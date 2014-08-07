@@ -58,6 +58,23 @@
 			<version>3.1.0</version>
 			<scope>provided</scope>
 		</dependency>
+		
+		<!-- DB Related stuff -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.hsqldb</groupId>
+			<artifactId>hsqldb</artifactId>
+			<version>2.3.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tomcat</groupId>
+			<artifactId>tomcat-jdbc</artifactId>
+			<version>8.0.8</version><!-- not the latest (8.0.8), jetty has a problem -->
+		</dependency>
 	</dependencies>
 
 	<build>
