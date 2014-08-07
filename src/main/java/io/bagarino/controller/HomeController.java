@@ -24,8 +24,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class HomeController {
 
     @RequestMapping(value = "/hello")
-    @ResponseBody
     public String test() {
-        return "hello, world!";
+        return "/index";
     }
 }

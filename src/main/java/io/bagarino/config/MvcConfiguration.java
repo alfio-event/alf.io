@@ -16,21 +16,62 @@
  */
 package io.bagarino.config;
 
+import org.springframework.context.ResourceLoaderAware;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.view.mustache.MustacheViewResolver;
+import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateFactory;
+import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 
 @Configuration
 @ComponentScan(basePackages = "io.bagarino")
 @EnableWebMvc
-public class MvcConfiguration extends WebMvcConfigurerAdapter {
+public class MvcConfiguration extends WebMvcConfigurerAdapter implements ResourceLoaderAware {
+
+    private ResourceLoader resourceLoader;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
     }
 
+    @Bean
+    public ViewResolver getViewResolver() throws Exception {
+        MustacheViewResolver viewResolver = new MustacheViewResolver();
+        viewResolver.setSuffix("");
+        viewResolver.setTemplateFactory(getTemplateFactory());
+        return viewResolver;
+    }
 
+    @Bean
+    public JMustacheTemplateFactory getTemplateFactory() throws Exception {
+        final JMustacheTemplateFactory templateFactory = new JMustacheTemplateFactory();
+        templateFactory.setPrefix("/WEB-INF/templates");
+        templateFactory.setSuffix(".ms");
+        templateFactory.setEscapeHTML(true);
+        templateFactory.setStandardsMode(false);
+        templateFactory.setTemplateLoader(getTemplateLoader());
+        templateFactory.afterPropertiesSet();
+        return templateFactory;
+    }
+
+
+    @Bean
+    public JMustacheTemplateLoader getTemplateLoader() {
+        final JMustacheTemplateLoader templateLoader = new JMustacheTemplateLoader();
+        templateLoader.setResourceLoader(resourceLoader);
+        return templateLoader;
+    }
+
+
+    @Override
+    public void setResourceLoader(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
 }
