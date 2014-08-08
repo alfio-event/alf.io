@@ -26,5 +26,4 @@ public class Event {
     private final String description;
     private final Collection<TicketCategory> ticketCategories;
     private final Organization owner;
-    private final Collection<Section> sections;
 }
