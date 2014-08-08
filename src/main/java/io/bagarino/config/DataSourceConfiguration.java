@@ -18,36 +18,42 @@ package io.bagarino.config;
 
 import java.net.URISyntaxException;
 
+import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
+import org.hsqldb.util.DatabaseManagerSwing;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
-@Configuration
 public class DataSourceConfiguration {
 
-	// TODO use a profile instead of doing a fallback
 	@Bean(destroyMethod = "close")
 	public DataSource getDataSource(Environment env) throws URISyntaxException {
 		org.apache.tomcat.jdbc.pool.DataSource dataSource = new org.apache.tomcat.jdbc.pool.DataSource();
-		dataSource.setDriverClassName(env.getProperty("datasource.driver", "org.hsqldb.jdbcDriver"));
-		dataSource.setUrl(env.getProperty("datasource.url", "jdbc:hsqldb:mem:lavagna"));
-		dataSource.setUsername(env.getProperty("datasource.username", "sa"));
-		dataSource.setPassword(env.getProperty("datasource.password", ""));
-		dataSource.setValidationQuery(env.getProperty("datasource.validationQuery",
-				"SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS"));
+		dataSource.setDriverClassName(env.getRequiredProperty("datasource.driver"));
+		dataSource.setUrl(env.getRequiredProperty("datasource.url"));
+		dataSource.setUsername(env.getRequiredProperty("datasource.username"));
+		dataSource.setPassword(env.getRequiredProperty("datasource.password"));
+		dataSource.setValidationQuery(env.getRequiredProperty("datasource.validationQuery"));
 		dataSource.setTestOnBorrow(true);
 		dataSource.setTestOnConnect(true);
 		dataSource.setTestWhileIdle(true);
+		
 		return dataSource;
+	}
+	
+	@PostConstruct
+	public void init() {
+		if (System.getProperty("startDBManager") != null) {
+			DatabaseManagerSwing.main(new String[] { "--url", "jdbc:hsqldb:mem:bagarino", "--noexit" });
+		}
 	}
 
 	@Bean
 	public Flyway migrator(Environment env, DataSource dataSource) {
-		String sqlDialect = env.getProperty("datasource.dialect", "HSQLDB");
+		String sqlDialect = env.getRequiredProperty("datasource.dialect");
 		Flyway migration = new Flyway();
 		migration.setDataSource(dataSource);
 		// TODO remove the validation = false when the schemas will be stable

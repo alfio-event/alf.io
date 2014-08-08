@@ -13,6 +13,7 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<spring.version>4.0.6.RELEASE</spring.version>
+		<org.eclipse.jetty.version>9.2.2.v20140723</org.eclipse.jetty.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
@@ -137,6 +138,81 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-maven-plugin</artifactId>
+				<version>${org.eclipse.jetty.version}</version>
+				<configuration>
+					<httpConnector>
+						<port>${jetty.port}</port>
+						<host>${jetty.host}</host>
+					</httpConnector>
+					<systemProperties>
+						<systemProperty>
+							<name>spring.profiles.active</name>
+							<value>${spring.profiles.active}</value>
+						</systemProperty>
+						<systemProperty>
+							<name>datasource.dialect</name>
+							<value>${datasource.dialect}</value>
+						</systemProperty>
+						<systemProperty>
+							<name>datasource.driver</name>
+							<value>${datasource.driver}</value>
+						</systemProperty>
+						<systemProperty>
+							<name>datasource.url</name>
+							<value>${datasource.url}</value>
+						</systemProperty>
+						<systemProperty>
+							<name>datasource.username</name>
+							<value>${datasource.username}</value>
+						</systemProperty>
+						<systemProperty>
+							<name>datasource.password</name>
+							<value>${datasource.password}</value>
+						</systemProperty>
+						<systemProperty>
+							<name>datasource.validationQuery</name>
+							<value>${datasource.validationQuery}</value>
+						</systemProperty>
+					</systemProperties>
+				</configuration>
+				</plugin>
 		</plugins>
 	</build>
+	
+	<profiles>
+		<profile>
+			<id>dev</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<jetty.port>8080</jetty.port>
+				<jetty.host>0.0.0.0</jetty.host>
+				<datasource.dialect>HSQLDB</datasource.dialect>
+				<datasource.driver>org.hsqldb.jdbcDriver</datasource.driver>
+				<datasource.url>jdbc:hsqldb:mem:bagarino</datasource.url>
+				<datasource.username>sa</datasource.username>
+				<datasource.password></datasource.password>
+				<datasource.validationQuery>SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS</datasource.validationQuery>
+				<spring.profiles.active>dev</spring.profiles.active>
+			</properties>
+		</profile>
+		<profile>
+			<id>dev-pgsql</id>
+			<properties>
+				<jetty.port>8080</jetty.port>
+				<jetty.host>0.0.0.0</jetty.host>
+				<datasource.dialect>PGSQL</datasource.dialect>
+				<datasource.driver>org.postgresql.Driver</datasource.driver>
+				<datasource.url>jdbc:postgresql://localhost:5432/bagarino</datasource.url>
+				<datasource.username>postgres</datasource.username>
+				<datasource.password>password</datasource.password>
+				<datasource.validationQuery>SELECT 1</datasource.validationQuery>
+				<spring.profiles.active>dev</spring.profiles.active>
+			</properties>
+		</profile>
+	</profiles>
 </project>
