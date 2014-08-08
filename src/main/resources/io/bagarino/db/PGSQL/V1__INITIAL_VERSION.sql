@@ -15,4 +15,4 @@
 -- along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
 --
 
--- here be tables for hsqldb
+-- here be tables for pgsql
