@@ -52,8 +52,8 @@ public class QueryRepositoryScanner implements BeanFactoryPostProcessor {
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 		if (packagesToScan != null) {
+			CustomClasspathScanner scanner = new CustomClasspathScanner();
 			for (String packageToScan : packagesToScan) {
-				CustomClasspathScanner scanner = new CustomClasspathScanner();
 				Set<BeanDefinition> candidates = scanner.findCandidateComponents(packageToScan);
 				handleCandidates(candidates, beanFactory);
 			}
