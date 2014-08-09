@@ -56,9 +56,13 @@ public class DataSourceConfiguration {
 	}
 
 	@Bean
-	public QueryFactory queryFactory(Environment env, DataSource datasource) {
-		return new QueryFactory(env.getRequiredProperty("datasource.dialect"), new NamedParameterJdbcTemplate(
-				datasource));
+	public NamedParameterJdbcTemplate namedParameterJdbcTemplate(DataSource dataSource) {
+		return new NamedParameterJdbcTemplate(dataSource);
+	}
+
+	@Bean
+	public QueryFactory queryFactory(Environment env, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+		return new QueryFactory(env.getRequiredProperty("datasource.dialect"), namedParameterJdbcTemplate);
 	}
 
 	@Bean
