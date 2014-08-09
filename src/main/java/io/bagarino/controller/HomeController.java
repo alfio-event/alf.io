@@ -16,14 +16,35 @@
  */
 package io.bagarino.controller;
 
+import java.util.UUID;
+
+import io.bagarino.repository.UserRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 public class HomeController {
 
-    @RequestMapping(value = "/hello")
-    public String test() {
-        return "/index";
-    }
+	private final UserRepository userRepository;
+
+	@Autowired
+	public HomeController(UserRepository userRepository) {
+		this.userRepository = userRepository;
+	}
+
+	@RequestMapping(value = "/hello")
+	public String test(Model model) {
+		model.addAttribute("users", userRepository.findAll());
+		return "/index";
+	}
+
+	@RequestMapping(value = "/register-user")
+	public String registerUser() {
+		userRepository.create("user-" + UUID.randomUUID().toString(), "bla", "bla", "bla", "bla", "bla", "bla", "bla",
+				"bla", "bla");
+		return "redirect:/hello";
+	}
 }

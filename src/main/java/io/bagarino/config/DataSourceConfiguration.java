@@ -16,17 +16,23 @@
  */
 package io.bagarino.config;
 
+import io.bagarino.datamapper.QueryFactory;
+import io.bagarino.datamapper.QueryRepositoryScanner;
+
 import java.net.URISyntaxException;
 
-import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
-import org.hsqldb.util.DatabaseManagerSwing;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+@EnableTransactionManagement
 public class DataSourceConfiguration {
 
 	@Bean(destroyMethod = "close")
@@ -40,15 +46,24 @@ public class DataSourceConfiguration {
 		dataSource.setTestOnBorrow(true);
 		dataSource.setTestOnConnect(true);
 		dataSource.setTestWhileIdle(true);
-		
+
 		return dataSource;
 	}
-	
-	@PostConstruct
-	public void init() {
-		if (System.getProperty("startDBManager") != null) {
-			DatabaseManagerSwing.main(new String[] { "--url", "jdbc:hsqldb:mem:bagarino", "--noexit" });
-		}
+
+	@Bean
+	public PlatformTransactionManager platformTransactionManager(DataSource dataSource) {
+		return new DataSourceTransactionManager(dataSource);
+	}
+
+	@Bean
+	public QueryFactory queryFactory(Environment env, DataSource datasource) {
+		return new QueryFactory(env.getRequiredProperty("datasource.dialect"), new NamedParameterJdbcTemplate(
+				datasource));
+	}
+
+	@Bean
+	public QueryRepositoryScanner queryRepositoryScanner() {
+		return new QueryRepositoryScanner("io.bagarino.repository");
 	}
 
 	@Bean

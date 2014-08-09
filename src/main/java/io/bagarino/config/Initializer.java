@@ -16,9 +16,22 @@
  */
 package io.bagarino.config;
 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+
+import org.hsqldb.util.DatabaseManagerSwing;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
+
+	@Override
+	public void onStartup(ServletContext servletContext) throws ServletException {
+		super.onStartup(servletContext);
+
+		if (System.getProperty("startDBManager") != null) {
+			DatabaseManagerSwing.main(new String[] { "--url", "jdbc:hsqldb:mem:bagarino", "--noexit" });
+		}
+	}
 
 	@Override
 	protected Class<?>[] getRootConfigClasses() {
