@@ -23,7 +23,7 @@ import java.util.Collection;
 
 @Data
 public class WaitingQueue {
-    private final Event event; //TODO should it be directly linked with the section?
+    private final Event event;
     private final Collection<User> users;
 
     public void addUser(User user) {

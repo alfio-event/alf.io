@@ -25,6 +25,14 @@ import java.util.Collection;
 public class User {
     private final Collection<Organization> organizations;
     private final Collection<Ticket> tickets;
-    private final String username;//the password won't be mapped for security reasons
+    private final String username;
+    private final String firstName;
+    private final String lastName;
+    private final String address;
+    private final String zip;
+    private final String city;
+    private final String state;
+    private final String country;
+    private final String emailAddress;
 
 }

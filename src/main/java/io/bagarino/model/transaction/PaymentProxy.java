@@ -21,6 +21,7 @@ import lombok.Data;
 @Data
 public class PaymentProxy {
 
+    private final String key;
     private final String address;
     private final String name;
 }

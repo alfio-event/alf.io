@@ -25,5 +25,5 @@ public class Transaction {
     private final PaymentProxy paymentProxy;
     private final LocalDateTime timestamp;
     private final String sourceIp;
-    private final String userID;
+    private final int userID;
 }

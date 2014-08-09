@@ -19,6 +19,8 @@ package io.bagarino.model;
 import io.bagarino.model.user.Organization;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.Collection;
 
 @Data
@@ -26,4 +28,8 @@ public class Event {
     private final String description;
     private final Collection<TicketCategory> ticketCategories;
     private final Organization owner;
+    private final String latitude;
+    private final String longitude;
+    private final LocalDateTime begin;
+    private final LocalDateTime end;
 }

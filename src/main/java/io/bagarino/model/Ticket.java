@@ -21,6 +21,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 public class Ticket {
@@ -29,9 +30,9 @@ public class Ticket {
         PENDING, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED
     }
 
-    private final Instant creation;
+    private final LocalDateTime creation;
     private final TicketCategory category;
-    private final Event event;//TODO should it be directly linked with the section?
+    private final Event event;
     private final TicketStatus status;
     private final BigDecimal originalPrice;
     private final BigDecimal paidPrice;
