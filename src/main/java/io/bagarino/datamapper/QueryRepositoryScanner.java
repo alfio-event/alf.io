@@ -28,11 +28,13 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 public class QueryRepositoryScanner implements BeanFactoryPostProcessor {
 
-	public QueryRepositoryScanner(String... packagesToScan) {
+	private final QueryFactory queryFactory;
+	private final String[] packagesToScan;
+
+	public QueryRepositoryScanner(QueryFactory queryFactory, String... packagesToScan) {
+		this.queryFactory = queryFactory;
 		this.packagesToScan = packagesToScan;
 	}
-
-	private final String[] packagesToScan;
 
 	private static class CustomClasspathScanner extends ClassPathScanningCandidateComponentProvider {
 
@@ -62,8 +64,7 @@ public class QueryRepositoryScanner implements BeanFactoryPostProcessor {
 		try {
 			for (BeanDefinition beanDefinition : candidates) {
 				final Class<?> c = Class.forName(beanDefinition.getBeanClassName());
-				QueryFactory qf = beanFactory.getBean(QueryFactory.class);
-				beanFactory.registerSingleton(beanDefinition.getBeanClassName(), qf.from(c));
+				beanFactory.registerSingleton(beanDefinition.getBeanClassName(), queryFactory.from(c));
 			}
 		} catch (ClassNotFoundException cnf) {
 			throw new IllegalStateException("Error while loading class", cnf);

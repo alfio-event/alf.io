@@ -66,8 +66,8 @@ public class DataSourceConfiguration {
 	}
 
 	@Bean
-	public QueryRepositoryScanner queryRepositoryScanner() {
-		return new QueryRepositoryScanner("io.bagarino.repository");
+	public QueryRepositoryScanner queryRepositoryScanner(QueryFactory queryFactory) {
+		return new QueryRepositoryScanner(queryFactory, "io.bagarino.repository");
 	}
 
 	@Bean
