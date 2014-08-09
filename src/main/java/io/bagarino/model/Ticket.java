@@ -17,24 +17,24 @@
 package io.bagarino.model;
 
 import io.bagarino.model.transaction.Transaction;
-import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDateTime;
+
+import lombok.Data;
 
 @Data
 public class Ticket {
 
-    public enum TicketStatus {
-        PENDING, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED
-    }
+	public enum TicketStatus {
+		PENDING, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED
+	}
 
-    private final LocalDateTime creation;
-    private final TicketCategory category;
-    private final Event event;
-    private final TicketStatus status;
-    private final BigDecimal originalPrice;
-    private final BigDecimal paidPrice;
-    private final Transaction transaction;
+	private final LocalDateTime creation;
+	private final TicketCategory category;
+	private final Event event;
+	private final TicketStatus status;
+	private final BigDecimal originalPrice;
+	private final BigDecimal paidPrice;
+	private final Transaction transaction;
 }
