@@ -20,7 +20,6 @@ import io.bagarino.model.user.Organization;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.time.Period;
 import java.util.Collection;
 
 @Data
