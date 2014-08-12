@@ -16,34 +16,24 @@
  */
 package io.bagarino.controller;
 
+import io.bagarino.repository.RoleRepository;
 import io.bagarino.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.UUID;
-
 @Controller
-public class HomeController {
+@RequestMapping("/admin")
+public class AdminController {
 
-	private final UserRepository userRepository;
+    @Autowired
+    public AdminController(UserRepository userRepository,
+                           RoleRepository roleRepository,
+                           PasswordEncoder passwordEncoder) {
+        //insert admin user. Temporary!
+        userRepository.create("admin", passwordEncoder.encode("admin"), "The", "Administrator", "", "", "", "", "", "admin@localhost");
+        roleRepository.create("admin", "ROLE_ADMIN");
+    }
 
-	@Autowired
-	public HomeController(UserRepository userRepository) {
-		this.userRepository = userRepository;
-	}
-
-	@RequestMapping(value = "/hello")
-	public String test(Model model) {
-		model.addAttribute("users", userRepository.findAll());
-		return "/index";
-	}
-
-	@RequestMapping(value = "/register-user")
-	public String registerUser() {
-		userRepository.create("user-" + UUID.randomUUID().toString(), "bla", "bla", "bla", "bla", "bla", "bla", "bla",
-				"bla", "bla");
-		return "redirect:/hello";
-	}
 }

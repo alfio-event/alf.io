@@ -15,7 +15,8 @@
 		<spring.version>4.0.6.RELEASE</spring.version>
 		<org.eclipse.jetty.version>9.2.2.v20140723</org.eclipse.jetty.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
+        <spring-security-config.version>3.2.4.RELEASE</spring-security-config.version>
+    </properties>
 
 	<dependencies>
 		<!-- Spring core & mvc -->
@@ -32,6 +33,17 @@
 			<scope>compile</scope>
 		</dependency>
 
+        <!-- Spring security -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-web</artifactId>
+            <version>${spring-security-config.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-config</artifactId>
+            <version>${spring-security-config.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.samskivert</groupId>
             <artifactId>jmustache</artifactId>
@@ -97,11 +109,6 @@
 					<target>${java.version}</target>
 				</configuration>
 			</plugin>
-            <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
-                <version>9.2.2.v20140723</version>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>

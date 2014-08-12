@@ -37,7 +37,13 @@ create table user (
 	city varchar(255) not null, 
 	state varchar(255) not null, 
 	country varchar(255) not null, 
-	email_address varchar(255) not null
+	email_address varchar(255) not null,
+  enabled boolean default true
+);
+
+create table authority(
+  username varchar(255) not null,
+  role varchar(255) not null
 );
 
 create table ticket_category (

@@ -24,6 +24,8 @@ public class User {
 //	private final Collection<Organization> organizations;
 //	private final Collection<Ticket> tickets;
 
+    //TODO to be split in "Customer" and "User"
+
 	private final int id;
 	private final String username;
 	private final String firstName;
