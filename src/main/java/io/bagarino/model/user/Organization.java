@@ -16,9 +16,16 @@
  */
 package io.bagarino.model.user;
 
-import lombok.Data;
+import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
-@Data
+@Getter
 public class Organization {
-    private final String description;
+	private final int id;
+	private final String description;
+
+	public Organization(@Column("id") int id, @Column("description") String description) {
+		this.id = id;
+		this.description = description;
+	}
 }

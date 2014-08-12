@@ -17,17 +17,12 @@
 package io.bagarino.model.user;
 
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
-import io.bagarino.model.Ticket;
-
-import java.util.Collection;
-import java.util.Collections;
-
 import lombok.Getter;
 
 @Getter
 public class User {
-	private final Collection<Organization> organizations;
-	private final Collection<Ticket> tickets;
+//	private final Collection<Organization> organizations;
+//	private final Collection<Ticket> tickets;
 
 	private final int id;
 	private final String username;
@@ -54,7 +49,7 @@ public class User {
 		this.state = state;
 		this.country = country;
 		this.emailAddress = emailAddress;
-		this.organizations = Collections.emptyList();
-		this.tickets = Collections.emptyList();
+		// this.organizations = Collections.emptyList();
+		// this.tickets = Collections.emptyList();
 	}
 }

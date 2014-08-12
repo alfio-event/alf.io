@@ -16,17 +16,118 @@
 --
 
 --entities
-create table discount (id integer identity, amount decimal);
-create table organization ( id integer identity, description varchar(2048));
-create table user (id integer identity, username varchar(255), password varchar(255), first_name varchar(255), last_name varchar(255), address varchar(255), zip varchar(255), city varchar(255), state varchar(255), country varchar(255), email_address varchar(255));
-create table ticket_category (id integer identity, inception timestamp, "end" timestamp, discount_id integer, max_tickets integer);
-create table event(id integer identity, description varchar(2048), owner integer, latitude varchar(255), longitude varchar(255), "begin" timestamp, "end" timestamp);
-create table payment_proxy(id integer identity, key varchar(255), address varchar(1024), name varchar(255));
-create table transaction(id integer identity, payment_proxy_id integer, "timestamp" timestamp, source_ip varchar(255), user_id integer);
-create table ticket (id integer identity, creation timestamp, category_id integer, event_id integer, status varchar(255), original_price decimal, paid_price decimal, transaction_id integer);
-create table waiting_queue(id integer identity, event_id integer);
+create table discount (
+	id integer identity not null, 
+	amount decimal not null
+);
+
+create table organization ( 
+	id integer identity not null, 
+	description varchar(2048) not null
+);
+
+create table user (
+	id integer identity not null, 
+	username varchar(255) not null, 
+	password varchar(255) not null, 
+	first_name varchar(255) not null, 
+	last_name varchar(255) not null, 
+	address varchar(255) not null, 
+	zip varchar(255) not null, 
+	city varchar(255) not null, 
+	state varchar(255) not null, 
+	country varchar(255) not null, 
+	email_address varchar(255) not null
+);
+
+create table ticket_category (
+	id integer identity not null, 
+	inception timestamp not null, 
+	"end" timestamp not null, 
+	discount_id integer, 
+	max_tickets integer not null
+);
+-- constraints
+alter table ticket_category add foreign key(discount_id) references discount(id); 
+
+create table event(
+	id integer identity not null, 
+	description varchar(2048) not null, 
+	owner integer not null, 
+	latitude varchar(255) not null, 
+	longitude varchar(255) not null, 
+	"begin" timestamp not null, 
+	"end" timestamp not null
+);
+
+create table payment_proxy(
+	id integer identity not null, 
+	key varchar(255) not null, 
+	address varchar(1024) not null, 
+	name varchar(255) not null
+);
+
+create table transaction(
+	id integer identity not null, 
+	payment_proxy_id integer not null, 
+	"timestamp" timestamp not null, 
+	source_ip varchar(255) not null, 
+	user_id integer not null
+);
+-- constraints
+alter table transaction add foreign key(user_id) references user(id);
+
+create table ticket (
+	id integer identity not null, 
+	creation timestamp not null, 
+	category_id integer not null, 
+	event_id integer not null, 
+	status varchar(255) not null, 
+	original_price decimal not null, 
+	paid_price decimal not null, 
+	transaction_id integer not null
+);
+-- constraints
+alter table ticket add foreign key(category_id) references ticket_category(id);
+alter table ticket add foreign key(event_id) references event(id);
+alter table ticket add foreign key(transaction_id) references transaction(id);
+
+create table waiting_queue(
+	id integer identity not null, 
+	event_id integer not null
+);
+-- constraints
+alter table waiting_queue add foreign key(event_id) references event(id);
+
 --join tables
-create table j_user_organization (user_id integer not null, org_id integer not null);
-create table j_ticket_category_organization (cat_id integer not null, org_id integer not null);
-create table j_event_ticket_category(event_id integer not null, ticket_category_id integer not null);
-create table j_waiting_queue_user(waiting_queue_id integer not null, user_id integer not null);
+create table j_user_organization (
+	user_id integer not null, 
+	org_id integer not null
+);
+-- constraints
+alter table j_user_organization add foreign key(user_id) references user(id);
+alter table j_user_organization add foreign key(org_id) references organization(id);
+
+create table j_ticket_category_organization (
+	cat_id integer not null, 
+	org_id integer not null
+);
+-- constraints
+alter table j_ticket_category_organization add foreign key(cat_id) references ticket_category(id);
+alter table j_ticket_category_organization add foreign key(org_id) references organization(id);
+
+create table j_event_ticket_category(
+	event_id integer not null, 
+	ticket_category_id integer not null
+);
+-- constraints
+alter table j_event_ticket_category add foreign key(event_id) references event(id);
+alter table j_event_ticket_category add foreign key(ticket_category_id) references ticket_category(id);
+
+create table j_waiting_queue_user(
+	waiting_queue_id integer not null, 
+	user_id integer not null
+);
+-- constraints
+alter table j_waiting_queue_user add foreign key(waiting_queue_id) references waiting_queue(id);
+alter table j_waiting_queue_user add foreign key(user_id) references user(id);

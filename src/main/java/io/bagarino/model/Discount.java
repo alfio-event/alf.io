@@ -16,11 +16,19 @@
  */
 package io.bagarino.model;
 
-import lombok.Data;
+import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 
 import java.math.BigDecimal;
 
-@Data
+import lombok.Getter;
+
+@Getter
 public class Discount {
-    private final BigDecimal amount;
+	private final int id;
+	private final BigDecimal amount;
+
+	public Discount(@Column("id") int id, @Column("amount") BigDecimal amount) {
+		this.id = id;
+		this.amount = amount;
+	}
 }
