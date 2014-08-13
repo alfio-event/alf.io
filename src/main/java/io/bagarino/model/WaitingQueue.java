@@ -16,7 +16,6 @@
  */
 package io.bagarino.model;
 
-import io.bagarino.model.user.User;
 import lombok.Data;
 
 import java.util.Collection;
@@ -24,9 +23,9 @@ import java.util.Collection;
 @Data
 public class WaitingQueue {
     private final Event event;
-    private final Collection<User> users;
+    private final Collection<Customer> users;
 
-    public void addUser(User user) {
-        this.users.add(user);
+    public void addUser(Customer customer) {
+        this.users.add(customer);
     }
 }

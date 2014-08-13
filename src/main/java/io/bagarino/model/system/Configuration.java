@@ -14,12 +14,27 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.controller;
+package io.bagarino.model.system;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
-@Controller
-@RequestMapping("/admin")
-public class AdminController {
+@Getter
+public class Configuration {
+
+    private final int id;
+    private final String key;
+    private final String value;
+    private final String description;
+
+
+    public Configuration(@Column("id") int id,
+                         @Column("c_key") String key,
+                         @Column("c_value") String value,
+                         @Column("description") String description) {
+        this.id = id;
+        this.key = key;
+        this.value = value;
+        this.description = description;
+    }
 }

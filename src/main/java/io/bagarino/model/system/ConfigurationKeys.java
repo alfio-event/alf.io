@@ -14,12 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.controller;
+package io.bagarino.model.system;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+public final class ConfigurationKeys {
 
-@Controller
-@RequestMapping("/admin")
-public class AdminController {
+    public static final String INIT_COMPLETED = "INIT_COMPLETED";
+
+    private ConfigurationKeys() {
+    }
+
 }

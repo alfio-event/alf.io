@@ -43,7 +43,7 @@ create table customer (
 create table user (
 	id integer identity not null, 
 	username varchar(255) not null, 
-	password varchar(255) not null, 
+	password varchar(2048) not null,
 	first_name varchar(255) not null, 
 	last_name varchar(255) not null, 
 	email_address varchar(255) not null,
@@ -146,3 +146,10 @@ create table j_waiting_queue_customer(
 -- constraints
 alter table j_waiting_queue_customer add foreign key(waiting_queue_id) references waiting_queue(id);
 alter table j_waiting_queue_customer add foreign key(customer_id) references customer(id);
+
+create table configuration(
+  id integer identity not null,
+  c_key varchar(255) not null,
+  c_value varchar(2048) not null,
+  description varchar(2048)
+);

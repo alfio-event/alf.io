@@ -16,6 +16,8 @@
  */
 package io.bagarino.config;
 
+import io.bagarino.interceptor.ConfigurationStatusChecker;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -36,6 +38,8 @@ import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplate
 public class MvcConfiguration extends WebMvcConfigurerAdapter implements ResourceLoaderAware {
 
     private ResourceLoader resourceLoader;
+    @Autowired
+    private ConfigurationStatusChecker configurationStatusChecker;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
