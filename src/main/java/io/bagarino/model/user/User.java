@@ -21,37 +21,22 @@ import lombok.Getter;
 
 @Getter
 public class User {
-//	private final Collection<Organization> organizations;
-//	private final Collection<Ticket> tickets;
-
-    //TODO to be split in "Customer" and "User"
 
 	private final int id;
 	private final String username;
 	private final String firstName;
 	private final String lastName;
-	private final String address;
-	private final String zip;
-	private final String city;
-	private final String state;
-	private final String country;
 	private final String emailAddress;
+    private final boolean enabled;
+
 
 	public User(@Column("id") int id, @Column("username") String username, @Column("first_name") String firstName,
-			@Column("last_name") String lastName, @Column("address") String address, @Column("zip") String zip,
-			@Column("city") String city, @Column("state") String state, @Column("country") String country,
-			@Column("email_address") String emailAddress) {
+			@Column("last_name") String lastName, @Column("email_address") String emailAddress, @Column("enabled") boolean enabled) {
 		this.id = id;
 		this.username = username;
 		this.firstName = firstName;
 		this.lastName = lastName;
-		this.address = address;
-		this.zip = zip;
-		this.city = city;
-		this.state = state;
-		this.country = country;
 		this.emailAddress = emailAddress;
-		// this.organizations = Collections.emptyList();
-		// this.tickets = Collections.emptyList();
+        this.enabled=enabled;
 	}
 }

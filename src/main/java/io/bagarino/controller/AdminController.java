@@ -16,8 +16,8 @@
  */
 package io.bagarino.controller;
 
-import io.bagarino.repository.RoleRepository;
-import io.bagarino.repository.UserRepository;
+import io.bagarino.repository.user.RoleRepository;
+import io.bagarino.repository.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -28,11 +28,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class AdminController {
 
     @Autowired
-    public AdminController(UserRepository userRepository,
+    public AdminController(UserRepository customerRepository,
                            RoleRepository roleRepository,
                            PasswordEncoder passwordEncoder) {
         //insert admin user. Temporary!
-        userRepository.create("admin", passwordEncoder.encode("admin"), "The", "Administrator", "", "", "", "", "", "admin@localhost");
+        customerRepository.create("admin", passwordEncoder.encode("admin"), "The", "Administrator", "admin@localhost", true);
         roleRepository.create("admin", "ROLE_ADMIN");
     }
 

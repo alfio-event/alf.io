@@ -26,17 +26,26 @@ create table organization (
 	description varchar(2048) not null
 );
 
+create table customer (
+  id integer identity not null,
+  username varchar(255) not null,
+  password varchar(255) not null,
+  first_name varchar(255) not null,
+  last_name varchar(255) not null,
+  address varchar(255) not null,
+  zip varchar(255) not null,
+  city varchar(255) not null,
+  state varchar(255) not null,
+  country varchar(255) not null,
+  email_address varchar(255) not null
+);
+
 create table user (
 	id integer identity not null, 
 	username varchar(255) not null, 
 	password varchar(255) not null, 
 	first_name varchar(255) not null, 
 	last_name varchar(255) not null, 
-	address varchar(255) not null, 
-	zip varchar(255) not null, 
-	city varchar(255) not null, 
-	state varchar(255) not null, 
-	country varchar(255) not null, 
 	email_address varchar(255) not null,
   enabled boolean default true
 );
@@ -78,10 +87,10 @@ create table transaction(
 	payment_proxy_id integer not null, 
 	"timestamp" timestamp not null, 
 	source_ip varchar(255) not null, 
-	user_id integer not null
+	customer_id integer not null
 );
 -- constraints
-alter table transaction add foreign key(user_id) references user(id);
+alter table transaction add foreign key(customer_id) references customer(id);
 
 create table ticket (
 	id integer identity not null, 
@@ -130,10 +139,10 @@ create table j_event_ticket_category(
 alter table j_event_ticket_category add foreign key(event_id) references event(id);
 alter table j_event_ticket_category add foreign key(ticket_category_id) references ticket_category(id);
 
-create table j_waiting_queue_user(
+create table j_waiting_queue_customer(
 	waiting_queue_id integer not null, 
-	user_id integer not null
+	customer_id integer not null
 );
 -- constraints
-alter table j_waiting_queue_user add foreign key(waiting_queue_id) references waiting_queue(id);
-alter table j_waiting_queue_user add foreign key(user_id) references user(id);
+alter table j_waiting_queue_customer add foreign key(waiting_queue_id) references waiting_queue(id);
+alter table j_waiting_queue_customer add foreign key(customer_id) references customer(id);

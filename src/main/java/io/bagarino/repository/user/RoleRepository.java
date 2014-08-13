@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.repository;
+package io.bagarino.repository.user;
 
 import io.bagarino.datamapper.Bind;
 import io.bagarino.datamapper.Query;
