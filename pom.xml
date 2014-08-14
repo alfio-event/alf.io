@@ -16,6 +16,7 @@
 		<org.eclipse.jetty.version>9.2.2.v20140723</org.eclipse.jetty.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-security-config.version>3.2.4.RELEASE</spring-security-config.version>
+        <org.apache.logging.log4j.version>2.0.1</org.apache.logging.log4j.version>
     </properties>
 
 	<dependencies>
@@ -95,6 +96,28 @@
 			<artifactId>tomcat-jdbc</artifactId>
 			<version>8.0.8</version><!-- not the latest (8.0.8), jetty has a problem -->
 		</dependency>
+		
+		<!-- logging (log4j2) -->
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>${org.apache.logging.log4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>${org.apache.logging.log4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-jcl</artifactId>
+			<version>${org.apache.logging.log4j.version}</version>
+		</dependency>
+		<!-- <dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j-impl</artifactId>
+			<version>${org.apache.logging.log4j.version}</version>
+		</dependency> -->
 	</dependencies>
 
 	<build>
