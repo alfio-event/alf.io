@@ -19,15 +19,17 @@ package io.bagarino.datamapper;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.StatementCreatorUtils;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.util.StringUtils;
 
 /**
@@ -67,7 +69,7 @@ public enum QueryType {
 		@Override
 		Object apply(String template, NamedParameterJdbcTemplate jdbc, Method method, Object[] args) {
 			JdbcAction action = actionFromTemplate(template);
-			Map<String, Object> parameters = extractParameters(method, args);
+			SqlParameterSource parameters = extractParameters(method, args);
 			if (action == JdbcAction.QUERY) {
 				return doQuery(template, jdbc, method, parameters);
 			} else {
@@ -77,7 +79,7 @@ public enum QueryType {
 
 		@SuppressWarnings("unchecked")
 		private Object doQuery(String template, NamedParameterJdbcTemplate jdbc, Method method,
-				Map<String, Object> parameters) {
+				SqlParameterSource parameters) {
 			if (method.getReturnType().isAssignableFrom(List.class)) {
 				Class<Object> c = (Class<Object>) ((ParameterizedType) method.getGenericReturnType())
 						.getActualTypeArguments()[0];
@@ -125,22 +127,23 @@ public enum QueryType {
 		}
 	}
 
-	private static Map<String, Object> extractParameters(Method m, Object[] args) {
+	private static SqlParameterSource extractParameters(Method m, Object[] args) {
 
 		Annotation[][] parameterAnnotations = m.getParameterAnnotations();
 		if (parameterAnnotations == null || parameterAnnotations.length == 0) {
-			return Collections.emptyMap();
+			return new EmptySqlParameterSource();
 		}
 
-		Map<String, Object> r = new HashMap<>();
+		MapSqlParameterSource ps = new MapSqlParameterSource();
+		Class<?>[] parameterTypes = m.getParameterTypes();
 		for (int i = 0; i < args.length; i++) {
 			String name = parameterName(parameterAnnotations[i]);
 			if (name != null) {
-				r.put(name, args[i]);
+				ps.addValue(name, args[i], StatementCreatorUtils.javaTypeToSqlParameterType(parameterTypes[i]));
 			}
 		}
 
-		return r;
+		return ps;
 	}
 
 	private static String parameterName(Annotation[] annotation) {
