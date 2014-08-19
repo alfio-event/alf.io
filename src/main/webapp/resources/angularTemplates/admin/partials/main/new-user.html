@@ -1,0 +1,23 @@
+<form role="form">
+    <div class="form-group">
+        <label for="organizationId">Organization</label>
+        <select id="organizationId"></select>
+    </div>
+    <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="org-name" class="form-control" data-ng-bind="user.username">
+    </div>
+    <div class="form-group">
+        <label for="firstName">First name</label>
+        <input type="text" id="firstName" class="form-control" data-ng-bind="user.firstName">
+    </div>
+    <div class="form-group">
+        <label for="lastName">Last name</label>
+        <input type="text" id="lastName" class="form-control" data-ng-bind="user.lastName">
+    </div>
+    <div class="form-group">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" class="form-control" data-ng-bind="user.email">
+    </div>
+    <button class="btn btn-default" data-ng-click="save(user)">Submit</button>
+</form>

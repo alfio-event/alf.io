@@ -16,10 +16,16 @@
  */
 package io.bagarino.model.user;
 
-import lombok.Data;
+import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
-@Data
+@Getter
 public class Authority {
     private final String username;
     private final String role;
+
+    public Authority(@Column("username") String username, @Column("role") String role) {
+        this.username = username;
+        this.role = role;
+    }
 }

@@ -16,21 +16,29 @@
  */
 package io.bagarino.config;
 
-import io.bagarino.interceptor.ConfigurationStatusChecker;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.ViewResolver;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.*;
+import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import org.springframework.web.servlet.view.mustache.MustacheViewResolver;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateFactory;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
+import org.springframework.web.servlet.view.mustache.jmustache.LocalizationMessageInterceptor;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 @Configuration
 @ComponentScan(basePackages = "io.bagarino")
@@ -38,8 +46,6 @@ import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplate
 public class MvcConfiguration extends WebMvcConfigurerAdapter implements ResourceLoaderAware {
 
     private ResourceLoader resourceLoader;
-    @Autowired
-    private ConfigurationStatusChecker configurationStatusChecker;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -49,6 +55,35 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
         registry.addViewController("/admin/").setViewName("/admin/index");
+        registry.addViewController("/admin/partials/index.html").setViewName("/admin/partials/main");
+        registry.addViewController("/admin/partials/main/organizations.html").setViewName("/admin/partials/organizations");
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(getTemplateMessagesInterceptor());
+    }
+
+    @Bean
+    public MessageSource messageSource() {
+        ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+        source.setBasenames("io.bagarino.i18n.application", "io.bagarino.i18n.admin");
+        return source;
+    }
+
+    @Bean
+    public LocalizationMessageInterceptor getTemplateMessagesInterceptor() {
+        LocalizationMessageInterceptor interceptor = new LocalizationMessageInterceptor();
+        interceptor.setLocaleResolver(getLocaleResolver());
+        interceptor.setMessageSource(messageSource());
+        return interceptor;
+    }
+
+    @Bean
+    public LocaleResolver getLocaleResolver() {
+        SessionLocaleResolver localeResolver = new SessionLocaleResolver();
+        localeResolver.setDefaultLocale(Locale.ENGLISH);
+        return localeResolver;
     }
 
     @Bean
@@ -56,7 +91,15 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         MustacheViewResolver viewResolver = new MustacheViewResolver();
         viewResolver.setSuffix("");
         viewResolver.setTemplateFactory(getTemplateFactory());
+        viewResolver.setOrder(1);
         return viewResolver;
+    }
+
+    @Override
+    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+        StringHttpMessageConverter converter = new StringHttpMessageConverter();
+        converter.setSupportedMediaTypes(Arrays.asList(MediaType.TEXT_HTML));
+        converters.add(new MappingJackson2HttpMessageConverter());
     }
 
     @Bean

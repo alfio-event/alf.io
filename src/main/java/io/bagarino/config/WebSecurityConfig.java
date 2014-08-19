@@ -33,6 +33,9 @@ import javax.sql.DataSource;
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     private static final String ROLE_ADMIN = "ADMIN";
+    private static final String ROLE_OWNER = "OWNER";
+    public static final String ADMIN_API = "/admin/api";
+
     @Autowired
     private DataSource dataSource;
 
@@ -52,7 +55,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-                .antMatchers("/admin/").hasRole(ROLE_ADMIN)
+                .antMatchers(ADMIN_API + "/organizations/new",
+                        ADMIN_API + "/users/**").hasRole(ROLE_ADMIN)
+                .antMatchers("/admin/**").hasAnyRole(ROLE_ADMIN, ROLE_OWNER)
                 .and().formLogin();
 
     }

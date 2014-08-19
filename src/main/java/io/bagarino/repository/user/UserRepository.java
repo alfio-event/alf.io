@@ -19,17 +19,20 @@ package io.bagarino.repository.user;
 import io.bagarino.datamapper.Bind;
 import io.bagarino.datamapper.Query;
 import io.bagarino.datamapper.QueryRepository;
-import io.bagarino.model.Customer;
+import io.bagarino.model.user.User;
 
 import java.util.List;
 
 @QueryRepository
 public interface UserRepository {
     @Query("SELECT * FROM user")
-    List<Customer> findAll();
+    List<User> findAll();
 
     @Query("SELECT * FROM user WHERE id = :userId")
-    Customer findById(@Bind("userId") int userId);
+    User findById(@Bind("userId") int userId);
+
+    @Query("select * from user where username = :username")
+    User findByUsername(@Bind("username") String username);
 
     @Query("INSERT INTO user(username, password, first_name, last_name, email_address, enabled) VALUES"
             + " (:username, :password, :first_name, :last_name, :email_address, :enabled)")

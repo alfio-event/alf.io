@@ -1,0 +1,18 @@
+<div>
+    <a data-ui-sref="index.new-user">add new user</a>
+</div>
+<table class="table">
+    <thead>
+        <th>id</th>
+        <th>username</th>
+        <th>actions</th>
+    </thead>
+    <tbody>
+        <tr data-ng-repeat="user in users" data-ng-class-even="active">
+            <td>{{user.id}}</td>
+            <td>{{user.username}}</td>
+            <td>actions</td>
+        </tr>
+    </tbody>
+</table>
+<div data-ui-view="newUser"></div>

@@ -22,10 +22,14 @@ import lombok.Getter;
 @Getter
 public class Organization {
 	private final int id;
+    private final String name;
 	private final String description;
 
-	public Organization(@Column("id") int id, @Column("description") String description) {
+	public Organization(@Column("id") int id,
+                        @Column("name") String name,
+                        @Column("description") String description) {
 		this.id = id;
-		this.description = description;
+        this.name = name;
+        this.description = description;
 	}
 }
