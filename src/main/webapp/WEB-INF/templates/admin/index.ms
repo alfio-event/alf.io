@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="_csrf" content="{{_csrf.token}}"/>
+    <meta name="_csrf_header" content="{{_csrf.headerName}}"/>
     <link rel="stylesheet" href="/resources/bower_components/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="/resources/css/admin.css" />
     <link rel="stylesheet" href="/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
@@ -14,7 +16,7 @@
     <script src="/resources/js/admin/ng-app/admin-application.js"></script>
     <script src="/resources/js/admin/directive/admin-directive.js"></script>
     <script src="/resources/js/admin/service/service.js"></script>
-    <title>{{#i18n}}application.title{{/i18n}}</title>
+    <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
 <body>
     <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -26,7 +28,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand logo" href="#">{{#i18n}}application.title{{/i18n}}</a>
+                <a class="navbar-brand logo" href="#">{{#i18n}}admin.title{{/i18n}}</a>
             </div>
             <div class="navbar-left">
                 <div class="collapse navbar-collapse">

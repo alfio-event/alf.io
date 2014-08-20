@@ -14,7 +14,21 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.manager;
+package io.bagarino.controller.form;
 
-public class EventManager {
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+
+@Getter
+public class OrganizationForm {
+
+    private final String name;
+    private final String description;
+
+    @JsonCreator
+    public OrganizationForm(@JsonProperty("name") String name, @JsonProperty("description") String description) {
+        this.name = name;
+        this.description = description;
+    }
 }

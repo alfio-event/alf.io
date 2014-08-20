@@ -17,26 +17,29 @@
                 url: "new-organization",
                 views: {
                     "newOrganization": {
-                        templateUrl: BASE_STATIC_URL + "/main/new-organization.html"
+                        templateUrl: BASE_STATIC_URL + "/main/new-organization.html",
+                        controller: 'InsertNewOrganizationController'
                     }
-                },
-                controller: 'InsertNewOrganizationController'
+                }
             })
             .state('index.new-user', {
                 url: "new-user",
                 views: {
                     "newUser": {
-                        templateUrl: BASE_STATIC_URL + "/main/new-user.html"
+                        templateUrl: BASE_STATIC_URL + "/main/new-user.html",
+                        controller: 'InsertNewUserController'
                     }
-                },
-                controller: 'InsertNewUserController'
+                }
             })
     });
 
-    admin.controller('InsertNewOrganizationController', function($scope) {
+    admin.controller('InsertNewOrganizationController', function($scope, $state, $rootScope, OrganizationService) {
         $scope.organization = {};
         $scope.save = function(organization) {
-            alert('save!!');
+            OrganizationService.insertOrganization(organization).success(function() {
+                $rootScope.$emit('ReloadOrganizations', {});
+                $state.go("index");
+            });
         };
     });
 
@@ -46,7 +49,7 @@
             $scope.organizations = result;
         });
         $scope.save = function(user) {
-            alert('save!!');
+            alert('aa');
         };
     });
 

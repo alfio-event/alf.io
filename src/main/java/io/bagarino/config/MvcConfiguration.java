@@ -27,18 +27,25 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.LocaleResolver;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.*;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import org.springframework.web.servlet.view.mustache.MustacheViewResolver;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateFactory;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 import org.springframework.web.servlet.view.mustache.jmustache.LocalizationMessageInterceptor;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 @Configuration
 @ComponentScan(basePackages = "io.bagarino")
@@ -62,6 +69,20 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(getTemplateMessagesInterceptor());
+        registry.addInterceptor(getCsrfInterceptor());
+    }
+
+    @Bean
+    public HandlerInterceptor getCsrfInterceptor() {
+        return new HandlerInterceptorAdapter() {
+            @Override
+            public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+                Optional.ofNullable(modelAndView).ifPresent(mv -> {
+                    HttpSession session = request.getSession();
+                    mv.addObject("_csrf", session.getAttribute(WebSecurityConfig.CSRF_SESSION_ATTRIBUTE));
+                });
+            }
+        };
     }
 
     @Bean

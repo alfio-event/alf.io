@@ -3,7 +3,10 @@
     var baseServices = angular.module('adminServices', []);
 
     baseServices.config(['$httpProvider', function($httpProvider) {
+        var token = $("meta[name='_csrf']").attr("content");
+        var header = $("meta[name='_csrf_header']").attr("content");
         $httpProvider.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+        $httpProvider.defaults.headers.common[header] = token;
     }]);
 
     baseServices.service("OrganizationService", function($http, HttpErrorHandler) {

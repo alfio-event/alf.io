@@ -23,6 +23,7 @@ create table discount (
 
 create table organization ( 
 	id integer identity not null, 
+	name varchar(255) not null,
 	description varchar(2048) not null
 );
 
