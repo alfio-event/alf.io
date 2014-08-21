@@ -12,11 +12,11 @@
         <tr data-ng-if="!organizations || organizations.length == 0">
             <td colspan="4">no organization have been found. <a data-ui-sref="index.new-organization">Insert a new one</a></td>
         </tr>
-        <tr data-ng-repeat="organization in organizations" data-ng-class-even="active">
-            <td>{{organization.id}}</td>
-            <td>{{organization.name}}</td>
-            <td>{{organization.description}}</td>
-            <td>actions</td>
+        <tr data-ng-repeat="organization in organizations">
+            <td data-ng-class-even="'active'">{{organization.id}}</td>
+            <td data-ng-class-even="'active'">{{organization.name}}</td>
+            <td data-ng-class-even="'active'">{{organization.description}}</td>
+            <td data-ng-class-even="'active'">actions</td>
         </tr>
     </tbody>
 </table>

@@ -36,20 +36,24 @@
     admin.controller('InsertNewOrganizationController', function($scope, $state, $rootScope, OrganizationService) {
         $scope.organization = {};
         $scope.save = function(organization) {
-            OrganizationService.insertOrganization(organization).success(function() {
+            OrganizationService.createOrganization(organization).success(function() {
                 $rootScope.$emit('ReloadOrganizations', {});
                 $state.go("index");
             });
         };
     });
 
-    admin.controller('InsertNewUserController', function($scope, OrganizationService) {
+    admin.controller('InsertNewUserController', function($scope, $state, $rootScope, OrganizationService, UserService) {
         $scope.user = {};
+        $scope.organizations = {};
         OrganizationService.getAllOrganizations().success(function(result) {
             $scope.organizations = result;
         });
         $scope.save = function(user) {
-            alert('aa');
+            UserService.createUser(user).success(function() {
+                $rootScope.$emit('ReloadUsers', {});
+                $state.go("index");
+            });
         };
     });
 

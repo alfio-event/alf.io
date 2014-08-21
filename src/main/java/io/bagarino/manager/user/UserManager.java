@@ -24,9 +24,12 @@ import io.bagarino.repository.user.OrganizationRepository;
 import io.bagarino.repository.user.UserRepository;
 import io.bagarino.repository.user.join.UserOrganizationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -36,16 +39,19 @@ public class UserManager {
     private final OrganizationRepository organizationRepository;
     private final UserOrganizationRepository userOrganizationRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public UserManager(AuthorityRepository authorityRepository,
                        OrganizationRepository organizationRepository,
                        UserOrganizationRepository userOrganizationRepository,
-                       UserRepository userRepository) {
+                       UserRepository userRepository,
+                       PasswordEncoder passwordEncoder) {
         this.authorityRepository = authorityRepository;
         this.organizationRepository = organizationRepository;
         this.userOrganizationRepository = userOrganizationRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<Authority> getUserAuthorities(User user) {
@@ -83,6 +89,15 @@ public class UserManager {
 
     public void createOrganization(String name, String description) {
         organizationRepository.create(name, description);
+    }
+
+    @Transactional
+    public void createUser(int organizationId, String username, String firstName, String lastName, String emailAddress) {
+        Organization organization = organizationRepository.findById(organizationId);
+        String userPassword = Long.toHexString(UUID.randomUUID().getMostSignificantBits());
+        userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
+        userOrganizationRepository.create(userRepository.getGeneratedUserId(), organization.getId());
+        authorityRepository.create(username, AuthorityRepository.ROLE_OWNER);
     }
 
 }

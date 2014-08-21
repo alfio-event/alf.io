@@ -14,7 +14,7 @@
             getAllOrganizations : function() {
                 return $http.get('/admin/api/organizations.json').error(HttpErrorHandler.handle);
             },
-            insertOrganization : function(organization) {
+            createOrganization : function(organization) {
                 return $http['post']('/admin/api/organizations/new', organization).error(HttpErrorHandler.handle);
             }
         };
@@ -24,6 +24,9 @@
         return {
             getAllUsers : function() {
                 return $http.get('/admin/api/users.json').error(HttpErrorHandler.handle);
+            },
+            createUser : function(user) {
+                return $http['post']('/admin/api/users/new', user).error(HttpErrorHandler.handle);
             }
         };
     });

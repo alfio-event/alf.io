@@ -25,11 +25,17 @@
         return {
             scope: true,
             templateUrl: '/resources/angularTemplates/admin/partials/main/users.html',
-            controller: function($scope, UserService) {
+            controller: function($scope, $rootScope, UserService) {
                 $scope.users = [];
-                UserService.getAllUsers().success(function(result) {
-                    $scope.users = result;
+                var loadUsers = function() {
+                    UserService.getAllUsers().success(function(result) {
+                        $scope.users = result;
+                    });
+                };
+                $rootScope.$on('ReloadUsers', function() {
+                    loadUsers();
                 });
+                loadUsers();
             },
             link: angular.noop
         };

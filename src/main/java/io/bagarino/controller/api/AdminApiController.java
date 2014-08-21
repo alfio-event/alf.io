@@ -17,6 +17,7 @@
 package io.bagarino.controller.api;
 
 import io.bagarino.controller.form.OrganizationForm;
+import io.bagarino.controller.form.UserForm;
 import io.bagarino.manager.user.UserManager;
 import io.bagarino.model.user.Organization;
 import io.bagarino.model.user.User;
@@ -53,6 +54,12 @@ public class AdminApiController {
     @RequestMapping(value = "/organizations/new", method = RequestMethod.POST)
     public String insertOrganization(@RequestBody OrganizationForm organizationForm) {
         userManager.createOrganization(organizationForm.getName(), organizationForm.getDescription());
+        return "OK";
+    }
+
+    @RequestMapping(value = "/users/new", method = RequestMethod.POST)
+    public String insertUser(@RequestBody UserForm userForm) {
+        userManager.createUser(userForm.getOrganizationId(), userForm.getUsername(), userForm.getFirstName(), userForm.getLastName(), userForm.getEmailAddress());
         return "OK";
     }
 

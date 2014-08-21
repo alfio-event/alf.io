@@ -39,4 +39,7 @@ public interface UserRepository {
     int create(@Bind("username") String username, @Bind("password") String password,
                @Bind("first_name") String firstname, @Bind("last_name") String lastname,
                @Bind("email_address") String emailAddress, @Bind("enabled") boolean enabled);
+
+    @Query("call identity()")
+    int getGeneratedUserId();
 }
