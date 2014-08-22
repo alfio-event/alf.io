@@ -23,6 +23,7 @@ import io.bagarino.repository.user.AuthorityRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 import io.bagarino.repository.user.UserRepository;
 import io.bagarino.repository.user.join.UserOrganizationRepository;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -95,8 +96,8 @@ public class UserManager {
     public void createUser(int organizationId, String username, String firstName, String lastName, String emailAddress) {
         Organization organization = organizationRepository.findById(organizationId);
         String userPassword = Long.toHexString(UUID.randomUUID().getMostSignificantBits());
-        userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
-        userOrganizationRepository.create(userRepository.getGeneratedUserId(), organization.getId());
+        Pair<Integer, Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
+        userOrganizationRepository.create(result.getLeft(), organization.getId());
         authorityRepository.create(username, AuthorityRepository.ROLE_OWNER);
     }
 
