@@ -3,14 +3,16 @@
 </div>
 <table class="table">
     <thead>
-        <th>id</th>
-        <th>name</th>
-        <th>description</th>
-        <th>actions</th>
+        <tr>
+            <th>id</th>
+            <th>name</th>
+            <th>description</th>
+            <th>actions</th>
+        </tr>
     </thead>
     <tbody>
         <tr data-ng-if="!organizations || organizations.length == 0">
-            <td colspan="4">no organization have been found. <a data-ui-sref="index.new-organization">Insert a new one</a></td>
+            <td colspan="4">no organizations have been found. <a data-ui-sref="index.new-organization">Insert a new one</a></td>
         </tr>
         <tr data-ng-repeat="organization in organizations">
             <td data-ng-class-even="'active'">{{organization.id}}</td>

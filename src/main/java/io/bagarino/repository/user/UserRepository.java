@@ -34,7 +34,10 @@ public interface UserRepository {
     User findById(@Bind("userId") int userId);
 
     @Query("select * from user where username = :username")
-    User findByUsername(@Bind("username") String username);
+    User getByUsername(@Bind("username") String username);
+
+    @Query("select * from user where username = :username")
+    List<User> findByUsername(@Bind("username") String username);
 
     @Query("INSERT INTO user(username, password, first_name, last_name, email_address, enabled) VALUES"
             + " (:username, :password, :first_name, :last_name, :email_address, :enabled)")

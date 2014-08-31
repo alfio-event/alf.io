@@ -16,6 +16,9 @@
             },
             createOrganization : function(organization) {
                 return $http['post']('/admin/api/organizations/new', organization).error(HttpErrorHandler.handle);
+            },
+            checkOrganization : function(organization) {
+                return $http['post']('/admin/api/organizations/check', organization).error(HttpErrorHandler.handle);
             }
         };
     });
@@ -27,6 +30,17 @@
             },
             createUser : function(user) {
                 return $http['post']('/admin/api/users/new', user).error(HttpErrorHandler.handle);
+            },
+            checkUser : function(user) {
+                return $http['post']('/admin/api/users/check', user).error(HttpErrorHandler.handle);
+            }
+        };
+    });
+
+    baseServices.service("EventService", function($http, HttpErrorHandler) {
+        return {
+            getAllEvents : function() {
+                return $http.get('/admin/api/events.json').error(HttpErrorHandler.handle);
             }
         };
     });

@@ -18,9 +18,12 @@ package io.bagarino.controller.api;
 
 import io.bagarino.controller.form.OrganizationForm;
 import io.bagarino.controller.form.UserForm;
+import io.bagarino.manager.EventManager;
 import io.bagarino.manager.user.UserManager;
+import io.bagarino.model.Event;
 import io.bagarino.model.user.Organization;
 import io.bagarino.model.user.User;
+import io.bagarino.util.ValidationResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -33,12 +36,13 @@ import java.util.List;
 public class AdminApiController {
 
     private final UserManager userManager;
+    private final EventManager eventManager;
 
     @Autowired
-    public AdminApiController(UserManager userManager) {
+    public AdminApiController(UserManager userManager, EventManager eventManager) {
         this.userManager = userManager;
+        this.eventManager = eventManager;
     }
-
 
     @RequestMapping("/organizations")
     @ResponseStatus(HttpStatus.OK)
@@ -48,13 +52,30 @@ public class AdminApiController {
 
     @RequestMapping("/users")
     public List<User> getAllUsers(Principal principal) {
-        return userManager.findAllUsers();
+        return userManager.findAllUsers(principal.getName());
+    }
+
+    @RequestMapping("/events")
+    public List<Event> getAllEvents(Principal principal) {
+        return eventManager.getAllEvents(principal.getName());
     }
 
     @RequestMapping(value = "/organizations/new", method = RequestMethod.POST)
     public String insertOrganization(@RequestBody OrganizationForm organizationForm) {
         userManager.createOrganization(organizationForm.getName(), organizationForm.getDescription());
         return "OK";
+    }
+
+    @RequestMapping(value = "/organizations/check", method = RequestMethod.POST)
+    public ValidationResult validateOrganization(@RequestBody OrganizationForm organizationForm) {
+        return userManager.validateOrganization(organizationForm.getId(), organizationForm.getName(), organizationForm.getDescription());
+    }
+
+    @RequestMapping(value = "/users/check", method = RequestMethod.POST)
+    public ValidationResult validateUser(@RequestBody UserForm userForm) {
+        return userManager.validateUser(userForm.getId(), userForm.getUsername(),
+                userForm.getOrganizationId(), userForm.getFirstName(),
+                userForm.getLastName(), userForm.getEmailAddress());
     }
 
     @RequestMapping(value = "/users/new", method = RequestMethod.POST)

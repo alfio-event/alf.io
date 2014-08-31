@@ -23,6 +23,7 @@ import lombok.Getter;
 @Getter
 public class UserForm {
 
+    private final Integer id;
     private final int organizationId;
     private final String username;
     private final String firstName;
@@ -30,11 +31,13 @@ public class UserForm {
     private final String emailAddress;
 
     @JsonCreator
-    public UserForm(@JsonProperty("organizationId") int organizationId,
+    public UserForm(@JsonProperty("id") Integer id,
+                    @JsonProperty("organizationId") int organizationId,
                     @JsonProperty("username") String username,
                     @JsonProperty("firstName") String firstName,
                     @JsonProperty("lastName") String lastName,
                     @JsonProperty("emailAddress") String emailAddress) {
+        this.id = id;
         this.organizationId = organizationId;
         this.username = username;
         this.firstName = firstName;

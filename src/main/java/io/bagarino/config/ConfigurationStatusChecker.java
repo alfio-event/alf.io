@@ -20,6 +20,7 @@ import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.repository.system.ConfigurationRepository;
 import io.bagarino.repository.user.AuthorityRepository;
 import io.bagarino.repository.user.UserRepository;
+import io.bagarino.util.PasswordGenerator;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
@@ -27,8 +28,6 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-
-import java.util.UUID;
 
 @Component
 @Log4j2
@@ -59,7 +58,7 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
             initCompleted = false;
         }
         if (!initCompleted) {
-            String adminPassword = Long.toHexString(UUID.randomUUID().getMostSignificantBits());
+            String adminPassword = PasswordGenerator.generateRandomPassword();
             userRepository.create("admin", passwordEncoder.encode(adminPassword), "The", "Administrator", "admin@localhost", true);
             authorityRepository.create("admin", AuthorityRepository.ROLE_ADMIN);
             log.info("*******************************************************");

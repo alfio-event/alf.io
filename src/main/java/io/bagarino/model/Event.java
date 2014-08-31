@@ -16,19 +16,31 @@
  */
 package io.bagarino.model;
 
-import io.bagarino.model.user.Organization;
-import lombok.Data;
+import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
 
-@Data
+@Getter
 public class Event {
+    private final int id;
     private final String description;
-    private final Collection<TicketCategory> ticketCategories;
-    private final Organization owner;
     private final String latitude;
     private final String longitude;
     private final LocalDateTime begin;
     private final LocalDateTime end;
+
+    public Event(@Column("id") int id,
+                 @Column("description") String description,
+                 @Column("latitude") String latitude,
+                 @Column("longitude") String longitude,
+                 @Column("begin") LocalDateTime begin,
+                 @Column("end") LocalDateTime end) {
+        this.id = id;
+        this.description = description;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.begin = begin;
+        this.end = end;
+    }
 }

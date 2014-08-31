@@ -1,0 +1,31 @@
+<form role="form" data-editable-form name="editUser" data-onbeforesave="check($data, editUser)" data-onaftersave="save(user)" data-oncancel="cancel()">
+    <div class="form-group">
+        <label for="organizationId">Organization</label>
+        <span data-editable-select="user.organizationId" data-e-name="organizationId" data-e-id="organizationId" data-e-required data-e-ng-options="organization.id as organization.name for organization in organizations">{{ organizations | printSelectedOrganization:user.organizationId }}</span>
+    </div>
+    <div class="form-group">
+        <label for="username">Username</label>
+        <span data-editable-text="user.username" data-e-name="username" data-e-id="username" data-e-required data-e-pattern=".{2,}" data-e-title="2 characters minimum">{{ user.username || '' }}</span>
+    </div>
+    <div class="form-group">
+        <label for="firstName">First name</label>
+        <span data-editable-text="user.firstName" data-e-name="firstName" data-e-id="firstName" data-e-required data-e-pattern=".{2,}" data-e-title="2 characters minimum">{{ user.firstName || '' }}</span>
+    </div>
+    <div class="form-group">
+        <label for="lastName">Last name</label>
+        <span data-editable-text="user.lastName" data-e-name="lastName" data-e-id="lastName" data-e-required data-e-pattern=".{2,}" data-e-title="2 characters minimum">{{ user.lastName || '' }}</span>
+    </div>
+    <div class="form-group">
+        <label for="emailAddress">E-mail</label>
+        <span data-editable-email="user.emailAddress" data-e-name="emailAddress" data-e-id="emailAddress" data-e-required>{{ user.emailAddress || '' }}</span>
+    </div>
+    <div data-ng-switch="editUser.$visible">
+        <div data-ng-switch-when="true">
+            <button type="submit" class="btn btn-primary" data-ng-disabled="editUser.$waiting">Save</button>
+            <button type="button" class="btn btn-default" data-ng-disabled="editUser.$waiting" data-ng-click="editUser.$cancel()">Cancel</button>
+        </div>
+        <div data-ng-switch-when="false">
+            <button type="button" class="btn btn-primary" data-ng-click="editUser.$show()">Edit</button>
+        </div>
+    </div>
+</form>

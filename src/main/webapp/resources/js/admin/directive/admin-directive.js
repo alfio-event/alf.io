@@ -40,4 +40,15 @@
             link: angular.noop
         };
     });
+
+    directives.directive("eventsList", function() {
+        return {
+            scope: true,
+            templateUrl: '/resources/angularTemplates/admin/partials/main/events.html',
+            controller: function($scope, EventService) {
+                $scope.events = [];
+            },
+            link: angular.noop
+        };
+    });
 })();

@@ -23,6 +23,9 @@ import io.bagarino.repository.user.AuthorityRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 import io.bagarino.repository.user.UserRepository;
 import io.bagarino.repository.user.join.UserOrganizationRepository;
+import io.bagarino.util.PasswordGenerator;
+import io.bagarino.util.ValidationResult;
+import io.bagarino.util.ValidationResult.ValidationError;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,12 +33,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.function.Function;
+
+import static java.util.stream.Collectors.toList;
 
 @Component
 public class UserManager {
 
+    private static final Function<Integer, Integer> ID_EVALUATOR = id -> Optional.ofNullable(id).orElse(Integer.MIN_VALUE);
     private final AuthorityRepository authorityRepository;
     private final OrganizationRepository organizationRepository;
     private final UserOrganizationRepository userOrganizationRepository;
@@ -59,22 +65,26 @@ public class UserManager {
         return authorityRepository.findGrantedAuthorities(user.getUsername());
     }
 
-    public List<User> findAllUsers() {
-        return userRepository.findAll();
+    public List<User> findAllUsers(String username) {
+        return findUserOrganizations(username)
+                .stream()
+                .flatMap(o -> userOrganizationRepository.findByOrganizationId(o.getId()).stream())
+                .map(uo -> userRepository.findById(uo.getUserId()))
+                .collect(toList());
     }
 
     public List<Organization> findUserOrganizations(String username) {
-        return findUserOrganizations(userRepository.findByUsername(username));
+        return findUserOrganizations(userRepository.getByUsername(username));
     }
 
     public List<Organization> findUserOrganizations(User user) {
-        if(isAdmin(user)) {
+        if (isAdmin(user)) {
             return organizationRepository.findAll();
         }
         return userOrganizationRepository.findByUserId(user.getId())
                 .stream()
-                .map(uo -> organizationRepository.findById(uo.getOrganizationId()))
-                .collect(Collectors.toList());
+                .map(uo -> organizationRepository.getById(uo.getOrganizationId()))
+                .collect(toList());
     }
 
     public boolean isAdmin(User user) {
@@ -85,20 +95,45 @@ public class UserManager {
         return userOrganizationRepository.findByOrganizationId(organization.getId())
                 .stream()
                 .map(uo -> userRepository.findById(uo.getUserId()))
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     public void createOrganization(String name, String description) {
         organizationRepository.create(name, description);
     }
 
+    public ValidationResult validateOrganization(Integer id, String name, String description) {
+        int orgId = ID_EVALUATOR.apply(id);
+        final long existing = organizationRepository.findByName(name)
+                .stream()
+                .filter(o -> o.getId() != orgId)
+                .count();
+        if(existing > 0) {
+            return ValidationResult.failed(new ValidationError("name", "There is already another organization with the same name."));
+        }
+        return ValidationResult.success();
+    }
+
     @Transactional
     public void createUser(int organizationId, String username, String firstName, String lastName, String emailAddress) {
-        Organization organization = organizationRepository.findById(organizationId);
-        String userPassword = Long.toHexString(UUID.randomUUID().getMostSignificantBits());
+        Organization organization = organizationRepository.getById(organizationId);
+        String userPassword = PasswordGenerator.generateRandomPassword();
         Pair<Integer, Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
         userOrganizationRepository.create(result.getLeft(), organization.getId());
         authorityRepository.create(username, AuthorityRepository.ROLE_OWNER);
     }
+
+    public ValidationResult validateUser(Integer id, String username, int organizationId, String firstName, String lastName, String emailAddress) {
+        int userId = ID_EVALUATOR.apply(id);
+        final long existing = userRepository.findByUsername(username)
+                .stream()
+                .filter(u -> u.getId() != userId)
+                .count();
+        if(existing > 0) {
+            return ValidationResult.failed(new ValidationError("username", "There is already another user with the same username."));
+        }
+        return ValidationResult.success();
+    }
+
 
 }

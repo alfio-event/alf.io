@@ -23,11 +23,15 @@ import lombok.Getter;
 @Getter
 public class OrganizationForm {
 
+    private final Integer id;
     private final String name;
     private final String description;
 
     @JsonCreator
-    public OrganizationForm(@JsonProperty("name") String name, @JsonProperty("description") String description) {
+    public OrganizationForm(@JsonProperty("id") Integer id,
+                            @JsonProperty("name") String name,
+                            @JsonProperty("description") String description) {
+        this.id = id;
         this.name = name;
         this.description = description;
     }

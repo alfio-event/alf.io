@@ -21,4 +21,16 @@
             </div>
         </div>
     </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h1 class="panel-title">{{#i18n}}admin.main.events{{/i18n}}</h1>
+                </div>
+                <div class="panel-body">
+                    <div data-events-list></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

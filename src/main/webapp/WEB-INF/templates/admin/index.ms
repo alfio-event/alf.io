@@ -10,11 +10,14 @@
     <link rel="stylesheet" href="/resources/css/admin.css" />
     <link rel="stylesheet" href="/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
     <script src="/resources/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="/resources/bower_components/lodash/dist/lodash.min.js"></script>
     <script src="/resources/bower_components/angular/angular.min.js"></script>
     <script src="/resources/bower_components/angular-bootstrap/ui-bootstrap.min.js"></script>
     <script src="/resources/bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
+    <script src="/resources/bower_components/angular-xeditable/dist/js/xeditable.min.js"></script>
     <script src="/resources/js/admin/ng-app/admin-application.js"></script>
     <script src="/resources/js/admin/directive/admin-directive.js"></script>
+    <script src="/resources/js/admin/filter/util.js"></script>
     <script src="/resources/js/admin/service/service.js"></script>
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>

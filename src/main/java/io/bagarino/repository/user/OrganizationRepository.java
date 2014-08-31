@@ -30,7 +30,10 @@ public interface OrganizationRepository {
     List<Organization> findAll();
 
     @Query("SELECT * FROM organization where id = :id")
-    Organization findById(@Bind("id") int id);
+    Organization getById(@Bind("id") int id);
+
+    @Query("SELECT * FROM organization where name = :name")
+    List<Organization> findByName(@Bind("name") String name);
 
     @Query("INSERT INTO organization(name, description) VALUES (:name, :description)")
     int create(@Bind("name") String name, @Bind("description") String description);

@@ -16,5 +16,37 @@
  */
 package io.bagarino.manager;
 
+import io.bagarino.manager.user.UserManager;
+import io.bagarino.model.Event;
+import io.bagarino.repository.EventRepository;
+import io.bagarino.repository.join.EventOrganizationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Component
 public class EventManager {
+
+    private final UserManager userManager;
+    private final EventOrganizationRepository eventOrganizationRepository;
+    private final EventRepository eventRepository;
+
+    @Autowired
+    public EventManager(UserManager userManager,
+                        EventOrganizationRepository eventOrganizationRepository,
+                        EventRepository eventRepository) {
+        this.userManager = userManager;
+        this.eventOrganizationRepository = eventOrganizationRepository;
+        this.eventRepository = eventRepository;
+    }
+
+    public List<Event> getAllEvents(String username) {
+        return userManager.findUserOrganizations(username)
+                    .parallelStream()
+                    .flatMap(o -> eventOrganizationRepository.findByOrganizationId(o.getId()).stream())
+                    .map(eo -> eventRepository.findById(eo.getEventId()))
+                    .collect(Collectors.toList());
+    }
 }
