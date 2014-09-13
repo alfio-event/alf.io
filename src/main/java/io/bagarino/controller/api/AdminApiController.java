@@ -16,12 +16,12 @@
  */
 package io.bagarino.controller.api;
 
-import io.bagarino.controller.form.EventForm;
-import io.bagarino.controller.form.OrganizationForm;
-import io.bagarino.controller.form.UserForm;
 import io.bagarino.manager.EventManager;
 import io.bagarino.manager.user.UserManager;
 import io.bagarino.model.Event;
+import io.bagarino.model.modification.EventModification;
+import io.bagarino.model.modification.OrganizationModification;
+import io.bagarino.model.modification.UserModification;
 import io.bagarino.model.user.Organization;
 import io.bagarino.model.user.User;
 import io.bagarino.util.ValidationResult;
@@ -59,26 +59,26 @@ public class AdminApiController {
 
 
     @RequestMapping(value = "/organizations/new", method = RequestMethod.POST)
-    public String insertOrganization(@RequestBody OrganizationForm organizationForm) {
-        userManager.createOrganization(organizationForm.getName(), organizationForm.getDescription());
+    public String insertOrganization(@RequestBody OrganizationModification organizationModification) {
+        userManager.createOrganization(organizationModification.getName(), organizationModification.getDescription());
         return OK;
     }
 
     @RequestMapping(value = "/organizations/check", method = RequestMethod.POST)
-    public ValidationResult validateOrganization(@RequestBody OrganizationForm organizationForm) {
-        return userManager.validateOrganization(organizationForm.getId(), organizationForm.getName(), organizationForm.getDescription());
+    public ValidationResult validateOrganization(@RequestBody OrganizationModification organizationModification) {
+        return userManager.validateOrganization(organizationModification.getId(), organizationModification.getName(), organizationModification.getDescription());
     }
 
     @RequestMapping(value = "/users/check", method = RequestMethod.POST)
-    public ValidationResult validateUser(@RequestBody UserForm userForm) {
-        return userManager.validateUser(userForm.getId(), userForm.getUsername(),
-                userForm.getOrganizationId(), userForm.getFirstName(),
-                userForm.getLastName(), userForm.getEmailAddress());
+    public ValidationResult validateUser(@RequestBody UserModification userModification) {
+        return userManager.validateUser(userModification.getId(), userModification.getUsername(),
+                userModification.getOrganizationId(), userModification.getFirstName(),
+                userModification.getLastName(), userModification.getEmailAddress());
     }
 
     @RequestMapping(value = "/users/new", method = RequestMethod.POST)
-    public String insertUser(@RequestBody UserForm userForm) {
-        userManager.createUser(userForm.getOrganizationId(), userForm.getUsername(), userForm.getFirstName(), userForm.getLastName(), userForm.getEmailAddress());
+    public String insertUser(@RequestBody UserModification userModification) {
+        userManager.createUser(userModification.getOrganizationId(), userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress());
         return OK;
     }
 
@@ -88,13 +88,13 @@ public class AdminApiController {
     }
 
     @RequestMapping(value = "/events/check", method = RequestMethod.POST)
-    public ValidationResult validateEvent(@RequestBody EventForm eventForm) {
+    public ValidationResult validateEvent(@RequestBody EventModification eventModification) {
         return ValidationResult.success();
     }
 
     @RequestMapping(value = "/events/new", method = RequestMethod.POST)
-    public String insertEvent(@RequestBody EventForm eventForm) {
-        eventManager.createEvent(eventForm);
+    public String insertEvent(@RequestBody EventModification eventModification) {
+        eventManager.createEvent(eventModification);
         return OK;
     }
 }

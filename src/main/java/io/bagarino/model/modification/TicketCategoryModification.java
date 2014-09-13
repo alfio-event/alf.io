@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.controller.form;
+package io.bagarino.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,22 +23,22 @@ import lombok.Getter;
 import java.math.BigDecimal;
 
 @Getter
-public class TicketCategoryForm {
+public class TicketCategoryModification {
 
     private final Integer id;
     private final String name;
     private final BigDecimal seats;
-    private final DateTimeForm inception;
-    private final DateTimeForm expiration;
+    private final DateTimeModification inception;
+    private final DateTimeModification expiration;
     private final BigDecimal discount;
 
     @JsonCreator
-    public TicketCategoryForm(@JsonProperty("id") Integer id,
-                              @JsonProperty("name") String name,
-                              @JsonProperty("seats") BigDecimal seats,
-                              @JsonProperty("inception") DateTimeForm inception,
-                              @JsonProperty("expiration") DateTimeForm expiration,
-                              @JsonProperty("discount") BigDecimal discount) {
+    public TicketCategoryModification(@JsonProperty("id") Integer id,
+                                      @JsonProperty("name") String name,
+                                      @JsonProperty("seats") BigDecimal seats,
+                                      @JsonProperty("inception") DateTimeModification inception,
+                                      @JsonProperty("expiration") DateTimeModification expiration,
+                                      @JsonProperty("discount") BigDecimal discount) {
         this.id = id;
         this.name = name;
         this.seats = seats;

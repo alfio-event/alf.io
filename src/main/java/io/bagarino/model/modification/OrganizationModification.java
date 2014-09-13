@@ -14,34 +14,25 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.controller.form;
+package io.bagarino.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
-public class UserForm {
+public class OrganizationModification {
 
     private final Integer id;
-    private final int organizationId;
-    private final String username;
-    private final String firstName;
-    private final String lastName;
-    private final String emailAddress;
+    private final String name;
+    private final String description;
 
     @JsonCreator
-    public UserForm(@JsonProperty("id") Integer id,
-                    @JsonProperty("organizationId") int organizationId,
-                    @JsonProperty("username") String username,
-                    @JsonProperty("firstName") String firstName,
-                    @JsonProperty("lastName") String lastName,
-                    @JsonProperty("emailAddress") String emailAddress) {
+    public OrganizationModification(@JsonProperty("id") Integer id,
+                                    @JsonProperty("name") String name,
+                                    @JsonProperty("description") String description) {
         this.id = id;
-        this.organizationId = organizationId;
-        this.username = username;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.emailAddress = emailAddress;
+        this.name = name;
+        this.description = description;
     }
 }

@@ -16,9 +16,9 @@
  */
 package io.bagarino.manager;
 
-import io.bagarino.controller.form.EventForm;
 import io.bagarino.manager.user.UserManager;
 import io.bagarino.model.Event;
+import io.bagarino.model.modification.EventModification;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.join.EventOrganizationRepository;
@@ -64,12 +64,12 @@ public class EventManager {
     }
 
     @Transactional
-    public void createEvent(EventForm eventForm) {//to be improved. Should we create an object which would fit better?
-        final Pair<Integer, Integer> event = eventRepository.insert(eventForm.getDescription(), eventForm.getOrganizationId(), eventForm.getLocation(),
-                "", "", eventForm.getStart().toDate(), eventForm.getEnd().toDate(), eventForm.getPrice(), eventForm.getCurrency(),
-                eventForm.getSeats(), eventForm.isVatIncluded(), eventForm.getVat());
-        final BigDecimal seats = new BigDecimal(eventForm.getSeats());
-        eventForm.getTicketCategories().stream().forEach(tc -> {
+    public void createEvent(EventModification eventModification) {//to be improved. Should we create an object which would fit better?
+        final Pair<Integer, Integer> event = eventRepository.insert(eventModification.getDescription(), eventModification.getOrganizationId(), eventModification.getLocation(),
+                "", "", eventModification.getStart().toDate(), eventModification.getEnd().toDate(), eventModification.getPrice(), eventModification.getCurrency(),
+                eventModification.getSeats(), eventModification.isVatIncluded(), eventModification.getVat());
+        final BigDecimal seats = new BigDecimal(eventModification.getSeats());
+        eventModification.getTicketCategories().stream().forEach(tc -> {
             int maxSeats = tc.getSeats().divide(HUNDRED).multiply(seats).intValue();
             final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toDate(),
                     tc.getExpiration().toDate(), maxSeats, tc.getDiscount());

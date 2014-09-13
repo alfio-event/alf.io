@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.controller.form;
+package io.bagarino.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,34 +24,34 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
-public class EventForm {
+public class EventModification {
 
     private final Integer id;
     private final int organizationId;
     private final String location;
     private final String description;
-    private final DateTimeForm start;
-    private final DateTimeForm end;
+    private final DateTimeModification start;
+    private final DateTimeModification end;
     private final BigDecimal price;
     private final String currency;
     private final int seats;
     private final BigDecimal vat;
     private final boolean vatIncluded;
-    private final List<TicketCategoryForm> ticketCategories;
+    private final List<TicketCategoryModification> ticketCategories;
 
     @JsonCreator
-    public EventForm(@JsonProperty("id") Integer id,
-                     @JsonProperty("organizationId") int organizationId,
-                     @JsonProperty("location") String location,
-                     @JsonProperty("description") String description,
-                     @JsonProperty("start") DateTimeForm start,
-                     @JsonProperty("end") DateTimeForm end,
-                     @JsonProperty("price") BigDecimal price,
-                     @JsonProperty("currency") String currency,
-                     @JsonProperty("seats") int seats,
-                     @JsonProperty("vat") BigDecimal vat,
-                     @JsonProperty("vatIncluded") boolean vatIncluded,
-                     @JsonProperty("ticketCategories") List<TicketCategoryForm> ticketCategories) {
+    public EventModification(@JsonProperty("id") Integer id,
+                             @JsonProperty("organizationId") int organizationId,
+                             @JsonProperty("location") String location,
+                             @JsonProperty("description") String description,
+                             @JsonProperty("start") DateTimeModification start,
+                             @JsonProperty("end") DateTimeModification end,
+                             @JsonProperty("price") BigDecimal price,
+                             @JsonProperty("currency") String currency,
+                             @JsonProperty("seats") int seats,
+                             @JsonProperty("vat") BigDecimal vat,
+                             @JsonProperty("vatIncluded") boolean vatIncluded,
+                             @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories) {
         this.id = id;
         this.organizationId = organizationId;
         this.location = location;

@@ -14,25 +14,28 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.controller.form;
+package io.bagarino.model.modification;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.util.Date;
+
 @Getter
-public class OrganizationForm {
+public class DateTimeModification {
+    private final LocalDate date;
+    private final LocalTime time;
 
-    private final Integer id;
-    private final String name;
-    private final String description;
+    public DateTimeModification(@JsonProperty("date") LocalDate date, @JsonProperty("time") LocalTime time) {
+        this.date = date;
+        this.time = time;
+    }
 
-    @JsonCreator
-    public OrganizationForm(@JsonProperty("id") Integer id,
-                            @JsonProperty("name") String name,
-                            @JsonProperty("description") String description) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
+    public Date toDate() {
+        return Date.from(LocalDateTime.of(date, time).toInstant(ZoneOffset.UTC));
     }
 }
