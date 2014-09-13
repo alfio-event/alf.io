@@ -5,3 +5,7 @@ body {
 div.list-even {
     background: #f5f5f5;
 }
+
+input.ng-invalid, select.ng-invalid, textarea.ng-invalid {
+	border:1px solid red;
+}
