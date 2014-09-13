@@ -20,9 +20,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 @Getter
@@ -36,6 +36,6 @@ public class DateTimeModification {
     }
 
     public Date toDate() {
-        return Date.from(LocalDateTime.of(date, time).toInstant(ZoneOffset.UTC));
+        return Date.from(ZonedDateTime.of(date, time, ZoneId.systemDefault()).toInstant());
     }
 }
