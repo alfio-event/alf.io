@@ -1,4 +1,6 @@
 <div class="container">
+    <h1>Dashboard</h1>
+    <hr />
     <div class="row">
         <div class="col-sm-12 col-md-6">
             <div class="panel panel-default">

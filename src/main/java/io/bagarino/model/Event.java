@@ -19,28 +19,48 @@ package io.bagarino.model;
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.util.Date;
 
 @Getter
 public class Event {
     private final int id;
     private final String description;
+    private final String location;
     private final String latitude;
     private final String longitude;
-    private final LocalDateTime begin;
-    private final LocalDateTime end;
+    private final Date begin;
+    private final Date end;
+    private final BigDecimal regularPrice;
+    private final String currency;
+    private final int availableSeats;
+    private final boolean vatIncluded;
+    private final BigDecimal vat;
+
 
     public Event(@Column("id") int id,
                  @Column("description") String description,
+                 @Column("location") String location,
                  @Column("latitude") String latitude,
                  @Column("longitude") String longitude,
-                 @Column("begin") LocalDateTime begin,
-                 @Column("end") LocalDateTime end) {
+                 @Column("start_ts") Date begin,
+                 @Column("end_ts") Date end,
+                 @Column("regular_price") BigDecimal regularPrice,
+                 @Column("currency") String currency,
+                 @Column("available_seats") int availableSeats,
+                 @Column("vat_included") boolean vatIncluded,
+                 @Column("vat") BigDecimal vat) {
         this.id = id;
         this.description = description;
+        this.location = location;
         this.latitude = latitude;
         this.longitude = longitude;
         this.begin = begin;
         this.end = end;
+        this.regularPrice = regularPrice;
+        this.currency = currency;
+        this.availableSeats = availableSeats;
+        this.vatIncluded = vatIncluded;
+        this.vat = vat;
     }
 }

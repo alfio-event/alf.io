@@ -1,19 +1,14 @@
-<form role="form" data-editable-form name="insertNewOrganization" data-onbeforesave="check($data, insertNewOrganization)" data-onaftersave="save(organization)" data-oncancel="cancel()">
+<form role="form" name="insertNewOrganization" ng-submit="save(insertNewOrganization, organization)" novalidate data-oncancel="cancel()">
     <div class="form-group">
         <label for="org-name">Name</label>
-        <span data-editable-text="organization.name" data-e-name="name" data-e-id="org-name" data-e-required data-e-pattern=".{2,}" data-e-title="2 characters minimum">{{ organization.name || '' }}</span>
+        <input class="form-control" type="text" id="org-name" name="name" data-ng-model="organization.name" required data-minlength="2" />
     </div>
     <div class="form-group">
         <label for="org-description">Description</label>
-        <span data-editable-text="organization.description" data-e-name="description" data-e-id="org-description" data-e-required data-e-pattern=".{3,}" data-e-title="3 characters minimum">{{ organization.description || '' }}</span>
+        <input class="form-control" type="text" id="org-description" name="description" data-ng-model="organization.description" required data-minlength="3" />
     </div>
-    <div data-ng-switch="insertNewOrganization.$visible">
-        <div data-ng-switch-when="true">
-            <button type="submit" class="btn btn-primary" data-ng-disabled="insertNewOrganization.$waiting">Save</button>
-            <button type="button" class="btn btn-default" data-ng-disabled="insertNewOrganization.$waiting" data-ng-click="insertNewOrganization.$cancel()">Cancel</button>
-        </div>
-        <div data-ng-switch-when="false">
-            <button type="button" class="btn btn-primary" data-ng-click="insertNewOrganization.$show()">Edit</button>
-        </div>
+    <div>
+        <button type="submit" class="btn btn-primary" data-ng-disabled="insertNewOrganization.$waiting">Save</button>
+        <button type="button" class="btn btn-default" data-ng-disabled="insertNewOrganization.$waiting" data-ng-click="insertNewOrganization.$cancel()">Cancel</button>
     </div>
 </form>

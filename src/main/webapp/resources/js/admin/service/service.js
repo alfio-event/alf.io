@@ -41,6 +41,12 @@
         return {
             getAllEvents : function() {
                 return $http.get('/admin/api/events.json').error(HttpErrorHandler.handle);
+            },
+            checkEvent : function(event) {
+                return $http['post']('/admin/api/events/check', event).error(HttpErrorHandler.handle);
+            },
+            createEvent : function(event) {
+                return $http['post']('/admin/api/events/new', event).error(HttpErrorHandler.handle);
             }
         };
     });

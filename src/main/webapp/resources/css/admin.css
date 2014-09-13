@@ -1,3 +1,7 @@
 body {
     padding-top:70px;
 }
+
+div.list-even {
+    background: #f5f5f5;
+}

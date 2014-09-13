@@ -9,12 +9,15 @@
     <link rel="stylesheet" href="/resources/bower_components/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="/resources/css/admin.css" />
     <link rel="stylesheet" href="/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
-    <script src="/resources/bower_components/jquery/dist/jquery.min.js"></script>
+    <link rel="stylesheet" href="/resources/bower_components/jquery-ui/themes/smoothness/jquery-ui.css" />
+    <script src="/resources/bower_components/jquery/dist/jquery.js"></script>
+    <script src="/resources/bower_components/jquery-ui/jquery-ui.js"></script>
     <script src="/resources/bower_components/lodash/dist/lodash.min.js"></script>
     <script src="/resources/bower_components/angular/angular.min.js"></script>
+    <script src="/resources/bower_components/angular-messages/angular-messages.min.js"></script>
     <script src="/resources/bower_components/angular-bootstrap/ui-bootstrap.min.js"></script>
+    <script src="/resources/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
     <script src="/resources/bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
-    <script src="/resources/bower_components/angular-xeditable/dist/js/xeditable.min.js"></script>
     <script src="/resources/js/admin/ng-app/admin-application.js"></script>
     <script src="/resources/js/admin/directive/admin-directive.js"></script>
     <script src="/resources/js/admin/filter/util.js"></script>
@@ -36,9 +39,9 @@
             <div class="navbar-left">
                 <div class="collapse navbar-collapse">
                     <ul class="nav navbar-nav">
-                        <li class="active"><a href="#">Home</a></li>
-                        <li><a href="#">second</a></li>
-                        <li><a href="#">third</a></li>
+                        <li class="active"><a href="#">Dashboard</a></li>
+                        <li><a href="#">My Profile</a></li>
+                        <li><a href="#">About</a></li>
                     </ul>
                 </div>
             </div>

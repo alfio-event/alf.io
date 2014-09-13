@@ -16,6 +16,7 @@
  */
 package io.bagarino.controller.api;
 
+import io.bagarino.controller.form.EventForm;
 import io.bagarino.controller.form.OrganizationForm;
 import io.bagarino.controller.form.UserForm;
 import io.bagarino.manager.EventManager;
@@ -35,6 +36,7 @@ import java.util.List;
 @RequestMapping("/admin/api")
 public class AdminApiController {
 
+    private static final String OK = "OK";
     private final UserManager userManager;
     private final EventManager eventManager;
 
@@ -44,26 +46,22 @@ public class AdminApiController {
         this.eventManager = eventManager;
     }
 
-    @RequestMapping("/organizations")
+    @RequestMapping(value = "/organizations", method = RequestMethod.GET)
     @ResponseStatus(HttpStatus.OK)
     public List<Organization> getAllOrganizations(Principal principal) {
         return userManager.findUserOrganizations(principal.getName());
     }
 
-    @RequestMapping("/users")
+    @RequestMapping(value = "/users", method = RequestMethod.GET)
     public List<User> getAllUsers(Principal principal) {
         return userManager.findAllUsers(principal.getName());
     }
 
-    @RequestMapping("/events")
-    public List<Event> getAllEvents(Principal principal) {
-        return eventManager.getAllEvents(principal.getName());
-    }
 
     @RequestMapping(value = "/organizations/new", method = RequestMethod.POST)
     public String insertOrganization(@RequestBody OrganizationForm organizationForm) {
         userManager.createOrganization(organizationForm.getName(), organizationForm.getDescription());
-        return "OK";
+        return OK;
     }
 
     @RequestMapping(value = "/organizations/check", method = RequestMethod.POST)
@@ -81,7 +79,22 @@ public class AdminApiController {
     @RequestMapping(value = "/users/new", method = RequestMethod.POST)
     public String insertUser(@RequestBody UserForm userForm) {
         userManager.createUser(userForm.getOrganizationId(), userForm.getUsername(), userForm.getFirstName(), userForm.getLastName(), userForm.getEmailAddress());
-        return "OK";
+        return OK;
     }
 
+    @RequestMapping(value = "/events", method = RequestMethod.GET)
+    public List<Event> getAllEvents(Principal principal) {
+        return eventManager.getAllEvents(principal.getName());
+    }
+
+    @RequestMapping(value = "/events/check", method = RequestMethod.POST)
+    public ValidationResult validateEvent(@RequestBody EventForm eventForm) {
+        return ValidationResult.success();
+    }
+
+    @RequestMapping(value = "/events/new", method = RequestMethod.POST)
+    public String insertEvent(@RequestBody EventForm eventForm) {
+        eventManager.createEvent(eventForm);
+        return OK;
+    }
 }

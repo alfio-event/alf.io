@@ -1,5 +1,5 @@
 <div>
-    <a data-ui-sref="index.new-event">create new event</a>
+    <a data-ui-sref="event.new">create new event</a>
 </div>
 <table class="table">
     <thead>
@@ -12,7 +12,7 @@
     </thead>
     <tbody>
     <tr data-ng-if="!events || events.length == 0">
-        <td colspan="4">no events have been found. <a data-ui-sref="index.new-event">Create a new one</a></td>
+        <td colspan="4">no events have been found. <a data-ui-sref="event.new">Create a new one</a></td>
     </tr>
     <tr data-ng-repeat="event in events">
         <td data-ng-class-even="'active'">{{event.id}}</td>

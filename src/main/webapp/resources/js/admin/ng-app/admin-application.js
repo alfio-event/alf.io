@@ -4,15 +4,7 @@
     var BASE_TEMPLATE_URL = "/admin/partials";
     var BASE_STATIC_URL = "/resources/angularTemplates/admin/partials";
 
-    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'xeditable', 'utilFilters']);
-
-    admin.run(function(editableOptions, editableThemes) {
-        editableThemes.bs3.submitTpl = '<button type="submit" class="btn btn-primary"><span class="fa fa-check"></span></button>';
-        editableThemes.bs3.cancelTpl = '<button type="button" class="btn btn-default" ng-click="$form.$cancel()">'+
-            '<span class="fa fa-times"></span>'+
-            '</button>';
-        editableOptions.theme = 'bs3';
-    });
+    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.otherwise("/");
@@ -26,7 +18,7 @@
                 views: {
                     "newOrganization": {
                         templateUrl: BASE_STATIC_URL + "/main/edit-organization.html",
-                        controller: 'InsertNewOrganizationController'
+                        controller: 'CreateOrganizationController'
                     }
                 }
             })
@@ -35,9 +27,19 @@
                 views: {
                     "newUser": {
                         templateUrl: BASE_STATIC_URL + "/main/edit-user.html",
-                        controller: 'InsertNewUserController'
+                        controller: 'CreateUserController'
                     }
                 }
+            })
+            .state('event', {
+                abstract: true,
+                url: '/event',
+                templateUrl: BASE_STATIC_URL + "/event/index.html"
+            })
+            .state('event.new', {
+                url: '/new',
+                templateUrl: BASE_STATIC_URL + "/event/edit-event.html",
+                controller: 'CreateEventController'
             })
     });
 
@@ -47,7 +49,7 @@
                 angular.forEach(validationResult.validationErrors, function(error) {
                     form.$setError(error.fieldName, error.message);
                 });
-                deferred.resolve("invalid form");
+                deferred.reject("invalid form");
             }
             deferred.resolve();
         };
@@ -61,53 +63,72 @@
         return deferred.promise;
     };
 
-    admin.controller('InsertNewOrganizationController', function($scope, $state, $rootScope, $q, OrganizationService) {
+    admin.controller('CreateOrganizationController', function($scope, $state, $rootScope, $q, OrganizationService) {
         $scope.organization = {};
-        $scope.save = function(organization) {
-            OrganizationService.createOrganization(organization).success(function() {
-                $rootScope.$emit('ReloadOrganizations', {});
-                $state.go("index");
-            });
-        };
-        $scope.$watch('insertNewOrganization', function(form) {
-            if(!form.$visible) {
-                form.$show();
+        $scope.save = function(form, organization) {
+            if(!form.$valid) {
+                return;
             }
-        });
+            validationPerformer($q, OrganizationService.checkOrganization, organization, form).then(function() {
+                OrganizationService.createOrganization(organization).success(function() {
+                    $rootScope.$emit('ReloadOrganizations', {});
+                    $state.go("index");
+                });
+            }, angular.noop);
+        };
         $scope.cancel = function() {
             $state.go("index");
         };
-
-        $scope.check = function(data, form) {
-            return validationPerformer($q, OrganizationService.checkOrganization, data, form);
-        };
     });
 
-    admin.controller('InsertNewUserController', function($scope, $state, $rootScope, $q, OrganizationService, UserService) {
+    admin.controller('CreateUserController', function($scope, $state, $rootScope, $q, OrganizationService, UserService) {
         $scope.user = {};
         $scope.organizations = {};
-        $scope.$watch('editUser', function(form) {
-            if(!form.$visible) {
-                form.$show();
-            }
-        });
         OrganizationService.getAllOrganizations().success(function(result) {
             $scope.organizations = result;
         });
 
-        $scope.save = function(user) {
-            UserService.createUser(user).success(function() {
-                $rootScope.$emit('ReloadUsers', {});
-                $state.go("index");
-            });
+        $scope.save = function(form, user) {
+            if(!form.$valid) {
+                return;
+            }
+            validationPerformer($q, UserService.checkUser, user, form).then(function() {
+                UserService.createUser(user).success(function() {
+                    $rootScope.$emit('ReloadUsers', {});
+                    $state.go("index");
+                });
+            }, angular.noop);
         };
 
         $scope.cancel = function() {
             $state.go("index");
         };
 
-        $scope.check = function(data, form) {
-            return validationPerformer($q, UserService.checkUser, data, form);
+    });
+
+    admin.controller('CreateEventController', function($scope, $state, $rootScope, $q, OrganizationService, EventService) {
+        $scope.event = {
+            start: {},
+            end: {}
+        };
+        $scope.organizations = {};
+
+        OrganizationService.getAllOrganizations().success(function(result) {
+            $scope.organizations = result;
+        });
+
+        $scope.event.ticketCategories = [{name: 'super-early'}, {name: 'early'}, {name: 'normal'}];
+
+        $scope.save = function(form, event) {
+            validationPerformer($q, EventService.checkEvent, event, form).then(function() {
+                EventService.createEvent(event).success(function() {
+                    $state.go("index");
+                });
+            }, angular.noop);
+        };
+
+        $scope.cancel = function() {
+            $state.go("index");
         };
     });
 

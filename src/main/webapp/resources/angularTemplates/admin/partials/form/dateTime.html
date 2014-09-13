@@ -1,0 +1,10 @@
+<div class="{{rowClass}}">
+    <div class="{{dateCellClass}}">
+        <label for="{{idPrefix}}-date">{{prefix}} Date</label>
+        <input type="text" data-ng-model="modelObject.date" name="{{idPrefix}}-date" id="{{idPrefix}}-date" class="form-control" required pattern="^\d{4}-\d{2}-\d{2}$"/><!-- data-date-field -->
+    </div>
+    <div class="{{timeCellClass}}">
+        <label for="{{idPrefix}}-time">Time</label>
+        <input type="text" data-ng-model="modelObject.time" name="{{idPrefix}}-time" id="{{idPrefix}}-time" class="form-control" required pattern="^\d{2}:\d{2}$"/>
+    </div>
+</div>

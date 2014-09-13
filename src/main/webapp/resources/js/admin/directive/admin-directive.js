@@ -41,7 +41,7 @@
         };
     });
 
-    directives.directive("eventsList", function() {
+    directives.directive('eventsList', function() {
         return {
             scope: true,
             templateUrl: '/resources/angularTemplates/admin/partials/main/events.html',
@@ -50,5 +50,29 @@
             },
             link: angular.noop
         };
+    });
+
+    directives.directive('dateTime', function() {
+        return {
+            templateUrl: '/resources/angularTemplates/admin/partials/form/dateTime.html',
+            scope: {
+                modelObject: '=',
+                prefix: '@',
+                idPrefix: '@',
+                rowClass: '@',
+                dateCellClass: '@',
+                timeCellClass: '@'
+            },
+            link: angular.noop
+        }
+    });
+
+    directives.directive('dateField', function($log) {
+        return {
+            restrict:'A',
+            link: function(scope, element, attrs) {
+                element.datepicker({ dateFormat: 'yy-mm-dd' });
+            }
+        }
     });
 })();

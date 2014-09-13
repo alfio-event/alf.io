@@ -14,28 +14,28 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.model;
+package io.bagarino.controller.form;
 
-import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.Date;
 
 @Getter
-public class TicketCategory {
-    private final Date inception;
-    private final Date end;
-    private final int maxTickets;
-    private final BigDecimal appliedDiscount;
+public class DateTimeForm {
+    private final LocalDate date;
+    private final LocalTime time;
 
-    public TicketCategory(@Column("inception") Date inception,
-                          @Column("expiration") Date expiration,
-                          @Column("max_tickets") int maxTickets,
-                          @Column("discount") BigDecimal appliedDiscount) {
-        this.inception = inception;
-        this.end = expiration;
-        this.maxTickets = maxTickets;
-        this.appliedDiscount = appliedDiscount;
+    public DateTimeForm(@JsonProperty("date") LocalDate date, @JsonProperty("time") LocalTime time) {
+        this.date = date;
+        this.time = time;
+    }
+
+    public Date toDate() {
+        return Date.from(LocalDateTime.of(date, time).toInstant(ZoneOffset.UTC));
     }
 }

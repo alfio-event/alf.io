@@ -16,30 +16,43 @@
  */
 package io.bagarino.manager;
 
+import io.bagarino.controller.form.EventForm;
 import io.bagarino.manager.user.UserManager;
 import io.bagarino.model.Event;
 import io.bagarino.repository.EventRepository;
+import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.join.EventOrganizationRepository;
+import io.bagarino.repository.join.EventTicketCategoryRepository;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
 public class EventManager {
 
+    public static final BigDecimal HUNDRED = new BigDecimal("100.0");
     private final UserManager userManager;
     private final EventOrganizationRepository eventOrganizationRepository;
     private final EventRepository eventRepository;
+    private final TicketCategoryRepository ticketCategoryRepository;
+    private final EventTicketCategoryRepository eventTicketCategoryRepository;
 
     @Autowired
     public EventManager(UserManager userManager,
                         EventOrganizationRepository eventOrganizationRepository,
-                        EventRepository eventRepository) {
+                        EventRepository eventRepository,
+                        TicketCategoryRepository ticketCategoryRepository,
+                        EventTicketCategoryRepository eventTicketCategoryRepository) {
         this.userManager = userManager;
         this.eventOrganizationRepository = eventOrganizationRepository;
         this.eventRepository = eventRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.eventTicketCategoryRepository = eventTicketCategoryRepository;
     }
 
     public List<Event> getAllEvents(String username) {
@@ -49,4 +62,20 @@ public class EventManager {
                     .map(eo -> eventRepository.findById(eo.getEventId()))
                     .collect(Collectors.toList());
     }
+
+    @Transactional
+    public void createEvent(EventForm eventForm) {//to be improved. Should we create an object which would fit better?
+        final Pair<Integer, Integer> event = eventRepository.insert(eventForm.getDescription(), eventForm.getOrganizationId(), eventForm.getLocation(),
+                "", "", eventForm.getStart().toDate(), eventForm.getEnd().toDate(), eventForm.getPrice(), eventForm.getCurrency(),
+                eventForm.getSeats(), eventForm.isVatIncluded(), eventForm.getVat());
+        final BigDecimal seats = new BigDecimal(eventForm.getSeats());
+        eventForm.getTicketCategories().stream().forEach(tc -> {
+            int maxSeats = tc.getSeats().divide(HUNDRED).multiply(seats).intValue();
+            final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toDate(),
+                    tc.getExpiration().toDate(), maxSeats, tc.getDiscount());
+            eventTicketCategoryRepository.insert(event.getValue(), category.getValue());
+        });
+        //insert tickets...
+    }
+
 }

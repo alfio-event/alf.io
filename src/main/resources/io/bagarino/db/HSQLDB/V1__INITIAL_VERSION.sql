@@ -59,21 +59,25 @@ create table authority(
 create table ticket_category (
 	id integer identity not null, 
 	inception timestamp not null, 
-	"end" timestamp not null, 
-	discount_id integer, 
-	max_tickets integer not null
+	expiration timestamp not null,
+	max_tickets integer not null,
+  discount decimal(5,2) not null
 );
--- constraints
-alter table ticket_category add foreign key(discount_id) references discount(id); 
 
 create table event(
 	id integer identity not null, 
 	description varchar(2048) not null, 
-	owner integer not null, 
+	owner integer not null,
+  location varchar(2048) not null,
 	latitude varchar(255) not null, 
 	longitude varchar(255) not null, 
-	"begin" timestamp not null, 
-	"end" timestamp not null
+	start_ts timestamp not null,
+	end_ts timestamp not null,
+  regular_price decimal(10,2) not null,
+  currency varchar(3) not null,
+  available_seats integer not null,
+  vat_included boolean not null,
+  vat decimal(5,2) not null
 );
 
 create table payment_proxy(

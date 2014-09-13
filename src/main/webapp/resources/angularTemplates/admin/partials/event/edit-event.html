@@ -1,0 +1,91 @@
+<div class="container">
+    <h1>Create new Event</h1>
+    <p>Please fill in the required information and then save</p>
+    <hr />
+    <form role="form" name="editEvent" data-ng-submit="save(form, event)" novalidate>
+        <div class="well well-sm"><h3>Logistic info</h3></div>
+        <div class="row">
+            <div class="col-sm-12 col-md-6">
+                <div class="form-group">
+                    <label for="organizationId">Owner Organization</label>
+                    <select data-ng-model="event.organizationId" name="organizationId" id="organizationId" class="form-control" data-required data-ng-options="organization.id as organization.name for organization in organizations"></select>
+                    
+                    <label for="location">Location</label>
+                    <textarea data-ng-model="event.location" name="location" id="location" class="form-control" required data-minlength="10"></textarea>
+
+                    <label for="description">Event Description</label>
+                    <textarea data-ng-model="event.description" name="description" id="description" required class="form-control" data-minlength="10"></textarea>
+                </div>
+                <date-time data-id-prefix="start" data-prefix="Start" data-model-object="event.start" data-row-class="row" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
+                <date-time data-id-prefix="end" data-prefix="End" data-model-object="event.end" data-row-class="row" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
+            </div>
+            <div class="col-sm-12 col-md-6">
+                here the map
+            </div>
+        </div>
+
+        <div class="well well-sm"><h3>Tickets</h3></div>
+
+        <div class="row">
+            <div class="col-sm-2">
+                <label for="price">Regular Price</label>
+                <input type="number" data-ng-model="event.price" name="price" id="price" class="form-control" required />
+            </div>
+            <div class="col-sm-2">
+                <label for="currency">Currency</label>
+                <input type="text" data-ng-model="event.currency" name="currency" id="currency" class="form-control" required />
+            </div>
+            <div class="col-sm-2">
+                <label for="seats">Available seats</label>
+                <input type="number" data-ng-model="event.seats" name="seats" id="seats" class="form-control" required />
+            </div>
+            <div class="col-sm-2">
+                <label for="vat">VAT (%)</label>
+                <input type="number" data-ng-model="event.vat" name="vat" id="vat" class="form-control" required />
+            </div>
+            <div class="col-sm-2">
+                <label for="vatIncluded">VAT included</label>
+                <input type="checkbox" data-ng-model="event.vatIncluded" name="vatIncluded" id="vatIncluded" required />
+            </div>
+        </div>
+
+        <h3>Categories</h3>
+        <hr />
+
+        <div class="row">
+            <div class="col-sm-4" data-ng-repeat="ticketCategory in event.ticketCategories" ng-class-even="'list-even'">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <label for="{{$index}}-seats">Name</label>
+                        <input type="text" data-ng-model="ticketCategory.name" name="{{$index}}-name" id="{{$index}}-name" class="form-control" required />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <label for="{{$index}}-seats">Available seats ({{ticketCategory.seats}}%)</label>
+                        <input type="range" data-ng-model="ticketCategory.seats" name="{{$index}}-seats" id="{{$index}}-seats" min="0" max="100" class="form-control" required />
+                    </div>
+                </div>
+
+                <date-time data-id-prefix="{{$index}}-inception" data-prefix="Inception" data-model-object="ticketCategory.inception" data-row-class="row" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
+                <date-time data-id-prefix="{{$index}}-expiration" data-prefix="Expiration" data-model-object="ticketCategory.expiration" data-row-class="row" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <label for="{{$index}}-discount">Applied Discount ({{ticketCategory.discount}}%)</label>
+                        <input type="range" data-ng-model="ticketCategory.discount" name="{{$index}}-discount" id="{{$index}}-discount" class="form-control" required min="0" max="100" />
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <br />
+        <div class="row">
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary" data-ng-disabled="editEvent.$waiting || !editEvent.$valid">Save</button>
+                <button type="button" class="btn btn-default" data-ng-disabled="editEvent.$waiting" data-ng-click="editEvent.cancel()">Cancel</button>
+            </div>
+        </div>
+
+    </form>
+</div>

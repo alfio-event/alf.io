@@ -16,6 +16,8 @@
  */
 package io.bagarino.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import org.springframework.context.MessageSource;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
@@ -120,7 +122,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         StringHttpMessageConverter converter = new StringHttpMessageConverter();
         converter.setSupportedMediaTypes(Arrays.asList(MediaType.TEXT_HTML));
-        converters.add(new MappingJackson2HttpMessageConverter());
+        converters.add(jacksonMessageConverter());
     }
 
     @Bean
@@ -140,6 +142,20 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         final JMustacheTemplateLoader templateLoader = new JMustacheTemplateLoader();
         templateLoader.setResourceLoader(resourceLoader);
         return templateLoader;
+    }
+
+    @Bean
+    public MappingJackson2HttpMessageConverter jacksonMessageConverter() {
+        final MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+        converter.setObjectMapper(objectMapper());
+        return converter;
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JSR310Module());
+        return mapper;
     }
 
     @Override
