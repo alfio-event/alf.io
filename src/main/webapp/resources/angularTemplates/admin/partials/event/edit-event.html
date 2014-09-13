@@ -83,7 +83,7 @@
         <div class="row">
             <div class="col-sm-12">
                 <button type="submit" class="btn btn-primary" data-ng-disabled="editEvent.$waiting || !editEvent.$valid">Save</button>
-                <button type="button" class="btn btn-default" data-ng-disabled="editEvent.$waiting" data-ng-click="editEvent.cancel()">Cancel</button>
+                <button type="button" class="btn btn-default" data-ng-disabled="editEvent.$waiting" data-ng-click="editEvent.cancel();cancel();">Cancel</button>
             </div>
         </div>
 
