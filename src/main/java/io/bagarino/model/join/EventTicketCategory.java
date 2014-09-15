@@ -14,22 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.repository.join;
+package io.bagarino.model.join;
 
-import io.bagarino.datamapper.Bind;
-import io.bagarino.datamapper.Query;
-import io.bagarino.datamapper.QueryRepository;
-import io.bagarino.model.join.EventTicketCategory;
+import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
-import java.util.List;
+@Getter
+public class EventTicketCategory {
 
-@QueryRepository
-public interface EventTicketCategoryRepository {
+    private final int eventId;
+    private final int ticketCategoryId;
 
-    @Query("insert into j_event_ticket_category(event_id, ticket_category_id) values(:event_id, :ticket_category_id)")
-    int insert(@Bind("event_id") int eventId, @Bind("ticket_category_id") int ticketCategoryId);
-
-    @Query("select * from j_event_ticket_category where event_id = :event_id")
-    List<EventTicketCategory> findByEventId(@Bind("event_id") int eventId);
-
+    public EventTicketCategory(@Column("event_id") int eventId, @Column("ticket_category_id") int ticketCategoryId) {
+        this.eventId = eventId;
+        this.ticketCategoryId = ticketCategoryId;
+    }
 }

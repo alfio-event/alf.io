@@ -16,25 +16,46 @@
  */
 package io.bagarino.model;
 
-import io.bagarino.model.transaction.Transaction;
+import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.Date;
 
-import lombok.Data;
-
-@Data
+@Getter
 public class Ticket {
 
-	public enum TicketStatus {
-		PENDING, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED
-	}
+    public enum TicketStatus {
+        FREE, PENDING, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED
+    }
 
-	private final LocalDateTime creation;
-	private final TicketCategory category;
-	private final Event event;
-	private final TicketStatus status;
-	private final BigDecimal originalPrice;
-	private final BigDecimal paidPrice;
-	private final Transaction transaction;
+    private final int id;
+    private final String uuid;
+    private final Date creation;
+    private final int categoryId;
+    private final int eventId;
+    private final TicketStatus status;
+    private final BigDecimal originalPrice;
+    private final BigDecimal paidPrice;
+    private final Integer transactionId;
+
+    public Ticket(@Column("id") int id,
+                  @Column("uuid") String uuid,
+                  @Column("creation") Date creation,
+                  @Column("category_id") int categoryId,
+                  @Column("status") String status,
+                  @Column("event_id") int eventId,
+                  @Column("original_price") BigDecimal originalPrice,
+                  @Column("paid_price") BigDecimal paidPrice,
+                  @Column("transaction_id") Integer transactionId) {
+        this.id = id;
+        this.uuid = uuid;
+        this.creation = creation;
+        this.categoryId = categoryId;
+        this.eventId = eventId;
+        this.status = TicketStatus.valueOf(status);
+        this.originalPrice = originalPrice;
+        this.paidPrice = paidPrice;
+        this.transactionId = transactionId;
+    }
 }

@@ -24,18 +24,21 @@ import java.util.Date;
 
 @Getter
 public class TicketCategory {
+    private final int id;
     private final Date inception;
-    private final Date end;
+    private final Date expiration;
     private final int maxTickets;
-    private final BigDecimal appliedDiscount;
+    private final BigDecimal discount;
 
-    public TicketCategory(@Column("inception") Date inception,
+    public TicketCategory(@Column("id") int id,
+                          @Column("inception") Date inception,
                           @Column("expiration") Date expiration,
                           @Column("max_tickets") int maxTickets,
-                          @Column("discount") BigDecimal appliedDiscount) {
+                          @Column("discount") BigDecimal discount) {
+        this.id = id;
         this.inception = inception;
-        this.end = expiration;
+        this.expiration = expiration;
         this.maxTickets = maxTickets;
-        this.appliedDiscount = appliedDiscount;
+        this.discount = discount;
     }
 }

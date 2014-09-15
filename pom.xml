@@ -141,6 +141,13 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.3.2</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.insightfullogic</groupId>
+            <artifactId>lambda-behave</artifactId>
+            <version>0.3</version>
+            <scope>test</scope>
+        </dependency>
 	</dependencies>
 
 	<build>

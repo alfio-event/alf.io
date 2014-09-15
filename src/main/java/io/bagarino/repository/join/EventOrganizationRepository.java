@@ -32,4 +32,7 @@ public interface EventOrganizationRepository {
     @Query("select * from j_event_organization where org_id = :organizationId")
     List<EventOrganization> findByOrganizationId(@Bind("organizationId") int organizationId);
 
+    @Query("insert into j_event_organization(event_id, org_id) values(:eventId, :organizationId)")
+    int create(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
+
 }

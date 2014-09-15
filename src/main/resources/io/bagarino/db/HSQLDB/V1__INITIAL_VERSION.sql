@@ -98,14 +98,15 @@ create table transaction(
 alter table transaction add foreign key(customer_id) references customer(id);
 
 create table ticket (
-	id integer identity not null, 
+	id integer identity not null,
+  uuid varchar(255) not null,
 	creation timestamp not null, 
 	category_id integer not null, 
 	event_id integer not null, 
 	status varchar(255) not null, 
 	original_price decimal not null, 
-	paid_price decimal not null, 
-	transaction_id integer not null
+	paid_price decimal not null,
+	transaction_id integer
 );
 -- constraints
 alter table ticket add foreign key(category_id) references ticket_category(id);

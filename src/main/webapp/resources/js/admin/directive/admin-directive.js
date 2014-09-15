@@ -46,7 +46,9 @@
             scope: true,
             templateUrl: '/resources/angularTemplates/admin/partials/main/events.html',
             controller: function($scope, EventService) {
-                $scope.events = [];
+                EventService.getAllEvents().success(function(data) {
+                    $scope.events = data;
+                });
             },
             link: angular.noop
         };

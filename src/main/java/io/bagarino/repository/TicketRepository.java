@@ -14,22 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.repository.join;
+package io.bagarino.repository;
 
-import io.bagarino.datamapper.Bind;
 import io.bagarino.datamapper.Query;
 import io.bagarino.datamapper.QueryRepository;
-import io.bagarino.model.join.EventTicketCategory;
-
-import java.util.List;
+import io.bagarino.datamapper.QueryType;
 
 @QueryRepository
-public interface EventTicketCategoryRepository {
+public interface TicketRepository {
 
-    @Query("insert into j_event_ticket_category(event_id, ticket_category_id) values(:event_id, :ticket_category_id)")
-    int insert(@Bind("event_id") int eventId, @Bind("ticket_category_id") int ticketCategoryId);
-
-    @Query("select * from j_event_ticket_category where event_id = :event_id")
-    List<EventTicketCategory> findByEventId(@Bind("event_id") int eventId);
-
+    @Query(type = QueryType.TEMPLATE, value = "insert into ticket (uuid, creation, category_id, event_id, status, original_price, paid_price)" +
+            "values(:uuid, :creation, :categoryId, :eventId, :status, :originalPrice, :paidPrice)")
+    String bulkTicketInitialization();
 }
