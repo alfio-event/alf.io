@@ -104,8 +104,8 @@ create table ticket (
 	category_id integer not null, 
 	event_id integer not null, 
 	status varchar(255) not null, 
-	original_price decimal not null, 
-	paid_price decimal not null,
+	original_price decimal(10,2) not null,
+	paid_price decimal(10,2) not null,
 	transaction_id integer
 );
 -- constraints
