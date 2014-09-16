@@ -62,8 +62,14 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-12">
-                        <label for="{{$index}}-seats">Available seats ({{ticketCategory.seats}}%)</label>
-                        <input type="range" data-ng-model="ticketCategory.seats" name="{{$index}}-seats" id="{{$index}}-seats" min="0" max="100" class="form-control" required />
+                        <label for="{{$index}}-description">Description</label>
+                        <textarea data-ng-model="ticketCategory.description" name="{{$index}}-description" id="{{$index}}-description" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <label for="{{$index}}-seats">Available seats</label>
+                        <input type="number" data-ng-model="ticketCategory.seats" name="{{$index}}-seats" id="{{$index}}-seats" class="form-control" required />
                     </div>
                 </div>
 

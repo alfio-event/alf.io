@@ -61,6 +61,7 @@ create table ticket_category (
 	inception timestamp not null, 
 	expiration timestamp not null,
 	max_tickets integer not null,
+  description varchar(1024),
   discount decimal(5,2) not null
 );
 

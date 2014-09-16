@@ -111,11 +111,9 @@ public class EventManager {
     }
 
     private void distributeSeats(EventModification em, int eventId) {
-        BigDecimal seats = new BigDecimal(em.getSeats());
         em.getTicketCategories().stream().forEach(tc -> {
-            int maxSeats = tc.getSeats().divide(HUNDRED).multiply(seats).intValue();
             final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toDate(),
-                    tc.getExpiration().toDate(), maxSeats, tc.getDiscount());
+                    tc.getExpiration().toDate(), tc.getDescription(), tc.getSeats(), tc.getDiscount());
             eventTicketCategoryRepository.insert(eventId, category.getValue());
         });
         final List<TicketCategory> ticketCategories = eventTicketCategoryRepository.findByEventId(eventId).stream()
@@ -129,7 +127,6 @@ public class EventManager {
                                   .findFirst().get();
             ticketCategoryRepository.updateSeatsAvailability(last.getId(), last.getMaxTickets() + notAssignedTickets);
         }
-
     }
 
     static BigDecimal evaluatePrice(BigDecimal price, BigDecimal vat, boolean vatIncluded) {
