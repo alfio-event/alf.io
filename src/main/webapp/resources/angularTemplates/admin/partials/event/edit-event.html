@@ -73,8 +73,19 @@
         </div>
 
         <h3>Categories</h3>
+        <p>Here you can define all the ticket categories for the event.</p>
         <hr />
 
+        <div class="row">
+            <div class="col-sm-12">
+                total:
+                <progressbar value="100">{{event.seats}}</progressbar>
+                assigned:
+                <progress>
+                    <bar data-ng-repeat="category in event.ticketCategories" value="calcBarValue(category.seats, event.seats)" type="{{evaluateBarType($index)}}">{{category.name}} - {{category.seats}}</bar>
+                </progress>
+            </div>
+        </div>
         <div class="row">
             <div class="col-sm-4" data-ng-repeat="ticketCategory in event.ticketCategories" ng-class-even="'list-even'">
                 <div class="row">

@@ -117,6 +117,18 @@
             $scope.organizations = result;
         });
 
+        $scope.evaluateBarType = function(index) {
+            var barClasses = ['danger', 'warning', 'info', 'success'];
+            if(index < barClasses.length) {
+                return barClasses[index];
+            }
+            return index % 2 == 0 ? 'info' : 'success';
+        };
+
+        $scope.calcBarValue = function(categorySeats, eventSeats) {
+            return Math.floor((categorySeats / eventSeats + 0.00001) * 10000) / 100;
+        };
+
         $scope.event.ticketCategories = [{name: 'super-early'}, {name: 'early'}, {name: 'normal'}];
 
         $scope.save = function(form, event) {
