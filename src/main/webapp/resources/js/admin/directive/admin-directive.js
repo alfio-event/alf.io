@@ -69,12 +69,41 @@
         }
     });
 
-    directives.directive('dateField', function($log) {
+    directives.directive('dateField', function() {
         return {
             restrict:'A',
             link: function(scope, element, attrs) {
                 element.datepicker({ dateFormat: 'yy-mm-dd' });
             }
         }
+    });
+
+    directives.directive('grabFocus', function() {
+        return {
+            restrict: 'A',
+            link: function(scope, element, attrs) {
+                element.focus();
+            }
+        };
+    });
+
+    directives.directive('controlButtons', function() {
+        return {
+            restrict: 'E',
+            templateUrl: '/resources/angularTemplates/admin/partials/form/controlButtons.html',
+            scope: {
+                formObj: '=',
+                cancelHandler: '='
+            },
+            link: function(scope, element, attrs) {
+                scope.cancel = function() {
+                    if(angular.isFunction(scope.cancelHandler)) {
+                        scope.cancelHandler();
+                    } else if(angular.isFunction(scope.$parent.cancel)) {
+                        scope.$parent.cancel();
+                    }
+                }
+            }
+        };
     });
 })();

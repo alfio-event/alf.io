@@ -8,7 +8,7 @@
             <div class="col-sm-12 col-md-6">
                 <div class="form-group">
                     <label for="organizationId">Owner Organization</label>
-                    <select data-ng-model="event.organizationId" name="organizationId" id="organizationId" class="form-control" data-required data-ng-options="organization.id as organization.name for organization in organizations"></select>
+                    <select data-ng-model="event.organizationId" name="organizationId" data-grab-focus id="organizationId" class="form-control" data-required data-ng-options="organization.id as organization.name for organization in organizations"></select>
                     
                     <label for="location">Location</label>
                     <textarea data-ng-model="event.location" name="location" id="location" class="form-control" required data-minlength="10"></textarea>
@@ -85,13 +85,7 @@
 
             </div>
         </div>
-        <br />
-        <div class="row">
-            <div class="col-sm-12">
-                <button type="submit" class="btn btn-primary" data-ng-disabled="editEvent.$waiting || !editEvent.$valid">Save</button>
-                <button type="button" class="btn btn-default" data-ng-disabled="editEvent.$waiting" data-ng-click="editEvent.cancel();cancel();">Cancel</button>
-            </div>
-        </div>
-
+        <br class="clearfix"/>
+        <control-buttons data-form-obj="editEvent"></control-buttons>
     </form>
 </div>

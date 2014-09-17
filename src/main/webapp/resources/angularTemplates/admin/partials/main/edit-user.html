@@ -1,7 +1,7 @@
 <form role="form" name="editUser" data-ng-submit="save(editUser, user)" novalidate>
     <div class="form-group">
         <label for="organizationId">Organization</label>
-        <select data-ng-model="user.organizationId" name="organizationId" class="form-control" id="organizationId" data-required data-ng-options="organization.id as organization.name for organization in organizations"></select>
+        <select data-ng-model="user.organizationId" data-grab-focus name="organizationId" class="form-control" id="organizationId" data-required data-ng-options="organization.id as organization.name for organization in organizations"></select>
     </div>
     <div class="form-group">
         <label for="username">Username</label>
@@ -19,8 +19,5 @@
         <label for="emailAddress">E-mail</label>
         <input type="email" data-ng-model="user.emailAddress" name="emailAddress" class="form-control" id="emailAddress" required />
     </div>
-    <div>
-        <button type="submit" class="btn btn-primary" data-ng-disabled="editUser.$waiting">Save</button>
-        <button type="button" class="btn btn-default" data-ng-disabled="editUser.$waiting" data-ng-click="cancel()">Cancel</button>
-    </div>
+    <control-buttons data-form-obj="editUser"></control-buttons>
 </form>
