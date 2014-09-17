@@ -6,6 +6,6 @@ div.list-even {
     background: #f5f5f5;
 }
 
-input.ng-invalid, select.ng-invalid, textarea.ng-invalid {
+input.ng-invalid.ng-touched, select.ng-invalid.ng-touched, textarea.ng-invalid.ng-touched {
 	border:1px solid red;
 }
