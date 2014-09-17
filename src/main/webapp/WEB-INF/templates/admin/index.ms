@@ -13,6 +13,7 @@
     <script src="/resources/bower_components/jquery/dist/jquery.js"></script>
     <script src="/resources/bower_components/jquery-ui/jquery-ui.js"></script>
     <script src="/resources/bower_components/lodash/dist/lodash.min.js"></script>
+    <script src="/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
     <script src="/resources/bower_components/angular/angular.min.js"></script>
     <script src="/resources/bower_components/angular-messages/angular-messages.min.js"></script>
     <script src="/resources/bower_components/angular-bootstrap/ui-bootstrap.min.js"></script>

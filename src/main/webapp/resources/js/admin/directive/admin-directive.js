@@ -1,6 +1,6 @@
 (function () {
     "use strict";
-    var directives = angular.module('adminDirectives', ['adminServices']);
+    var directives = angular.module('adminDirectives', ['ui.bootstrap', 'adminServices']);
 
     directives.directive("organizationsList", function() {
         return {
@@ -65,15 +65,18 @@
                 dateCellClass: '@',
                 timeCellClass: '@'
             },
-            link: angular.noop
-        }
-    });
-
-    directives.directive('dateField', function() {
-        return {
-            restrict:'A',
             link: function(scope, element, attrs) {
-                element.datepicker({ dateFormat: 'yy-mm-dd' });
+                scope.tomorrow = moment().add(1, 'days').toDate();
+                //scope.opened = false;
+                scope.dateOptions = {
+                    formatYear: 'yy',
+                    startingDay: 1
+                };
+                scope.open = function($event) {
+                    $event.preventDefault();
+                    $event.stopPropagation();
+                    scope.opened = true;
+                }
             }
         }
     });
