@@ -9,9 +9,7 @@
     <link rel="stylesheet" href="/resources/bower_components/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="/resources/css/admin.css" />
     <link rel="stylesheet" href="/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
-    <link rel="stylesheet" href="/resources/bower_components/jquery-ui/themes/smoothness/jquery-ui.css" />
     <script src="/resources/bower_components/jquery/dist/jquery.js"></script>
-    <script src="/resources/bower_components/jquery-ui/jquery-ui.js"></script>
     <script src="/resources/bower_components/lodash/dist/lodash.min.js"></script>
     <script src="/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
     <script src="/resources/bower_components/angular/angular.min.js"></script>
