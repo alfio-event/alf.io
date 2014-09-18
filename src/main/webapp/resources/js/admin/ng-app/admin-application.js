@@ -129,7 +129,11 @@
             return Math.floor((categorySeats / eventSeats + 0.00001) * 10000) / 100;
         };
 
-        $scope.event.ticketCategories = [{name: 'super-early'}, {name: 'early'}, {name: 'normal'}];
+        $scope.event.ticketCategories = [];
+
+        $scope.addCategory = function() {
+            $scope.event.ticketCategories.push({});
+        };
 
         $scope.save = function(form, event) {
             validationPerformer($q, EventService.checkEvent, event, form).then(function() {
@@ -138,6 +142,8 @@
                 });
             }, angular.noop);
         };
+
+
 
         $scope.cancel = function() {
             $state.go("index");

@@ -86,38 +86,40 @@
                 </progress>
             </div>
         </div>
-        <div class="row">
-            <div class="col-sm-4" data-ng-repeat="ticketCategory in event.ticketCategories" ng-class-even="'list-even'">
+        <div class="row category" data-ng-repeat="ticketCategory in event.ticketCategories" data-ng-class="'bg-' + evaluateBarType($index)">
+            <div class="col-sm-12">
                 <div class="row">
-                    <div class="col-sm-12">
+                    <div class="col-sm-12 col-md-4">
                         <label for="{{$index}}-seats">Name</label>
                         <input type="text" data-ng-model="ticketCategory.name" name="{{$index}}-name" id="{{$index}}-name" class="form-control" required />
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-sm-12">
+                    <div class="col-sm-12 col-md-4">
                         <label for="{{$index}}-description">Description</label>
                         <textarea data-ng-model="ticketCategory.description" name="{{$index}}-description" id="{{$index}}-description" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-sm-12">
+                    <div class="col-sm-12 col-md-4">
                         <label for="{{$index}}-seats">Available seats</label>
                         <input type="number" data-ng-model="ticketCategory.seats" name="{{$index}}-seats" id="{{$index}}-seats" class="form-control" required />
                     </div>
                 </div>
-
-                <date-time data-id-prefix="{{$index}}-inception" data-prefix="Inception" data-model-object="ticketCategory.inception" data-row-class="row" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
-                <date-time data-id-prefix="{{$index}}-expiration" data-prefix="Expiration" data-model-object="ticketCategory.expiration" data-row-class="row" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
-
                 <div class="row">
-                    <div class="col-sm-12">
+                    <div class="col-sm-12 col-md-4">
+                        <date-time data-id-prefix="{{$index}}-inception" data-prefix="Inception" data-model-object="ticketCategory.inception" data-row-class="row" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
+                    </div>
+                    <div class="col-sm-12 col-md-4">
+                        <date-time data-id-prefix="{{$index}}-expiration" data-prefix="Expiration" data-model-object="ticketCategory.expiration" data-row-class="row" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
+                    </div>
+
+                    <div class="col-sm-12 col-md-4">
                         <label for="{{$index}}-discount">Applied Discount ({{ticketCategory.discount}}%)</label>
                         <input type="range" data-ng-model="ticketCategory.discount" name="{{$index}}-discount" id="{{$index}}-discount" class="form-control" required min="0" max="100" />
                     </div>
                 </div>
-
             </div>
+        </div>
+        <div class="row category">
+            <div class="col-sm-11"><span class="text-right" data-ng-if="event.ticketCategories.length == 0">No ticket categories have been defined. Please add a new one by clicking here</span></div>
+            <div class="col-sm-1"><button type="button" class="btn btn-success" data-ng-click="addCategory()"><i class="fa fa-plus"></i></button></div>
         </div>
         <br class="clearfix"/>
         <control-buttons data-form-obj="editEvent"></control-buttons>
