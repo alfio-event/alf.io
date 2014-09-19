@@ -45,7 +45,7 @@
             </div>
             <div class="col-sm-2">
                 <label for="vatIncluded">VAT included</label>
-                <input type="checkbox" data-ng-model="event.vatIncluded" name="vatIncluded" id="vatIncluded" required />
+                <input type="checkbox" data-ng-model="event.vatIncluded" name="vatIncluded" id="vatIncluded" />
             </div>
         </div>
 
@@ -56,7 +56,7 @@
             <div class="col-sm-4" data-ng-repeat="ticketCategory in event.ticketCategories" ng-class-even="'list-even'">
                 <div class="row">
                     <div class="col-sm-12">
-                        <label for="{{$index}}-seats">Name</label>
+                        <label for="{{$index}}-name">Name</label>
                         <input type="text" data-ng-model="ticketCategory.name" name="{{$index}}-name" id="{{$index}}-name" class="form-control" required />
                     </div>
                 </div>
@@ -66,14 +66,15 @@
                         <input type="range" data-ng-model="ticketCategory.seats" name="{{$index}}-seats" id="{{$index}}-seats" min="0" max="100" class="form-control" required />
                     </div>
                 </div>
+                <div ng-if="ticketCategory.seats > 0">
+                    <date-time data-id-prefix="{{$index}}-inception" data-prefix="Inception" data-model-object="ticketCategory.inception" data-row-class="row" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
+                    <date-time data-id-prefix="{{$index}}-expiration" data-prefix="Expiration" data-model-object="ticketCategory.expiration" data-row-class="row" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
 
-                <date-time data-id-prefix="{{$index}}-inception" data-prefix="Inception" data-model-object="ticketCategory.inception" data-row-class="row" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
-                <date-time data-id-prefix="{{$index}}-expiration" data-prefix="Expiration" data-model-object="ticketCategory.expiration" data-row-class="row" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
-
-                <div class="row">
-                    <div class="col-sm-12">
-                        <label for="{{$index}}-discount">Applied Discount ({{ticketCategory.discount}}%)</label>
-                        <input type="range" data-ng-model="ticketCategory.discount" name="{{$index}}-discount" id="{{$index}}-discount" class="form-control" required min="0" max="100" />
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <label for="{{$index}}-discount">Applied Discount ({{ticketCategory.discount}}%)</label>
+                            <input type="range" data-ng-model="ticketCategory.discount" name="{{$index}}-discount" id="{{$index}}-discount" class="form-control" required min="0" max="100" />
+                        </div>
                     </div>
                 </div>
 

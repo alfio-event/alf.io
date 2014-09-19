@@ -113,10 +113,13 @@ public class EventManager {
     private void distributeSeats(EventModification em, int eventId) {
         BigDecimal seats = new BigDecimal(em.getSeats());
         em.getTicketCategories().stream().forEach(tc -> {
-            int maxSeats = tc.getSeats().divide(HUNDRED).multiply(seats).intValue();
-            final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toDate(),
-                    tc.getExpiration().toDate(), maxSeats, tc.getDiscount());
-            eventTicketCategoryRepository.insert(eventId, category.getValue());
+
+            if (tc.getSeats().intValue()>0) {
+                int maxSeats = tc.getSeats().divide(HUNDRED).multiply(seats).intValue();
+                final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toDate(),
+                        tc.getExpiration().toDate(), maxSeats, tc.getDiscount());
+                eventTicketCategoryRepository.insert(eventId, category.getValue());
+            }
         });
         final List<TicketCategory> ticketCategories = eventTicketCategoryRepository.findByEventId(eventId).stream()
                 .map(etc -> ticketCategoryRepository.getById(etc.getTicketCategoryId()))
