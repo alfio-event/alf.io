@@ -17,7 +17,7 @@
     <tr data-ng-repeat="event in events">
         <td data-ng-class-even="'active'">{{event.id}}</td>
         <td data-ng-class-even="'active'">{{event.description}}</td>
-        <td data-ng-class-even="'active'">{{event.begin}}/{{event.end}}</td>
+        <td data-ng-class-even="'active'">{{event.begin | date : 'dd/MM/yyyy HH:mm'}} /{{event.end | date : 'dd/MM/yyyy HH:mm'}}</td>
         <td data-ng-class-even="'active'">actions</td>
     </tr>
     </tbody>

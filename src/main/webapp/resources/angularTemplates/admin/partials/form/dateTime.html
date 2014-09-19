@@ -2,7 +2,7 @@
     <div class="{{dateCellClass}}">
         <label for="{{idPrefix}}-date">{{prefix}} Date</label>
         <p class="input-group">
-            <input type="text" data-ng-model="modelObject.date" data-datepicker-popup="yyyy-MM-dd" data-is-open="opened" data-min-date="tomorrow" name="{{idPrefix}}-date" id="{{idPrefix}}-date" class="form-control" required placeholder="yyyy-mm-dd"/>
+            <input type="text" data-ng-model="date" data-datepicker-popup="dd/MM/yyyy" data-is-open="opened" data-min-date="tomorrow" name="{{idPrefix}}-date" id="{{idPrefix}}-date" class="form-control" required placeholder="yyyy-mm-dd"/>
             <span class="input-group-btn">
                 <button type="button" class="btn btn-default" ng-click="open($event)"><i class="fa fa-calendar"></i></button>
             </span>

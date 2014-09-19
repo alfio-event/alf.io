@@ -76,7 +76,12 @@
                     $event.preventDefault();
                     $event.stopPropagation();
                     scope.opened = true;
-                }
+                };
+                scope.$watch('date', function(d) {
+                    if(angular.isDefined(d) && angular.isDefined(scope.modelObject)) {
+                        scope.modelObject['date'] = moment(d).format('YYYY-MM-DD');
+                    }
+                });
             }
         }
     });

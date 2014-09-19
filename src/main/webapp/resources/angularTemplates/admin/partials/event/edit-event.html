@@ -22,16 +22,17 @@
     </table>
 </script>
 <div class="container">
-    <h1>Create new Event</h1>
-    <p>Please fill in the required information and then save</p>
-    <hr />
+    <div class="page-header">
+        <h1>Create new Event</h1>
+        <h4 class="text-muted">Please fill in the required information and then save</h4>
+    </div>
     <form role="form" name="editEvent" data-ng-submit="save(form, event)" novalidate>
-        <div class="well well-sm"><h3>Logistic info</h3></div>
+        <div class="page-header"><h2>Logistic info</h2></div>
         <div class="row">
             <div class="col-sm-12 col-md-6">
                 <div class="form-group">
                     <label for="organizationId">Owner Organization</label>
-                    <select data-ng-model="event.organizationId" name="organizationId" data-grab-focus id="organizationId" class="form-control" data-required data-ng-options="organization.id as organization.name for organization in organizations"></select>
+                    <select data-ng-model="event.organizationId" name="organizationId" data-grab-focus id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>
                     
                     <label for="location">Location</label>
                     <textarea data-ng-model="event.location" name="location" id="location" class="form-control" required data-minlength="10"></textarea>
@@ -47,7 +48,9 @@
             </div>
         </div>
 
-        <div class="well well-sm"><h3>Tickets</h3></div>
+        <div class="page-header">
+            <h2>Tickets</h2>
+        </div>
 
         <div class="row">
             <div class="col-sm-2">
@@ -72,9 +75,10 @@
             </div>
         </div>
 
-        <h3>Categories</h3>
-        <p>Here you can define all the ticket categories for the event.</p>
-        <hr />
+        <div class="page-header">
+            <h3>Categories</h3>
+            <h5 class="text-muted">Here you can define all the ticket categories for the event. Please note that at least one category is required in order to create the event.</h5>
+        </div>
 
         <div class="row">
             <div class="col-sm-12">

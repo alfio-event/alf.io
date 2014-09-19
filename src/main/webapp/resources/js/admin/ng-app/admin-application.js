@@ -132,7 +132,7 @@
         $scope.event.ticketCategories = [];
 
         $scope.addCategory = function() {
-            $scope.event.ticketCategories.push({});
+            $scope.event.ticketCategories.push({inception:{}, expiration:{}});
         };
 
         $scope.save = function(form, event) {
