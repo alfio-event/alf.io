@@ -31,8 +31,11 @@
         <div class="row">
             <div class="col-sm-12 col-md-6">
                 <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" data-ng-model="event.name" name="name" data-grab-focus id="name" class="form-control" required />
+
                     <label for="organizationId">Owner Organization</label>
-                    <select data-ng-model="event.organizationId" name="organizationId" data-grab-focus id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>
+                    <select data-ng-model="event.organizationId" name="organizationId" id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>
                     
                     <label for="location">Location</label>
                     <textarea data-ng-model="event.location" name="location" id="location" class="form-control" required data-minlength="10"></textarea>
@@ -86,11 +89,11 @@
                 <progressbar value="100">{{event.seats}}</progressbar>
                 assigned:
                 <progress>
-                    <bar data-ng-repeat="category in event.ticketCategories" value="calcBarValue(category.seats, event.seats)" type="{{evaluateBarType($index)}}">{{category.name}} - {{category.seats}}</bar>
+                    <bar data-ng-repeat="category in event.ticketCategories" value="calcBarValue(category.seats, event.seats)" type="{{evaluateBarType($index)}}">{{category.name}} ({{category.seats}})</bar>
                 </progress>
             </div>
         </div>
-        <div class="row category" data-ng-repeat="ticketCategory in event.ticketCategories" data-ng-class="'bg-' + evaluateBarType($index)">
+        <div class="row category" data-ng-repeat="ticketCategory in event.ticketCategories" data-ng-class="'category-' + evaluateBarType($index)">
             <div class="col-sm-12">
                 <div class="row">
                     <div class="col-sm-12 col-md-4">
@@ -121,9 +124,9 @@
                 </div>
             </div>
         </div>
-        <div class="row category">
+        <div class="row">
             <div class="col-sm-11"><span class="text-right" data-ng-if="event.ticketCategories.length == 0">No ticket categories have been defined. Please add a new one by clicking here</span></div>
-            <div class="col-sm-1"><button type="button" class="btn btn-success" data-ng-click="addCategory()"><i class="fa fa-plus"></i></button></div>
+            <div class="col-sm-1"><button type="button" class="btn btn-success" data-ng-disabled="!canAddCategory(event.ticketCategories)" data-ng-click="addCategory()"><i class="fa fa-plus"></i></button></div>
         </div>
         <br class="clearfix"/>
         <control-buttons data-form-obj="editEvent"></control-buttons>

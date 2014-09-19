@@ -132,7 +132,28 @@
         $scope.event.ticketCategories = [];
 
         $scope.addCategory = function() {
-            $scope.event.ticketCategories.push({inception:{}, expiration:{}});
+            var lastCategory = _.last($scope.event.ticketCategories);
+            var inceptionDate = moment();
+            if(angular.isDefined(lastCategory)) {
+                inceptionDate = moment(lastCategory.inception.date).add(1, 'days');
+            }
+            var category = {
+                inception: {
+                    date: inceptionDate.toDate()
+                }, expiration: {
+                    date: inceptionDate.add(1, 'days').toDate()
+                }
+            };
+            $scope.event.ticketCategories.push(category);
+        };
+
+        $scope.canAddCategory = function(categories) {
+            return _.every(categories, function(category) {
+                return angular.isDefined(category.name) &&
+                    angular.isDefined(category.seats) &&
+                    category.seats > 0 &&
+                    angular.isDefined(category.expiration.date);
+            });
         };
 
         $scope.save = function(form, event) {
@@ -142,8 +163,6 @@
                 });
             }, angular.noop);
         };
-
-
 
         $scope.cancel = function() {
             $state.go("index");

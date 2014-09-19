@@ -9,10 +9,31 @@ div.list-even {
 }
 
 div.category {
-    margin-bottom: 5px;
+    margin-bottom: 15px;
     padding-top: 5px;
+    border: 1px solid #c0c0c0;
 }
 
 input.ng-invalid.ng-touched, select.ng-invalid.ng-touched, textarea.ng-invalid.ng-touched {
 	border:1px solid red;
+}
+
+div.category-danger {
+    border-left: 5px solid #d9534f;
+    border-radius: 2px;
+}
+
+div.category-warning {
+    border-left: 5px solid #f0ad4e;
+    border-radius: 2px;
+}
+
+div.category-info {
+    border-left: 5px solid #5bc0de;
+    border-radius: 2px;
+}
+
+div.category-success {
+    border-left: 5px solid #5cb85c;
+    border-radius: 2px;
 }
