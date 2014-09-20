@@ -27,7 +27,7 @@ import java.util.List;
 public class EventModification {
 
     private final Integer id;
-    private final String name;
+    private final String shortName;
     private final int organizationId;
     private final String location;
     private final String description;
@@ -42,7 +42,7 @@ public class EventModification {
 
     @JsonCreator
     public EventModification(@JsonProperty("id") Integer id,
-                             @JsonProperty("name") String name,
+                             @JsonProperty("shortName") String shortName,
                              @JsonProperty("organizationId") int organizationId,
                              @JsonProperty("location") String location,
                              @JsonProperty("description") String description,
@@ -55,7 +55,7 @@ public class EventModification {
                              @JsonProperty("vatIncluded") boolean vatIncluded,
                              @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories) {
         this.id = id;
-        this.name = name;
+        this.shortName = shortName;
         this.organizationId = organizationId;
         this.location = location;
         this.description = description;

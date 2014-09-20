@@ -142,7 +142,7 @@ public class EventManager {
 
     private int insertEvent(EventModification em) {
         BigDecimal actualPrice = evaluatePrice(em.getPrice(), em.getVat(), em.isVatIncluded());
-        return eventRepository.insert(em.getDescription(), em.getOrganizationId(), em.getLocation(),
+        return eventRepository.insert(em.getDescription(), em.getShortName(), em.getOrganizationId(), em.getLocation(),
                 "", "", em.getStart().toDate(), em.getEnd().toDate(), actualPrice,
                 em.getCurrency(), em.getSeats(), em.isVatIncluded(), em.getVat()).getValue();
     }
