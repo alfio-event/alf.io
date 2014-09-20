@@ -100,14 +100,18 @@ public class EventManager {
                         final BigDecimal price = regularPrice.subtract(regularPrice.multiply(tc.getDiscount()).divide(HUNDRED, 2, HALF_UP));
                         return Stream.generate(MapSqlParameterSource::new)
                                 .limit(tc.getMaxTickets())
-                                .map(ps -> ps.addValue("uuid", UUID.randomUUID().toString())
-                                        .addValue("creation", creation)
-                                        .addValue("categoryId", tc.getId())
-                                        .addValue("eventId", eventId)
-                                        .addValue("status", Ticket.TicketStatus.FREE.name())
-                                        .addValue("originalPrice", price)
-                                        .addValue("paidPrice", BigDecimal.ZERO));
+                                .map(ps -> buildParams(eventId, creation, tc, price, ps));
                     }).toArray(MapSqlParameterSource[]::new);
+    }
+
+    private MapSqlParameterSource buildParams(int eventId, Date creation, TicketCategory tc, BigDecimal price, MapSqlParameterSource ps) {
+        return ps.addValue("uuid", UUID.randomUUID().toString())
+                .addValue("creation", creation)
+                .addValue("categoryId", tc.getId())
+                .addValue("eventId", eventId)
+                .addValue("status", Ticket.TicketStatus.FREE.name())
+                .addValue("originalPrice", price)
+                .addValue("paidPrice", BigDecimal.ZERO);
     }
 
     private void distributeSeats(EventModification em, int eventId) {
@@ -138,7 +142,7 @@ public class EventManager {
 
     private int insertEvent(EventModification em) {
         BigDecimal actualPrice = evaluatePrice(em.getPrice(), em.getVat(), em.isVatIncluded());
-        return eventRepository.insert(em.getDescription(), em.getOrganizationId(), em.getLocation(),
+        return eventRepository.insert(em.getDescription(), em.getShortName(), em.getOrganizationId(), em.getLocation(),
                 "", "", em.getStart().toDate(), em.getEnd().toDate(), actualPrice,
                 em.getCurrency(), em.getSeats(), em.isVatIncluded(), em.getVat()).getValue();
     }

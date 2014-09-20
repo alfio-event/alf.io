@@ -117,7 +117,53 @@
             $scope.organizations = result;
         });
 
-        $scope.event.ticketCategories = [{name: 'super-early'}, {name: 'early'}, {name: 'normal'}];
+        $scope.evaluateBarType = function(index) {
+            var barClasses = ['danger', 'warning', 'info', 'success'];
+            if(index < barClasses.length) {
+                return barClasses[index];
+            }
+            return index % 2 == 0 ? 'info' : 'success';
+        };
+
+        $scope.calcBarValue = function(categorySeats, eventSeats) {
+            return Math.floor((categorySeats / eventSeats + 0.00001) * 10000) / 100;
+        };
+
+        var createCategory = function(sticky) {
+            var lastCategory = _.last($scope.event.ticketCategories);
+            var inceptionDate = moment();
+            if(angular.isDefined(lastCategory)) {
+                inceptionDate = moment(lastCategory.inception.date).add(1, 'days');
+            }
+            var category = {
+                inception: {
+                    date: inceptionDate.toDate()
+                }, expiration: {
+                    date: inceptionDate.add(1, 'days').toDate()
+                }, sticky: sticky
+            };
+            $scope.event.ticketCategories.push(category);
+        };
+
+        $scope.event.ticketCategories = [];
+        createCategory(true);
+
+        $scope.addCategory = function() {
+            createCategory(false);
+        };
+
+        $scope.canAddCategory = function(categories) {
+            var remaining = _.foldl(categories, function(difference, category) {
+                return difference - category.seats;
+            }, $scope.event.seats);
+
+            return remaining > 0 && _.every(categories, function(category) {
+                return angular.isDefined(category.name) &&
+                    angular.isDefined(category.seats) &&
+                    category.seats > 0 &&
+                    angular.isDefined(category.expiration.date);
+            });
+        };
 
         $scope.save = function(form, event) {
             validationPerformer($q, EventService.checkEvent, event, form).then(function() {

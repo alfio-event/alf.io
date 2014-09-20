@@ -1,6 +1,6 @@
 (function () {
     "use strict";
-    var directives = angular.module('adminDirectives', ['adminServices']);
+    var directives = angular.module('adminDirectives', ['ui.bootstrap', 'adminServices']);
 
     directives.directive("organizationsList", function() {
         return {
@@ -65,16 +65,53 @@
                 dateCellClass: '@',
                 timeCellClass: '@'
             },
-            link: angular.noop
+            link: function(scope, element, attrs) {
+                scope.tomorrow = moment().add(1, 'days').toDate();
+                //scope.opened = false;
+                scope.dateOptions = {
+                    formatYear: 'yy',
+                    startingDay: 1
+                };
+                scope.open = function($event) {
+                    $event.preventDefault();
+                    $event.stopPropagation();
+                    scope.opened = true;
+                };
+                scope.$watch('date', function(d) {
+                    if(angular.isDefined(d) && angular.isDefined(scope.modelObject)) {
+                        scope.modelObject['date'] = moment(d).format('YYYY-MM-DD');
+                    }
+                });
+            }
         }
     });
 
-    directives.directive('dateField', function($log) {
+    directives.directive('grabFocus', function() {
         return {
-            restrict:'A',
+            restrict: 'A',
             link: function(scope, element, attrs) {
-                element.datepicker({ dateFormat: 'yy-mm-dd' });
+                element.focus();
             }
-        }
+        };
+    });
+
+    directives.directive('controlButtons', function() {
+        return {
+            restrict: 'E',
+            templateUrl: '/resources/angularTemplates/admin/partials/form/controlButtons.html',
+            scope: {
+                formObj: '=',
+                cancelHandler: '='
+            },
+            link: function(scope, element, attrs) {
+                scope.cancel = function() {
+                    if(angular.isFunction(scope.cancelHandler)) {
+                        scope.cancelHandler();
+                    } else if(angular.isFunction(scope.$parent.cancel)) {
+                        scope.$parent.cancel();
+                    }
+                }
+            }
+        };
     });
 })();
