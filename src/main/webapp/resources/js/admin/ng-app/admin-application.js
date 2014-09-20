@@ -129,9 +129,7 @@
             return Math.floor((categorySeats / eventSeats + 0.00001) * 10000) / 100;
         };
 
-        $scope.event.ticketCategories = [];
-
-        $scope.addCategory = function() {
+        var createCategory = function(sticky) {
             var lastCategory = _.last($scope.event.ticketCategories);
             var inceptionDate = moment();
             if(angular.isDefined(lastCategory)) {
@@ -142,13 +140,24 @@
                     date: inceptionDate.toDate()
                 }, expiration: {
                     date: inceptionDate.add(1, 'days').toDate()
-                }
+                }, sticky: sticky
             };
             $scope.event.ticketCategories.push(category);
         };
 
+        $scope.event.ticketCategories = [];
+        createCategory(true);
+
+        $scope.addCategory = function() {
+            createCategory(false);
+        };
+
         $scope.canAddCategory = function(categories) {
-            return _.every(categories, function(category) {
+            var remaining = _.foldl(categories, function(difference, category) {
+                return difference - category.seats;
+            }, $scope.event.seats);
+
+            return remaining > 0 && _.every(categories, function(category) {
                 return angular.isDefined(category.name) &&
                     angular.isDefined(category.seats) &&
                     category.seats > 0 &&
