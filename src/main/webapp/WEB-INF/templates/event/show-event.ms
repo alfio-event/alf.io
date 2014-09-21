@@ -4,3 +4,8 @@
 
 
 <h2>Tickets</h2>
+<ul>
+{{#ticketCategories}}
+	<li>{{description}}, regular price is:  {{event.regularPrice}} {{event.currency}} (vat included: {{event.vatIncluded}}), apply {{discount}}% of discount</li>
+{{/ticketCategories}}
+</ul>

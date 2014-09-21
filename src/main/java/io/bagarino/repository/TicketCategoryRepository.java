@@ -21,10 +21,12 @@ import io.bagarino.datamapper.Bind;
 import io.bagarino.datamapper.Query;
 import io.bagarino.datamapper.QueryRepository;
 import io.bagarino.model.TicketCategory;
+
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 @QueryRepository
 public interface TicketCategoryRepository {
@@ -40,6 +42,10 @@ public interface TicketCategoryRepository {
 
     @Query("select * from ticket_category where id = :id")
     TicketCategory getById(@Bind("id") int id);
+    
+    @Query("select * from ticket_category inner join j_event_ticket_category on ticket_category_id = id " +
+           "where event_id = :eventId order by inception asc")
+    List<TicketCategory> findAllTicketCategories(@Bind("eventId") int eventId);
 
     @Query("update ticket_category set inception = :inception, expiration = :expiration, " +
             "max_tickets = :max_tickets, discount = :discount where id = :id")

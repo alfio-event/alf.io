@@ -1,6 +1,7 @@
 package io.bagarino.controller;
 
 import io.bagarino.repository.EventRepository;
+import io.bagarino.repository.TicketCategoryRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -13,10 +14,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 public class EventController {
 
 	private final EventRepository eventRepository;
+	private final TicketCategoryRepository ticketCategoryRepository;
 
 	@Autowired
-	public EventController(EventRepository eventRepository) {
+	public EventController(EventRepository eventRepository, TicketCategoryRepository ticketCategoryRepository) {
 		this.eventRepository = eventRepository;
+		this.ticketCategoryRepository = ticketCategoryRepository;
 	}
 
 	@RequestMapping(value = "/event/", method = RequestMethod.GET)
@@ -27,7 +30,11 @@ public class EventController {
 
 	@RequestMapping(value = "/event/{eventId}", method = RequestMethod.GET)
 	public String showEvent(@PathVariable("eventId") int eventId, Model model) {
-		model.addAttribute("event", eventRepository.findById(eventId));
+		
+		//TODO: for each ticket categories we should check if there are available tickets
+		
+		model.addAttribute("event", eventRepository.findById(eventId))//
+				.addAttribute("ticketCategories", ticketCategoryRepository.findAllTicketCategories(eventId));
 		return "/event/show-event";
 	}
 }
