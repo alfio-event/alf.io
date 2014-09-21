@@ -21,16 +21,22 @@ import io.bagarino.datamapper.Bind;
 import io.bagarino.datamapper.Query;
 import io.bagarino.datamapper.QueryRepository;
 import io.bagarino.model.Event;
+
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 @QueryRepository
 public interface EventRepository {
 
     @Query("select * from event where id = :eventId")
     Event findById(@Bind("eventId") int eventId);
+    
+    
+    @Query("select * from event order by start_ts asc")
+    List<Event> findAll();
 
     @Query("insert into event(description, short_name, owner, location, latitude, longitude, start_ts, end_ts, regular_price, currency, available_seats, vat_included, vat) " +
             "values(:description, :shortName, :owner, :location, :latitude, :longitude, :start_ts, :end_ts, :regular_price, :currency, :available_seats, :vat_included, :vat)")

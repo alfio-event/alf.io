@@ -25,6 +25,7 @@ import java.util.Date;
 @Getter
 public class Event {
     private final int id;
+    private final String shortName;
     private final String description;
     private final String location;
     private final String latitude;
@@ -39,6 +40,7 @@ public class Event {
 
 
     public Event(@Column("id") int id,
+                 @Column("short_name") String shortName,
                  @Column("description") String description,
                  @Column("location") String location,
                  @Column("latitude") String latitude,
@@ -51,6 +53,7 @@ public class Event {
                  @Column("vat_included") boolean vatIncluded,
                  @Column("vat") BigDecimal vat) {
         this.id = id;
+        this.shortName = shortName;
         this.description = description;
         this.location = location;
         this.latitude = latitude;

@@ -32,6 +32,7 @@ public class TicketCategoryModification {
     private final DateTimeModification expiration;
     private final String description;
     private final BigDecimal discount;
+    private final boolean sticky;
 
     @JsonCreator
     public TicketCategoryModification(@JsonProperty("id") Integer id,
@@ -40,7 +41,8 @@ public class TicketCategoryModification {
                                       @JsonProperty("inception") DateTimeModification inception,
                                       @JsonProperty("expiration") DateTimeModification expiration,
                                       @JsonProperty("description") String description,
-                                      @JsonProperty("discount") BigDecimal discount) {
+                                      @JsonProperty("discount") BigDecimal discount,
+                                      @JsonProperty("sticky") boolean sticky) {
         this.id = id;
         this.name = name;
         this.seats = seats;
@@ -48,5 +50,6 @@ public class TicketCategoryModification {
         this.expiration = expiration;
         this.description = description;
         this.discount = discount;
+        this.sticky = sticky;
     }
 }
