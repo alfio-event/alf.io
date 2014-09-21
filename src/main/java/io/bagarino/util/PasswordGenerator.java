@@ -23,6 +23,7 @@ public final class PasswordGenerator {
     }
 
     public static String generateRandomPassword() {
-        return Long.toHexString(UUID.randomUUID().getMostSignificantBits());
+        return "dev".equals(System.getProperty("spring.profiles.active")) ? "abcd" : 
+            Long.toHexString(UUID.randomUUID().getMostSignificantBits());
     }
 }
