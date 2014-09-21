@@ -30,11 +30,18 @@ public class EventController {
 
 	@RequestMapping(value = "/event/{eventId}", method = RequestMethod.GET)
 	public String showEvent(@PathVariable("eventId") int eventId, Model model) {
-		
-		//TODO: for each ticket categories we should check if there are available tickets
-		
+
+		// TODO: for each ticket categories we should check if there are available tickets
+
 		model.addAttribute("event", eventRepository.findById(eventId))//
 				.addAttribute("ticketCategories", ticketCategoryRepository.findAllTicketCategories(eventId));
 		return "/event/show-event";
+	}
+
+	@RequestMapping(value = "/event/{eventId}/reserve-tickets", method = RequestMethod.POST)
+	public void reserveTicket() {
+		// TODO: transactionally: check if there are enough ticket
+		// -> yes, reserve the correct amount (with a expiration obviously) of tickets and redirect to the payment
+		// -> no, show error page
 	}
 }
