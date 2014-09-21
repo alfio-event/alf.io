@@ -43,8 +43,8 @@
                     <label for="description">Event Description</label>
                     <textarea data-ng-model="event.description" name="description" id="description" required class="form-control" data-minlength="10"></textarea>
                 </div>
-                <date-time data-id-prefix="start" data-prefix="Start" data-model-object="event.start" data-row-class="row" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
-                <date-time data-id-prefix="end" data-prefix="End" data-model-object="event.end" data-row-class="row" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
+                <date-time data-id-prefix="start" data-prefix="Start" data-model-object="event.start" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
+                <date-time data-id-prefix="end" data-prefix="End" data-model-object="event.end" data-not-before="{{event.start.date}}" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
             </div>
             <div class="col-sm-12 col-md-6">
                 here the map
@@ -111,10 +111,10 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-12 col-md-4">
-                        <date-time data-id-prefix="{{$index}}-inception" data-prefix="Inception" data-model-object="ticketCategory.inception" data-row-class="row" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
+                        <date-time data-id-prefix="{{$index}}-inception" data-prefix="Initial sale" data-not-before="{{ticketCategory.notBefore}}" data-model-object="ticketCategory.inception" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
                     </div>
                     <div class="col-sm-12 col-md-4">
-                        <date-time data-id-prefix="{{$index}}-expiration" data-prefix="Expiration" data-model-object="ticketCategory.expiration" data-row-class="row" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
+                        <date-time data-id-prefix="{{$index}}-expiration" data-prefix="End sale" data-not-before="{{ticketCategory.inception.date}}" data-model-object="ticketCategory.expiration" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
                     </div>
 
                     <div class="col-sm-12 col-md-4">

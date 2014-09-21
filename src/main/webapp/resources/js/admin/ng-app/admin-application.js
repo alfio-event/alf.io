@@ -131,16 +131,22 @@
 
         var createCategory = function(sticky) {
             var lastCategory = _.last($scope.event.ticketCategories);
-            var inceptionDate = moment();
+            var inceptionDate, notBefore;
             if(angular.isDefined(lastCategory)) {
-                inceptionDate = moment(lastCategory.inception.date).add(1, 'days');
+                inceptionDate = moment(lastCategory.expiration.date).format('YYYY-MM-DD');
+                notBefore = inceptionDate;
+            } else {
+                inceptionDate = moment().format('YYYY-MM-DD');
+                notBefore = undefined;
             }
+
             var category = {
                 inception: {
-                    date: inceptionDate.toDate()
-                }, expiration: {
-                    date: inceptionDate.add(1, 'days').toDate()
-                }, sticky: sticky
+                    date: inceptionDate
+                },
+                expiration: {},
+                sticky: sticky,
+                notBefore: notBefore
             };
             $scope.event.ticketCategories.push(category);
         };

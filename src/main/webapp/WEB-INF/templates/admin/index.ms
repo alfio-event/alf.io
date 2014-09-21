@@ -11,11 +11,10 @@
     <link rel="stylesheet" href="/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
     <script src="/resources/bower_components/jquery/dist/jquery.js"></script>
     <script src="/resources/bower_components/lodash/dist/lodash.min.js"></script>
-    <script src="/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
+    <script src="/resources/bower_components/moment/min/moment-with-locales.js"></script>
     <script src="/resources/bower_components/angular/angular.min.js"></script>
     <script src="/resources/bower_components/angular-messages/angular-messages.min.js"></script>
-    <script src="/resources/bower_components/angular-bootstrap/ui-bootstrap.min.js"></script>
-    <script src="/resources/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+    <script src="/resources/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="/resources/bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
     <script src="/resources/js/admin/ng-app/admin-application.js"></script>
     <script src="/resources/js/admin/directive/admin-directive.js"></script>
