@@ -16,6 +16,7 @@
  */
 package io.bagarino.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import org.springframework.context.MessageSource;
@@ -155,6 +156,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JSR310Module());
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return mapper;
     }
 
