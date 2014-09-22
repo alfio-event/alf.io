@@ -18,6 +18,7 @@ package io.bagarino.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.bagarino.model.transaction.PaymentProxy;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -38,6 +39,7 @@ public class EventModification {
     private final int seats;
     private final BigDecimal vat;
     private final boolean vatIncluded;
+    private final List<PaymentProxy> paymentProxies;
     private final List<TicketCategoryModification> ticketCategories;
 
     @JsonCreator
@@ -53,6 +55,7 @@ public class EventModification {
                              @JsonProperty("seats") int seats,
                              @JsonProperty("vat") BigDecimal vat,
                              @JsonProperty("vatIncluded") boolean vatIncluded,
+                             @JsonProperty("paymentProxies") List<PaymentProxy> paymentProxies,
                              @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories) {
         this.id = id;
         this.shortName = shortName;
@@ -66,6 +69,7 @@ public class EventModification {
         this.seats = seats;
         this.vat = vat;
         this.vatIncluded = vatIncluded;
+        this.paymentProxies = paymentProxies;
         this.ticketCategories = ticketCategories;
     }
 }

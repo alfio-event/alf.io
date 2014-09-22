@@ -45,6 +45,10 @@
                 </div>
                 <date-time data-id-prefix="start" data-prefix="Start" data-model-object="event.start" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
                 <date-time data-id-prefix="end" data-prefix="End" data-model-object="event.end" data-not-before="{{event.start.date}}" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
+                <div class="form-group">
+                    <label for="paymentProxies">Accepted payment methods</label>
+                    <select data-ng-model="event.paymentProxies" multiple name="paymentProxies" id="paymentProxies" class="form-control" required data-ng-options="proxy.id as proxy.description for proxy in paymentProxies"></select>
+                </div>
             </div>
             <div class="col-sm-12 col-md-6">
                 here the map
@@ -129,6 +133,7 @@
                 </div>
             </div>
         </div>
+
         <div class="row">
             <div class="col-sm-11"><span class="text-right" data-ng-if="event.ticketCategories.length == 0">No ticket categories have been defined. Please add a new one by clicking here</span></div>
             <div class="col-sm-1"><button type="button" class="btn btn-success" data-ng-disabled="!canAddCategory(event.ticketCategories)" data-ng-click="addCategory()"><i class="fa fa-plus"></i></button></div>

@@ -23,6 +23,14 @@
         };
     });
 
+    baseServices.service('PaymentProxyService', function($http, HttpErrorHandler) {
+        return {
+            getAllProxies : function() {
+                return $http.get('/admin/api/paymentProxies.json').error(HttpErrorHandler.handle);
+            }
+        };
+    });
+
     baseServices.service("UserService", function($http, HttpErrorHandler) {
         return {
             getAllUsers : function() {

@@ -79,7 +79,8 @@ create table event(
   currency varchar(3) not null,
   available_seats integer not null,
   vat_included boolean not null,
-  vat decimal(5,2) not null
+  vat decimal(5,2) not null,
+  allowed_payment_proxies varchar(2048) not null
 );
 
 create table payment_proxy(

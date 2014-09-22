@@ -22,6 +22,7 @@ import io.bagarino.model.Event;
 import io.bagarino.model.modification.EventModification;
 import io.bagarino.model.modification.OrganizationModification;
 import io.bagarino.model.modification.UserModification;
+import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.model.user.Organization;
 import io.bagarino.model.user.User;
 import io.bagarino.util.ValidationResult;
@@ -30,6 +31,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -50,6 +52,12 @@ public class AdminApiController {
     @ResponseStatus(HttpStatus.OK)
     public List<Organization> getAllOrganizations(Principal principal) {
         return userManager.findUserOrganizations(principal.getName());
+    }
+
+    @RequestMapping(value = "/paymentProxies", method = RequestMethod.GET)
+    @ResponseStatus(HttpStatus.OK)
+    public List<PaymentProxy> getPaymentProxies() {
+        return Arrays.asList(PaymentProxy.values());
     }
 
     @RequestMapping(value = "/users", method = RequestMethod.GET)

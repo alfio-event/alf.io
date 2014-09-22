@@ -17,10 +17,14 @@
 package io.bagarino.model;
 
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import io.bagarino.model.transaction.PaymentProxy;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 public class Event {
@@ -37,6 +41,7 @@ public class Event {
     private final int availableSeats;
     private final boolean vatIncluded;
     private final BigDecimal vat;
+    private final List<PaymentProxy> allowedPaymentProxies;
 
 
     public Event(@Column("id") int id,
@@ -51,7 +56,8 @@ public class Event {
                  @Column("currency") String currency,
                  @Column("available_seats") int availableSeats,
                  @Column("vat_included") boolean vatIncluded,
-                 @Column("vat") BigDecimal vat) {
+                 @Column("vat") BigDecimal vat,
+                 @Column("allowed_payment_proxies") String allowedPaymentProxies) {
         this.id = id;
         this.shortName = shortName;
         this.description = description;
@@ -65,5 +71,8 @@ public class Event {
         this.availableSeats = availableSeats;
         this.vatIncluded = vatIncluded;
         this.vat = vat;
+        this.allowedPaymentProxies = Arrays.stream(allowedPaymentProxies.split(","))
+                .map(PaymentProxy::valueOf)
+                .collect(Collectors.toList());
     }
 }

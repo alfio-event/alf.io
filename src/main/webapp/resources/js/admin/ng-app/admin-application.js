@@ -3,7 +3,11 @@
 
     var BASE_TEMPLATE_URL = "/admin/partials";
     var BASE_STATIC_URL = "/resources/angularTemplates/admin/partials";
-
+    var PAYMENT_PROXY_DESCRIPTIONS = {
+        "STRIPE": "Credit card payments",
+        "PAYPAL": "PayPal account",
+        "ON_SITE": "On site (cash) payment"
+    };
     var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
@@ -115,7 +119,7 @@
 
     });
 
-    admin.controller('CreateEventController', function($scope, $state, $rootScope, $q, OrganizationService, EventService) {
+    admin.controller('CreateEventController', function($scope, $state, $rootScope, $q, OrganizationService, PaymentProxyService, EventService) {
         $scope.event = {
             start: {},
             end: {}
@@ -124,6 +128,15 @@
 
         OrganizationService.getAllOrganizations().success(function(result) {
             $scope.organizations = result;
+        });
+
+        PaymentProxyService.getAllProxies().success(function(result) {
+            $scope.paymentProxies = _.map(result, function(p) {
+                return {
+                    id: p,
+                    description: PAYMENT_PROXY_DESCRIPTIONS[p] || "Unknown provider ("+p+")  Please check configuration"
+                };
+            });
         });
 
         $scope.calculateTotalPrice = function(e) {

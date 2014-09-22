@@ -16,12 +16,19 @@
  */
 package io.bagarino.model.transaction;
 
-import lombok.Data;
+public enum PaymentProxy {
+    STRIPE("stripe.com"),
+    PAYPAL("PayPal"),
+    ON_SITE("on-site payment");
 
-@Data
-public class PaymentProxy {
+    private final String description;
 
-    private final String key;
-    private final String address;
-    private final String name;
+    private PaymentProxy(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
 }

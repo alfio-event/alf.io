@@ -21,6 +21,7 @@ import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
 import io.bagarino.model.modification.EventModification;
+import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.math.RoundingMode.HALF_UP;
+import static java.util.stream.Collectors.joining;
 
 @Component
 public class EventManager {
@@ -141,9 +143,13 @@ public class EventManager {
     }
 
     private int insertEvent(EventModification em) {
+        String paymentProxies = em.getPaymentProxies()
+                .stream()
+                .map(PaymentProxy::name)
+                .collect(joining(","));
         BigDecimal actualPrice = evaluatePrice(em.getPrice(), em.getVat(), em.isVatIncluded());
         return eventRepository.insert(em.getDescription(), em.getShortName(), em.getOrganizationId(), em.getLocation(),
                 "", "", em.getStart().toDate(), em.getEnd().toDate(), actualPrice,
-                em.getCurrency(), em.getSeats(), em.isVatIncluded(), em.getVat()).getValue();
+                em.getCurrency(), em.getSeats(), em.isVatIncluded(), em.getVat(), paymentProxies).getValue();
     }
 }
