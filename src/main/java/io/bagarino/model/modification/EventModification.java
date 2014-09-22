@@ -22,7 +22,9 @@ import io.bagarino.model.transaction.PaymentProxy;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Getter
 public class EventModification {
@@ -41,6 +43,7 @@ public class EventModification {
     private final boolean vatIncluded;
     private final List<PaymentProxy> paymentProxies;
     private final List<TicketCategoryModification> ticketCategories;
+    private final boolean freeOfCharge;
 
     @JsonCreator
     public EventModification(@JsonProperty("id") Integer id,
@@ -56,7 +59,8 @@ public class EventModification {
                              @JsonProperty("vat") BigDecimal vat,
                              @JsonProperty("vatIncluded") boolean vatIncluded,
                              @JsonProperty("paymentProxies") List<PaymentProxy> paymentProxies,
-                             @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories) {
+                             @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories,
+                             @JsonProperty("freeOfCharge") boolean freeOfCharge) {
         this.id = id;
         this.shortName = shortName;
         this.organizationId = organizationId;
@@ -69,7 +73,8 @@ public class EventModification {
         this.seats = seats;
         this.vat = vat;
         this.vatIncluded = vatIncluded;
-        this.paymentProxies = paymentProxies;
+        this.paymentProxies = Optional.ofNullable(paymentProxies).orElse(Collections.<PaymentProxy>emptyList());
         this.ticketCategories = ticketCategories;
+        this.freeOfCharge = freeOfCharge;
     }
 }

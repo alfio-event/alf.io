@@ -28,7 +28,8 @@ public class EventManagerTest {{
 
         final BigDecimal hundred = new BigDecimal("100.00");
         describe("EventManager", it -> {
-            it.should("deduct vat if included into event price", expect -> expect.that(EventManager.evaluatePrice(hundred, BigDecimal.TEN, true)).is(new BigDecimal("90.91")));
-            it.should("not deduct vat if not included into event price", expect -> expect.that(EventManager.evaluatePrice(hundred, BigDecimal.TEN, false)).is(hundred));
+            it.should("deduct vat if included into event price", expect -> expect.that(EventManager.evaluatePrice(hundred, BigDecimal.TEN, true, false)).is(new BigDecimal("90.91")));
+            it.should("not deduct vat if not included into event price", expect -> expect.that(EventManager.evaluatePrice(hundred, BigDecimal.TEN, false, false)).is(hundred));
+            it.should("return BigDecimal.ZERO if the event is free of charge", expect -> expect.that(EventManager.evaluatePrice(hundred, BigDecimal.TEN, false, true)).is(BigDecimal.ZERO));
         });
 }}

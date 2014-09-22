@@ -76,7 +76,7 @@ create table event(
 	start_ts timestamp not null,
 	end_ts timestamp not null,
   regular_price decimal(10,2) not null,
-  currency varchar(3) not null,
+  currency varchar(3),
   available_seats integer not null,
   vat_included boolean not null,
   vat decimal(5,2) not null,

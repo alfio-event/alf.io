@@ -45,10 +45,6 @@
                 </div>
                 <date-time data-id-prefix="start" data-prefix="Start" data-model-object="event.start" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
                 <date-time data-id-prefix="end" data-prefix="End" data-model-object="event.end" data-not-before="{{event.start.date}}" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
-                <div class="form-group">
-                    <label for="paymentProxies">Accepted payment methods</label>
-                    <select data-ng-model="event.paymentProxies" multiple name="paymentProxies" id="paymentProxies" class="form-control" required data-ng-options="proxy.id as proxy.description for proxy in paymentProxies"></select>
-                </div>
             </div>
             <div class="col-sm-12 col-md-6">
                 here the map
@@ -57,26 +53,36 @@
 
         <div class="page-header">
             <h2>Tickets</h2>
+            <div class="btn-group">
+                <label class="btn btn-primary" data-ng-model="event.freeOfCharge" data-btn-radio="false">Paid</label>
+                <label class="btn btn-primary" data-ng-model="event.freeOfCharge" data-btn-radio="true">Free</label>
+            </div>
+        </div>
+
+
+        <div class="form-group" data-ng-if="!event.freeOfCharge">
+            <label for="paymentProxies">Accepted payment methods</label>
+            <select data-ng-model="event.paymentProxies" multiple name="paymentProxies" id="paymentProxies" class="form-control" required data-ng-options="proxy.id as proxy.description for proxy in paymentProxies"></select>
         </div>
 
         <div class="row">
             <div class="col-sm-2">
-                <label for="price">Regular Price</label>
-                <input type="number" data-ng-model="event.price" name="price" id="price" class="form-control" required />
-            </div>
-            <div class="col-sm-2">
-                <label for="currency">Currency</label>
-                <input type="text" data-ng-model="event.currency" name="currency" id="currency" class="form-control" required />
-            </div>
-            <div class="col-sm-2">
                 <label for="seats">Available seats</label>
                 <input type="number" data-ng-model="event.seats" name="seats" id="seats" class="form-control" required />
             </div>
-            <div class="col-sm-2">
+            <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
+                <label for="price">Regular Price</label>
+                <input type="number" data-ng-model="event.price" name="price" id="price" class="form-control" required />
+            </div>
+            <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
+                <label for="currency">Currency</label>
+                <input type="text" data-ng-model="event.currency" name="currency" id="currency" class="form-control" required />
+            </div>
+            <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
                 <label for="vat">VAT (%)</label>
                 <input type="number" data-ng-model="event.vat" name="vat" id="vat" class="form-control" required />
             </div>
-            <div class="col-sm-4">
+            <div class="col-sm-4" data-ng-if="!event.freeOfCharge">
                 <label for="vatIncluded">VAT included</label>
                 <div class="input-group">
                     <span class="input-group-addon">
@@ -126,7 +132,7 @@
                         <date-time data-id-prefix="{{$index}}-expiration" data-prefix="End sale" data-not-before="{{ticketCategory.inception.date}}" data-model-object="ticketCategory.expiration" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
                     </div>
 
-                    <div class="col-sm-12 col-md-4">
+                    <div class="col-sm-12 col-md-4" data-ng-if="!event.freeOfCharge">
                         <label for="{{$index}}-discount">Applied Discount ({{ticketCategory.discount}}%)</label>
                         <input type="range" data-ng-model="ticketCategory.discount" name="{{$index}}-discount" id="{{$index}}-discount" class="form-control" required min="0" max="100" />
                     </div>

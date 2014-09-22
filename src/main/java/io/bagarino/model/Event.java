@@ -19,6 +19,7 @@ package io.bagarino.model;
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import io.bagarino.model.transaction.PaymentProxy;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -72,6 +73,7 @@ public class Event {
         this.vatIncluded = vatIncluded;
         this.vat = vat;
         this.allowedPaymentProxies = Arrays.stream(allowedPaymentProxies.split(","))
+                .filter(StringUtils::isNotBlank)
                 .map(PaymentProxy::valueOf)
                 .collect(Collectors.toList());
     }

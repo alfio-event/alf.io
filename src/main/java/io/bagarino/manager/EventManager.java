@@ -95,7 +95,10 @@ public class EventManager {
 
     }
 
-    private MapSqlParameterSource[] prepareBulkInsertParameters(int eventId, Date creation, Event event, BigDecimal regularPrice) {
+    private MapSqlParameterSource[] prepareBulkInsertParameters(int eventId,
+                                                                Date creation,
+                                                                Event event,
+                                                                BigDecimal regularPrice) {
         return eventTicketCategoryRepository.findByEventId(event.getId()).stream()
                     .map(etc -> ticketCategoryRepository.getById(etc.getTicketCategoryId()))
                     .flatMap(tc -> {
@@ -117,9 +120,10 @@ public class EventManager {
     }
 
     private void distributeSeats(EventModification em, int eventId) {
+        boolean freeOfCharge = em.isFreeOfCharge();
         em.getTicketCategories().stream().forEach(tc -> {
             final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toDate(),
-                    tc.getExpiration().toDate(), tc.getDescription(), tc.getSeats(), tc.getDiscount());
+                    tc.getExpiration().toDate(), tc.getDescription(), tc.getSeats(), freeOfCharge ? BigDecimal.ZERO : tc.getDiscount());
             eventTicketCategoryRepository.insert(eventId, category.getValue());
         });
         final List<TicketCategory> ticketCategories = eventTicketCategoryRepository.findByEventId(eventId).stream()
@@ -135,7 +139,10 @@ public class EventManager {
         }
     }
 
-    static BigDecimal evaluatePrice(BigDecimal price, BigDecimal vat, boolean vatIncluded) {
+    static BigDecimal evaluatePrice(BigDecimal price, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge) {
+        if(freeOfCharge) {
+            return BigDecimal.ZERO;
+        }
         if(!vatIncluded) {
             return price;
         }
@@ -147,9 +154,10 @@ public class EventManager {
                 .stream()
                 .map(PaymentProxy::name)
                 .collect(joining(","));
-        BigDecimal actualPrice = evaluatePrice(em.getPrice(), em.getVat(), em.isVatIncluded());
+        BigDecimal actualPrice = evaluatePrice(em.getPrice(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
+        BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
         return eventRepository.insert(em.getDescription(), em.getShortName(), em.getOrganizationId(), em.getLocation(),
                 "", "", em.getStart().toDate(), em.getEnd().toDate(), actualPrice,
-                em.getCurrency(), em.getSeats(), em.isVatIncluded(), em.getVat(), paymentProxies).getValue();
+                em.getCurrency(), em.getSeats(), em.isVatIncluded(), vat, paymentProxies).getValue();
     }
 }

@@ -121,6 +121,7 @@
 
     admin.controller('CreateEventController', function($scope, $state, $rootScope, $q, OrganizationService, PaymentProxyService, EventService) {
         $scope.event = {
+            freeOfCharge: false,
             start: {},
             end: {}
         };
