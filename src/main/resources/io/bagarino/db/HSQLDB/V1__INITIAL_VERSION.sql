@@ -171,3 +171,19 @@ create table configuration(
   c_value varchar(2048) not null,
   description varchar(2048)
 );
+
+INSERT INTO organization(name, description) VALUES ('demo', 'demo organization');
+
+insert into event(description, short_name, owner, location, latitude, longitude, start_ts, end_ts, regular_price, currency, available_seats, vat_included, vat, allowed_payment_proxies)
+  values('event desc', 'eventname', 0, 'demo location', '0', '0', '2015-01-10 00:00:00' , '2015-01-10 23:59:00' , 10, 'CHF', 440, 'true', 8, 'STRIPE');
+
+insert into j_event_organization(event_id, org_id) values(0, 0)
+
+insert into ticket_category(inception, expiration, name, description, max_tickets, discount)
+  values('2014-01-10 00:00:00', '2015-01-10 00:00:00', 'Normal', 'Very good category', 2, 0);
+
+insert into ticket (uuid, creation, category_id, event_id, status, original_price, paid_price)
+  values('abcdefghilmn', '2014-01-10 00:00:00', 0, 0, 'NEW', 180, 180);
+
+insert into ticket (uuid, creation, category_id, event_id, status, original_price, paid_price)
+  values('abcdefghilmo', '2014-01-10 00:00:00', 0, 0, 'NEW', 180, 180);
