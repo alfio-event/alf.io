@@ -16,11 +16,22 @@
  */
 package io.bagarino.controller;
 
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
+import io.bagarino.manager.EventManager;
+import io.bagarino.model.TicketReservation;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
+
+import java.util.List;
+
+import lombok.Data;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -28,11 +39,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @Controller
 public class EventController {
 
+	private final EventManager eventManager;
 	private final EventRepository eventRepository;
 	private final TicketCategoryRepository ticketCategoryRepository;
 
 	@Autowired
-	public EventController(EventRepository eventRepository, TicketCategoryRepository ticketCategoryRepository) {
+	public EventController(EventManager eventManager, EventRepository eventRepository,
+			TicketCategoryRepository ticketCategoryRepository) {
+		this.eventManager = eventManager;
 		this.eventRepository = eventRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 	}
@@ -54,9 +68,25 @@ public class EventController {
 	}
 
 	@RequestMapping(value = "/event/{eventId}/reserve-tickets", method = RequestMethod.POST)
-	public void reserveTicket() {
-		// TODO: transactionally: check if there are enough ticket
-		// -> yes, reserve the correct amount (with a expiration obviously) of tickets and redirect to the payment
-		// -> no, show error page
+	public String reserveTicket(@PathVariable("eventId") int eventId, @ModelAttribute ReservationForm reservation) {
+		//TODO handle error cases :D
+		String reservationIdentifier = eventManager.createTicketReservation(eventId, reservation.selected());
+		return "redirect:/event/" + eventId + "/reservation/" + reservationIdentifier;
+	}
+	
+	@RequestMapping(value = "/event/{eventId}/reservation/{reservationId}", method = RequestMethod.GET)
+	public String showReservationPage(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId) {
+		return "/event/reservation-page";
+	}
+
+	@Data
+	public static class ReservationForm {
+		List<TicketReservation> reservation;
+
+		private List<TicketReservation> selected() {
+			return ofNullable(reservation).orElse(emptyList()).stream()
+					.filter((e) -> e!= null && e.getAmount() != null && e.getTicketCategoryId() != null && e.getAmount() > 0)
+					.collect(toList());
+		}
 	}
 }

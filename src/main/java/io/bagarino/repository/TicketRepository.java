@@ -16,9 +16,13 @@
  */
 package io.bagarino.repository;
 
+import io.bagarino.datamapper.Bind;
 import io.bagarino.datamapper.Query;
 import io.bagarino.datamapper.QueryRepository;
 import io.bagarino.datamapper.QueryType;
+
+import java.util.Date;
+import java.util.List;
 
 @QueryRepository
 public interface TicketRepository {
@@ -26,4 +30,17 @@ public interface TicketRepository {
     @Query(type = QueryType.TEMPLATE, value = "insert into ticket (uuid, creation, category_id, event_id, status, original_price, paid_price)" +
             "values(:uuid, :creation, :categoryId, :eventId, :status, :originalPrice, :paidPrice)")
     String bulkTicketInitialization();
+    
+    
+    @Query("select id from ticket where  category_id = :categoryId and event_id = :eventId and transaction_id is null limit :amount for update")
+    List<Integer> selectTicketInCategoryForUpdate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId, @Bind("amount") int amount);
+    
+    @Query("update ticket set transaction_id = :transactionId where id in (:reservedForUpdate)")
+    int reserveTickets(@Bind("transactionId") String transactionId, @Bind("reservedForUpdate") List<Integer> reservedForUpdate);
+    
+    @Query("insert into tickets_transaction(id, validity) values (:id, :validity)")
+	int createNewTransaction(@Bind("id") String id, @Bind("validity") Date validity);
+
+
+	
 }

@@ -61,6 +61,7 @@ create table ticket_category (
 	inception timestamp not null, 
 	expiration timestamp not null,
 	max_tickets integer not null,
+	name varchar(255) not null,
   description varchar(1024),
   discount decimal(5,2) not null
 );
@@ -90,31 +91,28 @@ create table payment_proxy(
 	name varchar(255) not null
 );
 
-create table transaction(
-	id integer identity not null, 
-	payment_proxy_id integer not null, 
-	"timestamp" timestamp not null, 
-	source_ip varchar(255) not null, 
-	customer_id integer not null
+create table tickets_transaction(
+	id varchar(255) primary key not null,
+	validity timestamp not null
 );
 -- constraints
-alter table transaction add foreign key(customer_id) references customer(id);
 
 create table ticket (
 	id integer identity not null,
-  uuid varchar(255) not null,
+    uuid varchar(255) not null,
 	creation timestamp not null, 
 	category_id integer not null, 
 	event_id integer not null, 
 	status varchar(255) not null, 
 	original_price decimal(10,2) not null,
 	paid_price decimal(10,2) not null,
-	transaction_id integer
+	transaction_id varchar(255)
 );
 -- constraints
+alter table ticket add constraint "unique_ticket_uuid" unique(uuid);
 alter table ticket add foreign key(category_id) references ticket_category(id);
 alter table ticket add foreign key(event_id) references event(id);
-alter table ticket add foreign key(transaction_id) references transaction(id);
+alter table ticket add foreign key(transaction_id) references tickets_transaction(id);
 
 create table waiting_queue(
 	id integer identity not null, 

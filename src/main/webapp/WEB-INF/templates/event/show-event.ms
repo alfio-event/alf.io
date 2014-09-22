@@ -9,7 +9,9 @@
 	<ul>
 	{{#ticketCategories}}
 		<li>
-			{{description}}, regular price is:  {{event.regularPrice}} {{event.currency}} (vat included: {{event.vatIncluded}}), apply {{discount}}% of discount : <input name="amount[{{id}}]" type="text">
+			{{name}}, regular price is:  {{event.regularPrice}} {{event.currency}} (vat included: {{event.vatIncluded}}), apply {{discount}}% of discount : 
+			<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
+			<input name="reservation[{{-index}}].amount" type="text">
 		</li>
 	{{/ticketCategories}}
 	</ul>

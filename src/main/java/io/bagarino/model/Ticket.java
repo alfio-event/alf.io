@@ -37,7 +37,7 @@ public class Ticket {
     private final TicketStatus status;
     private final BigDecimal originalPrice;
     private final BigDecimal paidPrice;
-    private final Integer transactionId;
+    private final String transactionId;
 
     public Ticket(@Column("id") int id,
                   @Column("uuid") String uuid,
@@ -47,7 +47,7 @@ public class Ticket {
                   @Column("event_id") int eventId,
                   @Column("original_price") BigDecimal originalPrice,
                   @Column("paid_price") BigDecimal paidPrice,
-                  @Column("transaction_id") Integer transactionId) {
+                  @Column("transaction_id") String transactionId) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
