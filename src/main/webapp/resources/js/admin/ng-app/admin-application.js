@@ -63,6 +63,15 @@
         return deferred.promise;
     };
 
+    var calcPercentage = function(fraction, total) {
+        return Math.floor((fraction / total + 0.00001) * 10000) / 100;
+    };
+
+    var applyPercentage = function(total, percentage) {
+        var actualPercentage = percentage / 100.0;
+        return Math.floor((total * actualPercentage + 0.00001) * 100) / 100;
+    };
+
     admin.controller('CreateOrganizationController', function($scope, $state, $rootScope, $q, OrganizationService) {
         $scope.organization = {};
         $scope.save = function(form, organization) {
@@ -117,6 +126,17 @@
             $scope.organizations = result;
         });
 
+        $scope.calculateTotalPrice = function(e) {
+            if(isNaN(e.price) || isNaN(e.vat)) {
+                return "0.00";
+            }
+            var vat = 0.0;
+            if(!e.vatIncluded) {
+                vat = applyPercentage(e.price, e.vat);
+            }
+            return e.price + vat;
+        };
+
         $scope.evaluateBarType = function(index) {
             var barClasses = ['danger', 'warning', 'info', 'success'];
             if(index < barClasses.length) {
@@ -126,7 +146,7 @@
         };
 
         $scope.calcBarValue = function(categorySeats, eventSeats) {
-            return Math.floor((categorySeats / eventSeats + 0.00001) * 10000) / 100;
+            return calcPercentage(categorySeats, eventSeats);
         };
 
         var createCategory = function(sticky) {

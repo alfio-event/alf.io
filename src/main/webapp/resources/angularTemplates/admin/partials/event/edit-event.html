@@ -72,9 +72,14 @@
                 <label for="vat">VAT (%)</label>
                 <input type="number" data-ng-model="event.vat" name="vat" id="vat" class="form-control" required />
             </div>
-            <div class="col-sm-2">
+            <div class="col-sm-4">
                 <label for="vatIncluded">VAT included</label>
-                <input type="checkbox" data-ng-model="event.vatIncluded" name="vatIncluded" id="vatIncluded" />
+                <div class="input-group">
+                    <span class="input-group-addon">
+                        <input type="checkbox" data-ng-model="event.vatIncluded" name="vatIncluded" id="vatIncluded">
+                    </span>
+                    <span class="form-control text-muted">Price VAT included: {{calculateTotalPrice(event) | currency : (event.currency || "")}}</span>
+                </div>
             </div>
         </div>
 
