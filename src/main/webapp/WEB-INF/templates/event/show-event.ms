@@ -5,6 +5,8 @@
 
 <h2>Tickets</h2>
 
+
+
 <form method="post" action="reserve-tickets">
 	<ul>
 	{{#ticketCategories}}
@@ -17,4 +19,6 @@
 	</ul>
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 	<button type="submit">Continue</button>
+
+
 </form>

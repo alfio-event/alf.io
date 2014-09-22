@@ -20,6 +20,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import io.bagarino.manager.EventManager;
+import io.bagarino.manager.StripeManager;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
@@ -31,10 +32,7 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 public class EventController {
@@ -42,13 +40,15 @@ public class EventController {
 	private final EventManager eventManager;
 	private final EventRepository eventRepository;
 	private final TicketCategoryRepository ticketCategoryRepository;
+    private final StripeManager stripeManager;
 
 	@Autowired
 	public EventController(EventManager eventManager, EventRepository eventRepository,
-			TicketCategoryRepository ticketCategoryRepository) {
+			TicketCategoryRepository ticketCategoryRepository, StripeManager stripeManager) {
 		this.eventManager = eventManager;
 		this.eventRepository = eventRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
+        this.stripeManager = stripeManager;
 	}
 
 	@RequestMapping(value = "/event/", method = RequestMethod.GET)
@@ -73,13 +73,26 @@ public class EventController {
 		String reservationIdentifier = eventManager.createTicketReservation(eventId, reservation.selected());
 		return "redirect:/event/" + eventId + "/reservation/" + reservationIdentifier;
 	}
-	
-	@RequestMapping(value = "/event/{eventId}/reservation/{reservationId}", method = RequestMethod.GET)
-	public String showReservationPage(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId) {
-		return "/event/reservation-page";
+
+
+
+    @RequestMapping(value = "/event/{eventId}/reservation/{reservationId}", method = RequestMethod.GET)
+	public String showReservationPage(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId, Model model) {
+        model.addAttribute("event", eventRepository.findById(eventId));
+        model.addAttribute("reservationId", reservationId);
+        return "/event/reservation-page";
 	}
 
-	@Data
+    @RequestMapping(value = "/event/{eventId}/reservation/pay-tickets", method = RequestMethod.POST)
+    public String payTickets(@PathVariable("eventId") int eventId, @RequestParam("stripeEmail") String customerEmail,
+                             @RequestParam("stripeToken") String stripeToken, @RequestParam("reservationId") String reservationId, Model model) {
+        stripeManager.chargeCreditCard(stripeToken);
+        model.addAttribute("event", eventRepository.findById(eventId));//
+        model.addAttribute("customerEmail", customerEmail);
+        return "/event/show-paid-event";
+    }
+
+    @Data
 	public static class ReservationForm {
 		List<TicketReservation> reservation;
 

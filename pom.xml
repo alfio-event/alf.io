@@ -18,6 +18,7 @@
         <spring-security-config.version>3.2.4.RELEASE</spring-security-config.version>
         <org.apache.logging.log4j.version>2.0.1</org.apache.logging.log4j.version>
         <jackson.version>2.4.0</jackson.version>
+        <stripe.version>1.18.0</stripe.version>
     </properties>
 
 	<dependencies>
@@ -129,6 +130,11 @@
 			<artifactId>log4j-jcl</artifactId>
 			<version>${org.apache.logging.log4j.version}</version>
 		</dependency>
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>${stripe.version}</version>
+        </dependency>
 		<!-- <dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j-impl</artifactId>

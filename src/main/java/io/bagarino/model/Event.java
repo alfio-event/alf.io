@@ -77,4 +77,8 @@ public class Event {
                 .map(PaymentProxy::valueOf)
                 .collect(Collectors.toList());
     }
+
+    public Long getRegularPriceInCents(){
+        return regularPrice.multiply(new BigDecimal(100)).longValue();
+    }
 }
