@@ -68,12 +68,14 @@
     };
 
     var calcPercentage = function(fraction, total) {
-        return Math.floor((fraction / total + 0.00001) * 10000) / 100;
+        if(isNaN(fraction) || isNaN(total)){
+            return numeral(0.0);
+        }
+        return numeral(fraction).divide(total).multiply(100);
     };
 
     var applyPercentage = function(total, percentage) {
-        var actualPercentage = percentage / 100.0;
-        return Math.floor((total * actualPercentage + 0.00001) * 100) / 100;
+        return numeral(percentage).divide(100).multiply(total);
     };
 
     admin.controller('CreateOrganizationController', function($scope, $state, $rootScope, $q, OrganizationService) {
@@ -140,15 +142,25 @@
             });
         });
 
+        var calculateNetPrice = function(event) {
+            if(isNaN(event.price) || isNaN(event.vat)) {
+                return numeral(0.0);
+            }
+            if(!event.vatIncluded) {
+                return event.price;
+            }
+            return numeral(event.price).divide(numeral(1).add(numeral(event.vat).divide(100)));
+        };
+
         $scope.calculateTotalPrice = function(e) {
             if(isNaN(e.price) || isNaN(e.vat)) {
                 return "0.00";
             }
-            var vat = 0.0;
+            var vat = numeral(0.0);
             if(!e.vatIncluded) {
                 vat = applyPercentage(e.price, e.vat);
             }
-            return e.price + vat;
+            return vat.add(e.price).value();
         };
 
         $scope.evaluateBarType = function(index) {
@@ -160,7 +172,20 @@
         };
 
         $scope.calcBarValue = function(categorySeats, eventSeats) {
-            return calcPercentage(categorySeats, eventSeats);
+            return calcPercentage(categorySeats, eventSeats).format('0.00');
+        };
+
+        $scope.calcCategoryPrice = function(category, event) {
+            if(isNaN(event.price) || isNaN(category.discount)) {
+                return '0.00';
+            }
+            var netPrice = calculateNetPrice(event);
+            var result = netPrice.subtract(applyPercentage(netPrice, category.discount));
+            if(event.vatIncluded) {
+                return result.add(applyPercentage(result, event.vat)).format('0.00');
+            }
+            return result.format('0.00');
+
         };
 
         var createCategory = function(sticky) {

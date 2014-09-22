@@ -133,7 +133,7 @@
                     </div>
 
                     <div class="col-sm-12 col-md-4" data-ng-if="!event.freeOfCharge">
-                        <label for="{{$index}}-discount">Applied Discount ({{ticketCategory.discount}}%)</label>
+                        <label for="{{$index}}-discount">Applied Discount <span data-ng-if="ticketCategory.discount">({{ticketCategory.discount}}%  - Price: {{calcCategoryPrice(ticketCategory, event) | currency : (event.currency || "")}})</span></label>
                         <input type="range" data-ng-model="ticketCategory.discount" name="{{$index}}-discount" id="{{$index}}-discount" class="form-control" required min="0" max="100" />
                     </div>
                 </div>
