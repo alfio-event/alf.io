@@ -3,6 +3,8 @@ bagarino
 
 bagarino.io
 
+[![Build Status](https://travis-ci.org/exteso/bagarino.png?branch=master)](https://travis-ci.org/exteso/bagarino)
+
 read the [Requirements](https://github.com/exteso/bagarino/wiki/Requirements)
 
 ## Run with jetty
