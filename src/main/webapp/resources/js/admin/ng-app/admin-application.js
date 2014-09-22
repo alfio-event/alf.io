@@ -147,7 +147,7 @@
                 return numeral(0.0);
             }
             if(!event.vatIncluded) {
-                return event.price;
+                return numeral(event.price);
             }
             return numeral(event.price).divide(numeral(1).add(numeral(event.vat).divide(100)));
         };
