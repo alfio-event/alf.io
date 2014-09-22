@@ -1,0 +1,10 @@
+language: java
+
+jdk:
+  - oraclejdk8
+  
+notifications:
+  email:
+    recipients:
+      - sylvain.jermini@syjer.com
+      - celestino.bellone@gmail.com
