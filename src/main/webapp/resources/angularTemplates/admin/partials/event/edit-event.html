@@ -32,7 +32,7 @@
             <div class="col-sm-12 col-md-6">
                 <div class="form-group">
                     <label for="shortName">Name</label>
-                    <input type="text" data-ng-model="event.shortName" name="shortName" data-grab-focus id="shortName" class="form-control" required />
+                    <input type="text" data-ng-model="event.shortName" name="shortName" data-grab-focus id="shortName" class="form-control" required pattern="^[A-Za-z0-9]{2,}$"/>
 
                     <label for="organizationId">Owner Organization</label>
                     <select data-ng-model="event.organizationId" name="organizationId" id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>
