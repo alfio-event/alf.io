@@ -84,6 +84,8 @@ create table event(
   allowed_payment_proxies varchar(2048) not null
 );
 
+alter table event add constraint "unique_event_name" unique(short_name);
+
 create table payment_proxy(
 	id integer identity not null, 
 	key varchar(255) not null, 
