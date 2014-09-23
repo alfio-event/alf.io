@@ -26,7 +26,8 @@ import java.util.List;
 @QueryRepository
 public interface TicketRepository {
 
-    @Query(type = QueryType.TEMPLATE, value = "insert into ticket (uuid, creation, category_id, event_id, status, original_price, paid_price)" + "values(:uuid, :creation, :categoryId, :eventId, :status, :originalPrice, :paidPrice)")
+	@Query(type = QueryType.TEMPLATE, value = "insert into ticket (uuid, creation, category_id, event_id, status, original_price, paid_price)"
+			+ "values(:uuid, :creation, :categoryId, :eventId, :status, :originalPrice, :paidPrice)")
 	String bulkTicketInitialization();
 
 	@Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null limit :amount for update")
@@ -36,7 +37,11 @@ public interface TicketRepository {
 	@Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING' where id in (:reservedForUpdate)")
 	int reserveTickets(@Bind("reservationId") String reservationId,
 			@Bind("reservedForUpdate") List<Integer> reservedForUpdate);
-	
+
 	@Query("update ticket set status = :status where tickets_reservation_id = :reservationId")
 	int updateTicketStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
+
+	@Query("update ticket set status = 'FREE', tickets_reservation_id = null where status = 'PENDING' "
+			+ " and tickets_reservation_id in (:reservationIds)")
+	int freeFromReservation(@Bind("reservationIds") List<String> reservationIds);
 }

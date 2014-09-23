@@ -16,22 +16,29 @@
  */
 package io.bagarino.repository;
 
-import java.util.Date;
-
 import io.bagarino.datamapper.Bind;
 import io.bagarino.datamapper.Query;
 import io.bagarino.datamapper.QueryRepository;
 import io.bagarino.model.TicketReservation;
+
+import java.util.Date;
+import java.util.List;
 
 @QueryRepository
 public interface TicketReservationRepository {
 
 	@Query("insert into tickets_reservation(id, validity, status) values (:id, :validity, 'PENDING')")
 	int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity);
-	
+
 	@Query("update tickets_reservation set status = :status where id = :reservationId")
 	int updateTicketReservationStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
 
 	@Query("select * from tickets_reservation where id = :id")
 	TicketReservation findReservationById(@Bind("id") String id);
+
+	@Query("select id from tickets_reservation where validity < :date and status = 'PENDING'")
+	List<String> findExpiredReservation(@Bind("date") Date date);
+
+	@Query("delete from tickets_reservation where id in (:ids)")
+	int remove(@Bind("ids") List<String> ids);
 }

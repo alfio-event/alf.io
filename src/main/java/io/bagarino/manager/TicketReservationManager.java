@@ -59,11 +59,21 @@ public class TicketReservationManager {
     	return transactionId;
     }
 
-    @Transactional
 	public void completeReservation(int eventId, String reservationId, String customerEmail) {
 		int updatedTickets = ticketRepository.updateTicketStatus(reservationId, TicketStatus.ACQUIRED.toString());
 		Validate.isTrue(updatedTickets > 0);
 		int updatedReservation = ticketReservationRepository.updateTicketReservationStatus(reservationId, TicketReservationStatus.COMPLETE.toString());
 		Validate.isTrue(updatedReservation == 1);
+	}
+
+
+	public void cleanupExpiredPendingReservation(Date expirationDate) {
+		List<String> expired = ticketReservationRepository.findExpiredReservation(expirationDate);
+		if(expired.isEmpty()) {
+			return;
+		}
+		
+		ticketRepository.freeFromReservation(expired);
+		ticketReservationRepository.remove(expired);
 	}
 }

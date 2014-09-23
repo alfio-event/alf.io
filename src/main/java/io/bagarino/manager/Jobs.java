@@ -16,7 +16,7 @@
  */
 package io.bagarino.manager;
 
-import io.bagarino.repository.TicketRepository;
+import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,16 +26,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class Jobs {
 
-	private final TicketRepository ticketRepository;
+	private final TicketReservationManager ticketReservationManager;
 
 	@Autowired
-	public Jobs(TicketRepository ticketRepository) {
-		this.ticketRepository = ticketRepository;
+	public Jobs(TicketReservationManager ticketReservationManager) {
+		this.ticketReservationManager = ticketReservationManager;
 	}
 
 	@Scheduled(initialDelay = 1000 * 60, fixedDelay = 1000 * 30)
 	@Transactional
 	public void cleanupExpiredPendingReservation() {
-		//FIXME
+		ticketReservationManager.cleanupExpiredPendingReservation(new Date());
 	}
 }

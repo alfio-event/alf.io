@@ -104,7 +104,9 @@ public class EventController {
 		Validate.isTrue(reservation.selectionCount() > 0);
 			
 		//TODO handle error cases :D
-		String reservationId = tickReservationManager.createTicketReservation(eventId, reservation.selected(), DateUtils.addMinutes(new Date(), 25));
+		//TODO: 25 minutes should be configurable
+		Date expiration = DateUtils.addMinutes(new Date(), 25);
+		String reservationId = tickReservationManager.createTicketReservation(eventId, reservation.selected(), expiration);
 		return "redirect:/event/" + eventId + "/reservation/" + reservationId;
 	}
 
