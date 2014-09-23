@@ -19,15 +19,15 @@ package io.bagarino.controller;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
-import io.bagarino.manager.EventManager;
 import io.bagarino.manager.StripeManager;
+import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.model.Event;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
-import io.bagarino.repository.TicketRepository;
+import io.bagarino.repository.TicketReservationRepository;
 
 import java.util.Date;
 import java.util.List;
@@ -53,19 +53,20 @@ import com.stripe.exception.StripeException;
 @Controller
 public class EventController {
 
-    private final EventManager eventManager;
     private final EventRepository eventRepository;
-    private final TicketRepository ticketRepository;
+    private final TicketReservationManager tickReservationManager;
+    private final TicketReservationRepository ticketReservationRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final StripeManager stripeManager;
 
 	@Autowired
-	public EventController(EventManager eventManager, EventRepository eventRepository,
-			TicketRepository ticketRepository,
+	public EventController(EventRepository eventRepository,
+			TicketReservationManager tickReservationManager,
+			TicketReservationRepository ticketReservationRepository,
 			TicketCategoryRepository ticketCategoryRepository, StripeManager stripeManager) {
-		this.eventManager = eventManager;
 		this.eventRepository = eventRepository;
-		this.ticketRepository = ticketRepository;
+		this.tickReservationManager = tickReservationManager;
+		this.ticketReservationRepository = ticketReservationRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
         this.stripeManager = stripeManager;
 	}
@@ -103,7 +104,7 @@ public class EventController {
 		Validate.isTrue(reservation.selectionCount() > 0);
 			
 		//TODO handle error cases :D
-		String reservationId = eventManager.createTicketReservation(eventId, reservation.selected(), DateUtils.addMinutes(new Date(), 25));
+		String reservationId = tickReservationManager.createTicketReservation(eventId, reservation.selected(), DateUtils.addMinutes(new Date(), 25));
 		return "redirect:/event/" + eventId + "/reservation/" + reservationId;
 	}
 
@@ -116,7 +117,7 @@ public class EventController {
     		return "redirect:/event/";
     	}
 
-    	Optional<TicketReservation> reservation = optionally(() -> ticketRepository.findReservationById(reservationId));
+    	Optional<TicketReservation> reservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId));
     	
     	if(!reservation.isPresent()) {
     		model.addAttribute("reservationId", reservationId);
@@ -138,7 +139,7 @@ public class EventController {
     		return "redirect:/event/";
     	}
     	
-    	if(!optionally(() -> ticketRepository.findReservationById(reservationId)).isPresent()) {
+    	if(!optionally(() -> ticketReservationRepository.findReservationById(reservationId)).isPresent()) {
     		model.addAttribute("reservationId", reservationId);
     		return "/event/reservation-page-not-found";
     	}
@@ -149,7 +150,7 @@ public class EventController {
         
         
         // we can enter here only if the reservation is done correctly
-        eventManager.completeReservation(eventId, reservationId, customerEmail);
+        tickReservationManager.completeReservation(eventId, reservationId, customerEmail);
         //
 
         return "redirect:/event/" + eventId + "/reservation/" + reservationId;

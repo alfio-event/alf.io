@@ -20,9 +20,7 @@ import io.bagarino.datamapper.Bind;
 import io.bagarino.datamapper.Query;
 import io.bagarino.datamapper.QueryRepository;
 import io.bagarino.datamapper.QueryType;
-import io.bagarino.model.TicketReservation;
 
-import java.util.Date;
 import java.util.List;
 
 @QueryRepository
@@ -41,13 +39,4 @@ public interface TicketRepository {
 	
 	@Query("update ticket set status = :status where tickets_reservation_id = :reservationId")
 	int updateTicketStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
-	
-	@Query("insert into tickets_reservation(id, validity, status) values (:id, :validity, 'PENDING')")
-	int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity);
-	
-	@Query("update tickets_reservation set status = :status where id = :reservationId")
-	int updateTicketReservationStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
-
-	@Query("select * from tickets_reservation where id = :id")
-	TicketReservation findReservationById(@Bind("id") String id);
 }
