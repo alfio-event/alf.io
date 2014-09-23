@@ -21,6 +21,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import io.bagarino.manager.EventManager;
 import io.bagarino.manager.StripeManager;
+import io.bagarino.model.Event;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
@@ -30,12 +31,15 @@ import io.bagarino.repository.TicketRepository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import lombok.Data;
 
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -76,18 +80,29 @@ public class EventController {
 	public String showEvent(@PathVariable("eventId") int eventId, Model model) {
 
 		// TODO: for each ticket categories we should check if there are available tickets
+		
+		Optional<Event> event = optionally(() -> eventRepository.findById(eventId));
 
-		model.addAttribute("event", eventRepository.findById(eventId))//
+		if(event.isPresent()) {
+			model.addAttribute("event", event.get())//
 				.addAttribute("ticketCategories", ticketCategoryRepository.findAllTicketCategories(eventId));
-		return "/event/show-event";
+			return "/event/show-event";
+		} else {
+			return "redirect:/event/";
+		}
 	}
 
 	@RequestMapping(value = "/event/{eventId}/reserve-tickets", method = RequestMethod.POST)
 	public String reserveTicket(@PathVariable("eventId") int eventId, @ModelAttribute ReservationForm reservation) {
-		//TODO handle error cases :D
 		
+		if(!optionally(() -> eventRepository.findById(eventId)).isPresent()) {
+    		return "redirect:/event/";
+    	}
+		
+
 		Validate.isTrue(reservation.selectionCount() > 0);
-		
+			
+		//TODO handle error cases :D
 		String reservationId = eventManager.createTicketReservation(eventId, reservation.selected(), DateUtils.addMinutes(new Date(), 25));
 		return "redirect:/event/" + eventId + "/reservation/" + reservationId;
 	}
@@ -96,10 +111,17 @@ public class EventController {
 
     @RequestMapping(value = "/event/{eventId}/reservation/{reservationId}", method = RequestMethod.GET)
 	public String showReservationPage(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId, Model model) {
+    	 
+    	if(!optionally(() -> eventRepository.findById(eventId)).isPresent()) {
+    		return "redirect:/event/";
+    	}
+
+    	Optional<TicketReservation> reservation = optionally(() -> ticketRepository.findReservationById(reservationId));
     	
-    	TicketReservation reservation = ticketRepository.findReservationById(reservationId);
-    	
-    	if(reservation.getStatus() == TicketReservationStatus.PENDING) {
+    	if(!reservation.isPresent()) {
+    		model.addAttribute("reservationId", reservationId);
+    		return "/event/reservation-page-not-found";
+    	} else if(reservation.get().getStatus() == TicketReservationStatus.PENDING) {
     		model.addAttribute("event", eventRepository.findById(eventId));
     		model.addAttribute("reservationId", reservationId);
     		return "/event/reservation-page";
@@ -111,6 +133,15 @@ public class EventController {
     @RequestMapping(value = "/event/{eventId}/reservation/{reservationId}", method = RequestMethod.POST)
     public String handleReservation(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId, @RequestParam("stripeEmail") String customerEmail,
                                     @RequestParam("stripeToken") String stripeToken, Model model) throws StripeException {
+    	
+    	if(!optionally(() -> eventRepository.findById(eventId)).isPresent()) {
+    		return "redirect:/event/";
+    	}
+    	
+    	if(!optionally(() -> ticketRepository.findReservationById(reservationId)).isPresent()) {
+    		model.addAttribute("reservationId", reservationId);
+    		return "/event/reservation-page-not-found";
+    	}
     	
     	// TODO handle error/other payment methods
         stripeManager.chargeCreditCard(stripeToken);
@@ -138,4 +169,12 @@ public class EventController {
 			return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
 		}
 	}
+    
+    private <T> Optional<T> optionally(Supplier<T> s) {
+    	 try {
+    		 return Optional.of(s.get());
+    	 } catch(EmptyResultDataAccessException e) {
+    		 return Optional.empty();
+    	 }
+    }
 }
