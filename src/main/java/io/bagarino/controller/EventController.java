@@ -44,6 +44,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.stripe.exception.StripeException;
+
 @Controller
 public class EventController {
 
@@ -108,7 +110,7 @@ public class EventController {
 
     @RequestMapping(value = "/event/{eventId}/reservation/{reservationId}", method = RequestMethod.POST)
     public String payTickets(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId, @RequestParam("stripeEmail") String customerEmail,
-                             @RequestParam("stripeToken") String stripeToken, Model model) {
+                             @RequestParam("stripeToken") String stripeToken, Model model) throws StripeException {
     	
     	// TODO handle error/other payment methods
         stripeManager.chargeCreditCard(stripeToken);
