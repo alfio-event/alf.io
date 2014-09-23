@@ -93,9 +93,10 @@ create table payment_proxy(
 	name varchar(255) not null
 );
 
-create table tickets_transaction(
+create table tickets_reservation(
 	id varchar(255) primary key not null,
-	validity timestamp not null
+	validity timestamp not null,
+	status varchar(255) not null
 );
 -- constraints
 
@@ -108,13 +109,13 @@ create table ticket (
 	status varchar(255) not null, 
 	original_price decimal(10,2) not null,
 	paid_price decimal(10,2) not null,
-	transaction_id varchar(255)
+	tickets_reservation_id varchar(255)
 );
 -- constraints
 alter table ticket add constraint "unique_ticket_uuid" unique(uuid);
 alter table ticket add foreign key(category_id) references ticket_category(id);
 alter table ticket add foreign key(event_id) references event(id);
-alter table ticket add foreign key(transaction_id) references tickets_transaction(id);
+alter table ticket add foreign key(tickets_reservation_id) references tickets_reservation(id);
 
 create table waiting_queue(
 	id integer identity not null, 

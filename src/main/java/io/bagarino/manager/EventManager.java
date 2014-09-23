@@ -20,8 +20,10 @@ import io.bagarino.manager.user.UserManager;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
-import io.bagarino.model.TicketReservation;
+import io.bagarino.model.Ticket.TicketStatus;
+import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.EventModification;
+import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
@@ -30,7 +32,6 @@ import io.bagarino.repository.join.EventOrganizationRepository;
 import io.bagarino.repository.join.EventTicketCategoryRepository;
 
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -166,12 +167,12 @@ public class EventManager {
     }
 
     @Transactional
-    public String createTicketReservation(int eventId, List<TicketReservation> ticketReservations) {
+    public String createTicketReservation(int eventId, List<TicketReservationModification> ticketReservations, Date reservationExpiration) {
     	
         String transactionId = UUID.randomUUID().toString();
-        ticketRepository.createNewTransaction(transactionId, DateUtils.addMinutes(new Date(), 25));//TODO: 25 minutes should be configured
+        ticketRepository.createNewReservation(transactionId, reservationExpiration);
         
-        for(TicketReservation ticketReservation : ticketReservations) {
+        for(TicketReservationModification ticketReservation : ticketReservations) {
             List<Integer> reservedForUpdate = ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount());
             Validate.isTrue(reservedForUpdate.size() == ticketReservation.getAmount().intValue(), "not enough tickets to reserve");
             ticketRepository.reserveTickets(transactionId, reservedForUpdate);
@@ -179,4 +180,12 @@ public class EventManager {
 
     	return transactionId;
     }
+
+    @Transactional
+	public void completeReservation(int eventId, String reservationId, String customerEmail) {
+		int updatedTickets = ticketRepository.updateTicketStatus(reservationId, TicketStatus.ACQUIRED.toString());
+		Validate.isTrue(updatedTickets > 0);
+		int updatedReservation = ticketRepository.updateTicketReservationStatus(reservationId, TicketReservationStatus.COMPLETE.toString());
+		Validate.isTrue(updatedReservation == 1);
+	}
 }

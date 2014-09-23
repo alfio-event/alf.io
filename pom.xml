@@ -12,12 +12,13 @@
 
 	<properties>
 		<java.version>1.8</java.version>
-		<spring.version>4.0.6.RELEASE</spring.version>
+		<spring.version>4.1.0.RELEASE</spring.version>
 		<org.eclipse.jetty.version>9.2.2.v20140723</org.eclipse.jetty.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-security-config.version>3.2.4.RELEASE</spring-security-config.version>
+        <spring-security-config.version>3.2.5.RELEASE</spring-security-config.version>
         <org.apache.logging.log4j.version>2.0.1</org.apache.logging.log4j.version>
         <jackson.version>2.4.0</jackson.version>
+        <stripe.version>1.18.0</stripe.version>
     </properties>
 
 	<dependencies>
@@ -33,6 +34,11 @@
 			<version>${spring.version}</version>
 			<type>jar</type>
 			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-aop</artifactId>
+			<version>${spring.version}</version>
 		</dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -129,6 +135,11 @@
 			<artifactId>log4j-jcl</artifactId>
 			<version>${org.apache.logging.log4j.version}</version>
 		</dependency>
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>${stripe.version}</version>
+        </dependency>
 		<!-- <dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j-impl</artifactId>
