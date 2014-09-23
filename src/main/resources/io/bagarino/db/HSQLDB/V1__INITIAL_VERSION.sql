@@ -93,7 +93,8 @@ create table payment_proxy(
 
 create table tickets_reservation(
 	id varchar(255) primary key not null,
-	validity timestamp not null
+	validity timestamp not null,
+	status varchar(255) not null
 );
 -- constraints
 

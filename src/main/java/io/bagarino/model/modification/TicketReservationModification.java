@@ -14,29 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.model;
+package io.bagarino.model.modification;
 
-import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import lombok.Data;
 
-import java.util.Date;
-
-import lombok.Getter;
-
-@Getter
-public class TicketReservation {
-
-	public enum TicketReservationStatus {
-		PENDING, COMPLETE
-	}
-
-	private final String id;
-	private final Date validity;
-	private final TicketReservationStatus status;
-
-	public TicketReservation(@Column("id") String id, @Column("validity") Date validity,
-			@Column("status") TicketReservationStatus status) {
-		this.id = id;
-		this.validity = validity;
-		this.status = status;
-	}
+@Data
+public class TicketReservationModification {
+	private Integer ticketCategoryId;
+	private Integer amount;
 }
