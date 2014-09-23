@@ -51,7 +51,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 @Configuration
-@ComponentScan(basePackages = "io.bagarino")
+@ComponentScan(basePackages = "io.bagarino.controller")
 @EnableWebMvc
 public class MvcConfiguration extends WebMvcConfigurerAdapter implements ResourceLoaderAware {
 

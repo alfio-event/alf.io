@@ -31,12 +31,12 @@ public interface TicketRepository {
             "values(:uuid, :creation, :categoryId, :eventId, :status, :originalPrice, :paidPrice)")
     String bulkTicketInitialization();
     
-    @Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and transaction_id is null limit :amount for update")
+    @Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null limit :amount for update")
     List<Integer> selectTicketInCategoryForUpdate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId, @Bind("amount") int amount);
     
-    @Query("update ticket set transaction_id = :transactionId, status = 'PENDING' where id in (:reservedForUpdate)")
-    int reserveTickets(@Bind("transactionId") String transactionId, @Bind("reservedForUpdate") List<Integer> reservedForUpdate);
+    @Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING' where id in (:reservedForUpdate)")
+    int reserveTickets(@Bind("reservationId") String reservationId, @Bind("reservedForUpdate") List<Integer> reservedForUpdate);
     
-    @Query("insert into tickets_transaction(id, validity) values (:id, :validity)")
-	int createNewTransaction(@Bind("id") String id, @Bind("validity") Date validity);
+    @Query("insert into tickets_reservation(id, validity) values (:id, :validity)")
+	int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity);
 }

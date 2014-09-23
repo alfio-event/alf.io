@@ -25,14 +25,21 @@ import io.bagarino.model.TicketReservation;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 
+import java.util.Date;
 import java.util.List;
 
 import lombok.Data;
 
+import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class EventController {
@@ -70,26 +77,39 @@ public class EventController {
 	@RequestMapping(value = "/event/{eventId}/reserve-tickets", method = RequestMethod.POST)
 	public String reserveTicket(@PathVariable("eventId") int eventId, @ModelAttribute ReservationForm reservation) {
 		//TODO handle error cases :D
-		String reservationIdentifier = eventManager.createTicketReservation(eventId, reservation.selected());
-		return "redirect:/event/" + eventId + "/reservation/" + reservationIdentifier;
+		
+		Validate.isTrue(reservation.selectionCount() > 0);
+		
+		String reservationId = eventManager.createTicketReservation(eventId, reservation.selected(), DateUtils.addMinutes(new Date(), 25));
+		return "redirect:/event/" + eventId + "/reservation/" + reservationId;
 	}
 
 
 
     @RequestMapping(value = "/event/{eventId}/reservation/{reservationId}", method = RequestMethod.GET)
 	public String showReservationPage(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId, Model model) {
+    	
+    	
+    	
         model.addAttribute("event", eventRepository.findById(eventId));
         model.addAttribute("reservationId", reservationId);
+        
+        
         return "/event/reservation-page";
 	}
 
-    @RequestMapping(value = "/event/{eventId}/reservation/pay-tickets", method = RequestMethod.POST)
-    public String payTickets(@PathVariable("eventId") int eventId, @RequestParam("stripeEmail") String customerEmail,
-                             @RequestParam("stripeToken") String stripeToken, @RequestParam("reservationId") String reservationId, Model model) {
+    @RequestMapping(value = "/event/{eventId}/reservation/{reservationId}", method = RequestMethod.POST)
+    public String payTickets(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId, @RequestParam("stripeEmail") String customerEmail,
+                             @RequestParam("stripeToken") String stripeToken, Model model) {
+    	
+    	// TODO handle error/other payment methods
         stripeManager.chargeCreditCard(stripeToken);
-        model.addAttribute("event", eventRepository.findById(eventId));//
-        model.addAttribute("customerEmail", customerEmail);
-        return "/event/show-paid-event";
+        
+        // TODO: here save transaction
+        
+        //
+
+        return "redirect:/event/" + eventId + "/reservation/" + reservationId;
     }
 
     @Data
@@ -100,6 +120,10 @@ public class EventController {
 			return ofNullable(reservation).orElse(emptyList()).stream()
 					.filter((e) -> e!= null && e.getAmount() != null && e.getTicketCategoryId() != null && e.getAmount() > 0)
 					.collect(toList());
+		}
+		
+		private int selectionCount() {
+			return selected().stream().mapToInt(TicketReservation::getAmount).sum();
 		}
 	}
 }

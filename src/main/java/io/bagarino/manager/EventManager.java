@@ -166,10 +166,10 @@ public class EventManager {
     }
 
     @Transactional
-    public String createTicketReservation(int eventId, List<TicketReservation> ticketReservations) {
+    public String createTicketReservation(int eventId, List<TicketReservation> ticketReservations, Date reservationExpiration) {
     	
         String transactionId = UUID.randomUUID().toString();
-        ticketRepository.createNewTransaction(transactionId, DateUtils.addMinutes(new Date(), 25));//TODO: 25 minutes should be configured
+        ticketRepository.createNewReservation(transactionId, reservationExpiration);
         
         for(TicketReservation ticketReservation : ticketReservations) {
             List<Integer> reservedForUpdate = ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount());
