@@ -109,13 +109,15 @@ public class EventController {
 	}
 
     @RequestMapping(value = "/event/{eventId}/reservation/{reservationId}", method = RequestMethod.POST)
-    public String payTickets(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId, @RequestParam("stripeEmail") String customerEmail,
-                             @RequestParam("stripeToken") String stripeToken, Model model) throws StripeException {
+    public String handleReservation(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId, @RequestParam("stripeEmail") String customerEmail,
+                                    @RequestParam("stripeToken") String stripeToken, Model model) throws StripeException {
     	
     	// TODO handle error/other payment methods
         stripeManager.chargeCreditCard(stripeToken);
-        
         //
+        
+        
+        // we can enter here only if the reservation is done correctly
         eventManager.completeReservation(eventId, reservationId, customerEmail);
         //
 
