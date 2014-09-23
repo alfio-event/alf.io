@@ -36,6 +36,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     public static final String ADMIN_API = "/admin/api";
     public static final String CSRF_SESSION_ATTRIBUTE = "CSRF_SESSION_ATTRIBUTE";
+    public static final String CSRF_PARAM_NAME = "_csrf";
     private static final String ROLE_ADMIN = "ADMIN";
     private static final String ROLE_OWNER = "OWNER";
 
@@ -59,17 +60,21 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public CsrfTokenRepository getCsrfTokenRepository() {
         HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
         repository.setSessionAttributeName(CSRF_SESSION_ATTRIBUTE);
+        repository.setParameterName(CSRF_PARAM_NAME);
         return repository;
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.csrf().csrfTokenRepository(getCsrfTokenRepository())
-                .and().authorizeRequests()
-                .antMatchers(ADMIN_API + "/organizations/new",
-                        ADMIN_API + "/users/**").hasRole(ROLE_ADMIN)
-                .antMatchers("/admin/**").hasAnyRole(ROLE_ADMIN, ROLE_OWNER)
-                .and().formLogin();
+        http.csrf()
+            .csrfTokenRepository(getCsrfTokenRepository())
+            .and()
+            .authorizeRequests()
+            .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/users/**").hasRole(ROLE_ADMIN)
+            .antMatchers("/admin/**").hasAnyRole(ROLE_ADMIN, ROLE_OWNER)
+            .antMatchers("/**").permitAll()
+            .and()
+            .formLogin();
 
     }
 }
