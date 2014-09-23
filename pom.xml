@@ -78,6 +78,33 @@
             <artifactId>mustache-spring-view</artifactId>
             <version>1.3</version>
         </dependency>
+        
+        
+        <dependency>
+			<groupId>javax.mail</groupId>
+			<artifactId>mail</artifactId>
+			<version>1.4.6</version>
+		</dependency>
+        
+        <dependency>
+    		<groupId>org.xhtmlrenderer</groupId>
+    		<artifactId>flying-saucer-pdf</artifactId>
+    		<version>9.0.6</version>
+    		<exclusions>
+    			<exclusion>
+    				<artifactId>bcmail-jdk14</artifactId>
+    				<groupId>bouncycastle</groupId>
+    			</exclusion>
+    			<exclusion>
+    				<artifactId>bcprov-jdk14</artifactId>
+    				<groupId>bouncycastle</groupId>
+    			</exclusion>
+    			<exclusion>
+    				<artifactId>bctsp-jdk14</artifactId>
+    				<groupId>org.bouncycastle</groupId>
+    			</exclusion>
+    		</exclusions>
+        </dependency>
 
 		<dependency>
 			<groupId>org.springframework</groupId>
