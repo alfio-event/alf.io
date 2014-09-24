@@ -33,15 +33,19 @@
                 <div class="form-group">
                     <label for="shortName">Name</label>
                     <input type="text" data-ng-model="event.shortName" name="shortName" data-grab-focus id="shortName" class="form-control" required pattern="^[A-Za-z0-9]{2,}$"/>
+                    <field-error data-form-obj="editEvent" data-required-pattern="'A-Za-z (no spaces)'" data-field-obj="editEvent.shortName"></field-error>
 
                     <label for="organizationId">Owner Organization</label>
                     <select data-ng-model="event.organizationId" name="organizationId" id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>
-                    
+                    <field-error data-form-obj="editEvent" data-field-obj="editEvent.organizationId"></field-error>
+
                     <label for="location">Location</label>
                     <textarea data-ng-model="event.location" name="location" id="location" class="form-control" required data-minlength="10"></textarea>
+                    <field-error data-form-obj="editEvent" data-field-obj="editEvent.location" data-min-char="10"></field-error>
 
                     <label for="description">Event Description</label>
                     <textarea data-ng-model="event.description" name="description" id="description" required class="form-control" data-minlength="10"></textarea>
+                    <field-error data-form-obj="editEvent" data-field-obj="editEvent.description" data-min-char="10"></field-error>
                 </div>
                 <date-time data-id-prefix="start" data-prefix="Start" data-model-object="event.start" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
                 <date-time data-id-prefix="end" data-prefix="End" data-model-object="event.end" data-not-before="{{event.start.date}}" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
@@ -59,28 +63,32 @@
             </div>
         </div>
 
-
         <div class="form-group" data-ng-if="!event.freeOfCharge">
             <label for="paymentProxies">Accepted payment methods</label>
             <select data-ng-model="event.paymentProxies" multiple name="paymentProxies" id="paymentProxies" class="form-control" required data-ng-options="proxy.id as proxy.description for proxy in paymentProxies"></select>
+            <field-error data-form-obj="editEvent" data-field-obj="editEvent.paymentProxies"></field-error>
         </div>
 
         <div class="row">
             <div class="col-sm-2">
                 <label for="seats">Available seats</label>
                 <input type="number" data-ng-model="event.seats" name="seats" id="seats" class="form-control" required />
+                <field-error data-form-obj="editEvent" data-field-obj="editEvent.paymentProxies"></field-error>
             </div>
             <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
                 <label for="price">Regular Price</label>
                 <input type="number" data-ng-model="event.price" name="price" id="price" class="form-control" required />
+                <field-error data-form-obj="editEvent" data-field-obj="editEvent.price"></field-error>
             </div>
             <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
                 <label for="currency">Currency</label>
-                <input type="text" data-ng-model="event.currency" name="currency" id="currency" class="form-control" required />
+                <input type="text" data-ng-model="event.currency" name="currency" id="currency" class="form-control" required pattern="[A-Z]{3}"/>
+                <field-error data-form-obj="editEvent" data-field-obj="editEvent.currency" data-required-pattern="'Three capital letters'"></field-error>
             </div>
             <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
                 <label for="vat">VAT (%)</label>
                 <input type="number" data-ng-model="event.vat" name="vat" id="vat" class="form-control" required />
+                <field-error data-form-obj="editEvent" data-field-obj="editEvent.vat"></field-error>
             </div>
             <div class="col-sm-4" data-ng-if="!event.freeOfCharge">
                 <label for="vatIncluded">VAT included</label>
@@ -108,12 +116,13 @@
                 </progress>
             </div>
         </div>
-        <div class="row category" data-ng-repeat="ticketCategory in event.ticketCategories" data-ng-class="'category-' + evaluateBarType($index)">
+        <div class="row category" data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories" data-ng-class="'category-' + evaluateBarType($index)">
             <div class="col-sm-12">
                 <div class="row">
                     <div class="col-sm-12 col-md-4">
                         <label for="{{$index}}-name">Name</label>
                         <input type="text" data-ng-model="ticketCategory.name" name="{{$index}}-name" id="{{$index}}-name" class="form-control" required />
+                        <field-error data-form-obj="category" data-field-obj="category.name"></field-error>
                     </div>
                     <div class="col-sm-12 col-md-4">
                         <label for="{{$index}}-description">Description</label>
@@ -122,6 +131,7 @@
                     <div class="col-sm-12 col-md-4">
                         <label for="{{$index}}-seats">Available seats</label>
                         <input type="number" data-ng-model="ticketCategory.seats" name="{{$index}}-seats" id="{{$index}}-seats" class="form-control" required />
+                        <field-error data-form-obj="category" data-field-obj="category.seats"></field-error>
                     </div>
                 </div>
                 <div class="row">

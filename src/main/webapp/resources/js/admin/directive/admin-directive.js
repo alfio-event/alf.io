@@ -171,4 +171,18 @@
             }
         };
     });
+
+    directives.directive('fieldError', function() {
+        return {
+            restrict: 'E',
+            templateUrl: '/resources/angularTemplates/admin/partials/form/fieldError.html',
+            scope: {
+                formObj: '=',
+                fieldObj: '=',
+                minChar: '=',
+                requiredPattern: '='
+            },
+            link:angular.noop
+        };
+    });
 })();

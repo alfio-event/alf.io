@@ -1,15 +1,17 @@
-<div class="row">
-    <div class="{{dateCellClass}}">
-        <label for="{{idPrefix}}-date">{{prefix}} Date</label>
-        <p class="input-group">
-            <input type="text" data-ng-model="date" data-datepicker-popup data-after-date="{{notBefore}}" data-is-open="opened" data-min-date="minDate" name="{{idPrefix}}-date" id="{{idPrefix}}-date" class="form-control" required placeholder="dd/mm/yyyy"/>
-            <span class="input-group-btn">
-                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="fa fa-calendar"></i></button>
-            </span>
-        </p>
-    </div>
-    <div class="{{timeCellClass}}">
-        <label for="{{idPrefix}}-time">Time</label>
-        <input type="text" data-ng-model="modelObject.time" name="{{idPrefix}}-time" id="{{idPrefix}}-time" class="form-control" required pattern="^\d{2}:\d{2}$" placeholder="hh:mm"/>
+<div data-ng-form="dateTimeForm">
+    <div class="row" data-ng-form="dateTimeForm">
+        <div class="{{dateCellClass}}">
+            <label for="{{idPrefix}}-date">{{prefix}} Date</label>
+            <p class="input-group">
+                <input type="text" data-ng-model="date" data-datepicker-popup data-after-date="{{notBefore}}" data-is-open="opened" data-min-date="minDate" name="date" id="{{idPrefix}}-date" class="form-control" required placeholder="dd/mm/yyyy"/>
+                <span class="input-group-btn">
+                    <button type="button" class="btn btn-default" ng-click="open($event)"><i class="fa fa-calendar"></i></button>
+                </span>
+            </p>
+        </div>
+        <div class="{{timeCellClass}}">
+            <label for="{{idPrefix}}-time">Time</label>
+            <input type="text" data-ng-model="modelObject.time" name="time" id="{{idPrefix}}-time" class="form-control" required pattern="^\d{2}:\d{2}$" placeholder="hh:mm"/>
+        </div>
     </div>
 </div>

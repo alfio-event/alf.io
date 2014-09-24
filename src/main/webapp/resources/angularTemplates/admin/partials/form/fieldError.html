@@ -1,0 +1,4 @@
+<div ng-messages="fieldObj.$error" ng-if="fieldObj.$touched" class="text-danger">
+    <div ng-message="minlength">The value should be at least {{minChar}} characters</div>
+    <div ng-message="pattern">The value should match the following pattern: {{requiredPattern}}</div>
+</div>
