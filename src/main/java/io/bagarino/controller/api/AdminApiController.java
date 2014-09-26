@@ -67,14 +67,14 @@ public class AdminApiController {
 
 
     @RequestMapping(value = "/organizations/new", method = RequestMethod.POST)
-    public String insertOrganization(@RequestBody OrganizationModification organizationModification) {
-        userManager.createOrganization(organizationModification.getName(), organizationModification.getDescription());
+    public String insertOrganization(@RequestBody OrganizationModification om) {
+        userManager.createOrganization(om.getName(), om.getDescription(), om.getEmail());
         return OK;
     }
 
     @RequestMapping(value = "/organizations/check", method = RequestMethod.POST)
-    public ValidationResult validateOrganization(@RequestBody OrganizationModification organizationModification) {
-        return userManager.validateOrganization(organizationModification.getId(), organizationModification.getName(), organizationModification.getDescription());
+    public ValidationResult validateOrganization(@RequestBody OrganizationModification om) {
+        return userManager.validateOrganization(om.getId(), om.getName(), om.getEmail(), om.getDescription());
     }
 
     @RequestMapping(value = "/users/check", method = RequestMethod.POST)

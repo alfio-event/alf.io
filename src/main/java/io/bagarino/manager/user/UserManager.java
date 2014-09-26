@@ -26,6 +26,7 @@ import io.bagarino.repository.user.join.UserOrganizationRepository;
 import io.bagarino.util.PasswordGenerator;
 import io.bagarino.util.ValidationResult;
 import io.bagarino.util.ValidationResult.ValidationError;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -98,11 +99,11 @@ public class UserManager {
                 .collect(toList());
     }
 
-    public void createOrganization(String name, String description) {
-        organizationRepository.create(name, description);
+    public void createOrganization(String name, String description, String email) {
+        organizationRepository.create(name, description, email);
     }
 
-    public ValidationResult validateOrganization(Integer id, String name, String description) {
+    public ValidationResult validateOrganization(Integer id, String name, String email, String description) {
         int orgId = ID_EVALUATOR.apply(id);
         final long existing = organizationRepository.findByName(name)
                 .stream()
@@ -111,6 +112,9 @@ public class UserManager {
         if(existing > 0) {
             return ValidationResult.failed(new ValidationError("name", "There is already another organization with the same name."));
         }
+        Validate.notBlank(name, "name can't be empty");
+        Validate.notBlank(email, "email can't be empty");
+        Validate.notBlank(description, "description can't be empty");
         return ValidationResult.success();
     }
 

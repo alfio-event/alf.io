@@ -15,7 +15,7 @@
 -- along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-INSERT INTO organization(name, description) VALUES ('demo', 'demo organization');
+INSERT INTO organization(name, description, email) VALUES ('demo', 'demo organization', 'info@pippobaudo.com');
 
 insert into event(description, short_name, owner, location, latitude, longitude, start_ts, end_ts, regular_price, currency, available_seats, vat_included, vat, allowed_payment_proxies)
   values('event desc', 'eventname', 0, 'demo location', '0', '0', '2015-01-10 00:00:00' , '2015-01-10 23:59:00' , 10, 'CHF', 440, 'true', 8, 'STRIPE');

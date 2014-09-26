@@ -24,12 +24,15 @@ public class Organization {
 	private final int id;
     private final String name;
 	private final String description;
+	private final String email;
 
 	public Organization(@Column("id") int id,
                         @Column("name") String name,
-                        @Column("description") String description) {
+                        @Column("description") String description,
+                        @Column("email") String email) {
 		this.id = id;
         this.name = name;
         this.description = description;
-	}
+        this.email = email;
+    }
 }
