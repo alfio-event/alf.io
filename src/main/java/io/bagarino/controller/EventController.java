@@ -32,15 +32,20 @@ import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import lombok.Data;
 
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Controller;
@@ -133,6 +138,7 @@ public class EventController {
     		return "/event/reservation-page-not-found";
     	} else if(reservation.get().getStatus() == TicketReservationStatus.PENDING) {
     		
+    		model.addAttribute("summary", extractSummary(reservationId));
     		model.addAttribute("totalPrice", totalReservationCost(reservationId));
     		model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
     		model.addAttribute("event", eventRepository.findById(eventId));
@@ -171,8 +177,29 @@ public class EventController {
     }
     
     private BigDecimal totalReservationCost(String reservationId) {
-    	List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
+    	return totalFrom(ticketRepository.findTicketsInReservation(reservationId));
+    }
+    
+    private BigDecimal totalFrom(List<Ticket> tickets) {
     	return tickets.stream().map(Ticket::getPaidPrice).reduce((a,b) -> a.add(b)).orElseThrow(IllegalStateException::new);
+    }
+    
+    private List<SummaryRow> extractSummary(String reservationId) {
+    	List<SummaryRow> summary = new ArrayList<>();
+    	List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
+    	tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).forEach((categoryId, ticketsByCategory) -> {
+    		String categoryName = ticketCategoryRepository.getById(categoryId).getName();
+    		summary.add(new SummaryRow(categoryName, ticketsByCategory.get(0).getPaidPrice(), ticketsByCategory.size(), totalFrom(ticketsByCategory)));
+    	});
+    	return summary;
+    }
+    
+    @Data
+    public static class SummaryRow {
+    	private final String name;
+    	private final BigDecimal price;
+    	private final int amount;
+    	private final BigDecimal subTotal;
     }
 
     @Data

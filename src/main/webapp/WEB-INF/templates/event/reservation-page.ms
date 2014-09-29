@@ -37,12 +37,44 @@ jQuery(function($) {
 });
 </script>
 
-<h1>here payment info for confirmation and stuff</h1>
+<h2>Order summary</h2>
+<table>
+	<thead>	
+		<th>category</th>
+		<th>price</th>
+		<th>amount</th>
+		<th>subtotal</th>
+	</thead>
+	<tbody>
+{{#summary}}
+		<tr>
+			<td>{{name}}</td>
+			<td>{{price}}</td>
+			<td>{{amount}}</td>
+			<td>{{subTotal}}</td>
+		</tr>
+{{/summary}}
+	</tbody>
+	<tfoot>
+		<tr><th colspan="3">total</th><td>{{totalPrice}} {{event.currency}}</td></tr>
+	</tfoot>
+</table>
 
 
-<p>Total price is: {{totalPrice}} {{event.currency}}</p>
+
 
 <form action="" method="POST" id="payment-form">
+	<h2>Billing details</h2>
+	<p>full name</p>
+	<p>email</p>
+	<p>...?</p>
+	
+	
+	
+
+
+	<h2>Payment</h2>
+
 	<span class="payment-errors"></span>
  
 	<div class="form-row">
