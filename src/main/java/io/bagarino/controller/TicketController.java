@@ -91,7 +91,6 @@ public class TicketController {
 		Validate.isTrue(reservation.getStatus() == TicketReservationStatus.COMPLETE);
 
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
-		// TODO: here generate PDF
 
 		Map<String, Object> tmplModel = new HashMap<>();
 
