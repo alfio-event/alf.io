@@ -59,7 +59,7 @@ public class TicketReservationManager {
     	return transactionId;
     }
 
-	public void completeReservation(int eventId, String reservationId, String customerEmail) {
+	public void completeReservation(int eventId, String reservationId) {
 		int updatedTickets = ticketRepository.updateTicketStatus(reservationId, TicketStatus.ACQUIRED.toString());
 		Validate.isTrue(updatedTickets > 0);
 		int updatedReservation = ticketReservationRepository.updateTicketReservationStatus(reservationId, TicketReservationStatus.COMPLETE.toString());

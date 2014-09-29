@@ -134,7 +134,7 @@ public class EventController {
 	}
 
     @RequestMapping(value = "/event/{eventId}/reservation/{reservationId}", method = RequestMethod.POST)
-    public String handleReservation(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId, @RequestParam("stripeEmail") String customerEmail,
+    public String handleReservation(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId,
                                     @RequestParam("stripeToken") String stripeToken, Model model) throws StripeException {
     	
     	if(!optionally(() -> eventRepository.findById(eventId)).isPresent()) {
@@ -152,7 +152,7 @@ public class EventController {
         
         
         // we can enter here only if the reservation is done correctly
-        tickReservationManager.completeReservation(eventId, reservationId, customerEmail);
+        tickReservationManager.completeReservation(eventId, reservationId);
         //
 
         return "redirect:/event/" + eventId + "/reservation/" + reservationId;
