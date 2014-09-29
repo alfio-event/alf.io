@@ -22,15 +22,19 @@ insert into event(description, short_name, owner, location, latitude, longitude,
 
 insert into j_event_organization(event_id, org_id) values(0, 0);
 
-insert into ticket_category(inception, expiration, name, description, max_tickets, discount)
-  values('2014-01-10 00:00:00', '2015-01-10 00:00:00', 'Normal', 'Very good category', 2, 0);
+insert into ticket_category(inception, expiration, name, description, max_tickets, discount) values
+  ('2014-01-10 00:00:00', '2015-01-10 00:00:00', 'Normal', 'Very good category', 2, 0),
+  ('2014-01-10 00:00:00', '2015-01-10 00:00:00', 'Not normal', 'Very very good category', 2, 50);
   
 insert into j_event_ticket_category(event_id, ticket_category_id) values (0,0);
+insert into j_event_ticket_category(event_id, ticket_category_id) values (0,1);
 
 insert into ticket (uuid, creation, category_id, event_id, status, original_price, paid_price)
   values
   ('abcdefghilmn', '2014-01-10 00:00:00', 0, 0, 'FREE', 1000, 1000),
-  ('abcdefghilmo', '2014-01-10 00:00:00', 0, 0, 'FREE', 1000, 1000);
+  ('abcdefghilmo', '2014-01-10 00:00:00', 0, 0, 'FREE', 1000, 1000),
+  ('abcdefghilmn42', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500),
+  ('abcdefghilmo43', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500);
   
 insert into configuration (c_key, c_value, description) values
 	('stripe_secret_key', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'test api key'),
