@@ -143,6 +143,7 @@ public class EventController {
     		return "/event/reservation-page";
     	} else {
     		
+    		model.addAttribute("reservationId", reservationId);
     		model.addAttribute("ticketsByCategory", ticketRepository.findTicketsInReservation(reservationId).stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet());
     		
     		return "/event/reservation-page-complete";

@@ -7,7 +7,7 @@ name/email + button for sending to registered email the ticket
 <ul>
 {{#ticketsByCategory}}
 	{{#value}}
-		<li>{{key}} - {{.}} <a href="./ticket/{{uuid}}">Download ticket</a></li>
+		<li>{{key}} - {{.}} <a href="{{reservationId}}/download-ticket/{{uuid}}">Download ticket</a></li>
 	{{/value}}
 {{/ticketsByCategory}}
 </ul>

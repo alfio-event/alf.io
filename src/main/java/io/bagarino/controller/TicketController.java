@@ -17,41 +17,114 @@
 package io.bagarino.controller;
 
 import static io.bagarino.util.OptionalWrapper.optionally;
+import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
+import io.bagarino.model.TicketCategory;
+import io.bagarino.model.TicketReservation;
+import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.repository.EventRepository;
+import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.xhtmlrenderer.pdf.ITextRenderer;
+
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import com.lowagie.text.DocumentException;
+import com.samskivert.mustache.Mustache;
+import com.samskivert.mustache.MustacheException;
 
 @Controller
 public class TicketController {
-	
+
 	private final EventRepository eventRepository;
 	private final TicketReservationRepository ticketReservationRepository;
 	private final TicketRepository ticketRepository;
-	
+	private final TicketCategoryRepository ticketCategoryRepository;
+
 	@Autowired
-	public TicketController(EventRepository eventRepository, TicketReservationRepository ticketReservationRepository, TicketRepository ticketRepository) {
+	public TicketController(EventRepository eventRepository, TicketReservationRepository ticketReservationRepository,
+			TicketRepository ticketRepository, TicketCategoryRepository ticketCategoryRepository) {
 		this.eventRepository = eventRepository;
 		this.ticketReservationRepository = ticketReservationRepository;
 		this.ticketRepository = ticketRepository;
+		this.ticketCategoryRepository = ticketCategoryRepository;
 	}
-	
-	
 
 	@RequestMapping(value = "/event/{eventId}/reservation/{reservationId}/download-ticket/{ticketIdentifier}", method = RequestMethod.GET)
-	public void generateTicketPdf(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
-		
-		optionally(() -> eventRepository.findById(eventId)).orElseThrow(IllegalArgumentException::new);
-		optionally(() -> ticketReservationRepository.findReservationById(reservationId)).orElseThrow(IllegalArgumentException::new);
-		
-		Ticket t = optionally(() ->ticketRepository.findByUUID(ticketIdentifier)).orElseThrow(IllegalArgumentException::new);
-		
-		//TODO: here generate PDF
+	public void generateTicketPdf(@PathVariable("eventId") int eventId,
+			@PathVariable("reservationId") String reservationId,
+			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response)
+			throws MustacheException, IOException, DocumentException, WriterException {
+
+		Event e = optionally(() -> eventRepository.findById(eventId)).orElseThrow(IllegalArgumentException::new);
+		TicketReservation reservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId))
+				.orElseThrow(IllegalArgumentException::new);
+		Ticket ticket = optionally(() -> ticketRepository.findByUUID(ticketIdentifier)).orElseThrow(
+				IllegalArgumentException::new);
+
+		Validate.isTrue(reservation.getStatus() == TicketReservationStatus.COMPLETE);
+
+		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
+		// TODO: here generate PDF
+
+		Map<String, Object> tmplModel = new HashMap<>();
+
+		String qrCodeText = e.getId() + "/" + ticket.getTicketsReservationId() + "/" + ticket.getUuid();
+
+		tmplModel.put("event", e);
+		tmplModel.put("qrCodeDataUri", toDataUri(createQRCode(qrCodeText)));
+
+		InputStreamReader res = new InputStreamReader(
+				new ClassPathResource("/io/bagarino/templates/ticket.ms").getInputStream(), StandardCharsets.UTF_8);
+		String page = Mustache.compiler().escapeHTML(false).compile(res).execute(tmplModel);
+
+		ITextRenderer renderer = new ITextRenderer();
+		renderer.setDocumentFromString(page);
+		renderer.layout();
+
+		response.setContentType("application/pdf");
+		response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
+		try (OutputStream os = response.getOutputStream()) {
+			renderer.createPDF(os);
+		}
+	}
+
+	private static byte[] createQRCode(String text) throws WriterException, IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		Map<EncodeHintType, Object> hintMap = new EnumMap<>(EncodeHintType.class);
+		hintMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
+		BitMatrix matrix = new MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, 200, 200, hintMap);
+		MatrixToImageWriter.writeToStream(matrix, "png", baos);
+		return baos.toByteArray();
+	}
+
+	private static String toDataUri(byte[] content) {
+		return "data:image/png;base64," + Base64.getEncoder().encodeToString(content);
 	}
 }
