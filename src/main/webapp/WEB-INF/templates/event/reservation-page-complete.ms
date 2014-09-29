@@ -2,3 +2,12 @@
 
 name/email + button for sending to registered email the ticket
 
+<h2>Tickets</h2>
+
+<ul>
+{{#ticketsByCategory}}
+	{{#value}}
+		<li>{{key}} - {{.}} <a href="./ticket/{{uuid}}">Download ticket</a></li>
+	{{/value}}
+{{/ticketsByCategory}}
+</ul>

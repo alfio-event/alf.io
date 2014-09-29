@@ -48,4 +48,7 @@ public interface TicketRepository {
 
 	@Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc")
 	List<Ticket> findTicketsInReservation(@Bind("reservationId") String reservationId);
+	
+	@Query("select * from ticket where uuid = :uuid")
+	Ticket findByUUID(@Bind("uuid") String uuid);
 }

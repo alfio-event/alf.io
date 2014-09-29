@@ -19,6 +19,7 @@ package io.bagarino.controller;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static io.bagarino.util.OptionalWrapper.optionally;
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.model.Event;
@@ -36,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import lombok.Data;
@@ -44,7 +44,6 @@ import lombok.Data;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -143,6 +142,9 @@ public class EventController {
     		
     		return "/event/reservation-page";
     	} else {
+    		
+    		model.addAttribute("ticketsByCategory", ticketRepository.findTicketsInReservation(reservationId).stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet());
+    		
     		return "/event/reservation-page-complete";
     	}
 	}
@@ -213,12 +215,4 @@ public class EventController {
 			return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
 		}
 	}
-    
-    private <T> Optional<T> optionally(Supplier<T> s) {
-    	 try {
-    		 return Optional.of(s.get());
-    	 } catch(EmptyResultDataAccessException e) {
-    		 return Optional.empty();
-    	 }
-    }
 }
