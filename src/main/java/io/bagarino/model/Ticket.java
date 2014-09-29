@@ -37,8 +37,8 @@ public class Ticket {
     private final TicketStatus status;
     private final BigDecimal originalPrice;
     private final BigDecimal paidPrice;
-    private final String transactionId;
-
+    private final String ticketsReservationId;
+    
     public Ticket(@Column("id") int id,
                   @Column("uuid") String uuid,
                   @Column("creation") Date creation,
@@ -47,7 +47,7 @@ public class Ticket {
                   @Column("event_id") int eventId,
                   @Column("original_price") BigDecimal originalPrice,
                   @Column("paid_price") BigDecimal paidPrice,
-                  @Column("transaction_id") String transactionId) {
+                  @Column("tickets_reservation_id") String ticketsReservationId) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
@@ -56,6 +56,6 @@ public class Ticket {
         this.status = TicketStatus.valueOf(status);
         this.originalPrice = originalPrice;
         this.paidPrice = paidPrice;
-        this.transactionId = transactionId;
+        this.ticketsReservationId = ticketsReservationId;
     }
 }

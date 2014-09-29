@@ -20,6 +20,7 @@ import io.bagarino.datamapper.Bind;
 import io.bagarino.datamapper.Query;
 import io.bagarino.datamapper.QueryRepository;
 import io.bagarino.datamapper.QueryType;
+import io.bagarino.model.Ticket;
 
 import java.util.List;
 
@@ -44,4 +45,7 @@ public interface TicketRepository {
 	@Query("update ticket set status = 'FREE', tickets_reservation_id = null where status = 'PENDING' "
 			+ " and tickets_reservation_id in (:reservationIds)")
 	int freeFromReservation(@Bind("reservationIds") List<String> reservationIds);
+
+	@Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc")
+	List<Ticket> findTicketsInReservation(@Bind("reservationId") String reservationId);
 }

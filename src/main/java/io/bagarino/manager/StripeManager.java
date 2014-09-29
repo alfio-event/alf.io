@@ -16,20 +16,39 @@
  */
 package io.bagarino.manager;
 
-import com.stripe.Stripe;
-import com.stripe.exception.*;
-import com.stripe.model.Charge;
 
-import org.springframework.stereotype.Component;
+import io.bagarino.repository.system.ConfigurationRepository;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Charge;
 
 /**
  * Created by yanke on 22.09.14.
  */
 @Component
 public class StripeManager {
+	
+	private final ConfigurationRepository configurationRepository;
+	
+	@Autowired
+	public StripeManager(ConfigurationRepository configurationRepository) {
+		this.configurationRepository = configurationRepository;
+	}
+	
+	public String getSecretKey() {
+		return configurationRepository.findByKey("stripe_secret_key").getValue();
+	}
+	
+	public String getPublicKey() {
+		return configurationRepository.findByKey("stripe_public_key").getValue();
+	}
 
     /**
      * After client side integration with stripe widget, our server receives the stripeToken
@@ -38,14 +57,15 @@ public class StripeManager {
      *
      * as documented in https://stripe.com/docs/tutorials/charges
      * @param stripeToken
+     * @param bigDecimal 
      * @throws StripeException 
      */
-    public void chargeCreditCard(String stripeToken) throws StripeException {
+    public void chargeCreditCard(String stripeToken, long amountInCent) throws StripeException {
         // Use Stripe's bindings...
-        Stripe.apiKey = "sk_test_cayJOFUUYF9cWOoMXemJd61Z";
+        Stripe.apiKey = getSecretKey();
 
         Map<String, Object> chargeParams = new HashMap<>();
-        chargeParams.put("amount", 1000);
+        chargeParams.put("amount", amountInCent);
         chargeParams.put("currency", "chf");
         //chargeParams.put("card", "tok_14fYSAJSN8lunZypoZ7bQ2nm"); // obtained with Stripe.js
         chargeParams.put("card", stripeToken); // obtained with Stripe.js

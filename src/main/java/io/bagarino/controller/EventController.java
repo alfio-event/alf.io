@@ -22,13 +22,16 @@ import static java.util.stream.Collectors.toList;
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.model.Event;
+import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
+import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -54,6 +57,7 @@ import com.stripe.exception.StripeException;
 public class EventController {
 
     private final EventRepository eventRepository;
+    private final TicketRepository ticketRepository;
     private final TicketReservationManager tickReservationManager;
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
@@ -61,10 +65,12 @@ public class EventController {
 
 	@Autowired
 	public EventController(EventRepository eventRepository,
+			TicketRepository ticketRepository,
 			TicketReservationManager tickReservationManager,
 			TicketReservationRepository ticketReservationRepository,
 			TicketCategoryRepository ticketCategoryRepository, StripeManager stripeManager) {
 		this.eventRepository = eventRepository;
+		this.ticketRepository = ticketRepository;
 		this.tickReservationManager = tickReservationManager;
 		this.ticketReservationRepository = ticketReservationRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
@@ -120,13 +126,18 @@ public class EventController {
     	}
 
     	Optional<TicketReservation> reservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId));
+
     	
     	if(!reservation.isPresent()) {
     		model.addAttribute("reservationId", reservationId);
     		return "/event/reservation-page-not-found";
     	} else if(reservation.get().getStatus() == TicketReservationStatus.PENDING) {
+    		
+    		model.addAttribute("totalPrice", totalReservationCost(reservationId));
+    		model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
     		model.addAttribute("event", eventRepository.findById(eventId));
     		model.addAttribute("reservationId", reservationId);
+    		
     		return "/event/reservation-page";
     	} else {
     		return "/event/reservation-page-complete";
@@ -147,7 +158,8 @@ public class EventController {
     	}
     	
     	// TODO handle error/other payment methods
-        stripeManager.chargeCreditCard(stripeToken);
+    	//FIXME: there is a mismatch between the price of the ticket (chf) and the expected stripe value (cents?)
+        stripeManager.chargeCreditCard(stripeToken, totalReservationCost(reservationId).longValueExact());
         //
         
         
@@ -156,6 +168,11 @@ public class EventController {
         //
 
         return "redirect:/event/" + eventId + "/reservation/" + reservationId;
+    }
+    
+    private BigDecimal totalReservationCost(String reservationId) {
+    	List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
+    	return tickets.stream().map(Ticket::getPaidPrice).reduce((a,b) -> a.add(b)).orElseThrow(IllegalStateException::new);
     }
 
     @Data

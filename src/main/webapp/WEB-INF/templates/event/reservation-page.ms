@@ -3,7 +3,7 @@
  
 <script type="text/javascript">
 // This identifies your website in the createToken call below
-Stripe.setPublishableKey('pk_test_gY3X0UiTgKCeStUG67i2kEFq');
+Stripe.setPublishableKey('{{stripe_p_key}}');
  
 var stripeResponseHandler = function(status, response) {
 	var $form = $('#payment-form');
@@ -39,7 +39,8 @@ jQuery(function($) {
 
 <h1>here payment info for confirmation and stuff</h1>
 
-Ticket price ({{event.currency}}{{event.regularPrice}}):
+
+<p>Total price is: {{totalPrice}} {{event.currency}}</p>
 
 <form action="" method="POST" id="payment-form">
 	<span class="payment-errors"></span>

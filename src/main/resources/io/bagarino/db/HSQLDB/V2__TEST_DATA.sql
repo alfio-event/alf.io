@@ -18,7 +18,7 @@
 INSERT INTO organization(name, description, email) VALUES ('demo', 'demo organization', 'info@pippobaudo.com');
 
 insert into event(description, short_name, owner, location, latitude, longitude, start_ts, end_ts, regular_price, currency, available_seats, vat_included, vat, allowed_payment_proxies)
-  values('event desc', 'eventname', 0, 'demo location', '0', '0', '2015-01-10 00:00:00' , '2015-01-10 23:59:00' , 10, 'CHF', 440, 'true', 8, 'STRIPE');
+  values('event desc', 'eventname', 0, 'demo location', '0', '0', '2015-01-10 00:00:00' , '2015-01-10 23:59:00' , 1000, 'CHF', 440, 'true', 8, 'STRIPE');
 
 insert into j_event_organization(event_id, org_id) values(0, 0);
 
@@ -29,5 +29,9 @@ insert into j_event_ticket_category(event_id, ticket_category_id) values (0,0);
 
 insert into ticket (uuid, creation, category_id, event_id, status, original_price, paid_price)
   values
-  ('abcdefghilmn', '2014-01-10 00:00:00', 0, 0, 'FREE', 180, 180),
-  ('abcdefghilmo', '2014-01-10 00:00:00', 0, 0, 'FREE', 180, 180);
+  ('abcdefghilmn', '2014-01-10 00:00:00', 0, 0, 'FREE', 1000, 1000),
+  ('abcdefghilmo', '2014-01-10 00:00:00', 0, 0, 'FREE', 1000, 1000);
+  
+insert into configuration (c_key, c_value, description) values
+	('stripe_secret_key', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'test api key'),
+	('stripe_public_key', 'pk_test_gY3X0UiTgKCeStUG67i2kEFq', 'test client side api key');
