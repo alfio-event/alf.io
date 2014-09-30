@@ -91,17 +91,20 @@ public class TicketController {
 		Validate.isTrue(reservation.getStatus() == TicketReservationStatus.COMPLETE);
 
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
+		
+		//
+		String qrCodeText = e.getId() + "/" + ticket.getTicketsReservationId() + "/" + ticket.getUuid();
+		//
 
 		Map<String, Object> tmplModel = new HashMap<>();
-
-		String qrCodeText = e.getId() + "/" + ticket.getTicketsReservationId() + "/" + ticket.getUuid();
-
+		tmplModel.put("ticket", ticket);
+		tmplModel.put("ticketCategory", ticketCategory);
 		tmplModel.put("event", e);
 		tmplModel.put("qrCodeDataUri", toDataUri(createQRCode(qrCodeText)));
 
-		InputStreamReader res = new InputStreamReader(
+		InputStreamReader ticketTmpl = new InputStreamReader(
 				new ClassPathResource("/io/bagarino/templates/ticket.ms").getInputStream(), StandardCharsets.UTF_8);
-		String page = Mustache.compiler().escapeHTML(false).compile(res).execute(tmplModel);
+		String page = Mustache.compiler().escapeHTML(false).compile(ticketTmpl).execute(tmplModel);
 
 		ITextRenderer renderer = new ITextRenderer();
 		renderer.setDocumentFromString(page);
