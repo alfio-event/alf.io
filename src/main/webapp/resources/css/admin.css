@@ -37,3 +37,11 @@ div.category-success {
     border-left: 5px solid #5cb85c;
     border-radius: 2px;
 }
+
+a.icon, a.icon:hover {
+    text-decoration: none;
+}
+
+div.wMarginBottom {
+    margin-bottom: 25px;
+}

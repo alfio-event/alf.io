@@ -32,7 +32,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/admin/api")
@@ -52,6 +54,11 @@ public class AdminApiController {
     @ResponseStatus(HttpStatus.OK)
     public List<Organization> getAllOrganizations(Principal principal) {
         return userManager.findUserOrganizations(principal.getName());
+    }
+
+    @RequestMapping(value = "/organizations/{id}", method = RequestMethod.GET)
+    public Organization getOrganization(@PathVariable("id") int id, Principal principal) {
+        return userManager.findOrganizationById(id, principal.getName());
     }
 
     @RequestMapping(value = "/paymentProxies", method = RequestMethod.GET)
@@ -93,6 +100,17 @@ public class AdminApiController {
     @RequestMapping(value = "/events", method = RequestMethod.GET)
     public List<Event> getAllEvents(Principal principal) {
         return eventManager.getAllEvents(principal.getName());
+    }
+
+    @RequestMapping(value = "/events/{name}", method = RequestMethod.GET)
+    public Map<String, Object> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
+        Map<String, Object> out = new HashMap<>();
+        final String username = principal.getName();
+        final Event event = eventManager.getSingleEvent(eventName, username);
+        out.put("event", event);
+        out.put("organization", eventManager.loadOrganizer(event, username));
+        out.put("ticketCategories", eventManager.loadTicketCategoriesWithStats(event));
+        return out;
     }
 
     @RequestMapping(value = "/events/check", method = RequestMethod.POST)

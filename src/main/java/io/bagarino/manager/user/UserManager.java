@@ -78,6 +78,14 @@ public class UserManager {
         return findUserOrganizations(userRepository.getByUsername(username));
     }
 
+    public Organization findOrganizationById(int id, String username) {
+        return findUserOrganizations(username)
+                .stream()
+                .filter(o -> o.getId() == id)
+                .findFirst()
+                .orElseThrow(IllegalArgumentException::new);
+    }
+
     public List<Organization> findUserOrganizations(User user) {
         if (isAdmin(user)) {
             return organizationRepository.findAll();

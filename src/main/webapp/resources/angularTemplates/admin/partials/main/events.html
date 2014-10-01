@@ -1,5 +1,5 @@
 <div>
-    <a data-ui-sref="event.new">create new event</a>
+    <a data-ui-sref="events.new">create new event</a>
 </div>
 <table class="table">
     <thead>
@@ -13,14 +13,14 @@
     </thead>
     <tbody>
     <tr data-ng-if="!events || events.length == 0">
-        <td colspan="4">no events have been found. <a data-ui-sref="event.new">Create a new one</a></td>
+        <td colspan="4">no events have been found. <a data-ui-sref="events.new">Create a new one</a></td>
     </tr>
     <tr data-ng-repeat="event in events">
         <td data-ng-class-even="'active'">{{event.id}}</td>
         <td data-ng-class-even="'active'">{{event.shortName}}</td>
         <td data-ng-class-even="'active'">{{event.description}}</td>
-        <td data-ng-class-even="'active'">{{event.begin | date : 'dd/MM/yyyy HH:mm'}} /{{event.end | date : 'dd/MM/yyyy HH:mm'}}</td>
-        <td data-ng-class-even="'active'">actions</td>
+        <td data-ng-class-even="'active'">{{event.begin | date : 'dd/MM/yyyy HH:mm'}} / {{event.end | date : 'dd/MM/yyyy HH:mm'}}</td>
+        <td data-ng-class-even="'active'"><a class="icon fa fa-pie-chart" data-ui-sref="events.detail({eventName: event.shortName})"></a></td>
     </tr>
     </tbody>
 </table>

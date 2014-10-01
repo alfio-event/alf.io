@@ -103,9 +103,11 @@
                     scope.opened = true;
                 };
 
+                var date = "";
                 if(angular.isDefined(scope.modelObject.date)) {
-                    scope.date = moment(scope.modelObject.date).format('YYYY-MM-DD');
+                    date = scope.modelObject.date;
                 }
+                scope.date = moment(date).format('YYYY-MM-DD');
                 scope.minDate = moment().toDate();
 
                 scope.$watch('date', function(d) {
@@ -120,7 +122,7 @@
         }
     });
 
-    directives.directive('afterDate', function($log) {
+    directives.directive('afterDate', function() {
         return {
             restrict: 'A',
             scope: false,

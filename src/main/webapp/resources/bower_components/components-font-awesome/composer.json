@@ -11,7 +11,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "4.1.x-dev"
+            "dev-master": "4.2.x-dev"
         },
         "component": {
             "styles": [

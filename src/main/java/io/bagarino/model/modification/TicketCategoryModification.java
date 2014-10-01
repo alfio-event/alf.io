@@ -27,7 +27,7 @@ public class TicketCategoryModification {
 
     private final Integer id;
     private final String name;
-    private final int seats;
+    private final int maxTickets;
     private final DateTimeModification inception;
     private final DateTimeModification expiration;
     private final String description;
@@ -36,14 +36,14 @@ public class TicketCategoryModification {
     @JsonCreator
     public TicketCategoryModification(@JsonProperty("id") Integer id,
                                       @JsonProperty("name") String name,
-                                      @JsonProperty("seats") int seats,
+                                      @JsonProperty("maxTickets") int maxTickets,
                                       @JsonProperty("inception") DateTimeModification inception,
                                       @JsonProperty("expiration") DateTimeModification expiration,
                                       @JsonProperty("description") String description,
                                       @JsonProperty("discount") BigDecimal discount) {
         this.id = id;
         this.name = name;
-        this.seats = seats;
+        this.maxTickets = maxTickets;
         this.inception = inception;
         this.expiration = expiration;
         this.description = description;

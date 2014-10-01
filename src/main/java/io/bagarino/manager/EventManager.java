@@ -21,13 +21,14 @@ import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
 import io.bagarino.model.modification.EventModification;
+import io.bagarino.model.modification.TicketCategoryWithStatistic;
 import io.bagarino.model.transaction.PaymentProxy;
+import io.bagarino.model.user.Organization;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.join.EventOrganizationRepository;
 import io.bagarino.repository.join.EventTicketCategoryRepository;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -45,6 +46,7 @@ import java.util.stream.Stream;
 
 import static java.math.RoundingMode.HALF_UP;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 @Component
 public class EventManager {
@@ -81,6 +83,35 @@ public class EventManager {
                     .flatMap(o -> eventOrganizationRepository.findByOrganizationId(o.getId()).stream())
                     .map(eo -> eventRepository.findById(eo.getEventId()))
                     .collect(Collectors.toList());
+    }
+
+    public Event getSingleEvent(String eventName, String username) {
+        final Event event = eventRepository.findByShortName(eventName);
+        final int organizer = eventOrganizationRepository.getByEventId(event.getId()).getOrganizationId();
+        userManager.findUserOrganizations(username)
+                .stream()
+                .filter(o -> o.getId() == organizer)
+                .findAny()
+                .orElseThrow(IllegalArgumentException::new);
+        return event;
+    }
+
+    public List<TicketCategory> loadTicketCategories(Event event) {
+        return eventTicketCategoryRepository.findByEventId(event.getId())
+                    .stream()
+                    .map(etc -> ticketCategoryRepository.getById(etc.getTicketCategoryId()))
+                    .collect(toList());
+    }
+
+    public List<TicketCategoryWithStatistic> loadTicketCategoriesWithStats(Event event) {
+        return loadTicketCategories(event).stream()
+                    .map(tc -> new TicketCategoryWithStatistic(tc, ticketRepository.countConfirmedTickets(event.getId(), tc.getId())))
+                    .collect(toList());
+    }
+
+    public Organization loadOrganizer(Event event, String username) {
+        final int organizationId = eventOrganizationRepository.getByEventId(event.getId()).getOrganizationId();
+        return userManager.findOrganizationById(organizationId, username);
     }
 
     @Transactional
@@ -124,13 +155,13 @@ public class EventManager {
         boolean freeOfCharge = em.isFreeOfCharge();
         em.getTicketCategories().stream().forEach(tc -> {
             final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toDate(),
-                    tc.getExpiration().toDate(), tc.getName(), tc.getDescription(), tc.getSeats(), freeOfCharge ? BigDecimal.ZERO : tc.getDiscount());
+                    tc.getExpiration().toDate(), tc.getName(), tc.getDescription(), tc.getMaxTickets(), freeOfCharge ? BigDecimal.ZERO : tc.getDiscount());
             eventTicketCategoryRepository.insert(eventId, category.getValue());
         });
         final List<TicketCategory> ticketCategories = eventTicketCategoryRepository.findByEventId(eventId).stream()
                 .map(etc -> ticketCategoryRepository.getById(etc.getTicketCategoryId()))
                 .collect(Collectors.toList());
-        int notAssignedTickets = em.getSeats() - ticketCategories.stream().mapToInt(TicketCategory::getMaxTickets).sum();
+        int notAssignedTickets = em.getAvailableSeats() - ticketCategories.stream().mapToInt(TicketCategory::getMaxTickets).sum();
 
         if(notAssignedTickets != 0) {
             TicketCategory last = ticketCategories.stream()
@@ -151,14 +182,14 @@ public class EventManager {
     }
 
     private int insertEvent(EventModification em) {
-        String paymentProxies = em.getPaymentProxies()
+        String paymentProxies = em.getAllowedPaymentProxies()
                 .stream()
                 .map(PaymentProxy::name)
                 .collect(joining(","));
         BigDecimal actualPrice = evaluatePrice(em.getPrice(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
         BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
         return eventRepository.insert(em.getDescription(), em.getShortName(), em.getOrganizationId(), em.getLocation(),
-                "", "", em.getStart().toDate(), em.getEnd().toDate(), actualPrice,
-                em.getCurrency(), em.getSeats(), em.isVatIncluded(), vat, paymentProxies).getValue();
+                "", "", em.getBegin().toDate(), em.getEnd().toDate(), actualPrice,
+                em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies).getValue();
     }
 }

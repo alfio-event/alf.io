@@ -35,6 +35,9 @@ public interface TicketRepository {
 	List<Integer> selectTicketInCategoryForUpdate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId,
 			@Bind("amount") int amount);
 
+    @Query("select count(*) from ticket where status in ('ACQUIRED', 'CHECKED_IN') and category_id = :categoryId and event_id = :eventId")
+    Integer countConfirmedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
+
 	@Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING' where id in (:reservedForUpdate)")
 	int reserveTickets(@Bind("reservationId") String reservationId,
 			@Bind("reservedForUpdate") List<Integer> reservedForUpdate);

@@ -34,14 +34,14 @@ public class EventModification {
     private final int organizationId;
     private final String location;
     private final String description;
-    private final DateTimeModification start;
+    private final DateTimeModification begin;
     private final DateTimeModification end;
     private final BigDecimal price;
     private final String currency;
-    private final int seats;
+    private final int availableSeats;
     private final BigDecimal vat;
     private final boolean vatIncluded;
-    private final List<PaymentProxy> paymentProxies;
+    private final List<PaymentProxy> allowedPaymentProxies;
     private final List<TicketCategoryModification> ticketCategories;
     private final boolean freeOfCharge;
 
@@ -51,14 +51,14 @@ public class EventModification {
                              @JsonProperty("organizationId") int organizationId,
                              @JsonProperty("location") String location,
                              @JsonProperty("description") String description,
-                             @JsonProperty("start") DateTimeModification start,
+                             @JsonProperty("begin") DateTimeModification begin,
                              @JsonProperty("end") DateTimeModification end,
-                             @JsonProperty("price") BigDecimal price,
+                             @JsonProperty("regularPrice") BigDecimal regularPrice,
                              @JsonProperty("currency") String currency,
-                             @JsonProperty("seats") int seats,
+                             @JsonProperty("availableSeats") int availableSeats,
                              @JsonProperty("vat") BigDecimal vat,
                              @JsonProperty("vatIncluded") boolean vatIncluded,
-                             @JsonProperty("paymentProxies") List<PaymentProxy> paymentProxies,
+                             @JsonProperty("allowedPaymentProxies") List<PaymentProxy> allowedPaymentProxies,
                              @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories,
                              @JsonProperty("freeOfCharge") boolean freeOfCharge) {
         this.id = id;
@@ -66,14 +66,14 @@ public class EventModification {
         this.organizationId = organizationId;
         this.location = location;
         this.description = description;
-        this.start = start;
+        this.begin = begin;
         this.end = end;
-        this.price = price;
+        this.price = regularPrice;
         this.currency = currency;
-        this.seats = seats;
+        this.availableSeats = availableSeats;
         this.vat = vat;
         this.vatIncluded = vatIncluded;
-        this.paymentProxies = Optional.ofNullable(paymentProxies).orElse(Collections.<PaymentProxy>emptyList());
+        this.allowedPaymentProxies = Optional.ofNullable(allowedPaymentProxies).orElse(Collections.<PaymentProxy>emptyList());
         this.ticketCategories = ticketCategories;
         this.freeOfCharge = freeOfCharge;
     }

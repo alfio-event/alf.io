@@ -14,6 +14,9 @@
             getAllOrganizations : function() {
                 return $http.get('/admin/api/organizations.json').error(HttpErrorHandler.handle);
             },
+            getOrganization: function(id) {
+                return $http.get('/admin/api/organizations/'+id+'.json').error(HttpErrorHandler.handle);
+            },
             createOrganization : function(organization) {
                 return $http['post']('/admin/api/organizations/new', organization).error(HttpErrorHandler.handle);
             },
@@ -31,7 +34,7 @@
         };
     });
 
-    baseServices.service("UserService", function($http, HttpErrorHandler) {
+    baseServices.service('UserService', function($http, HttpErrorHandler) {
         return {
             getAllUsers : function() {
                 return $http.get('/admin/api/users.json').error(HttpErrorHandler.handle);
@@ -49,6 +52,9 @@
         return {
             getAllEvents : function() {
                 return $http.get('/admin/api/events.json').error(HttpErrorHandler.handle);
+            },
+            getEvent: function(name) {
+                return $http.get('/admin/api/events/'+name+'.json').error(HttpErrorHandler.handle);
             },
             checkEvent : function(event) {
                 return $http['post']('/admin/api/events/check', event).error(HttpErrorHandler.handle);

@@ -1,0 +1,103 @@
+<div class="fa fa-refresh fa-spin fa-2x text-muted" data-ng-if="!event">
+</div>
+<div class="container" data-ng-if="event">
+    <div class="page-header">
+        <h1>{{event.shortName}}</h1>
+        <h4 class="text-muted">{{event.description}}</h4>
+    </div>
+    <div class="page-header"><h2>Logistic info</h2></div>
+    <div class="row">
+        <div class="col-sm-12 col-md-6">
+            <div class="form-group">
+                <label>Owner Organization</label>
+                <p class="form-control-static">{{organization.name}}</p>
+
+                <label>Location</label>
+                <p class="form-control-static">{{event.location}}</p>
+
+                <label>Start Date/Time</label>
+                <p class="form-control-static">{{event.begin | date : 'dd/MM/yyyy HH:mm'}}</p>
+
+                <label>End Date/Time</label>
+                <p class="form-control-static">{{event.end | date : 'dd/MM/yyyy HH:mm'}}</p>
+
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6">
+            here the map
+        </div>
+    </div>
+
+    <div class="page-header">
+        <h2>Tickets</h2>
+        <h4>This event has been marked as <span data-ng-if="event.freeOfCharge">Free of charge</span> <span data-ng-if="!event.freeOfCharge">Paid</span></h4>
+    </div>
+
+    <div class="form-group" data-ng-if="!event.freeOfCharge">
+        <label>Accepted payment methods</label>
+        <p class="form-control-static">{{event.allowedPaymentProxies.join(',')}}</p>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-2">
+            <label>Available seats</label>
+            <p class="form-control-static">{{event.availableSeats}}</p>
+        </div>
+        <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
+            <label>Regular Price</label>
+            <p class="form-control-static">{{event.regularPrice | currency : (event.currency || "")}}</p>
+        </div>
+        <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
+            <label>VAT (%)</label>
+            <p class="form-control-static">{{event.vat}}</p>
+        </div>
+        <div class="col-sm-4" data-ng-if="!event.freeOfCharge">
+            <label>Final Price</label>
+            <p class="form-control-static">{{calculateTotalPrice(event) | currency : (event.currency || "")}}</p>
+        </div>
+    </div>
+
+    <div class="page-header">
+        <h3>Categories</h3>
+        <h5 class="text-muted">Here the categories that have been defined for this event.</h5>
+    </div>
+
+    <div data-ng-repeat="categoryWithStatistic in ticketCategories" class="container wMarginBottom" data-ng-class="'category-' + evaluateBarType($index)">
+        <div class="page-header">
+            <div class="row">
+                <div class="col-sm-4">
+                    <h4>{{categoryWithStatistic.ticketCategory.name}}</h4>
+                    <h5 class="text-muted">{{categoryWithStatistic.ticketCategory.description}}</h5>
+                </div>
+                <div class="col-sm-6">
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Available seats</strong></div>
+                        <div class="col-sm-8">{{categoryWithStatistic.ticketCategory.maxTickets}}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Initial sale date</strong></div>
+                        <div class="col-sm-8">{{categoryWithStatistic.ticketCategory.inception | date : 'dd/MM/yyyy HH:mm'}} </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>End sale date</strong></div>
+                        <div class="col-sm-8">{{categoryWithStatistic.ticketCategory.expiration | date : 'dd/MM/yyyy HH:mm'}} </div>
+                    </div>
+                    <div class="row" data-ng-if="!event.freeOfCharge">
+                        <div class="col-sm-4"><strong>Final price</strong></div>
+                        <div class="col-sm-8">{{calcCategoryPrice(categoryWithStatistic.ticketCategory, event) | currency : (event.currency || "")}}</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="row">
+            <div class="col-sm-8">
+                <progress>
+                    <bar data-ng-if="categoryWithStatistic.soldTickets > 0" type="success" value="categoryWithStatistic.soldTicketsPercent">{{categoryWithStatistic.soldTickets}}</bar>
+                    <bar data-ng-if="categoryWithStatistic.notSoldTickets > 0" type="danger" value="categoryWithStatistic.notSoldTicketsPercent">{{categoryWithStatistic.notSoldTickets}}</bar>
+                </progress>
+            </div>
+            <div class="col-sm-4">sold: {{categoryWithStatistic.soldTickets}}, available: {{categoryWithStatistic.notSoldTickets}}</div>
+        </div>
+    </div>
+</div>

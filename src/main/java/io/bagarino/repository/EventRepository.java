@@ -32,8 +32,10 @@ public interface EventRepository {
 
     @Query("select * from event where id = :eventId")
     Event findById(@Bind("eventId") int eventId);
-    
-    
+
+    @Query("select * from event where short_name = :eventName")
+    Event findByShortName(@Bind("eventName") String eventName);
+
     @Query("select * from event order by start_ts asc")
     List<Event> findAll();
 

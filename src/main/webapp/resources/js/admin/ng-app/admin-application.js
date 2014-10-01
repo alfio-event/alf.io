@@ -35,15 +35,20 @@
                     }
                 }
             })
-            .state('event', {
+            .state('events', {
                 abstract: true,
-                url: '/event',
+                url: '/events',
                 templateUrl: BASE_STATIC_URL + "/event/index.html"
             })
-            .state('event.new', {
+            .state('events.new', {
                 url: '/new',
                 templateUrl: BASE_STATIC_URL + "/event/edit-event.html",
                 controller: 'CreateEventController'
+            })
+            .state('events.detail', {
+                url: '/:eventName',
+                templateUrl: BASE_STATIC_URL + "/event/detail.html",
+                controller: 'EventDetailController'
             })
     });
 
@@ -124,7 +129,7 @@
     admin.controller('CreateEventController', function($scope, $state, $rootScope, $q, OrganizationService, PaymentProxyService, EventService) {
         $scope.event = {
             freeOfCharge: false,
-            start: {},
+            begin: {},
             end: {}
         };
         $scope.organizations = {};
@@ -134,59 +139,13 @@
         });
 
         PaymentProxyService.getAllProxies().success(function(result) {
-            $scope.paymentProxies = _.map(result, function(p) {
+            $scope.allowedPaymentProxies = _.map(result, function(p) {
                 return {
                     id: p,
                     description: PAYMENT_PROXY_DESCRIPTIONS[p] || "Unknown provider ("+p+")  Please check configuration"
                 };
             });
         });
-
-        var calculateNetPrice = function(event) {
-            if(isNaN(event.price) || isNaN(event.vat)) {
-                return numeral(0.0);
-            }
-            if(!event.vatIncluded) {
-                return numeral(event.price);
-            }
-            return numeral(event.price).divide(numeral(1).add(numeral(event.vat).divide(100)));
-        };
-
-        $scope.calculateTotalPrice = function(e) {
-            if(isNaN(e.price) || isNaN(e.vat)) {
-                return "0.00";
-            }
-            var vat = numeral(0.0);
-            if(!e.vatIncluded) {
-                vat = applyPercentage(e.price, e.vat);
-            }
-            return vat.add(e.price).value();
-        };
-
-        $scope.evaluateBarType = function(index) {
-            var barClasses = ['danger', 'warning', 'info', 'success'];
-            if(index < barClasses.length) {
-                return barClasses[index];
-            }
-            return index % 2 == 0 ? 'info' : 'success';
-        };
-
-        $scope.calcBarValue = function(categorySeats, eventSeats) {
-            return calcPercentage(categorySeats, eventSeats).format('0.00');
-        };
-
-        $scope.calcCategoryPrice = function(category, event) {
-            if(isNaN(event.price) || isNaN(category.discount)) {
-                return '0.00';
-            }
-            var netPrice = calculateNetPrice(event);
-            var result = netPrice.subtract(applyPercentage(netPrice, category.discount));
-            if(event.vatIncluded) {
-                return result.add(applyPercentage(result, event.vat)).format('0.00');
-            }
-            return result.format('0.00');
-
-        };
 
         var createCategory = function(sticky) {
             var lastCategory = _.last($scope.event.ticketCategories);
@@ -219,13 +178,13 @@
 
         $scope.canAddCategory = function(categories) {
             var remaining = _.foldl(categories, function(difference, category) {
-                return difference - category.seats;
-            }, $scope.event.seats);
+                return difference - category.maxTickets;
+            }, $scope.event.availableSeats);
 
             return remaining > 0 && _.every(categories, function(category) {
                 return angular.isDefined(category.name) &&
-                    angular.isDefined(category.seats) &&
-                    category.seats > 0 &&
+                    angular.isDefined(category.maxTickets) &&
+                    category.maxTickets > 0 &&
                     angular.isDefined(category.expiration.date);
             });
         };
@@ -243,10 +202,66 @@
         };
     });
 
+    admin.controller('EventDetailController', function($scope, $stateParams, OrganizationService, EventService) {
+        EventService.getEvent($stateParams.eventName).success(function(result) {
+            $scope.event = result.event;
+            $scope.organization = result.organization;
+            $scope.ticketCategories = result.ticketCategories;
+        });
+    });
+
     admin.controller('MessageBarController', function($scope, $rootScope) {
         $rootScope.$on('Message', function(m) {
             $scope.message = m;
         });
+    });
+
+    admin.run(function($rootScope) {
+        var calculateNetPrice = function(event) {
+            if(isNaN(event.regularPrice) || isNaN(event.vat)) {
+                return numeral(0.0);
+            }
+            if(!event.vatIncluded) {
+                return numeral(event.regularPrice);
+            }
+            return numeral(event.regularPrice).divide(numeral(1).add(numeral(event.vat).divide(100)));
+        };
+
+        $rootScope.calculateTotalPrice = function(event) {
+            if(isNaN(event.regularPrice) || isNaN(event.vat)) {
+                return "0.00";
+            }
+            var vat = numeral(0.0);
+            if(!event.vatIncluded) {
+                vat = applyPercentage(event.regularPrice, event.vat);
+            }
+            return vat.add(event.regularPrice).value();
+        };
+
+        $rootScope.evaluateBarType = function(index) {
+            var barClasses = ['danger', 'warning', 'info', 'success'];
+            if(index < barClasses.length) {
+                return barClasses[index];
+            }
+            return index % 2 == 0 ? 'info' : 'success';
+        };
+
+        $rootScope.calcBarValue = function(categorySeats, eventSeats) {
+            return calcPercentage(categorySeats, eventSeats).format('0.00');
+        };
+
+        $rootScope.calcCategoryPrice = function(category, event) {
+            if(isNaN(event.regularPrice) || isNaN(category.discount)) {
+                return '0.00';
+            }
+            var netPrice = calculateNetPrice(event);
+            var result = netPrice.subtract(applyPercentage(netPrice, category.discount));
+            if(event.vatIncluded) {
+                return result.add(applyPercentage(result, event.vat)).format('0.00');
+            }
+            return result.format('0.00');
+
+        };
     });
 
 })();
