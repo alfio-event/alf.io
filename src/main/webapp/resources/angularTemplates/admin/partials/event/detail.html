@@ -53,7 +53,7 @@
         </div>
         <div class="col-sm-4" data-ng-if="!event.freeOfCharge">
             <label>Final Price</label>
-            <p class="form-control-static">{{calculateTotalPrice(event) | currency : (event.currency || "")}}</p>
+            <p class="form-control-static">{{calculateTotalPrice(event, true) | currency : (event.currency || "")}}</p>
         </div>
     </div>
 

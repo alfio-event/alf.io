@@ -96,7 +96,7 @@
                     <span class="input-group-addon">
                         <input type="checkbox" data-ng-model="event.vatIncluded" name="vatIncluded" id="vatIncluded">
                     </span>
-                    <span class="form-control text-muted">Price VAT included: {{calculateTotalPrice(event) | currency : (event.currency || "")}}</span>
+                    <span class="form-control text-muted">Price VAT included: {{calculateTotalPrice(event, false) | currency : (event.currency || "")}}</span>
                 </div>
             </div>
         </div>
@@ -143,8 +143,8 @@
                     </div>
 
                     <div class="col-sm-12 col-md-4" data-ng-if="!event.freeOfCharge">
-                        <label for="{{$index}}-discount">Applied Discount <span data-ng-if="ticketCategory.discount">({{ticketCategory.discount}}%  - Price: {{calcCategoryPrice(ticketCategory, event) | currency : (event.currency || "")}})</span></label>
-                        <input type="range" data-ng-model="ticketCategory.discount" name="{{$index}}-discount" id="{{$index}}-discount" class="form-control" required min="0" max="100" />
+                        <label for="{{$index}}-price">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event)}}%)</span></label>
+                        <input type="number" data-ng-model="ticketCategory.price" name="{{$index}}-price" id="{{$index}}-price" class="form-control" required />
                     </div>
                 </div>
             </div>

@@ -227,12 +227,12 @@
             return numeral(event.regularPrice).divide(numeral(1).add(numeral(event.vat).divide(100)));
         };
 
-        $rootScope.calculateTotalPrice = function(event) {
+        $rootScope.calculateTotalPrice = function(event, alreadySaved) {
             if(isNaN(event.regularPrice) || isNaN(event.vat)) {
                 return "0.00";
             }
             var vat = numeral(0.0);
-            if(!event.vatIncluded) {
+            if(alreadySaved || !event.vatIncluded) {
                 vat = applyPercentage(event.regularPrice, event.vat);
             }
             return vat.add(event.regularPrice).value();
@@ -250,17 +250,22 @@
             return calcPercentage(categorySeats, eventSeats).format('0.00');
         };
 
-        $rootScope.calcCategoryPrice = function(category, event) {
-            if(isNaN(event.regularPrice) || isNaN(category.discount)) {
+        $rootScope.calcCategoryPricePercent = function(category, event) {
+            if(isNaN(event.regularPrice) || isNaN(category.price)) {
                 return '0.00';
             }
-            var netPrice = calculateNetPrice(event);
-            var result = netPrice.subtract(applyPercentage(netPrice, category.discount));
-            if(event.vatIncluded) {
-                return result.add(applyPercentage(result, event.vat)).format('0.00');
-            }
-            return result.format('0.00');
+            return calcPercentage(category.price, event.regularPrice).format('0.00');
+        };
 
+        $rootScope.calcCategoryPrice = function(category, event) {
+            if(isNaN(event.vat) || isNaN(category.price)) {
+                return '0.00';
+            }
+            var vat = numeral(0.0);
+            if(event.vatIncluded) {
+                vat = applyPercentage(category.price, event.vat);
+            }
+            return numeral(category.price).add(vat).format('0.00');
         };
     });
 

@@ -30,7 +30,7 @@ public class TicketCategory {
     private final int maxTickets;
     private final String name;
     private final String description;
-    private final BigDecimal discount;
+    private final BigDecimal price;
 
     public TicketCategory(@Column("id") int id,
                           @Column("inception") Date inception,
@@ -38,13 +38,13 @@ public class TicketCategory {
                           @Column("max_tickets") int maxTickets,
                           @Column("name") String name,
                           @Column("description") String description,
-                          @Column("discount") BigDecimal discount) {
+                          @Column("price") BigDecimal price) {
         this.id = id;
         this.inception = inception;
         this.expiration = expiration;
         this.maxTickets = maxTickets;
         this.name = name;
         this.description = description;
-        this.discount = discount;
+        this.price = price;
     }
 }

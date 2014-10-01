@@ -64,7 +64,7 @@ create table ticket_category (
 	max_tickets integer not null,
 	name varchar(255) not null,
   description varchar(1024),
-  discount decimal(5,2) not null
+  price decimal(5,2) not null
 );
 
 create table event(

@@ -134,7 +134,7 @@ public class EventManager {
         return eventTicketCategoryRepository.findByEventId(event.getId()).stream()
                     .map(etc -> ticketCategoryRepository.getById(etc.getTicketCategoryId()))
                     .flatMap(tc -> {
-                        final BigDecimal price = regularPrice.subtract(regularPrice.multiply(tc.getDiscount()).divide(HUNDRED, 2, HALF_UP));
+                        final BigDecimal price = regularPrice.subtract(regularPrice.multiply(tc.getPrice()).divide(HUNDRED, 2, HALF_UP));
                         return Stream.generate(MapSqlParameterSource::new)
                                 .limit(tc.getMaxTickets())
                                 .map(ps -> buildParams(eventId, creation, tc, price, ps));
@@ -153,9 +153,11 @@ public class EventManager {
 
     private void distributeSeats(EventModification em, int eventId) {
         boolean freeOfCharge = em.isFreeOfCharge();
+        boolean vatIncluded = em.isVatIncluded();
         em.getTicketCategories().stream().forEach(tc -> {
+            final BigDecimal price = evaluatePrice(tc.getPrice(), em.getVat(), vatIncluded, freeOfCharge);
             final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toDate(),
-                    tc.getExpiration().toDate(), tc.getName(), tc.getDescription(), tc.getMaxTickets(), freeOfCharge ? BigDecimal.ZERO : tc.getDiscount());
+                    tc.getExpiration().toDate(), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price);
             eventTicketCategoryRepository.insert(eventId, category.getValue());
         });
         final List<TicketCategory> ticketCategories = eventTicketCategoryRepository.findByEventId(eventId).stream()
