@@ -74,6 +74,8 @@ jQuery(function($) {
 
 
 	<h2>Payment</h2>
+	
+	<h3>https://stripe.com/docs/testing</h3>
 
 	<span class="payment-errors"></span>
  
@@ -90,6 +92,7 @@ jQuery(function($) {
 			<input type="text" size="4" data-stripe="cvc"/>
 		</label>
 	</div>
+ 
  
 	<div class="form-row">
 		<label>

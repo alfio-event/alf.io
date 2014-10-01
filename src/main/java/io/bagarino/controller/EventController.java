@@ -109,7 +109,8 @@ public class EventController {
     	}
 		
 		//TODO: should have a maximum selection count too.
-		Validate.isTrue(reservation.selectionCount() > 0);
+		final int selectionCount = reservation.selectionCount();
+		Validate.isTrue(selectionCount > 0  && selectionCount <= tickReservationManager.maxAmountOfTickets());
 			
 		//TODO handle error cases :D
 		//TODO: 25 minutes should be configurable
