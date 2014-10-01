@@ -60,18 +60,17 @@ public class StripeManager {
      * @param bigDecimal 
      * @throws StripeException 
      */
-    public void chargeCreditCard(String stripeToken, long amountInCent) throws StripeException {
+    public void chargeCreditCard(String stripeToken, long amountInCent, String currency) throws StripeException {
         // Use Stripe's bindings...
         Stripe.apiKey = getSecretKey();
 
         Map<String, Object> chargeParams = new HashMap<>();
         chargeParams.put("amount", amountInCent);
-        chargeParams.put("currency", "chf");
-        //chargeParams.put("card", "tok_14fYSAJSN8lunZypoZ7bQ2nm"); // obtained with Stripe.js
+        chargeParams.put("currency", currency);
         chargeParams.put("card", stripeToken); // obtained with Stripe.js
-        chargeParams.put("description", "Charge for test@example.com");
+        chargeParams.put("description", "Charge for test@example.com");//TODO replace
         Map<String, String> initialMetadata = new HashMap<String, String>();
-        initialMetadata.put("order_id", "6735");
+        initialMetadata.put("order_id", "6735");//TODO: replace
         chargeParams.put("metadata", initialMetadata);
         Charge charge = Charge.create(chargeParams);
     }

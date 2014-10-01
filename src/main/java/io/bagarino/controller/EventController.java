@@ -107,7 +107,7 @@ public class EventController {
     		return "redirect:/event/";
     	}
 		
-
+		//TODO: should have a maximum selection count too.
 		Validate.isTrue(reservation.selectionCount() > 0);
 			
 		//TODO handle error cases :D
@@ -154,7 +154,9 @@ public class EventController {
     public String handleReservation(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId,
                                     @RequestParam("stripeToken") String stripeToken, Model model) throws StripeException {
     	
-    	if(!optionally(() -> eventRepository.findById(eventId)).isPresent()) {
+    	
+    	Optional<Event> event = optionally(() -> eventRepository.findById(eventId));
+    	if(!event.isPresent()) {
     		return "redirect:/event/";
     	}
     	
@@ -163,9 +165,9 @@ public class EventController {
     		return "/event/reservation-page-not-found";
     	}
     	
-    	// TODO handle error/other payment methods
-    	//FIXME: there is a mismatch between the price of the ticket (chf) and the expected stripe value (cents?)
-        stripeManager.chargeCreditCard(stripeToken, totalReservationCost(reservationId).longValueExact());
+    	// TODO handle error - free case
+    	// FIXME: there is a mismatch between the price of the ticket (chf) and the expected stripe value (cents?)
+        stripeManager.chargeCreditCard(stripeToken, totalReservationCost(reservationId).longValueExact(), event.get().getCurrency());
         //
         
         
@@ -180,7 +182,7 @@ public class EventController {
     	return totalFrom(ticketRepository.findTicketsInReservation(reservationId));
     }
     
-    private BigDecimal totalFrom(List<Ticket> tickets) {
+    private static BigDecimal totalFrom(List<Ticket> tickets) {
     	return tickets.stream().map(Ticket::getPaidPrice).reduce((a,b) -> a.add(b)).orElseThrow(IllegalStateException::new);
     }
     
