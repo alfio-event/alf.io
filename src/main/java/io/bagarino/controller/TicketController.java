@@ -76,13 +76,13 @@ public class TicketController {
 		this.ticketCategoryRepository = ticketCategoryRepository;
 	}
 
-	@RequestMapping(value = "/event/{eventId}/reservation/{reservationId}/download-ticket/{ticketIdentifier}", method = RequestMethod.GET)
-	public void generateTicketPdf(@PathVariable("eventId") int eventId,
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/download-ticket/{ticketIdentifier}", method = RequestMethod.GET)
+	public void generateTicketPdf(@PathVariable("eventName") String eventName,
 			@PathVariable("reservationId") String reservationId,
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response)
 			throws MustacheException, IOException, DocumentException, WriterException {
-
-		Event e = optionally(() -> eventRepository.findById(eventId)).orElseThrow(IllegalArgumentException::new);
+		
+		Event e = optionally(() -> eventRepository.findByShortName(eventName)).orElseThrow(IllegalArgumentException::new);
 		TicketReservation reservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId))
 				.orElseThrow(IllegalArgumentException::new);
 		Ticket ticket = optionally(() -> ticketRepository.findByUUID(ticketIdentifier)).orElseThrow(
@@ -93,7 +93,7 @@ public class TicketController {
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
 		
 		//
-		String qrCodeText = e.getId() + "/" + ticket.getTicketsReservationId() + "/" + ticket.getUuid();
+		String qrCodeText = e.getShortName() + "/" + ticket.getTicketsReservationId() + "/" + ticket.getUuid();
 		//
 
 		Map<String, Object> tmplModel = new HashMap<>();

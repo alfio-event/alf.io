@@ -2,7 +2,7 @@
 <ul>
 {{#events}}
 	<li>
-		<a href="./{{id}}/">
+		<a href="./{{shortName}}/">
 			<div>
 				<h2>{{shortName}}</h2>
 				<div>{{begin}}-{{end}}</div>

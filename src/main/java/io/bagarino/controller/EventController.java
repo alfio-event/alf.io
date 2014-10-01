@@ -84,26 +84,27 @@ public class EventController {
 		return "/event/event-list";
 	}
 
-	@RequestMapping(value = "/event/{eventId}", method = RequestMethod.GET)
-	public String showEvent(@PathVariable("eventId") int eventId, Model model) {
+	@RequestMapping(value = "/event/{eventName}", method = RequestMethod.GET)
+	public String showEvent(@PathVariable("eventName") String eventName, Model model) {
 
 		// TODO: for each ticket categories we should check if there are available tickets
 		
-		Optional<Event> event = optionally(() -> eventRepository.findById(eventId));
+		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
 
 		if(event.isPresent()) {
 			model.addAttribute("event", event.get())//
-				.addAttribute("ticketCategories", ticketCategoryRepository.findAllTicketCategories(eventId));
+				.addAttribute("ticketCategories", ticketCategoryRepository.findAllTicketCategories(event.get().getId()));
 			return "/event/show-event";
 		} else {
 			return "redirect:/event/";
 		}
 	}
 
-	@RequestMapping(value = "/event/{eventId}/reserve-tickets", method = RequestMethod.POST)
-	public String reserveTicket(@PathVariable("eventId") int eventId, @ModelAttribute ReservationForm reservation) {
+	@RequestMapping(value = "/event/{eventName}/reserve-tickets", method = RequestMethod.POST)
+	public String reserveTicket(@PathVariable("eventName") String eventName, @ModelAttribute ReservationForm reservation) {
 		
-		if(!optionally(() -> eventRepository.findById(eventId)).isPresent()) {
+		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
+		if(!event.isPresent()) {
     		return "redirect:/event/";
     	}
 		
@@ -113,16 +114,17 @@ public class EventController {
 		//TODO handle error cases :D
 		//TODO: 25 minutes should be configurable
 		Date expiration = DateUtils.addMinutes(new Date(), 25);
-		String reservationId = tickReservationManager.createTicketReservation(eventId, reservation.selected(), expiration);
-		return "redirect:/event/" + eventId + "/reservation/" + reservationId;
+		String reservationId = tickReservationManager.createTicketReservation(event.get().getId(), reservation.selected(), expiration);
+		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 	}
 
 
 
-    @RequestMapping(value = "/event/{eventId}/reservation/{reservationId}", method = RequestMethod.GET)
-	public String showReservationPage(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId, Model model) {
-    	 
-    	if(!optionally(() -> eventRepository.findById(eventId)).isPresent()) {
+    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.GET)
+	public String showReservationPage(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Model model) {
+    	
+    	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
+    	if(!event.isPresent()) {
     		return "redirect:/event/";
     	}
 
@@ -137,7 +139,7 @@ public class EventController {
     		model.addAttribute("summary", extractSummary(reservationId));
     		model.addAttribute("totalPrice", totalReservationCost(reservationId));
     		model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
-    		model.addAttribute("event", eventRepository.findById(eventId));
+    		model.addAttribute("event", event.get());
     		model.addAttribute("reservationId", reservationId);
     		
     		return "/event/reservation-page";
@@ -150,12 +152,12 @@ public class EventController {
     	}
 	}
 
-    @RequestMapping(value = "/event/{eventId}/reservation/{reservationId}", method = RequestMethod.POST)
-    public String handleReservation(@PathVariable("eventId") int eventId, @PathVariable("reservationId") String reservationId,
+    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
+    public String handleReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
                                     @RequestParam("stripeToken") String stripeToken, Model model) throws StripeException {
     	
     	
-    	Optional<Event> event = optionally(() -> eventRepository.findById(eventId));
+    	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
     		return "redirect:/event/";
     	}
@@ -172,10 +174,10 @@ public class EventController {
         
         
         // we can enter here only if the reservation is done correctly
-        tickReservationManager.completeReservation(eventId, reservationId);
+        tickReservationManager.completeReservation(event.get().getId(), reservationId);
         //
 
-        return "redirect:/event/" + eventId + "/reservation/" + reservationId;
+        return "redirect:/event/" + eventName + "/reservation/" + reservationId;
     }
     
     private BigDecimal totalReservationCost(String reservationId) {
