@@ -133,22 +133,25 @@ public class EventManager {
                                                                 BigDecimal regularPrice) {
         return eventTicketCategoryRepository.findByEventId(event.getId()).stream()
                     .map(etc -> ticketCategoryRepository.getById(etc.getTicketCategoryId()))
-                    .flatMap(tc -> {
-                        final BigDecimal price = regularPrice.subtract(regularPrice.multiply(tc.getPrice()).divide(HUNDRED, 2, HALF_UP));
-                        return Stream.generate(MapSqlParameterSource::new)
-                                .limit(tc.getMaxTickets())
-                                .map(ps -> buildParams(eventId, creation, tc, price, ps));
-                    }).toArray(MapSqlParameterSource[]::new);
+                    .flatMap(tc -> Stream.generate(MapSqlParameterSource::new)
+                            .limit(tc.getMaxTickets())
+                            .map(ps -> buildParams(eventId, creation, tc, regularPrice, tc.getPrice(), ps)))
+                    .toArray(MapSqlParameterSource[]::new);
     }
 
-    private MapSqlParameterSource buildParams(int eventId, Date creation, TicketCategory tc, BigDecimal price, MapSqlParameterSource ps) {
+    private MapSqlParameterSource buildParams(int eventId,
+                                              Date creation,
+                                              TicketCategory tc,
+                                              BigDecimal originalPrice,
+                                              BigDecimal paidPrice,
+                                              MapSqlParameterSource ps) {
         return ps.addValue("uuid", UUID.randomUUID().toString())
                 .addValue("creation", creation)
                 .addValue("categoryId", tc.getId())
                 .addValue("eventId", eventId)
                 .addValue("status", Ticket.TicketStatus.FREE.name())
-                .addValue("originalPrice", price)
-                .addValue("paidPrice", BigDecimal.ZERO);
+                .addValue("originalPrice", originalPrice)
+                .addValue("paidPrice", paidPrice);
     }
 
     private void distributeSeats(EventModification em, int eventId) {
@@ -165,7 +168,7 @@ public class EventManager {
                 .collect(Collectors.toList());
         int notAssignedTickets = em.getAvailableSeats() - ticketCategories.stream().mapToInt(TicketCategory::getMaxTickets).sum();
 
-        if(notAssignedTickets != 0) {
+        if(notAssignedTickets < 0) {
             TicketCategory last = ticketCategories.stream()
                                   .sorted(Comparator.comparing(TicketCategory::getExpiration).reversed())
                                   .findFirst().get();

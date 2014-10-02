@@ -17,6 +17,7 @@
 package io.bagarino.model;
 
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import io.bagarino.manager.EventManager;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -57,5 +58,9 @@ public class Ticket {
         this.originalPrice = originalPrice;
         this.paidPrice = paidPrice;
         this.ticketsReservationId = ticketsReservationId;
+    }
+
+    public BigDecimal getPaidPriceInCent() {
+        return getPaidPrice().multiply(EventManager.HUNDRED);
     }
 }

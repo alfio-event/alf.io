@@ -16,10 +16,7 @@
  */
 package io.bagarino.controller;
 
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static io.bagarino.util.OptionalWrapper.optionally;
+import com.stripe.exception.StripeException;
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.model.Event;
@@ -31,6 +28,13 @@ import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
+import lombok.Data;
+import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -39,20 +43,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import lombok.Data;
-
-import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import com.stripe.exception.StripeException;
+import static io.bagarino.util.OptionalWrapper.optionally;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 
 @Controller
 public class EventController {
@@ -183,7 +177,7 @@ public class EventController {
     }
     
     private static BigDecimal totalFrom(List<Ticket> tickets) {
-    	return tickets.stream().map(Ticket::getPaidPrice).reduce((a,b) -> a.add(b)).orElseThrow(IllegalStateException::new);
+    	return tickets.stream().map(Ticket::getPaidPriceInCent).reduce((a,b) -> a.add(b)).orElseThrow(IllegalStateException::new);
     }
     
     private List<SummaryRow> extractSummary(String reservationId) {
