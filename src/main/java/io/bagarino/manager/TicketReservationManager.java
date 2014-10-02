@@ -21,6 +21,7 @@ import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
+import io.bagarino.repository.system.ConfigurationRepository;
 
 import java.util.Date;
 import java.util.List;
@@ -28,6 +29,7 @@ import java.util.UUID;
 
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,11 +39,13 @@ public class TicketReservationManager {
 	
 	private final TicketRepository ticketRepository;
 	private final TicketReservationRepository ticketReservationRepository;
+	private final ConfigurationRepository configurationRepository;
 	
 	@Autowired
-	public TicketReservationManager(TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository) {
+	public TicketReservationManager(TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository, ConfigurationRepository configurationRepository) {
 		this.ticketRepository = ticketRepository;
 		this.ticketReservationRepository = ticketReservationRepository;
+		this.configurationRepository = configurationRepository;
 	}
 	
     
@@ -75,5 +79,14 @@ public class TicketReservationManager {
 		
 		ticketRepository.freeFromReservation(expired);
 		ticketReservationRepository.remove(expired);
+	}
+
+
+	public int maxAmountOfTickets() {
+		try {
+			return Integer.valueOf(configurationRepository.findByKey("MAX_AMOUNT_OF_TICKETS_BY_RESERVATION").getValue());
+		} catch(NumberFormatException | NullPointerException | EmptyResultDataAccessException e) {
+			return 5;
+		}
 	}
 }

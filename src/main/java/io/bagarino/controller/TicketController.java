@@ -76,24 +76,35 @@ public class TicketController {
 		this.ticketCategoryRepository = ticketCategoryRepository;
 	}
 
-	@RequestMapping(value = "/event/{eventId}/reservation/{reservationId}/download-ticket/{ticketIdentifier}", method = RequestMethod.GET)
-	public void generateTicketPdf(@PathVariable("eventId") int eventId,
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.POST)
+	public String assignTicketToPerson(@PathVariable("eventName") String eventName,
+			@PathVariable("reservationId") String reservationId,
+			@PathVariable("ticketIdentifier") String ticketIdentifier) {
+		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+	}
+
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/download-ticket/{ticketIdentifier}", method = RequestMethod.GET)
+	public void generateTicketPdf(@PathVariable("eventName") String eventName,
 			@PathVariable("reservationId") String reservationId,
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response)
 			throws MustacheException, IOException, DocumentException, WriterException {
 
-		Event e = optionally(() -> eventRepository.findById(eventId)).orElseThrow(IllegalArgumentException::new);
+		Event e = optionally(() -> eventRepository.findByShortName(eventName)).orElseThrow(
+				IllegalArgumentException::new);
 		TicketReservation reservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId))
 				.orElseThrow(IllegalArgumentException::new);
 		Ticket ticket = optionally(() -> ticketRepository.findByUUID(ticketIdentifier)).orElseThrow(
 				IllegalArgumentException::new);
+		
+		//FIXME: we should let generate the pdf only if the user has set full name and email!
 
 		Validate.isTrue(reservation.getStatus() == TicketReservationStatus.COMPLETE);
 
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
-		
-		//
-		String qrCodeText = e.getId() + "/" + ticket.getTicketsReservationId() + "/" + ticket.getUuid();
+
+		//FIXME: in the qr code we should add a hash of full name + email .
+		//FIXME: additionally during the event creation, we can add a secret row with a UUID, this uuid will be used to compute a HMAC of the whole qrcodetext, thus ensuring the integrity and authenticity
+		String qrCodeText = e.getShortName() + "/" + ticket.getTicketsReservationId() + "/" + ticket.getUuid();
 		//
 
 		Map<String, Object> tmplModel = new HashMap<>();

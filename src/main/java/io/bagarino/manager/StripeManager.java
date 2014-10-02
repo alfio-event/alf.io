@@ -43,11 +43,11 @@ public class StripeManager {
 	}
 	
 	public String getSecretKey() {
-		return configurationRepository.findByKey("stripe_secret_key").getValue();
+		return configurationRepository.findByKey("STRIPE_SECRET_KEY").getValue();
 	}
 	
 	public String getPublicKey() {
-		return configurationRepository.findByKey("stripe_public_key").getValue();
+		return configurationRepository.findByKey("STRIPE_PUBLIC_KEY").getValue();
 	}
 
     /**

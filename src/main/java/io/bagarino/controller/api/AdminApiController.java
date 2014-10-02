@@ -120,6 +120,7 @@ public class AdminApiController {
 
     @RequestMapping(value = "/events/new", method = RequestMethod.POST)
     public String insertEvent(@RequestBody EventModification eventModification) {
+    	//FIXME: check event short name should not contain "/" as we use it as part of the url
         eventManager.createEvent(eventModification);
         return OK;
     }
