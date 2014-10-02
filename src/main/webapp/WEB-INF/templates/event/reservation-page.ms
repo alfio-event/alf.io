@@ -67,11 +67,7 @@ jQuery(function($) {
 	<h2>Billing details</h2>
 	<p>full name</p>
 	<p>email</p>
-	<p>...?</p>
-	
-	
-	
-
+	<p>optional address textarea</p>
 
 	<h2>Payment</h2>
 	

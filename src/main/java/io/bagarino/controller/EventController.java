@@ -168,6 +168,10 @@ public class EventController {
     		return "/event/reservation-page-not-found";
     	}
     	
+    	//FIXME before charging the credit card we need to check that we are within the 25 minutes -> the job should remove only the transactions that are pending and older than 35 minutes
+    	
+    	//
+    	
     	// TODO handle error - free case
     	// FIXME: there is a mismatch between the price of the ticket (chf) and the expected stripe value (cents?)
         stripeManager.chargeCreditCard(stripeToken, totalReservationCost(reservationId).longValueExact(), event.get().getCurrency());
