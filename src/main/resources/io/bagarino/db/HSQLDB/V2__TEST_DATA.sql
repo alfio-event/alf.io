@@ -31,8 +31,8 @@ insert into j_event_ticket_category(event_id, ticket_category_id) values (0,1);
 
 insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts)
   values
-  ('abcdefghilmn', '2014-01-10 00:00:00', 0, 0, 'FREE', 1000, 1000),
-  ('abcdefghilmo', '2014-01-10 00:00:00', 0, 0, 'FREE', 1000, 1000),
+  ('abcdefghilmn', '2014-01-10 00:00:00', 0, 0, 'FREE', 0, 0),
+  ('abcdefghilmo', '2014-01-10 00:00:00', 0, 0, 'FREE', 0, 0),
   ('abcdefghilmn41', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500),
   ('abcdefghilmn42', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500),
   ('abcdefghilmn43', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500),

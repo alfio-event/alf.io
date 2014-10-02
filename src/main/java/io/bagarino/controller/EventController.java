@@ -28,7 +28,6 @@ import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
-import io.bagarino.util.MonetaryUtil;
 import lombok.Data;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -43,6 +42,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static io.bagarino.util.MonetaryUtil.formatCents;
 import static io.bagarino.util.OptionalWrapper.optionally;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -132,7 +132,7 @@ public class EventController {
     	} else if(reservation.get().getStatus() == TicketReservationStatus.PENDING) {
     		
     		model.addAttribute("summary", extractSummary(reservationId));
-    		model.addAttribute("totalPrice", MonetaryUtil.formatCents(totalReservationCost(reservationId)));
+    		model.addAttribute("totalPrice", formatCents(totalReservationCost(reservationId)));
     		model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
     		model.addAttribute("event", event.get());
     		model.addAttribute("reservationId", reservationId);
@@ -191,7 +191,7 @@ public class EventController {
     	List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
     	tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).forEach((categoryId, ticketsByCategory) -> {
     		String categoryName = ticketCategoryRepository.getById(categoryId).getName();
-    		summary.add(new SummaryRow(categoryName, ticketsByCategory.get(0).getPaidPriceInCents(), ticketsByCategory.size(), totalFrom(ticketsByCategory)));
+    		summary.add(new SummaryRow(categoryName, formatCents(ticketsByCategory.get(0).getPaidPriceInCents()), ticketsByCategory.size(), formatCents(totalFrom(ticketsByCategory))));
     	});
     	return summary;
     }
@@ -199,9 +199,9 @@ public class EventController {
     @Data
     public static class SummaryRow {
     	private final String name;
-    	private final int price;
+    	private final String price;
     	private final int amount;
-    	private final int subTotal;
+    	private final String subTotal;
     }
 
     @Data
