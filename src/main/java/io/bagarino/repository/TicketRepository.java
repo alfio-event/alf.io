@@ -27,7 +27,7 @@ import java.util.List;
 @QueryRepository
 public interface TicketRepository {
 
-	@Query(type = QueryType.TEMPLATE, value = "insert into ticket (uuid, creation, category_id, event_id, status, original_price, paid_price)"
+	@Query(type = QueryType.TEMPLATE, value = "insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts)"
 			+ "values(:uuid, :creation, :categoryId, :eventId, :status, :originalPrice, :paidPrice)")
 	String bulkTicketInitialization();
 

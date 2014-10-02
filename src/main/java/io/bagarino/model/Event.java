@@ -18,6 +18,7 @@ package io.bagarino.model;
 
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import io.bagarino.model.transaction.PaymentProxy;
+import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -37,7 +38,7 @@ public class Event {
     private final String longitude;
     private final Date begin;
     private final Date end;
-    private final BigDecimal regularPrice;
+    private final int regularPriceInCents;
     private final String currency;
     private final int availableSeats;
     private final boolean vatIncluded;
@@ -53,7 +54,7 @@ public class Event {
                  @Column("longitude") String longitude,
                  @Column("start_ts") Date begin,
                  @Column("end_ts") Date end,
-                 @Column("regular_price") BigDecimal regularPrice,
+                 @Column("regular_price_cts") int regularPriceInCents,
                  @Column("currency") String currency,
                  @Column("available_seats") int availableSeats,
                  @Column("vat_included") boolean vatIncluded,
@@ -67,7 +68,7 @@ public class Event {
         this.longitude = longitude;
         this.begin = begin;
         this.end = end;
-        this.regularPrice = regularPrice;
+        this.regularPriceInCents = regularPriceInCents;
         this.currency = currency;
         this.availableSeats = availableSeats;
         this.vatIncluded = vatIncluded;
@@ -78,7 +79,7 @@ public class Event {
                 .collect(Collectors.toList());
     }
 
-    public Long getRegularPriceInCents(){
-        return regularPrice.multiply(new BigDecimal(100)).longValue();
+    public BigDecimal getRegularPrice() {
+        return MonetaryUtil.centsToUnit(regularPriceInCents);
     }
 }

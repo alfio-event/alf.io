@@ -17,7 +17,7 @@
 package io.bagarino.model;
 
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
-import io.bagarino.manager.EventManager;
+import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -36,8 +36,8 @@ public class Ticket {
     private final int categoryId;
     private final int eventId;
     private final TicketStatus status;
-    private final BigDecimal originalPrice;
-    private final BigDecimal paidPrice;
+    private final int originalPriceInCents;
+    private final int paidPriceInCents;
     private final String ticketsReservationId;
     
     public Ticket(@Column("id") int id,
@@ -46,8 +46,8 @@ public class Ticket {
                   @Column("category_id") int categoryId,
                   @Column("status") String status,
                   @Column("event_id") int eventId,
-                  @Column("original_price") BigDecimal originalPrice,
-                  @Column("paid_price") BigDecimal paidPrice,
+                  @Column("original_price_cts") int originalPriceInCents,
+                  @Column("paid_price_cts") int paidPriceInCents,
                   @Column("tickets_reservation_id") String ticketsReservationId) {
         this.id = id;
         this.uuid = uuid;
@@ -55,12 +55,16 @@ public class Ticket {
         this.categoryId = categoryId;
         this.eventId = eventId;
         this.status = TicketStatus.valueOf(status);
-        this.originalPrice = originalPrice;
-        this.paidPrice = paidPrice;
+        this.originalPriceInCents = originalPriceInCents;
+        this.paidPriceInCents = paidPriceInCents;
         this.ticketsReservationId = ticketsReservationId;
     }
 
-    public BigDecimal getPaidPriceInCent() {
-        return getPaidPrice().multiply(EventManager.HUNDRED);
+    public BigDecimal getOriginalPrice() {
+        return MonetaryUtil.centsToUnit(originalPriceInCents);
+    }
+
+    public BigDecimal getPaidPrice() {
+        return MonetaryUtil.centsToUnit(paidPriceInCents);
     }
 }

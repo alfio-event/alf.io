@@ -17,19 +17,19 @@
 
 INSERT INTO organization(name, description, email) VALUES ('demo', 'demo organization', 'info@pippobaudo.com');
 
-insert into event(description, short_name, owner, location, latitude, longitude, start_ts, end_ts, regular_price, currency, available_seats, vat_included, vat, allowed_payment_proxies)
+insert into event(description, short_name, owner, location, latitude, longitude, start_ts, end_ts, regular_price_cts, currency, available_seats, vat_included, vat, allowed_payment_proxies)
   values('event desc', 'eventname', 0, 'demo location', '0', '0', '2015-01-10 00:00:00' , '2015-01-10 23:59:00' , 1000, 'CHF', 440, 'true', 8, 'STRIPE');
 
 insert into j_event_organization(event_id, org_id) values(0, 0);
 
-insert into ticket_category(inception, expiration, name, description, max_tickets, price) values
+insert into ticket_category(inception, expiration, name, description, max_tickets, price_cts) values
   ('2014-01-10 00:00:00', '2015-01-10 00:00:00', 'Normal', 'Very good category', 2, 1000),
   ('2014-01-10 00:00:00', '2015-01-10 00:00:00', 'Not normal', 'Very very good category', 2, 500);
   
 insert into j_event_ticket_category(event_id, ticket_category_id) values (0,0);
 insert into j_event_ticket_category(event_id, ticket_category_id) values (0,1);
 
-insert into ticket (uuid, creation, category_id, event_id, status, original_price, paid_price)
+insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts)
   values
   ('abcdefghilmn', '2014-01-10 00:00:00', 0, 0, 'FREE', 1000, 1000),
   ('abcdefghilmo', '2014-01-10 00:00:00', 0, 0, 'FREE', 1000, 1000),

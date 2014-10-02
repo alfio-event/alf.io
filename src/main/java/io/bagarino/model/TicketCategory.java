@@ -17,6 +17,7 @@
 package io.bagarino.model;
 
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -30,7 +31,7 @@ public class TicketCategory {
     private final int maxTickets;
     private final String name;
     private final String description;
-    private final BigDecimal price;
+    private final int priceInCents;
 
     public TicketCategory(@Column("id") int id,
                           @Column("inception") Date inception,
@@ -38,13 +39,17 @@ public class TicketCategory {
                           @Column("max_tickets") int maxTickets,
                           @Column("name") String name,
                           @Column("description") String description,
-                          @Column("price") BigDecimal price) {
+                          @Column("price_cts") int priceInCents) {
         this.id = id;
         this.inception = inception;
         this.expiration = expiration;
         this.maxTickets = maxTickets;
         this.name = name;
         this.description = description;
-        this.price = price;
+        this.priceInCents = priceInCents;
+    }
+
+    public BigDecimal getPrice() {
+        return MonetaryUtil.centsToUnit(priceInCents);
     }
 }

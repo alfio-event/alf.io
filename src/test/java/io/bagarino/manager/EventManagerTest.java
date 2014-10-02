@@ -26,10 +26,10 @@ import static com.insightfullogic.lambdabehave.Suite.describe;
 @RunWith(JunitSuiteRunner.class)
 public class EventManagerTest {{
 
-        final BigDecimal hundred = new BigDecimal("100.00");
+        final int hundred = 10000;//100.00
         describe("EventManager", it -> {
-            it.should("deduct vat if included into event price", expect -> expect.that(EventManager.evaluatePrice(hundred, BigDecimal.TEN, true, false)).is(new BigDecimal("90.91")));
+            it.should("deduct vat if included into event price", expect -> expect.that(EventManager.evaluatePrice(hundred, BigDecimal.TEN, true, false)).is(9091));
             it.should("not deduct vat if not included into event price", expect -> expect.that(EventManager.evaluatePrice(hundred, BigDecimal.TEN, false, false)).is(hundred));
-            it.should("return BigDecimal.ZERO if the event is free of charge", expect -> expect.that(EventManager.evaluatePrice(hundred, BigDecimal.TEN, false, true)).is(BigDecimal.ZERO));
+            it.should("return BigDecimal.ZERO if the event is free of charge", expect -> expect.that(EventManager.evaluatePrice(hundred, BigDecimal.TEN, false, true)).is(0));
         });
 }}

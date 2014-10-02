@@ -28,6 +28,7 @@ import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
+import io.bagarino.util.MonetaryUtil;
 import lombok.Data;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -36,7 +37,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -129,7 +129,7 @@ public class EventController {
     	} else if(reservation.get().getStatus() == TicketReservationStatus.PENDING) {
     		
     		model.addAttribute("summary", extractSummary(reservationId));
-    		model.addAttribute("totalPrice", totalReservationCost(reservationId));
+    		model.addAttribute("totalPrice", MonetaryUtil.formatCents(totalReservationCost(reservationId)));
     		model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
     		model.addAttribute("event", eventRepository.findById(eventId));
     		model.addAttribute("reservationId", reservationId);
@@ -160,8 +160,7 @@ public class EventController {
     	}
     	
     	// TODO handle error - free case
-    	// FIXME: there is a mismatch between the price of the ticket (chf) and the expected stripe value (cents?)
-        stripeManager.chargeCreditCard(stripeToken, totalReservationCost(reservationId).longValueExact(), event.get().getCurrency());
+        stripeManager.chargeCreditCard(stripeToken, totalReservationCost(reservationId), event.get().getCurrency());
         //
         
         
@@ -172,12 +171,12 @@ public class EventController {
         return "redirect:/event/" + eventId + "/reservation/" + reservationId;
     }
     
-    private BigDecimal totalReservationCost(String reservationId) {
+    private int totalReservationCost(String reservationId) {
     	return totalFrom(ticketRepository.findTicketsInReservation(reservationId));
     }
     
-    private static BigDecimal totalFrom(List<Ticket> tickets) {
-    	return tickets.stream().map(Ticket::getPaidPriceInCent).reduce((a,b) -> a.add(b)).orElseThrow(IllegalStateException::new);
+    private static int totalFrom(List<Ticket> tickets) {
+    	return tickets.stream().mapToInt(Ticket::getPaidPriceInCents).sum();
     }
     
     private List<SummaryRow> extractSummary(String reservationId) {
@@ -185,7 +184,7 @@ public class EventController {
     	List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
     	tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).forEach((categoryId, ticketsByCategory) -> {
     		String categoryName = ticketCategoryRepository.getById(categoryId).getName();
-    		summary.add(new SummaryRow(categoryName, ticketsByCategory.get(0).getPaidPrice(), ticketsByCategory.size(), totalFrom(ticketsByCategory)));
+    		summary.add(new SummaryRow(categoryName, ticketsByCategory.get(0).getPaidPriceInCents(), ticketsByCategory.size(), totalFrom(ticketsByCategory)));
     	});
     	return summary;
     }
@@ -193,9 +192,9 @@ public class EventController {
     @Data
     public static class SummaryRow {
     	private final String name;
-    	private final BigDecimal price;
+    	private final int price;
     	private final int amount;
-    	private final BigDecimal subTotal;
+    	private final int subTotal;
     }
 
     @Data

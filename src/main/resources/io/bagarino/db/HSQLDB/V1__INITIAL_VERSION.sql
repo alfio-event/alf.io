@@ -64,7 +64,7 @@ create table ticket_category (
 	max_tickets integer not null,
 	name varchar(255) not null,
   description varchar(1024),
-  price decimal(10,2) not null
+  price_cts integer not null
 );
 
 create table event(
@@ -77,7 +77,7 @@ create table event(
 	longitude varchar(255) not null, 
 	start_ts timestamp not null,
 	end_ts timestamp not null,
-  regular_price decimal(10,2) not null,
+  regular_price_cts integer not null,
   currency varchar(3),
   available_seats integer not null,
   vat_included boolean not null,
@@ -103,13 +103,13 @@ create table tickets_reservation(
 
 create table ticket (
 	id integer identity not null,
-    uuid varchar(255) not null,
+  uuid varchar(255) not null,
 	creation timestamp not null, 
 	category_id integer not null, 
 	event_id integer not null, 
 	status varchar(255) not null, 
-	original_price decimal(10,2) not null,
-	paid_price decimal(10,2) not null,
+	original_price_cts integer not null,
+	paid_price_cts integer not null,
 	tickets_reservation_id varchar(255)
 );
 -- constraints

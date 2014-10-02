@@ -18,6 +18,7 @@ package io.bagarino.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.bagarino.manager.EventManager;
 import io.bagarino.model.transaction.PaymentProxy;
 import lombok.Getter;
 
@@ -76,5 +77,9 @@ public class EventModification {
         this.allowedPaymentProxies = Optional.ofNullable(allowedPaymentProxies).orElse(Collections.<PaymentProxy>emptyList());
         this.ticketCategories = ticketCategories;
         this.freeOfCharge = freeOfCharge;
+    }
+
+    public int getPriceInCents() {
+        return price.multiply(EventManager.HUNDRED).intValueExact();
     }
 }

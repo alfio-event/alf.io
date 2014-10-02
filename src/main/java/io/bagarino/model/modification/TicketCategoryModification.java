@@ -18,6 +18,7 @@ package io.bagarino.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.bagarino.manager.EventManager;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -48,5 +49,9 @@ public class TicketCategoryModification {
         this.expiration = expiration;
         this.description = description;
         this.price = price;
+    }
+
+    public int getPriceInCents() {
+        return price.multiply(EventManager.HUNDRED).intValueExact();
     }
 }
