@@ -37,6 +37,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class TicketReservationManager {
 	
+	public static final int RESERVATION_MINUTE = 25;
+	
 	private final TicketRepository ticketRepository;
 	private final TicketReservationRepository ticketReservationRepository;
 	private final ConfigurationRepository configurationRepository;

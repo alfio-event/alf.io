@@ -18,6 +18,7 @@ package io.bagarino.manager;
 
 import java.util.Date;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -34,6 +35,7 @@ public class Jobs {
 
 	@Scheduled(initialDelay = 1000 * 60, fixedDelay = 1000 * 30)
 	public void cleanupExpiredPendingReservation() {
-		ticketReservationManager.cleanupExpiredPendingReservation(new Date());
+		//TODO CHECK, 10 minutes of additional slack
+		ticketReservationManager.cleanupExpiredPendingReservation(DateUtils.addMinutes(new Date(), 10));
 	}
 }

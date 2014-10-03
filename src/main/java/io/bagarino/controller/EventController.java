@@ -108,7 +108,7 @@ public class EventController {
 			
 		//TODO handle error cases :D
 		//TODO: 25 minutes should be configurable
-		Date expiration = DateUtils.addMinutes(new Date(), 25);
+		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
 		String reservationId = tickReservationManager.createTicketReservation(event.get().getId(), reservation.selected(), expiration);
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 	}
@@ -136,6 +136,7 @@ public class EventController {
     		model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
     		model.addAttribute("event", event.get());
     		model.addAttribute("reservationId", reservationId);
+    		model.addAttribute("reservation", reservation.get());
     		
     		return "/event/reservation-page";
     	} else {
@@ -157,16 +158,19 @@ public class EventController {
     		return "redirect:/event/";
     	}
     	
-    	if(!optionally(() -> ticketReservationRepository.findReservationById(reservationId)).isPresent()) {
+    	Optional<TicketReservation> ticketReservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId));
+    	
+    	if(!ticketReservation.isPresent()) {
     		model.addAttribute("reservationId", reservationId);
     		return "/event/reservation-page-not-found";
     	}
     	
-    	//FIXME before charging the credit card we need to check that we are within the 25 minutes -> the job should remove only the transactions that are pending and older than 35 minutes
-    	
+    	//TODO: expose as a validation error :D
+    	Validate.isTrue(ticketReservation.get().getValidity().after(new Date()));
     	//
     	
-    	// TODO handle error - free case
+    	// TODO handle error
+    	// TODO handle free case
         stripeManager.chargeCreditCard(stripeToken, totalReservationCost(reservationId), event.get().getCurrency());
         //
         
