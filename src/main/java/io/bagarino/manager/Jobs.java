@@ -36,6 +36,6 @@ public class Jobs {
 	@Scheduled(initialDelay = 1000 * 60, fixedDelay = 1000 * 30)
 	public void cleanupExpiredPendingReservation() {
 		//TODO CHECK, 10 minutes of additional slack
-		ticketReservationManager.cleanupExpiredPendingReservation(DateUtils.addMinutes(new Date(), 10));
+		ticketReservationManager.cleanupExpiredPendingReservation(DateUtils.addMinutes(new Date(), -10));
 	}
 }
