@@ -192,8 +192,9 @@ public class EventManager {
                 .collect(joining(","));
         int actualPrice = evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
         BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
+        String privateKey = UUID.randomUUID().toString();
         return eventRepository.insert(em.getDescription(), em.getShortName(), em.getOrganizationId(), em.getLocation(),
                 "", "", em.getBegin().toDate(), em.getEnd().toDate(), actualPrice,
-                em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies).getValue();
+                em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies, privateKey).getValue();
     }
 }

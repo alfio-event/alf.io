@@ -82,10 +82,12 @@ create table event(
   available_seats integer not null,
   vat_included boolean not null,
   vat decimal(5,2) not null,
-  allowed_payment_proxies varchar(2048) not null
+  allowed_payment_proxies varchar(2048) not null,
+  private_key varchar(2048) not null
 );
 
 alter table event add constraint "unique_event_name" unique(short_name);
+alter table event add constraint "unique_private_key" unique(private_key);
 
 create table payment_proxy(
 	id integer identity not null, 

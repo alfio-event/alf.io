@@ -16,6 +16,7 @@
  */
 package io.bagarino.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.util.MonetaryUtil;
@@ -44,6 +45,7 @@ public class Event {
     private final boolean vatIncluded;
     private final BigDecimal vat;
     private final List<PaymentProxy> allowedPaymentProxies;
+    private final String privateKey;
 
 
     public Event(@Column("id") int id,
@@ -59,7 +61,8 @@ public class Event {
                  @Column("available_seats") int availableSeats,
                  @Column("vat_included") boolean vatIncluded,
                  @Column("vat") BigDecimal vat,
-                 @Column("allowed_payment_proxies") String allowedPaymentProxies) {
+                 @Column("allowed_payment_proxies") String allowedPaymentProxies,
+                 @Column("private_key") String privateKey) {
         this.id = id;
         this.shortName = shortName;
         this.description = description;
@@ -73,6 +76,7 @@ public class Event {
         this.availableSeats = availableSeats;
         this.vatIncluded = vatIncluded;
         this.vat = vat;
+        this.privateKey = privateKey;
         this.allowedPaymentProxies = Arrays.stream(allowedPaymentProxies.split(","))
                 .filter(StringUtils::isNotBlank)
                 .map(PaymentProxy::valueOf)
@@ -81,5 +85,10 @@ public class Event {
 
     public BigDecimal getRegularPrice() {
         return MonetaryUtil.centsToUnit(regularPriceInCents);
+    }
+
+    @JsonIgnore
+    public String getPrivateKey() {
+        return privateKey;
     }
 }
