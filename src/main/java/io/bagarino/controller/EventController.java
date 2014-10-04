@@ -102,7 +102,7 @@ public class EventController {
     		return "redirect:/event/";
     	}
 		
-		//TODO: should have a maximum selection count too.
+		//
 		final int selectionCount = reservation.selectionCount();
 		Validate.isTrue(selectionCount > 0  && selectionCount <= tickReservationManager.maxAmountOfTickets());
 			

@@ -49,9 +49,12 @@ public interface TicketRepository {
 			+ " and tickets_reservation_id in (:reservationIds)")
 	int freeFromReservation(@Bind("reservationIds") List<String> reservationIds);
 
-	@Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc")
+	@Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc")
 	List<Ticket> findTicketsInReservation(@Bind("reservationId") String reservationId);
 	
 	@Query("select * from ticket where uuid = :uuid")
 	Ticket findByUUID(@Bind("uuid") String uuid);
+
+	@Query("update ticket set email_address = :email, full_name = :fullName where uuid = :ticketIdentifier")
+	int updateTicketOwner(@Bind("ticketIdentifier") String ticketIdentifier, @Bind("email") String email, @Bind("fullName") String fullName);
 }

@@ -20,8 +20,18 @@ import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.Date;
+import java.util.Optional;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.commons.lang3.StringUtils;
 
 @Getter
 public class Ticket {
@@ -39,6 +49,8 @@ public class Ticket {
     private final int originalPriceInCents;
     private final int paidPriceInCents;
     private final String ticketsReservationId;
+    private final String fullName;
+    private final String email;
     
     public Ticket(@Column("id") int id,
                   @Column("uuid") String uuid,
@@ -48,7 +60,9 @@ public class Ticket {
                   @Column("event_id") int eventId,
                   @Column("original_price_cts") int originalPriceInCents,
                   @Column("paid_price_cts") int paidPriceInCents,
-                  @Column("tickets_reservation_id") String ticketsReservationId) {
+                  @Column("tickets_reservation_id") String ticketsReservationId,
+                  @Column("full_name") String fullName,
+                  @Column("email_address") String email) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
@@ -58,6 +72,12 @@ public class Ticket {
         this.originalPriceInCents = originalPriceInCents;
         this.paidPriceInCents = paidPriceInCents;
         this.ticketsReservationId = ticketsReservationId;
+        this.fullName = Optional.ofNullable(fullName).orElse("");
+        this.email = Optional.ofNullable(email).orElse("");
+    }
+    
+    public boolean getAssigned() {
+    	return StringUtils.isNotBlank(fullName) && StringUtils.isNotBlank(email);
     }
 
     public BigDecimal getOriginalPrice() {
@@ -66,5 +86,28 @@ public class Ticket {
 
     public BigDecimal getPaidPrice() {
         return MonetaryUtil.centsToUnit(paidPriceInCents);
+    }
+    
+    /**
+     * The code is composed with:
+     * 
+     * <pre>uuid + '/' + hmac_sha256_base64((ticketsReservationId + '/' + uuid + '/' + fullName + '/' + email), eventKey)</pre>
+     * 
+     * @param eventKey
+     * @return
+     */
+    public String ticketCode(String eventKey) {
+    	String code = StringUtils.join(new String[]{ticketsReservationId , uuid, fullName, email}, '/');
+		return uuid + '/' + hmacSHA256Base64(eventKey, code);
+    }
+    
+    private static String hmacSHA256Base64(String key, String code) {
+    	try {
+    		Mac hmac = Mac.getInstance("HmacSHA256");
+    		hmac.init(new SecretKeySpec(key.getBytes("UTF-8"), "HmacSHA256"));
+    		return Base64.getEncoder().encodeToString(hmac.doFinal(code.getBytes("UTF-8")));
+    	} catch(UnsupportedEncodingException | InvalidKeyException | NoSuchAlgorithmException e) {
+    		throw new IllegalStateException(e);
+    	}
     }
 }

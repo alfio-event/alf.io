@@ -99,7 +99,10 @@ create table payment_proxy(
 create table tickets_reservation(
 	id varchar(255) primary key not null,
 	validity timestamp not null,
-	status varchar(255) not null
+	status varchar(255) not null,
+	full_name varchar(255),
+	email_address varchar(255),
+	billing_address varchar(2048)
 );
 -- constraints
 
@@ -112,7 +115,10 @@ create table ticket (
 	status varchar(255) not null, 
 	original_price_cts integer not null,
 	paid_price_cts integer not null,
-	tickets_reservation_id varchar(255)
+	tickets_reservation_id varchar(255),
+	full_name varchar(255),
+	email_address varchar(255)
+	
 );
 -- constraints
 alter table ticket add constraint "unique_ticket_uuid" unique(uuid);

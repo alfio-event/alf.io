@@ -46,6 +46,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import com.google.zxing.BarcodeFormat;
@@ -79,7 +80,14 @@ public class TicketController {
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.POST)
 	public String assignTicketToPerson(@PathVariable("eventName") String eventName,
 			@PathVariable("reservationId") String reservationId,
-			@PathVariable("ticketIdentifier") String ticketIdentifier) {
+			@PathVariable("ticketIdentifier") String ticketIdentifier,
+			@RequestParam("email") String email,
+			@RequestParam("fullName") String fullName) {
+		
+		//TODO: validate email, fullname
+		
+		ticketRepository.updateTicketOwner(ticketIdentifier, email, fullName);
+		
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 	}
 
@@ -89,28 +97,26 @@ public class TicketController {
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response)
 			throws MustacheException, IOException, DocumentException, WriterException {
 
-		Event e = optionally(() -> eventRepository.findByShortName(eventName)).orElseThrow(
+		Event event = optionally(() -> eventRepository.findByShortName(eventName)).orElseThrow(
 				IllegalArgumentException::new);
 		TicketReservation reservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId))
 				.orElseThrow(IllegalArgumentException::new);
 		Ticket ticket = optionally(() -> ticketRepository.findByUUID(ticketIdentifier)).orElseThrow(
 				IllegalArgumentException::new);
 		
-		//FIXME: we should let generate the pdf only if the user has set full name and email!
-
 		Validate.isTrue(reservation.getStatus() == TicketReservationStatus.COMPLETE);
+		Validate.isTrue(ticket.getAssigned(), "can only generate a pdf if the ticket is assigned to a person");
 
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
 
-		//FIXME: in the qr code we should add a hash of full name + email .
-		//FIXME: additionally during the event creation, we can add a secret row with a UUID, this uuid will be used to compute a HMAC of the whole qrcodetext, thus ensuring the integrity and authenticity
-		String qrCodeText = e.getShortName() + "/" + ticket.getTicketsReservationId() + "/" + ticket.getUuid();
+		//
+		String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
 		//
 
 		Map<String, Object> tmplModel = new HashMap<>();
 		tmplModel.put("ticket", ticket);
 		tmplModel.put("ticketCategory", ticketCategory);
-		tmplModel.put("event", e);
+		tmplModel.put("event", event);
 		tmplModel.put("qrCodeDataUri", toDataUri(createQRCode(qrCodeText)));
 
 		InputStreamReader ticketTmpl = new InputStreamReader(
