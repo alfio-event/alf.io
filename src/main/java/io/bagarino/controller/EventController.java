@@ -150,9 +150,11 @@ public class EventController {
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
     public String handleReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
-                                    @RequestParam("stripeToken") String stripeToken, Model model) throws StripeException {
-    	
-    	
+                                    @RequestParam("stripeToken") String stripeToken, 
+                                    @RequestParam("email") String email,
+                                    @RequestParam("fullName") String fullName,
+                                    @RequestParam(value="billingAddress", required=false) String billingAddress,
+                                    Model model) throws StripeException {
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
     		return "redirect:/event/";
@@ -210,7 +212,7 @@ public class EventController {
 
     @Data
 	public static class ReservationForm {
-		List<TicketReservationModification> reservation;
+		private List<TicketReservationModification> reservation;
 
 		private List<TicketReservationModification> selected() {
 			return ofNullable(reservation).orElse(emptyList()).stream()

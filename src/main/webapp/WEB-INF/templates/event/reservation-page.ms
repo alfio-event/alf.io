@@ -65,9 +65,9 @@ jQuery(function($) {
 
 <form action="" method="POST" id="payment-form">
 	<h2>Billing details</h2>
-	<p>full name</p>
-	<p>email</p>
-	<p>optional address textarea</p>
+	<p>full name: <input type="text" name="fullName" required></p>
+	<p>email: <input type="email" name="email" required></p>
+	<p>optional billing address: <textarea name="billingAddress"></textarea></p>
 
 	<h2>Payment</h2>
 	
