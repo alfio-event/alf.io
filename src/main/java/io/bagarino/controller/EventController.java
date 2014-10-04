@@ -179,10 +179,11 @@ public class EventController {
     	Validate.isTrue(ticketReservation.get().getValidity().after(new Date()));
     	//
     	
+    	final int reservationCost = totalReservationCost(reservationId);
     	// TODO handle error
-    	if(totalReservationCost(reservationId) > 0) {
+    	if(reservationCost > 0) {
     		Validate.isTrue(StringUtils.isNotBlank(stripeToken));
-    		stripeManager.chargeCreditCard(stripeToken, totalReservationCost(reservationId), event.get().getCurrency(), email, fullName, billingAddress);
+    		stripeManager.chargeCreditCard(stripeToken, reservationCost, event.get().getCurrency(), email, fullName, billingAddress);
     	}
         //
         
