@@ -17,6 +17,7 @@
 package io.bagarino.controller;
 
 import com.stripe.exception.StripeException;
+
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.model.Event;
@@ -29,6 +30,8 @@ import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
 import lombok.Data;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,6 +112,8 @@ public class EventController {
 		//TODO handle error cases :D
 		//TODO: 25 minutes should be configurable
 		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
+		
+		//TODO: this could fail with not enough ticket -> should we launch an exception?
 		String reservationId = tickReservationManager.createTicketReservation(event.get().getId(), reservation.selected(), expiration);
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 	}
@@ -131,8 +136,11 @@ public class EventController {
     		return "/event/reservation-page-not-found";
     	} else if(reservation.get().getStatus() == TicketReservationStatus.PENDING) {
     		
+    		int reservationCost = totalReservationCost(reservationId);
+    		
     		model.addAttribute("summary", extractSummary(reservationId));
-    		model.addAttribute("totalPrice", formatCents(totalReservationCost(reservationId)));
+    		model.addAttribute("free", reservationCost == 0);
+    		model.addAttribute("totalPrice", formatCents(reservationCost));
     		model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
     		model.addAttribute("event", event.get());
     		model.addAttribute("reservationId", reservationId);
@@ -150,10 +158,10 @@ public class EventController {
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
     public String handleReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
-                                    @RequestParam("stripeToken") String stripeToken, 
+                                    @RequestParam(value = "stripeToken", required = false) String stripeToken, 
                                     @RequestParam("email") String email,
                                     @RequestParam("fullName") String fullName,
-                                    @RequestParam(value="billingAddress", required=false) String billingAddress,
+                                    @RequestParam(value="billingAddress", required = false) String billingAddress,
                                     Model model) throws StripeException {
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
@@ -172,13 +180,15 @@ public class EventController {
     	//
     	
     	// TODO handle error
-    	// TODO handle free case
-        stripeManager.chargeCreditCard(stripeToken, totalReservationCost(reservationId), event.get().getCurrency());
+    	if(totalReservationCost(reservationId) > 0) {
+    		Validate.isTrue(StringUtils.isNotBlank(stripeToken));
+    		stripeManager.chargeCreditCard(stripeToken, totalReservationCost(reservationId), event.get().getCurrency(), email, fullName, billingAddress);
+    	}
         //
         
         
         // we can enter here only if the reservation is done correctly
-        tickReservationManager.completeReservation(event.get().getId(), reservationId);
+        tickReservationManager.completeReservation(event.get().getId(), reservationId, email, fullName, billingAddress);
         //
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId;

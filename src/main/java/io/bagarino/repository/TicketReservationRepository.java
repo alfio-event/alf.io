@@ -30,8 +30,10 @@ public interface TicketReservationRepository {
 	@Query("insert into tickets_reservation(id, validity, status) values (:id, :validity, 'PENDING')")
 	int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity);
 
-	@Query("update tickets_reservation set status = :status where id = :reservationId")
-	int updateTicketReservationStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
+	@Query("update tickets_reservation set status = :status, full_name = :fullName, email_address = :email, billing_address = :billingAddress where id = :reservationId")
+	int updateTicketReservation(@Bind("reservationId") String reservationId, @Bind("status") String status,
+			@Bind("email") String email, @Bind("fullName") String fullName,
+			@Bind("billingAddress") String billingAddress);
 
 	@Query("select * from tickets_reservation where id = :id")
 	TicketReservation findReservationById(@Bind("id") String id);

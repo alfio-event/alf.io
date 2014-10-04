@@ -1,3 +1,4 @@
+{{^free}}
  <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
  
@@ -36,6 +37,7 @@ jQuery(function($) {
 	});
 });
 </script>
+{{/free}}
 
 <h2>Order summary</h2>
 <table>
@@ -64,11 +66,16 @@ jQuery(function($) {
 
 
 <form action="" method="POST" id="payment-form">
-	<h2>Billing details</h2>
+	<h2>Your details</h2>
 	<p>full name: <input type="text" name="fullName" required></p>
 	<p>email: <input type="email" name="email" required></p>
+	{{#free}}
+	<button type="submit">Continue</button>
+	{{/free}}
+	{{^free}}
+	
 	<p>optional billing address: <textarea name="billingAddress"></textarea></p>
-
+	
 	<h2>Payment</h2>
 	
 	<h3>https://stripe.com/docs/testing</h3>
@@ -98,8 +105,10 @@ jQuery(function($) {
 		<span> / </span>
 		<input type="text" size="4" data-stripe="exp-year"/>
 	</div>
+	<button type="submit">Submit payment and continue</button>
+	{{/free}}
  
  	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
  	
-	<button type="submit">Submit Payment</button>
+	
 </form>

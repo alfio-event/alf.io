@@ -22,6 +22,7 @@ import io.bagarino.repository.system.ConfigurationRepository;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -60,7 +61,7 @@ public class StripeManager {
      * @param bigDecimal 
      * @throws StripeException 
      */
-    public void chargeCreditCard(String stripeToken, long amountInCent, String currency) throws StripeException {
+    public void chargeCreditCard(String stripeToken, long amountInCent, String currency, String email, String fullName, String billingAddress) throws StripeException {
         // Use Stripe's bindings...
         Stripe.apiKey = getSecretKey();
 
@@ -69,8 +70,17 @@ public class StripeManager {
         chargeParams.put("currency", currency);
         chargeParams.put("card", stripeToken); // obtained with Stripe.js
         chargeParams.put("description", "Charge for test@example.com");//TODO replace
+        
         Map<String, String> initialMetadata = new HashMap<String, String>();
         initialMetadata.put("order_id", "6735");//TODO: replace
+        
+        initialMetadata.put("email", email);
+        initialMetadata.put("fullName", fullName);
+        if(StringUtils.isNotBlank(billingAddress)) {
+        	initialMetadata.put("billingAddress", billingAddress);
+        }
+        
+        
         chargeParams.put("metadata", initialMetadata);
         Charge charge = Charge.create(chargeParams);
     }
