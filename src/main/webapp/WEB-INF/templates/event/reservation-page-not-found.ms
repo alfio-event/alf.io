@@ -11,10 +11,18 @@
 
 
 <div class="container">
+<div class="row">
+<div class="col-md-8 col-md-offset-2">
+
+
 	The reservation with id {{reservationId}} does not exist. 
 
 	Go back to <a href="../">event</a>
-</div> 
+	
+	
+</div>
+</div>
+</div>
 
 </body>
 </html>

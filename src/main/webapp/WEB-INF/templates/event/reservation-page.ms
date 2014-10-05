@@ -11,6 +11,9 @@
 
 
 <div class="container">
+<div class="row">
+<div class="col-md-8 col-md-offset-2">
+
 
 {{^free}}
  <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
@@ -54,7 +57,7 @@ jQuery(function($) {
 {{/free}}
 
 <h2>Order summary</h2>
-<table>
+<table class="table">
 	<thead>	
 		<th>category</th>
 		<th>price</th>
@@ -81,45 +84,61 @@ jQuery(function($) {
 
 <form action="" method="POST" id="payment-form">
 	<h2>Your details</h2>
-	<p>full name: <input type="text" name="fullName" required></p>
-	<p>email: <input type="email" name="email" required></p>
+	<div class="form-group">
+		<label for="full-name">Full name</label>
+		<input type="text" name="fullName" id="full-name" required class="form-control">
+	</div>
+	<div class="form-group">
+		<label for="email">Email</label>
+		<input type="email" name="email" id="email" required class="form-control">
+	</div>
 	{{#free}}
-	<button type="submit" class="btn btn-primary">Continue</button>
+	<button type="submit" class="btn btn-primary pull-right">Continue</button>
 	{{/free}}
 	{{^free}}
 	
-	<p>optional billing address: <textarea name="billingAddress"></textarea></p>
+	<div class="form-group">
+		<label for="billing-address">Billing address</label>
+		<textarea name="billingAddress" id="billing-address" class="form-control"></textarea>
+	</div>
 	
-	<h2>Payment</h2>
-	
-	<h3>https://stripe.com/docs/testing</h3>
+	<h2>Payment (https://stripe.com/docs/testing)</h2>
 
 	<span class="payment-errors"></span>
  
-	<div class="form-row">
-		<label>
-			<span>Card Number</span>
-			<input type="text" size="20" data-stripe="number" required/>
-		</label>
+	<div class="form-group">
+		<label for="card-number">Card Number</label>
+		<input type="text" size="20" data-stripe="number" required class="form-control" id="card-number">
 	</div>
  
-	<div class="form-row">
-		<label>
-			<span>CVC</span>
-			<input type="text" size="4" data-stripe="cvc" required/>
-		</label>
+	<div class="form-group">
+		<div><label for="card-cvc">CVC</label></div>
+		<div class="row">
+			<div class="col-xs-2">
+				<input type="text" size="4" data-stripe="cvc" required class="form-control" id="card-cvc">
+			</div>
+		</div>
 	</div>
  
  
-	<div class="form-row">
-		<label>
-			<span>Expiration (MM/YYYY)</span>
-			<input type="text" size="2" data-stripe="exp-month" required/>
-		</label>
-		<span> / </span>
-		<input type="text" size="4" data-stripe="exp-year" required/>
+	<div class="form-group">
+		<div>
+			<label>Expiration (MM/YYYY)
+		</div>
+		<div class="row">
+			<div class="col-xs-2">
+				<input type="text" size="2" data-stripe="exp-month" required class="form-control" maxlength="2"/>
+			</div>
+			<div class="col-xs-1">/</div>
+			<div class="col-xs-2">
+				<input type="text" size="4" data-stripe="exp-year" required class="form-control" maxlength="4"/>
+			</div>
+		</div>
 	</div>
-	<button type="submit"  class="btn btn-primary">Submit payment and continue</button>
+	
+	<div class="form-group">
+		<button type="submit"  class="btn btn-primary pull-right">Submit payment and continue</button>
+	</div>
 	{{/free}}
  
  	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
@@ -127,6 +146,8 @@ jQuery(function($) {
 	
 </form>
 
+</div>
+</div>
 </div>
 
 </body>

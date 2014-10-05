@@ -11,10 +11,13 @@
 
 
 <div class="container">
+<div class="row">
+<div class="col-md-8 col-md-offset-2">
+
 	<h1>Events</h1>
-	<ul>
+	<ul class="list-group">
 	{{#events}}
-		<li>
+		<li class="list-group-item">
 			<a href="./{{shortName}}/">
 				<div>
 					<h2>{{shortName}}</h2>
@@ -25,6 +28,10 @@
 		</li>
 	{{/events}}
 	</ul>
+	
+
+</div>
+</div>
 </div>
 
 </body>

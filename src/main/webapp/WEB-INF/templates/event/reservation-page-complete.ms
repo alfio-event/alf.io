@@ -10,11 +10,15 @@
 <body>
 
 <div class="container">
+<div class="row">
+<div class="col-md-8 col-md-offset-2">
+
+
 	<h1>Your Ticket(s)</h1>
-	<ul>
+	<ul class="list-group">
 	{{#ticketsByCategory}}
 		{{#value}}
-			<li>Category: {{key}} -	ticket: 
+			<li class="list-group-item">Category: {{key}} -	ticket: 
 				{{assigned}}
 				{{#assigned}}
 					<p><a href="{{reservationId}}/download-ticket/{{uuid}}">Download ticket</a>.</p>
@@ -33,6 +37,9 @@
 		{{/value}}
 	{{/ticketsByCategory}}
 	</ul>
+	
+</div>
+</div>
 </div>
 	
 </body>

@@ -10,6 +10,9 @@
 <body>
 
 <div class="container">
+<div class="row">
+<div class="col-md-8 col-md-offset-2">
+
 
 <h1>{{event.shortName}}</h1>
 <div>{{event.begin}}-{{event.end}} {{event.location}}</div>
@@ -21,9 +24,9 @@
 
 
 <form method="post" action="reserve-tickets">
-	<ul>
+	<ul class="list-group">
 	{{#ticketCategories}}
-		<li>
+		<li class="list-group-item">
 			{{name}}, regular price is:  {{event.regularPrice}} {{event.currency}} (vat included: {{event.vatIncluded}}), category price {{price}} :
 			<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
 			<input name="reservation[{{-index}}].amount" type="text">
@@ -31,11 +34,13 @@
 	{{/ticketCategories}}
 	</ul>
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
-	<button type="submit" class="btn btn-primary">Continue</button>
+	<button type="submit" class="btn btn-primary pull-right">Continue</button>
 
 
 </form>
 
+</div>
+</div>
 </div>
 
 </body>
