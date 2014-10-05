@@ -1,0 +1,9 @@
+body {
+	background-color: #E5E5E5;
+}
+
+
+div.col-md-8.col-md-offset-2 {
+	background-color:white;
+	padding-bottom:1em;
+}

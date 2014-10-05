@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <link rel="stylesheet" href="/resources/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/resources/bower_components/components-font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/resources/css/application.css">
 </head>
 <body>
 
@@ -56,13 +57,13 @@ jQuery(function($) {
 </script>
 {{/free}}
 
-<h2>Order summary</h2>
+<h2>Order summary (TODO: you have X minutes to complete this order)</h2>
 <table class="table">
 	<thead>	
-		<th>category</th>
-		<th>price</th>
-		<th>amount</th>
-		<th>subtotal</th>
+		<th>Category</th>
+		<th>Price</th>
+		<th>Amount</th>
+		<th>Subtotal</th>
 	</thead>
 	<tbody>
 {{#summary}}
@@ -75,7 +76,7 @@ jQuery(function($) {
 {{/summary}}
 	</tbody>
 	<tfoot>
-		<tr><th colspan="3">total</th><td>{{totalPrice}} {{event.currency}}</td></tr>
+		<tr><th colspan="3">Total</th><td>{{totalPrice}} {{event.currency}}</td></tr>
 	</tfoot>
 </table>
 
