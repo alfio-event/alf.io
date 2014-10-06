@@ -41,4 +41,5 @@ insert into ticket (uuid, creation, category_id, event_id, status, original_pric
 insert into configuration (c_key, c_value, description) values
 	('STRIPE_SECRET_KEY', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'test api key'),
 	('STRIPE_PUBLIC_KEY', 'pk_test_gY3X0UiTgKCeStUG67i2kEFq', 'test client side api key'),
-	('MAX_AMOUNT_OF_TICKETS_BY_RESERVATION', '5', 'max amount of tickets');
+	('MAX_AMOUNT_OF_TICKETS_BY_RESERVATION', '5', 'max amount of tickets'),
+	('SPECIAL_PRICE_CODE_LENGTH', '6', 'length of special price code');

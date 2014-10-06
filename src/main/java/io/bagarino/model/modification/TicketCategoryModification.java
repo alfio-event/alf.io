@@ -18,7 +18,7 @@ package io.bagarino.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.bagarino.manager.EventManager;
+import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -33,6 +33,7 @@ public class TicketCategoryModification {
     private final DateTimeModification expiration;
     private final String description;
     private final BigDecimal price;
+    private final boolean tokenGenerationRequested;
 
     @JsonCreator
     public TicketCategoryModification(@JsonProperty("id") Integer id,
@@ -41,7 +42,8 @@ public class TicketCategoryModification {
                                       @JsonProperty("inception") DateTimeModification inception,
                                       @JsonProperty("expiration") DateTimeModification expiration,
                                       @JsonProperty("description") String description,
-                                      @JsonProperty("price") BigDecimal price) {
+                                      @JsonProperty("price") BigDecimal price,
+                                      @JsonProperty("tokenGenerationRequested") boolean tokenGenerationRequested) {
         this.id = id;
         this.name = name;
         this.maxTickets = maxTickets;
@@ -49,9 +51,10 @@ public class TicketCategoryModification {
         this.expiration = expiration;
         this.description = description;
         this.price = price;
+        this.tokenGenerationRequested = tokenGenerationRequested;
     }
 
     public int getPriceInCents() {
-        return price.multiply(EventManager.HUNDRED).intValueExact();
+        return MonetaryUtil.unitToCents(price);
     }
 }

@@ -18,6 +18,7 @@ package io.bagarino.manager;
 
 import io.bagarino.manager.user.UserManager;
 import io.bagarino.model.Event;
+import io.bagarino.model.SpecialPrice;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
 import io.bagarino.model.modification.EventModification;
@@ -25,6 +26,7 @@ import io.bagarino.model.modification.TicketCategoryWithStatistic;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.model.user.Organization;
 import io.bagarino.repository.EventRepository;
+import io.bagarino.repository.SpecialPriceRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.join.EventOrganizationRepository;
@@ -58,6 +60,7 @@ public class EventManager {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final EventTicketCategoryRepository eventTicketCategoryRepository;
     private final TicketRepository ticketRepository;
+    private final SpecialPriceRepository specialPriceRepository;
     private final NamedParameterJdbcTemplate jdbc;
 
     @Autowired
@@ -67,6 +70,7 @@ public class EventManager {
                         TicketCategoryRepository ticketCategoryRepository,
                         EventTicketCategoryRepository eventTicketCategoryRepository,
                         TicketRepository ticketRepository,
+                        SpecialPriceRepository specialPriceRepository,
                         NamedParameterJdbcTemplate jdbc) {
         this.userManager = userManager;
         this.eventOrganizationRepository = eventOrganizationRepository;
@@ -74,6 +78,7 @@ public class EventManager {
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.eventTicketCategoryRepository = eventTicketCategoryRepository;
         this.ticketRepository = ticketRepository;
+        this.specialPriceRepository = specialPriceRepository;
         this.jdbc = jdbc;
     }
 
@@ -121,15 +126,15 @@ public class EventManager {
         Date creation = new Date();
         Event event = eventRepository.findById(eventId);
         eventOrganizationRepository.create(eventId, em.getOrganizationId());
-        final MapSqlParameterSource[] params = prepareBulkInsertParameters(eventId, creation, event, event.getRegularPriceInCents());
+        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(eventId, creation, event, event.getRegularPriceInCents());
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
 
     }
 
-    private MapSqlParameterSource[] prepareBulkInsertParameters(int eventId,
-                                                                Date creation,
-                                                                Event event,
-                                                                int regularPrice) {
+    private MapSqlParameterSource[] prepareTicketsBulkInsertParameters(int eventId,
+                                                                       Date creation,
+                                                                       Event event,
+                                                                       int regularPrice) {
         return eventTicketCategoryRepository.findByEventId(event.getId()).stream()
                     .map(etc -> ticketCategoryRepository.getById(etc.getTicketCategoryId()))
                     .flatMap(tc -> Stream.generate(MapSqlParameterSource::new)
@@ -161,6 +166,10 @@ public class EventManager {
             final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toDate(),
                     tc.getExpiration().toDate(), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price);
             eventTicketCategoryRepository.insert(eventId, category.getValue());
+            if(tc.isTokenGenerationRequested()) {
+                final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategoryRepository.getById(category.getValue()));
+                jdbc.batchUpdate(specialPriceRepository.bulkInsert(), args);
+            }
         });
         final List<TicketCategory> ticketCategories = eventTicketCategoryRepository.findByEventId(eventId).stream()
                 .map(etc -> ticketCategoryRepository.getById(etc.getTicketCategoryId()))
@@ -173,6 +182,19 @@ public class EventManager {
                                   .findFirst().get();
             ticketCategoryRepository.updateSeatsAvailability(last.getId(), last.getMaxTickets() + notAssignedTickets);
         }
+    }
+
+    private MapSqlParameterSource[] prepareTokenBulkInsertParameters(TicketCategory tc) {
+        return Stream.generate(MapSqlParameterSource::new)
+                .limit(tc.getMaxTickets())
+                .map(ps -> {
+                    ps.addValue("code", UUID.randomUUID().toString());
+                    ps.addValue("priceInCents", tc.getPriceInCents());
+                    ps.addValue("ticketCategoryId", tc.getId());
+                    ps.addValue("status", SpecialPrice.Status.WAITING.name());
+                    return ps;
+                })
+                .toArray(MapSqlParameterSource[]::new);
     }
 
     static int evaluatePrice(int price, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge) {

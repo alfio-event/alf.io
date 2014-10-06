@@ -16,22 +16,20 @@
  */
 package io.bagarino.manager;
 
+import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.Ticket.TicketStatus;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
-import io.bagarino.repository.system.ConfigurationRepository;
+import org.apache.commons.lang3.Validate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-
-import org.apache.commons.lang3.Validate;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @Transactional
@@ -41,13 +39,13 @@ public class TicketReservationManager {
 	
 	private final TicketRepository ticketRepository;
 	private final TicketReservationRepository ticketReservationRepository;
-	private final ConfigurationRepository configurationRepository;
+	private final ConfigurationManager configurationManager;
 	
 	@Autowired
-	public TicketReservationManager(TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository, ConfigurationRepository configurationRepository) {
+	public TicketReservationManager(TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository, ConfigurationManager configurationManager) {
 		this.ticketRepository = ticketRepository;
 		this.ticketReservationRepository = ticketReservationRepository;
-		this.configurationRepository = configurationRepository;
+		this.configurationManager = configurationManager;
 	}
 	
     
@@ -85,10 +83,6 @@ public class TicketReservationManager {
 
 
 	public int maxAmountOfTickets() {
-		try {
-			return Integer.valueOf(configurationRepository.findByKey("MAX_AMOUNT_OF_TICKETS_BY_RESERVATION").getValue());
-		} catch(NumberFormatException | NullPointerException | EmptyResultDataAccessException e) {
-			return 5;
-		}
+        return configurationManager.getIntConfigValue("MAX_AMOUNT_OF_TICKETS_BY_RESERVATION", 5);
 	}
 }

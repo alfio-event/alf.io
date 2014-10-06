@@ -16,9 +16,12 @@
 --
 
 --entities
-create table discount (
-	id integer identity not null, 
-	amount decimal not null
+create table special_price (
+  id integer identity not null,
+  code varchar(2048) not null,
+  price_cts integer not null,
+  ticket_category_id integer not null,
+  status varchar(255) not null
 );
 
 create table organization ( 

@@ -17,18 +17,30 @@
 package io.bagarino.model;
 
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
-
-import java.math.BigDecimal;
-
 import lombok.Getter;
 
 @Getter
-public class Discount {
-	private final int id;
-	private final BigDecimal amount;
+public class SpecialPrice {
 
-	public Discount(@Column("id") int id, @Column("amount") BigDecimal amount) {
-		this.id = id;
-		this.amount = amount;
-	}
+    public enum Status {
+        WAITING, FREE, TAKEN, CANCELLED
+    }
+
+    private final int id;
+    private final String code;
+    private final int priceInCents;
+    private final int ticketCategoryId;
+    private final Status status;
+
+    public SpecialPrice(@Column("id") int id,
+                        @Column("code") String code,
+                        @Column("price_cts") int priceInCents,
+                        @Column("ticket_category_id") int ticketCategoryId,
+                        @Column("status") String status) {
+        this.id = id;
+        this.code = code;
+        this.priceInCents = priceInCents;
+        this.ticketCategoryId = ticketCategoryId;
+        this.status = Status.valueOf(status);
+    }
 }

@@ -16,26 +16,34 @@
  */
 package io.bagarino.manager;
 
-import java.util.Date;
-
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
+
 @Component
 public class Jobs {
 
 	private final TicketReservationManager ticketReservationManager;
+    private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
 
 	@Autowired
-	public Jobs(TicketReservationManager ticketReservationManager) {
+	public Jobs(TicketReservationManager ticketReservationManager,
+                SpecialPriceTokenGenerator specialPriceTokenGenerator) {
 		this.ticketReservationManager = ticketReservationManager;
-	}
+        this.specialPriceTokenGenerator = specialPriceTokenGenerator;
+    }
 
 	@Scheduled(initialDelay = 1000 * 60, fixedDelay = 1000 * 30)
 	public void cleanupExpiredPendingReservation() {
 		//TODO CHECK
 		ticketReservationManager.cleanupExpiredPendingReservation(DateUtils.addMinutes(new Date(), -10));
 	}
+
+    @Scheduled(fixedDelay = 1000 * 30)
+    public void generateSpecialPriceCodes() {
+        specialPriceTokenGenerator.generatePendingCodes();
+    }
 }
