@@ -112,6 +112,10 @@ public class TicketController {
 		//
 		String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
 		//
+		
+		//
+		//TODO add event organizer and display it :D
+		//
 
 		Map<String, Object> tmplModel = new HashMap<>();
 		tmplModel.put("ticket", ticket);

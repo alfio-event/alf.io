@@ -57,11 +57,10 @@ public class StripeManager {
      * get money on our account.
      *
      * as documented in https://stripe.com/docs/tutorials/charges
-     * @param stripeToken
-     * @param bigDecimal 
+     * 
      * @throws StripeException 
      */
-    public void chargeCreditCard(String stripeToken, long amountInCent, String currency, String email, String fullName, String billingAddress) throws StripeException {
+    public void chargeCreditCard(String stripeToken, long amountInCent, String currency, String reservationId, String email, String fullName, String billingAddress) throws StripeException {
         // Use Stripe's bindings...
         Stripe.apiKey = getSecretKey();
 
@@ -69,16 +68,19 @@ public class StripeManager {
         chargeParams.put("amount", amountInCent);
         chargeParams.put("currency", currency);
         chargeParams.put("card", stripeToken); // obtained with Stripe.js
+        
+        
         chargeParams.put("description", "Charge for test@example.com");//TODO replace
         
         Map<String, String> initialMetadata = new HashMap<String, String>();
-        initialMetadata.put("order_id", "6735");//TODO: replace
         
+        initialMetadata.put("reservationId", reservationId);
         initialMetadata.put("email", email);
         initialMetadata.put("fullName", fullName);
         if(StringUtils.isNotBlank(billingAddress)) {
         	initialMetadata.put("billingAddress", billingAddress);
         }
+        
         
         
         chargeParams.put("metadata", initialMetadata);

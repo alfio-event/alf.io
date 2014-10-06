@@ -183,7 +183,7 @@ public class EventController {
     	// TODO handle error
     	if(reservationCost > 0) {
     		Validate.isTrue(StringUtils.isNotBlank(stripeToken));
-    		stripeManager.chargeCreditCard(stripeToken, reservationCost, event.get().getCurrency(), email, fullName, billingAddress);
+    		stripeManager.chargeCreditCard(stripeToken, reservationCost, event.get().getCurrency(), reservationId, email, fullName, billingAddress);
     	}
         //
         
