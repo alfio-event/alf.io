@@ -24,13 +24,19 @@
 
 
 
-<form method="post" action="reserve-tickets">
+<form method="post" action="reserve-tickets" class="form-horizontal">
 	<ul class="list-group">
 	{{#ticketCategories}}
 		<li class="list-group-item">
-			{{name}}, regular price is:  {{event.regularPrice}} {{event.currency}} (vat included: {{event.vatIncluded}}), category price {{price}} :
-			<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
-			<input name="reservation[{{-index}}].amount" type="text">
+			<div class="form-group">
+				<div class="col-sm-10">
+					{{name}}, regular price is:  {{event.regularPrice}} {{event.currency}} (vat included: {{event.vatIncluded}}), category price {{price}} :
+					<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
+				</div>
+				<div class="col-sm-2">
+					<input name="reservation[{{-index}}].amount" type="text" class="form-control text-align-center" placeholder="0" autocomplete="off">
+				</div>
+			</div>
 		</li>
 	{{/ticketCategories}}
 	</ul>

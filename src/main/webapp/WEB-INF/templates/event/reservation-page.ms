@@ -87,11 +87,11 @@ jQuery(function($) {
 	<h2>Your details</h2>
 	<div class="form-group">
 		<label for="full-name">Full name</label>
-		<input type="text" name="fullName" id="full-name" required class="form-control">
+		<input type="text" name="fullName" id="full-name" required class="form-control" autocomplete="off">
 	</div>
 	<div class="form-group">
 		<label for="email">Email</label>
-		<input type="email" name="email" id="email" required class="form-control">
+		<input type="email" name="email" id="email" required class="form-control" autocomplete="off">
 	</div>
 	{{#free}}
 	<button type="submit" class="btn btn-primary pull-right">Continue</button>
@@ -109,14 +109,14 @@ jQuery(function($) {
  
 	<div class="form-group">
 		<label for="card-number">Card Number</label>
-		<input type="text" size="20" data-stripe="number" required class="form-control" id="card-number">
+		<input type="text" size="20" data-stripe="number" required class="form-control" id="card-number" autocomplete="off">
 	</div>
  
 	<div class="form-group">
 		<div><label for="card-cvc">CVC</label></div>
 		<div class="row">
 			<div class="col-xs-2">
-				<input type="text" size="4" data-stripe="cvc" required class="form-control" id="card-cvc">
+				<input type="text" size="4" data-stripe="cvc" required class="form-control" id="card-cvc" autocomplete="off">
 			</div>
 		</div>
 	</div>
@@ -128,11 +128,11 @@ jQuery(function($) {
 		</div>
 		<div class="row">
 			<div class="col-xs-2">
-				<input type="text" size="2" data-stripe="exp-month" required class="form-control" maxlength="2"/>
+				<input type="text" size="2" data-stripe="exp-month" required class="form-control" maxlength="2" autocomplete="off"/>
 			</div>
 			<div class="col-xs-1">/</div>
 			<div class="col-xs-2">
-				<input type="text" size="4" data-stripe="exp-year" required class="form-control" maxlength="4"/>
+				<input type="text" size="4" data-stripe="exp-year" required class="form-control" maxlength="4" autocomplete="off"/>
 			</div>
 		</div>
 	</div>
