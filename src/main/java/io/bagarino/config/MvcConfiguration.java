@@ -19,12 +19,15 @@ package io.bagarino.config;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
+
+import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -45,6 +48,7 @@ import org.springframework.web.servlet.view.mustache.jmustache.LocalizationMessa
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -108,11 +112,13 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     }
 
     @Bean
-    public ViewResolver getViewResolver() throws Exception {
+    public ViewResolver getViewResolver(Environment env) throws Exception {
         MustacheViewResolver viewResolver = new MustacheViewResolver();
         viewResolver.setSuffix("");
         viewResolver.setTemplateFactory(getTemplateFactory());
         viewResolver.setOrder(1);
+        //disable caching if we are in dev mode
+        viewResolver.setCache(!ArrayUtils.contains(env.getActiveProfiles(), "dev"));
         return viewResolver;
     }
 
