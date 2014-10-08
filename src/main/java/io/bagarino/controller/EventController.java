@@ -75,7 +75,7 @@ public class EventController {
         this.stripeManager = stripeManager;
 	}
 
-	@RequestMapping(value = "/event/", method = RequestMethod.GET)
+	@RequestMapping(value = {"/"}, method = RequestMethod.GET)
 	public String listEvents(Model model) {
 		model.addAttribute("events", eventRepository.findAll());
 		return "/event/event-list";
@@ -130,6 +130,7 @@ public class EventController {
 
     	Optional<TicketReservation> reservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId));
 
+    	model.addAttribute("event", event.get());
     	
     	if(!reservation.isPresent()) {
     		model.addAttribute("reservationId", reservationId);
@@ -142,13 +143,11 @@ public class EventController {
     		model.addAttribute("free", reservationCost == 0);
     		model.addAttribute("totalPrice", formatCents(reservationCost));
     		model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
-    		model.addAttribute("event", event.get());
     		model.addAttribute("reservationId", reservationId);
     		model.addAttribute("reservation", reservation.get());
     		
     		return "/event/reservation-page";
     	} else {
-    		
     		model.addAttribute("reservationId", reservationId);
     		model.addAttribute("ticketsByCategory", ticketRepository.findTicketsInReservation(reservationId).stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet());
     		

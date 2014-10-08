@@ -20,7 +20,7 @@
 <div>{{event.description}}</div>
 
 
-<h2>Tickets</h2>
+<h2>{{#i18n}}show-event.tickets{{/i18n}}</h2>
 
 
 
@@ -41,7 +41,7 @@
 	{{/ticketCategories}}
 	</ul>
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
-	<button type="submit" class="btn btn-primary pull-right">Continue</button>
+	<button type="submit" class="btn btn-primary pull-right">{{#i18n}}show-event.continue{{/i18n}}</button>
 
 
 </form>
