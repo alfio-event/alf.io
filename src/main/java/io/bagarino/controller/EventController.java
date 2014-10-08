@@ -77,8 +77,13 @@ public class EventController {
 
 	@RequestMapping(value = {"/"}, method = RequestMethod.GET)
 	public String listEvents(Model model) {
-		model.addAttribute("events", eventRepository.findAll());
-		return "/event/event-list";
+		List<Event> events = eventRepository.findAll();
+		if(events.size() == 1) {
+			return "redirect:/event/" + events.get(0).getShortName();
+		} else {
+			model.addAttribute("events", events);
+			return "/event/event-list";
+		}
 	}
 
 	@RequestMapping(value = "/event/{eventName}", method = RequestMethod.GET)
