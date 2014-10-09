@@ -22,11 +22,13 @@ import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
+
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -86,5 +88,17 @@ public class TicketReservationManager {
 
 	public int maxAmountOfTickets() {
         return configurationManager.getIntConfigValue("MAX_AMOUNT_OF_TICKETS_BY_RESERVATION", 5);
+	}
+
+
+	public void cancelPendingReservation(String reservationId) {
+		
+		Validate.isTrue(ticketReservationRepository.findReservationById(reservationId).getStatus() == TicketReservationStatus.PENDING);
+		
+		List<String> toRemove = Collections.singletonList(reservationId);
+		int updatedTickets = ticketRepository.freeFromReservation(toRemove);
+		Validate.isTrue(updatedTickets > 0);
+		int removedReservation = ticketReservationRepository.remove(toRemove);
+		Validate.isTrue(removedReservation == 1);
 	}
 }

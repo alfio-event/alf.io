@@ -43,7 +43,7 @@
 {{/summary}}
 	</tbody>
 	<tfoot>
-		<tr><th colspan="3"><strong>{{#i18n}}reservation-page.total{{/i18n}}</th><td>{{totalPrice}} {{event.currency}}</strong></td></tr>
+		<tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td><strong>{{totalPrice}} {{event.currency}}</strong></td></tr>
 	</tfoot>
 </table>
 
@@ -105,7 +105,8 @@
 	</div>
 	
 	<div class="form-group">
-		<button type="submit" class="btn btn-primary pull-right">{{#i18n}}reservation-page.pay{{/i18n}} {{totalPrice}} {{event.currency}}</button>
+		<button type="submit" class="btn btn-success pull-right">{{#i18n}}reservation-page.pay{{/i18n}} {{totalPrice}} {{event.currency}}</button>
+		<button type="submit" class="btn btn-info pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
 	</div>
 	{{/free}}
  

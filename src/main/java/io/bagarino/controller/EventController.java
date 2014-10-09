@@ -162,10 +162,13 @@ public class EventController {
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
     public String handleReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
                                     @RequestParam(value = "stripeToken", required = false) String stripeToken, 
-                                    @RequestParam("email") String email,
-                                    @RequestParam("fullName") String fullName,
+                                    @RequestParam(value = "email", required = false) String email,
+                                    @RequestParam(value = "fullName", required = false) String fullName,
                                     @RequestParam(value="billingAddress", required = false) String billingAddress,
+                                    @RequestParam(value="cancel-reservation", required = false) Boolean cancelReservation,
                                     Model model) throws StripeException {
+    	
+    	Optional<Boolean> cancel = Optional.ofNullable(cancelReservation);
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
     		return "redirect:/event/";
@@ -176,6 +179,11 @@ public class EventController {
     	if(!ticketReservation.isPresent()) {
     		model.addAttribute("reservationId", reservationId);
     		return "/event/reservation-page-not-found";
+    	}
+    	
+    	if(cancel.isPresent()) {
+    		tickReservationManager.cancelPendingReservation(reservationId);
+			return "redirect:/event/" + eventName + "/";
     	}
     	
     	//TODO: expose as a validation error :D
