@@ -15,6 +15,10 @@
 <div class="row">
 <div class="col-md-8 col-md-offset-2">
 
+	<!-- lang bar -->
+	<div class="bagarino-lang"><a href="?lang=de">de</a> / <a href="?lang=fr">fr</a> / <a href="?lang=it">it</a> / <a href="?lang=en">en</a></div>
+	<!-- -->
+	<div class="clearfix"></div>
 	<p>{{#i18n}}reservation-page-not-found.reservation-with-id{{/i18n}} {{reservationId}} {{#i18n}}reservation-page-not-found.does-not-exist{{/i18n}}</p>
 	<p>{{#i18n}}reservation-page-not-found.go-back-to-event{{/i18n}}</p>
 	

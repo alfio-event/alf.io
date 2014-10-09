@@ -40,6 +40,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import org.springframework.web.servlet.view.mustache.MustacheViewResolver;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateFactory;
@@ -78,6 +79,14 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         registry.addInterceptor(getTemplateMessagesInterceptor());
         registry.addInterceptor(getCsrfInterceptor());
         registry.addInterceptor(getCSPInterceptor());
+        registry.addInterceptor(getLocaleChangeInterceptor());
+    }
+    
+    @Bean
+    public HandlerInterceptor getLocaleChangeInterceptor(){
+        LocaleChangeInterceptor localeChangeInterceptor= new LocaleChangeInterceptor();
+        localeChangeInterceptor.setParamName("lang");
+        return localeChangeInterceptor;
     }
 
     private HandlerInterceptor getCSPInterceptor() {
@@ -116,7 +125,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         return interceptor;
     }
 
-    @Bean
+    @Bean(name = "localeResolver")
     public LocaleResolver getLocaleResolver() {
         SessionLocaleResolver localeResolver = new SessionLocaleResolver();
         localeResolver.setDefaultLocale(Locale.ENGLISH);

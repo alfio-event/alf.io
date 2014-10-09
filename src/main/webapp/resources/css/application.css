@@ -11,6 +11,14 @@ div.col-md-8.col-md-offset-2 {
 	margin-bottom:1em;
 }
 
+div.col-md-8.col-md-offset-2 > h1 {
+	margin-top:0;
+}
+
 .text-align-center {
 	text-align: center;
+}
+
+.bagarino-lang {
+	text-align: right;
 }

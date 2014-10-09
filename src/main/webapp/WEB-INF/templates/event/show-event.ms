@@ -14,6 +14,9 @@
 <div class="row">
 <div class="col-md-8 col-md-offset-2">
 
+<!-- lang bar -->
+<div class="bagarino-lang"><a href="?lang=de">de</a> / <a href="?lang=fr">fr</a> / <a href="?lang=it">it</a> / <a href="?lang=en">en</a></div>
+<!-- -->
 
 <h1>{{event.shortName}}</h1>
 <div>{{event.begin}}-{{event.end}} {{event.location}}</div>

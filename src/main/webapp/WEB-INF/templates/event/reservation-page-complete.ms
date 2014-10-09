@@ -14,6 +14,10 @@
 <div class="row">
 <div class="col-md-8 col-md-offset-2">
 
+	<!-- lang bar -->
+	<div class="bagarino-lang"><a href="?lang=de">de</a> / <a href="?lang=fr">fr</a> / <a href="?lang=it">it</a> / <a href="?lang=en">en</a></div>
+	<!-- -->
+
 
 	<h1>{{#i18n}}reservation-page-complete.your-tickets{{/i18n}} {{event.shortName}}</h1>
 	<ul class="list-group">

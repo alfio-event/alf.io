@@ -10,6 +10,8 @@
 	 
 		if (response.error) {
 			// Show the errors on the form
+			// TODO: see http://stackoverflow.com/questions/23437439/non-english-texts-in-stripe-possible 
+			// use the code for handle the localization
 			$form.find('.payment-errors').text(response.error.message);
 			$form.find('button').prop('disabled', false);
 		} else {
