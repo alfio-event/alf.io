@@ -65,8 +65,8 @@
 	</ul>
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 	<button type="submit" class="btn btn-primary pull-right">{{#i18n}}show-event.continue{{/i18n}}</button>
-
-
+	
+	<div class="clearfix"></div>
 </form>
 
 </div>
