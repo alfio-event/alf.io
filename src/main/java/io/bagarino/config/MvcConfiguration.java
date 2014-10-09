@@ -82,6 +82,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         registry.addInterceptor(getLocaleChangeInterceptor());
     }
     
+    //TODO: check why we are not able to get the default browser locale -> 
+    //      ideally if the user has IT as the preferred language it should show the IT messages...
     @Bean
     public HandlerInterceptor getLocaleChangeInterceptor(){
         LocaleChangeInterceptor localeChangeInterceptor= new LocaleChangeInterceptor();
