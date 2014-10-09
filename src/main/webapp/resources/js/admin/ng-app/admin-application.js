@@ -208,6 +208,35 @@
             $scope.organization = result.organization;
             $scope.ticketCategories = result.ticketCategories;
         });
+
+        $scope.evaluateClass = function(token) {
+            switch(token.status) {
+                case 'WAITING':
+                    return 'fa fa-cog fa-spin';
+                case 'FREE':
+                    return 'fa fa-qrcode';
+                case 'TAKEN':
+                    return 'fa fa-stop';
+                case 'CANCELLED':
+                    return 'fa fa-eraser';
+            }
+        };
+
+        $scope.isCollapsed = function(categoryWithStatistic) {
+            return !categoryWithStatistic.isTokenViewExpanded;
+        };
+
+        $scope.toggleCollapse = function(categoryWithStatistic) {
+            categoryWithStatistic.isTokenViewExpanded = !categoryWithStatistic.isTokenViewExpanded;
+        };
+
+        $scope.isPending = function(token) {
+            return token.status === 'WAITING';
+        };
+
+        $scope.isReady = function(token) {
+            return token.status === 'WAITING';
+        };
     });
 
     admin.controller('MessageBarController', function($scope, $rootScope) {

@@ -28,7 +28,10 @@ import java.util.List;
 public interface SpecialPriceRepository {
 
     @Query("select * from special_price where ticket_category_id = :ticketCategoryId")
-    List<SpecialPrice> findByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
+    List<SpecialPrice> findAllByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
+
+    @Query("select * from special_price where ticket_category_id = :ticketCategoryId and status = 'FREE'")
+    List<SpecialPrice> findActiveByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
 
     @Query("select * from special_price where code = :code and status = 'FREE'")
     SpecialPrice getByCode(@Bind("code") String code);
@@ -36,7 +39,7 @@ public interface SpecialPriceRepository {
     @Query("select count(*) from special_price where code = :code")
     Integer countByCode(@Bind("code") String code);
 
-    @Query("update special_price set code = :code where id = :id")
+    @Query("update special_price set code = :code, status = 'FREE' where id = :id")
     int updateCode(@Bind("code") String code, @Bind("id") int id);
 
     @Query(type = QueryType.TEMPLATE, value = "insert into special_price (code, price_cts, ticket_category_id, status) " +
