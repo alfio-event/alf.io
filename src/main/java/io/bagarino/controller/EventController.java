@@ -89,7 +89,7 @@ public class EventController {
 	@RequestMapping(value = "/event/{eventName}", method = RequestMethod.GET)
 	public String showEvent(@PathVariable("eventName") String eventName, Model model) {
 
-		// TODO: for each ticket categories we should check if there are available tickets
+		// TODO: for each ticket categories we should check if there are available tickets, and if they can be sold (and check the visibility)
 		
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
 
@@ -115,10 +115,9 @@ public class EventController {
 		Validate.isTrue(selectionCount > 0  && selectionCount <= tickReservationManager.maxAmountOfTickets());
 			
 		//TODO handle error cases :D
-		//TODO: 25 minutes should be configurable
 		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
 		
-		//TODO: this could fail with not enough ticket -> should we launch an exception?
+		//TODO: this could fail with not enough ticket -> validation error
 		String reservationId = tickReservationManager.createTicketReservation(event.get().getId(), reservation.selected(), expiration);
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 	}

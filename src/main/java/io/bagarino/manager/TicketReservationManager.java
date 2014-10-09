@@ -51,6 +51,8 @@ public class TicketReservationManager {
     
     public String createTicketReservation(int eventId, List<TicketReservationModification> ticketReservations, Date reservationExpiration) {
     	
+    	//FIXME check if the tickets can be sold now ! 
+    	
         String transactionId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(transactionId, reservationExpiration);
         
