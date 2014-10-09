@@ -77,9 +77,21 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(getTemplateMessagesInterceptor());
         registry.addInterceptor(getCsrfInterceptor());
+        registry.addInterceptor(getCSPInterceptor());
     }
 
-    @Bean
+    private HandlerInterceptor getCSPInterceptor() {
+    	return new HandlerInterceptorAdapter() {
+    		@Override
+    		public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+    				ModelAndView modelAndView) throws Exception {
+    			//TODO: complete the policy: to add: connect-src, style-src (other?)
+    			response.addHeader("Content-Security-Policy", "script-src 'self' https://ajax.googleapis.com/ https://js.stripe.com/ https://api.stripe.com/");
+    		}
+    	};
+	}
+
+	@Bean
     public HandlerInterceptor getCsrfInterceptor() {
         return new HandlerInterceptorAdapter() {
             @Override
@@ -119,6 +131,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         viewResolver.setOrder(1);
         //disable caching if we are in dev mode
         viewResolver.setCache(!ArrayUtils.contains(env.getActiveProfiles(), "dev"));
+        viewResolver.setContentType("text/html;charset=UTF-8");
         return viewResolver;
     }
 

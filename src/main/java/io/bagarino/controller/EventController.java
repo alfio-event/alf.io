@@ -79,7 +79,7 @@ public class EventController {
 	public String listEvents(Model model) {
 		List<Event> events = eventRepository.findAll();
 		if(events.size() == 1) {
-			return "redirect:/event/" + events.get(0).getShortName();
+			return "redirect:/event/" + events.get(0).getShortName() + "/";
 		} else {
 			model.addAttribute("events", events);
 			return "/event/event-list";
