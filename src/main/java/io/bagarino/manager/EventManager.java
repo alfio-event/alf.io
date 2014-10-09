@@ -110,7 +110,7 @@ public class EventManager {
 
     public List<TicketCategoryWithStatistic> loadTicketCategoriesWithStats(Event event) {
         return loadTicketCategories(event).stream()
-                    .map(tc -> new TicketCategoryWithStatistic(tc, ticketRepository.countConfirmedTickets(event.getId(), tc.getId())))
+                    .map(tc -> new TicketCategoryWithStatistic(tc, ticketRepository.countConfirmedTickets(event.getId(), tc.getId()), specialPriceRepository.findAllByCategoryId(tc.getId())))
                     .collect(toList());
     }
 

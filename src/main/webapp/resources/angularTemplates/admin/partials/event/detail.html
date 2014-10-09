@@ -88,7 +88,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
         <div class="row">
             <div class="col-sm-8">
@@ -98,6 +97,18 @@
                 </progress>
             </div>
             <div class="col-sm-4">sold: {{categoryWithStatistic.soldTickets}}, available: {{categoryWithStatistic.notSoldTickets}}</div>
+        </div>
+        <div data-ng-if="categoryWithStatistic.accessRestricted">
+            <div class="wMarginBottom">
+                <button class="btn btn-default" data-ng-click="toggleCollapse(categoryWithStatistic)">
+                    <span data-ng-if="isCollapsed(categoryWithStatistic)">show</span><span data-ng-if="!isCollapsed(categoryWithStatistic)">hide</span> tokens
+                </button>
+            </div>
+            <div class="wMarginBottom" data-collapse="isCollapsed(categoryWithStatistic)">
+                <div class="row">
+                    <div class="col-sm-2" data-ng-repeat="token in categoryWithStatistic.tokenStatus"><i class="status-icon" data-ng-class="evaluateClass(token)"></i> {{token.code}}</div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
