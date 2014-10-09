@@ -29,9 +29,23 @@
 	{{#ticketCategories}}
 		<li class="list-group-item">
 			<div class="form-group">
-				<div class="col-sm-10">
-					{{name}}, regular price is:  {{event.regularPrice}} {{event.currency}} (vat included: {{event.vatIncluded}}), category price {{price}} :
+				<div class="col-sm-8">
+					<label class="control-label">{{name}}</label>
 					<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
+					<div>
+						(vat included: {{event.vatIncluded}})
+						{{description}}
+					</div>
+				</div>
+				<div class="col-sm-2">
+					<label class="control-label">
+						{{#free}}
+							{{#i18n}}common.free{{/i18n}}	
+						{{/free}}
+						{{^free}}
+							{{price}} {{event.currency}}
+						{{/free}}
+					</label>
 				</div>
 				<div class="col-sm-2">
 					<input name="reservation[{{-index}}].amount" type="text" class="form-control text-align-center" placeholder="0" autocomplete="off">

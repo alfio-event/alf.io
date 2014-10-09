@@ -80,6 +80,6 @@ public class EventModification {
     }
 
     public int getPriceInCents() {
-        return price.multiply(EventManager.HUNDRED).intValueExact();
+        return freeOfCharge ? 0 : price.multiply(EventManager.HUNDRED).intValueExact();
     }
 }

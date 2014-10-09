@@ -105,7 +105,7 @@
 	</div>
 	
 	<div class="form-group">
-		<button type="submit"  class="btn btn-primary pull-right"> {{#i18n}}reservation-page.submit-payment-continue{{/i18n}}</button>
+		<button type="submit" class="btn btn-primary pull-right">{{#i18n}}reservation-page.pay{{/i18n}} {{totalPrice}} {{event.currency}}</button>
 	</div>
 	{{/free}}
  
