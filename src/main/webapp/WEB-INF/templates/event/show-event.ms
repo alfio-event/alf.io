@@ -20,22 +20,28 @@
 <div>{{event.description}}</div>
 
 
-<h2>Tickets</h2>
+<h2>{{#i18n}}show-event.tickets{{/i18n}}</h2>
 
 
 
-<form method="post" action="reserve-tickets">
+<form method="post" action="reserve-tickets" class="form-horizontal">
 	<ul class="list-group">
 	{{#ticketCategories}}
 		<li class="list-group-item">
-			{{name}}, regular price is:  {{event.regularPrice}} {{event.currency}} (vat included: {{event.vatIncluded}}), category price {{price}} :
-			<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
-			<input name="reservation[{{-index}}].amount" type="text">
+			<div class="form-group">
+				<div class="col-sm-10">
+					{{name}}, regular price is:  {{event.regularPrice}} {{event.currency}} (vat included: {{event.vatIncluded}}), category price {{price}} :
+					<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
+				</div>
+				<div class="col-sm-2">
+					<input name="reservation[{{-index}}].amount" type="text" class="form-control text-align-center" placeholder="0" autocomplete="off">
+				</div>
+			</div>
 		</li>
 	{{/ticketCategories}}
 	</ul>
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
-	<button type="submit" class="btn btn-primary pull-right">Continue</button>
+	<button type="submit" class="btn btn-primary pull-right">{{#i18n}}show-event.continue{{/i18n}}</button>
 
 
 </form>

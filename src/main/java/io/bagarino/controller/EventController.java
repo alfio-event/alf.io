@@ -75,16 +75,21 @@ public class EventController {
         this.stripeManager = stripeManager;
 	}
 
-	@RequestMapping(value = "/event/", method = RequestMethod.GET)
+	@RequestMapping(value = {"/"}, method = RequestMethod.GET)
 	public String listEvents(Model model) {
-		model.addAttribute("events", eventRepository.findAll());
-		return "/event/event-list";
+		List<Event> events = eventRepository.findAll();
+		if(events.size() == 1) {
+			return "redirect:/event/" + events.get(0).getShortName() + "/";
+		} else {
+			model.addAttribute("events", events);
+			return "/event/event-list";
+		}
 	}
 
 	@RequestMapping(value = "/event/{eventName}", method = RequestMethod.GET)
 	public String showEvent(@PathVariable("eventName") String eventName, Model model) {
 
-		// TODO: for each ticket categories we should check if there are available tickets
+		// TODO: for each ticket categories we should check if there are available tickets, and if they can be sold (and check the visibility)
 		
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
 
@@ -110,10 +115,9 @@ public class EventController {
 		Validate.isTrue(selectionCount > 0  && selectionCount <= tickReservationManager.maxAmountOfTickets());
 			
 		//TODO handle error cases :D
-		//TODO: 25 minutes should be configurable
 		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
 		
-		//TODO: this could fail with not enough ticket -> should we launch an exception?
+		//TODO: this could fail with not enough ticket -> validation error
 		String reservationId = tickReservationManager.createTicketReservation(event.get().getId(), reservation.selected(), expiration);
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 	}
@@ -130,6 +134,7 @@ public class EventController {
 
     	Optional<TicketReservation> reservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId));
 
+    	model.addAttribute("event", event.get());
     	
     	if(!reservation.isPresent()) {
     		model.addAttribute("reservationId", reservationId);
@@ -142,13 +147,11 @@ public class EventController {
     		model.addAttribute("free", reservationCost == 0);
     		model.addAttribute("totalPrice", formatCents(reservationCost));
     		model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
-    		model.addAttribute("event", event.get());
     		model.addAttribute("reservationId", reservationId);
     		model.addAttribute("reservation", reservation.get());
     		
     		return "/event/reservation-page";
     	} else {
-    		
     		model.addAttribute("reservationId", reservationId);
     		model.addAttribute("ticketsByCategory", ticketRepository.findTicketsInReservation(reservationId).stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet());
     		

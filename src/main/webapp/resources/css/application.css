@@ -5,5 +5,12 @@ body {
 
 div.col-md-8.col-md-offset-2 {
 	background-color:white;
+	padding-top:1em;
 	padding-bottom:1em;
+	margin-top:1em;
+	margin-bottom:1em;
+}
+
+.text-align-center {
+	text-align: center;
 }

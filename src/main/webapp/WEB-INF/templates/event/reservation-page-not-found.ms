@@ -15,10 +15,8 @@
 <div class="row">
 <div class="col-md-8 col-md-offset-2">
 
-
-	The reservation with id {{reservationId}} does not exist. 
-
-	Go back to <a href="../">event</a>
+	<p>{{#i18n}}reservation-page-not-found.reservation-with-id{{/i18n}} {{reservationId}} {{#i18n}}reservation-page-not-found.does-not-exist{{/i18n}}</p>
+	<p>{{#i18n}}reservation-page-not-found.go-back-to-event{{/i18n}}</p>
 	
 	
 </div>

@@ -15,11 +15,11 @@
 <div class="row">
 <div class="col-md-8 col-md-offset-2">
 
-	<h1>Events</h1>
+	<h1>{{#i18n}}event-list.title{{/i18n}}</h1>
 	<ul class="list-group">
 	{{#events}}
 		<li class="list-group-item">
-			<a href="./{{shortName}}/">
+			<a href="event/{{shortName}}/">
 				<div>
 					<h2>{{shortName}}</h2>
 					<div>{{begin}}-{{end}}</div>
