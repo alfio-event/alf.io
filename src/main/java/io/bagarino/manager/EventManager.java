@@ -53,7 +53,6 @@ import static java.util.stream.Collectors.toList;
 @Component
 public class EventManager {
 
-    public static final BigDecimal HUNDRED = new BigDecimal("100.0");
     private final UserManager userManager;
     private final EventOrganizationRepository eventOrganizationRepository;
     private final EventRepository eventRepository;

@@ -18,8 +18,8 @@ package io.bagarino.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.bagarino.manager.EventManager;
 import io.bagarino.model.transaction.PaymentProxy;
+import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -80,6 +80,6 @@ public class EventModification {
     }
 
     public int getPriceInCents() {
-        return freeOfCharge ? 0 : price.multiply(EventManager.HUNDRED).intValueExact();
+        return freeOfCharge ? 0 : MonetaryUtil.unitToCents(price);
     }
 }

@@ -16,9 +16,9 @@
  */
 package io.bagarino.model.modification;
 
-import io.bagarino.manager.EventManager;
 import io.bagarino.model.SpecialPrice;
 import io.bagarino.model.TicketCategory;
+import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -39,11 +39,11 @@ public class TicketCategoryWithStatistic {
         this.ticketCategory = ticketCategory;
         this.soldTickets = soldTickets;
         this.tokenStatus = tokenStatus;
-        this.soldTicketsPercent = BigDecimal.valueOf(soldTickets).divide(BigDecimal.valueOf(ticketCategory.getMaxTickets()), 2, RoundingMode.HALF_UP);
+        this.soldTicketsPercent = BigDecimal.valueOf(soldTickets).divide(BigDecimal.valueOf(ticketCategory.getMaxTickets()), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED);
     }
 
     public BigDecimal getNotSoldTicketsPercent() {
-        return EventManager.HUNDRED.subtract(soldTicketsPercent);
+        return MonetaryUtil.HUNDRED.subtract(soldTicketsPercent);
     }
 
     public int getNotSoldTickets() {
