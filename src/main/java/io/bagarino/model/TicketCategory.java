@@ -32,6 +32,7 @@ public class TicketCategory {
     private final String name;
     private final String description;
     private final int priceInCents;
+    private final boolean accessRestricted;
 
     public TicketCategory(@Column("id") int id,
                           @Column("inception") Date inception,
@@ -39,7 +40,8 @@ public class TicketCategory {
                           @Column("max_tickets") int maxTickets,
                           @Column("name") String name,
                           @Column("description") String description,
-                          @Column("price_cts") int priceInCents) {
+                          @Column("price_cts") int priceInCents,
+                          @Column("access_restricted") boolean accessRestricted) {
         this.id = id;
         this.inception = inception;
         this.expiration = expiration;
@@ -47,6 +49,7 @@ public class TicketCategory {
         this.name = name;
         this.description = description;
         this.priceInCents = priceInCents;
+        this.accessRestricted = accessRestricted;
     }
 
     public BigDecimal getPrice() {

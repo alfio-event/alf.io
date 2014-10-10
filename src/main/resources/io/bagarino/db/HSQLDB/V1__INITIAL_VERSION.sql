@@ -67,7 +67,8 @@ create table ticket_category (
 	max_tickets integer not null,
 	name varchar(255) not null,
   description varchar(1024),
-  price_cts integer not null
+  price_cts integer not null,
+  access_restricted boolean not null
 );
 
 create table event(

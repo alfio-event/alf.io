@@ -51,6 +51,6 @@ public class TicketCategoryWithStatistic {
     }
 
     public boolean isAccessRestricted() {
-        return !tokenStatus.isEmpty();
+        return ticketCategory.isAccessRestricted();
     }
 }
