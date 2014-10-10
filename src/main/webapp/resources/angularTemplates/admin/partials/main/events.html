@@ -20,7 +20,7 @@
         <td data-ng-class-even="'active'">{{event.shortName}}</td>
         <td data-ng-class-even="'active'">{{event.description}}</td>
         <td data-ng-class-even="'active'">{{event.begin | date : 'dd/MM/yyyy HH:mm'}} / {{event.end | date : 'dd/MM/yyyy HH:mm'}}</td>
-        <td data-ng-class-even="'active'"><a class="icon fa fa-pie-chart" data-ui-sref="events.detail({eventName: event.shortName})"></a></td>
+        <td data-ng-class-even="'active'"><a class="icon fa fa-bar-chart" data-ui-sref="events.detail({eventName: event.shortName})"></a></td>
     </tr>
     </tbody>
 </table>
