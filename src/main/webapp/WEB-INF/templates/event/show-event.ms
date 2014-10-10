@@ -19,7 +19,7 @@
 <!-- -->
 
 <h1>{{event.shortName}}</h1>
-<div>{{event.begin}}-{{event.end}} {{event.location}}</div>
+<div>{{#format-date}}{{event.begin}} dd.MM.yyyy HH:mm{{/format-date}} {{#format-date}}{{event.end}} dd.MM.yyyy HH:mm{{/format-date}} {{event.location}}</div>
 <div>{{event.description}}</div>
 
 
@@ -36,6 +36,8 @@
 					<label class="control-label">{{name}}</label>
 					<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
 					<div>
+						<p>inception: {{#format-date}}{{inception}} dd.MM.yyyy HH:mm{{/format-date}}</p>
+						<p>expiration: {{#format-date}}{{expiration}} dd.MM.yyyy HH:mm{{/format-date}}</p>
 						{{description}}
 					</div>
 				</div>

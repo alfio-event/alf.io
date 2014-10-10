@@ -19,8 +19,10 @@ package io.bagarino.config;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
+import com.samskivert.mustache.Mustache;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
@@ -47,10 +49,13 @@ import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplate
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 import org.springframework.web.servlet.view.mustache.jmustache.LocalizationMessageInterceptor;
 
+import io.bagarino.util.DateFormatterInterceptor;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -77,6 +82,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(getTemplateMessagesInterceptor());
+        registry.addInterceptor(new DateFormatterInterceptor());
         registry.addInterceptor(getCsrfInterceptor());
         registry.addInterceptor(getCSPInterceptor());
         registry.addInterceptor(getLocaleChangeInterceptor());
@@ -96,7 +102,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     		@Override
     		public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
     				ModelAndView modelAndView) throws Exception {
-    			//TODO: complete the policy: to add: connect-src, style-src (other?)
+    			// TODO: complete the policy: to add: connect-src, style-src (other?)
+    			// http://www.html5rocks.com/en/tutorials/security/content-security-policy/
     			response.addHeader("Content-Security-Policy", "script-src 'self' https://ajax.googleapis.com/ https://js.stripe.com/ https://api.stripe.com/");
     		}
     	};
@@ -156,20 +163,25 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     @Bean
     public JMustacheTemplateFactory getTemplateFactory() throws Exception {
         final JMustacheTemplateFactory templateFactory = new JMustacheTemplateFactory();
+        
+        JMustacheTemplateLoader loader = new JMustacheTemplateLoader();
+        loader.setResourceLoader(resourceLoader);
+        
         templateFactory.setPrefix("/WEB-INF/templates");
         templateFactory.setSuffix(".ms");
-        templateFactory.setEscapeHTML(true);
-        templateFactory.setStandardsMode(false);
-        templateFactory.setTemplateLoader(getTemplateLoader());
+        templateFactory.setTemplateLoader(loader);
+        templateFactory.setCompiler(Mustache.compiler()
+        		.escapeHTML(true)
+        		.standardsMode(false)
+				.withFormatter(
+						(o) -> {
+							return (o instanceof Date) ? DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.format((Date) o)
+									: String.valueOf(o);
+						})
+        		.withLoader(loader));
+        
         templateFactory.afterPropertiesSet();
         return templateFactory;
-    }
-
-    @Bean
-    public JMustacheTemplateLoader getTemplateLoader() {
-        final JMustacheTemplateLoader templateLoader = new JMustacheTemplateLoader();
-        templateLoader.setResourceLoader(resourceLoader);
-        return templateLoader;
     }
 
     @Bean
