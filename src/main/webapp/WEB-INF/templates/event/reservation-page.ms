@@ -19,13 +19,15 @@
 <div class="bagarino-lang"><a href="?lang=de">de</a> / <a href="?lang=fr">fr</a> / <a href="?lang=it">it</a> / <a href="?lang=en">en</a></div>
 <!-- -->
 
-
-{{^free}}
- <script src="https://js.stripe.com/v2/"></script>
-{{/free}}
-
+{{#free}}
  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
  <script src="/resources/js/event/reservation-page.js"></script>
+{{/free}}
+{{^free}}
+ <script src="https://js.stripe.com/v2/"></script>
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+ <script src="/resources/js/event/reservation-page.js" data-stripe-key="{{stripe_p_key}}" id="stripe-key"></script>
+{{/free}}
 
 <h1>{{#i18n}}reservation-page.title{{/i18n}} {{event.shortName}}</h1>
 <table class="table">
