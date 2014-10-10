@@ -22,9 +22,10 @@
 
 {{^free}}
  <script src="https://js.stripe.com/v2/"></script>
- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
- <script src="/resources/js/event/reservation-page.js" data-stripe-key="{{stripe_p_key}}" id="stripe-key"></script>
 {{/free}}
+
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+ <script src="/resources/js/event/reservation-page.js"></script>
 
 <h1>{{#i18n}}reservation-page.title{{/i18n}} {{event.shortName}}</h1>
 <table class="table">
@@ -66,6 +67,7 @@
 	</div>
 	{{#free}}
 	<button type="submit" class="btn btn-primary pull-right">{{#i18n}}reservation-page.continue{{/i18n}}</button>
+	<button type="submit" class="btn btn-info pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
 	{{/free}}
 	{{^free}}
 	

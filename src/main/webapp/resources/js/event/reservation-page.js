@@ -2,9 +2,7 @@
 	
 	'use strict';
 	
-	// This identifies your website in the createToken call below
-	Stripe.setPublishableKey(document.getElementById("stripe-key").getAttribute('data-stripe-key'));
-	 
+	
 	function stripeResponseHandler(status, response) {
 		var $form = $('#payment-form');
 	 
@@ -24,11 +22,16 @@
 		}
 	};
 	
+	var hasStripe = document.getElementById("stripe-key") != null;
+	
+	if(hasStripe) {
+		// This identifies your website in the createToken call below
+		Stripe.setPublishableKey(document.getElementById("stripe-key").getAttribute('data-stripe-key'));
+	}
+	
 	
 	 
 	jQuery(function($) {
-		
-		
 		
 		function submitForm(e) {
 			var $form = $(this);
@@ -42,6 +45,8 @@
 			return false;
 		}
 		
+		
+		
 		$("#cancel-reservation").click(function(e) {
 			var $form = $('#payment-form');
 			$form
@@ -52,6 +57,8 @@
 			return true;
 		});
 		
-		$('#payment-form').submit(submitForm);
+		if(hasStripe) {
+			$('#payment-form').submit(submitForm);
+		}
 	});
 })();
