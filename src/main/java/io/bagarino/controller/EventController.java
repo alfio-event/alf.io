@@ -115,10 +115,18 @@ public class EventController {
     		return "redirect:/";
     	}
 		
+		final Date now = new Date();
+		
 		//
 		final int selectionCount = reservation.selectionCount();
-		Validate.isTrue(selectionCount > 0  && selectionCount <= tickReservationManager.maxAmountOfTickets());
-		//TODO check if the ticket category is within the bound of inception/expiration date and accessRestricted is false
+		Validate.isTrue(selectionCount > 0  && selectionCount <= tickReservationManager.maxAmountOfTickets(), "must select at least 1 ticket and less than maximum amount");
+		
+		// check if the ticket category is saleable / access restricted
+		reservation.selected().forEach((r) -> {
+			SellableTicketCategory ticketCategory = new SellableTicketCategory(ticketCategoryRepository.getById(r.getTicketCategoryId()), now);
+			Validate.isTrue(ticketCategory.getSaleable(), "ticket category must be sellable");
+			Validate.isTrue(ticketCategory.isAccessRestricted(), "ticket category cannot be access restricted");
+		});
 		//
 			
 		//TODO handle error cases :D
@@ -242,7 +250,7 @@ public class EventController {
 			this.now = now;
 		}
 		
-		public boolean getSellable() {
+		public boolean getSaleable() {
 			return getInception().before(now) && getExpiration().after(now);
 		}
 		

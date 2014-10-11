@@ -36,7 +36,7 @@
 					<label class="control-label">{{name}}</label>
 					<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
 					<div>
-						<p>sellable: {{sellable}}</p>
+						<p>saleable: {{saleable}}</p>
 						<p>inception: {{#format-date}}{{inception}} dd.MM.yyyy HH:mm{{/format-date}}</p>
 						<p>expiration: {{#format-date}}{{expiration}} dd.MM.yyyy HH:mm{{/format-date}}</p>
 						{{description}}
@@ -63,7 +63,12 @@
 					</div>
 				</div>
 				<div class="col-sm-2">
-					<input name="reservation[{{-index}}].amount" type="text" class="form-control text-align-center" placeholder="0" autocomplete="off">
+					{{#saleable}}
+						<input name="reservation[{{-index}}].amount" type="text" class="form-control text-align-center" placeholder="0" autocomplete="off">
+					{{/saleable}}
+					{{^saleable}}
+						<label class="control-label">N/A</label>
+					{{/saleable}}
 				</div>
 			</div>
 		</li>

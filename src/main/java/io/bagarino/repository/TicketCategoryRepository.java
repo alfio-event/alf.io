@@ -44,7 +44,7 @@ public interface TicketCategoryRepository {
     TicketCategory getById(@Bind("id") int id);
 
     @Query("select * from ticket_category inner join j_event_ticket_category on ticket_category_id = id " +
-            "where event_id = :eventId order by inception asc")
+            "where event_id = :eventId order by inception asc, expiration asc, id asc")
     List<TicketCategory> findAllTicketCategories(@Bind("eventId") int eventId);
 
     @Query("update ticket_category set inception = :inception, expiration = :expiration, " +
