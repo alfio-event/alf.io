@@ -30,15 +30,12 @@
 <form method="post" action="reserve-tickets" class="form-horizontal">
 	<ul class="list-group">
 	{{#ticketCategories}}
-		<li class="list-group-item">
+		<li class="list-group-item {{#expired}}event-expired{{/expired}}">
 			<div class="form-group">
 				<div class="col-sm-7">
 					<label class="control-label">{{name}}</label>
 					<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
 					<div>
-						<p>saleable: {{saleable}}</p>
-						<p>inception: {{#format-date}}{{inception}} dd.MM.yyyy HH:mm{{/format-date}}</p>
-						<p>expiration: {{#format-date}}{{expiration}} dd.MM.yyyy HH:mm{{/format-date}}</p>
 						{{description}}
 					</div>
 				</div>
@@ -62,7 +59,7 @@
 						{{/free}}
 					</div>
 				</div>
-				<div class="col-sm-2">
+				<div class="col-sm-2 text-align-center">
 					{{#saleable}}
 						<input name="reservation[{{-index}}].amount" type="text" class="form-control text-align-center" placeholder="0" autocomplete="off">
 					{{/saleable}}

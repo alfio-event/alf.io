@@ -22,3 +22,7 @@ div.col-md-8.col-md-offset-2 > h1 {
 .bagarino-lang {
 	text-align: right;
 }
+
+.event-expired {
+	color:#bbb;
+}
