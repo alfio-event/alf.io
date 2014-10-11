@@ -23,11 +23,13 @@ insert into event(description, short_name, owner, location, latitude, longitude,
 insert into j_event_organization(event_id, org_id) values(0, 0);
 
 insert into ticket_category(inception, expiration, name, description, max_tickets, price_cts, access_restricted) values
-  ('2014-01-10 00:00:00', '2015-01-10 00:00:00', 'Normal', 'Very good category', 2, 0, false),
-  ('2014-01-10 00:00:00', '2015-01-10 00:00:00', 'Not normal', 'Very very good category', 4, 500, false);
+  ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Normal', 'Very good category', 2, 0, false),
+  ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Not normal', 'Very very good category', 4, 500, false),
+  ('2015-09-10 00:00:00', '2015-10-10 00:00:00', 'Still not in sale', 'Last day category', 1, 500, false);
   
 insert into j_event_ticket_category(event_id, ticket_category_id) values (0,0);
 insert into j_event_ticket_category(event_id, ticket_category_id) values (0,1);
+insert into j_event_ticket_category(event_id, ticket_category_id) values (0,2);
 
 insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts)
   values
@@ -36,7 +38,8 @@ insert into ticket (uuid, creation, category_id, event_id, status, original_pric
   ('abcdefghilmn41', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500),
   ('abcdefghilmn42', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500),
   ('abcdefghilmn43', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500),
-  ('abcdefghilmo44', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500);
+  ('abcdefghilmo44', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500),
+  ('abcdefghilmo45', '2014-01-10 00:00:00', 2, 0, 'FREE', 500, 500);
   
 insert into configuration (c_key, c_value, description) values
 	('STRIPE_SECRET_KEY', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'test api key'),

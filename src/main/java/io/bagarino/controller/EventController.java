@@ -113,6 +113,8 @@ public class EventController {
 		//
 		final int selectionCount = reservation.selectionCount();
 		Validate.isTrue(selectionCount > 0  && selectionCount <= tickReservationManager.maxAmountOfTickets());
+		//TODO check if the ticket category is within the bound of inception/expiration date and accessRestricted is false
+		//
 			
 		//TODO handle error cases :D
 		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
