@@ -36,10 +36,10 @@
 					<label class="control-label">{{name}}</label>
 					<div>
 						{{#saleInFuture}}
-							Sales not started.
+							{{#i18n}}show-event.sales-not-started{{/i18n}}
 						{{/saleInFuture}}
 						{{^saleInFuture}}
-							Sales end {{#format-date}}{{expiration}} dd.MM.yyyy{{/format-date}}.
+							{{#i18n}}show-event.sales-end [{{#format-date}}{{expiration}} dd.MM.yyyy{{/format-date}}]{{/i18n}}
 						{{/saleInFuture}}
 					</div>
 					<div>
@@ -58,10 +58,10 @@
 					<div>
 						{{^free}}
 							{{#event.vatIncluded}}
-								{{#i18n}}show-event.incVat{{/i18n}} {{event.vat}}%
+								{{#i18n}}show-event.incVat [{{event.vat}}]{{/i18n}}
 							{{/event.vatIncluded}}
 							{{^event.vatIncluded}}
-								{{#i18n}}show-event.excVat{{/i18n}} {{event.vat}}%
+								{{#i18n}}show-event.excVat [{{event.vat}}]{{/i18n}}
 							{{/event.vatIncluded}}
 						{{/free}}
 					</div>
