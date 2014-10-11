@@ -36,6 +36,14 @@
 					<label class="control-label">{{name}}</label>
 					<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
 					<div>
+						{{#saleInFuture}}
+							Sales not started.
+						{{/saleInFuture}}
+						{{^saleInFuture}}
+							Sales end {{#format-date}}{{expiration}} dd.MM.yyyy{{/format-date}}.
+						{{/saleInFuture}}
+					</div>
+					<div>
 						{{description}}
 					</div>
 				</div>

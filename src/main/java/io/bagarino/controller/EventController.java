@@ -257,6 +257,10 @@ public class EventController {
 		public boolean getExpired() {
 			return getExpiration().before(now);
 		}
+		
+		public boolean getSaleInFuture() {
+			return getInception().after(now);
+		}
     	
     }
     
