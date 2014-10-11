@@ -2,6 +2,7 @@
 
 <h1>{{event.shortName}}</h1>
 <div>
+	<i class="fa fa-calendar width-13-center"></i> 
 	{{#event.sameDay}}
 		{{#i18n}}event-days.same-day 
 			[{{#format-date}}{{event.begin}}EEEEE dd MMMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] 
@@ -21,7 +22,7 @@
 		{{/i18n}} 
 	{{/event.sameDay}}
 </div>
-<div>{{event.location}}</div>
+<div><i class="fa fa-map-marker width-13-center"></i> {{event.location}}</div>
 <div>{{event.description}}</div>
 
 

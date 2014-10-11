@@ -26,3 +26,8 @@ div.col-md-8.col-md-offset-2 > h1 {
 .event-expired {
 	color:#bbb;
 }
+
+.width-13-center {
+	width: 13px;
+	text-align: center;
+}
