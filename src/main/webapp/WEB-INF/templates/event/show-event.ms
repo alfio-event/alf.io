@@ -1,25 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <link rel="stylesheet" href="/resources/bower_components/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/resources/bower_components/components-font-awesome/css/font-awesome.min.css">
-    <link rel="stylesheet" href="/resources/css/application.css">
-</head>
-<body>
-
-<div class="container">
-<div class="row">
-<div class="col-md-8 col-md-offset-2">
-
-<!-- lang bar -->
-<div class="bagarino-lang"><a href="?lang=de">de</a> / <a href="?lang=fr">fr</a> / <a href="?lang=it">it</a> / <a href="?lang=en">en</a></div>
-<!-- -->
+{{>/event/page-top}}
 
 <h1>{{event.shortName}}</h1>
-<div>{{event.sameDay}}: {{#format-date}}{{event.begin}} dd.MM.yyyy HH:mm{{/format-date}} {{#format-date}}{{event.end}} dd.MM.yyyy HH:mm{{/format-date}} {{event.location}}</div>
+<div>
+	{{#event.sameDay}}
+		{{#i18n}}event-days.same-day 
+			[{{#format-date}}{{event.begin}}EEEEE dd MMMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] 
+			[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] 
+			[{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
+		{{/i18n}}
+	{{/event.sameDay}}
+	{{^event.sameDay}}
+		{{#i18n}}event-days.not-same-day 
+			[{{#format-date}}{{event.begin}}EEEEE dd MMMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+			[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
+		{{/i18n}} 
+		- 
+		{{#i18n}}event-days.not-same-day 
+			[{{#format-date}}{{event.end}}EEEEE dd MMMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+			[{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
+		{{/i18n}} 
+	{{/event.sameDay}}
+</div>
+<div>{{event.location}}</div>
 <div>{{event.description}}</div>
 
 
@@ -85,9 +87,4 @@
 	<div class="clearfix"></div>
 </form>
 
-</div>
-</div>
-</div>
-
-</body>
-</html>
+{{>/event/page-bottom}}
