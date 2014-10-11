@@ -22,6 +22,7 @@ import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
+import io.bagarino.model.TicketCategory;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
@@ -92,14 +93,17 @@ public class EventController {
 		// TODO: for each ticket categories we should check if there are available tickets, and if they can be sold (and check the visibility)
 		
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
-
-		if(event.isPresent()) {
-			model.addAttribute("event", event.get())//
-				.addAttribute("ticketCategories", ticketCategoryRepository.findAllTicketCategories(event.get().getId()));
-			return "/event/show-event";
-		} else {
-			return "redirect:/event/";
+		
+		if(!event.isPresent()) {
+			return "redirect:/";
 		}
+
+		//hide access restricted ticket categories
+		List<TicketCategory> t = ticketCategoryRepository.findAllTicketCategories(event.get().getId()).stream().filter((c) -> !c.isAccessRestricted()).collect(Collectors.toList());
+		//
+		model.addAttribute("event", event.get())//
+			.addAttribute("ticketCategories", t);
+		return "/event/show-event";
 	}
 
 	@RequestMapping(value = "/event/{eventName}/reserve-tickets", method = RequestMethod.POST)
@@ -107,7 +111,7 @@ public class EventController {
 		
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
 		if(!event.isPresent()) {
-    		return "redirect:/event/";
+    		return "redirect:/";
     	}
 		
 		//
@@ -131,7 +135,7 @@ public class EventController {
     	
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
-    		return "redirect:/event/";
+    		return "redirect:/";
     	}
 
     	Optional<TicketReservation> reservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId));
@@ -173,7 +177,7 @@ public class EventController {
     	Optional<Boolean> cancel = Optional.ofNullable(cancelReservation);
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
-    		return "redirect:/event/";
+    		return "redirect:/";
     	}
     	
     	Optional<TicketReservation> ticketReservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId));
