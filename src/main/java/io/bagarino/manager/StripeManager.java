@@ -17,38 +17,34 @@
 package io.bagarino.manager;
 
 
-import io.bagarino.repository.system.ConfigurationRepository;
-
-import java.util.HashMap;
-import java.util.Map;
-
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Charge;
+import io.bagarino.manager.system.ConfigurationManager;
+import io.bagarino.model.system.ConfigurationKeys;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.stripe.Stripe;
-import com.stripe.exception.StripeException;
-import com.stripe.model.Charge;
+import java.util.HashMap;
+import java.util.Map;
 
-/**
- * Created by yanke on 22.09.14.
- */
 @Component
 public class StripeManager {
-	
-	private final ConfigurationRepository configurationRepository;
-	
+
+    private final ConfigurationManager configurationManager;
+
 	@Autowired
-	public StripeManager(ConfigurationRepository configurationRepository) {
-		this.configurationRepository = configurationRepository;
+	public StripeManager(ConfigurationManager configurationManager) {
+        this.configurationManager = configurationManager;
 	}
-	
+
 	public String getSecretKey() {
-		return configurationRepository.findByKey("STRIPE_SECRET_KEY").getValue();
+        return configurationManager.getRequiredValue(ConfigurationKeys.STRIPE_SECRET_KEY);
 	}
-	
+
 	public String getPublicKey() {
-		return configurationRepository.findByKey("STRIPE_PUBLIC_KEY").getValue();
+		return configurationManager.getRequiredValue(ConfigurationKeys.STRIPE_PUBLIC_KEY);
 	}
 
     /**
@@ -57,8 +53,8 @@ public class StripeManager {
      * get money on our account.
      *
      * as documented in https://stripe.com/docs/tutorials/charges
-     * 
-     * @throws StripeException 
+     *
+     * @throws StripeException
      */
     public void chargeCreditCard(String stripeToken, long amountInCent, String currency, String reservationId, String email, String fullName, String billingAddress) throws StripeException {
         // Use Stripe's bindings...
@@ -68,21 +64,21 @@ public class StripeManager {
         chargeParams.put("amount", amountInCent);
         chargeParams.put("currency", currency);
         chargeParams.put("card", stripeToken); // obtained with Stripe.js
-        
-        
+
+
         chargeParams.put("description", "Charge for test@example.com");//TODO replace
-        
+
         Map<String, String> initialMetadata = new HashMap<String, String>();
-        
+
         initialMetadata.put("reservationId", reservationId);
         initialMetadata.put("email", email);
         initialMetadata.put("fullName", fullName);
         if(StringUtils.isNotBlank(billingAddress)) {
         	initialMetadata.put("billingAddress", billingAddress);
         }
-        
-        
-        
+
+
+
         chargeParams.put("metadata", initialMetadata);
         Charge charge = Charge.create(chargeParams);
     }

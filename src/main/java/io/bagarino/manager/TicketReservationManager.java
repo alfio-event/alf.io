@@ -20,9 +20,9 @@ import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.Ticket.TicketStatus;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
+import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
-
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -38,8 +38,8 @@ import java.util.UUID;
 public class TicketReservationManager {
 	
 	public static final int RESERVATION_MINUTE = 25;
-	
-	private final TicketRepository ticketRepository;
+
+    private final TicketRepository ticketRepository;
 	private final TicketReservationRepository ticketReservationRepository;
 	private final ConfigurationManager configurationManager;
 	
@@ -87,7 +87,7 @@ public class TicketReservationManager {
 
 
 	public int maxAmountOfTickets() {
-        return configurationManager.getIntConfigValue("MAX_AMOUNT_OF_TICKETS_BY_RESERVATION", 5);
+        return configurationManager.getIntConfigValue(ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
 	}
 
 

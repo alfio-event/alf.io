@@ -16,8 +16,8 @@
  */
 package io.bagarino.config;
 
+import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.system.ConfigurationKeys;
-import io.bagarino.repository.system.ConfigurationRepository;
 import io.bagarino.repository.user.AuthorityRepository;
 import io.bagarino.repository.user.UserRepository;
 import io.bagarino.util.PasswordGenerator;
@@ -25,7 +25,6 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -33,17 +32,17 @@ import org.springframework.stereotype.Component;
 @Log4j2
 public class ConfigurationStatusChecker implements ApplicationListener<ContextRefreshedEvent> {
 
-    private final ConfigurationRepository configurationRepository;
+    private final ConfigurationManager configurationManager;
     private final UserRepository userRepository;
     private final AuthorityRepository authorityRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public ConfigurationStatusChecker(ConfigurationRepository configurationRepository,
+    public ConfigurationStatusChecker(ConfigurationManager configurationManager,
                                       UserRepository userRepository,
                                       AuthorityRepository authorityRepository,
                                       PasswordEncoder passwordEncoder) {
-        this.configurationRepository = configurationRepository;
+        this.configurationManager = configurationManager;
         this.authorityRepository = authorityRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -51,12 +50,7 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
-        boolean initCompleted;
-        try {
-            initCompleted = Boolean.parseBoolean(configurationRepository.findByKey(ConfigurationKeys.INIT_COMPLETED).getValue());
-        } catch (EmptyResultDataAccessException e) {
-            initCompleted = false;
-        }
+        boolean initCompleted = configurationManager.getBooleanConfigValue(ConfigurationKeys.INIT_COMPLETED, false);
         if (!initCompleted) {
             String adminPassword = PasswordGenerator.generateRandomPassword();
             userRepository.create("admin", passwordEncoder.encode(adminPassword), "The", "Administrator", "admin@localhost", true);
@@ -67,7 +61,7 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
             log.info("   {} ", adminPassword);
             log.info("*******************************************************");
 
-            configurationRepository.insert(ConfigurationKeys.INIT_COMPLETED, "true");
+            configurationManager.save(ConfigurationKeys.INIT_COMPLETED, "true");
         }
     }
 }

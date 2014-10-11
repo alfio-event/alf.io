@@ -24,6 +24,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
+import static io.bagarino.util.OptionalWrapper.optionally;
+
 @Component
 public class ConfigurationManager {
 
@@ -45,5 +47,31 @@ public class ConfigurationManager {
         } catch (NumberFormatException | EmptyResultDataAccessException e) {
             return defaultValue;
         }
+    }
+
+    public boolean getBooleanConfigValue(String key, boolean defaultValue) {
+        return optionally(() -> Boolean.parseBoolean(configurationRepository.findByKey(key).getValue()))
+                .orElse(defaultValue);
+    }
+
+    public void save(String key, String value) {
+        Optional<Configuration> conf = optionally(() -> configurationRepository.findByKey(key));
+        if(conf.isPresent()) {
+            configurationRepository.insert(key, value);
+        } else {
+            configurationRepository.update(key, value);
+        }
+    }
+
+    public String getStringConfigValue(String key, String defaultValue) {
+        return optionally(() -> configurationRepository.findByKey(key))
+                .map(Configuration::getValue)
+                .orElse(defaultValue);
+    }
+
+    public String getRequiredValue(String key) {
+        return optionally(() -> configurationRepository.findByKey(key))
+                .map(Configuration::getValue)
+                .orElseThrow(IllegalArgumentException::new);
     }
 }

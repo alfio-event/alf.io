@@ -18,6 +18,7 @@ package io.bagarino.manager;
 
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.SpecialPrice;
+import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.repository.SpecialPriceRepository;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -96,7 +97,7 @@ public class SpecialPriceTokenGenerator {
     private int getCodeLength() {
         Integer length = codeLength.get();
         if (!Optional.ofNullable(length).isPresent()) {
-            codeLength.compareAndSet(length, configurationManager.getIntConfigValue("SPECIAL_PRICE_CODE_LENGTH", 6));
+            codeLength.compareAndSet(length, configurationManager.getIntConfigValue(ConfigurationKeys.SPECIAL_PRICE_CODE_LENGTH, 6));
             length = codeLength.get();
         }
         return length;

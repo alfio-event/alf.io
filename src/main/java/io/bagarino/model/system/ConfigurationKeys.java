@@ -19,6 +19,10 @@ package io.bagarino.model.system;
 public final class ConfigurationKeys {
 
     public static final String INIT_COMPLETED = "INIT_COMPLETED";
+    public static final String STRIPE_SECRET_KEY = "STRIPE_SECRET_KEY";
+    public static final String STRIPE_PUBLIC_KEY = "STRIPE_PUBLIC_KEY";
+    public static final String SPECIAL_PRICE_CODE_LENGTH = "SPECIAL_PRICE_CODE_LENGTH";
+    public static final String MAX_AMOUNT_OF_TICKETS_BY_RESERVATION = "MAX_AMOUNT_OF_TICKETS_BY_RESERVATION";
 
     private ConfigurationKeys() {
     }
