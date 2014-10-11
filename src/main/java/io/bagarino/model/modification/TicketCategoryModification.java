@@ -18,10 +18,12 @@ package io.bagarino.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 @Getter
 public class TicketCategoryModification {
@@ -55,6 +57,6 @@ public class TicketCategoryModification {
     }
 
     public int getPriceInCents() {
-        return MonetaryUtil.unitToCents(price);
+        return Optional.ofNullable(price).map(MonetaryUtil::unitToCents).orElse(0);
     }
 }

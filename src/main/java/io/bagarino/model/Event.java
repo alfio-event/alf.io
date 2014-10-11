@@ -17,13 +17,16 @@
 package io.bagarino.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -85,6 +88,13 @@ public class Event {
 
     public BigDecimal getRegularPrice() {
         return MonetaryUtil.centsToUnit(regularPriceInCents);
+    }
+    
+    
+    public boolean getSameDay() {
+    	//FIXME: take in account the timezone
+    	ZoneId tz = ZoneId.systemDefault();
+    	return begin.toInstant().atZone(tz).toLocalDate().equals(end.toInstant().atZone(tz).toLocalDate());
     }
 
     @JsonIgnore

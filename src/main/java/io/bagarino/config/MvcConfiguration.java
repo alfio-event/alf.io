@@ -173,6 +173,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         templateFactory.setCompiler(Mustache.compiler()
         		.escapeHTML(true)
         		.standardsMode(false)
+        		.defaultValue("")
+        		.nullValue("")
 				.withFormatter(
 						(o) -> {
 							return (o instanceof Date) ? DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.format((Date) o)

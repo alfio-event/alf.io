@@ -19,7 +19,7 @@
 <!-- -->
 
 <h1>{{event.shortName}}</h1>
-<div>{{#format-date}}{{event.begin}} dd.MM.yyyy HH:mm{{/format-date}} {{#format-date}}{{event.end}} dd.MM.yyyy HH:mm{{/format-date}} {{event.location}}</div>
+<div>{{event.sameDay}}: {{#format-date}}{{event.begin}} dd.MM.yyyy HH:mm{{/format-date}} {{#format-date}}{{event.end}} dd.MM.yyyy HH:mm{{/format-date}} {{event.location}}</div>
 <div>{{event.description}}</div>
 
 
