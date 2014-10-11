@@ -16,13 +16,16 @@
  */
 package io.bagarino.manager;
 
+import static io.bagarino.util.OptionalWrapper.optionally;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.Ticket.TicketStatus;
+import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
+
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -31,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -50,10 +54,16 @@ public class TicketReservationManager {
 		this.configurationManager = configurationManager;
 	}
 	
-    
+    /**
+     * Create a ticket reservation. It will create a reservation _only_ if it can find enough tickets. Note that it will not do date/validity validation. This must be ensured by the
+     * caller.
+     * 
+     * @param eventId
+     * @param ticketReservations
+     * @param reservationExpiration
+     * @return
+     */
     public String createTicketReservation(int eventId, List<TicketReservationModification> ticketReservations, Date reservationExpiration) {
-    	
-    	//FIXME check if the tickets can be sold now ! 
     	
         String transactionId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(transactionId, reservationExpiration);
@@ -67,6 +77,17 @@ public class TicketReservationManager {
     	return transactionId;
     }
 
+    /**
+     * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress.
+     * 
+     * TODO: should save the transaction id from stripe&co too!
+     * 
+     * @param eventId
+     * @param reservationId
+     * @param email
+     * @param fullName
+     * @param billingAddress
+     */
 	public void completeReservation(int eventId, String reservationId, String email, String fullName, String billingAddress) {
 		int updatedTickets = ticketRepository.updateTicketStatus(reservationId, TicketStatus.ACQUIRED.toString());
 		Validate.isTrue(updatedTickets > 0);
@@ -88,6 +109,10 @@ public class TicketReservationManager {
 
 	public int maxAmountOfTickets() {
         return configurationManager.getIntConfigValue(ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
+	}
+	
+	public Optional<TicketReservation> findById(String reservationId) {
+		return optionally(() -> ticketReservationRepository.findReservationById(reservationId));
 	}
 
 

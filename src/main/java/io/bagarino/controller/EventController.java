@@ -29,7 +29,6 @@ import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
-import io.bagarino.repository.TicketReservationRepository;
 import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
@@ -58,7 +57,6 @@ public class EventController {
     private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
     private final TicketReservationManager tickReservationManager;
-    private final TicketReservationRepository ticketReservationRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final StripeManager stripeManager;
 
@@ -66,12 +64,10 @@ public class EventController {
 	public EventController(EventRepository eventRepository,
 			TicketRepository ticketRepository,
 			TicketReservationManager tickReservationManager,
-			TicketReservationRepository ticketReservationRepository,
 			TicketCategoryRepository ticketCategoryRepository, StripeManager stripeManager) {
 		this.eventRepository = eventRepository;
 		this.ticketRepository = ticketRepository;
 		this.tickReservationManager = tickReservationManager;
-		this.ticketReservationRepository = ticketReservationRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
         this.stripeManager = stripeManager;
 	}
@@ -147,7 +143,7 @@ public class EventController {
     		return "redirect:/";
     	}
 
-    	Optional<TicketReservation> reservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId));
+    	Optional<TicketReservation> reservation = tickReservationManager.findById(reservationId);
 
     	model.addAttribute("event", event.get());
     	
@@ -189,7 +185,7 @@ public class EventController {
     		return "redirect:/";
     	}
     	
-    	Optional<TicketReservation> ticketReservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId));
+    	Optional<TicketReservation> ticketReservation = tickReservationManager.findById(reservationId);
     	
     	if(!ticketReservation.isPresent()) {
     		model.addAttribute("reservationId", reservationId);
