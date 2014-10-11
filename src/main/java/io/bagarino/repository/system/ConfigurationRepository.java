@@ -35,6 +35,6 @@ public interface ConfigurationRepository {
     @Query("INSERT into configuration(c_key, c_value) values(:key, :value)")
     int insert(@Bind("key") String key, @Bind("value") String value);
 
-    @Query("UPDATE configuration set c_value = :value where key = :key")
+    @Query("UPDATE configuration set c_value = :value where c_key = :key")
     int update(@Bind("key") String existingKey, @Bind("value") String newValue);
 }
