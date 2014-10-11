@@ -36,6 +36,7 @@
 					<label class="control-label">{{name}}</label>
 					<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
 					<div>
+						<p>sellable: {{sellable}}</p>
 						<p>inception: {{#format-date}}{{inception}} dd.MM.yyyy HH:mm{{/format-date}}</p>
 						<p>expiration: {{#format-date}}{{expiration}} dd.MM.yyyy HH:mm{{/format-date}}</p>
 						{{description}}

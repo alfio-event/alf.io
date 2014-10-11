@@ -98,8 +98,9 @@ public class EventController {
 			return "redirect:/";
 		}
 
+		final Date now = new Date();
 		//hide access restricted ticket categories
-		List<TicketCategory> t = ticketCategoryRepository.findAllTicketCategories(event.get().getId()).stream().filter((c) -> !c.isAccessRestricted()).collect(Collectors.toList());
+		List<SellableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(event.get().getId()).stream().filter((c) -> !c.isAccessRestricted()).map((m) -> new SellableTicketCategory(m, now)).collect(Collectors.toList());
 		//
 		model.addAttribute("event", event.get())//
 			.addAttribute("ticketCategories", t);
@@ -228,6 +229,27 @@ public class EventController {
     		summary.add(new SummaryRow(categoryName, formatCents(ticketsByCategory.get(0).getPaidPriceInCents()), ticketsByCategory.size(), formatCents(totalFrom(ticketsByCategory))));
     	});
     	return summary;
+    }
+    
+    public static class SellableTicketCategory extends TicketCategory {
+    	
+    	private final Date now;
+
+		public SellableTicketCategory(TicketCategory ticketCategory, Date now) {
+			super(ticketCategory.getId(), ticketCategory.getInception(), ticketCategory.getExpiration(), ticketCategory
+					.getMaxTickets(), ticketCategory.getName(), ticketCategory.getDescription(), ticketCategory
+					.getPriceInCents(), ticketCategory.isAccessRestricted());
+			this.now = now;
+		}
+		
+		public boolean getSellable() {
+			return getInception().before(now) && getExpiration().after(now);
+		}
+		
+		public boolean getExpired() {
+			return getExpiration().before(now);
+		}
+    	
     }
     
     @Data
