@@ -125,7 +125,7 @@ public class EventController {
 		reservation.selected().forEach((r) -> {
 			SellableTicketCategory ticketCategory = new SellableTicketCategory(ticketCategoryRepository.getById(r.getTicketCategoryId()), now);
 			Validate.isTrue(ticketCategory.getSaleable(), "ticket category must be sellable");
-			Validate.isTrue(ticketCategory.isAccessRestricted(), "ticket category cannot be access restricted");
+			Validate.isTrue(!ticketCategory.isAccessRestricted(), "ticket category cannot be access restricted");
 		});
 		//
 			

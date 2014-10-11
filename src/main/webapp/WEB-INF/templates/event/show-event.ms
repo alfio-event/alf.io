@@ -34,7 +34,6 @@
 			<div class="form-group">
 				<div class="col-sm-7">
 					<label class="control-label">{{name}}</label>
-					<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
 					<div>
 						{{#saleInFuture}}
 							Sales not started.
@@ -69,6 +68,7 @@
 				</div>
 				<div class="col-sm-2 text-align-center">
 					{{#saleable}}
+						<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
 						<input name="reservation[{{-index}}].amount" type="text" class="form-control text-align-center" placeholder="0" autocomplete="off">
 					{{/saleable}}
 					{{^saleable}}
