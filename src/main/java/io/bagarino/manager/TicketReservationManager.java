@@ -84,19 +84,23 @@ public class TicketReservationManager {
 
     	return transactionId;
     }
+    
+    public void transitionToInPayment(String reservationId, String email, String fullName, String billingAddress) {
+    	int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.IN_PAYMENT.toString(), email, fullName, billingAddress);
+		Validate.isTrue(updatedReservation == 1);
+    }
 
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress.
      * 
      * TODO: should save the transaction id from stripe&co too!
      * 
-     * @param eventId
      * @param reservationId
      * @param email
      * @param fullName
      * @param billingAddress
      */
-	public void completeReservation(int eventId, String reservationId, String email, String fullName, String billingAddress) {
+	public void completeReservation(String reservationId, String email, String fullName, String billingAddress) {
 		int updatedTickets = ticketRepository.updateTicketStatus(reservationId, TicketStatus.ACQUIRED.toString());
 		Validate.isTrue(updatedTickets > 0);
 		int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, billingAddress);

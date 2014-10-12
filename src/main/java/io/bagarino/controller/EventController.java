@@ -210,14 +210,14 @@ public class EventController {
     	if(reservationCost > 0) {
     		Validate.isTrue(StringUtils.isNotBlank(paymentForm.getStripeToken()));
     		
-    		//TODO: see todo beneath, set the reservation with a state: IN_PAYMENT so we could salvage the tickets from the admin tool and set them as completed
+    		//transition to IN_PAYMENT, so we can keep track if we have a failure between the stripe payment and the completition of the reservation
+    		tickReservationManager.transitionToInPayment(reservationId, email, fullName, billingAddress);
+    		
     		stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost, event.get().getCurrency(), reservationId, email, fullName, billingAddress);
     	}
-        //
-        // TODO: here we have a potential point of failure. Payment could be ok, but if the db is down we could be in a unconsistent state.
         
         // we can enter here only if the reservation is done correctly
-        tickReservationManager.completeReservation(event.get().getId(), reservationId, email, fullName, billingAddress);
+        tickReservationManager.completeReservation(reservationId, email, fullName, billingAddress);
         //
         
         //TODO: complete, additionally, the mail should be sent asynchronously from another thread

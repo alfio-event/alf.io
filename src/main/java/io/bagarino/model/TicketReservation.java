@@ -22,11 +22,13 @@ import java.util.Date;
 
 import lombok.Getter;
 
+//TODO: add in the admin tool the possibility to handle reservation that are stuck in the IN_PAYMENT status.
+//      They can be caused if the database goes down just after the payment has been ACK by stripes.
 @Getter
 public class TicketReservation {
 
 	public enum TicketReservationStatus {
-		PENDING, COMPLETE
+		PENDING, IN_PAYMENT, COMPLETE
 	}
 
 	private final String id;
