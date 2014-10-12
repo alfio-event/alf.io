@@ -23,6 +23,17 @@ public final class ConfigurationKeys {
     public static final String STRIPE_PUBLIC_KEY = "STRIPE_PUBLIC_KEY";
     public static final String SPECIAL_PRICE_CODE_LENGTH = "SPECIAL_PRICE_CODE_LENGTH";
     public static final String MAX_AMOUNT_OF_TICKETS_BY_RESERVATION = "MAX_AMOUNT_OF_TICKETS_BY_RESERVATION";
+    
+
+    //smtp configuration related keys
+    public static final String SMTP_HOST = "SMTP_HOST";
+    public static final String SMTP_PORT = "SMTP_PORT";
+    public static final String SMTP_PROTOCOL = "SMTP_PROTOCOL"; //smtp or smtps
+    public static final String SMTP_USERNAME = "SMTP_USERNAME";
+    public static final String SMTP_PASSWORD = "SMTP_PASSWORD";
+    public static final String SMTP_FROM_EMAIL = "SMTP_FROM_EMAIL";
+    public static final String SMTP_PROPERTIES = "SMTP_PROPERTIES";
+    //
 
     private ConfigurationKeys() {
     }

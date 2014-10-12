@@ -20,6 +20,7 @@ import com.stripe.exception.StripeException;
 
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
+import io.bagarino.manager.system.MailManager;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
@@ -59,17 +60,20 @@ public class EventController {
     private final TicketReservationManager tickReservationManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final StripeManager stripeManager;
+    private final MailManager mailManager;
 
 	@Autowired
 	public EventController(EventRepository eventRepository,
 			TicketRepository ticketRepository,
 			TicketReservationManager tickReservationManager,
-			TicketCategoryRepository ticketCategoryRepository, StripeManager stripeManager) {
+			TicketCategoryRepository ticketCategoryRepository, StripeManager stripeManager,
+			MailManager mailManager) {
 		this.eventRepository = eventRepository;
 		this.ticketRepository = ticketRepository;
 		this.tickReservationManager = tickReservationManager;
 		this.ticketCategoryRepository = ticketCategoryRepository;
         this.stripeManager = stripeManager;
+        this.mailManager = mailManager;
 	}
 
 	@RequestMapping(value = {"/"}, method = RequestMethod.GET)
@@ -212,6 +216,10 @@ public class EventController {
         
         // we can enter here only if the reservation is done correctly
         tickReservationManager.completeReservation(event.get().getId(), reservationId, email, fullName, billingAddress);
+        //
+        
+        //TODO: complete
+        mailManager.getMailer().send(email, "reservation complete :D", "here be link", "here be link html");
         //
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId;

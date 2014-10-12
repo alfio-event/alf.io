@@ -17,6 +17,8 @@
 package io.bagarino.controller;
 
 import static io.bagarino.util.OptionalWrapper.optionally;
+import io.bagarino.manager.system.MailManager;
+import io.bagarino.manager.system.MailManager.Attachment;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
@@ -40,7 +42,9 @@ import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -67,14 +71,17 @@ public class TicketController {
 	private final TicketReservationRepository ticketReservationRepository;
 	private final TicketRepository ticketRepository;
 	private final TicketCategoryRepository ticketCategoryRepository;
+	private final MailManager mailManager;
 
 	@Autowired
 	public TicketController(EventRepository eventRepository, TicketReservationRepository ticketReservationRepository,
-			TicketRepository ticketRepository, TicketCategoryRepository ticketCategoryRepository) {
+			TicketRepository ticketRepository, TicketCategoryRepository ticketCategoryRepository,
+			MailManager mailManager) {
 		this.eventRepository = eventRepository;
 		this.ticketReservationRepository = ticketReservationRepository;
 		this.ticketRepository = ticketRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
+		this.mailManager = mailManager;
 	}
 
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.POST)
@@ -82,11 +89,24 @@ public class TicketController {
 			@PathVariable("reservationId") String reservationId,
 			@PathVariable("ticketIdentifier") String ticketIdentifier,
 			@RequestParam("email") String email,
-			@RequestParam("fullName") String fullName) {
+			@RequestParam("fullName") String fullName) throws DocumentException, WriterException, IOException {
 		
 		//TODO: validate email, fullname
-		
 		ticketRepository.updateTicketOwner(ticketIdentifier, email, fullName);
+		
+		
+		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
+		
+		check(data.getMiddle(), data.getRight());
+		
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		preparePdfTicket(data.getLeft(), data.getRight()).createPDF(baos);
+		
+		Attachment attachment = new Attachment("ticket-" + ticketIdentifier + ".pdf", new ByteArrayResource(baos.toByteArray()), "application/pdf");
+		
+		//TODO: complete
+		mailManager.getMailer().send(email, "your ticket", "here attached your ticket", "here attached your ticket", attachment);
+		//
 		
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 	}
@@ -97,18 +117,39 @@ public class TicketController {
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response)
 			throws MustacheException, IOException, DocumentException, WriterException {
 
+		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
+		Ticket ticket = data.getRight();
+		
+		check(data.getMiddle(), ticket);
+
+		response.setContentType("application/pdf");
+		response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
+		try (OutputStream os = response.getOutputStream()) {
+			preparePdfTicket(data.getLeft(), ticket).createPDF(os);
+		}
+	}
+	
+	private void check(TicketReservation reservation, Ticket ticket) {
+		Validate.isTrue(reservation.getStatus() == TicketReservationStatus.COMPLETE);
+		Validate.isTrue(ticket.getAssigned(), "can only generate a pdf if the ticket is assigned to a person");
+	}
+	
+	
+	private Triple<Event, TicketReservation, Ticket> fetch(String eventName, String reservationId, String ticketIdentifier) {
 		Event event = optionally(() -> eventRepository.findByShortName(eventName)).orElseThrow(
 				IllegalArgumentException::new);
 		TicketReservation reservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId))
 				.orElseThrow(IllegalArgumentException::new);
 		Ticket ticket = optionally(() -> ticketRepository.findByUUID(ticketIdentifier)).orElseThrow(
 				IllegalArgumentException::new);
+		return Triple.of(event, reservation, ticket);
+	}
+
+	private ITextRenderer preparePdfTicket(Event event, Ticket ticket)
+			throws WriterException, IOException {
 		
-		Validate.isTrue(reservation.getStatus() == TicketReservationStatus.COMPLETE);
-		Validate.isTrue(ticket.getAssigned(), "can only generate a pdf if the ticket is assigned to a person");
-
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
-
+		
 		//
 		String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
 		//
@@ -130,12 +171,7 @@ public class TicketController {
 		ITextRenderer renderer = new ITextRenderer();
 		renderer.setDocumentFromString(page);
 		renderer.layout();
-
-		response.setContentType("application/pdf");
-		response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
-		try (OutputStream os = response.getOutputStream()) {
-			renderer.createPDF(os);
-		}
+		return renderer;
 	}
 
 	private static byte[] createQRCode(String text) throws WriterException, IOException {
