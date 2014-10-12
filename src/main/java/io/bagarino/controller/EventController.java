@@ -20,6 +20,7 @@ import com.stripe.exception.StripeException;
 
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
+import io.bagarino.manager.TicketReservationManager.NotEnoughTicketsException;
 import io.bagarino.manager.system.MailManager;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
@@ -38,6 +39,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -104,37 +106,37 @@ public class EventController {
 		//
 		model.addAttribute("event", event.get())//
 			.addAttribute("ticketCategories", t);
+		model.asMap().putIfAbsent("hasErrors", false);//TODO: refactor
 		return "/event/show-event";
 	}
 
 	@RequestMapping(value = "/event/{eventName}/reserve-tickets", method = RequestMethod.POST)
-	public String reserveTicket(@PathVariable("eventName") String eventName, @ModelAttribute ReservationForm reservation) {
+	public String reserveTicket(@PathVariable("eventName") String eventName, @ModelAttribute ReservationForm reservation, BindingResult bindingResult, Model model) {
 		
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
 		if(!event.isPresent()) {
     		return "redirect:/";
     	}
 		
-		final Date now = new Date();
+		reservation.validate(bindingResult, tickReservationManager, ticketCategoryRepository);
 		
-		//
-		final int selectionCount = reservation.selectionCount();
-		Validate.isTrue(selectionCount > 0  && selectionCount <= tickReservationManager.maxAmountOfTickets(), "must select at least 1 ticket and less than maximum amount");
-		
-		// check if the ticket category is saleable / access restricted
-		reservation.selected().forEach((r) -> {
-			SellableTicketCategory ticketCategory = new SellableTicketCategory(ticketCategoryRepository.getById(r.getTicketCategoryId()), now);
-			Validate.isTrue(ticketCategory.getSaleable(), "ticket category must be sellable");
-			Validate.isTrue(!ticketCategory.isAccessRestricted(), "ticket category cannot be access restricted");
-		});
-		//
+		if (bindingResult.hasErrors()) {
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
+			return showEvent(eventName, model);
+		}
 			
-		//TODO handle error cases :D
 		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
 		
-		//TODO: this could fail with not enough ticket -> validation error
-		String reservationId = tickReservationManager.createTicketReservation(event.get().getId(), reservation.selected(), expiration);
-		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+		try {
+			
+			String reservationId = tickReservationManager.createTicketReservation(event.get().getId(),
+					reservation.selected(), expiration);
+			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+		} catch (NotEnoughTicketsException nete) {
+			bindingResult.reject("not_enough_ticket_exception");
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
+			return showEvent(eventName, model);
+		}
 	}
 
 
@@ -175,15 +177,11 @@ public class EventController {
 	}
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
-    public String handleReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
-                                    @RequestParam(value = "stripeToken", required = false) String stripeToken, 
-                                    @RequestParam(value = "email", required = false) String email,
-                                    @RequestParam(value = "fullName", required = false) String fullName,
-                                    @RequestParam(value="billingAddress", required = false) String billingAddress,
-                                    @RequestParam(value="cancel-reservation", required = false) Boolean cancelReservation,
+    public String handleReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, 
+    								PaymentForm paymentForm, BindingResult bindingResult,
                                     Model model) throws StripeException {
     	
-    	Optional<Boolean> cancel = Optional.ofNullable(cancelReservation);
+    	Optional<Boolean> cancel = Optional.ofNullable(paymentForm.getCancelReservation());
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
     		return "redirect:/";
@@ -207,9 +205,12 @@ public class EventController {
     	
     	final int reservationCost = totalReservationCost(reservationId);
     	// TODO handle error
+    	
+    	String email = paymentForm.getEmail(), fullName = paymentForm.getFullName(), billingAddress = paymentForm.getBillingAddress();
+    	
     	if(reservationCost > 0) {
-    		Validate.isTrue(StringUtils.isNotBlank(stripeToken));
-    		stripeManager.chargeCreditCard(stripeToken, reservationCost, event.get().getCurrency(), reservationId, email, fullName, billingAddress);
+    		Validate.isTrue(StringUtils.isNotBlank(paymentForm.getStripeToken()));
+    		stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost, event.get().getCurrency(), reservationId, email, fullName, billingAddress);
     	}
         //
         
@@ -275,7 +276,8 @@ public class EventController {
     	private final int amount;
     	private final String subTotal;
     }
-
+    
+    // step 1 : choose tickets
     @Data
 	public static class ReservationForm {
 		private List<TicketReservationModification> reservation;
@@ -289,5 +291,41 @@ public class EventController {
 		private int selectionCount() {
 			return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
 		}
+		
+		private void validate(BindingResult bindingResult, TicketReservationManager tickReservationManager, TicketCategoryRepository ticketCategoryRepository) {
+			int selectionCount = selectionCount();
+			
+			if(selectionCount <= 0) {
+				bindingResult.reject("selection_at_least_one");
+			}
+			
+			if(selectionCount >  tickReservationManager.maxAmountOfTickets()) {
+				bindingResult.reject("selection_count_over_maximum");
+			}
+			
+			final Date now = new Date();
+			
+			selected().forEach((r) -> {
+				SellableTicketCategory ticketCategory = new SellableTicketCategory(ticketCategoryRepository.getById(r.getTicketCategoryId()), now);
+				
+				if (!ticketCategory.getSaleable()) {
+					bindingResult.reject("ticket_category_must_be_saleable"); // TODO add correct field
+				}
+				if (ticketCategory.isAccessRestricted()) {
+					bindingResult.reject("ticket_category_access_restricted"); //
+				}
+			});
+		}
 	}
+    
+    // step 2 : payment/claim ticketss
+    
+    @Data
+    public static class PaymentForm {
+    	private String stripeToken;
+        private String email;
+        private String fullName;
+        private String billingAddress;
+        private Boolean cancelReservation;
+    }
 }

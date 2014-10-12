@@ -28,6 +28,13 @@
 
 <h2>{{#i18n}}show-event.tickets{{/i18n}}</h2>
 
+{{#hasErrors}}
+<ul>
+	{{#error.globalErrors}}
+		<li>{{code}}</li>
+	{{/error.globalErrors}}
+</ul>
+{{/hasErrors}}
 
 
 <form method="post" action="reserve-tickets" class="form-horizontal">

@@ -53,7 +53,7 @@
 				.attr('novalidate', 'novalidate')
 				.unbind('submit', submitForm)
 				.find('button').prop('disabled', true);
-			$form.append($('<input type="hidden" name="cancel-reservation" />').val(true))
+			$form.append($('<input type="hidden" name="cancelReservation" />').val(true))
 			return true;
 		});
 		

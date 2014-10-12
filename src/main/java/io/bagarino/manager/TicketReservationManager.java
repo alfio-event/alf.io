@@ -47,6 +47,10 @@ public class TicketReservationManager {
 	private final TicketReservationRepository ticketReservationRepository;
 	private final ConfigurationManager configurationManager;
 	
+	public static class NotEnoughTicketsException extends Exception {
+		
+	}
+	
 	@Autowired
 	public TicketReservationManager(TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository, ConfigurationManager configurationManager) {
 		this.ticketRepository = ticketRepository;
@@ -63,14 +67,18 @@ public class TicketReservationManager {
      * @param reservationExpiration
      * @return
      */
-    public String createTicketReservation(int eventId, List<TicketReservationModification> ticketReservations, Date reservationExpiration) {
+    public String createTicketReservation(int eventId, List<TicketReservationModification> ticketReservations, Date reservationExpiration) throws NotEnoughTicketsException {
     	
         String transactionId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(transactionId, reservationExpiration);
         
         for(TicketReservationModification ticketReservation : ticketReservations) {
             List<Integer> reservedForUpdate = ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount());
-            Validate.isTrue(reservedForUpdate.size() == ticketReservation.getAmount().intValue(), "not enough tickets to reserve");
+            
+			if (reservedForUpdate.size() != ticketReservation.getAmount().intValue()) {
+				throw new NotEnoughTicketsException();
+			}
+            
             ticketRepository.reserveTickets(transactionId, reservedForUpdate);
         }
 
