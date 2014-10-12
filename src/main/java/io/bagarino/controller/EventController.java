@@ -128,7 +128,6 @@ public class EventController {
 		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
 		
 		try {
-			
 			String reservationId = tickReservationManager.createTicketReservation(event.get().getId(),
 					reservation.selected(), expiration);
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
@@ -210,16 +209,18 @@ public class EventController {
     	
     	if(reservationCost > 0) {
     		Validate.isTrue(StringUtils.isNotBlank(paymentForm.getStripeToken()));
+    		
+    		//TODO: see todo beneath, set the reservation with a state: IN_PAYMENT so we could salvage the tickets from the admin tool and set them as completed
     		stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost, event.get().getCurrency(), reservationId, email, fullName, billingAddress);
     	}
         //
-        
+        // TODO: here we have a potential point of failure. Payment could be ok, but if the db is down we could be in a unconsistent state.
         
         // we can enter here only if the reservation is done correctly
         tickReservationManager.completeReservation(event.get().getId(), reservationId, email, fullName, billingAddress);
         //
         
-        //TODO: complete
+        //TODO: complete, additionally, the mail should be sent asynchronously from another thread
         mailManager.getMailer().send(email, "reservation complete :D", "here be link", Optional.of("here be link html"));
         //
 
