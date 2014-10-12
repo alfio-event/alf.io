@@ -58,6 +58,7 @@ public class MailManager {
 		if (ArrayUtils.contains(environment.getActiveProfiles(), "dev")) {
 			return new DevMailer();
 		} else {
+			//TODO: configurationManager should return in a single call/query a key,value map.
 			return new ProdMailer(configurationManager.getRequiredValue(ConfigurationKeys.SMTP_HOST),//
 					Integer.valueOf(configurationManager.getRequiredValue(ConfigurationKeys.SMTP_PORT)),//
 					configurationManager.getRequiredValue(ConfigurationKeys.SMTP_PROTOCOL),//
