@@ -252,6 +252,12 @@
 				<artifactId>jetty-maven-plugin</artifactId>
 				<version>${org.eclipse.jetty.version}</version>
 				<configuration>
+                    <scanIntervalSeconds>10</scanIntervalSeconds>
+                    <stopPort>8005</stopPort>
+                    <stopKey>STOP</stopKey>
+                    <webApp>
+                        <contextPath>/</contextPath>
+                    </webApp>
 					<httpConnector>
 						<port>${jetty.port}</port>
 						<host>${jetty.host}</host>
@@ -286,7 +292,29 @@
 							<value>${datasource.validationQuery}</value>
 						</systemProperty>
 					</systemProperties>
-				</configuration>
+                </configuration>
+                <executions>
+                    <!-- start and stop jetty during the integration-test phase is necessary to prepare
+                         a complete docker image with all the dependencies required to startup the application -->
+                    <execution>
+                        <id>start-jetty</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <scanIntervalSeconds>0</scanIntervalSeconds>
+                            <daemon>true</daemon>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>stop-jetty</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
 				</plugin>
 		</plugins>
 	</build>
