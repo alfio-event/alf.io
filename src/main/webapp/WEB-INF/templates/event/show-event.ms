@@ -31,8 +31,11 @@
 {{#hasErrors}}
 <ul>
 	{{#error.globalErrors}}
-		<li>{{code}}</li>
+		<li>global error: {{code}}</li>
 	{{/error.globalErrors}}
+	{{#error.fieldErrors}}
+		<li>field error : {{field}} : {{code}}</li>
+	{{/error.fieldErrors}}
 </ul>
 {{/hasErrors}}
 

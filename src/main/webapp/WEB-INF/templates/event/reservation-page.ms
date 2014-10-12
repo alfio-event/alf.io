@@ -35,7 +35,16 @@
 	</tfoot>
 </table>
 
-
+{{#hasErrors}}
+<ul>
+	{{#error.globalErrors}}
+		<li>global error: {{code}}</li>
+	{{/error.globalErrors}}
+	{{#error.fieldErrors}}
+		<li>field error : {{field}} : {{code}}</li>
+	{{/error.fieldErrors}}
+</ul>
+{{/hasErrors}}
 
 
 <form action="" method="POST" id="payment-form">

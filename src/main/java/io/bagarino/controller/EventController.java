@@ -34,12 +34,12 @@ import io.bagarino.repository.TicketRepository;
 import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -92,7 +92,7 @@ public class EventController {
 	@RequestMapping(value = "/event/{eventName}", method = RequestMethod.GET)
 	public String showEvent(@PathVariable("eventName") String eventName, Model model) {
 
-		// TODO: for each ticket categories we should check if there are available tickets, and if they can be sold (and check the visibility)
+		// TODO: for each ticket categories we should check if there are available tickets (to show sold out text)
 		
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
 		
@@ -151,6 +151,7 @@ public class EventController {
     	Optional<TicketReservation> reservation = tickReservationManager.findById(reservationId);
 
     	model.addAttribute("event", event.get());
+    	model.asMap().putIfAbsent("hasErrors", false);
     	
     	if(!reservation.isPresent()) {
     		model.addAttribute("reservationId", reservationId);
@@ -180,7 +181,6 @@ public class EventController {
     								PaymentForm paymentForm, BindingResult bindingResult,
                                     Model model) throws StripeException {
     	
-    	Optional<Boolean> cancel = Optional.ofNullable(paymentForm.getCancelReservation());
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
     		return "redirect:/";
@@ -193,27 +193,40 @@ public class EventController {
     		return "/event/reservation-page-not-found";
     	}
     	
-    	if(cancel.isPresent()) {
+    	if(paymentForm.shouldCancelReservation()) {
     		tickReservationManager.cancelPendingReservation(reservationId);
 			return "redirect:/event/" + eventName + "/";
     	}
     	
-    	//TODO: expose as a validation error :D
-    	Validate.isTrue(ticketReservation.get().getValidity().after(new Date()));
-    	//
+    	if(!ticketReservation.get().getValidity().after(new Date())) {
+    		bindingResult.reject("ticket_reservation_no_more_valid");
+    	}
     	
     	final int reservationCost = totalReservationCost(reservationId);
-    	// TODO handle error
+    	
+    	//
+    	paymentForm.validate(bindingResult, reservationCost);
+    	//
+    	
+    	if (bindingResult.hasErrors()) {
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
+			return showReservationPage(eventName, reservationId, model);
+    	}
+    	
     	
     	String email = paymentForm.getEmail(), fullName = paymentForm.getFullName(), billingAddress = paymentForm.getBillingAddress();
     	
     	if(reservationCost > 0) {
-    		Validate.isTrue(StringUtils.isNotBlank(paymentForm.getStripeToken()));
-    		
     		//transition to IN_PAYMENT, so we can keep track if we have a failure between the stripe payment and the completition of the reservation
     		tickReservationManager.transitionToInPayment(reservationId, email, fullName, billingAddress);
     		
-    		stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost, event.get().getCurrency(), reservationId, email, fullName, billingAddress);
+    		try {
+    			stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost, event.get().getCurrency(), reservationId, email, fullName, billingAddress);
+    		} catch(StripeException se) {
+    			bindingResult.reject("payment_processor_error");
+    			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
+    			return showReservationPage(eventName, reservationId, model);
+    		}
     	}
         
         // we can enter here only if the reservation is done correctly
@@ -328,5 +341,27 @@ public class EventController {
         private String fullName;
         private String billingAddress;
         private Boolean cancelReservation;
+        
+        private void validate(BindingResult bindingResult, int reservationCost) {
+        	
+        	
+			if (reservationCost > 0 && StringUtils.isBlank(stripeToken)) {
+				bindingResult.reject("missing_stripe_token");
+			}
+			
+			
+			//TODO: check email/fullname length/billing address
+			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "email", "email_missing");
+			
+			if(email != null && !email.contains("@")) {
+				bindingResult.rejectValue("email", "not_an_email");
+			}
+			
+			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "fullName", "fullname_missing");
+        }
+        
+        public Boolean shouldCancelReservation() {
+        	return Optional.ofNullable(cancelReservation).orElse(false);
+        }
     }
 }
