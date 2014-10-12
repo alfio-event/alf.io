@@ -19,6 +19,7 @@ package io.bagarino.manager.system;
 import io.bagarino.model.system.ConfigurationKeys;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Properties;
 
 import lombok.AllArgsConstructor;
@@ -70,21 +71,15 @@ public class MailManager {
 	}
 
 	public interface Mailer {
-		void send(final String to, final String subject, final String text, Attachment... attachment);
-
-		void send(final String to, final String subject, final String text, final String html, Attachment... attachment);
+		void send(String to, String subject, String text, Optional<String> html, Attachment... attachment);
 	}
 
 	@Log4j2
 	public static class DevMailer implements Mailer {
-		@Override
-		public void send(String to, String subject, String text, Attachment... attachments) {
-			send(to, subject, text, null, attachments);
-		}
 
 		@Override
-		public void send(String to, String subject, String text, String html, Attachment... attachments) {
-			log.info("Email: to: {}, subject: {}, text: {}, html: {}, attachments amount: {}", to, subject, text, html,
+		public void send(String to, String subject, String text, Optional<String> html, Attachment... attachments) {
+			log.info("Email: to: {}, subject: {}, text: {}, html: {}, attachments amount: {}", to, subject, text, html.orElse("no html"),
 					ArrayUtils.getLength(attachments));
 		}
 
@@ -108,25 +103,20 @@ public class MailManager {
 		private final String from;
 		private final String properties;
 
-		@Override
-		public void send(final String to, final String subject, final String text, Attachment... attachments) {
-			send(to, subject, text, null, attachments);
-		}
 
 		@Override
-		public void send(final String to, final String subject, final String text, final String html,
+		public void send(String to, String subject, String text, Optional<String> html,
 				Attachment... attachments) {
 
 			MimeMessagePreparator preparator = (mimeMessage) -> {
-				MimeMessageHelper message = html == null ? new MimeMessageHelper(mimeMessage, "UTF-8")
-						: new MimeMessageHelper(mimeMessage, true, "UTF-8");
+				MimeMessageHelper message = html.isPresent() ? new MimeMessageHelper(mimeMessage, true, "UTF-8") : new MimeMessageHelper(mimeMessage, "UTF-8");
 				message.setSubject(subject);
 				message.setFrom(from);
 				message.setTo(to);
-				if (html == null) {
-					message.setText(text, false);
+				if (html.isPresent()) {
+					message.setText(text, html.get());
 				} else {
-					message.setText(text, html);
+					message.setText(text, false);
 				}
 
 				if (attachments != null) {

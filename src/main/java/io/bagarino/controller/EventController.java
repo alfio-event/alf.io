@@ -219,7 +219,7 @@ public class EventController {
         //
         
         //TODO: complete
-        mailManager.getMailer().send(email, "reservation complete :D", "here be link", "here be link html");
+        mailManager.getMailer().send(email, "reservation complete :D", "here be link", Optional.of("here be link html"));
         //
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId;

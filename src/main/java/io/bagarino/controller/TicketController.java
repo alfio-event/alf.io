@@ -38,6 +38,7 @@ import java.util.Base64;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -105,7 +106,7 @@ public class TicketController {
 		Attachment attachment = new Attachment("ticket-" + ticketIdentifier + ".pdf", new ByteArrayResource(baos.toByteArray()), "application/pdf");
 		
 		//TODO: complete
-		mailManager.getMailer().send(email, "your ticket", "here attached your ticket", "here attached your ticket", attachment);
+		mailManager.getMailer().send(email, "your ticket", "here attached your ticket", Optional.of("here attached your ticket"), attachment);
 		//
 		
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
