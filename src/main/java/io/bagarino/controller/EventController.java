@@ -36,11 +36,15 @@ import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -110,13 +114,17 @@ public class EventController {
 		return "/event/show-event";
 	}
 
-	@RequestMapping(value = "/event/{eventName}/reserve-tickets", method = RequestMethod.POST)
-	public String reserveTicket(@PathVariable("eventName") String eventName, @ModelAttribute ReservationForm reservation, BindingResult bindingResult, Model model) {
+	@RequestMapping(value = "/event/{eventName}/reserve-tickets", method = {RequestMethod.POST, RequestMethod.GET})
+	public String reserveTicket(@PathVariable("eventName") String eventName, @ModelAttribute ReservationForm reservation, BindingResult bindingResult, Model model, ServletWebRequest request) {
 		
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
 		if(!event.isPresent()) {
     		return "redirect:/";
     	}
+		
+		if (request.getHttpMethod() == HttpMethod.GET) {
+			return "redirect:/event/" + eventName + "/";
+		}
 		
 		reservation.validate(bindingResult, tickReservationManager, ticketCategoryRepository);
 		
