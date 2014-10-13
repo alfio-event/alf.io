@@ -49,6 +49,7 @@ public class Event {
     private final BigDecimal vat;
     private final List<PaymentProxy> allowedPaymentProxies;
     private final String privateKey;
+    private final int organizationId;
 
 
     public Event(@Column("id") int id,
@@ -65,7 +66,8 @@ public class Event {
                  @Column("vat_included") boolean vatIncluded,
                  @Column("vat") BigDecimal vat,
                  @Column("allowed_payment_proxies") String allowedPaymentProxies,
-                 @Column("private_key") String privateKey) {
+                 @Column("private_key") String privateKey,
+                 @Column("org_id") int organizationId) {
         this.id = id;
         this.shortName = shortName;
         this.description = description;
@@ -80,6 +82,7 @@ public class Event {
         this.vatIncluded = vatIncluded;
         this.vat = vat;
         this.privateKey = privateKey;
+        this.organizationId = organizationId;
         this.allowedPaymentProxies = Arrays.stream(allowedPaymentProxies.split(","))
                 .filter(StringUtils::isNotBlank)
                 .map(PaymentProxy::valueOf)

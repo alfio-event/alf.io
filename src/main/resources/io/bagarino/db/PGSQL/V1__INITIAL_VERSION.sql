@@ -89,11 +89,13 @@ create table event(
   	vat_included boolean not null,
   	vat decimal(5,2) not null,
   	allowed_payment_proxies varchar(2048) not null,
-  	private_key varchar(2048) not null
+  	private_key varchar(2048) not null,
+  	org_id integer not null
 );
 
 alter table event add constraint "unique_event_name" unique(short_name);
 alter table event add constraint "unique_private_key" unique(private_key);
+alter table event add foreign key(org_id) references organization(id);
 
 create table payment_proxy(
 	id serial primary key not null, 
@@ -147,17 +149,6 @@ create table j_user_organization (
 -- constraints
 alter table j_user_organization add foreign key(user_id) references ba_user(id);
 alter table j_user_organization add foreign key(org_id) references organization(id);
-
-create table j_event_organization (
-  event_id integer not null,
-  org_id integer not null
-);
-
--- constraints
-alter table j_event_organization add foreign key(event_id) references event(id);
-alter table j_event_organization add foreign key(org_id) references organization(id);
---TODO add unique constraint on event_id. An organization can have multiple events but an event can have only one
--- owner organization
 
 create table j_ticket_category_organization (
 	cat_id integer not null, 

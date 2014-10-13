@@ -29,7 +29,6 @@ import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.SpecialPriceRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
-import io.bagarino.repository.join.EventOrganizationRepository;
 import io.bagarino.repository.join.EventTicketCategoryRepository;
 import io.bagarino.util.MonetaryUtil;
 import org.apache.commons.lang3.tuple.Pair;
@@ -54,7 +53,6 @@ import static java.util.stream.Collectors.toList;
 public class EventManager {
 
     private final UserManager userManager;
-    private final EventOrganizationRepository eventOrganizationRepository;
     private final EventRepository eventRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final EventTicketCategoryRepository eventTicketCategoryRepository;
@@ -64,7 +62,6 @@ public class EventManager {
 
     @Autowired
     public EventManager(UserManager userManager,
-                        EventOrganizationRepository eventOrganizationRepository,
                         EventRepository eventRepository,
                         TicketCategoryRepository ticketCategoryRepository,
                         EventTicketCategoryRepository eventTicketCategoryRepository,
@@ -72,7 +69,6 @@ public class EventManager {
                         SpecialPriceRepository specialPriceRepository,
                         NamedParameterJdbcTemplate jdbc) {
         this.userManager = userManager;
-        this.eventOrganizationRepository = eventOrganizationRepository;
         this.eventRepository = eventRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.eventTicketCategoryRepository = eventTicketCategoryRepository;
@@ -82,19 +78,15 @@ public class EventManager {
     }
 
     public List<Event> getAllEvents(String username) {
-        return userManager.findUserOrganizations(username)
-                    .parallelStream()
-                    .flatMap(o -> eventOrganizationRepository.findByOrganizationId(o.getId()).stream())
-                    .map(eo -> eventRepository.findById(eo.getEventId()))
-                    .collect(Collectors.toList());
+        return eventRepository.findAll();//FIXME
     }
 
     public Event getSingleEvent(String eventName, String username) {
         final Event event = eventRepository.findByShortName(eventName);
-        final int organizer = eventOrganizationRepository.getByEventId(event.getId()).getOrganizationId();
+        //final int organizer = eventOrganizationRepository.getByEventId(event.getId()).getOrganizationId();
         userManager.findUserOrganizations(username)
                 .stream()
-                .filter(o -> o.getId() == organizer)
+                .filter(o -> o.getId() == event.getOrganizationId())
                 .findAny()
                 .orElseThrow(IllegalArgumentException::new);
         return event;
@@ -114,8 +106,8 @@ public class EventManager {
     }
 
     public Organization loadOrganizer(Event event, String username) {
-        final int organizationId = eventOrganizationRepository.getByEventId(event.getId()).getOrganizationId();
-        return userManager.findOrganizationById(organizationId, username);
+        //final int organizationId = eventOrganizationRepository.getByEventId(event.getId()).getOrganizationId();
+        return userManager.findOrganizationById(event.getOrganizationId(), username);
     }
 
     @Transactional
@@ -124,7 +116,7 @@ public class EventManager {
         distributeSeats(em, eventId);
         Date creation = new Date();
         Event event = eventRepository.findById(eventId);
-        eventOrganizationRepository.create(eventId, em.getOrganizationId());
+        //eventOrganizationRepository.create(eventId, em.getOrganizationId());
         final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(eventId, creation, event, event.getRegularPriceInCents());
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
 
@@ -216,6 +208,6 @@ public class EventManager {
         String privateKey = UUID.randomUUID().toString();
         return eventRepository.insert(em.getDescription(), em.getShortName(), em.getOrganizationId(), em.getLocation(),
                 "", "", em.getBegin().toDate(), em.getEnd().toDate(), actualPrice,
-                em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies, privateKey).getValue();
+                em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies, privateKey, em.getOrganizationId()).getValue();
     }
 }
