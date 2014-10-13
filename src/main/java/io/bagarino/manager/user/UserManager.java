@@ -131,7 +131,7 @@ public class UserManager {
         Organization organization = organizationRepository.getById(organizationId);
         String userPassword = PasswordGenerator.generateRandomPassword();
         Pair<Integer, Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
-        userOrganizationRepository.create(result.getLeft(), organization.getId());
+        userOrganizationRepository.create(result.getValue(), organization.getId());
         authorityRepository.create(username, AuthorityRepository.ROLE_OWNER);
     }
 

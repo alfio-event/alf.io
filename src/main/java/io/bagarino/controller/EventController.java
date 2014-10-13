@@ -169,9 +169,12 @@ public class EventController {
     		model.addAttribute("summary", extractSummary(reservationId));
     		model.addAttribute("free", reservationCost == 0);
     		model.addAttribute("totalPrice", formatCents(reservationCost));
-    		model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
     		model.addAttribute("reservationId", reservationId);
     		model.addAttribute("reservation", reservation.get());
+    		
+    		if(reservationCost > 0) {
+    			model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
+    		}
     		
     		return "/event/reservation-page";
     	} else {

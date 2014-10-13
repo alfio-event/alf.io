@@ -45,14 +45,14 @@ create table customer (
   email_address varchar(255) not null
 );
 
-create table user (
+create table ba_user (
 	id integer identity not null, 
 	username varchar(255) not null, 
 	password varchar(2048) not null,
 	first_name varchar(255) not null, 
 	last_name varchar(255) not null, 
 	email_address varchar(255) not null,
-  enabled boolean default true
+    enabled boolean default true
 );
 
 create table authority(
@@ -143,7 +143,7 @@ create table j_user_organization (
 	org_id integer not null
 );
 -- constraints
-alter table j_user_organization add foreign key(user_id) references user(id);
+alter table j_user_organization add foreign key(user_id) references ba_user(id);
 alter table j_user_organization add foreign key(org_id) references organization(id);
 
 create table j_event_organization (
@@ -187,3 +187,8 @@ create table configuration(
   c_value varchar(2048) not null,
   description varchar(2048)
 );
+
+
+insert into configuration (c_key, c_value, description) values
+	('MAX_AMOUNT_OF_TICKETS_BY_RESERVATION', '5', 'max amount of tickets'),
+	('SPECIAL_PRICE_CODE_LENGTH', '6', 'length of special price code');

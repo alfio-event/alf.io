@@ -18,15 +18,18 @@ package io.bagarino.manager.system;
 
 import io.bagarino.model.system.Configuration;
 import io.bagarino.repository.system.ConfigurationRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
 import static io.bagarino.util.OptionalWrapper.optionally;
 
 @Component
+@Transactional
 public class ConfigurationManager {
 
     private final ConfigurationRepository configurationRepository;
@@ -56,7 +59,7 @@ public class ConfigurationManager {
 
     public void save(String key, String value) {
         Optional<Configuration> conf = optionally(() -> configurationRepository.findByKey(key));
-        if(conf.isPresent()) {
+        if(!conf.isPresent()) {
             configurationRepository.insert(key, value);
         } else {
             configurationRepository.update(key, value);
