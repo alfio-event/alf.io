@@ -21,7 +21,6 @@ import io.bagarino.model.Event;
 import io.bagarino.model.TicketCategory;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
-import lombok.Data;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -72,7 +71,7 @@ public class EventController {
 
 		final Date now = new Date();
 		//hide access restricted ticket categories
-		List<SellableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(event.get().getId()).stream().filter((c) -> !c.isAccessRestricted()).map((m) -> new SellableTicketCategory(m, now)).collect(Collectors.toList());
+		List<SaleableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(event.get().getId()).stream().filter((c) -> !c.isAccessRestricted()).map((m) -> new SaleableTicketCategory(m, now)).collect(Collectors.toList());
 		//
 		model.addAttribute("event", event.get())//
 			.addAttribute("ticketCategories", t);
@@ -82,11 +81,11 @@ public class EventController {
     
 
     
-    public static class SellableTicketCategory extends TicketCategory {
+    public static class SaleableTicketCategory extends TicketCategory {
     	
     	private final Date now;
 
-		public SellableTicketCategory(TicketCategory ticketCategory, Date now) {
+		public SaleableTicketCategory(TicketCategory ticketCategory, Date now) {
 			super(ticketCategory.getId(), ticketCategory.getInception(), ticketCategory.getExpiration(), ticketCategory
 					.getMaxTickets(), ticketCategory.getName(), ticketCategory.getDescription(), ticketCategory
 					.getPriceInCents(), ticketCategory.isAccessRestricted());
@@ -105,14 +104,6 @@ public class EventController {
 			return getInception().after(now);
 		}
     	
-    }
-    
-    @Data
-    public static class SummaryRow {
-    	private final String name;
-    	private final String price;
-    	private final int amount;
-    	private final String subTotal;
     }
     
     

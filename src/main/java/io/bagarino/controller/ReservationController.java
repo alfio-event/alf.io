@@ -21,8 +21,7 @@ import static io.bagarino.util.OptionalWrapper.optionally;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
-import io.bagarino.controller.EventController.SellableTicketCategory;
-import io.bagarino.controller.EventController.SummaryRow;
+import io.bagarino.controller.EventController.SaleableTicketCategory;
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.manager.TicketReservationManager.NotEnoughTicketsException;
@@ -114,7 +113,7 @@ public class ReservationController {
 					reservation.selected(), expiration);
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 		} catch (NotEnoughTicketsException nete) {
-			bindingResult.reject("not_enough_ticket_exception");
+			bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
 			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
 			return eventController.showEvent(eventName, model);
 		}
@@ -295,23 +294,23 @@ public class ReservationController {
 			int selectionCount = selectionCount();
 			
 			if(selectionCount <= 0) {
-				bindingResult.reject("selection_at_least_one");
+				bindingResult.reject(ErrorsCode.STEP_1_SELECT_AT_LEAST_ONE);
 			}
 			
 			if(selectionCount >  tickReservationManager.maxAmountOfTickets()) {
-				bindingResult.reject("selection_count_over_maximum");
+				bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM);//FIXME: we must display the maximum amount of tickets
 			}
 			
 			final Date now = new Date();
 			
 			selected().forEach((r) -> {
-				SellableTicketCategory ticketCategory = new SellableTicketCategory(ticketCategoryRepository.getById(r.getTicketCategoryId()), now);
+				SaleableTicketCategory ticketCategory = new SaleableTicketCategory(ticketCategoryRepository.getById(r.getTicketCategoryId()), now);
 				
 				if (!ticketCategory.getSaleable()) {
-					bindingResult.reject("ticket_category_must_be_saleable"); // TODO add correct field
+					bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); // TODO add correct field
 				}
 				if (ticketCategory.isAccessRestricted()) {
-					bindingResult.reject("ticket_category_access_restricted"); //
+					bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED); //
 				}
 			});
 		}
@@ -351,6 +350,14 @@ public class ReservationController {
         public Boolean shouldCancelReservation() {
         	return Optional.ofNullable(cancelReservation).orElse(false);
         }
+    }
+    
+    @Data
+    public static class SummaryRow {
+    	private final String name;
+    	private final String price;
+    	private final int amount;
+    	private final String subTotal;
     }
 
 }

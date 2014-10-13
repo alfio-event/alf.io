@@ -29,14 +29,13 @@
 <h2>{{#i18n}}show-event.tickets{{/i18n}}</h2>
 
 {{#hasErrors}}
-<ul>
-	{{#error.globalErrors}}
-		<li>global error: {{code}}</li>
-	{{/error.globalErrors}}
-	{{#error.fieldErrors}}
-		<li>field error : {{field}} : {{code}}</li>
-	{{/error.fieldErrors}}
-</ul>
+<div class="alert alert-danger" role="alert">
+
+{{#error.globalErrors}}
+	<p><strong>{{#i18n}}{{code}}{{/i18n}}</strong></p>
+{{/error.globalErrors}}
+
+</div>
 {{/hasErrors}}
 
 
