@@ -92,7 +92,7 @@ public class TicketController {
 			@RequestParam("email") String email,
 			@RequestParam("fullName") String fullName) throws DocumentException, WriterException, IOException {
 		
-		//TODO: validate email, fullname
+		//TODO: validate email, fullname (not null, maxlength 255)
 		ticketRepository.updateTicketOwner(ticketIdentifier, email, fullName);
 		
 		

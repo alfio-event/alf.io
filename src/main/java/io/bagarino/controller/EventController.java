@@ -362,6 +362,9 @@ public class EventController {
 			//TODO: check email/fullname length/billing address
 			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "email", "email_missing");
 			
+			//email, fullname maxlength is 255
+			//billing address maxlength is 2048
+			
 			if(email != null && !email.contains("@")) {
 				bindingResult.rejectValue("email", "not_an_email");
 			}

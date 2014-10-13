@@ -18,13 +18,13 @@
 				<div class="form-group">
 					<label class="col-sm-2 control-label" for="full-name-{{uuid}}">{{#i18n}}common.full-name{{/i18n}}</label>
 					<div class="col-sm-10">
-						<input type="text" name="fullName" value="{{fullName}}" required id="full-name-{{uuid}}" class="form-control">
+						<input type="text" name="fullName" value="{{fullName}}" required id="full-name-{{uuid}}" class="form-control"  maxlength="255">
 					</div>
 				</div>
 				<div class="form-group">
 					 <label class="col-sm-2 control-label" for="email-{{uuid}}">{{#i18n}}common.email{{/i18n}}</label>
 					 <div class="col-sm-10">
-						<input type="email" name="email" value="{{email}}" required id="email-{{uuid}}" class="form-control">
+						<input type="email" name="email" value="{{email}}" required id="email-{{uuid}}" class="form-control"  maxlength="255">
 					</div>
 				</div>
 				<div class="form-group">
