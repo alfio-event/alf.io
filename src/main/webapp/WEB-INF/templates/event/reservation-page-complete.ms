@@ -14,8 +14,11 @@
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 </form>
 
+{{#ticketsAreAllAssigned}}
+<p class="bg-info ticket-info">You can update the owner of a ticket: a new email will be sent: the previous sent ticket will be invalidated.</p>
+{{/ticketsAreAllAssigned}}
 {{^ticketsAreAllAssigned}}
-<div><p>Please assign all your tickets.</p></div>
+<p class="bg-info ticket-info">Please assign all your tickets.</p>
 {{/ticketsAreAllAssigned}}
 
 <ul class="list-group">
@@ -31,7 +34,6 @@
 						<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 					</form>
 				</div>
-				<p>You can update the owner of the ticket: a new email will be sent (reminder: the previous sent ticket will be invalidated)</p>
 			{{/assigned}}
 			{{^assigned}}
 				<p>You need to fill fullname/email to download the ticket:</p>

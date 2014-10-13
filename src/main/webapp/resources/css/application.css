@@ -31,3 +31,8 @@ div.col-md-8.col-md-offset-2 > h1 {
 	width: 13px;
 	text-align: center;
 }
+
+p.ticket-info {
+	padding:15px;
+	margin-top:10px;
+}

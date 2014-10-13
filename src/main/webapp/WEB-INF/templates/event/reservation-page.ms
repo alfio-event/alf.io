@@ -46,7 +46,6 @@
 </ul>
 {{/hasErrors}}
 
-
 <form action="" method="POST" id="payment-form">
 	<h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
 	<div class="form-group">
@@ -70,7 +69,8 @@
 	
 	<h2>{{#i18n}}reservation-page.payment{{/i18n}}</h2>
 
-	<span class="payment-errors"></span>
+	<div class="alert alert-danger payment-errors" role="alert">
+	</div>
 
 	<div class="form-group">
 		<label for="card-number">{{#i18n}}reservation-page.card-number{{/i18n}}</label>
@@ -89,15 +89,15 @@
  
 	<div class="form-group">
 		<div>
-			<label> {{#i18n}}reservation-page.expiration{{/i18n}}</label>
+			<label>{{#i18n}}reservation-page.expiration{{/i18n}}</label>
 		</div>
 		<div class="row">
 			<div class="col-xs-2">
-				<input type="text" size="2" data-stripe="exp-month" required class="form-control" maxlength="2" autocomplete="off"/>
+				<input type="text" size="2" data-stripe="exp-month" required class="form-control" maxlength="2" autocomplete="off" id="card-mm" pattern="\d+"/>
 			</div>
 			<div class="col-xs-1">/</div>
 			<div class="col-xs-2">
-				<input type="text" size="4" data-stripe="exp-year" required class="form-control" maxlength="4" autocomplete="off"/>
+				<input type="text" size="4" data-stripe="exp-year" required class="form-control" maxlength="4" autocomplete="off" id="card-yyyy" pattern="\d+"/>
 			</div>
 		</div>
 	</div>
