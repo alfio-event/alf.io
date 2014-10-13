@@ -19,10 +19,7 @@ package io.bagarino.model.modification;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.Date;
 
 @Getter
@@ -35,7 +32,8 @@ public class DateTimeModification {
         this.time = time;
     }
 
-    public Date toDate() {
-        return Date.from(ZonedDateTime.of(date, time, ZoneId.systemDefault()).toInstant());
+    public Date toDate(ZoneId zoneId) {
+        ZonedDateTime zd = ZonedDateTime.of(date, time, zoneId);
+        return Date.from(zd.withZoneSameInstant(ZoneId.of(ZoneOffset.UTC.getId())).toInstant());
     }
 }

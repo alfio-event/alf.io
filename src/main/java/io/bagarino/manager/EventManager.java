@@ -16,6 +16,7 @@
  */
 package io.bagarino.manager;
 
+import io.bagarino.manager.location.LocationManager;
 import io.bagarino.manager.user.UserManager;
 import io.bagarino.model.Event;
 import io.bagarino.model.SpecialPrice;
@@ -40,10 +41,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.time.ZoneId;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,6 +59,7 @@ public class EventManager {
     private final EventTicketCategoryRepository eventTicketCategoryRepository;
     private final TicketRepository ticketRepository;
     private final SpecialPriceRepository specialPriceRepository;
+    private final LocationManager locationManager;
     private final NamedParameterJdbcTemplate jdbc;
 
     @Autowired
@@ -70,6 +70,7 @@ public class EventManager {
                         EventTicketCategoryRepository eventTicketCategoryRepository,
                         TicketRepository ticketRepository,
                         SpecialPriceRepository specialPriceRepository,
+                        LocationManager locationManager,
                         NamedParameterJdbcTemplate jdbc) {
         this.userManager = userManager;
         this.eventOrganizationRepository = eventOrganizationRepository;
@@ -78,6 +79,7 @@ public class EventManager {
         this.eventTicketCategoryRepository = eventTicketCategoryRepository;
         this.ticketRepository = ticketRepository;
         this.specialPriceRepository = specialPriceRepository;
+        this.locationManager = locationManager;
         this.jdbc = jdbc;
     }
 
@@ -121,9 +123,9 @@ public class EventManager {
     @Transactional
     public void createEvent(EventModification em) {
         int eventId = insertEvent(em);
-        distributeSeats(em, eventId);
-        Date creation = new Date();
         Event event = eventRepository.findById(eventId);
+        distributeSeats(em, event);
+        Date creation = new Date();
         eventOrganizationRepository.create(eventId, em.getOrganizationId());
         final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(eventId, creation, event, event.getRegularPriceInCents());
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
@@ -157,13 +159,16 @@ public class EventManager {
                 .addValue("paidPrice", paidPrice);
     }
 
-    private void distributeSeats(EventModification em, int eventId) {
+    private void distributeSeats(EventModification em, Event event) {
         boolean freeOfCharge = em.isFreeOfCharge();
         boolean vatIncluded = em.isVatIncluded();
+        ZoneId zoneId = TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
+        int eventId = event.getId();
+
         em.getTicketCategories().stream().forEach(tc -> {
             final int price = evaluatePrice(tc.getPriceInCents(), em.getVat(), vatIncluded, freeOfCharge);
-            final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toDate(),
-                    tc.getExpiration().toDate(), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested());
+            final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toDate(zoneId),
+                    tc.getExpiration().toDate(zoneId), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested());
             eventTicketCategoryRepository.insert(eventId, category.getValue());
             if(tc.isTokenGenerationRequested()) {
                 final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategoryRepository.getById(category.getValue()));
@@ -214,8 +219,13 @@ public class EventManager {
         int actualPrice = evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
         BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
         String privateKey = UUID.randomUUID().toString();
+        Pair<String, String> coordinates = locationManager.geocode(em.getLocation());
+        TimeZone tz = locationManager.getTimezone(coordinates);
+        String timeZone = tz.getID();
+        ZoneId zoneId = tz.toZoneId();
         return eventRepository.insert(em.getDescription(), em.getShortName(), em.getOrganizationId(), em.getLocation(),
-                "", "", em.getBegin().toDate(), em.getEnd().toDate(), actualPrice,
-                em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies, privateKey).getValue();
+                coordinates.getLeft(), coordinates.getRight(), em.getBegin().toDate(zoneId), em.getEnd().toDate(zoneId),
+                timeZone, actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
+                privateKey).getValue();
     }
 }
