@@ -69,6 +69,7 @@ public class ReservationController {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final StripeManager stripeManager;
     private final MailManager mailManager;
+    //
     private final EventController eventController;
     
     @Autowired

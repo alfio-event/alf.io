@@ -53,10 +53,11 @@ public class StripeManager {
      * get money on our account.
      *
      * as documented in https://stripe.com/docs/tutorials/charges
+     * @return 
      *
      * @throws StripeException
      */
-    public void chargeCreditCard(String stripeToken, long amountInCent, String currency, String reservationId, String email, String fullName, String billingAddress) throws StripeException {
+    public Charge chargeCreditCard(String stripeToken, long amountInCent, String currency, String reservationId, String email, String fullName, String billingAddress) throws StripeException {
         // Use Stripe's bindings...
         Stripe.apiKey = getSecretKey();
 
@@ -80,7 +81,7 @@ public class StripeManager {
 
 
         chargeParams.put("metadata", initialMetadata);
-        Charge charge = Charge.create(chargeParams);
+        return Charge.create(chargeParams);
     }
 
 }

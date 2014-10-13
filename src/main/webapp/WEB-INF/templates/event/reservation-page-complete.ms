@@ -3,7 +3,7 @@
 
 <h1>{{#i18n}}reservation-page-complete.your-tickets{{/i18n}} {{event.shortName}}</h1>
 <form action="{{reservationId}}/re-send-email" method="post">
-	<button type="submit" class="btn btn-link">Resend reservation email to {{reservation.email}}</button>
+	<button type="submit" class="btn btn-link">{{#i18n}}reservation-page-complete.resend-reservation-email [{{reservation.email}}]{{/i18n}}</button>
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 </form>
 <ul class="list-group">
