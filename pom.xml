@@ -356,5 +356,19 @@
 				<spring.profiles.active>dev</spring.profiles.active>
 			</properties>
 		</profile>
+        <profile>
+            <id>docker-test</id>
+            <properties>
+                <jetty.port>8080</jetty.port>
+                <jetty.host>0.0.0.0</jetty.host>
+                <datasource.dialect>PGSQL</datasource.dialect>
+                <datasource.driver>org.postgresql.Driver</datasource.driver>
+                <datasource.url>jdbc:postgresql://0.0.0.0:5432/postgres</datasource.url>
+                <datasource.username>postgres</datasource.username>
+                <datasource.password>postgres</datasource.password>
+                <datasource.validationQuery>SELECT 1</datasource.validationQuery>
+                <spring.profiles.active>dev</spring.profiles.active>
+            </properties>
+        </profile>
 	</profiles>
 </project>
