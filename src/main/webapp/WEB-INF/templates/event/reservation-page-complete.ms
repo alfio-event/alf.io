@@ -8,7 +8,6 @@
 		<li class="list-group-item">Category: {{key}} -	ticket:
 			{{#assigned}}
 				<p><a href="{{reservationId}}/download-ticket/{{uuid}}">{{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a>.</p>
-				<div>TODO: send by email</div>
 				<p>You can update the owner of the ticket: a new email will be sent (reminder: the previous sent ticket will be invalidated)</p>
 			{{/assigned}}
 			{{^assigned}}

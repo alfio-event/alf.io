@@ -42,12 +42,15 @@ import java.util.Optional;
 
 import javax.servlet.http.HttpServletResponse;
 
+import lombok.Data;
+
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -89,11 +92,10 @@ public class TicketController {
 	public String assignTicketToPerson(@PathVariable("eventName") String eventName,
 			@PathVariable("reservationId") String reservationId,
 			@PathVariable("ticketIdentifier") String ticketIdentifier,
-			@RequestParam("email") String email,
-			@RequestParam("fullName") String fullName) throws DocumentException, WriterException, IOException {
+			UpdateTicketOwnerForm updateTicketOwner, BindingResult bindingResult) throws DocumentException, WriterException, IOException {
 		
 		//TODO: validate email, fullname (not null, maxlength 255)
-		ticketRepository.updateTicketOwner(ticketIdentifier, email, fullName);
+		ticketRepository.updateTicketOwner(ticketIdentifier, updateTicketOwner.getEmail(), updateTicketOwner.getFullName());
 		
 		
 		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
@@ -106,7 +108,7 @@ public class TicketController {
 		Attachment attachment = new Attachment("ticket-" + ticketIdentifier + ".pdf", new ByteArrayResource(baos.toByteArray()), "application/pdf");
 		
 		//TODO: complete
-		mailManager.getMailer().send(email, "your ticket", "here attached your ticket", Optional.of("here attached your ticket"), attachment);
+		mailManager.mailer().send(updateTicketOwner.getEmail(), "your ticket", "here attached your ticket", Optional.of("here attached your ticket"), attachment);
 		//
 		
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
@@ -186,5 +188,11 @@ public class TicketController {
 
 	private static String toDataUri(byte[] content) {
 		return "data:image/png;base64," + Base64.getEncoder().encodeToString(content);
+	}
+	
+	@Data
+	public static class UpdateTicketOwnerForm {
+		private String email;
+		private String fullName;
 	}
 }

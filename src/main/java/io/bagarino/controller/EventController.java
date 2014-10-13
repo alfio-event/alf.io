@@ -243,7 +243,7 @@ public class EventController {
         //
         
         //TODO: complete, additionally, the mail should be sent asynchronously from another thread
-        mailManager.getMailer().send(email, "reservation complete :D", "here be link", Optional.of("here be link html"));
+        mailManager.mailer().send(email, "reservation complete :D", "here be link", Optional.of("here be link html"));
         //
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId;

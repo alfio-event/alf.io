@@ -82,7 +82,7 @@
 				<div class="col-sm-2 text-align-center">
 					{{#saleable}}
 						<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
-						<input name="reservation[{{-index}}].amount" type="text" class="form-control text-align-center" placeholder="0" autocomplete="off">
+						<input name="reservation[{{-index}}].amount" type="text" class="form-control text-align-center" placeholder="0" autocomplete="off" pattern="\d+">
 					{{/saleable}}
 					{{^saleable}}
 						<label class="control-label">N/A</label>

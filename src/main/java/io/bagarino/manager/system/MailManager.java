@@ -55,7 +55,7 @@ public class MailManager {
 		this.configurationManager = configurationManager;
 	}
 
-	public Mailer getMailer() {
+	public Mailer mailer() {
 		if (ArrayUtils.contains(environment.getActiveProfiles(), "dev")) {
 			return new DevMailer();
 		} else {
