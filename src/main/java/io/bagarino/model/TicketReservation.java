@@ -34,11 +34,20 @@ public class TicketReservation {
 	private final String id;
 	private final Date validity;
 	private final TicketReservationStatus status;
-
+	private final String fullName;
+	private final String email;
+	private final String billingAddress; 
+	
 	public TicketReservation(@Column("id") String id, @Column("validity") Date validity,
-			@Column("status") TicketReservationStatus status) {
+			@Column("status") TicketReservationStatus status,
+			@Column("full_name") String fullName,
+			@Column("email_address") String email,
+			@Column("billing_address") String billingAddress) {
 		this.id = id;
 		this.validity = validity;
 		this.status = status;
+		this.fullName = fullName;
+		this.email = email;
+		this.billingAddress = billingAddress;
 	}
 }
