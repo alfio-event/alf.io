@@ -1,17 +1,36 @@
 {{>/event/page-top}}
 
 
-<h1>{{#i18n}}reservation-page-complete.your-tickets{{/i18n}} {{event.shortName}}</h1>
+<h1>
+	{{#ticketsAreAllAssigned}}
+		{{#i18n}}reservation-page-complete.your-tickets [{{event.shortName}}]{{/i18n}} 
+	{{/ticketsAreAllAssigned}}
+	{{^ticketsAreAllAssigned}}
+		{{#i18n}}reservation-page-complete.assign-your-tickets [{{event.shortName}}]{{/i18n}}
+	{{/ticketsAreAllAssigned}}
+</h1>
 <form action="{{reservationId}}/re-send-email" method="post">
 	<button type="submit" class="btn btn-link">{{#i18n}}reservation-page-complete.resend-reservation-email [{{reservation.email}}]{{/i18n}}</button>
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 </form>
+
+{{^ticketsAreAllAssigned}}
+<div><p>Please assign all your tickets.</p></div>
+{{/ticketsAreAllAssigned}}
+
 <ul class="list-group">
 {{#ticketsByCategory}}
 	{{#value}}
 		<li class="list-group-item">Category: {{key}} -	ticket:
 			{{#assigned}}
-				<p><a href="{{reservationId}}/download-ticket/{{uuid}}">{{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a>.</p>
+				<div>
+					<form method="post" action="{{reservationId}}/{{uuid}}/send-ticket-by-email" class="form-inline">
+						TODO: redo this UI
+						<a href="{{reservationId}}/download-ticket/{{uuid}}">{{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a> or 
+						<button type="submit" class="btn btn-link">{{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{email}}]{{/i18n}}</button>
+						<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
+					</form>
+				</div>
 				<p>You can update the owner of the ticket: a new email will be sent (reminder: the previous sent ticket will be invalidated)</p>
 			{{/assigned}}
 			{{^assigned}}

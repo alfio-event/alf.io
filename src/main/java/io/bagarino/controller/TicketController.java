@@ -95,10 +95,21 @@ public class TicketController {
 		
 		//TODO: validate email, fullname (not null, maxlength 255)
 		ticketRepository.updateTicketOwner(ticketIdentifier, updateTicketOwner.getEmail(), updateTicketOwner.getFullName());
+
+		//
+		sendTicketByEmail(eventName, reservationId, ticketIdentifier);
+		//
+		
+		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+	}
+
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}/send-ticket-by-email", method = RequestMethod.POST)
+	public String sendTicketByEmail(@PathVariable("eventName") String eventName,
+			@PathVariable("reservationId") String reservationId, 
+			@PathVariable("ticketIdentifier") String ticketIdentifier) throws DocumentException, WriterException, IOException {
 		
 		
 		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
-		
 		check(data.getMiddle(), data.getRight());
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -107,11 +118,11 @@ public class TicketController {
 		Attachment attachment = new Attachment("ticket-" + ticketIdentifier + ".pdf", new ByteArrayResource(baos.toByteArray()), "application/pdf");
 		
 		//TODO: complete
-		mailManager.mailer().send(updateTicketOwner.getEmail(), "your ticket", "here attached your ticket", Optional.of("here attached your ticket"), attachment);
-		//
+		mailManager.mailer().send(data.getRight().getEmail(), "your ticket", "here attached your ticket", Optional.of("here attached your ticket"), attachment);
 		
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 	}
+	
 
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/download-ticket/{ticketIdentifier}", method = RequestMethod.GET)
 	public void generateTicketPdf(@PathVariable("eventName") String eventName,

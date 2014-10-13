@@ -153,12 +153,19 @@ public class ReservationController {
     		}
     		
     		return "/event/reservation-page";
-    	} else {
+    	} else if (reservation.get().getStatus() == TicketReservationStatus.COMPLETE ){
     		model.addAttribute("reservationId", reservationId);
     		model.addAttribute("reservation", reservation.get());
-    		model.addAttribute("ticketsByCategory", ticketRepository.findTicketsInReservation(reservationId).stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet());
+    		
+    		
+    		List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
+    		
+    		model.addAttribute("ticketsByCategory", tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet());
+    		model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
     		
     		return "/event/reservation-page-complete";
+    	} else { //reservation status is in payment.
+    		throw new IllegalStateException();//FIXME
     	}
 	}
 
