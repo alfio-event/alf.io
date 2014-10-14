@@ -54,12 +54,17 @@
 		
 		$("#cancel-reservation").click(function(e) {
 			var $form = $('#payment-form');
+			
+			$("input[type=submit], button:not([type=button])", $form ).unbind('click');
+			$form.unbind('submit');
+			$("input", $form).unbind('keypress');
+			
 			$form
 				.attr('novalidate', 'novalidate')
 				.unbind('submit', submitForm)
 				.find('button').prop('disabled', true);
 			$form.append($('<input type="hidden" name="cancelReservation" />').val(true))
-			return true;
+			$form.submit();
 		});
 		
 		if(hasStripe) {
