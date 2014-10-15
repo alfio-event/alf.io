@@ -75,7 +75,6 @@ create table event(
 	id integer identity not null,
   short_name varchar(2048) not null,
 	description varchar(2048) not null, 
-	owner integer not null,
   location varchar(2048) not null,
 	latitude varchar(255) not null, 
 	longitude varchar(255) not null, 
