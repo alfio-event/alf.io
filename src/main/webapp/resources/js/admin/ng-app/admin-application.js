@@ -126,7 +126,9 @@
 
     });
 
-    admin.controller('CreateEventController', function($scope, $state, $rootScope, $q, OrganizationService, PaymentProxyService, EventService) {
+    admin.controller('CreateEventController', function($scope, $state, $rootScope,
+                                                       $q, OrganizationService, PaymentProxyService,
+                                                       EventService, LocationService) {
         $scope.event = {
             freeOfCharge: false,
             begin: {},
@@ -199,6 +201,16 @@
 
         $scope.cancel = function() {
             $state.go("index");
+        };
+
+        $scope.updateLocation = function(location) {
+            $scope.loadingMap = true;
+            LocationService.geolocate(location).success(function(result) {
+                $scope.event.geolocation = result;
+                $scope.loadingMap = false;
+            }).error(function() {
+                $scope.loadingMap = false;
+            });
         };
     });
 

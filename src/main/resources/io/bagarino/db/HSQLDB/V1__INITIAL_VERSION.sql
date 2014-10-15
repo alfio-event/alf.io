@@ -81,6 +81,7 @@ create table event(
 	longitude varchar(255) not null, 
 	start_ts timestamp not null,
 	end_ts timestamp not null,
+  time_zone varchar(255) not null,
   regular_price_cts integer not null,
   currency varchar(3),
   available_seats integer not null,

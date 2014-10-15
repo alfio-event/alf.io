@@ -40,7 +40,7 @@
                     <field-error data-form-obj="editEvent" data-field-obj="editEvent.organizationId"></field-error>
 
                     <label for="location">Location</label>
-                    <textarea data-ng-model="event.location" name="location" id="location" class="form-control" required data-minlength="10"></textarea>
+                    <textarea data-ng-model="event.location" name="location" id="location" class="form-control" required data-minlength="10" data-ng-change="updateLocation(event.location)" data-ng-model-options="{ updateOn: 'blur'}"></textarea>
                     <field-error data-form-obj="editEvent" data-field-obj="editEvent.location" data-min-char="10"></field-error>
 
                     <label for="description">Event Description</label>
@@ -49,9 +49,14 @@
                 </div>
                 <date-time data-id-prefix="begin" data-prefix="Start" data-model-object="event.begin" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
                 <date-time data-id-prefix="end" data-prefix="End" data-model-object="event.end" data-not-before="{{event.begin.date}}" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
+                <div class="form-group">
+                    <label for="timeZone">Event time zone</label>
+                    <input class="form-control" readonly name="timeZone" data-ng-model="event.geolocation.timeZone" required />
+                </div>
             </div>
             <div class="col-sm-12 col-md-6">
-                here the map
+                <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loadingMap"></i>
+                <img data-ng-if="event.geolocation && !loadingMap" data-ng-src="{{event.geolocation.mapUrl}}" alt="{{event.location}}" />
             </div>
         </div>
 

@@ -14,26 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.model.modification;
+package io.bagarino.manager.location;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
+public class LocationNotFound extends RuntimeException {
 
-import java.time.*;
-import java.util.Date;
-
-@Getter
-public class DateTimeModification {
-    private final LocalDate date;
-    private final LocalTime time;
-
-    public DateTimeModification(@JsonProperty("date") LocalDate date, @JsonProperty("time") LocalTime time) {
-        this.date = date;
-        this.time = time;
+    public LocationNotFound(String message) {
+        super(message);
     }
 
-    public Date toDate(ZoneId zoneId) {
-        ZonedDateTime zd = ZonedDateTime.of(date, time, zoneId);
-        return Date.from(zd.withZoneSameInstant(ZoneId.of(ZoneOffset.UTC.getId())).toInstant());
+    public LocationNotFound(String message, Throwable cause) {
+        super(message, cause);
     }
 }

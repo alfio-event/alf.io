@@ -17,19 +17,19 @@
 package io.bagarino.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
-
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 @Getter
@@ -40,8 +40,8 @@ public class Event {
     private final String location;
     private final String latitude;
     private final String longitude;
-    private final Date begin;
-    private final Date end;
+    private final LocalDateTime begin;
+    private final LocalDateTime end;
     private final int regularPriceInCents;
     private final String currency;
     private final int availableSeats;
@@ -50,6 +50,7 @@ public class Event {
     private final List<PaymentProxy> allowedPaymentProxies;
     private final String privateKey;
     private final int organizationId;
+    private final ZoneId timeZone;
 
 
     public Event(@Column("id") int id,
@@ -60,6 +61,7 @@ public class Event {
                  @Column("longitude") String longitude,
                  @Column("start_ts") Date begin,
                  @Column("end_ts") Date end,
+                 @Column("time_zone") String timeZone,
                  @Column("regular_price_cts") int regularPriceInCents,
                  @Column("currency") String currency,
                  @Column("available_seats") int availableSeats,
@@ -74,8 +76,9 @@ public class Event {
         this.location = location;
         this.latitude = latitude;
         this.longitude = longitude;
-        this.begin = begin;
-        this.end = end;
+        this.begin = LocalDateTime.ofInstant(begin.toInstant(), ZoneId.of("UTC"));
+        this.end = LocalDateTime.ofInstant(end.toInstant(), ZoneId.of("UTC"));
+        this.timeZone = TimeZone.getTimeZone(timeZone).toZoneId();
         this.regularPriceInCents = regularPriceInCents;
         this.currency = currency;
         this.availableSeats = availableSeats;
@@ -95,13 +98,40 @@ public class Event {
     
     
     public boolean getSameDay() {
-    	//FIXME: take in account the timezone
-    	ZoneId tz = ZoneId.systemDefault();
-    	return begin.toInstant().atZone(tz).toLocalDate().equals(end.toInstant().atZone(tz).toLocalDate());
+    	return begin.atZone(timeZone).equals(end.atZone(timeZone));
     }
 
     @JsonIgnore
     public String getPrivateKey() {
         return privateKey;
+    }
+
+    /**
+     * Returns the begin date in the event's timezone
+     * @return Date
+     */
+    public Date getBegin() {
+        return Date.from(begin.atZone(timeZone).toInstant());
+    }
+
+    /**
+     * Returns the end date in the event's timezone
+     * @return Date
+     */
+    public Date getEnd() {
+        return Date.from(end.atZone(timeZone).toInstant());
+    }
+
+    /**
+     * Returns a string representation of the event's time zone
+     * @return timeZone
+     */
+    public String getTimeZone() {
+        return timeZone.toString();
+    }
+
+    @JsonIgnore
+    public ZoneId getZoneId() {
+        return timeZone;
     }
 }
