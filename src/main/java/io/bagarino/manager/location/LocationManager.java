@@ -24,6 +24,7 @@ import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.system.ConfigurationKeys;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -41,6 +42,7 @@ public class LocationManager {
          this.configurationManager = configurationManager;
     }
 
+    @Cacheable
     public Pair<String, String> geocode(String address) {
         return Optional.ofNullable(GeocodingApi.geocode(getApiContext(), address).awaitIgnoreError())
                     .filter(r -> r.length > 0)
@@ -58,10 +60,12 @@ public class LocationManager {
         return CTX.get();
     }
 
+    @Cacheable
     public TimeZone getTimezone(Pair<String, String> location) {
         return getTimezone(location.getLeft(), location.getRight());
     }
 
+    @Cacheable
     public TimeZone getTimezone(String latitude, String longitude) {
         return Optional.ofNullable(TimeZoneApi.getTimeZone(getApiContext(), new LatLng(Double.valueOf(latitude), Double.valueOf(longitude))).awaitIgnoreError())
                 .orElseThrow(() -> new LocationNotFound(String.format("No TimeZone found for location having coordinates: %s,%s", latitude, longitude)));

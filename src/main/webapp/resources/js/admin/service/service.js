@@ -65,6 +65,17 @@
         };
     });
 
+    baseServices.service("LocationService", function($http, HttpErrorHandler) {
+        return {
+            showOnMap : function(location) {
+                return $http.get('/admin/api/location/map.json?location='+location).error(HttpErrorHandler.handle);
+            },
+            geolocate : function(location) {
+                return $http.get('/admin/api/location/geo.json?location='+location).error(HttpErrorHandler.handle);
+            }
+        };
+    });
+
     baseServices.service("HttpErrorHandler", function($rootScope, $log) {
         return {
             handle : function(error) {

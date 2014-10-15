@@ -62,7 +62,8 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
             log.info("*******************************************************");
 
             configurationManager.save(ConfigurationKeys.INIT_COMPLETED, "true");
-            configurationManager.save(ConfigurationKeys.MAPS_SERVER_API_KEY, System.getProperty("maps.apiKey"));
+            configurationManager.save(ConfigurationKeys.MAPS_SERVER_API_KEY, System.getProperty("maps.serverApiKey"));
+            configurationManager.save(ConfigurationKeys.MAPS_CLIENT_API_KEY, System.getProperty("maps.clientApiKey"));
         }
     }
 }

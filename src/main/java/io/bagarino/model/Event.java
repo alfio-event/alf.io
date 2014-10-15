@@ -74,8 +74,8 @@ public class Event {
         this.location = location;
         this.latitude = latitude;
         this.longitude = longitude;
-        this.begin = LocalDateTime.from(begin.toInstant());
-        this.end = LocalDateTime.from(end.toInstant());
+        this.begin = LocalDateTime.ofInstant(begin.toInstant(), ZoneId.of("UTC"));
+        this.end = LocalDateTime.ofInstant(end.toInstant(), ZoneId.of("UTC"));
         this.timeZone = TimeZone.getTimeZone(timeZone).toZoneId();
         this.regularPriceInCents = regularPriceInCents;
         this.currency = currency;

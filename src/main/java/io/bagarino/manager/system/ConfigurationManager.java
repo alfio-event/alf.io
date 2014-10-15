@@ -56,7 +56,7 @@ public class ConfigurationManager {
 
     public void save(String key, String value) {
         Optional<Configuration> conf = optionally(() -> configurationRepository.findByKey(key));
-        if(conf.isPresent()) {
+        if(!conf.isPresent()) {
             configurationRepository.insert(key, value);
         } else {
             configurationRepository.update(key, value);
