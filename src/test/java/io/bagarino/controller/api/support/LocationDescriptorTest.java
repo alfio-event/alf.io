@@ -17,9 +17,11 @@
 package io.bagarino.controller.api.support;
 
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.runner.RunWith;
 
+import java.util.Optional;
 import java.util.TimeZone;
 
 import static com.insightfullogic.lambdabehave.Suite.describe;
@@ -33,6 +35,6 @@ public class LocationDescriptorTest {{
     final LocationDescriptor expected = new LocationDescriptor(timeZone.getID(), latitude, longitude, "https://maps.googleapis.com/maps/api/staticmap?center=latitude,longitude&key=mapKey&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7Clatitude,longitude");
 
     describe("LocationDescriptor", it -> {
-        it.should("build the locationDescriptor", expect -> expect.that(LocationDescriptor.fromGeoData(Pair.of(latitude, longitude), timeZone, "mapKey")).isEqualTo(expected));
+        it.should("build the locationDescriptor", expect -> expect.that(LocationDescriptor.fromGeoData(Pair.of(latitude, longitude), timeZone, Optional.of("mapKey"))).isEqualTo(expected));
     });
 }}
