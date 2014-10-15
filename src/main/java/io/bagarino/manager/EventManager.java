@@ -80,7 +80,10 @@ public class EventManager {
     }
 
     public List<Event> getAllEvents(String username) {
-        return eventRepository.findAll();//FIXME
+        return userManager.findUserOrganizations(username)
+                .parallelStream()
+                .flatMap(o -> eventRepository.findByOrganizationId(o.getId()).stream())
+                .collect(Collectors.toList());
     }
 
     public Event getSingleEvent(String eventName, String username) {
@@ -108,7 +111,6 @@ public class EventManager {
     }
 
     public Organization loadOrganizer(Event event, String username) {
-        //final int organizationId = eventOrganizationRepository.getByEventId(event.getId()).getOrganizationId();
         return userManager.findOrganizationById(event.getOrganizationId(), username);
     }
 
@@ -215,7 +217,7 @@ public class EventManager {
         TimeZone tz = locationManager.getTimezone(coordinates);
         String timeZone = tz.getID();
         ZoneId zoneId = tz.toZoneId();
-        return eventRepository.insert(em.getDescription(), em.getShortName(), em.getOrganizationId(), em.getLocation(),
+        return eventRepository.insert(em.getDescription(), em.getShortName(), em.getLocation(),
                 coordinates.getLeft(), coordinates.getRight(), em.getBegin().toDate(zoneId), em.getEnd().toDate(zoneId),
                 timeZone, actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
                 privateKey, em.getOrganizationId()).getValue();
