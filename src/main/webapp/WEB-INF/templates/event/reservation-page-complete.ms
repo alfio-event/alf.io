@@ -27,18 +27,20 @@
 		<li class="list-group-item">Category: {{key}} -	ticket:
 			{{#assigned}}
 				<div>
-					<form method="post" action="{{reservationId}}/{{uuid}}/send-ticket-by-email" class="form-inline">
-						TODO: redo this UI
-						<a href="{{reservationId}}/download-ticket/{{uuid}}">{{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a> or 
-						<button type="submit" class="btn btn-link">{{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{email}}]{{/i18n}}</button>
-						<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
-					</form>
+					<p>Assigned to <strong>{{fullName}}</strong> &lt;{{email}}&gt;</p>
+					<ul>
+						<li> <a href="{{reservationId}}/{{uuid}}" class="btn btn-link">Show ticket</a>
+						<li> <a href="{{reservationId}}/{{uuid}}/download-ticket" class="btn btn-link">{{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a>
+						<li> <form method="post" action="{{reservationId}}/{{uuid}}/send-ticket-by-email" class="form-inline"><button type="submit" class="btn btn-link">{{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{email}}]{{/i18n}}</button><input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}"></form>
+						<li> <a href="#ticket-{{uuid}}" class="btn btn-link update-ticket-owner">Update ticket owner</a>
+					</ul>
+					
 				</div>
 			{{/assigned}}
 			{{^assigned}}
 				<p>You need to fill fullname/email to download the ticket:</p>
 			{{/assigned}}
-			<form method="post" action="{{reservationId}}/{{uuid}}" class="form-horizontal">
+			<form method="post" action="{{reservationId}}/{{uuid}}" class="form-horizontal {{#assigned}}hide-by-default{{/assigned}}" id="ticket-{{uuid}}">
 				<div class="form-group">
 					<label class="col-sm-2 control-label" for="full-name-{{uuid}}">{{#i18n}}common.full-name{{/i18n}}</label>
 					<div class="col-sm-10">
@@ -53,7 +55,14 @@
 				</div>
 				<div class="form-group">
 					<div class="col-sm-offset-2 col-sm-10">	
-						<button type="submit" class="btn btn-primary">{{#i18n}}reservation-page-complete.update{{/i18n}}</button>
+						<button type="submit" class="btn btn-primary pull-right">
+							{{#i18n}}{{#assigned}}reservation-page-complete.update{{/assigned}}{{^assigned}}reservation-page-complete.assign{{/assigned}}{{/i18n}}
+						</button>
+
+						{{#assigned}}
+							<button type="button" class="btn btn-default pull-left cancel-update" data-for-form="ticket-{{uuid}}">{{#i18n}}reservation-page-complete.cancel{{/i18n}}</button>
+						{{/assigned}}
+						
 						<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 					</div>
 				</div>
@@ -62,5 +71,8 @@
 	{{/value}}
 {{/ticketsByCategory}}
 </ul>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="/resources/js/event/reservation-page-complete.js"></script>
 	
 {{>/event/page-bottom}}

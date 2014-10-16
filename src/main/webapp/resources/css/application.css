@@ -36,3 +36,7 @@ p.ticket-info {
 	padding:15px;
 	margin-top:10px;
 }
+
+.hide-by-default {
+	display: none;
+}

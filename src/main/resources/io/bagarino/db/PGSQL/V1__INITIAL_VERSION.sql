@@ -77,7 +77,6 @@ create table event(
 	id serial primary key not null,
   	short_name varchar(2048) not null,
 	description varchar(2048) not null, 
-	owner integer not null,
   	location varchar(2048) not null,
 	latitude varchar(255) not null, 
 	longitude varchar(255) not null, 
@@ -180,6 +179,7 @@ create table configuration(
   c_value varchar(2048) not null,
   description varchar(2048)
 );
+alter table configuration add constraint "unique_configuration_c_key" unique(c_key);
 
 insert into configuration (c_key, c_value, description) values
 	('MAX_AMOUNT_OF_TICKETS_BY_RESERVATION', '5', 'max amount of tickets'),

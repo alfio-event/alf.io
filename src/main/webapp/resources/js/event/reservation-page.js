@@ -6,13 +6,50 @@
 	function stripeResponseHandler(status, response) {
 		var $form = $('#payment-form');
 	 
+		
+		//https://stripe.com/docs/api#errors codes from stripes
+		
+		/*
+		 * incorrect_number 		The card number is incorrect.
+		 * invalid_number 			The card number is not a valid credit card number.
+		 * invalid_expiry_month 	The card's expiration month is invalid.
+		 * invalid_expiry_year 		The card's expiration year is invalid.
+		 * invalid_cvc 				The card's security code is invalid.
+		 * expired_card 			The card has expired.
+		 * incorrect_cvc 			The card's security code is incorrect.
+		 * incorrect_zip 			The card's zip code failed validation.
+		 * card_declined 			The card was declined.
+		 * missing 					There is no card on a customer that is being charged.
+		 * processing_error 		An error occurred while processing the card.
+		 * rate_limit 				An error occurred due to requests hitting the API too quickly.
+		 * 
+		 */
+		
+		var errorCodeToSelectorMap = {
+			incorrect_number : '[data-stripe=number]',
+			invalid_number: '[data-stripe=number]',
+			invalid_expiry_month : '[data-stripe=exp-month]',
+			invalid_expiry_year : '[data-stripe=exp-year]',
+			invalid_cvc : '[data-stripe=cvc]',
+			expired_card : '[data-stripe]',
+			incorrect_cvc : '[data-stripe=cvc]',
+			card_declined : '[data-stripe]',
+			missing : '[data-stripe]',
+			processing_error : '[data-stripe]',
+			rate_limit : '[data-stripe]'
+		};
+		
 		if (response.error) {
 			$(".payment-errors").show().empty();
+			$("[data-stripe]").parent().removeClass('has-error');
+			
+			
 			// Show the errors on the form
 			// TODO: see http://stackoverflow.com/questions/23437439/non-english-texts-in-stripe-possible 
 			// use the code for handle the localization
 			$form.find('.payment-errors').append("<p><strong>"+response.error.message+"</strong></p>");
 			$form.find('button').prop('disabled', false);
+			$form.find(errorCodeToSelectorMap[response.error.code]).parent().addClass('has-error');
 			
 		} else {
 			$(".payment-errors").hide();

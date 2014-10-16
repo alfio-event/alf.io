@@ -141,7 +141,7 @@ public class AdminApiController {
     public LocationDescriptor geocodeAddress(@RequestParam("location") String address) {
         Pair<String, String> coordinates = locationManager.geocode(address);
         TimeZone timezone = locationManager.getTimezone(coordinates);
-        return LocationDescriptor.fromGeoData(coordinates, timezone, configurationManager.getRequiredValue(MAPS_CLIENT_API_KEY));
+        return LocationDescriptor.fromGeoData(coordinates, timezone, Optional.ofNullable(configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY, null)));
     }
 
 }

@@ -179,6 +179,7 @@ create table configuration(
   c_value varchar(2048) not null,
   description varchar(2048)
 );
+alter table configuration add constraint "unique_configuration_c_key" unique(c_key);
 
 
 insert into configuration (c_key, c_value, description) values

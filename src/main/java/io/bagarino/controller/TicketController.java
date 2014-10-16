@@ -50,6 +50,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -85,6 +86,18 @@ public class TicketController {
 		this.ticketRepository = ticketRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.mailManager = mailManager;
+	}
+	
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.GET)
+	public String showTicket(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, 
+			@PathVariable("ticketIdentifier") String ticketIdentifier, Model model) {
+		
+		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
+		check(data.getMiddle(), data.getRight());
+		
+		model.addAttribute("ticket", data.getRight());
+		
+		return "/event/show-ticket";
 	}
 
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.POST)
@@ -124,7 +137,7 @@ public class TicketController {
 	}
 	
 
-	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/download-ticket/{ticketIdentifier}", method = RequestMethod.GET)
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}/download-ticket", method = RequestMethod.GET)
 	public void generateTicketPdf(@PathVariable("eventName") String eventName,
 			@PathVariable("reservationId") String reservationId,
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response)
@@ -140,6 +153,24 @@ public class TicketController {
 		try (OutputStream os = response.getOutputStream()) {
 			preparePdfTicket(data.getLeft(), ticket).createPDF(os);
 		}
+	}
+	
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}/code.png", method = RequestMethod.GET)
+	public void generateTicketCode(@PathVariable("eventName") String eventName,
+			@PathVariable("reservationId") String reservationId,
+			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response) throws IOException, WriterException {
+		
+		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
+		Event event = data.getLeft();
+		Ticket ticket = data.getRight();
+		
+		check(data.getMiddle(), ticket);
+		
+		String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
+		
+		response.setContentType("image/png");
+		response.getOutputStream().write(createQRCode(qrCodeText));
+		
 	}
 	
 	private void check(TicketReservation reservation, Ticket ticket) {

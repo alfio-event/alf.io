@@ -16,6 +16,7 @@
  */
 package io.bagarino.config;
 
+import static java.util.Optional.ofNullable;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.repository.user.AuthorityRepository;
@@ -62,8 +63,9 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
             log.info("*******************************************************");
 
             configurationManager.save(ConfigurationKeys.INIT_COMPLETED, "true");
-            configurationManager.save(ConfigurationKeys.MAPS_SERVER_API_KEY, System.getProperty("maps.serverApiKey"));
-            configurationManager.save(ConfigurationKeys.MAPS_CLIENT_API_KEY, System.getProperty("maps.clientApiKey"));
+            
+            ofNullable(System.getProperty("maps.serverApiKey")).ifPresent((serverApiKey) -> configurationManager.save(ConfigurationKeys.MAPS_SERVER_API_KEY, serverApiKey));
+            ofNullable(System.getProperty("maps.clientApiKey")).ifPresent((clientApiKey) -> configurationManager.save(ConfigurationKeys.MAPS_CLIENT_API_KEY, clientApiKey));
         }
     }
 }
