@@ -7,8 +7,6 @@ div.col-md-8.col-md-offset-2 {
 	background-color:white;
 	padding-top:1em;
 	padding-bottom:1em;
-	margin-top:1em;
-	margin-bottom:1em;
 }
 
 div.col-md-8.col-md-offset-2 > h1 {
@@ -19,17 +17,16 @@ div.col-md-8.col-md-offset-2 > h1 {
 	text-align: center;
 }
 
+.img-center {
+	margin:auto;
+}
+
 .bagarino-lang {
 	text-align: right;
 }
 
 .event-expired {
 	color:#bbb;
-}
-
-.width-13-center {
-	width: 13px;
-	text-align: center;
 }
 
 p.ticket-info {

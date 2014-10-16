@@ -71,6 +71,10 @@ public class ConfigurationManager {
                 .map(Configuration::getValue)
                 .orElse(defaultValue);
     }
+    
+    public Optional<String> getStringConfigValue(String key) {
+    	return optionally(() -> configurationRepository.findByKey(key)).map(Configuration::getValue);
+    }
 
     public String getRequiredValue(String key) {
         return optionally(() -> configurationRepository.findByKey(key))

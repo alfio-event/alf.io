@@ -17,11 +17,14 @@
 package io.bagarino.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
+
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -104,6 +107,11 @@ public class Event {
     @JsonIgnore
     public String getPrivateKey() {
         return privateKey;
+    }
+    
+    @JsonIgnore
+    public Pair<String, String> getLatLong() {
+    	return Pair.of(latitude, longitude);
     }
 
     /**

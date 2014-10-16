@@ -17,10 +17,14 @@
 package io.bagarino.controller;
 
 
+import io.bagarino.controller.api.support.LocationDescriptor;
+import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.Event;
 import io.bagarino.model.TicketCategory;
+import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
+import io.bagarino.repository.user.OrganizationRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -30,7 +34,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static io.bagarino.util.OptionalWrapper.optionally;
 
@@ -39,11 +45,16 @@ public class EventController {
 
     private final EventRepository eventRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final ConfigurationManager configurationManager;
+    private final OrganizationRepository organizationRepository;
 
 	@Autowired
-	public EventController(EventRepository eventRepository,
+	public EventController(ConfigurationManager configurationManager, EventRepository eventRepository,
+			OrganizationRepository organizationRepository,
 			TicketCategoryRepository ticketCategoryRepository) {
+		this.configurationManager = configurationManager;
 		this.eventRepository = eventRepository;
+		this.organizationRepository = organizationRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 	}
 
@@ -73,8 +84,17 @@ public class EventController {
 		//hide access restricted ticket categories
 		List<SaleableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(event.get().getId()).stream().filter((c) -> !c.isAccessRestricted()).map((m) -> new SaleableTicketCategory(m, now)).collect(Collectors.toList());
 		//
-		model.addAttribute("event", event.get())//
-			.addAttribute("ticketCategories", t);
+		
+		Event ev = event.get();
+		
+		LocationDescriptor ld = LocationDescriptor.fromGeoData(ev.getLatLong(), TimeZone.getTimeZone(ev.getTimeZone()),
+				configurationManager.getStringConfigValue(ConfigurationKeys.MAPS_CLIENT_API_KEY));
+		
+		model.addAttribute("event", ev)//
+			.addAttribute("organizer", organizationRepository.getById(ev.getOrganizationId()))
+			.addAttribute("ticketCategories", t)//
+			.addAttribute("amountOfTickets", IntStream.rangeClosed(0, configurationManager.getIntConfigValue(ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5)).toArray())//
+			.addAttribute("locationDescriptor", ld);
 		model.asMap().putIfAbsent("hasErrors", false);//TODO: refactor
 		return "/event/show-event";
 	}
