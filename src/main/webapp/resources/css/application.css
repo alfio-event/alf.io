@@ -5,12 +5,15 @@ body {
 
 div.col-md-8.col-md-offset-2 {
 	background-color:white;
-	padding-top:1em;
-	padding-bottom:1em;
 }
 
-div.col-md-8.col-md-offset-2 > h1 {
+div.col-md-8.col-md-offset-2 h1 {
 	margin-top:0;
+}
+
+div.col-md-8.col-md-offset-2 > div {
+	margin-top:1em;
+	margin-bottom:1em;
 }
 
 .text-align-center {
@@ -36,4 +39,18 @@ p.ticket-info {
 
 .hide-by-default {
 	display: none;
+}
+
+
+.list-group-item {
+	border-left:none;
+	border-right:none;
+}
+
+.list-group-item:first-child {
+	border-top:none;
+}
+
+.list-group-item:last-child {
+	border-bottom:none;
 }

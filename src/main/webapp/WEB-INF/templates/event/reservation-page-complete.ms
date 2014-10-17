@@ -15,10 +15,10 @@
 </form>
 
 {{#ticketsAreAllAssigned}}
-<p class="bg-info ticket-info">You can update the owner of a ticket: a new email will be sent: the previous sent ticket will be invalidated.</p>
+<p class="bg-info ticket-info">{{#i18n}}reservation-page-complete.info-update{{/i18n}}</p>
 {{/ticketsAreAllAssigned}}
 {{^ticketsAreAllAssigned}}
-<p class="bg-info ticket-info">Please assign all your tickets.</p>
+<p class="bg-info ticket-info">{{#i18n}}reservation-page-complete.info-assign{{/i18n}}</p>
 {{/ticketsAreAllAssigned}}
 
 <ul class="list-group">
@@ -27,12 +27,12 @@
 		<li class="list-group-item">Category: {{key}} -	ticket:
 			{{#assigned}}
 				<div>
-					<p>Assigned to <strong>{{fullName}}</strong> &lt;{{email}}&gt;</p>
+					<p>{{#i18n}}reservation-page-complete.assigned-to [{{fullName}}] [{{email}}]{{/i18n}}</p>
 					<ul>
-						<li> <a href="{{reservationId}}/{{uuid}}" class="btn btn-link">Show ticket</a>
+						<li> <a href="{{reservationId}}/{{uuid}}" class="btn btn-link">{{#i18n}}reservation-page-complete.show-ticket{{/i18n}}</a>
 						<li> <a href="{{reservationId}}/{{uuid}}/download-ticket" class="btn btn-link">{{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a>
 						<li> <form method="post" action="{{reservationId}}/{{uuid}}/send-ticket-by-email" class="form-inline"><button type="submit" class="btn btn-link">{{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{email}}]{{/i18n}}</button><input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}"></form>
-						<li> <a href="#ticket-{{uuid}}" class="btn btn-link update-ticket-owner">Update ticket owner</a>
+						<li> <a href="#ticket-{{uuid}}" class="btn btn-link update-ticket-owner">{{#i18n}}reservation-page-complete.update-ticket-owner{{/i18n}}</a>
 					</ul>
 					
 				</div>

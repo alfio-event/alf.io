@@ -28,7 +28,7 @@
 		<div>{{event.description}}</div>
 	</div>
 	<div class="col-md-6">
-		<img src="{{locationDescriptor.mapUrl}}" class="img-responsive img-center img-rounded">
+		<img src="{{locationDescriptor.mapUrl}}" class="img-responsive img-center">
 	</div>
 </div>
 
