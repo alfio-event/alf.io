@@ -20,6 +20,10 @@ div.col-md-8.col-md-offset-2 > div {
 	text-align: center;
 }
 
+.event-description {
+	margin-top:1em;
+}
+
 .img-center {
 	margin:auto;
 }

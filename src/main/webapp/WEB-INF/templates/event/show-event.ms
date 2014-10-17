@@ -25,7 +25,7 @@
 			{{/event.sameDay}}
 		</div>
 		<div>{{event.location}}</div>
-		<div>{{event.description}}</div>
+		<div class="event-description">{{event.description}}</div>
 	</div>
 	<div class="col-md-6">
 		<img src="{{locationDescriptor.mapUrl}}" class="img-responsive img-center">
