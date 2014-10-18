@@ -64,8 +64,8 @@ create table authority(
 
 create table ticket_category (
 	id serial primary key not null, 
-	inception timestamp not null, 
-	expiration timestamp not null,
+	inception timestamp with time zone not null, 
+	expiration timestamp with time zone not null,
 	max_tickets integer not null,
 	name varchar(255) not null,
     description varchar(1024),
@@ -80,8 +80,9 @@ create table event(
   	location varchar(2048) not null,
 	latitude varchar(255) not null, 
 	longitude varchar(255) not null, 
-	start_ts timestamp not null,
-	end_ts timestamp not null,
+	start_ts timestamp with time zone not null,
+	end_ts timestamp with time zone not null,
+	time_zone varchar(255) not null,
   	regular_price_cts integer not null,
   	currency varchar(3),
   	available_seats integer not null,
@@ -105,7 +106,7 @@ create table payment_proxy(
 
 create table tickets_reservation(
 	id varchar(255) primary key not null,
-	validity timestamp not null,
+	validity timestamp with time zone not null,
 	status varchar(255) not null,
 	full_name varchar(255),
 	email_address varchar(255),
@@ -116,7 +117,7 @@ create table tickets_reservation(
 create table ticket (
 	id serial primary key not null,
   	uuid varchar(255) not null,
-	creation timestamp not null, 
+	creation timestamp with time zone not null, 
 	category_id integer not null, 
 	event_id integer not null, 
 	status varchar(255) not null, 

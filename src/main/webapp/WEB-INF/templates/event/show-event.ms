@@ -2,7 +2,7 @@
 
 <h1>{{event.shortName}}</h1>
 <div class="row">
-	<div class="col-md-6">
+	<div class="col-md-7">
 		<div>{{#i18n}}show-event.by{{/i18n}} <strong>{{organizer.name}}</strong> &lt;<a href="mailto:{{organizer.email}}">{{organizer.email}}</a>&gt;</div>
 		<div>
 			{{#event.sameDay}}
@@ -27,7 +27,7 @@
 		<div>{{event.location}}</div>
 		<div class="event-description">{{event.description}}</div>
 	</div>
-	<div class="col-md-6">
+	<div class="col-md-5">
 		<img src="{{locationDescriptor.mapUrl}}" class="img-responsive img-center">
 	</div>
 </div>
