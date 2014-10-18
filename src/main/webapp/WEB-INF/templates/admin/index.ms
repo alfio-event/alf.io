@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/resources/bower_components/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="/resources/css/admin.css" />
     <link rel="stylesheet" href="/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
     <script src="/resources/bower_components/jquery/dist/jquery.js"></script>
     <script src="/resources/bower_components/lodash/dist/lodash.min.js"></script>
     <script src="/resources/bower_components/moment/min/moment-with-locales.js"></script>
@@ -21,6 +22,7 @@
     <script src="/resources/js/admin/directive/admin-directive.js"></script>
     <script src="/resources/js/admin/filter/util.js"></script>
     <script src="/resources/js/admin/service/service.js"></script>
+    <script type="text/javascript" src="/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
 <body>

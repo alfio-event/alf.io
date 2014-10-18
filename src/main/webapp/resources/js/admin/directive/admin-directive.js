@@ -85,64 +85,50 @@
         };
     });
 
-    directives.directive('dateTime', function() {
-        return {
-            templateUrl: '/resources/angularTemplates/admin/partials/form/dateTime.html',
-            scope: {
-                modelObject: '=',
-                prefix: '@',
-                idPrefix: '@',
-                dateCellClass: '@',
-                timeCellClass: '@',
-                notBefore: '@'
-            },
-            link: function(scope, element, attrs) {
-                scope.open = function($event) {
-                    $event.preventDefault();
-                    $event.stopPropagation();
-                    scope.opened = true;
-                };
-
-                var date = "";
-                if(angular.isDefined(scope.modelObject.date)) {
-                    date = scope.modelObject.date;
-                }
-                scope.date = moment(date).format('YYYY-MM-DD');
-                scope.minDate = moment().toDate();
-
-                scope.$watch('date', function(d) {
-                    if(angular.isDefined(d) && angular.isDefined(scope.modelObject)) {
-                        var date = moment(d);
-                        if(date.isValid()) {
-                            scope.modelObject['date'] = date.format('YYYY-MM-DD');
-                        }
-                    }
-                });
-            }
-        }
-    });
-
-    directives.directive('afterDate', function() {
+    directives.directive('dateRange', function() {
         return {
             restrict: 'A',
-            scope: false,
-            link: function(scope, element, attrs) {
-                var setDate = function(val) {
-                    var minDate = parseDate(val);
-                    scope.minDate = minDate.toDate();
-                    var d;
-                    if(!angular.isDefined(scope.modelObject.date)
-                        || !(d = moment(scope.modelObject.date)).isValid()
-                        || d.isBefore(minDate)) {
-                        scope.date = minDate.format('YYYY-MM-DD');
+            scope: {
+                minDate: '=',
+                maxDate: '=',
+                startDate: '=',
+                startModelObj: '=startModel',
+                endModelObj: '=endModel'
+            },
+            require: '^ngModel',
+            link: function(scope, element, attrs, ctrl) {
+
+                var fillDate = function(modelObject) {
+                    if(!angular.isDefined(modelObject.date)) {
+                        modelObject.date = {};
+                        modelObject.time = {};
                     }
                 };
-                setDate(attrs.afterDate);
-                attrs.$observe('afterDate', function(val) {
-                    setDate(val);
+                fillDate(scope.startModelObj);
+                fillDate(scope.endModelObj);
+                var minDate = scope.minDate || moment();
+
+                element.daterangepicker({
+                    format: 'YYYY-MM-DD HH:mm',
+                    separator: ' / ',
+                    startDate: scope.startDate,
+                    minDate: minDate,
+                    maxDate: scope.maxDate,
+                    timePicker: true,
+                    timePicker12Hour: false,
+                    timePickerIncrement: 15
+                },
+                function(start, end, label) {
+                    scope.$apply(function() {
+                        scope.startModelObj['date'] = start.format('YYYY-MM-DD');
+                        scope.startModelObj['time'] = start.format('HH:mm');
+                        scope.endModelObj['date'] = end.format('YYYY-MM-DD');
+                        scope.endModelObj['time'] = end.format('HH:mm');
+                        ctrl.$setViewValue(element.val());
+                    });
                 });
             }
-        }
+        };
     });
 
     directives.directive('grabFocus', function() {

@@ -47,8 +47,10 @@
                     <textarea data-ng-model="event.description" name="description" id="description" required class="form-control" data-minlength="10"></textarea>
                     <field-error data-form-obj="editEvent" data-field-obj="editEvent.description" data-min-char="10"></field-error>
                 </div>
-                <date-time data-id-prefix="begin" data-prefix="Start" data-model-object="event.begin" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
-                <date-time data-id-prefix="end" data-prefix="End" data-model-object="event.end" data-not-before="{{event.begin.date}}" data-date-cell-class="col-sm-6 col-md-5" data-time-cell-class="col-sm-6 col-md-3"></date-time>
+                <div class="form-group">
+                    <label for="date">Event Date</label>
+                    <input type="text" data-date-range data-start-model="event.begin" data-end-model="event.end" data-ng-model="event.dateString" name="date" id="date" class="form-control" required />
+                </div>
                 <div class="form-group">
                     <label for="timeZone">Event time zone</label>
                     <input class="form-control" readonly name="timeZone" data-ng-model="event.geolocation.timeZone" required />
@@ -129,38 +131,49 @@
                         <input type="text" data-ng-model="ticketCategory.name" name="{{$index}}-name" id="{{$index}}-name" class="form-control" required />
                         <field-error data-form-obj="category" data-field-obj="category.name"></field-error>
                     </div>
-                    <div class="col-sm-12 col-md-4">
-                        <label for="{{$index}}-description">Description</label>
-                        <textarea data-ng-model="ticketCategory.description" name="{{$index}}-description" id="{{$index}}-description" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
+
+                    <div class="col-sm-12 col-md-3">
+                        <label class="control-label">Category type</label>
+                        <div class="form-group">
+                            <div class="radio-inline">
+                                <label>
+                                    <input type="radio" name="{{index}}-tokenGenerationRequested" data-ng-model="ticketCategory.tokenGenerationRequested" value="false">
+                                    Public
+                                </label>
+                            </div>
+                            <div class="radio-inline">
+                                <label>
+                                    <input type="radio" name="{{index}}-tokenGenerationRequested" data-ng-model="ticketCategory.tokenGenerationRequested" value="true">
+                                    Restricted
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-sm-12 col-md-4">
+
+                    <div class="col-sm-12 col-md-5">
                         <label for="{{$index}}-maxTickets">Available seats</label>
                         <input type="number" data-ng-model="ticketCategory.maxTickets" name="{{$index}}-maxTickets" id="{{$index}}-maxTickets" class="form-control" required />
                         <field-error data-form-obj="category" data-field-obj="category.maxTickets"></field-error>
                     </div>
+
                 </div>
                 <div class="row">
-                    <div class="col-sm-4">
-                        <div class="input-group">
-                            <span class="form-control"><strong>Generate ticket category access tokens</strong></span>
-                            <span class="input-group-addon">
-                                <input type="checkbox" data-ng-model="ticketCategory.tokenGenerationRequested" name="{{$index}}-tokenGenerationRequested" id="{{$index}}-tokenGenerationRequested">
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
+
                     <div class="col-sm-12 col-md-4">
-                        <date-time data-id-prefix="{{$index}}-inception" data-prefix="Initial sale" data-not-before="{{ticketCategory.notBefore}}" data-model-object="ticketCategory.inception" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
-                    </div>
-                    <div class="col-sm-12 col-md-4">
-                        <date-time data-id-prefix="{{$index}}-expiration" data-prefix="End sale" data-not-before="{{ticketCategory.inception.date}}" data-model-object="ticketCategory.expiration" data-date-cell-class="col-sm-6 col-md-7" data-time-cell-class="col-sm-6 col-md-5"></date-time>
+                        <label for="{{$index}}-date">Validity range</label>
+                        <input type="text" data-date-range data-start-model="ticketCategory.inception" data-end-model="ticketCategory.expiration" data-start-date="ticketCategory.notBefore" data-ng-model="ticketCategory.dateString" name="{{$index}}-date" id="{{$index}}-date" class="form-control" required />
                     </div>
 
-                    <div class="col-sm-12 col-md-4" data-ng-if="!event.freeOfCharge">
+                    <div class="col-sm-12 col-md-3" data-ng-if="!event.freeOfCharge">
                         <label for="{{$index}}-price">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event)}}%)</span></label>
                         <input type="number" data-ng-model="ticketCategory.price" name="{{$index}}-price" id="{{$index}}-price" class="form-control" required />
                     </div>
+
+                    <div class="col-sm-12 col-md-5">
+                        <label for="{{$index}}-description">Description</label>
+                        <textarea data-ng-model="ticketCategory.description" name="{{$index}}-description" id="{{$index}}-description" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
+                    </div>
+
                 </div>
             </div>
         </div>
