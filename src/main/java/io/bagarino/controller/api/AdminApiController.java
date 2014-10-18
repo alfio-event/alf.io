@@ -29,6 +29,7 @@ import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.model.user.Organization;
 import io.bagarino.model.user.User;
 import io.bagarino.util.ValidationResult;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -142,6 +143,14 @@ public class AdminApiController {
         Pair<String, String> coordinates = locationManager.geocode(address);
         TimeZone timezone = locationManager.getTimezone(coordinates);
         return LocationDescriptor.fromGeoData(coordinates, timezone, configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY));
+    }
+
+    @RequestMapping(value = "/location/map", method = GET)
+    public String getMapUrl(@RequestParam("lat") String latitude, @RequestParam("long") String longitude) {
+        Validate.notBlank(latitude);
+        Validate.notBlank(longitude);
+        LocationDescriptor descriptor = LocationDescriptor.fromGeoData(Pair.of(latitude, longitude), TimeZone.getDefault(), configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY));
+        return descriptor.getMapUrl();
     }
 
 }

@@ -67,11 +67,11 @@
 
     baseServices.service("LocationService", function($http, HttpErrorHandler) {
         return {
-            showOnMap : function(location) {
-                return $http.get('/admin/api/location/map.json?location='+location).error(HttpErrorHandler.handle);
-            },
             geolocate : function(location) {
                 return $http.get('/admin/api/location/geo.json?location='+location).error(HttpErrorHandler.handle);
+            },
+            getMapUrl : function(latitude, longitude) {
+                return $http.get('/admin/api/location/map.json?lat='+latitude+'&long='+longitude).error(HttpErrorHandler.handle);
             }
         };
     });

@@ -214,11 +214,18 @@
         };
     });
 
-    admin.controller('EventDetailController', function($scope, $stateParams, OrganizationService, EventService) {
+    admin.controller('EventDetailController', function($scope, $stateParams, OrganizationService, EventService, LocationService) {
         EventService.getEvent($stateParams.eventName).success(function(result) {
             $scope.event = result.event;
             $scope.organization = result.organization;
             $scope.ticketCategories = result.ticketCategories;
+            $scope.loadingMap = true;
+            LocationService.getMapUrl(result.event.latitude, result.event.longitude).success(function(mapUrl) {
+                $scope.event.geolocation = {
+                    mapUrl: mapUrl
+                };
+                $scope.loadingMap = false;
+            });
         });
 
         $scope.evaluateClass = function(token) {
