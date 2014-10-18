@@ -27,7 +27,7 @@ import java.util.TimeZone;
 public class MockLocationManager implements LocationManager {
     @Override
     public Pair<String, String> geocode(String address) {
-        return Pair.of("0", "0");
+        return Pair.of("40.1740944","18.168802");//home sweet home :P
     }
 
     @Override
