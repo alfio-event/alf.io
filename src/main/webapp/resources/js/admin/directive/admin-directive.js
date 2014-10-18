@@ -36,7 +36,7 @@
     directives.directive("organizationsList", function() {
         return {
             scope: true,
-            templateUrl: '/resources/angularTemplates/admin/partials/main/organizations.html',
+            templateUrl: '/resources/angular-templates/admin/partials/main/organizations.html',
             controller: function($scope, $rootScope, OrganizationService) {
                 var loadOrganizations = function() {
                     OrganizationService.getAllOrganizations().success(function(result) {
@@ -55,7 +55,7 @@
     directives.directive("usersList", function() {
         return {
             scope: true,
-            templateUrl: '/resources/angularTemplates/admin/partials/main/users.html',
+            templateUrl: '/resources/angular-templates/admin/partials/main/users.html',
             controller: function($scope, $rootScope, UserService) {
                 $scope.users = [];
                 var loadUsers = function() {
@@ -75,7 +75,7 @@
     directives.directive('eventsList', function() {
         return {
             scope: true,
-            templateUrl: '/resources/angularTemplates/admin/partials/main/events.html',
+            templateUrl: '/resources/angular-templates/admin/partials/main/events.html',
             controller: function($scope, EventService) {
                 EventService.getAllEvents().success(function(data) {
                     $scope.events = data;
@@ -143,7 +143,7 @@
     directives.directive('controlButtons', function() {
         return {
             restrict: 'E',
-            templateUrl: '/resources/angularTemplates/admin/partials/form/controlButtons.html',
+            templateUrl: '/resources/angular-templates/admin/partials/form/controlButtons.html',
             scope: {
                 formObj: '=',
                 cancelHandler: '='
@@ -163,7 +163,7 @@
     directives.directive('fieldError', function() {
         return {
             restrict: 'E',
-            templateUrl: '/resources/angularTemplates/admin/partials/form/fieldError.html',
+            templateUrl: '/resources/angular-templates/admin/partials/form/fieldError.html',
             scope: {
                 formObj: '=',
                 fieldObj: '=',

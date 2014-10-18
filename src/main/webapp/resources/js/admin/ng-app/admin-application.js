@@ -2,7 +2,7 @@
     "use strict";
 
     var BASE_TEMPLATE_URL = "/admin/partials";
-    var BASE_STATIC_URL = "/resources/angularTemplates/admin/partials";
+    var BASE_STATIC_URL = "/resources/angular-templates/admin/partials";
     var PAYMENT_PROXY_DESCRIPTIONS = {
         "STRIPE": "Credit card payments",
         "PAYPAL": "PayPal account",
