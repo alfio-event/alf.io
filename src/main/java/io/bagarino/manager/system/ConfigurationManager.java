@@ -17,14 +17,18 @@
 package io.bagarino.manager.system;
 
 import io.bagarino.model.system.Configuration;
+import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.repository.system.ConfigurationRepository;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static io.bagarino.util.OptionalWrapper.optionally;
 
@@ -39,9 +43,9 @@ public class ConfigurationManager {
         this.configurationRepository = configurationRepository;
     }
 
-    public int getIntConfigValue(String key, int defaultValue) {
+    public int getIntConfigValue(ConfigurationKeys key, int defaultValue) {
         try {
-            Optional<String> value = Optional.ofNullable(configurationRepository.findByKey(key))
+            Optional<String> value = Optional.ofNullable(configurationRepository.findByKey(key.getValue()))
                     .map(Configuration::getValue);
             if(value.isPresent()) {
                 return Integer.parseInt(value.get());
@@ -57,28 +61,42 @@ public class ConfigurationManager {
                 .orElse(defaultValue);
     }
 
-    public void save(String key, String value) {
-        Optional<Configuration> conf = optionally(() -> configurationRepository.findByKey(key));
+    public void save(ConfigurationKeys key, String value) {
+        Optional<Configuration> conf = optionally(() -> configurationRepository.findByKey(key.getValue()));
         if(!conf.isPresent()) {
-            configurationRepository.insert(key, value);
+            configurationRepository.insert(key.getValue(), value, key.getDescription());
         } else {
-            configurationRepository.update(key, value);
+            configurationRepository.update(key.getValue(), value);
         }
     }
 
-    public String getStringConfigValue(String key, String defaultValue) {
-        return optionally(() -> configurationRepository.findByKey(key))
+    public String getStringConfigValue(ConfigurationKeys key, String defaultValue) {
+        return optionally(() -> configurationRepository.findByKey(key.getValue()))
                 .map(Configuration::getValue)
                 .orElse(defaultValue);
     }
     
-    public Optional<String> getStringConfigValue(String key) {
-    	return optionally(() -> configurationRepository.findByKey(key)).map(Configuration::getValue);
+    public Optional<String> getStringConfigValue(ConfigurationKeys key) {
+    	return optionally(() -> configurationRepository.findByKey(key.getValue())).map(Configuration::getValue);
     }
 
-    public String getRequiredValue(String key) {
-        return optionally(() -> configurationRepository.findByKey(key))
+    public String getRequiredValue(ConfigurationKeys key) {
+        return optionally(() -> configurationRepository.findByKey(key.getValue()))
                 .map(Configuration::getValue)
                 .orElseThrow(IllegalArgumentException::new);
+    }
+
+    public List<Configuration> loadAllIncludingMissing() {
+        final List<Configuration> existing = configurationRepository.findAll()
+                .stream()
+                .filter(c -> !ConfigurationKeys.fromValue(c.getKey()).isInternal())
+                .collect(Collectors.toList());
+        final List<Configuration> missing = Arrays.stream(ConfigurationKeys.visible())
+                .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
+                .map(k -> new Configuration(-1, k.getValue(), null, k.getDescription()))
+                .collect(Collectors.toList());
+        List<Configuration> result = new LinkedList<>(existing);
+        result.addAll(missing);
+        return result;
     }
 }

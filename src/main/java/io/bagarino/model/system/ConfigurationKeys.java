@@ -16,28 +16,52 @@
  */
 package io.bagarino.model.system;
 
-public final class ConfigurationKeys {
+import lombok.Getter;
 
-    public static final String INIT_COMPLETED = "INIT_COMPLETED";
-    public static final String STRIPE_SECRET_KEY = "STRIPE_SECRET_KEY";
-    public static final String STRIPE_PUBLIC_KEY = "STRIPE_PUBLIC_KEY";
-    public static final String MAPS_SERVER_API_KEY = "MAPS_SERVER_API_KEY";
-    public static final String MAPS_CLIENT_API_KEY = "MAPS_CLIENT_API_KEY";
-    public static final String SPECIAL_PRICE_CODE_LENGTH = "SPECIAL_PRICE_CODE_LENGTH";
-    public static final String MAX_AMOUNT_OF_TICKETS_BY_RESERVATION = "MAX_AMOUNT_OF_TICKETS_BY_RESERVATION";
-    
+import java.util.Arrays;
+import java.util.function.Predicate;
+
+@Getter
+public enum ConfigurationKeys {
+
+    INIT_COMPLETED("init succeeded", true),
+    STRIPE_SECRET_KEY("Stripe's secret key", false),
+    STRIPE_PUBLIC_KEY("Stripe's public key", false),
+    MAPS_SERVER_API_KEY("Google maps' server api key", false),
+    MAPS_CLIENT_API_KEY("Google maps' client api key", false),
+    SPECIAL_PRICE_CODE_LENGTH("Length of special price code", false),
+    MAX_AMOUNT_OF_TICKETS_BY_RESERVATION("Max amount of tickets", false),
 
     //smtp configuration related keys
-    public static final String SMTP_HOST = "SMTP_HOST";
-    public static final String SMTP_PORT = "SMTP_PORT";
-    public static final String SMTP_PROTOCOL = "SMTP_PROTOCOL"; //smtp or smtps
-    public static final String SMTP_USERNAME = "SMTP_USERNAME";
-    public static final String SMTP_PASSWORD = "SMTP_PASSWORD";
-    public static final String SMTP_FROM_EMAIL = "SMTP_FROM_EMAIL";
-    public static final String SMTP_PROPERTIES = "SMTP_PROPERTIES";
-    //
+    SMTP_HOST("SMTP hostname", false),
+    SMTP_PORT("SMTP port", false),
+    SMTP_PROTOCOL("SMTP Protocol (smtp or smtps)", false), //smtp or smtps
+    SMTP_USERNAME("SMTP Username", false),
+    SMTP_PASSWORD("SMTP Password", false),
+    SMTP_FROM_EMAIL("E-Mail sender", false),
+    SMTP_PROPERTIES("SMTP Properties", false);
 
-    private ConfigurationKeys() {
+    private static final Predicate<ConfigurationKeys> INTERNAL = ConfigurationKeys::isInternal;
+    private final String description;
+    private final boolean internal;
+
+    private ConfigurationKeys(String description, boolean internal) {
+        this.description = description;
+        this.internal = internal;
+    }
+
+    public String getValue() {
+        return name();
+    }
+
+    public static ConfigurationKeys fromValue(String value) {
+        return valueOf(value);
+    }
+
+    public static ConfigurationKeys[] visible() {
+        return Arrays.stream(values())
+                .filter(INTERNAL.negate())
+                .toArray(ConfigurationKeys[]::new);
     }
 
 }

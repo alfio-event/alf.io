@@ -32,8 +32,8 @@ public interface ConfigurationRepository {
     @Query("SELECT * FROM configuration where c_key = :key")
     Configuration findByKey(@Bind("key") String key);
 
-    @Query("INSERT into configuration(c_key, c_value) values(:key, :value)")
-    int insert(@Bind("key") String key, @Bind("value") String value);
+    @Query("INSERT into configuration(c_key, c_value, description) values(:key, :value, :description)")
+    int insert(@Bind("key") String key, @Bind("value") String value, @Bind("description") String description);
 
     @Query("UPDATE configuration set c_value = :value where c_key = :key")
     int update(@Bind("key") String existingKey, @Bind("value") String newValue);

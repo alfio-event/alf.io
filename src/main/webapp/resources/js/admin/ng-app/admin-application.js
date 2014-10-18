@@ -47,8 +47,13 @@
             })
             .state('events.detail', {
                 url: '/:eventName',
-                templateUrl: BASE_STATIC_URL + "/event/detail.html",
+                templateUrl: BASE_STATIC_URL + '/event/detail.html',
                 controller: 'EventDetailController'
+            })
+            .state('configuration', {
+                url: '/configuration',
+                templateUrl: BASE_STATIC_URL + '/configuration/index.html',
+                controller: 'ConfigurationController'
             })
     });
 
@@ -58,7 +63,7 @@
                 angular.forEach(validationResult.validationErrors, function(error) {
                     form.$setError(error.fieldName, error.message);
                 });
-                deferred.reject("invalid form");
+                deferred.reject('invalid form');
             }
             deferred.resolve();
         };
@@ -92,12 +97,12 @@
             validationPerformer($q, OrganizationService.checkOrganization, organization, form).then(function() {
                 OrganizationService.createOrganization(organization).success(function() {
                     $rootScope.$emit('ReloadOrganizations', {});
-                    $state.go("index");
+                    $state.go('index');
                 });
             }, angular.noop);
         };
         $scope.cancel = function() {
-            $state.go("index");
+            $state.go('index');
         };
     });
 
@@ -115,13 +120,13 @@
             validationPerformer($q, UserService.checkUser, user, form).then(function() {
                 UserService.createUser(user).success(function() {
                     $rootScope.$emit('ReloadUsers', {});
-                    $state.go("index");
+                    $state.go('index');
                 });
             }, angular.noop);
         };
 
         $scope.cancel = function() {
-            $state.go("index");
+            $state.go('index');
         };
 
     });
@@ -144,7 +149,7 @@
             $scope.allowedPaymentProxies = _.map(result, function(p) {
                 return {
                     id: p,
-                    description: PAYMENT_PROXY_DESCRIPTIONS[p] || "Unknown provider ("+p+")  Please check configuration"
+                    description: PAYMENT_PROXY_DESCRIPTIONS[p] || 'Unknown provider ('+p+')  Please check configuration'
                 };
             });
         });
@@ -194,13 +199,13 @@
         $scope.save = function(form, event) {
             validationPerformer($q, EventService.checkEvent, event, form).then(function() {
                 EventService.createEvent(event).success(function() {
-                    $state.go("index");
+                    $state.go('index');
                 });
             }, angular.noop);
         };
 
         $scope.cancel = function() {
-            $state.go("index");
+            $state.go('index');
         };
 
         $scope.updateLocation = function(location) {
@@ -264,6 +269,14 @@
         });
     });
 
+    admin.controller('ConfigurationController', function($scope, ConfigurationService) {
+        $scope.loading = true;
+        ConfigurationService.loadAll().success(function(result) {
+            $scope.settings = result;
+            $scope.loading = false;
+        });
+    });
+
     admin.run(function($rootScope) {
         var calculateNetPrice = function(event) {
             if(isNaN(event.regularPrice) || isNaN(event.vat)) {
@@ -277,7 +290,7 @@
 
         $rootScope.calculateTotalPrice = function(event, alreadySaved) {
             if(isNaN(event.regularPrice) || isNaN(event.vat)) {
-                return "0.00";
+                return '0.00';
             }
             var vat = numeral(0.0);
             if(alreadySaved || !event.vatIncluded) {

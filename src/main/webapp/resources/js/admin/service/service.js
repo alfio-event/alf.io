@@ -76,6 +76,14 @@
         };
     });
 
+    baseServices.service('ConfigurationService', function($http, HttpErrorHandler) {
+        return {
+            loadAll: function() {
+                return $http.get('/admin/api/configuration/load').error(HttpErrorHandler.handle);
+            }
+        };
+    });
+
     baseServices.service("HttpErrorHandler", function($rootScope, $log) {
         return {
             handle : function(error) {

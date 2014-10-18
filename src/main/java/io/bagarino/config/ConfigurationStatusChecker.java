@@ -16,9 +16,7 @@
  */
 package io.bagarino.config;
 
-import static java.util.Optional.ofNullable;
 import io.bagarino.manager.system.ConfigurationManager;
-import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.repository.user.AuthorityRepository;
 import io.bagarino.repository.user.UserRepository;
 import io.bagarino.util.PasswordGenerator;
@@ -28,6 +26,9 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+
+import static io.bagarino.model.system.ConfigurationKeys.*;
+import static java.util.Optional.ofNullable;
 
 @Component
 @Log4j2
@@ -51,7 +52,7 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
-        boolean initCompleted = configurationManager.getBooleanConfigValue(ConfigurationKeys.INIT_COMPLETED, false);
+        boolean initCompleted = configurationManager.getBooleanConfigValue(INIT_COMPLETED.getValue(), false);
         if (!initCompleted) {
             String adminPassword = PasswordGenerator.generateRandomPassword();
             userRepository.create("admin", passwordEncoder.encode(adminPassword), "The", "Administrator", "admin@localhost", true);
@@ -62,10 +63,10 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
             log.info("   {} ", adminPassword);
             log.info("*******************************************************");
 
-            configurationManager.save(ConfigurationKeys.INIT_COMPLETED, "true");
+            configurationManager.save(INIT_COMPLETED, "true");
             
-            ofNullable(System.getProperty("maps.serverApiKey")).ifPresent((serverApiKey) -> configurationManager.save(ConfigurationKeys.MAPS_SERVER_API_KEY, serverApiKey));
-            ofNullable(System.getProperty("maps.clientApiKey")).ifPresent((clientApiKey) -> configurationManager.save(ConfigurationKeys.MAPS_CLIENT_API_KEY, clientApiKey));
+            ofNullable(System.getProperty("maps.serverApiKey")).ifPresent((serverApiKey) -> configurationManager.save(MAPS_SERVER_API_KEY, serverApiKey));
+            ofNullable(System.getProperty("maps.clientApiKey")).ifPresent((clientApiKey) -> configurationManager.save(MAPS_CLIENT_API_KEY, clientApiKey));
         }
     }
 }

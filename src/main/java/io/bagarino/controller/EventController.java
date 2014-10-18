@@ -21,15 +21,15 @@ import io.bagarino.controller.api.support.LocationDescriptor;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.Event;
 import io.bagarino.model.TicketCategory;
-import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.user.OrganizationRepository;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.Date;
 import java.util.List;
@@ -38,6 +38,8 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static io.bagarino.model.system.ConfigurationKeys.MAPS_CLIENT_API_KEY;
+import static io.bagarino.model.system.ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION;
 import static io.bagarino.util.OptionalWrapper.optionally;
 
 @Controller
@@ -88,12 +90,12 @@ public class EventController {
 		Event ev = event.get();
 		
 		LocationDescriptor ld = LocationDescriptor.fromGeoData(ev.getLatLong(), TimeZone.getTimeZone(ev.getTimeZone()),
-				configurationManager.getStringConfigValue(ConfigurationKeys.MAPS_CLIENT_API_KEY));
+				configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY));
 		
 		model.addAttribute("event", ev)//
 			.addAttribute("organizer", organizationRepository.getById(ev.getOrganizationId()))
 			.addAttribute("ticketCategories", t)//
-			.addAttribute("amountOfTickets", IntStream.rangeClosed(0, configurationManager.getIntConfigValue(ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5)).toArray())//
+			.addAttribute("amountOfTickets", IntStream.rangeClosed(0, configurationManager.getIntConfigValue(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5)).toArray())//
 			.addAttribute("locationDescriptor", ld);
 		model.asMap().putIfAbsent("hasErrors", false);//TODO: refactor
 		return "/event/show-event";

@@ -21,13 +21,15 @@ import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
 import io.bagarino.manager.system.ConfigurationManager;
-import io.bagarino.model.system.ConfigurationKeys;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static io.bagarino.model.system.ConfigurationKeys.STRIPE_PUBLIC_KEY;
+import static io.bagarino.model.system.ConfigurationKeys.STRIPE_SECRET_KEY;
 
 @Component
 public class StripeManager {
@@ -40,11 +42,11 @@ public class StripeManager {
 	}
 
 	public String getSecretKey() {
-        return configurationManager.getRequiredValue(ConfigurationKeys.STRIPE_SECRET_KEY);
+        return configurationManager.getRequiredValue(STRIPE_SECRET_KEY);
 	}
 
 	public String getPublicKey() {
-		return configurationManager.getRequiredValue(ConfigurationKeys.STRIPE_PUBLIC_KEY);
+		return configurationManager.getRequiredValue(STRIPE_PUBLIC_KEY);
 	}
 
     /**

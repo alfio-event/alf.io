@@ -25,6 +25,7 @@ import io.bagarino.model.Event;
 import io.bagarino.model.modification.EventModification;
 import io.bagarino.model.modification.OrganizationModification;
 import io.bagarino.model.modification.UserModification;
+import io.bagarino.model.system.Configuration;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.model.user.Organization;
 import io.bagarino.model.user.User;
@@ -151,6 +152,11 @@ public class AdminApiController {
         Validate.notBlank(longitude);
         LocationDescriptor descriptor = LocationDescriptor.fromGeoData(Pair.of(latitude, longitude), TimeZone.getDefault(), configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY));
         return descriptor.getMapUrl();
+    }
+
+    @RequestMapping(value = "/configuration/load", method = GET)
+    public List<Configuration> loadConfiguration() {
+        return configurationManager.loadAllIncludingMissing();
     }
 
 }
