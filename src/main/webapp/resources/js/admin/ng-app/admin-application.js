@@ -275,6 +275,16 @@
             $scope.settings = result;
             $scope.loading = false;
         });
+        $scope.configurationChange = function(conf) {
+            if(!conf.value) {
+                return;
+            }
+            $scope.loading = true;
+            ConfigurationService.update(conf).success(function(result) {
+                $scope.settings = result;
+                $scope.loading = false;
+            });
+        };
     });
 
     admin.run(function($rootScope) {

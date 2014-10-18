@@ -80,6 +80,9 @@
         return {
             loadAll: function() {
                 return $http.get('/admin/api/configuration/load').error(HttpErrorHandler.handle);
+            },
+            update: function(configuration) {
+                return $http.post('/admin/api/configuration/update', configuration).error(HttpErrorHandler.handle);
             }
         };
     });

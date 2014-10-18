@@ -22,10 +22,12 @@ import io.bagarino.manager.location.LocationManager;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.manager.user.UserManager;
 import io.bagarino.model.Event;
+import io.bagarino.model.modification.ConfigurationModification;
 import io.bagarino.model.modification.EventModification;
 import io.bagarino.model.modification.OrganizationModification;
 import io.bagarino.model.modification.UserModification;
 import io.bagarino.model.system.Configuration;
+import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.model.user.Organization;
 import io.bagarino.model.user.User;
@@ -157,6 +159,12 @@ public class AdminApiController {
     @RequestMapping(value = "/configuration/load", method = GET)
     public List<Configuration> loadConfiguration() {
         return configurationManager.loadAllIncludingMissing();
+    }
+
+    @RequestMapping(value = "/configuration/update", method = POST)
+    public List<Configuration> updateConfiguration(@RequestBody ConfigurationModification configuration) {
+        configurationManager.save(ConfigurationKeys.fromValue(configuration.getKey()), configuration.getValue());
+        return loadConfiguration();
     }
 
 }
