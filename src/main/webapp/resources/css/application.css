@@ -5,18 +5,27 @@ body {
 
 div.col-md-8.col-md-offset-2 {
 	background-color:white;
-	padding-top:1em;
-	padding-bottom:1em;
+}
+
+div.col-md-8.col-md-offset-2 h1 {
+	margin-top:0;
+}
+
+div.col-md-8.col-md-offset-2 > div {
 	margin-top:1em;
 	margin-bottom:1em;
 }
 
-div.col-md-8.col-md-offset-2 > h1 {
-	margin-top:0;
-}
-
 .text-align-center {
 	text-align: center;
+}
+
+.event-description {
+	margin-top:1em;
+}
+
+.img-center {
+	margin:auto;
 }
 
 .bagarino-lang {
@@ -27,11 +36,6 @@ div.col-md-8.col-md-offset-2 > h1 {
 	color:#bbb;
 }
 
-.width-13-center {
-	width: 13px;
-	text-align: center;
-}
-
 p.ticket-info {
 	padding:15px;
 	margin-top:10px;
@@ -39,4 +43,18 @@ p.ticket-info {
 
 .hide-by-default {
 	display: none;
+}
+
+
+.list-group-item {
+	border-left:none;
+	border-right:none;
+}
+
+.list-group-item:first-child {
+	border-top:none;
+}
+
+.list-group-item:last-child {
+	border-bottom:none;
 }

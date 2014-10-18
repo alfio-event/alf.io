@@ -1,30 +1,36 @@
 {{>/event/page-top}}
 
 <h1>{{event.shortName}}</h1>
-<div>
-	<i class="fa fa-calendar width-13-center"></i> 
-	{{#event.sameDay}}
-		{{#i18n}}event-days.same-day 
-			[{{#format-date}}{{event.begin}}EEEEE dd MMMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] 
-			[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] 
-			[{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
-		{{/i18n}}
-	{{/event.sameDay}}
-	{{^event.sameDay}}
-		{{#i18n}}event-days.not-same-day 
-			[{{#format-date}}{{event.begin}}EEEEE dd MMMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-			[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
-		{{/i18n}} 
-		- 
-		{{#i18n}}event-days.not-same-day 
-			[{{#format-date}}{{event.end}}EEEEE dd MMMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-			[{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
-		{{/i18n}} 
-	{{/event.sameDay}}
+<div class="row">
+	<div class="col-md-6">
+		<div>{{#i18n}}show-event.by{{/i18n}} <strong>{{organizer.name}}</strong> &lt;<a href="mailto:{{organizer.email}}">{{organizer.email}}</a>&gt;</div>
+		<div>
+			{{#event.sameDay}}
+				{{#i18n}}event-days.same-day 
+					[{{#format-date}}{{event.begin}}EEEEE dd MMMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] 
+					[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] 
+					[{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
+				{{/i18n}}
+			{{/event.sameDay}}
+			{{^event.sameDay}}
+				{{#i18n}}event-days.not-same-day 
+					[{{#format-date}}{{event.begin}}EEEEE dd MMMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+					[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
+				{{/i18n}} 
+				- 
+				{{#i18n}}event-days.not-same-day 
+					[{{#format-date}}{{event.end}}EEEEE dd MMMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+					[{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
+				{{/i18n}} 
+			{{/event.sameDay}}
+		</div>
+		<div>{{event.location}}</div>
+		<div class="event-description">{{event.description}}</div>
+	</div>
+	<div class="col-md-6">
+		<img src="{{locationDescriptor.mapUrl}}" class="img-responsive img-center">
+	</div>
 </div>
-<div><i class="fa fa-map-marker width-13-center"></i> {{event.location}}</div>
-<div>{{event.description}}</div>
-
 
 <h2>{{#i18n}}show-event.tickets{{/i18n}}</h2>
 
@@ -37,7 +43,6 @@
 
 </div>
 {{/hasErrors}}
-
 
 <form method="post" action="reserve-tickets" class="form-horizontal">
 	<ul class="list-group">
@@ -81,7 +86,9 @@
 				<div class="col-sm-2 text-align-center">
 					{{#saleable}}
 						<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
-						<input name="reservation[{{-index}}].amount" type="text" class="form-control text-align-center" placeholder="0" autocomplete="off" pattern="\d+">
+						<select name="reservation[{{-index}}].amount" class="form-control text-align-center" placeholder="0" autocomplete="off">
+							{{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
+						</select>
 					{{/saleable}}
 					{{^saleable}}
 						<label class="control-label">N/A</label>
