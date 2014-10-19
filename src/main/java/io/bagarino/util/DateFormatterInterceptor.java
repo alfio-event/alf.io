@@ -54,6 +54,17 @@ public class DateFormatterInterceptor extends HandlerInterceptorAdapter {
 	private static final String TZ_LABEL = "timezone:";
 	private static final String LOCALE_LABEL = "locale:";
 	
+	public static final Mustache.Lambda FORMAT_DATE = (frag, out) -> {
+		try {
+			String execution = frag.execute().trim();
+			Date d = DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.parse(substring(execution, 0, execution.indexOf(" ")));
+			Triple<String, TimeZone, Locale> p = parseParams(execution);
+			out.write(DateFormatUtils.format(d, p.getLeft(), p.getMiddle(), p.getRight()));
+		} catch (ParseException e) {
+			throw new IllegalArgumentException(e);
+		}
+	};
+	
 	private static Triple<String, TimeZone, Locale> parseParams(String r) {
 		
 		int indexTZ = r.indexOf(TZ_LABEL), indexLocale = r.indexOf(LOCALE_LABEL), end = Math.min(indexTZ != -1 ? indexTZ : r.length(), indexLocale != - 1 ? indexLocale : r.length());
@@ -73,17 +84,7 @@ public class DateFormatterInterceptor extends HandlerInterceptorAdapter {
 			ModelAndView modelAndView) throws Exception {
 
 		if (modelAndView != null) {
-			Mustache.Lambda formatDate = (frag, out) -> {
-				try {
-					String execution = frag.execute().trim();
-					Date d = DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.parse(substring(execution, 0, execution.indexOf(" ")));
-					Triple<String, TimeZone, Locale> p = parseParams(execution);
-					out.write(DateFormatUtils.format(d, p.getLeft(), p.getMiddle(), p.getRight()));
-				} catch (ParseException e) {
-					throw new IllegalArgumentException(e);
-				}
-			};
-			modelAndView.addObject("format-date", formatDate);
+			modelAndView.addObject("format-date", FORMAT_DATE);
 		}
 		
 		super.postHandle(request, response, handler, modelAndView);
