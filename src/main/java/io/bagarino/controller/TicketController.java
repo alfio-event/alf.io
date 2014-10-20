@@ -24,10 +24,12 @@ import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
+import io.bagarino.model.user.Organization;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
+import io.bagarino.repository.user.OrganizationRepository;
 import io.bagarino.util.DateFormatterInterceptor;
 
 import java.io.ByteArrayOutputStream;
@@ -38,7 +40,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -76,6 +77,7 @@ import com.samskivert.mustache.Mustache;
 public class TicketController {
 
 	private final EventRepository eventRepository;
+	private final OrganizationRepository organizationRepository;
 	private final TicketReservationRepository ticketReservationRepository;
 	private final TicketRepository ticketRepository;
 	private final TicketCategoryRepository ticketCategoryRepository;
@@ -83,11 +85,13 @@ public class TicketController {
 	private final LocalizationMessageInterceptor localizationMessageInterceptor;
 
 	@Autowired
-	public TicketController(EventRepository eventRepository, TicketReservationRepository ticketReservationRepository,
+	public TicketController(EventRepository eventRepository, OrganizationRepository organizationRepository, 
+			TicketReservationRepository ticketReservationRepository,
 			TicketRepository ticketRepository, TicketCategoryRepository ticketCategoryRepository,
 			MailManager mailManager,
 			LocalizationMessageInterceptor localizationMessageInterceptor) {
 		this.eventRepository = eventRepository;
+		this.organizationRepository = organizationRepository;
 		this.ticketReservationRepository = ticketReservationRepository;
 		this.ticketRepository = ticketRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
@@ -133,7 +137,7 @@ public class TicketController {
 		check(data.getMiddle(), data.getRight());
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		preparePdfTicket(request, response, data.getLeft(), data.getRight()).createPDF(baos);
+		preparePdfTicket(request, response, data.getLeft(), data.getMiddle(), data.getRight()).createPDF(baos);
 		
 		Attachment attachment = new Attachment("ticket-" + ticketIdentifier + ".pdf", new ByteArrayResource(baos.toByteArray()), "application/pdf");
 		
@@ -158,7 +162,7 @@ public class TicketController {
 		response.setContentType("application/pdf");
 		response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
 		try (OutputStream os = response.getOutputStream()) {
-			preparePdfTicket(request, response, data.getLeft(), ticket).createPDF(os);
+			preparePdfTicket(request, response, data.getLeft(), data.getMiddle(), ticket).createPDF(os);
 		}
 	}
 	
@@ -196,10 +200,11 @@ public class TicketController {
 		return Triple.of(event, reservation, ticket);
 	}
 
-	private ITextRenderer preparePdfTicket(HttpServletRequest request, HttpServletResponse response, Event event, Ticket ticket)
+	private ITextRenderer preparePdfTicket(HttpServletRequest request, HttpServletResponse response, Event event, TicketReservation ticketReservation, Ticket ticket)
 			throws Exception {
 		
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
+		Organization organization = organizationRepository.getById(event.getOrganizationId());
 		
 		//
 		String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
@@ -207,27 +212,26 @@ public class TicketController {
 		
 		//
 		//TODO add event organizer and display it :D
-		//
-
-		Map<String, Object> tmplModel = new HashMap<>();
-		tmplModel.put("ticket", ticket);
-		tmplModel.put("ticketCategory", ticketCategory);
-		tmplModel.put("event", event);
-		tmplModel.put("qrCodeDataUri", toDataUri(createQRCode(qrCodeText)));
-		tmplModel.put("format-date", DateFormatterInterceptor.FORMAT_DATE);
+		ModelAndView mv = new ModelAndView();
+		mv.addObject("ticket", ticket);
+		mv.addObject("reservation", ticketReservation);
+		mv.addObject("ticketCategory", ticketCategory);
+		mv.addObject("event", event);
+		mv.addObject("organization", organization);
+		mv.addObject("qrCodeDataUri", toDataUri(createQRCode(qrCodeText)));
 		
-		// TODO: ugly :(
-		ModelAndView mv = new ModelAndView("ticket.ms", tmplModel);
+		
+		//
+		mv.addObject("format-date", DateFormatterInterceptor.FORMAT_DATE);
 		localizationMessageInterceptor.postHandle(request, response, null, mv);
 		//
-		tmplModel = mv.getModel();
-
+		
 		InputStreamReader ticketTmpl = new InputStreamReader(
 				new ClassPathResource("/io/bagarino/templates/ticket.ms").getInputStream(), StandardCharsets.UTF_8);
 		String page = Mustache.compiler().escapeHTML(false).withFormatter((o) -> {
 							return (o instanceof Date) ? DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.format((Date) o)
 									: String.valueOf(o);
-						}).compile(ticketTmpl).execute(tmplModel);
+						}).compile(ticketTmpl).execute(mv.getModel());
 
 		ITextRenderer renderer = new ITextRenderer();
 		renderer.setDocumentFromString(page);
