@@ -106,7 +106,15 @@ public class TicketController {
 		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
 		check(data.getMiddle(), data.getRight());
 		
-		model.addAttribute("ticket", data.getRight());
+		
+		TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId());
+		Organization organization = organizationRepository.getById(data.getLeft().getOrganizationId());
+		
+		model.addAttribute("ticket", data.getRight())//
+				.addAttribute("reservation", data.getMiddle())//
+				.addAttribute("event", data.getLeft())//
+				.addAttribute("ticketCategory", ticketCategory)//
+				.addAttribute("organization", organization);
 		
 		return "/event/show-ticket";
 	}
@@ -134,17 +142,19 @@ public class TicketController {
 		
 		
 		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
-		check(data.getMiddle(), data.getRight());
+		Ticket ticket = data.getRight();
+		check(data.getMiddle(), ticket);
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		preparePdfTicket(request, response, data.getLeft(), data.getMiddle(), data.getRight()).createPDF(baos);
+		preparePdfTicket(request, response, data.getLeft(), data.getMiddle(), ticket).createPDF(baos);
 		
 		Attachment attachment = new Attachment("ticket-" + ticketIdentifier + ".pdf", new ByteArrayResource(baos.toByteArray()), "application/pdf");
 		
 		//TODO: complete
-		mailManager.mailer().send(data.getRight().getEmail(), "your ticket", "here attached your ticket", Optional.of("here attached your ticket"), attachment);
+		mailManager.mailer().send(ticket.getEmail(), "your ticket", "here attached your ticket", Optional.of("here attached your ticket"), attachment);
 		
-		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+		return "redirect:/event/" + eventName + "/reservation/" + reservationId
+				+ ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "");
 	}
 	
 
