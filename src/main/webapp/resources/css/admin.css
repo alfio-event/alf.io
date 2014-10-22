@@ -38,6 +38,11 @@ div.category-success {
     border-radius: 2px;
 }
 
+div.category-expired {
+    border-left: 5px solid #545558;
+    border-radius: 2px;
+}
+
 a.icon, a.icon:hover {
     text-decoration: none;
 }

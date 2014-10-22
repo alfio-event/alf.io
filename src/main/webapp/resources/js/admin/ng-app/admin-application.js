@@ -219,19 +219,32 @@
         };
     });
 
-    admin.controller('EventDetailController', function($scope, $stateParams, OrganizationService, EventService, LocationService) {
-        EventService.getEvent($stateParams.eventName).success(function(result) {
-            $scope.event = result.event;
-            $scope.organization = result.organization;
-            $scope.ticketCategories = result.ticketCategories;
-            $scope.loadingMap = true;
-            LocationService.getMapUrl(result.event.latitude, result.event.longitude).success(function(mapUrl) {
-                $scope.event.geolocation = {
-                    mapUrl: mapUrl
-                };
-                $scope.loadingMap = false;
+    admin.controller('EventDetailController', function($scope, $stateParams, OrganizationService, EventService, LocationService, $rootScope) {
+        var loadData = function() {
+            $scope.loading = true;
+            EventService.getEvent($stateParams.eventName).success(function(result) {
+                $scope.event = result.event;
+                $scope.organization = result.organization;
+                $scope.validCategories = _.filter(result.event.ticketCategories, function(tc) {
+                    return !tc.expired;
+                });
+                $scope.loading = false;
+                $scope.loadingMap = true;
+                LocationService.getMapUrl(result.event.latitude, result.event.longitude).success(function(mapUrl) {
+                    $scope.event.geolocation = {
+                        mapUrl: mapUrl
+                    };
+                    $scope.loadingMap = false;
+                });
             });
-        });
+        };
+        loadData();
+        $scope.evaluateCategoryStatusClass = function(index, category) {
+            if(category.expired) {
+                return 'category-expired';
+            }
+            return 'category-' + $rootScope.evaluateBarType(index);
+        };
 
         $scope.evaluateClass = function(token) {
             switch(token.status) {
@@ -246,12 +259,12 @@
             }
         };
 
-        $scope.isCollapsed = function(categoryWithStatistic) {
-            return !categoryWithStatistic.isTokenViewExpanded;
+        $scope.isCollapsed = function(category) {
+            return !category.isTokenViewExpanded;
         };
 
-        $scope.toggleCollapse = function(categoryWithStatistic) {
-            categoryWithStatistic.isTokenViewExpanded = !categoryWithStatistic.isTokenViewExpanded;
+        $scope.toggleCollapse = function(category) {
+            category.isTokenViewExpanded = !category.isTokenViewExpanded;
         };
 
         $scope.isPending = function(token) {
@@ -260,6 +273,14 @@
 
         $scope.isReady = function(token) {
             return token.status === 'WAITING';
+        };
+
+        $scope.moveOrphans = function(srcCategory, targetCategoryId, eventId) {
+            EventService.reallocateOrphans(srcCategory, targetCategoryId, eventId).success(function(result) {
+                if(result === 'OK') {
+                    loadData();
+                }
+            });
         };
     });
 

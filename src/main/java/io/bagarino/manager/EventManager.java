@@ -23,6 +23,7 @@ import io.bagarino.model.SpecialPrice;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
 import io.bagarino.model.modification.EventModification;
+import io.bagarino.model.modification.EventWithStatistics;
 import io.bagarino.model.modification.TicketCategoryWithStatistic;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.model.user.Organization;
@@ -34,6 +35,7 @@ import io.bagarino.repository.join.EventTicketCategoryRepository;
 import io.bagarino.util.MonetaryUtil;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -86,6 +88,13 @@ public class EventManager {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable
+    public List<EventWithStatistics> getAllEventsWithStatistics(String username) {
+        return getAllEvents(username).stream()
+                 .map(e -> new EventWithStatistics(e, loadTicketCategoriesWithStats(e)))
+                 .collect(toList());
+    }
+
     public Event getSingleEvent(String eventName, String username) {
         final Event event = eventRepository.findByShortName(eventName);
         //final int organizer = eventOrganizationRepository.getByEventId(event.getId()).getOrganizationId();
@@ -97,6 +106,11 @@ public class EventManager {
         return event;
     }
 
+    public EventWithStatistics getSingleEventWithStatistics(String eventName, String username) {
+        final Event event = getSingleEvent(eventName, username);
+        return new EventWithStatistics(event, loadTicketCategoriesWithStats(event));
+    }
+
     public List<TicketCategory> loadTicketCategories(Event event) {
         return eventTicketCategoryRepository.findByEventId(event.getId())
                     .stream()
@@ -104,9 +118,17 @@ public class EventManager {
                     .collect(toList());
     }
 
+    public TicketCategoryWithStatistic loadTicketCategoryWithStats(int categoryId, Event event) {
+        final TicketCategory tc = ticketCategoryRepository.getById(categoryId);
+        return new TicketCategoryWithStatistic(tc,
+                ticketRepository.countConfirmedTickets(event.getId(), tc.getId()),
+                specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId());
+    }
+
     public List<TicketCategoryWithStatistic> loadTicketCategoriesWithStats(Event event) {
         return loadTicketCategories(event).stream()
-                    .map(tc -> new TicketCategoryWithStatistic(tc, ticketRepository.countConfirmedTickets(event.getId(), tc.getId()), specialPriceRepository.findAllByCategoryId(tc.getId())))
+                    .map(tc -> new TicketCategoryWithStatistic(tc, ticketRepository.countConfirmedTickets(event.getId(), tc.getId()), specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId()))
+                    .sorted()
                     .collect(toList());
     }
 
@@ -124,6 +146,16 @@ public class EventManager {
         final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(eventId, creation, event, event.getRegularPriceInCents());
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
 
+    }
+
+    @Transactional
+    public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
+        Event event = eventRepository.findById(eventId);
+        TicketCategoryWithStatistic src = loadTicketCategoryWithStats(srcCategoryId, event);
+        TicketCategory target = ticketCategoryRepository.getById(targetCategoryId);
+        ticketCategoryRepository.updateSeatsAvailability(srcCategoryId, src.getSoldTickets());
+        ticketCategoryRepository.updateSeatsAvailability(targetCategoryId, target.getMaxTickets() + src.getNotSoldTickets());
+        specialPriceRepository.cancelExpiredTokens(srcCategoryId);
     }
 
     private MapSqlParameterSource[] prepareTicketsBulkInsertParameters(int eventId,

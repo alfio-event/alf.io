@@ -20,26 +20,33 @@ import io.bagarino.model.SpecialPrice;
 import io.bagarino.model.TicketCategory;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
+import lombok.experimental.Delegate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Getter
-public class TicketCategoryWithStatistic {
+public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWithStatistic> {
 
+    @Delegate
     private final TicketCategory ticketCategory;
     private final int soldTickets;
     private final BigDecimal soldTicketsPercent;
     private final List<SpecialPrice> tokenStatus;
+    private final ZoneId eventZoneId;
 
     public TicketCategoryWithStatistic(TicketCategory ticketCategory,
                                        int soldTickets,
-                                       List<SpecialPrice> tokenStatus) {
+                                       List<SpecialPrice> tokenStatus,
+                                       ZoneId eventZoneId) {
         this.ticketCategory = ticketCategory;
         this.soldTickets = soldTickets;
         this.tokenStatus = tokenStatus;
-        this.soldTicketsPercent = BigDecimal.valueOf(soldTickets).divide(BigDecimal.valueOf(ticketCategory.getMaxTickets()), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED);
+        this.eventZoneId = eventZoneId;
+        this.soldTicketsPercent = calcSoldTicketsPercent(ticketCategory, soldTickets);
     }
 
     public BigDecimal getNotSoldTicketsPercent() {
@@ -50,7 +57,24 @@ public class TicketCategoryWithStatistic {
         return ticketCategory.getMaxTickets() - soldTickets;
     }
 
-    public boolean isAccessRestricted() {
-        return ticketCategory.isAccessRestricted();
+    public boolean isExpired() {
+        return ZonedDateTime.now(eventZoneId).isAfter(ZonedDateTime.ofInstant(ticketCategory.getExpiration().toInstant(), eventZoneId));
     }
+
+    public boolean isContainingOrphans() {
+        return isExpired() && getNotSoldTickets() > 0;
+    }
+
+    @Override
+    public int compareTo(TicketCategoryWithStatistic o) {
+        ZonedDateTime exp = ZonedDateTime.ofInstant(getExpiration().toInstant(), eventZoneId);
+        ZonedDateTime exp2 = ZonedDateTime.ofInstant(o.getExpiration().toInstant(), o.eventZoneId);
+        return exp.compareTo(exp2);
+    }
+
+    private static BigDecimal calcSoldTicketsPercent(TicketCategory ticketCategory, int soldTickets) {
+        int maxTickets = Math.max(1, ticketCategory.getMaxTickets());
+        return BigDecimal.valueOf(soldTickets).divide(BigDecimal.valueOf(maxTickets), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED);
+    }
+
 }

@@ -63,29 +63,36 @@
         <h5 class="text-muted">Here the categories that have been defined for this event.</h5>
     </div>
 
-    <div data-ng-repeat="categoryWithStatistic in ticketCategories" class="container wMarginBottom" data-ng-class="'category-' + evaluateBarType($index)">
+    <div data-ng-repeat="ticketCategory in event.ticketCategories" class="container wMarginBottom" data-ng-class="evaluateCategoryStatusClass($index, ticketCategory)">
         <div class="page-header">
+            <div class="alert alert-danger" data-ng-if="ticketCategory.containingOrphans" data-ng-form="moveTickets">
+                <div class="form-inline">
+                    <i class="fa fa-warning"></i> This category contains orphan (not sold) tickets. Move them to another category:
+                    <select class="form-control" data-ng-model="targetCategoryId" required data-ng-options="category.id as category.name for category in validCategories"></select>
+                    <button class="btn btn-danger" data-ng-click="moveOrphans(ticketCategory, targetCategoryId, event.id)">apply</button>
+                </div>
+            </div>
             <div class="row">
                 <div class="col-sm-4">
-                    <h4>{{categoryWithStatistic.ticketCategory.name}}</h4>
-                    <h5 class="text-muted">{{categoryWithStatistic.ticketCategory.description}}</h5>
+                    <h4>{{ticketCategory.name}}</h4>
+                    <h5 class="text-muted">{{ticketCategory.description}}</h5>
                 </div>
                 <div class="col-sm-6">
                     <div class="row">
                         <div class="col-sm-4"><strong>Available seats</strong></div>
-                        <div class="col-sm-8">{{categoryWithStatistic.ticketCategory.maxTickets}}</div>
+                        <div class="col-sm-8">{{ticketCategory.maxTickets}}</div>
                     </div>
                     <div class="row">
                         <div class="col-sm-4"><strong>Initial sale date</strong></div>
-                        <div class="col-sm-8">{{categoryWithStatistic.ticketCategory.inception | date : 'dd/MM/yyyy HH:mm'}} </div>
+                        <div class="col-sm-8">{{ticketCategory.inception | date : 'dd/MM/yyyy HH:mm'}} </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-4"><strong>End sale date</strong></div>
-                        <div class="col-sm-8">{{categoryWithStatistic.ticketCategory.expiration | date : 'dd/MM/yyyy HH:mm'}} </div>
+                        <div class="col-sm-8">{{ticketCategory.expiration | date : 'dd/MM/yyyy HH:mm'}} </div>
                     </div>
                     <div class="row" data-ng-if="!event.freeOfCharge">
                         <div class="col-sm-4"><strong>Final price</strong></div>
-                        <div class="col-sm-8">{{calcCategoryPrice(categoryWithStatistic.ticketCategory, event) | currency : (event.currency || "")}}</div>
+                        <div class="col-sm-8">{{calcCategoryPrice(ticketCategory, event) | currency : (event.currency || "")}}</div>
                     </div>
                 </div>
             </div>
@@ -93,21 +100,21 @@
         <div class="row">
             <div class="col-sm-8">
                 <progress>
-                    <bar data-ng-if="categoryWithStatistic.soldTickets > 0" type="success" value="categoryWithStatistic.soldTicketsPercent">{{categoryWithStatistic.soldTickets}}</bar>
-                    <bar data-ng-if="categoryWithStatistic.notSoldTickets > 0" type="danger" value="categoryWithStatistic.notSoldTicketsPercent">{{categoryWithStatistic.notSoldTickets}}</bar>
+                    <bar data-ng-if="ticketCategory.soldTickets > 0" type="success" value="ticketCategory.soldTicketsPercent">{{ticketCategory.soldTickets}}</bar>
+                    <bar data-ng-if="ticketCategory.notSoldTickets > 0" type="danger" value="ticketCategory.notSoldTicketsPercent">{{ticketCategory.notSoldTickets}}</bar>
                 </progress>
             </div>
-            <div class="col-sm-4">sold: {{categoryWithStatistic.soldTickets}}, available: {{categoryWithStatistic.notSoldTickets}}</div>
+            <div class="col-sm-4">sold: {{ticketCategory.soldTickets}}, available: {{ticketCategory.notSoldTickets}}</div>
         </div>
-        <div data-ng-if="categoryWithStatistic.accessRestricted">
+        <div data-ng-if="ticketCategory.accessRestricted">
             <div class="wMarginBottom">
-                <button class="btn btn-default" data-ng-click="toggleCollapse(categoryWithStatistic)">
-                    <span data-ng-if="isCollapsed(categoryWithStatistic)">show</span><span data-ng-if="!isCollapsed(categoryWithStatistic)">hide</span> tokens
+                <button class="btn btn-default" data-ng-click="toggleCollapse(ticketCategory)">
+                    <span data-ng-if="isCollapsed(ticketCategory)">show</span><span data-ng-if="!isCollapsed(ticketCategory)">hide</span> tokens
                 </button>
             </div>
-            <div class="wMarginBottom" data-collapse="isCollapsed(categoryWithStatistic)">
+            <div class="wMarginBottom" data-collapse="isCollapsed(ticketCategory)">
                 <div class="row">
-                    <div class="col-sm-2" data-ng-repeat="token in categoryWithStatistic.tokenStatus"><i class="status-icon" data-ng-class="evaluateClass(token)"></i> {{token.code}}</div>
+                    <div class="col-sm-2" data-ng-repeat="token in ticketCategory.tokenStatus"><i class="status-icon" data-ng-class="evaluateClass(token)"></i> {{token.code}}</div>
                 </div>
             </div>
         </div>

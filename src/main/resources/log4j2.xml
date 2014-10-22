@@ -9,7 +9,7 @@
 		<logger name="io.bagarino" level="info" additivity="false">
 			<appender-ref ref="Console" />
 		</logger>
-        <logger name="org.springframework" level="error" additivity="false">
+        <logger name="org.springframework" level="warn" additivity="false">
 			<appender-ref ref="Console" />
 		</logger>
 		<root level="error">
