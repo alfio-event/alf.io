@@ -44,7 +44,7 @@
 </div>
 {{/hasErrors}}
 
-<form method="post" action="reserve-tickets" class="form-horizontal">
+<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reserve-tickets" class="form-horizontal">
 	<ul class="list-group">
 	{{#ticketCategories}}
 		<li class="list-group-item {{#expired}}event-expired{{/expired}}">

@@ -30,7 +30,7 @@ import java.util.TimeZone;
 public class LocationDescriptor {
 
     private static final String MAP_URL = "https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&key=${key}&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C${latitude},${longitude}";
-    private static final String OPENSTREETMAP_DE = "http://staticmap.openstreetmap.de/staticmap.php?center=${latitude},${longitude}&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C${latitude},${longitude}";
+    private static final String OPENSTREETMAP = "http://tyler-demo.herokuapp.com/?center=${latitude},${longitude}&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C${latitude},${longitude}";
 
     private final String timeZone;
     private final String latitude;
@@ -42,7 +42,7 @@ public class LocationDescriptor {
         params.put("latitude", coordinates.getLeft());
         params.put("longitude", coordinates.getRight());
         apiKey.ifPresent((key) -> params.put("key", key));
-        return new LocationDescriptor(timeZone.getID(), coordinates.getLeft(), coordinates.getRight(), new StrSubstitutor(params).replace(apiKey.isPresent() ? MAP_URL : OPENSTREETMAP_DE));
+        return new LocationDescriptor(timeZone.getID(), coordinates.getLeft(), coordinates.getRight(), new StrSubstitutor(params).replace(apiKey.isPresent() ? MAP_URL : OPENSTREETMAP));
     }
 
 }

@@ -86,6 +86,13 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         registry.addInterceptor(getCsrfInterceptor());
         registry.addInterceptor(getCSPInterceptor());
         registry.addInterceptor(getLocaleChangeInterceptor());
+        registry.addInterceptor(new HandlerInterceptorAdapter() {
+    		@Override
+    		public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+    				ModelAndView modelAndView) throws Exception {
+    			Optional.ofNullable(modelAndView).ifPresent(mv -> mv.addObject("request", request));
+    		}
+		});
     }
     
     //TODO: check why we are not able to get the default browser locale -> 
@@ -108,6 +115,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     		}
     	};
 	}
+    
 
 	@Bean
     public HandlerInterceptor getCsrfInterceptor() {

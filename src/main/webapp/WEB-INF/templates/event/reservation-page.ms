@@ -2,12 +2,12 @@
 
 {{#free}}
  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
- <script src="/resources/js/event/reservation-page.js"></script>
+ <script src="{{request.contextPath}}/resources/js/event/reservation-page.js"></script>
 {{/free}}
 {{^free}}
  <script src="https://js.stripe.com/v2/"></script>
  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
- <script src="/resources/js/event/reservation-page.js" data-stripe-key="{{stripe_p_key}}" id="stripe-key"></script>
+ <script src="{{request.contextPath}}/resources/js/event/reservation-page.js" data-stripe-key="{{stripe_p_key}}" id="stripe-key"></script>
 {{/free}}
 
 <h1>{{#i18n}}reservation-page.title{{/i18n}} {{event.shortName}}</h1>
@@ -46,7 +46,7 @@
 </ul>
 {{/hasErrors}}
 
-<form action="" method="POST" id="payment-form">
+<form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
 	<h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
 	<div class="form-group">
 		<label for="full-name">{{#i18n}}common.full-name{{/i18n}}</label>
