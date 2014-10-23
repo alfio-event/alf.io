@@ -32,7 +32,7 @@
 	</tr>
 	<tr>
 		<td>{{#i18n}}ticket.organized-by{{/i18n}}</td>
-		<td>{{organization.name}} &lt;{{organization.email}}&gt;</td>
+		<td>{{organization.name}} &lt;<a href="mailto:{{organization.email}}">{{organization.email}}</a>&gt;</td>
 	</tr>
 </table>
 		
@@ -52,7 +52,7 @@
 	</tr>
 	<tr>
 		<td>{{#i18n}}ticket.order-information{{/i18n}}</td>
-		<td>{{reservation.id}} by {{reservation.fullName}}</td>
+		<td>{{#i18n}}ticket.order-information-values [{{reservation.id}}] [{{reservation.fullName}}]{{/i18n}}</td>
 	</tr>
 </table>
 

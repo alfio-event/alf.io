@@ -9,6 +9,7 @@
 		{{#i18n}}reservation-page-complete.assign-your-tickets [{{event.shortName}}]{{/i18n}}
 	{{/ticketsAreAllAssigned}}
 </h1>
+
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/re-send-email" method="post">
 	<button type="submit" class="btn btn-link">{{#i18n}}reservation-page-complete.resend-reservation-email [{{reservation.email}}]{{/i18n}}</button>
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
@@ -24,7 +25,7 @@
 <ul class="list-group">
 {{#ticketsByCategory}}
 	{{#value}}
-		<li class="list-group-item">Category: {{key}} -	ticket:
+		<li class="list-group-item">{{#i18n}}reservation-page-complete.ticket-type{{/i18n}} <strong>{{key.name}}</strong>
 			{{#assigned}}
 				<div>
 					<p>{{#i18n}}reservation-page-complete.assigned-to [{{fullName}}] [{{email}}]{{/i18n}}</p>
@@ -71,6 +72,10 @@
 	{{/value}}
 {{/ticketsByCategory}}
 </ul>
+
+<div class="text-center">
+	{{#i18n}}reservation-page-complete.order-information [{{reservation.id}}] [{{reservation.fullName}}]{{/i18n}}
+</div>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <script src="{{request.contextPath}}/resources/js/event/reservation-page-complete.js"></script>
