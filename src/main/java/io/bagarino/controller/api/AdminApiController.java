@@ -21,11 +21,7 @@ import io.bagarino.manager.EventManager;
 import io.bagarino.manager.location.LocationManager;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.manager.user.UserManager;
-import io.bagarino.model.Event;
-import io.bagarino.model.modification.ConfigurationModification;
-import io.bagarino.model.modification.EventModification;
-import io.bagarino.model.modification.OrganizationModification;
-import io.bagarino.model.modification.UserModification;
+import io.bagarino.model.modification.*;
 import io.bagarino.model.system.Configuration;
 import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.model.transaction.PaymentProxy;
@@ -42,8 +38,7 @@ import java.security.Principal;
 import java.util.*;
 
 import static io.bagarino.model.system.ConfigurationKeys.MAPS_CLIENT_API_KEY;
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
 @RequestMapping("/admin/api")
@@ -114,18 +109,17 @@ public class AdminApiController {
     }
 
     @RequestMapping(value = "/events", method = GET)
-    public List<Event> getAllEvents(Principal principal) {
-        return eventManager.getAllEvents(principal.getName());
+    public List<EventWithStatistics> getAllEvents(Principal principal) {
+        return eventManager.getAllEventsWithStatistics(principal.getName());
     }
 
     @RequestMapping(value = "/events/{name}", method = GET)
     public Map<String, Object> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
         Map<String, Object> out = new HashMap<>();
         final String username = principal.getName();
-        final Event event = eventManager.getSingleEvent(eventName, username);
+        final EventWithStatistics event = eventManager.getSingleEventWithStatistics(eventName, username);
         out.put("event", event);
-        out.put("organization", eventManager.loadOrganizer(event, username));
-        out.put("ticketCategories", eventManager.loadTicketCategoriesWithStats(event));
+        out.put("organization", eventManager.loadOrganizer(event.getEvent(), username));
         return out;
     }
 
@@ -138,6 +132,12 @@ public class AdminApiController {
     public String insertEvent(@RequestBody EventModification eventModification) {
     	//FIXME: check event short name should not contain "/" as we use it as part of the url
         eventManager.createEvent(eventModification);
+        return OK;
+    }
+
+    @RequestMapping(value = "/events/reallocate", method = PUT)
+    public String reallocateTickets(@RequestBody TicketAllocationModification form) {
+        eventManager.reallocateTickets(form.getSrcCategoryId(), form.getTargetCategoryId(), form.getEventId());
         return OK;
     }
 

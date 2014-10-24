@@ -45,6 +45,7 @@ import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
@@ -159,7 +160,9 @@ public class ReservationController {
     		
     		List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
     		
-    		model.addAttribute("ticketsByCategory", tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet());
+    		model.addAttribute("ticketsByCategory", tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet()
+    					.stream().map((e) -> Pair.of(ticketCategoryRepository.getById(e.getKey()), e.getValue()))
+    					.collect(Collectors.toList()));
     		model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
     		
     		return "/event/reservation-page-complete";
@@ -248,7 +251,7 @@ public class ReservationController {
     	
     	sendReservationCompleteEmail(ticketReservation.orElseThrow(IllegalStateException::new));
     	
-    	return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+    	return "redirect:/event/" + eventName + "/reservation/" + reservationId+"?confirmation-email-sent=true";
     }
     
     //TODO: complete, additionally, the mail should be sent asynchronously

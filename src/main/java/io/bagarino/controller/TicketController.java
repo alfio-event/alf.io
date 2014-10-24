@@ -154,7 +154,7 @@ public class TicketController {
 		mailManager.mailer().send(ticket.getEmail(), "your ticket", "here attached your ticket", Optional.of("here attached your ticket"), attachment);
 		
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId
-				+ ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "");
+				+ ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "") + "?ticket-email-sent=true";
 	}
 	
 

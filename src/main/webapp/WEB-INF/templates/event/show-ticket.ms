@@ -1,5 +1,5 @@
 {{>/event/page-top}}
-<a href="../{{reservation.id}}">{{#i18n}}show-ticket.go-back-to-reservation{{/i18n}}</a>
+<a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}">{{#i18n}}show-ticket.go-back-to-reservation{{/i18n}}</a>
 
 <h1>{{event.shortName}}</h1>
 <h2>{{#i18n}}ticket.event-info{{/i18n}}</h2>
@@ -32,7 +32,7 @@
 	</tr>
 	<tr>
 		<td>{{#i18n}}ticket.organized-by{{/i18n}}</td>
-		<td>{{organization.name}} &lt;{{organization.email}}&gt;</td>
+		<td>{{organization.name}} &lt;<a href="mailto:{{organization.email}}">{{organization.email}}</a>&gt;</td>
 	</tr>
 </table>
 		
@@ -52,16 +52,16 @@
 	</tr>
 	<tr>
 		<td>{{#i18n}}ticket.order-information{{/i18n}}</td>
-		<td>{{reservation.id}} by {{reservation.fullName}}</td>
+		<td>{{#i18n}}ticket.order-information-values [{{reservation.id}}] [{{reservation.fullName}}]{{/i18n}}</td>
 	</tr>
 </table>
 
-<p class="text-center"><img src="{{ticket.uuid}}/code.png"></p>
+<p class="text-center"><img src="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{ticket.uuid}}/code.png"></p>
 
 
-<div><a href="{{ticket.uuid}}/download-ticket" class="btn btn-link">{{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div> 
+<div><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{ticket.uuid}}/download-ticket" class="btn btn-link">{{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div> 
 <div>
-	<form method="post" action="{{ticket.uuid}}/send-ticket-by-email" class="form-inline">
+	<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{ticket.uuid}}/send-ticket-by-email" class="form-inline">
 		<button type="submit" class="btn btn-link">{{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{ticket.email}}]{{/i18n}}</button>
 		<input type="hidden" name="from" value="ticket">
 		<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">

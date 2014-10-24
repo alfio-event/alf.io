@@ -4,23 +4,28 @@
 <table class="table">
     <thead>
         <tr>
-            <th>id</th>
             <th>name</th>
             <th>description</th>
             <th>schedule</th>
-            <th>actions</th>
+            <th>&nbsp;</th>
         </tr>
     </thead>
     <tbody>
     <tr data-ng-if="!events || events.length == 0">
         <td colspan="4">no events have been found. <a data-ui-sref="events.new">Create a new one</a></td>
     </tr>
-    <tr data-ng-repeat="event in events">
-        <td data-ng-class-even="'active'">{{event.id}}</td>
-        <td data-ng-class-even="'active'">{{event.shortName}}</td>
+    <tr data-ng-repeat="event in events" data-ng-class="{'bg-danger': event.warningNeeded}">
+        <td data-ng-class-even="'active'">
+            <span class="label label-danger" data-ng-if="event.warningNeeded"><i class="fa fa-warning" data-tooltip="something wrong is happening..."></i></span>
+            <a data-ui-sref="events.detail({eventName: event.shortName})">{{event.shortName}}</a>
+        </td>
         <td data-ng-class-even="'active'">{{event.description}}</td>
         <td data-ng-class-even="'active'">{{event.begin | date : 'dd/MM/yyyy HH:mm'}} / {{event.end | date : 'dd/MM/yyyy HH:mm'}}</td>
-        <td data-ng-class-even="'active'"><a class="icon fa fa-bar-chart" data-ui-sref="events.detail({eventName: event.shortName})"></a></td>
+        <td data-ng-class-even="'active'">
+            <a class="icon" data-ui-sref="events.detail({eventName: event.shortName})">
+                <i class="fa fa-bar-chart" data-tooltip="go to detail"></i>
+            </a>
+        </td>
     </tr>
     </tbody>
 </table>

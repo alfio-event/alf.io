@@ -4,7 +4,7 @@
 <ul class="list-group">
 {{#events}}
 	<li class="list-group-item">
-		<a href="event/{{shortName}}/">
+		<a href="{{request.contextPath}}/event/{{shortName}}/">
 			<div>
 				<h2>{{shortName}}</h2>
 				<div>

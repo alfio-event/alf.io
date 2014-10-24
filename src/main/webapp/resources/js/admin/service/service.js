@@ -61,6 +61,13 @@
             },
             createEvent : function(event) {
                 return $http['post']('/admin/api/events/new', event).error(HttpErrorHandler.handle);
+            },
+            reallocateOrphans : function(srcCategory, targetCategoryId, eventId) {
+                return $http['put']('/admin/api/events/reallocate', {
+                    srcCategoryId: srcCategory.id,
+                    targetCategoryId: targetCategoryId,
+                    eventId: eventId
+                }).error(HttpErrorHandler.handle);
             }
         };
     });
