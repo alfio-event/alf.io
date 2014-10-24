@@ -74,7 +74,7 @@ public class EventRepositoryTest {
         Date dateEnd = Date.from(endEventDate.toInstant(ZoneOffset.UTC));
 
         Pair<Integer, Integer> pair = eventRepository.insert("test from unit test", "unittest", "Lugano", "9", "8", dateBegin, dateEnd, eventTimeZone.getDisplayName(), 0, "CHF", 4, true, new BigDecimal(1), "", "", 0);
-        Event e = eventRepository.findById(pair.getLeft());
+        Event e = eventRepository.findById(pair.getRight());
         assertNotNull("Event not found in DB", e);
 
         assertEquals("Begin date is not correct", e.getBegin(),ZonedDateTime.of(beginEventDate, eventTimeZone.toZoneId()));
