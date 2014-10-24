@@ -1,9 +1,24 @@
+/**
+ * This file is part of bagarino.
+ *
+ * bagarino is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * bagarino is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package io.bagarino.repository;
 
 import io.bagarino.config.DataSourceConfiguration;
 import io.bagarino.model.Event;
 import org.apache.commons.lang3.tuple.Pair;
-import org.hsqldb.util.DatabaseManagerSwing;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,11 +29,14 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.math.BigDecimal;
-import java.time.*;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.TimeZone;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class })
