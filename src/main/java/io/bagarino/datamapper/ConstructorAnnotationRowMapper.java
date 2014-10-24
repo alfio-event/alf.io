@@ -25,8 +25,7 @@ import java.lang.reflect.Constructor;
 import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.util.Assert;
@@ -127,7 +126,9 @@ public class ConstructorAnnotationRowMapper<T> implements RowMapper<T> {
 
 				String name = ((Column) a).value();
 
-				if (paramType.isEnum()) {
+                if (paramType.isAssignableFrom(Date.class)) {
+                    return new DateColumnMapper(name);
+                } else if (paramType.isEnum()) {
 					return new EnumColumnMapper(name, paramType);
 				} else if (boolean.class == paramType || Boolean.class == paramType) {
 					return new BooleanColumnMapper(name);
@@ -194,6 +195,17 @@ public class ConstructorAnnotationRowMapper<T> implements RowMapper<T> {
 			}
 		}
 	}
+
+    static class DateColumnMapper extends ColumnMapper {
+
+        DateColumnMapper(String name) {
+            super(name);
+        }
+
+        public Object getObject(ResultSet rs) throws SQLException {
+            return rs.getTimestamp(name, Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+        }
+    }
 
 	static class EnumColumnMapper extends ColumnMapper {
 
