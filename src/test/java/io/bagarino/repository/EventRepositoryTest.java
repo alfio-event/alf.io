@@ -19,7 +19,6 @@ package io.bagarino.repository;
 import io.bagarino.config.DataSourceConfiguration;
 import io.bagarino.model.Event;
 import org.apache.commons.lang3.tuple.Pair;
-import org.hsqldb.util.DatabaseManagerSwing;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,6 +40,14 @@ import static org.junit.Assert.*;
 @ActiveProfiles("dev")
 public class EventRepositoryTest {
 
+	static {
+		System.setProperty("datasource.dialect", "HSQLDB");
+		System.setProperty("datasource.driver", "org.hsqldb.jdbcDriver");
+		System.setProperty("datasource.url", "jdbc:hsqldb:mem:bagarino");
+		System.setProperty("datasource.username", "sa");
+		System.setProperty("datasource.password", "");
+		System.setProperty("datasource.validationQuery", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
+	}
 
     @Autowired
     private EventRepository eventRepository;
