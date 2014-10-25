@@ -60,6 +60,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.mustache.jmustache.LocalizationMessageInterceptor;
 import org.xhtmlrenderer.pdf.ITextRenderer;
@@ -101,7 +102,9 @@ public class TicketController {
 	
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.GET)
 	public String showTicket(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, 
-			@PathVariable("ticketIdentifier") String ticketIdentifier, Model model) {
+			@PathVariable("ticketIdentifier") String ticketIdentifier,
+			@RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
+			Model model) {
 		
 		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
 		check(data.getMiddle(), data.getRight());
@@ -114,7 +117,8 @@ public class TicketController {
 				.addAttribute("reservation", data.getMiddle())//
 				.addAttribute("event", data.getLeft())//
 				.addAttribute("ticketCategory", ticketCategory)//
-				.addAttribute("organization", organization);
+				.addAttribute("organization", organization)//
+				.addAttribute("ticketEmailSent", ticketEmailSent);
 		
 		return "/event/show-ticket";
 	}
