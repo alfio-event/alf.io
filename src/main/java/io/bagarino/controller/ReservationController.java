@@ -17,7 +17,7 @@
 package io.bagarino.controller;
 
 import com.stripe.exception.StripeException;
-import io.bagarino.controller.EventController.SaleableTicketCategory;
+import io.bagarino.controller.decorator.SaleableTicketCategory;
 import io.bagarino.manager.EventManager;
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;

@@ -18,13 +18,13 @@ package io.bagarino.controller;
 
 
 import io.bagarino.controller.api.support.LocationDescriptor;
+import io.bagarino.controller.decorator.EventDescriptor;
+import io.bagarino.controller.decorator.SaleableTicketCategory;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.Event;
-import io.bagarino.model.TicketCategory;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.user.OrganizationRepository;
-import lombok.experimental.Delegate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -32,9 +32,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -106,61 +104,4 @@ public class EventController {
 		model.asMap().putIfAbsent("hasErrors", false);//TODO: refactor
 		return "/event/show-event";
 	}
-    
-
-    
-    public static class SaleableTicketCategory {
-
-        @Delegate
-        private final TicketCategory ticketCategory;
-    	private final ZonedDateTime now;
-        private final ZoneId zoneId;
-
-		public SaleableTicketCategory(TicketCategory ticketCategory, ZonedDateTime now, ZoneId zoneId) {
-            this.ticketCategory = ticketCategory;
-			this.now = now;
-            this.zoneId = zoneId;
-        }
-		
-		public boolean getSaleable() {
-			return getInception(zoneId).isBefore(now) && getExpiration(zoneId).isAfter(now);
-		}
-		
-		public boolean getExpired() {
-			return getExpiration(zoneId).isBefore(now);
-		}
-		
-		public boolean getSaleInFuture() {
-			return getInception(zoneId).isAfter(now);
-		}
-
-        public String getFormattedExpiration() {
-            return getExpiration(zoneId).format(DateTimeFormatter.ISO_DATE_TIME);
-        }
-    	
-    }
-
-    public static class EventDescriptor {
-
-        @Delegate
-        private final Event event;
-
-        public EventDescriptor(Event event) {
-            this.event = event;
-        }
-
-        public String getFormattedEventDates() {
-            final ZonedDateTime begin = event.getBegin();
-            final ZonedDateTime end = event.getEnd();
-            if(event.getSameDay()) {
-                return String.format("%s %s - %s", begin.format(DateTimeFormatter.ISO_DATE), begin.format(DateTimeFormatter.ISO_TIME), end.format(DateTimeFormatter.ISO_TIME));
-            }
-            return String.format("%s %s - %s %s", begin.format(DateTimeFormatter.ISO_DATE), begin.format(DateTimeFormatter.ISO_TIME),
-                    end.format(DateTimeFormatter.ISO_DATE), end.format(DateTimeFormatter.ISO_TIME));
-        }
-
-        public boolean getVatIncluded() {
-            return event.isVatIncluded();
-        }
-    }
 }
