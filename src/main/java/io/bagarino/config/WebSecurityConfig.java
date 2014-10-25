@@ -23,7 +23,6 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.servlet.configuration.EnableWebMvcSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
@@ -44,17 +43,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private DataSource dataSource;
 
     @Autowired
-    public void initConfiguration(AuthenticationManagerBuilder auth) throws Exception {
+    public void initConfiguration(AuthenticationManagerBuilder auth, PasswordEncoder passwordEncoder) throws Exception {
         auth.jdbcAuthentication().dataSource(dataSource)
                 .usersByUsernameQuery("select username, password, enabled from ba_user where username = ?")
                 .authoritiesByUsernameQuery("select username, role from authority where username = ?")
-                .passwordEncoder(getPasswordEncoder());
+                .passwordEncoder(passwordEncoder);
     }
 
-    @Bean
-    public PasswordEncoder getPasswordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+   
 
     @Bean
     public CsrfTokenRepository getCsrfTokenRepository() {

@@ -43,6 +43,14 @@ import static org.junit.Assert.assertNotNull;
 @ActiveProfiles("dev")
 public class EventRepositoryTest {
 
+	static {
+		System.setProperty("datasource.dialect", "HSQLDB");
+		System.setProperty("datasource.driver", "org.hsqldb.jdbcDriver");
+		System.setProperty("datasource.url", "jdbc:hsqldb:mem:bagarino");
+		System.setProperty("datasource.username", "sa");
+		System.setProperty("datasource.password", "");
+		System.setProperty("datasource.validationQuery", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
+	}
 
     @Autowired
     private EventRepository eventRepository;
@@ -69,7 +77,7 @@ public class EventRepositoryTest {
         Date dateEnd = Date.from(endEventDate.toInstant(ZoneOffset.UTC));
 
         Pair<Integer, Integer> pair = eventRepository.insert("test from unit test", "unittest", "Lugano", "9", "8", dateBegin, dateEnd, eventTimeZone.getDisplayName(), 0, "CHF", 4, true, new BigDecimal(1), "", "", 0);
-        Event e = eventRepository.findById(pair.getLeft());
+        Event e = eventRepository.findById(pair.getRight());
         assertNotNull("Event not found in DB", e);
 
         assertEquals("Begin date is not correct", e.getBegin(),ZonedDateTime.of(beginEventDate, eventTimeZone.toZoneId()));

@@ -56,6 +56,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.ServletWebRequest;
 
 import com.stripe.exception.StripeException;
@@ -123,7 +124,10 @@ public class ReservationController {
 
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.GET)
-	public String showReservationPage(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Model model) {
+	public String showReservationPage(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, 
+			@RequestParam(value="confirmation-email-sent", required=false, defaultValue="false") boolean confirmationEmailSent,
+			@RequestParam(value="ticket-email-sent", required=false, defaultValue="false") boolean ticketEmailSent,
+			Model model) {
     	
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
@@ -156,6 +160,8 @@ public class ReservationController {
     	} else if (reservation.get().getStatus() == TicketReservationStatus.COMPLETE ){
     		model.addAttribute("reservationId", reservationId);
     		model.addAttribute("reservation", reservation.get());
+    		model.addAttribute("confirmationEmailSent", confirmationEmailSent);
+    		model.addAttribute("ticketEmailSent", ticketEmailSent);
     		
     		
     		List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
@@ -205,7 +211,7 @@ public class ReservationController {
     	
     	if (bindingResult.hasErrors()) {
 			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
-			return showReservationPage(eventName, reservationId, model);
+			return showReservationPage(eventName, reservationId, false, false, model);
     	}
     	
     	
@@ -220,7 +226,7 @@ public class ReservationController {
     		} catch(StripeException se) {
     			bindingResult.reject("payment_processor_error");
     			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
-    			return showReservationPage(eventName, reservationId, model);
+    			return showReservationPage(eventName, reservationId, false, false, model);
     		}
     	}
         
