@@ -18,7 +18,7 @@
 INSERT INTO organization(name, description, email) VALUES ('demo', 'demo organization', 'info@pippobaudo.com');
 
 insert into event(description, short_name, location, latitude, longitude, start_ts, end_ts, regular_price_cts, currency, available_seats, vat_included, vat, allowed_payment_proxies, private_key, org_id, time_zone)
-  values('event desc', 'eventname', 'demo location', '0', '0', '2015-01-10 00:00:00' , '2015-01-10 23:59:00' , 1000, 'CHF', 440, 'true', 8, 'STRIPE', 'bagarino-rulez', 0, 'America/New_York');
+  values('event desc', 'eventname', 'demo location', '0', '0', '2015-01-10 05:00:00' , '2015-01-11 04:59:00' , 1000, 'CHF', 440, 'true', 8, 'STRIPE', 'bagarino-rulez', 0, 'America/New_York');
 
 insert into ticket_category(inception, expiration, name, description, max_tickets, price_cts, access_restricted) values
   ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Normal', 'Very good category', 2, 0, false),

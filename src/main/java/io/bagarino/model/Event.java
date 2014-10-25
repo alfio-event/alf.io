@@ -27,7 +27,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
@@ -143,15 +142,5 @@ public class Event {
     public ZoneId getZoneId() {
         return timeZone;
     }
-
-    public String getFormattedBegin() {
-        return begin.format(DateTimeFormatter.ISO_DATE_TIME);
-    }
-
-    public String getFormattedEnd() {
-        return end.format(DateTimeFormatter.ISO_DATE_TIME);
-    }
-
-
 
 }

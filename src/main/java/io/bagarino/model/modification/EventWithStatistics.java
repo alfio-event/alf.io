@@ -20,17 +20,19 @@ import io.bagarino.model.Event;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Getter
 public class EventWithStatistics {
 
+    public static final DateTimeFormatter JSON_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm");
+
     @Delegate
     private final Event event;
     private final List<TicketCategoryWithStatistic> ticketCategories;
 
-    public EventWithStatistics(Event event,
-                               List<TicketCategoryWithStatistic> ticketCategories) {
+    public EventWithStatistics(Event event, List<TicketCategoryWithStatistic> ticketCategories) {
         this.event = event;
         this.ticketCategories = ticketCategories;
     }
@@ -38,6 +40,14 @@ public class EventWithStatistics {
     public boolean isWarningNeeded() {
         return ticketCategories.stream()
                 .anyMatch(TicketCategoryWithStatistic::isContainingOrphans);
+    }
+
+    public String getFormattedBegin() {
+        return getBegin().format(JSON_DATE_FORMATTER);
+    }
+
+    public String getFormattedEnd() {
+        return getEnd().format(JSON_DATE_FORMATTER);
     }
 
 }

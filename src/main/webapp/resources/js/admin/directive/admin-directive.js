@@ -10,29 +10,6 @@
 
     var directives = angular.module('adminDirectives', ['ui.bootstrap', 'adminServices']);
 
-    directives.config(function(datepickerConfig, datepickerPopupConfig, $provide) {
-        datepickerConfig.startingDay = 1;
-        datepickerConfig.yearRange = 3;
-        datepickerPopupConfig.datepickerPopup='dd/MM/yyyy';
-
-        //this patch temporary fixes the issue https://github.com/angular-ui/bootstrap/issues/2169
-        //thanks to rigup (https://github.com/angular-ui/bootstrap/commit/42cc3f269bae020ba17b4dcceb4e5afaf671d49b)
-        //to be removed as soon as a newer version will be released
-        $provide.decorator('dateParser', function($delegate){
-
-            var oldParse = $delegate.parse;
-            $delegate.parse = function(input, format) {
-                if ( !angular.isString(input) || !format ) {
-                    return input;
-                }
-                return oldParse.apply(this, arguments);
-            };
-
-            return $delegate;
-        });
-        //end
-    });
-
     directives.directive("organizationsList", function() {
         return {
             scope: true,

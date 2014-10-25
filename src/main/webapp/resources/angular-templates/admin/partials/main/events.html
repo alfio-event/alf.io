@@ -20,7 +20,7 @@
             <a data-ui-sref="events.detail({eventName: event.shortName})">{{event.shortName}}</a>
         </td>
         <td data-ng-class-even="'active'">{{event.description}}</td>
-        <td data-ng-class-even="'active'">{{event.begin}} / {{event.end}}</td>
+        <td data-ng-class-even="'active'">{{event.formattedBegin | formatDate}} / {{event.formattedEnd | formatDate}}</td>
         <td data-ng-class-even="'active'">
             <a class="icon" data-ui-sref="events.detail({eventName: event.shortName})">
                 <i class="fa fa-bar-chart" data-tooltip="go to detail"></i>

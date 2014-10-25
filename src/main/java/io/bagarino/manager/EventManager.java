@@ -201,8 +201,8 @@ public class EventManager {
 
         em.getTicketCategories().stream().forEach(tc -> {
             final int price = evaluatePrice(tc.getPriceInCents(), em.getVat(), vatIncluded, freeOfCharge);
-            final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toDate(zoneId),
-                    tc.getExpiration().toDate(zoneId), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested());
+            final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
+                    tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested());
             eventTicketCategoryRepository.insert(eventId, category.getValue());
             if(tc.isTokenGenerationRequested()) {
                 final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategoryRepository.getById(category.getValue()));

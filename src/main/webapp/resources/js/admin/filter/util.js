@@ -10,4 +10,14 @@
             return existing.name;
         }
     });
+
+    filters.filter('formatDate' , function() {
+        return function(dateAsString) {
+            var date = moment(dateAsString);
+            if(date.isValid()) {
+                return date.format('DD.MM.YYYY HH:mm');
+            }
+            return dateAsString;
+        };
+    });
 })();

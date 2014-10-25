@@ -16,10 +16,10 @@
                 <p class="form-control-static">{{event.location}}</p>
 
                 <label>Start Date/Time</label>
-                <p class="form-control-static">{{event.begin | date : 'dd/MM/yyyy HH:mm'}}</p>
+                <p class="form-control-static">{{event.formattedBegin | formatDate}}</p>
 
                 <label>End Date/Time</label>
-                <p class="form-control-static">{{event.end | date : 'dd/MM/yyyy HH:mm'}}</p>
+                <p class="form-control-static">{{event.formattedEnd | formatDate}}</p>
 
             </div>
         </div>
@@ -84,11 +84,11 @@
                     </div>
                     <div class="row">
                         <div class="col-sm-4"><strong>Initial sale date</strong></div>
-                        <div class="col-sm-8">{{ticketCategory.inception | date : 'dd/MM/yyyy HH:mm'}} </div>
+                        <div class="col-sm-8">{{ticketCategory.formattedInception | formatDate}} </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-4"><strong>End sale date</strong></div>
-                        <div class="col-sm-8">{{ticketCategory.expiration | date : 'dd/MM/yyyy HH:mm'}} </div>
+                        <div class="col-sm-8">{{ticketCategory.formattedExpiration | formatDate}} </div>
                     </div>
                     <div class="row" data-ng-if="!event.freeOfCharge">
                         <div class="col-sm-4"><strong>Final price</strong></div>

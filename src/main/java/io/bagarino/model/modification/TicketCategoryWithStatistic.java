@@ -75,4 +75,12 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
         return BigDecimal.valueOf(soldTickets).divide(BigDecimal.valueOf(maxTickets), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED);
     }
 
+    public String getFormattedInception() {
+        return getInception(eventZoneId).format(EventWithStatistics.JSON_DATE_FORMATTER);
+    }
+
+    public String getFormattedExpiration() {
+        return getExpiration(eventZoneId).format(EventWithStatistics.JSON_DATE_FORMATTER);
+    }
+
 }

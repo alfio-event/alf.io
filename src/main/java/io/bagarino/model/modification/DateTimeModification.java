@@ -19,8 +19,10 @@ package io.bagarino.model.modification;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
-import java.time.*;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Getter
 public class DateTimeModification {
@@ -30,11 +32,6 @@ public class DateTimeModification {
     public DateTimeModification(@JsonProperty("date") LocalDate date, @JsonProperty("time") LocalTime time) {
         this.date = date;
         this.time = time;
-    }
-
-    public Date toDate(ZoneId zoneId) {
-        ZonedDateTime zd = ZonedDateTime.of(date, time, zoneId);
-        return Date.from(zd.withZoneSameInstant(ZoneId.of(ZoneOffset.UTC.getId())).toInstant());
     }
 
     public ZonedDateTime toZonedDateTime(ZoneId zoneId) {
