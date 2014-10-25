@@ -24,6 +24,7 @@ import io.bagarino.model.TicketCategory;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.user.OrganizationRepository;
+import lombok.experimental.Delegate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -67,7 +69,7 @@ public class EventController {
 		if(events.size() == 1) {
 			return "redirect:/event/" + events.get(0).getShortName() + "/";
 		} else {
-			model.addAttribute("events", events);
+			model.addAttribute("events", events.stream().map(EventDescriptor::new).collect(Collectors.toList()));
 			return "/event/event-list";
 		}
 	}
@@ -95,8 +97,8 @@ public class EventController {
 
 		LocationDescriptor ld = LocationDescriptor.fromGeoData(ev.getLatLong(), TimeZone.getTimeZone(ev.getTimeZone()),
 				configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY));
-		
-		model.addAttribute("event", ev)//
+        final EventDescriptor eventDescriptor = new EventDescriptor(ev);
+        model.addAttribute("event", eventDescriptor)//
 			.addAttribute("organizer", organizationRepository.getById(ev.getOrganizationId()))
 			.addAttribute("ticketCategories", t)//
 			.addAttribute("amountOfTickets", IntStream.rangeClosed(0, configurationManager.getIntConfigValue(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5)).toArray())//
@@ -132,6 +134,30 @@ public class EventController {
 			return getInception(zoneId).isAfter(now);
 		}
     	
+    }
+
+    public static class EventDescriptor {
+
+        @Delegate
+        private final Event event;
+
+        public EventDescriptor(Event event) {
+            this.event = event;
+        }
+
+        public String getFormattedEventDates() {
+            final ZonedDateTime begin = event.getBegin();
+            final ZonedDateTime end = event.getEnd();
+            if(event.getSameDay()) {
+                return String.format("%s %s - %s", begin.format(DateTimeFormatter.ISO_DATE), begin.format(DateTimeFormatter.ISO_TIME), end.format(DateTimeFormatter.ISO_TIME));
+            }
+            return String.format("%s %s - %s %s", begin.format(DateTimeFormatter.ISO_DATE), begin.format(DateTimeFormatter.ISO_TIME),
+                    end.format(DateTimeFormatter.ISO_DATE), end.format(DateTimeFormatter.ISO_TIME));
+        }
+
+        public boolean getVatIncluded() {
+            return event.isVatIncluded();
+        }
     }
     
     

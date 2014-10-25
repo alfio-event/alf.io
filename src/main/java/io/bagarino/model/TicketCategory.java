@@ -36,8 +36,8 @@ public class TicketCategory {
     private final boolean accessRestricted;
 
     public TicketCategory(@Column("id") int id,
-                          @Column("utcInception") ZonedDateTime utcInception,
-                          @Column("utcExpiration") ZonedDateTime utcExpiration,
+                          @Column("inception") ZonedDateTime utcInception,
+                          @Column("expiration") ZonedDateTime utcExpiration,
                           @Column("max_tickets") int maxTickets,
                           @Column("name") String name,
                           @Column("description") String description,

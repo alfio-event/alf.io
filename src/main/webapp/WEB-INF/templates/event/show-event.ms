@@ -4,27 +4,8 @@
 <div class="row">
 	<div class="col-md-7">
 		<div>{{#i18n}}show-event.by{{/i18n}} <strong>{{organizer.name}}</strong> &lt;<a href="mailto:{{organizer.email}}">{{organizer.email}}</a>&gt;</div>
-        <div>formatted begin: {{event.formattedBegin}}</div>
-        <div>formatted end: {{event.formattedEnd}}</div>
 		<div>
-			{{#event.sameDay}}
-				{{#i18n}}event-days.same-day 
-					[{{#format-date}}{{event.begin}}EEEEE dd MMMMM yyyy timezone: {{event.timeZone}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] 
-					[{{#format-date}}{{event.begin}} HH:mm timezone: {{event.timeZone}}{{/format-date}}] 
-					[{{#format-date}}{{event.end}} HH:mm timezone: {{event.timeZone}}{{/format-date}}]
-				{{/i18n}}
-			{{/event.sameDay}}
-			{{^event.sameDay}}
-				{{#i18n}}event-days.not-same-day 
-					[{{#format-date}}{{event.begin}}EEEEE dd MMMMM yyyy timezone: {{event.timeZone}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-					[{{#format-date}}{{event.begin}} HH:mm timezone: {{event.timeZone}}{{/format-date}}]
-				{{/i18n}} 
-				- 
-				{{#i18n}}event-days.not-same-day 
-					[{{#format-date}}{{event.end}}EEEEE dd MMMMM yyyy timezone: {{event.timeZone}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-					[{{#format-date}}{{event.end}} HH:mm timezone: {{event.timeZone}}{{/format-date}}]
-				{{/i18n}} 
-			{{/event.sameDay}} ({{event.timeZone}})
+			{{event.formattedEventDates}} ({{event.timeZone}})
 		</div>
 		<div>{{event.location}}</div>
 		<div class="event-description">{{event.description}}</div>
@@ -58,7 +39,7 @@
 							{{#i18n}}show-event.sales-not-started{{/i18n}}
 						{{/saleInFuture}}
 						{{^saleInFuture}}
-							{{#i18n}}show-event.sales-end [{{#format-date}}{{expiration}} dd.MM.yyyy{{/format-date}}]{{/i18n}}
+							{{#i18n}}show-event.sales-end [{{utcExpiration}}]{{/i18n}}
 						{{/saleInFuture}}
 					</div>
 					<div>

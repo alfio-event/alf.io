@@ -10,24 +10,7 @@
                 <div>formatted begin: {{formattedBegin}}</div>
                 <div>formatted end: {{formattedEnd}}</div>
 				<div>
-					{{#sameDay}}
-						{{#i18n}}event-days.same-day 
-							[{{#format-date}}{{begin}}EEEEE dd MMMMM yyyy timezone: {{timeZone}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-							[{{#format-date}}{{begin}} HH:mm timezone: {{timeZone}}{{/format-date}}]
-							[{{#format-date}}{{end}} HH:mm timezone: {{timeZone}}{{/format-date}}]
-						{{/i18n}}
-					{{/sameDay}}
-					{{^sameDay}}
-						{{#i18n}}event-days.not-same-day 
-							[{{#format-date}}{{begin}}EEEEE dd MMMMM yyyy timezone: {{timeZone}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-							[{{#format-date}}{{begin}} HH:mm timezone: {{timeZone}}{{/format-date}}]
-						{{/i18n}} 
-						- 
-						{{#i18n}}event-days.not-same-day 
-							[{{#format-date}}{{end}}EEEEE dd MMMMM yyyy timezone: {{timeZone}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-							[{{#format-date}}{{end}} HH:mm timezone: {{timeZone}}{{/format-date}}]
-						{{/i18n}} 
-					{{/sameDay}} ({{timeZone}})
+                    {{event.formattedEventDates}} ({{timeZone}})
 				</div>
 				<div>{{location}}</div>
 			</div>
