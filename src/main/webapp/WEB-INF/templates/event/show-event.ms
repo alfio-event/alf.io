@@ -39,7 +39,7 @@
 							{{#i18n}}show-event.sales-not-started{{/i18n}}
 						{{/saleInFuture}}
 						{{^saleInFuture}}
-							{{#i18n}}show-event.sales-end [{{utcExpiration}}]{{/i18n}}
+							{{#i18n}}show-event.sales-end [{{formattedExpiration}}]{{/i18n}}
 						{{/saleInFuture}}
 					</div>
 					<div>

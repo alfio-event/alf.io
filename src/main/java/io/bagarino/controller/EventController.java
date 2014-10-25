@@ -109,15 +109,15 @@ public class EventController {
     
 
     
-    public static class SaleableTicketCategory extends TicketCategory {
-    	
+    public static class SaleableTicketCategory {
+
+        @Delegate
+        private final TicketCategory ticketCategory;
     	private final ZonedDateTime now;
         private final ZoneId zoneId;
 
 		public SaleableTicketCategory(TicketCategory ticketCategory, ZonedDateTime now, ZoneId zoneId) {
-			super(ticketCategory.getId(), ticketCategory.getUtcInception(), ticketCategory.getUtcExpiration(), ticketCategory
-					.getMaxTickets(), ticketCategory.getName(), ticketCategory.getDescription(), ticketCategory
-					.getPriceInCents(), ticketCategory.isAccessRestricted());
+            this.ticketCategory = ticketCategory;
 			this.now = now;
             this.zoneId = zoneId;
         }
@@ -133,6 +133,10 @@ public class EventController {
 		public boolean getSaleInFuture() {
 			return getInception(zoneId).isAfter(now);
 		}
+
+        public String getFormattedExpiration() {
+            return getExpiration(zoneId).format(DateTimeFormatter.ISO_DATE_TIME);
+        }
     	
     }
 
@@ -159,6 +163,4 @@ public class EventController {
             return event.isVatIncluded();
         }
     }
-    
-    
 }
