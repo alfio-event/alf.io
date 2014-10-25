@@ -16,19 +16,21 @@
  */
 package io.bagarino.datamapper;
 
-import java.lang.annotation.Annotation;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.util.Assert;
+
+import java.lang.annotation.*;
 import java.lang.reflect.Constructor;
 import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
-
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.util.Assert;
+import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.TimeZone;
 
 public class ConstructorAnnotationRowMapper<T> implements RowMapper<T> {
 
@@ -126,8 +128,8 @@ public class ConstructorAnnotationRowMapper<T> implements RowMapper<T> {
 
 				String name = ((Column) a).value();
 
-                if (paramType.isAssignableFrom(Date.class)) {
-                    return new DateColumnMapper(name);
+                if (paramType.isAssignableFrom(ZonedDateTime.class)) {
+                    return new ZonedDateTimeColumnMapper(name);
                 } else if (paramType.isEnum()) {
 					return new EnumColumnMapper(name, paramType);
 				} else if (boolean.class == paramType || Boolean.class == paramType) {
@@ -196,14 +198,15 @@ public class ConstructorAnnotationRowMapper<T> implements RowMapper<T> {
 		}
 	}
 
-    static class DateColumnMapper extends ColumnMapper {
+    static class ZonedDateTimeColumnMapper extends ColumnMapper {
 
-        DateColumnMapper(String name) {
+        ZonedDateTimeColumnMapper(String name) {
             super(name);
         }
 
         public Object getObject(ResultSet rs) throws SQLException {
-            return rs.getTimestamp(name, Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+            Timestamp timestamp = rs.getTimestamp(name, Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+            return ZonedDateTime.ofInstant(timestamp.toInstant(), ZoneId.of("UTC"));
         }
     }
 

@@ -58,7 +58,7 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
     }
 
     public boolean isExpired() {
-        return ZonedDateTime.now(eventZoneId).isAfter(ZonedDateTime.ofInstant(ticketCategory.getExpiration().toInstant(), eventZoneId));
+        return ZonedDateTime.now(eventZoneId).isAfter(ticketCategory.getExpiration(eventZoneId));
     }
 
     public boolean isContainingOrphans() {
@@ -67,9 +67,7 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
 
     @Override
     public int compareTo(TicketCategoryWithStatistic o) {
-        ZonedDateTime exp = ZonedDateTime.ofInstant(getExpiration().toInstant(), eventZoneId);
-        ZonedDateTime exp2 = ZonedDateTime.ofInstant(o.getExpiration().toInstant(), o.eventZoneId);
-        return exp.compareTo(exp2);
+        return getExpiration(eventZoneId).compareTo(o.getExpiration(eventZoneId));
     }
 
     private static BigDecimal calcSoldTicketsPercent(TicketCategory ticketCategory, int soldTickets) {

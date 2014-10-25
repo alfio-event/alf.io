@@ -16,33 +16,23 @@
  */
 package io.bagarino.controller;
 
-import static io.bagarino.util.MonetaryUtil.formatCents;
-import static io.bagarino.util.OptionalWrapper.optionally;
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
+import com.stripe.exception.StripeException;
 import io.bagarino.controller.EventController.SaleableTicketCategory;
+import io.bagarino.manager.EventManager;
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.manager.TicketReservationManager.NotEnoughTicketsException;
 import io.bagarino.manager.system.MailManager;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
+import io.bagarino.model.TicketCategory;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import lombok.Data;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -52,19 +42,28 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 
-import com.stripe.exception.StripeException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static io.bagarino.util.MonetaryUtil.formatCents;
+import static io.bagarino.util.OptionalWrapper.optionally;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 
 @Controller
 public class ReservationController {
 	
 	private final EventRepository eventRepository;
+    private final EventManager eventManager;
     private final TicketRepository ticketRepository;
     private final TicketReservationManager tickReservationManager;
     private final TicketCategoryRepository ticketCategoryRepository;
@@ -75,12 +74,15 @@ public class ReservationController {
     
     @Autowired
     public ReservationController(EventRepository eventRepository,
-			TicketRepository ticketRepository,
-			TicketReservationManager tickReservationManager,
-			TicketCategoryRepository ticketCategoryRepository, StripeManager stripeManager,
-			MailManager mailManager,
-			EventController eventController) {
-		this.eventRepository = eventRepository;
+                                 EventManager eventManager,
+			                     TicketRepository ticketRepository,
+                                 TicketReservationManager tickReservationManager,
+                                 TicketCategoryRepository ticketCategoryRepository,
+                                 StripeManager stripeManager,
+                                 MailManager mailManager,
+                                 EventController eventController) {
+        this.eventRepository = eventRepository;
+        this.eventManager = eventManager;
 		this.ticketRepository = ticketRepository;
 		this.tickReservationManager = tickReservationManager;
 		this.ticketCategoryRepository = ticketCategoryRepository;
@@ -101,7 +103,7 @@ public class ReservationController {
 			return "redirect:/event/" + eventName + "/";
 		}
 		
-		reservation.validate(bindingResult, tickReservationManager, ticketCategoryRepository);
+		reservation.validate(bindingResult, tickReservationManager, ticketCategoryRepository, eventManager);
 		
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
@@ -287,11 +289,12 @@ public class ReservationController {
  // step 1 : choose tickets
     @Data
 	public static class ReservationForm {
-		private List<TicketReservationModification> reservation;
 
-		private List<TicketReservationModification> selected() {
+        private List<TicketReservationModification> reservation;
+
+        private List<TicketReservationModification> selected() {
 			return ofNullable(reservation).orElse(emptyList()).stream()
-					.filter((e) -> e!= null && e.getAmount() != null && e.getTicketCategoryId() != null && e.getAmount() > 0)
+					.filter((e) -> e != null && e.getAmount() != null && e.getTicketCategoryId() != null && e.getAmount() > 0)
 					.collect(toList());
 		}
 		
@@ -299,7 +302,10 @@ public class ReservationController {
 			return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
 		}
 		
-		private void validate(BindingResult bindingResult, TicketReservationManager tickReservationManager, TicketCategoryRepository ticketCategoryRepository) {
+		private void validate(BindingResult bindingResult,
+                              TicketReservationManager tickReservationManager,
+                              TicketCategoryRepository ticketCategoryRepository,
+                              EventManager eventManager) {
 			int selectionCount = selectionCount();
 			
 			if(selectionCount <= 0) {
@@ -309,19 +315,25 @@ public class ReservationController {
 			if(selectionCount >  tickReservationManager.maxAmountOfTickets()) {
 				bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM);//FIXME: we must display the maximum amount of tickets
 			}
-			
-			final Date now = new Date();
-			
-			selected().forEach((r) -> {
-				SaleableTicketCategory ticketCategory = new SaleableTicketCategory(ticketCategoryRepository.getById(r.getTicketCategoryId()), now);
-				
-				if (!ticketCategory.getSaleable()) {
-					bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); // TODO add correct field
-				}
-				if (ticketCategory.isAccessRestricted()) {
-					bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED); //
-				}
-			});
+
+            final List<TicketReservationModification> selected = selected();
+            final ZoneId eventZoneId = selected.stream().findFirst().map(r -> {
+                TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId());
+                return eventManager.findEventByTicketCategory(tc).getZoneId();
+            }).orElse(null);
+            final ZonedDateTime now = ZonedDateTime.now(eventZoneId);
+            selected.forEach((r) -> {
+
+                TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId());
+                SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, eventZoneId);
+
+                if (!ticketCategory.getSaleable()) {
+                    bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); // TODO add correct field
+                }
+                if (ticketCategory.isAccessRestricted()) {
+                    bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED); //
+                }
+            });
 		}
 	}
     

@@ -21,13 +21,14 @@ import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Getter
 public class TicketCategory {
     private final int id;
-    private final Date inception;
-    private final Date expiration;
+    private final ZonedDateTime utcInception;
+    private final ZonedDateTime utcExpiration;
     private final int maxTickets;
     private final String name;
     private final String description;
@@ -35,16 +36,16 @@ public class TicketCategory {
     private final boolean accessRestricted;
 
     public TicketCategory(@Column("id") int id,
-                          @Column("inception") Date inception,
-                          @Column("expiration") Date expiration,
+                          @Column("utcInception") ZonedDateTime utcInception,
+                          @Column("utcExpiration") ZonedDateTime utcExpiration,
                           @Column("max_tickets") int maxTickets,
                           @Column("name") String name,
                           @Column("description") String description,
                           @Column("price_cts") int priceInCents,
                           @Column("access_restricted") boolean accessRestricted) {
         this.id = id;
-        this.inception = inception;
-        this.expiration = expiration;
+        this.utcInception = utcInception;
+        this.utcExpiration = utcExpiration;
         this.maxTickets = maxTickets;
         this.name = name;
         this.description = description;
@@ -59,5 +60,13 @@ public class TicketCategory {
     
     public boolean getFree() {
     	return priceInCents == 0;
+    }
+
+    public ZonedDateTime getInception(ZoneId zoneId) {
+        return utcInception.withZoneSameInstant(zoneId);
+    }
+
+    public ZonedDateTime getExpiration(ZoneId zoneId) {
+        return utcExpiration.withZoneSameInstant(zoneId);
     }
 }

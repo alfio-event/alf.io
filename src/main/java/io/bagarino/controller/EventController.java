@@ -31,7 +31,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import java.util.Date;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -82,13 +83,16 @@ public class EventController {
 			return "redirect:/";
 		}
 
-		final Date now = new Date();
-		//hide access restricted ticket categories
-		List<SaleableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(event.get().getId()).stream().filter((c) -> !c.isAccessRestricted()).map((m) -> new SaleableTicketCategory(m, now)).collect(Collectors.toList());
-		//
-		
 		Event ev = event.get();
-		
+		final ZonedDateTime now = ZonedDateTime.now(ev.getZoneId());
+		//hide access restricted ticket categories
+		List<SaleableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(ev.getId()).stream()
+                .filter((c) -> !c.isAccessRestricted())
+                .map((m) -> new SaleableTicketCategory(m, now, ev.getZoneId()))
+                .collect(Collectors.toList());
+		//
+
+
 		LocationDescriptor ld = LocationDescriptor.fromGeoData(ev.getLatLong(), TimeZone.getTimeZone(ev.getTimeZone()),
 				configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY));
 		
@@ -105,25 +109,27 @@ public class EventController {
     
     public static class SaleableTicketCategory extends TicketCategory {
     	
-    	private final Date now;
+    	private final ZonedDateTime now;
+        private final ZoneId zoneId;
 
-		public SaleableTicketCategory(TicketCategory ticketCategory, Date now) {
-			super(ticketCategory.getId(), ticketCategory.getInception(), ticketCategory.getExpiration(), ticketCategory
+		public SaleableTicketCategory(TicketCategory ticketCategory, ZonedDateTime now, ZoneId zoneId) {
+			super(ticketCategory.getId(), ticketCategory.getUtcInception(), ticketCategory.getUtcExpiration(), ticketCategory
 					.getMaxTickets(), ticketCategory.getName(), ticketCategory.getDescription(), ticketCategory
 					.getPriceInCents(), ticketCategory.isAccessRestricted());
 			this.now = now;
-		}
+            this.zoneId = zoneId;
+        }
 		
 		public boolean getSaleable() {
-			return getInception().before(now) && getExpiration().after(now);
+			return getInception(zoneId).isBefore(now) && getExpiration(zoneId).isAfter(now);
 		}
 		
 		public boolean getExpired() {
-			return getExpiration().before(now);
+			return getExpiration(zoneId).isBefore(now);
 		}
 		
 		public boolean getSaleInFuture() {
-			return getInception().after(now);
+			return getInception(zoneId).isAfter(now);
 		}
     	
     }

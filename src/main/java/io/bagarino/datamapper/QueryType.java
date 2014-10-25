@@ -30,9 +30,10 @@ import org.springframework.util.StringUtils;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.sql.Types;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -51,7 +52,7 @@ public enum QueryType {
 	 */
 	TEMPLATE {
 		@Override
-		Object apply(String template, NamedParameterJdbcTemplate jdbc, Method method, Object[] args) {
+		String apply(String template, NamedParameterJdbcTemplate jdbc, Method method, Object[] args) {
 			return template;
 		}
 	},
@@ -154,7 +155,7 @@ public enum QueryType {
 
 	private static HasRowmapper handleClass(Class<Object> c) {
 		if (ConstructorAnnotationRowMapper.hasConstructorInTheCorrectForm(c)) {
-			return new HasRowmapper(true, new ConstructorAnnotationRowMapper<Object>(c));
+			return new HasRowmapper(true, new ConstructorAnnotationRowMapper<>(c));
 		} else {
 			return new HasRowmapper(false, null);
 		}
@@ -171,9 +172,18 @@ public enum QueryType {
 		Class<?>[] parameterTypes = m.getParameterTypes();
 		for (int i = 0; i < args.length; i++) {
 			String name = parameterName(parameterAnnotations[i]);
-			if (name != null) {
-				ps.addValue(name, args[i], StatementCreatorUtils.javaTypeToSqlParameterType(parameterTypes[i]));
-			}
+            if(name != null) {
+                if(ZonedDateTime.class.isAssignableFrom(parameterTypes[i])) {
+                    ZonedDateTime dateTime = ZonedDateTime.class.cast(args[i]);
+                    final ZonedDateTime utc = dateTime.withZoneSameInstant(ZoneId.of("UTC"));
+                    Calendar c = Calendar.getInstance();
+                    c.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    c.setTimeInMillis(utc.toInstant().toEpochMilli());
+                    ps.addValue(name, c, Types.TIMESTAMP);
+                } else {
+                    ps.addValue(name, args[i], StatementCreatorUtils.javaTypeToSqlParameterType(parameterTypes[i]));
+                }
+            }
 		}
 
 		return ps;

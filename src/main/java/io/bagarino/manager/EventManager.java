@@ -22,6 +22,7 @@ import io.bagarino.model.Event;
 import io.bagarino.model.SpecialPrice;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
+import io.bagarino.model.join.EventTicketCategory;
 import io.bagarino.model.modification.EventModification;
 import io.bagarino.model.modification.EventWithStatistics;
 import io.bagarino.model.modification.TicketCategoryWithStatistic;
@@ -43,7 +44,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.TimeZone;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -51,6 +55,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 @Component
+@Transactional
 public class EventManager {
 
     private final UserManager userManager;
@@ -136,7 +141,11 @@ public class EventManager {
         return userManager.findOrganizationById(event.getOrganizationId(), username);
     }
 
-    @Transactional
+    public Event findEventByTicketCategory(TicketCategory ticketCategory) {
+        final EventTicketCategory etc = eventTicketCategoryRepository.findByTicketCategoryId(ticketCategory.getId());
+        return eventRepository.findById(etc.getEventId());
+    }
+
     public void createEvent(EventModification em) {
         int eventId = insertEvent(em);
         Event event = eventRepository.findById(eventId);
@@ -148,7 +157,6 @@ public class EventManager {
 
     }
 
-    @Transactional
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
         Event event = eventRepository.findById(eventId);
         TicketCategoryWithStatistic src = loadTicketCategoryWithStats(srcCategoryId, event);
@@ -208,7 +216,7 @@ public class EventManager {
 
         if(notAssignedTickets < 0) {
             TicketCategory last = ticketCategories.stream()
-                                  .sorted(Comparator.comparing(TicketCategory::getExpiration).reversed())
+                                  .sorted((tc1, tc2) -> tc2.getExpiration(event.getZoneId()).compareTo(tc1.getExpiration(event.getZoneId())))
                                   .findFirst().get();
             ticketCategoryRepository.updateSeatsAvailability(last.getId(), last.getMaxTickets() + notAssignedTickets);
         }
@@ -250,7 +258,7 @@ public class EventManager {
         String timeZone = tz.getID();
         ZoneId zoneId = tz.toZoneId();
         return eventRepository.insert(em.getDescription(), em.getShortName(), em.getLocation(),
-                coordinates.getLeft(), coordinates.getRight(), em.getBegin().toDate(zoneId), em.getEnd().toDate(zoneId),
+                coordinates.getLeft(), coordinates.getRight(), em.getBegin().toZonedDateTime(zoneId), em.getEnd().toZonedDateTime(zoneId),
                 timeZone, actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
                 privateKey, em.getOrganizationId()).getValue();
     }

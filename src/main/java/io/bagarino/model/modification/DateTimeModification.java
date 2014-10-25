@@ -36,4 +36,8 @@ public class DateTimeModification {
         ZonedDateTime zd = ZonedDateTime.of(date, time, zoneId);
         return Date.from(zd.withZoneSameInstant(ZoneId.of(ZoneOffset.UTC.getId())).toInstant());
     }
+
+    public ZonedDateTime toZonedDateTime(ZoneId zoneId) {
+        return ZonedDateTime.of(date, time, zoneId);
+    }
 }

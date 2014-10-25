@@ -4,6 +4,8 @@
 <div class="row">
 	<div class="col-md-7">
 		<div>{{#i18n}}show-event.by{{/i18n}} <strong>{{organizer.name}}</strong> &lt;<a href="mailto:{{organizer.email}}">{{organizer.email}}</a>&gt;</div>
+        <div>formatted begin: {{event.formattedBegin}}</div>
+        <div>formatted end: {{event.formattedEnd}}</div>
 		<div>
 			{{#event.sameDay}}
 				{{#i18n}}event-days.same-day 
