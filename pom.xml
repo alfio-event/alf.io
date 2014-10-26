@@ -16,7 +16,7 @@
 		<org.eclipse.jetty.version>9.2.2.v20140723</org.eclipse.jetty.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-security-config.version>3.2.5.RELEASE</spring-security-config.version>
-        <org.apache.logging.log4j.version>2.0.2</org.apache.logging.log4j.version>
+        <org.apache.logging.log4j.version>2.1</org.apache.logging.log4j.version>
         <jackson.version>2.4.3</jackson.version>
         <stripe.version>1.19.1</stripe.version>
     </properties>
@@ -94,7 +94,7 @@
         <dependency>
     		<groupId>org.xhtmlrenderer</groupId>
     		<artifactId>flying-saucer-pdf</artifactId>
-    		<version>9.0.6</version>
+    		<version>9.0.7</version>
     		<exclusions>
     			<exclusion>
     				<artifactId>bcmail-jdk14</artifactId>
@@ -261,7 +261,7 @@
 				<artifactId>jetty-maven-plugin</artifactId>
 				<version>${org.eclipse.jetty.version}</version>
 				<configuration>
-                    <scanIntervalSeconds>10</scanIntervalSeconds>
+                    <!-- <scanIntervalSeconds>10</scanIntervalSeconds> -->
                     <stopPort>8005</stopPort>
                     <stopKey>STOP</stopKey>
                     <webApp>

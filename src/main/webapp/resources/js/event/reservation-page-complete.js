@@ -12,6 +12,11 @@
 		$(".cancel-update").click(function() {
 			$('#' + $(this).attr('data-for-form')).hide();
 		})
+		
+		
+		$("[data-dismiss=alert]").click(function() {
+			$(this).parent().hide('medium');
+		})
 	});
 	
 	

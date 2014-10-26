@@ -2,6 +2,14 @@
 <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}">{{#i18n}}show-ticket.go-back-to-reservation{{/i18n}}</a>
 
 <h1>{{event.shortName}}</h1>
+
+{{#ticketEmailSent}}
+<div class="alert alert-success alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+  <strong>{{#i18n}}email.ticket-email-sent{{/i18n}}</strong>
+</div>
+{{/ticketEmailSent}}
+
 <h2>{{#i18n}}ticket.event-info{{/i18n}}</h2>
 
 <table>
@@ -69,5 +77,8 @@
 		<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 	</form>
 </div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="{{request.contextPath}}/resources/js/event/show-ticket.js"></script>
 
 {{>/event/page-bottom}}

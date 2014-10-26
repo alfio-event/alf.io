@@ -10,6 +10,19 @@
 	{{/ticketsAreAllAssigned}}
 </h1>
 
+{{#confirmationEmailSent}}
+<div class="alert alert-success alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+  <strong>{{#i18n}}email.confirmation-email-sent{{/i18n}}</strong>
+</div>
+{{/confirmationEmailSent}}
+{{#ticketEmailSent}}
+<div class="alert alert-success alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+  <strong>{{#i18n}}email.ticket-email-sent{{/i18n}}</strong>
+</div>
+{{/ticketEmailSent}}
+
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/re-send-email" method="post">
 	<button type="submit" class="btn btn-link">{{#i18n}}reservation-page-complete.resend-reservation-email [{{reservation.email}}]{{/i18n}}</button>
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
