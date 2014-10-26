@@ -169,6 +169,7 @@
                 inception: {
                     date: inceptionDate
                 },
+                tokenGenerationRequested: 'false',
                 expiration: {},
                 sticky: sticky,
                 notBefore: notBefore
