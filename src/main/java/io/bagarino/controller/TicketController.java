@@ -17,6 +17,7 @@
 package io.bagarino.controller;
 
 import static io.bagarino.util.OptionalWrapper.optionally;
+import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.manager.system.MailManager;
 import io.bagarino.manager.system.MailManager.Attachment;
 import io.bagarino.model.Event;
@@ -30,16 +31,13 @@ import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
 import io.bagarino.repository.user.OrganizationRepository;
-import io.bagarino.util.DateFormatterInterceptor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Date;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -49,11 +47,9 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.Data;
 
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -61,8 +57,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.view.mustache.jmustache.LocalizationMessageInterceptor;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import com.google.zxing.BarcodeFormat;
@@ -72,7 +66,6 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
-import com.samskivert.mustache.Mustache;
 
 @Controller
 public class TicketController {
@@ -83,21 +76,21 @@ public class TicketController {
 	private final TicketRepository ticketRepository;
 	private final TicketCategoryRepository ticketCategoryRepository;
 	private final MailManager mailManager;
-	private final LocalizationMessageInterceptor localizationMessageInterceptor;
+	private final TemplateManager templateManager;
 
 	@Autowired
 	public TicketController(EventRepository eventRepository, OrganizationRepository organizationRepository, 
 			TicketReservationRepository ticketReservationRepository,
 			TicketRepository ticketRepository, TicketCategoryRepository ticketCategoryRepository,
 			MailManager mailManager,
-			LocalizationMessageInterceptor localizationMessageInterceptor) {
+			TemplateManager templateManager) {
 		this.eventRepository = eventRepository;
 		this.organizationRepository = organizationRepository;
 		this.ticketReservationRepository = ticketReservationRepository;
 		this.ticketRepository = ticketRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.mailManager = mailManager;
-		this.localizationMessageInterceptor = localizationMessageInterceptor;
+		this.templateManager = templateManager;
 	}
 	
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.GET)
@@ -225,27 +218,15 @@ public class TicketController {
 		//
 		
 		//
-		//TODO add event organizer and display it :D
-		ModelAndView mv = new ModelAndView();
-		mv.addObject("ticket", ticket);
-		mv.addObject("reservation", ticketReservation);
-		mv.addObject("ticketCategory", ticketCategory);
-		mv.addObject("event", event);
-		mv.addObject("organization", organization);
-		mv.addObject("qrCodeDataUri", toDataUri(createQRCode(qrCodeText)));
-		
-		
-		//
-		mv.addObject("format-date", DateFormatterInterceptor.FORMAT_DATE);
-		localizationMessageInterceptor.postHandle(request, response, null, mv);
-		//
-		
-		InputStreamReader ticketTmpl = new InputStreamReader(
-				new ClassPathResource("/io/bagarino/templates/ticket.ms").getInputStream(), StandardCharsets.UTF_8);
-		String page = Mustache.compiler().escapeHTML(false).withFormatter((o) -> {
-							return (o instanceof Date) ? DateFormatUtils.ISO_DATETIME_TIME_ZONE_FORMAT.format((Date) o)
-									: String.valueOf(o);
-						}).compile(ticketTmpl).execute(mv.getModel());
+		Map<String, Object> model = new HashMap<String, Object>();
+		model.put("ticket", ticket);
+		model.put("reservation", ticketReservation);
+		model.put("ticketCategory", ticketCategory);
+		model.put("event", event);
+		model.put("organization", organization);
+		model.put("qrCodeDataUri", toDataUri(createQRCode(qrCodeText)));
+			
+		String page = templateManager.render("/io/bagarino/templates/ticket.ms", model, request);
 
 		ITextRenderer renderer = new ITextRenderer();
 		renderer.setDocumentFromString(page);

@@ -16,6 +16,7 @@
  */
 package io.bagarino.config;
 
+import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.util.DateFormatterInterceptor;
 
 import java.time.ZonedDateTime;
@@ -214,6 +215,11 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         mapper.registerModule(new JSR310Module());
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return mapper;
+    }
+    
+    @Bean
+    public TemplateManager getTemplateManager(LocalizationMessageInterceptor localizationMessageInterceptor) {
+    	return new TemplateManager(localizationMessageInterceptor);
     }
 
     @Override
