@@ -20,7 +20,10 @@ import io.bagarino.config.DataSourceConfiguration;
 import io.bagarino.config.WebSecurityConfig;
 import io.bagarino.model.Event;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
@@ -28,7 +31,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.TimeZone;
@@ -87,20 +89,20 @@ public class EventRepositoryTest {
     }
 
     @Test
-    @Ignore
     public void testSQLInsertedDatesRespectTheirTimeZone() throws Exception {
         //these are the values of what we have inserted in the SQL insert script
-        LocalDateTime beginEventDate = LocalDateTime.of(2015,4,18,0,0,0);
-        LocalDateTime endEventDate = LocalDateTime.of(2015,4,19,23,59,59);
         TimeZone eventTimeZone = TimeZone.getTimeZone("America/New_York");
+        ZoneId eventZoneId = eventTimeZone.toZoneId();
+        ZonedDateTime beginEventDate = ZonedDateTime.of(2015,1,10,0,0,0,0,eventZoneId);
+        ZonedDateTime endEventDate = ZonedDateTime.of(2015, 1, 10, 23, 59, 0, 0, eventZoneId);
 
         Event e = eventRepository.findById(0);
         assertNotNull("Event not found in DB", e);
 
-        assertEquals("Begin date is not correct", e.getBegin(), ZonedDateTime.of(beginEventDate, eventTimeZone.toZoneId()));
-        assertEquals("End date is not correct", e.getEnd(),ZonedDateTime.of(endEventDate, eventTimeZone.toZoneId()));
+        assertEquals("Begin date is not correct", e.getBegin(), beginEventDate);
+        assertEquals("End date is not correct", e.getEnd(), endEventDate);
 
-        //since when debugging the toString method is used .... and it rely on the laptop TimZone, we test it too
+        //since when debugging the toString method is used .... and it rely on the system TimeZone, we test it too
         System.out.println(e.getBegin().toString());
         System.out.println(e.getEnd().toString());
     }
