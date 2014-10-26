@@ -32,22 +32,22 @@
 				<td style="width:150px">{{#i18n}}ticket.date-time{{/i18n}}</td>
 				<td>			{{#event.sameDay}}
 				{{#i18n}}event-days.same-day 
-					[{{#format-date}}{{event.begin}}EEEEE dd MMMMM yyyy timezone: {{event.timeZone}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] 
-					[{{#format-date}}{{event.begin}} HH:mm timezone: {{event.timeZone}}{{/format-date}}] 
-					[{{#format-date}}{{event.end}} HH:mm timezone: {{event.timeZone}}{{/format-date}}]
+					[{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] 
+					[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] 
+					[{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
 				{{/i18n}}
 			{{/event.sameDay}}
 			{{^event.sameDay}}
 				{{#i18n}}event-days.not-same-day 
-					[{{#format-date}}{{event.begin}}EEEEE dd MMMMM yyyy timezone: {{event.timeZone}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-					[{{#format-date}}{{event.begin}} HH:mm timezone: {{event.timeZone}}{{/format-date}}]
+					[{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+					[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
 				{{/i18n}} 
 				- 
 				{{#i18n}}event-days.not-same-day 
-					[{{#format-date}}{{event.end}}EEEEE dd MMMMM yyyy timezone: {{event.timeZone}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-					[{{#format-date}}{{event.end}} HH:mm timezone: {{event.timeZone}}{{/format-date}}]
+					[{{#format-date}}{{event.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+					[{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
 				{{/i18n}} 
-			{{/event.sameDay}} ({{event.timeZone}})</td>
+			{{/event.sameDay}}</td>
 			</tr>
 			<tr>
 				<td>{{#i18n}}ticket.location{{/i18n}}</td>

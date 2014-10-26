@@ -4,8 +4,25 @@
 <div class="row">
 	<div class="col-md-7">
 		<div>{{#i18n}}show-event.by{{/i18n}} <strong>{{organizer.name}}</strong> &lt;<a href="mailto:{{organizer.email}}">{{organizer.email}}</a>&gt;</div>
-		<div>
-			{{event.formattedEventDates}} ({{event.timeZone}})
+		<div>	
+			{{#event.sameDay}}
+				{{#i18n}}event-days.same-day 
+					[{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] 
+					[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] 
+					[{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
+				{{/i18n}}
+			{{/event.sameDay}}
+			{{^event.sameDay}}
+				{{#i18n}}event-days.not-same-day 
+					[{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+					[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
+				{{/i18n}} 
+				- 
+				{{#i18n}}event-days.not-same-day 
+					[{{#format-date}}{{event.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+					[{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
+				{{/i18n}} 
+			{{/event.sameDay}}
 		</div>
 		<div>{{event.location}}</div>
 		<div class="event-description">{{event.description}}</div>
@@ -39,7 +56,7 @@
 							{{#i18n}}show-event.sales-not-started{{/i18n}}
 						{{/saleInFuture}}
 						{{^saleInFuture}}
-							{{#i18n}}show-event.sales-end [{{formattedExpiration}}]{{/i18n}}
+							{{#i18n}}show-event.sales-end [{{#format-date}}{{zonedExpiration}} dd.MM.yyyy HH:mm (z) locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}
 						{{/saleInFuture}}
 					</div>
 					<div>

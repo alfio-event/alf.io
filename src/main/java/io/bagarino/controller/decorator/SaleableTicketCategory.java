@@ -51,5 +51,9 @@ public class SaleableTicketCategory {
     public String getFormattedExpiration() {
         return getExpiration(zoneId).format(DateTimeFormatter.ISO_DATE_TIME);
     }
+    
+    public ZonedDateTime getZonedExpiration() {
+    	return getExpiration(zoneId);
+    }
 
 }

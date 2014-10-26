@@ -7,10 +7,25 @@
 		<a href="{{request.contextPath}}/event/{{shortName}}/">
 			<div>
 				<h2>{{shortName}}</h2>
-                <div>formatted begin: {{formattedBegin}}</div>
-                <div>formatted end: {{formattedEnd}}</div>
 				<div>
-                    {{event.formattedEventDates}} ({{timeZone}})
+	            {{#sameDay}}
+					{{#i18n}}event-days.same-day 
+						[{{#format-date}}{{begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] 
+						[{{#format-date}}{{begin}} HH:mm{{/format-date}}] 
+						[{{#format-date}}{{end}} HH:mm (z){{/format-date}}]
+					{{/i18n}}
+				{{/sameDay}}
+				{{^sameDay}}
+					{{#i18n}}event-days.not-same-day 
+						[{{#format-date}}{{begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+						[{{#format-date}}{{begin}} HH:mm{{/format-date}}]
+					{{/i18n}} 
+					- 
+					{{#i18n}}event-days.not-same-day 
+						[{{#format-date}}{{end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+						[{{#format-date}}{{end}} HH:mm (z){{/format-date}}]
+					{{/i18n}} 
+				{{/sameDay}}
 				</div>
 				<div>{{location}}</div>
 			</div>

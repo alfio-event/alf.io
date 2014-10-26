@@ -17,16 +17,19 @@
 package io.bagarino.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
@@ -100,7 +103,7 @@ public class Event {
     
     
     public boolean getSameDay() {
-    	return begin.equals(end);
+    	return begin.truncatedTo(ChronoUnit.DAYS).equals(end.truncatedTo(ChronoUnit.DAYS));
     }
 
     @JsonIgnore

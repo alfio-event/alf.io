@@ -19,9 +19,6 @@ package io.bagarino.controller.decorator;
 import io.bagarino.model.Event;
 import lombok.experimental.Delegate;
 
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-
 public class EventDescriptor {
 
     @Delegate
@@ -29,16 +26,6 @@ public class EventDescriptor {
 
     public EventDescriptor(Event event) {
         this.event = event;
-    }
-
-    public String getFormattedEventDates() {
-        final ZonedDateTime begin = event.getBegin();
-        final ZonedDateTime end = event.getEnd();
-        if(event.getSameDay()) {
-            return String.format("%s %s - %s", begin.format(DateTimeFormatter.ISO_DATE), begin.format(DateTimeFormatter.ISO_TIME), end.format(DateTimeFormatter.ISO_TIME));
-        }
-        return String.format("%s %s - %s %s", begin.format(DateTimeFormatter.ISO_DATE), begin.format(DateTimeFormatter.ISO_TIME),
-                end.format(DateTimeFormatter.ISO_DATE), end.format(DateTimeFormatter.ISO_TIME));
     }
 
     public boolean getVatIncluded() {
