@@ -24,6 +24,7 @@ import java.util.Properties;
 
 import lombok.extern.log4j.Log4j2;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.support.EncodedResource;
@@ -41,6 +42,7 @@ public class DefaultMailer implements Mailer {
 
 	private final ConfigurationManager configurationManager;
 
+	@Autowired
 	public DefaultMailer(ConfigurationManager configurationManager) {
 		this.configurationManager = configurationManager;
 	}
