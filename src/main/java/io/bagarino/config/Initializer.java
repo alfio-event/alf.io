@@ -27,6 +27,11 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 	@Override
 	public void onStartup(ServletContext servletContext) throws ServletException {
 		super.onStartup(servletContext);
+		
+		
+		//FIXME and CHECKME what a mess, ouch: https://issues.jboss.org/browse/WFLY-3448 ?
+		servletContext.getSessionCookieConfig().setPath("/");
+		//
 
 		if (System.getProperty("startDBManager") != null) {
 			DatabaseManagerSwing.main(new String[] { "--url", "jdbc:hsqldb:mem:bagarino", "--noexit" });
