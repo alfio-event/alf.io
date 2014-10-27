@@ -120,7 +120,7 @@ public class DataSourceConfiguration {
 	}
 	
 	@Bean
-	public PlatformProvider getCloudProvider(Environment env) {
+	public PlatformProvider getCloudProvider() {
 		return System.getenv("OPENSHIFT_APP_NAME") != null ? PlatformProvider.OPENSHIFT : PlatformProvider.DEFAULT;
 	}
 
