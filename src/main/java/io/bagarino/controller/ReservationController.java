@@ -17,12 +17,13 @@
 package io.bagarino.controller;
 
 import com.stripe.exception.StripeException;
+
 import io.bagarino.controller.decorator.SaleableTicketCategory;
 import io.bagarino.manager.EventManager;
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.manager.TicketReservationManager.NotEnoughTicketsException;
-import io.bagarino.manager.system.MailManager;
+import io.bagarino.manager.system.Mailer;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
@@ -33,6 +34,7 @@ import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import lombok.Data;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -68,7 +70,7 @@ public class ReservationController {
     private final TicketReservationManager tickReservationManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final StripeManager stripeManager;
-    private final MailManager mailManager;
+    private final Mailer mailer;
     //
     private final EventController eventController;
     
@@ -79,7 +81,7 @@ public class ReservationController {
                                  TicketReservationManager tickReservationManager,
                                  TicketCategoryRepository ticketCategoryRepository,
                                  StripeManager stripeManager,
-                                 MailManager mailManager,
+                                 Mailer mailer,
                                  EventController eventController) {
         this.eventRepository = eventRepository;
         this.eventManager = eventManager;
@@ -87,7 +89,7 @@ public class ReservationController {
 		this.tickReservationManager = tickReservationManager;
 		this.ticketCategoryRepository = ticketCategoryRepository;
         this.stripeManager = stripeManager;
-        this.mailManager = mailManager;
+        this.mailer = mailer;
         this.eventController = eventController;
 	}
 	
@@ -264,7 +266,7 @@ public class ReservationController {
     
     //TODO: complete, additionally, the mail should be sent asynchronously
     private void sendReservationCompleteEmail(TicketReservation reservation) {
-    	mailManager.mailer().send(reservation.getEmail(), "reservation complete :D", "here be link", Optional.of("here be link html"));
+    	mailer.send(reservation.getEmail(), "reservation complete :D", "here be link", Optional.of("here be link html"));
     }
     
     

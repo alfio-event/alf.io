@@ -18,8 +18,8 @@ package io.bagarino.controller;
 
 import static io.bagarino.util.OptionalWrapper.optionally;
 import io.bagarino.controller.support.TemplateManager;
-import io.bagarino.manager.system.MailManager;
-import io.bagarino.manager.system.MailManager.Attachment;
+import io.bagarino.manager.system.Attachment;
+import io.bagarino.manager.system.Mailer;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
@@ -75,21 +75,21 @@ public class TicketController {
 	private final TicketReservationRepository ticketReservationRepository;
 	private final TicketRepository ticketRepository;
 	private final TicketCategoryRepository ticketCategoryRepository;
-	private final MailManager mailManager;
+	private final Mailer mailer;
 	private final TemplateManager templateManager;
 
 	@Autowired
 	public TicketController(EventRepository eventRepository, OrganizationRepository organizationRepository, 
 			TicketReservationRepository ticketReservationRepository,
 			TicketRepository ticketRepository, TicketCategoryRepository ticketCategoryRepository,
-			MailManager mailManager,
+			Mailer mailer,
 			TemplateManager templateManager) {
 		this.eventRepository = eventRepository;
 		this.organizationRepository = organizationRepository;
 		this.ticketReservationRepository = ticketReservationRepository;
 		this.ticketRepository = ticketRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
-		this.mailManager = mailManager;
+		this.mailer = mailer;
 		this.templateManager = templateManager;
 	}
 	
@@ -148,7 +148,7 @@ public class TicketController {
 		Attachment attachment = new Attachment("ticket-" + ticketIdentifier + ".pdf", new ByteArrayResource(baos.toByteArray()), "application/pdf");
 		
 		//TODO: complete
-		mailManager.mailer().send(ticket.getEmail(), "your ticket", "here attached your ticket", Optional.of("here attached your ticket"), attachment);
+		mailer.send(ticket.getEmail(), "your ticket", "here attached your ticket", Optional.of("here attached your ticket"), attachment);
 		
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId
 				+ ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "") + "?ticket-email-sent=true";
