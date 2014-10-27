@@ -166,5 +166,11 @@ public class AdminApiController {
         configurationManager.save(ConfigurationKeys.fromValue(configuration.getKey()), configuration.getValue());
         return loadConfiguration();
     }
+    
+    @RequestMapping(value = "/configuration/key/{key}", method = DELETE)
+    public boolean deleteKey(@PathVariable("key") String key) {
+        configurationManager.deleteKey(key);
+        return true;
+    }
 
 }

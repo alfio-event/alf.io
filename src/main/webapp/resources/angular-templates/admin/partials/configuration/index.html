@@ -1,10 +1,10 @@
 <div class="container">
     <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loading"></i>
     <div data-ng-if="!loading">
-        <form name="options" novalidate data-ng-submit="updateConfiguration(form, event)">
+        <form name="options" novalidate data-ng-submit="">
             <div class="form-group" data-ng-repeat="setting in settings">
-                <label for="{{setting.name}}">{{setting.description}}</label>
-                <input class="form-control" data-ng-model="setting.value" name="{{setting.name}}" id="{{setting.name}}" required data-ng-change="configurationChange(setting)"  data-ng-model-options="{ updateOn: 'blur'}">
+                <label for="{{setting.key}}">{{setting.description}} <button class="btn btn-default" data-ng-click="removeConfigurationKey(setting.key)" type="button">remove</button></label>
+                <input class="form-control" data-ng-model="setting.value" name="{{setting.key}}" id="{{setting.key}}" data-ng-change="configurationChange(setting)"  data-ng-model-options="{ updateOn: 'blur'}">
             </div>
         </form>
     </div>

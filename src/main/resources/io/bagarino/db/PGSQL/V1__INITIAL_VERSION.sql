@@ -183,5 +183,5 @@ create table configuration(
 alter table configuration add constraint "unique_configuration_c_key" unique(c_key);
 
 insert into configuration (c_key, c_value, description) values
-	('MAX_AMOUNT_OF_TICKETS_BY_RESERVATION', '5', 'max amount of tickets'),
-	('SPECIAL_PRICE_CODE_LENGTH', '6', 'length of special price code');
+	('MAX_AMOUNT_OF_TICKETS_BY_RESERVATION', '5', 'Max amount of tickets'),
+	('SPECIAL_PRICE_CODE_LENGTH', '6', 'Length of special price code');

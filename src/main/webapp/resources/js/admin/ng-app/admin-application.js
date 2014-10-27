@@ -297,6 +297,16 @@
             $scope.settings = result;
             $scope.loading = false;
         });
+        
+        $scope.removeConfigurationKey = function(key) {
+        	$scope.loading = true;
+            ConfigurationService.remove(key).then(function() {return ConfigurationService.loadAll();}).then(function(result) {
+            	console.log(result);
+            	$scope.settings = result.data;
+                $scope.loading = false;
+            });
+        }
+        
         $scope.configurationChange = function(conf) {
             if(!conf.value) {
                 return;

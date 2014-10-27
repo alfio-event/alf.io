@@ -90,6 +90,9 @@
             },
             update: function(configuration) {
                 return $http.post('/admin/api/configuration/update', configuration).error(HttpErrorHandler.handle);
+            },
+            remove: function(key) {
+            	return $http['delete']('/admin/api/configuration/key/' + key).error(HttpErrorHandler.handle);
             }
         };
     });

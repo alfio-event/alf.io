@@ -19,12 +19,14 @@ package io.bagarino.manager.system;
 import io.bagarino.model.system.Configuration;
 import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.repository.system.ConfigurationRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -97,6 +99,11 @@ public class ConfigurationManager {
                 .collect(Collectors.toList());
         List<Configuration> result = new LinkedList<>(existing);
         result.addAll(missing);
+        result.sort(Comparator.comparing(Configuration::getKey));
         return result;
     }
+
+	public void deleteKey(String key) {
+		configurationRepository.deleteByKey(key);
+	}
 }
