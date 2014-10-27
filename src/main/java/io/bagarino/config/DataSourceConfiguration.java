@@ -150,8 +150,8 @@ public class DataSourceConfiguration {
 	}
 
 	@Bean
-	public QueryFactory queryFactory(Environment env, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
-		return new QueryFactory(env.getRequiredProperty("datasource.dialect"), namedParameterJdbcTemplate);
+	public QueryFactory queryFactory(Environment env, PlatformProvider platform, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+		return new QueryFactory(platform.getDialect(env), namedParameterJdbcTemplate);
 	}
 
 	@Bean
