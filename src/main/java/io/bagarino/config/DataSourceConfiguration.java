@@ -20,6 +20,7 @@ import io.bagarino.datamapper.QueryFactory;
 import io.bagarino.datamapper.QueryRepositoryScanner;
 
 import java.net.URISyntaxException;
+import java.util.Objects;
 
 import javax.sql.DataSource;
 
@@ -40,15 +41,97 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableScheduling
 @ComponentScan(basePackages = {"io.bagarino.manager"})
 public class DataSourceConfiguration {
+	
+	
+	/**
+	 * For handling the various differences between the cloud providers.
+	 * 
+	 * Supported:
+	 *  - openshift : pgsql only
+	 *  - local use with system properties
+	 */
+	public enum PlatformProvider {
+		DEFAULT, 
+		
+		/**
+		 * See https://developers.openshift.com/en/managing-environment-variables.html
+		 * 
+		 * **/
+		OPENSHIFT {
+			@Override
+			public String getDriveClassName(Environment env) {
+				return "org.postgresql.Driver";
+			}
+			
+			@Override
+			public String getUrl(Environment env) {
+				String dbHost = Objects.requireNonNull(System.getenv("OPENSHIFT_POSTGRESQL_DB_HOST"), "OPENSHIFT_POSTGRESQL_DB_HOST env variable is missing");
+				String port = Objects.requireNonNull(System.getenv("OPENSHIFT_POSTGRESQL_DB_PORT"), "OPENSHIFT_POSTGRESQL_DB_PORT env variable is missing");
+				String dbName = Objects.requireNonNull(System.getenv("OPENSHIFT_APP_NAME"), "OPENSHIFT_APP_NAME env variable is missing");
+				
+				return "jdbc:postgresql://" + dbHost + ":" + port + "/" + dbName;
+			}
+			
+			@Override
+			public String getUsername(Environment env) {
+				return Objects.requireNonNull(System.getenv("OPENSHIFT_POSTGRESQL_DB_USERNAME"), "OPENSHIFT_POSTGRESQL_DB_USERNAME env variable is missing");
+			}
+			
+			
+			@Override
+			public String getPassword(Environment env) {
+				return Objects.requireNonNull(System.getenv("OPENSHIFT_POSTGRESQL_DB_PASSWORD"), "OPENSHIFT_POSTGRESQL_DB_PASSWORD env variable is missing");
+			}
+			
+			@Override
+			public String getValidationQuery(Environment env) {
+				return "SELECT 1";
+			}
+			
+			@Override
+			public String getDialect(Environment env) {
+				return "PGSQL";
+			}
+		};
+		
+		public String getDriveClassName(Environment env) {
+			return env.getRequiredProperty("datasource.driver");
+		}
+		
+		public String getUrl(Environment env) {
+			return env.getRequiredProperty("datasource.url");
+		}
+		
+		public String getUsername(Environment env) {
+			return env.getRequiredProperty("datasource.username");
+		}
+		
+		public String getPassword(Environment env) {
+			return env.getRequiredProperty("datasource.password");
+		}
+		
+		public String getValidationQuery(Environment env) {
+			return env.getRequiredProperty("datasource.validationQuery");
+		}
+		
+		public String getDialect(Environment env) {
+			return env.getRequiredProperty("datasource.dialect");
+		}
+	}
+	
+	@Bean
+	public PlatformProvider getCloudProvider(Environment env) {
+		return System.getenv("OPENSHIFT_APP_NAME") != null ? PlatformProvider.OPENSHIFT : PlatformProvider.DEFAULT;
+	}
 
 	@Bean(destroyMethod = "close")
-	public DataSource getDataSource(Environment env) throws URISyntaxException {
+	public DataSource getDataSource(Environment env, PlatformProvider platform) throws URISyntaxException {
 		org.apache.tomcat.jdbc.pool.DataSource dataSource = new org.apache.tomcat.jdbc.pool.DataSource();
-		dataSource.setDriverClassName(env.getRequiredProperty("datasource.driver"));
-		dataSource.setUrl(env.getRequiredProperty("datasource.url"));
-		dataSource.setUsername(env.getRequiredProperty("datasource.username"));
-		dataSource.setPassword(env.getRequiredProperty("datasource.password"));
-		dataSource.setValidationQuery(env.getRequiredProperty("datasource.validationQuery"));
+		dataSource.setDriverClassName(platform.getDriveClassName(env));
+		dataSource.setUrl(platform.getUrl(env));
+		dataSource.setUsername(platform.getUsername(env));
+		dataSource.setPassword(platform.getPassword(env));
+		dataSource.setValidationQuery(platform.getValidationQuery(env));
 		dataSource.setTestOnBorrow(true);
 		dataSource.setTestOnConnect(true);
 		dataSource.setTestWhileIdle(true);
@@ -77,8 +160,8 @@ public class DataSourceConfiguration {
 	}
 
 	@Bean
-	public Flyway migrator(Environment env, DataSource dataSource) {
-		String sqlDialect = env.getRequiredProperty("datasource.dialect");
+	public Flyway migrator(Environment env, PlatformProvider platform, DataSource dataSource) {
+		String sqlDialect = platform.getDialect(env);
 		Flyway migration = new Flyway();
 		migration.setDataSource(dataSource);
 		// TODO remove the validation = false when the schemas will be stable
