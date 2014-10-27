@@ -1,0 +1,66 @@
+Notes for installing the application on openshift
+=================================================
+
+This application need java 8 and use pgsql for the persistence layer.
+
+We will do a binary deploy using scp/sftp for moving the .war to our gear.
+
+1. Create an new application (scalable or not) with "WildFly Application Server 8.1.0.Final" and attach PostgreSQL 9.2 
+
+2. Follow the section "Deploying your WAR and EAR files using SCP/SFTP" from https://help.openshift.com/hc/en-us/articles/202399740-How-to-deploy-pre-compiled-java-applications-WAR-and-EAR-files-onto-your-OpenShift-gear-using-the-java-cartridges
+	- follow point 2,3,4 (clone the repo, remove src and pom.xml, commit and push)
+	
+3. Then build the application and push the war file (named ROOT.war) to your gear (we are doing a 2 step upload/move as sometimes wildfly detect the war in the middle of the upload).
+
+> mvn clean install
+> scp target/bagarino.war [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN].rhcloud.com:wildfly/standalone/deployments/ROOT
+> ssh [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN] "mv wildfly/standalone/deployments/ROOT wildfly/standalone/deployments/ROOT.war"
+
+4. Go to the log to get the admin username using
+
+> ssh [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN].rhcloud.com
+> less wildfly/logs/server.log
+
+and search for "admin credentials:"
+
+This will be your admin credentials for the admin section.
+
+You will need to configure the smtp too.
+
+
+For updating the application, you only need to upload the war and rename it:
+> mvn clean install
+> scp target/bagarino.war [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN].rhcloud.com:wildfly/standalone/deployments/ROOT
+> ssh [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN] "mv wildfly/standalone/deployments/ROOT wildfly/standalone/deployments/ROOT.war"
+
+ 
+
+Additional notes:
+=================
+
+Connecting to your pgsql database:
+
+
+>rhc port-forward -n YOUR_DOMAIN -a YOUR_APPLICATION
+
+You will have a similar output:
+
+    Service    Local                OpenShift
+    ---------- --------------- ---- -------------------------------------------------
+    haproxy    127.0.0.1:8080   =>  [...snip...]
+    haproxy    127.0.0.1:8081   =>  [...snip...]
+    java       127.0.0.1:3528   =>  [...snip...]
+    java       127.0.0.1:8082   =>  [...snip...]
+    java       127.0.0.1:9990   =>  [...snip...]
+    postgresql 127.0.0.1:36496  =>  [...snip...]
+
+    
+The credentials for the database are visible when you execute:
+
+>rhc show -n YOUR_DOMAIN
+
+
+Use pgadmin to connect using the local address, in our case: 
+
+ - host: 127.0.0.1
+ - port: 36496
