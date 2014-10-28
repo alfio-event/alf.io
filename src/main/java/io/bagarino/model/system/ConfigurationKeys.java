@@ -25,10 +25,13 @@ import java.util.function.Predicate;
 public enum ConfigurationKeys {
 
     INIT_COMPLETED("init succeeded", true),
-    STRIPE_SECRET_KEY("Stripe's secret key", false),
-    STRIPE_PUBLIC_KEY("Stripe's public key", false),
+    
     MAPS_SERVER_API_KEY("Google maps' server api key", false),
     MAPS_CLIENT_API_KEY("Google maps' client api key", false),
+    
+    STRIPE_SECRET_KEY("Stripe's secret key", false),
+    STRIPE_PUBLIC_KEY("Stripe's public key", false),
+    
     SPECIAL_PRICE_CODE_LENGTH("Length of special price code", false),
     MAX_AMOUNT_OF_TICKETS_BY_RESERVATION("Max amount of tickets", false),
 

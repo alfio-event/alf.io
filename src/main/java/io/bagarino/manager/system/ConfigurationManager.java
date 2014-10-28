@@ -99,7 +99,7 @@ public class ConfigurationManager {
                 .collect(Collectors.toList());
         List<Configuration> result = new LinkedList<>(existing);
         result.addAll(missing);
-        result.sort(Comparator.comparing(Configuration::getKey));
+        result.sort(Comparator.comparing(a -> ConfigurationKeys.valueOf(a.getKey())));
         return result;
     }
 
