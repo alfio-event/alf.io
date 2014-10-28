@@ -30,7 +30,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -70,7 +69,7 @@ public class RedirectToHttpsFilter implements Filter {
 
 	private static boolean isOverHttps(HttpServletRequest req) {
 		return req.isSecure() || req.getRequestURL().toString().startsWith("https://")
-				|| StringUtils.equals("https", req.getHeader("X-Forwarded-Proto"));
+				|| "https".equals(req.getHeader("X-Forwarded-Proto"));
 	}
 
 }

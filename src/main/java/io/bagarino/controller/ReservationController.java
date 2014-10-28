@@ -19,6 +19,7 @@ package io.bagarino.controller;
 import com.stripe.exception.StripeException;
 
 import io.bagarino.controller.decorator.SaleableTicketCategory;
+import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.manager.EventManager;
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
@@ -39,6 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -46,14 +48,19 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
 
 import static io.bagarino.util.MonetaryUtil.formatCents;
 import static io.bagarino.util.OptionalWrapper.optionally;
@@ -71,6 +78,8 @@ public class ReservationController {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final StripeManager stripeManager;
     private final Mailer mailer;
+    private final TemplateManager templateManager;
+    private final MessageSource messageSource;
     //
     private final EventController eventController;
     
@@ -82,6 +91,8 @@ public class ReservationController {
                                  TicketCategoryRepository ticketCategoryRepository,
                                  StripeManager stripeManager,
                                  Mailer mailer,
+                                 TemplateManager templateManager,
+                                 MessageSource messageSource,
                                  EventController eventController) {
         this.eventRepository = eventRepository;
         this.eventManager = eventManager;
@@ -90,6 +101,8 @@ public class ReservationController {
 		this.ticketCategoryRepository = ticketCategoryRepository;
         this.stripeManager = stripeManager;
         this.mailer = mailer;
+        this.templateManager = templateManager;
+        this.messageSource = messageSource;
         this.eventController = eventController;
 	}
 	
@@ -184,7 +197,7 @@ public class ReservationController {
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
     public String handleReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, 
     								PaymentForm paymentForm, BindingResult bindingResult,
-                                    Model model) throws StripeException {
+                                    Model model, HttpServletRequest request) throws StripeException {
     	
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
@@ -239,7 +252,7 @@ public class ReservationController {
         //
         
         //
-        sendReservationCompleteEmail(tickReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new));
+        sendReservationCompleteEmail(request, event.get(), tickReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new));
         //
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId;
@@ -247,7 +260,7 @@ public class ReservationController {
     
     
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/re-send-email", method = RequestMethod.POST)
-    public String reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {
+    public String reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, HttpServletRequest request) {
     	
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
@@ -259,14 +272,18 @@ public class ReservationController {
     		return "redirect:/event/" + eventName + "/";
     	}
     	
-    	sendReservationCompleteEmail(ticketReservation.orElseThrow(IllegalStateException::new));
+    	sendReservationCompleteEmail(request, event.get(), ticketReservation.orElseThrow(IllegalStateException::new));
     	
     	return "redirect:/event/" + eventName + "/reservation/" + reservationId+"?confirmation-email-sent=true";
     }
     
-    //TODO: complete, additionally, the mail should be sent asynchronously
-    private void sendReservationCompleteEmail(TicketReservation reservation) {
-    	mailer.send(reservation.getEmail(), "reservation complete :D", "here be link", Optional.of("here be link html"));
+    //TODO: complete, additionally, the mail should be sent asynchronously (?)
+    private void sendReservationCompleteEmail(HttpServletRequest request, Event event, TicketReservation reservation) {
+    	
+    	Map<String, Object> model = new HashMap<>();
+    	String reservationTxt = templateManager.render("/io/bagarino/templates/confirmation-email-txt.ms", model, request);
+    	String reservationHtml = templateManager.render("/io/bagarino/templates/confirmation-email-html.ms", model, request);
+    	mailer.send(reservation.getEmail(), messageSource.getMessage("reservation-email-subject", new Object[] {event.getShortName()}, RequestContextUtils.getLocale(request)), reservationTxt, Optional.of(reservationHtml));
     }
     
     

@@ -45,7 +45,8 @@ public class TemplateManager {
 
 	private final LocalizationMessageInterceptor localizationMessageInterceptor;
 	private final boolean cache;
-	private Map<String, Template> templateCache = new ConcurrentHashMap<>(3);
+	private Map<String, Template> templateCache = new ConcurrentHashMap<>(5); // 1 pdf, 2 email confirmation, 2 email
+																				// ticket
 
 	private final Compiler templateCompiler = Mustache
 			.compiler()
@@ -62,20 +63,22 @@ public class TemplateManager {
 		this.cache = environment.acceptsProfiles("!dev");
 	}
 
-	public String render(String classPathResource, Map<String, Object> model, HttpServletRequest request)
-			throws Exception {
+	public String render(String classPathResource, Map<String, Object> model, HttpServletRequest request) {
+		try {
+			ModelAndView mv = new ModelAndView((String) null, model);
 
-		ModelAndView mv = new ModelAndView((String) null, model);
+			//
+			mv.addObject("format-date", DateFormatterInterceptor.FORMAT_DATE);
+			localizationMessageInterceptor.postHandle(request, null, null, mv);
+			//
 
-		//
-		mv.addObject("format-date", DateFormatterInterceptor.FORMAT_DATE);
-		localizationMessageInterceptor.postHandle(request, null, null, mv);
-		//
+			Template tmpl = cache ? templateCache.computeIfAbsent(classPathResource, this::compile)
+					: compile(classPathResource);
 
-		Template tmpl = cache ? templateCache.computeIfAbsent(classPathResource, this::compile)
-				: compile(classPathResource);
-
-		return tmpl.execute(mv.getModel());
+			return tmpl.execute(mv.getModel());
+		} catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	private Template compile(String classPathResource) {
