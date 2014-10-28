@@ -1,6 +1,12 @@
 Notes for installing the application on openshift
 =================================================
 
+Prerequisites:
+
+ - a smtp server for sending emails: we have tested with mailgun over smtps
+ - google maps api key (public and private)
+ - stripes key (public and private)
+
 This application need java 8 and use pgsql for the persistence layer.
 
 We will do a binary deploy using scp/sftp for moving the .war to our gear.
@@ -25,7 +31,7 @@ and search for "admin credentials:"
 
 This will be your admin credentials for the admin section.
 
-You will need to configure the smtp too.
+You will need to configure smtp/stripe/google maps api key in the admin, section "Configuration"
 
 
 For updating the application, you only need to upload the war and rename it:
