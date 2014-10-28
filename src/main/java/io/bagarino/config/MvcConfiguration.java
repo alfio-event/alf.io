@@ -29,7 +29,6 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
@@ -161,7 +160,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         viewResolver.setTemplateFactory(getTemplateFactory());
         viewResolver.setOrder(1);
         //disable caching if we are in dev mode
-        viewResolver.setCache(!ArrayUtils.contains(env.getActiveProfiles(), "dev"));
+        viewResolver.setCache(env.acceptsProfiles("!dev"));
         viewResolver.setContentType("text/html;charset=UTF-8");
         return viewResolver;
     }
