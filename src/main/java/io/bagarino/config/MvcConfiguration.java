@@ -217,8 +217,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     }
     
     @Bean
-    public TemplateManager getTemplateManager(LocalizationMessageInterceptor localizationMessageInterceptor) {
-    	return new TemplateManager(localizationMessageInterceptor);
+    public TemplateManager getTemplateManager(LocalizationMessageInterceptor localizationMessageInterceptor, Environment environment) {
+    	return new TemplateManager(localizationMessageInterceptor, environment);
     }
 
     @Override

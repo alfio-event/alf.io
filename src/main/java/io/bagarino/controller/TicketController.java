@@ -18,8 +18,8 @@ package io.bagarino.controller;
 
 import static io.bagarino.util.OptionalWrapper.optionally;
 import io.bagarino.controller.support.TemplateManager;
-import io.bagarino.manager.system.Attachment;
 import io.bagarino.manager.system.Mailer;
+import io.bagarino.manager.system.Mailer.Attachment;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;

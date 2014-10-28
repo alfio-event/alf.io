@@ -18,21 +18,25 @@ package io.bagarino.controller.support;
 
 import io.bagarino.util.DateFormatterInterceptor;
 
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.mustache.jmustache.LocalizationMessageInterceptor;
 
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
+import com.samskivert.mustache.Template;
 
 /**
  * For hiding the uglyness :)
@@ -40,6 +44,8 @@ import com.samskivert.mustache.Mustache.Compiler;
 public class TemplateManager {
 
 	private final LocalizationMessageInterceptor localizationMessageInterceptor;
+	private final boolean cache;
+	private Map<String, Template> templateCache = new ConcurrentHashMap<>(3);
 
 	private final Compiler templateCompiler = Mustache
 			.compiler()
@@ -51,8 +57,9 @@ public class TemplateManager {
 					});
 
 	@Autowired
-	public TemplateManager(LocalizationMessageInterceptor localizationMessageInterceptor) {
+	public TemplateManager(LocalizationMessageInterceptor localizationMessageInterceptor, Environment environment) {
 		this.localizationMessageInterceptor = localizationMessageInterceptor;
+		this.cache = environment.acceptsProfiles("!dev");
 	}
 
 	public String render(String classPathResource, Map<String, Object> model, HttpServletRequest request)
@@ -65,8 +72,19 @@ public class TemplateManager {
 		localizationMessageInterceptor.postHandle(request, null, null, mv);
 		//
 
-		InputStreamReader tmpl = new InputStreamReader(new ClassPathResource(classPathResource).getInputStream(),
-				StandardCharsets.UTF_8);
-		return templateCompiler.compile(tmpl).execute(mv.getModel());
+		Template tmpl = cache ? templateCache.computeIfAbsent(classPathResource, this::compile)
+				: compile(classPathResource);
+
+		return tmpl.execute(mv.getModel());
+	}
+
+	private Template compile(String classPathResource) {
+		try {
+			InputStreamReader tmpl = new InputStreamReader(new ClassPathResource(classPathResource).getInputStream(),
+					StandardCharsets.UTF_8);
+			return templateCompiler.compile(tmpl);
+		} catch (IOException ioe) {
+			throw new IllegalStateException(ioe);
+		}
 	}
 }
