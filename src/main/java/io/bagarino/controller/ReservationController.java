@@ -340,10 +340,13 @@ public class ReservationController {
 			
 			if(selectionCount <= 0) {
 				bindingResult.reject(ErrorsCode.STEP_1_SELECT_AT_LEAST_ONE);
+				return;
 			}
 			
-			if(selectionCount >  tickReservationManager.maxAmountOfTickets()) {
-				bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM);//FIXME: we must display the maximum amount of tickets
+			final int maxAmountOfTicket = tickReservationManager.maxAmountOfTickets();
+			
+			if(selectionCount >  maxAmountOfTicket) {
+				bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM, new Object[]{maxAmountOfTicket}, null);
 			}
 
             final List<TicketReservationModification> selected = selected();
@@ -358,7 +361,7 @@ public class ReservationController {
                 SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, eventZoneId);
 
                 if (!ticketCategory.getSaleable()) {
-                    bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); // TODO add correct field
+                    bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); //
                 }
                 if (ticketCategory.isAccessRestricted()) {
                     bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED); //

@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -34,6 +35,7 @@ import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
@@ -191,6 +193,9 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
 						(o) -> {
 							if(o instanceof ZonedDateTime) {
 								return DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o);
+							} else if(o instanceof DefaultMessageSourceResolvable) {
+								DefaultMessageSourceResolvable m = ((DefaultMessageSourceResolvable) o);
+								return m.getCode()+ " " + Arrays.stream(Optional.ofNullable(m.getArguments()).orElse(new Object[]{})).map(x -> "["+x.toString()+"]").collect(Collectors.joining(" "));
 							} else {
 								return String.valueOf(o);
 							}
