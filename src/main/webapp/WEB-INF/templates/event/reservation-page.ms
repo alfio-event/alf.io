@@ -107,7 +107,7 @@
 	<div class="form-group">
 		<div><label for="card-cvc"> {{#i18n}}reservation-page.cvc{{/i18n}}</label></div>
 		<div class="row">
-			<div class="col-xs-2">
+			<div class="col-sm-2">
 				<input type="text" size="4" data-stripe="cvc" required class="form-control" id="card-cvc" autocomplete="off">
 			</div>
 		</div>
@@ -116,14 +116,20 @@
  
 	<div class="form-group">
 		<div>
-			<label>{{#i18n}}reservation-page.expiration{{/i18n}}</label>
+			<label>
+				<span class="hidden-xs">{{#i18n}}reservation-page.expiration{{/i18n}}</span>
+				<span class="visible-xs">{{#i18n}}reservation-page.expiration-month{{/i18n}}</span>
+			</label>
 		</div>
 		<div class="row">
-			<div class="col-xs-2">
+			<div class="col-sm-2">
 				<input type="text" size="2" data-stripe="exp-month" required class="form-control" maxlength="2" autocomplete="off" id="card-mm" pattern="\d+"/>
 			</div>
-			<div class="col-xs-1">/</div>
-			<div class="col-xs-2">
+			<div class="col-sm-1 hidden-xs">/</div>
+			<div class="col-sm-2 visible-xs" style="margin-top:15px">
+				<label>{{#i18n}}reservation-page.expiration-year{{/i18n}}</label>
+			</div>
+			<div class="col-sm-2">
 				<input type="text" size="4" data-stripe="exp-year" required class="form-control" maxlength="4" autocomplete="off" id="card-yyyy" pattern="\d+"/>
 			</div>
 		</div>
