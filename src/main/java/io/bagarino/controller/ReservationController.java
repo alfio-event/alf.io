@@ -353,7 +353,7 @@ public class ReservationController {
             final ZoneId eventZoneId = selected.stream().findFirst().map(r -> {
                 TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId());
                 return eventManager.findEventByTicketCategory(tc).getZoneId();
-            }).orElse(null);
+            }).orElseThrow(IllegalStateException::new);
             final ZonedDateTime now = ZonedDateTime.now(eventZoneId);
             selected.forEach((r) -> {
 
