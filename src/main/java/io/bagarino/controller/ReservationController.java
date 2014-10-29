@@ -127,7 +127,7 @@ public class ReservationController {
 		reservation.validate(bindingResult, tickReservationManager, ticketCategoryRepository, eventManager);
 		
 		if (bindingResult.hasErrors()) {
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
 			return eventController.showEvent(eventName, model);
 		}
 			
@@ -139,7 +139,7 @@ public class ReservationController {
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 		} catch (NotEnoughTicketsException nete) {
 			bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
 			return eventController.showEvent(eventName, model);
 		}
 	}
@@ -234,7 +234,7 @@ public class ReservationController {
     	//
     	
     	if (bindingResult.hasErrors()) {
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
 			return showReservationPage(eventName, reservationId, false, false, model);
     	}
     	
@@ -249,7 +249,7 @@ public class ReservationController {
     			stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost.getPriceWithVAT(), event.get().getCurrency(), reservationId, email, fullName, billingAddress);
     		} catch(StripeException se) {
     			bindingResult.reject("payment_processor_error");
-    			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
+    			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
     			return showReservationPage(eventName, reservationId, false, false, model);
     		}
     	}

@@ -101,7 +101,7 @@ public class EventController {
 			.addAttribute("ticketCategories", t)//
 			.addAttribute("amountOfTickets", IntStream.rangeClosed(0, configurationManager.getIntConfigValue(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5)).toArray())//
 			.addAttribute("locationDescriptor", ld);
-		model.asMap().putIfAbsent("hasErrors", false);//TODO: refactor
+		model.asMap().putIfAbsent("hasErrors", false);//
 		return "/event/show-event";
 	}
 }

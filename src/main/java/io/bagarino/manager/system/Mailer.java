@@ -21,9 +21,11 @@ import java.util.Optional;
 import lombok.Data;
 
 import org.springframework.core.io.InputStreamSource;
+import org.springframework.scheduling.annotation.Async;
 
 public interface Mailer {
 
+	@Async
 	void send(String to, String subject, String text, Optional<String> html, Attachment... attachment);
 
 	@Data
