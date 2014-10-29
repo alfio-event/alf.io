@@ -16,8 +16,8 @@
  */
 package io.bagarino.controller;
 
-import static io.bagarino.util.OptionalWrapper.optionally;
 import io.bagarino.controller.support.TemplateManager;
+import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.manager.system.Mailer;
 import io.bagarino.manager.system.Mailer.Attachment;
 import io.bagarino.model.Event;
@@ -26,10 +26,8 @@ import io.bagarino.model.TicketCategory;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.user.Organization;
-import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
-import io.bagarino.repository.TicketReservationRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 
 import java.io.ByteArrayOutputStream;
@@ -72,25 +70,24 @@ import com.lowagie.text.DocumentException;
 @Controller
 public class TicketController {
 
-	private final EventRepository eventRepository;
 	private final OrganizationRepository organizationRepository;
-	private final TicketReservationRepository ticketReservationRepository;
 	private final TicketRepository ticketRepository;
+	private final TicketReservationManager ticketReservationManager;
 	private final TicketCategoryRepository ticketCategoryRepository;
 	private final Mailer mailer;
 	private final MessageSource messageSource;
 	private final TemplateManager templateManager;
 
 	@Autowired
-	public TicketController(EventRepository eventRepository, OrganizationRepository organizationRepository, 
-			TicketReservationRepository ticketReservationRepository,
-			TicketRepository ticketRepository, TicketCategoryRepository ticketCategoryRepository,
+	public TicketController(OrganizationRepository organizationRepository, 
+			TicketReservationManager ticketReservationManager,
+			TicketRepository ticketRepository, 
+			TicketCategoryRepository ticketCategoryRepository,
 			Mailer mailer,
 			MessageSource messageSource,
 			TemplateManager templateManager) {
-		this.eventRepository = eventRepository;
 		this.organizationRepository = organizationRepository;
-		this.ticketReservationRepository = ticketReservationRepository;
+		this.ticketReservationManager = ticketReservationManager;
 		this.ticketRepository = ticketRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.mailer = mailer;
@@ -226,9 +223,7 @@ public class TicketController {
 	 * @return
 	 */
 	private Optional<Triple<Event, TicketReservation, Ticket>> fetch(String eventName, String reservationId, String ticketIdentifier) {
-		return optionally(() -> Triple.of(eventRepository.findByShortName(eventName), 
-				ticketReservationRepository.findReservationById(reservationId), 
-				ticketRepository.findByUUID(ticketIdentifier))).flatMap((t) -> {
+		return ticketReservationManager.from(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
 					if(t.getMiddle().getStatus() != TicketReservationStatus.COMPLETE || !t.getRight().getAssigned()) {
 						return Optional.empty();
 					} else {

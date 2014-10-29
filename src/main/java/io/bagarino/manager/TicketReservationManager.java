@@ -32,6 +32,7 @@ import io.bagarino.util.MonetaryUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -103,6 +104,12 @@ public class TicketReservationManager {
     public void transitionToInPayment(String reservationId, String email, String fullName, String billingAddress) {
     	int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.IN_PAYMENT.toString(), email, fullName, billingAddress);
 		Validate.isTrue(updatedReservation == 1);
+    }
+    
+    public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, String ticketIdentifier) {
+    	return optionally(() -> Triple.of(eventRepository.findByShortName(eventName), 
+				ticketReservationRepository.findReservationById(reservationId), 
+				ticketRepository.findByUUID(ticketIdentifier)));
     }
 
     /**
