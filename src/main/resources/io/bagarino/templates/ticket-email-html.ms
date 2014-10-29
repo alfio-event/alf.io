@@ -1,1 +1,0 @@
-this is ticket email html

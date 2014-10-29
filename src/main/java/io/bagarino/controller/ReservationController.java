@@ -284,8 +284,7 @@ public class ReservationController {
     	
     	Map<String, Object> model = new HashMap<>();
     	String reservationTxt = templateManager.render("/io/bagarino/templates/confirmation-email-txt.ms", model, request);
-    	String reservationHtml = templateManager.render("/io/bagarino/templates/confirmation-email-html.ms", model, request);
-    	mailer.send(reservation.getEmail(), messageSource.getMessage("reservation-email-subject", new Object[] {event.getShortName()}, RequestContextUtils.getLocale(request)), reservationTxt, Optional.of(reservationHtml));
+    	mailer.send(reservation.getEmail(), messageSource.getMessage("reservation-email-subject", new Object[] {event.getShortName()}, RequestContextUtils.getLocale(request)), reservationTxt, Optional.empty());
     }
     
     

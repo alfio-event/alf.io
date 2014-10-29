@@ -31,9 +31,11 @@
 {{/summary}}
 	</tbody>
 	<tfoot>
+		{{^free}}
 		{{^event.vatIncluded}}
 			<tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</td><td style="text-align:right">{{totalVAT}} {{event.currency}}</td></tr>
 		{{/event.vatIncluded}}
+		{{/free}}
 		<tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td style="text-align:right"><strong>{{totalPrice}} {{event.currency}}</strong></td></tr>
 	</tfoot>
 </table>

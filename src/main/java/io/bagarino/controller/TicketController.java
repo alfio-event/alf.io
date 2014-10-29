@@ -154,13 +154,13 @@ public class TicketController {
 		Attachment attachment = new Attachment("ticket-" + ticketIdentifier + ".pdf", new ByteArrayResource(baos.toByteArray()), "application/pdf");
 		
 		Map<String, Object> model = new HashMap<>();
+		model.put("organization", organizationRepository.getById(data.getLeft().getOrganizationId()));
 		model.put("event", data.getLeft());
 		model.put("ticketReservation", data.getMiddle());
 		model.put("ticket", ticket);
     	String ticketEmailTxt = templateManager.render("/io/bagarino/templates/ticket-email-txt.ms", model, request);
-    	String ticketEmailHtml = templateManager.render("/io/bagarino/templates/ticket-email-html.ms", model, request);
 		
-		mailer.send(ticket.getEmail(), messageSource.getMessage("ticket-email-subject", new Object[] {data.getLeft().getShortName()}, RequestContextUtils.getLocale(request)), ticketEmailTxt, Optional.of(ticketEmailHtml), attachment);
+		mailer.send(ticket.getEmail(), messageSource.getMessage("ticket-email-subject", new Object[] {data.getLeft().getShortName()}, RequestContextUtils.getLocale(request)), ticketEmailTxt, Optional.empty(), attachment);
 		
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId
 				+ ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "") + "?ticket-email-sent=true";
@@ -234,7 +234,7 @@ public class TicketController {
 		model.put("ticketCategory", ticketCategory);
 		model.put("event", event);
 		model.put("organization", organization);
-		model.put("qrCodeDataUri", toDataUri(createQRCode(qrCodeText)));
+		model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
 			
 		String page = templateManager.render("/io/bagarino/templates/ticket.ms", model, request);
 
@@ -251,10 +251,6 @@ public class TicketController {
 		BitMatrix matrix = new MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, 200, 200, hintMap);
 		MatrixToImageWriter.writeToStream(matrix, "png", baos);
 		return baos.toByteArray();
-	}
-
-	private static String toDataUri(byte[] content) {
-		return "data:image/png;base64," + Base64.getEncoder().encodeToString(content);
 	}
 	
 	@Data
