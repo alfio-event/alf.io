@@ -24,6 +24,7 @@ import io.bagarino.manager.EventManager;
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.manager.TicketReservationManager.NotEnoughTicketsException;
+import io.bagarino.manager.TicketReservationManager.TotalPrice;
 import io.bagarino.manager.system.Mailer;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
@@ -161,15 +162,16 @@ public class ReservationController {
     		return "/event/reservation-page-not-found";
     	} else if(reservation.get().getStatus() == TicketReservationStatus.PENDING) {
     		
-    		int reservationCost = totalReservationCost(reservationId);
+    		TotalPrice reservationCost = tickReservationManager.totalReservationCostWithVAT(reservationId);
     		
     		model.addAttribute("summary", extractSummary(reservationId));
-    		model.addAttribute("free", reservationCost == 0);
-    		model.addAttribute("totalPrice", formatCents(reservationCost));
+    		model.addAttribute("free", reservationCost.getPriceWithVAT() == 0);
+    		model.addAttribute("totalPrice", formatCents(reservationCost.getPriceWithVAT()));
+    		model.addAttribute("totalVAT", formatCents(reservationCost.getVAT()));
     		model.addAttribute("reservationId", reservationId);
     		model.addAttribute("reservation", reservation.get());
     		
-    		if(reservationCost > 0) {
+    		if(reservationCost.getPriceWithVAT() > 0) {
     			model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
     		}
     		
@@ -220,7 +222,7 @@ public class ReservationController {
     		bindingResult.reject("ticket_reservation_no_more_valid");
     	}
     	
-    	final int reservationCost = totalReservationCost(reservationId);
+    	final TotalPrice reservationCost = tickReservationManager.totalReservationCostWithVAT(reservationId);
     	
     	//
     	paymentForm.validate(bindingResult, reservationCost);
@@ -234,12 +236,12 @@ public class ReservationController {
     	
     	String email = paymentForm.getEmail(), fullName = paymentForm.getFullName(), billingAddress = paymentForm.getBillingAddress();
     	
-    	if(reservationCost > 0) {
+    	if(reservationCost.getPriceWithVAT() > 0) {
     		//transition to IN_PAYMENT, so we can keep track if we have a failure between the stripe payment and the completition of the reservation
     		tickReservationManager.transitionToInPayment(reservationId, email, fullName, billingAddress);
     		
     		try {
-    			stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost, event.get().getCurrency(), reservationId, email, fullName, billingAddress);
+    			stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost.getPriceWithVAT(), event.get().getCurrency(), reservationId, email, fullName, billingAddress);
     		} catch(StripeException se) {
     			bindingResult.reject("payment_processor_error");
     			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
@@ -287,20 +289,14 @@ public class ReservationController {
     }
     
     
-    private static int totalFrom(List<Ticket> tickets) {
-    	return tickets.stream().mapToInt(Ticket::getPaidPriceInCents).sum();
-    }
     
-    private int totalReservationCost(String reservationId) {
-    	return totalFrom(ticketRepository.findTicketsInReservation(reservationId));
-    }
     
     private List<SummaryRow> extractSummary(String reservationId) {
     	List<SummaryRow> summary = new ArrayList<>();
     	List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
     	tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).forEach((categoryId, ticketsByCategory) -> {
     		String categoryName = ticketCategoryRepository.getById(categoryId).getName();
-    		summary.add(new SummaryRow(categoryName, formatCents(ticketsByCategory.get(0).getPaidPriceInCents()), ticketsByCategory.size(), formatCents(totalFrom(ticketsByCategory))));
+    		summary.add(new SummaryRow(categoryName, formatCents(ticketsByCategory.get(0).getPaidPriceInCents()), ticketsByCategory.size(), formatCents(tickReservationManager.totalFrom(ticketsByCategory))));
     	});
     	return summary;
     } 
@@ -366,10 +362,10 @@ public class ReservationController {
         private String billingAddress;
         private Boolean cancelReservation;
         
-        private void validate(BindingResult bindingResult, int reservationCost) {
+        private void validate(BindingResult bindingResult, TotalPrice reservationCost) {
         	
         	
-			if (reservationCost > 0 && StringUtils.isBlank(stripeToken)) {
+			if (reservationCost.getPriceWithVAT() > 0 && StringUtils.isBlank(stripeToken)) {
 				bindingResult.reject("missing_stripe_token");
 			}
 			

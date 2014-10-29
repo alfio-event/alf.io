@@ -15,23 +15,26 @@
 	<thead>
 		<tr>
 			<th>{{#i18n}}reservation-page.category{{/i18n}}</th>
-			<th>{{#i18n}}reservation-page.price{{/i18n}}</th>
-			<th>{{#i18n}}reservation-page.amount{{/i18n}}</th>
-			<th>{{#i18n}}reservation-page.subtotal{{/i18n}}</th>
+			<th style="text-align:right">{{#i18n}}reservation-page.price{{/i18n}}</th>
+			<th style="text-align:center">{{#i18n}}reservation-page.amount{{/i18n}}</th>
+			<th style="text-align:right">{{#i18n}}reservation-page.subtotal{{/i18n}}</th>
 		</tr>
 	</thead>
 	<tbody>
 {{#summary}}
 		<tr>
 			<td>{{name}}</td>
-			<td>{{price}}</td>
-			<td>{{amount}}</td>
-			<td>{{subTotal}}</td>
+			<td style="text-align:right">{{price}}</td>
+			<td style="text-align:center">{{amount}}</td>
+			<td style="text-align:right">{{subTotal}} {{event.currency}}</td>
 		</tr>
 {{/summary}}
 	</tbody>
 	<tfoot>
-		<tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td><strong>{{totalPrice}} {{event.currency}}</strong></td></tr>
+		{{^event.vatIncluded}}
+			<tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</td><td style="text-align:right">{{totalVAT}} {{event.currency}}</td></tr>
+		{{/event.vatIncluded}}
+		<tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td style="text-align:right"><strong>{{totalPrice}} {{event.currency}}</strong></td></tr>
 	</tfoot>
 </table>
 
