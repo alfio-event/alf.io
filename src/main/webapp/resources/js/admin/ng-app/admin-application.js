@@ -151,7 +151,7 @@
             inception: {
                 date: inceptionDate
             },
-            tokenGenerationRequested: 'false',
+            tokenGenerationRequested: false,
             expiration: {},
             sticky: sticky,
             notBefore: notBefore
