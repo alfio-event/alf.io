@@ -61,11 +61,11 @@
 	<h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
 	<div class="form-group">
 		<label for="full-name">{{#i18n}}common.full-name{{/i18n}}</label>
-		<input type="text" name="fullName" id="full-name" required class="form-control" autocomplete="off" maxlength="255">
+		<input type="text" name="fullName" id="full-name" required class="form-control" autocomplete="name" maxlength="255">
 	</div>
 	<div class="form-group">
 		<label for="email">{{#i18n}}common.email{{/i18n}}</label>
-		<input type="email" name="email" id="email" required class="form-control" autocomplete="off" maxlength="255">
+		<input type="email" name="email" id="email" required class="form-control" autocomplete="email" maxlength="255">
 	</div>
 	{{#free}}
 	<button type="submit" class="btn btn-primary pull-right">{{#i18n}}reservation-page.continue{{/i18n}}</button>
