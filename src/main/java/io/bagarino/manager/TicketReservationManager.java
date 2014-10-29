@@ -30,6 +30,7 @@ import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
 import io.bagarino.util.MonetaryUtil;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -153,6 +154,12 @@ public class TicketReservationManager {
     		return new TotalPrice(priceWithVAT, priceWithVAT - total);
     	}
     	
+    }
+    
+    public String reservationUrl(String reservationId) {
+    	Event event = eventRepository.findByReservationId(reservationId);
+		return StringUtils.removeEnd(configurationManager.getRequiredValue(ConfigurationKeys.BASE_URL), "/")
+				+ "/event/" + event.getShortName() + "/reservation/" + reservationId;
     }
 
 

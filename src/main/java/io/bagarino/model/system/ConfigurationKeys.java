@@ -26,6 +26,9 @@ public enum ConfigurationKeys {
 
     INIT_COMPLETED("init succeeded", true),
     
+    BASE_URL("Base application url", false),
+    VAT_NR("VAT number", false),
+    
     MAPS_SERVER_API_KEY("Google maps' server api key", false),
     MAPS_CLIENT_API_KEY("Google maps' client api key", false),
     
