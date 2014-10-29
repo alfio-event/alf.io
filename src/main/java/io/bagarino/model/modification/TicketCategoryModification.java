@@ -18,11 +18,12 @@ package io.bagarino.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
+import io.bagarino.model.TicketCategory;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.util.Optional;
 
 @Getter
@@ -58,5 +59,16 @@ public class TicketCategoryModification {
 
     public int getPriceInCents() {
         return Optional.ofNullable(price).map(MonetaryUtil::unitToCents).orElse(0);
+    }
+
+    public static TicketCategoryModification fromTicketCategory(TicketCategory tc, ZoneId zoneId) {
+        return new TicketCategoryModification(tc.getId(),
+                tc.getName(),
+                tc.getMaxTickets(),
+                DateTimeModification.fromZonedDateTime(tc.getInception(zoneId)),
+                DateTimeModification.fromZonedDateTime(tc.getExpiration(zoneId)),
+                tc.getDescription(),
+                tc.getPrice(),
+                tc.isAccessRestricted());
     }
 }

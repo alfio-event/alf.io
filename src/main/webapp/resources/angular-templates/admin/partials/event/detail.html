@@ -28,7 +28,12 @@
             <img data-ng-if="event.geolocation && !loadingMap" data-ng-src="{{event.geolocation.mapUrl}}" alt="{{event.location}}" />
         </div>
     </div>
-
+    <div class="row">
+        <div class="col-sm-12">
+            <label>Description</label>
+            <p class="form-control-static">{{event.description}}</p>
+        </div>
+    </div>
     <div class="page-header">
         <h2>Tickets</h2>
         <h4>This event has been marked as <span data-ng-if="event.freeOfCharge">Free of charge</span> <span data-ng-if="!event.freeOfCharge">Paid</span></h4>
@@ -118,5 +123,8 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div class="row">
+        <button class="btn btn-default" data-ui-sref="events.edit({eventName: event.shortName})">edit</button>
     </div>
 </div>

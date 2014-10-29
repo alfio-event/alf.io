@@ -16,12 +16,13 @@
  */
 package io.bagarino.controller.api;
 
-import io.bagarino.controller.api.support.LocationDescriptor;
 import io.bagarino.manager.EventManager;
 import io.bagarino.manager.location.LocationManager;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.manager.user.UserManager;
+import io.bagarino.model.Event;
 import io.bagarino.model.modification.*;
+import io.bagarino.model.modification.support.LocationDescriptor;
 import io.bagarino.model.system.Configuration;
 import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.model.transaction.PaymentProxy;
@@ -123,6 +124,12 @@ public class AdminApiController {
         return out;
     }
 
+    @RequestMapping(value = "/events/{name}/for-update", method = GET)
+    public EventModification getSingleEventForUpdate(@PathVariable("name") String eventName, Principal principal) {
+        final Event event = eventManager.getSingleEvent(eventName, principal.getName());
+        return EventModification.fromEvent(event, eventManager.loadTicketCategories(event), getMapsClientApiKey());
+    }
+
     @RequestMapping(value = "/events/check", method = POST)
     public ValidationResult validateEvent(@RequestBody EventModification eventModification) {
         return ValidationResult.success();
@@ -130,10 +137,16 @@ public class AdminApiController {
 
     @RequestMapping(value = "/events/new", method = POST)
     public String insertEvent(@RequestBody EventModification eventModification) {
-    	//FIXME: check event short name should not contain "/" as we use it as part of the url
         eventManager.createEvent(eventModification);
         return OK;
     }
+
+    @RequestMapping(value = "/events/{id}/update", method = POST)
+    public String updateEvent(@PathVariable("id") int id, @RequestBody EventModification eventModification) {
+        eventManager.updateEvent(id, eventModification);
+        return OK;
+    }
+
 
     @RequestMapping(value = "/events/reallocate", method = PUT)
     public String reallocateTickets(@RequestBody TicketAllocationModification form) {
@@ -145,14 +158,18 @@ public class AdminApiController {
     public LocationDescriptor geocodeAddress(@RequestParam("location") String address) {
         Pair<String, String> coordinates = locationManager.geocode(address);
         TimeZone timezone = locationManager.getTimezone(coordinates);
-        return LocationDescriptor.fromGeoData(coordinates, timezone, configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY));
+        return LocationDescriptor.fromGeoData(coordinates, timezone, getMapsClientApiKey());
+    }
+
+    private Optional<String> getMapsClientApiKey() {
+        return configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY);
     }
 
     @RequestMapping(value = "/location/map", method = GET)
     public String getMapUrl(@RequestParam("lat") String latitude, @RequestParam("long") String longitude) {
         Validate.notBlank(latitude);
         Validate.notBlank(longitude);
-        LocationDescriptor descriptor = LocationDescriptor.fromGeoData(Pair.of(latitude, longitude), TimeZone.getDefault(), configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY));
+        LocationDescriptor descriptor = LocationDescriptor.fromGeoData(Pair.of(latitude, longitude), TimeZone.getDefault(), getMapsClientApiKey());
         return descriptor.getMapUrl();
     }
 

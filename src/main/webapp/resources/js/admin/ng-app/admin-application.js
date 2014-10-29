@@ -50,6 +50,11 @@
                 templateUrl: BASE_STATIC_URL + '/event/detail.html',
                 controller: 'EventDetailController'
             })
+            .state('events.edit', {
+                url: '/:eventName/edit',
+                templateUrl: BASE_STATIC_URL + '/event/edit-event.html',
+                controller: 'EditEventController'
+            })
             .state('configuration', {
                 url: '/configuration',
                 templateUrl: BASE_STATIC_URL + '/configuration/index.html',
@@ -131,14 +136,30 @@
 
     });
 
-    admin.controller('CreateEventController', function($scope, $state, $rootScope,
-                                                       $q, OrganizationService, PaymentProxyService,
-                                                       EventService, LocationService) {
-        $scope.event = {
-            freeOfCharge: false,
-            begin: {},
-            end: {}
+    var createCategory = function(sticky, $scope) {
+        var lastCategory = _.last($scope.event.ticketCategories);
+        var inceptionDate, notBefore;
+        if(angular.isDefined(lastCategory)) {
+            inceptionDate = moment(lastCategory.expiration.date).format('YYYY-MM-DD');
+            notBefore = inceptionDate;
+        } else {
+            inceptionDate = moment().format('YYYY-MM-DD');
+            notBefore = undefined;
+        }
+
+        var category = {
+            inception: {
+                date: inceptionDate
+            },
+            tokenGenerationRequested: 'false',
+            expiration: {},
+            sticky: sticky,
+            notBefore: notBefore
         };
+        $scope.event.ticketCategories.push(category);
+    };
+
+    var initScopeForEventEditing = function ($scope, OrganizationService, PaymentProxyService, LocationService, $state) {
         $scope.organizations = {};
 
         OrganizationService.getAllOrganizations().success(function(result) {
@@ -154,34 +175,8 @@
             });
         });
 
-        var createCategory = function(sticky) {
-            var lastCategory = _.last($scope.event.ticketCategories);
-            var inceptionDate, notBefore;
-            if(angular.isDefined(lastCategory)) {
-                inceptionDate = moment(lastCategory.expiration.date).format('YYYY-MM-DD');
-                notBefore = inceptionDate;
-            } else {
-                inceptionDate = moment().format('YYYY-MM-DD');
-                notBefore = undefined;
-            }
-
-            var category = {
-                inception: {
-                    date: inceptionDate
-                },
-                tokenGenerationRequested: 'false',
-                expiration: {},
-                sticky: sticky,
-                notBefore: notBefore
-            };
-            $scope.event.ticketCategories.push(category);
-        };
-
-        $scope.event.ticketCategories = [];
-        createCategory(true);
-
         $scope.addCategory = function() {
-            createCategory(false);
+            createCategory(false, $scope);
         };
 
         $scope.canAddCategory = function(categories) {
@@ -197,19 +192,11 @@
             });
         };
 
-        $scope.save = function(form, event) {
-            validationPerformer($q, EventService.checkEvent, event, form).then(function() {
-                EventService.createEvent(event).success(function() {
-                    $state.go('index');
-                });
-            }, angular.noop);
-        };
-
         $scope.cancel = function() {
             $state.go('index');
         };
 
-        $scope.updateLocation = function(location) {
+        $scope.updateLocation = function (location) {
             $scope.loadingMap = true;
             LocationService.geolocate(location).success(function(result) {
                 $scope.event.geolocation = result;
@@ -218,6 +205,48 @@
                 $scope.loadingMap = false;
             });
         };
+    };
+
+    admin.controller('CreateEventController', function($scope, $state, $rootScope,
+                                                       $q, OrganizationService, PaymentProxyService,
+                                                       EventService, LocationService) {
+
+        $scope.event = {
+            freeOfCharge: false,
+            begin: {},
+            end: {}
+        };
+        initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, $state);
+        $scope.event.ticketCategories = [];
+        createCategory(true, $scope);
+
+        $scope.save = function(form, event) {
+            validationPerformer($q, EventService.checkEvent, event, form).then(function() {
+                EventService.createEvent(event).success(function() {
+                    $state.go('index');
+                });
+            }, angular.noop);
+        };
+
+    });
+
+    admin.controller('EditEventController', function($scope, $state, $rootScope, $stateParams,
+                                                       $q, OrganizationService, PaymentProxyService,
+                                                       EventService, LocationService) {
+
+        EventService.getEventForUpdate($stateParams.eventName).success(function(result) {
+            $scope.event = result;
+            initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, $state);
+        });
+
+        $scope.save = function(form, event) {
+            validationPerformer($q, EventService.checkEvent, event, form).then(function() {
+                EventService.updateEvent(event).success(function() {
+                    $state.go('index');
+                });
+            }, angular.noop);
+        };
+
     });
 
     admin.controller('EventDetailController', function($scope, $stateParams, OrganizationService, EventService, LocationService, $rootScope) {
@@ -250,13 +279,13 @@
         $scope.evaluateClass = function(token) {
             switch(token.status) {
                 case 'WAITING':
-                    return 'fa fa-cog fa-spin';
+                    return 'bg-warning fa fa-cog fa-spin';
                 case 'FREE':
                     return 'fa fa-qrcode';
                 case 'TAKEN':
-                    return 'fa fa-stop';
+                    return 'bg-success fa fa-check';
                 case 'CANCELLED':
-                    return 'fa fa-eraser';
+                    return 'bg-default fa fa-eraser';
             }
         };
 
@@ -305,7 +334,7 @@
             	$scope.settings = result.data;
                 $scope.loading = false;
             });
-        }
+        };
         
         $scope.configurationChange = function(conf) {
             if(!conf.value) {

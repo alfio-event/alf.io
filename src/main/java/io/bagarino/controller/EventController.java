@@ -17,11 +17,11 @@
 package io.bagarino.controller;
 
 
-import io.bagarino.controller.api.support.LocationDescriptor;
 import io.bagarino.controller.decorator.EventDescriptor;
 import io.bagarino.controller.decorator.SaleableTicketCategory;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.Event;
+import io.bagarino.model.modification.support.LocationDescriptor;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.user.OrganizationRepository;

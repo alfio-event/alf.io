@@ -18,14 +18,24 @@ package io.bagarino.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.bagarino.model.Event;
+import io.bagarino.model.TicketCategory;
+import io.bagarino.model.modification.support.LocationDescriptor;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
+
+import static io.bagarino.model.modification.DateTimeModification.fromZonedDateTime;
+import static io.bagarino.model.modification.support.LocationDescriptor.fromGeoData;
+import static java.util.stream.Collectors.toList;
 
 @Getter
 public class EventModification {
@@ -37,7 +47,7 @@ public class EventModification {
     private final String description;
     private final DateTimeModification begin;
     private final DateTimeModification end;
-    private final BigDecimal price;
+    private final BigDecimal regularPrice;
     private final String currency;
     private final int availableSeats;
     private final BigDecimal vat;
@@ -45,6 +55,7 @@ public class EventModification {
     private final List<PaymentProxy> allowedPaymentProxies;
     private final List<TicketCategoryModification> ticketCategories;
     private final boolean freeOfCharge;
+    private final LocationDescriptor locationDescriptor;
 
     @JsonCreator
     public EventModification(@JsonProperty("id") Integer id,
@@ -61,7 +72,8 @@ public class EventModification {
                              @JsonProperty("vatIncluded") boolean vatIncluded,
                              @JsonProperty("allowedPaymentProxies") List<PaymentProxy> allowedPaymentProxies,
                              @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories,
-                             @JsonProperty("freeOfCharge") boolean freeOfCharge) {
+                             @JsonProperty("freeOfCharge") boolean freeOfCharge,
+                             @JsonProperty("location") LocationDescriptor locationDescriptor) {
         this.id = id;
         this.shortName = shortName;
         this.organizationId = organizationId;
@@ -69,17 +81,42 @@ public class EventModification {
         this.description = description;
         this.begin = begin;
         this.end = end;
-        this.price = regularPrice;
+        this.regularPrice = regularPrice;
         this.currency = currency;
         this.availableSeats = availableSeats;
         this.vat = vat;
         this.vatIncluded = vatIncluded;
+        this.locationDescriptor = locationDescriptor;
         this.allowedPaymentProxies = Optional.ofNullable(allowedPaymentProxies).orElse(Collections.<PaymentProxy>emptyList());
         this.ticketCategories = ticketCategories;
         this.freeOfCharge = freeOfCharge;
     }
 
     public int getPriceInCents() {
-        return freeOfCharge ? 0 : MonetaryUtil.unitToCents(price);
+        return freeOfCharge ? 0 : MonetaryUtil.unitToCents(regularPrice);
+    }
+
+    public LocationDescriptor getGeolocation() {
+        return locationDescriptor;
+    }
+
+    public static EventModification fromEvent(Event event, List<TicketCategory> ticketCategories, Optional<String> mapsApiKey) {
+        final ZoneId zoneId = event.getZoneId();
+        return new EventModification(event.getId(),
+                event.getShortName(),
+                event.getOrganizationId(),
+                event.getLocation(),
+                event.getDescription(),
+                fromZonedDateTime(event.getBegin()),
+                fromZonedDateTime(event.getEnd()),
+                event.getRegularPrice(),
+                event.getCurrency(),
+                event.getAvailableSeats(),
+                event.getVat(),
+                event.isVatIncluded(),
+                event.getAllowedPaymentProxies(),
+                ticketCategories.stream().map(tc -> TicketCategoryModification.fromTicketCategory(tc, zoneId)).collect(toList()),
+                event.isFreeOfCharge(),
+                fromGeoData(Pair.of(event.getLatitude(), event.getLongitude()), TimeZone.getTimeZone(zoneId), mapsApiKey));
     }
 }

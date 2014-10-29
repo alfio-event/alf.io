@@ -17,7 +17,7 @@
 package io.bagarino.controller.api.support;
 
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
-
+import io.bagarino.model.modification.support.LocationDescriptor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.runner.RunWith;
 

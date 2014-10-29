@@ -26,6 +26,7 @@ import java.time.ZonedDateTime;
 
 @Getter
 public class DateTimeModification {
+
     private final LocalDate date;
     private final LocalTime time;
 
@@ -36,5 +37,9 @@ public class DateTimeModification {
 
     public ZonedDateTime toZonedDateTime(ZoneId zoneId) {
         return ZonedDateTime.of(date, time, zoneId);
+    }
+
+    public static DateTimeModification fromZonedDateTime(ZonedDateTime zonedDateTime) {
+        return new DateTimeModification(zonedDateTime.toLocalDate(), zonedDateTime.toLocalTime());
     }
 }

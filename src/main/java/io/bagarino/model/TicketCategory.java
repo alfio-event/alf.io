@@ -26,6 +26,11 @@ import java.time.ZonedDateTime;
 
 @Getter
 public class TicketCategory {
+
+    public enum Status {
+        ACTIVE, NOT_ACTIVE
+    }
+
     private final int id;
     private final ZonedDateTime utcInception;
     private final ZonedDateTime utcExpiration;
@@ -34,6 +39,7 @@ public class TicketCategory {
     private final String description;
     private final int priceInCents;
     private final boolean accessRestricted;
+    private final Status status;
 
     public TicketCategory(@Column("id") int id,
                           @Column("inception") ZonedDateTime utcInception,
@@ -42,7 +48,8 @@ public class TicketCategory {
                           @Column("name") String name,
                           @Column("description") String description,
                           @Column("price_cts") int priceInCents,
-                          @Column("access_restricted") boolean accessRestricted) {
+                          @Column("access_restricted") boolean accessRestricted,
+                          @Column("tc_status") Status status) {
         this.id = id;
         this.utcInception = utcInception;
         this.utcExpiration = utcExpiration;
@@ -51,6 +58,7 @@ public class TicketCategory {
         this.description = description;
         this.priceInCents = priceInCents;
         this.accessRestricted = accessRestricted;
+        this.status = status;
     }
 
     public BigDecimal getPrice() {

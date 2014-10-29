@@ -14,10 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.bagarino.controller.api.support;
+package io.bagarino.model.modification.support;
 
 import lombok.Data;
-
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.commons.lang3.tuple.Pair;
 

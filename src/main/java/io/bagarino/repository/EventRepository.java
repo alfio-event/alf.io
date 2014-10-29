@@ -21,7 +21,6 @@ import io.bagarino.datamapper.Bind;
 import io.bagarino.datamapper.Query;
 import io.bagarino.datamapper.QueryRepository;
 import io.bagarino.model.Event;
-
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
@@ -53,6 +52,15 @@ public interface EventRepository {
                @Bind("vat") BigDecimal vat, @Bind("paymentProxies") String allowedPaymentProxies,
                @Bind("privateKey") String privateKey,
                @Bind("organizationId") int orgId);
+
+    @Query("update event set description = :description, short_name = :shortName, location = :location, latitude = :latitude, longitude = :longitude, start_ts = :start_ts, end_ts = :end_ts, time_zone = :time_zone, " +
+            "regular_price_cts = :regular_price, currency = :currency, available_seats = :available_seats, vat_included = :vat_included, vat = :vat, allowed_payment_proxies = :paymentProxies, org_id = :organizationId " +
+            "where id = :id")
+    int update(@Bind("id") int id, @Bind("description") String description, @Bind("shortName") String shortName, @Bind("location") String location,
+               @Bind("latitude") String latitude, @Bind("longitude") String longitude, @Bind("start_ts") ZonedDateTime begin,
+               @Bind("end_ts") ZonedDateTime end, @Bind("time_zone") String timeZone, @Bind("regular_price") int regular_price, @Bind("currency") String currency,
+               @Bind("available_seats") int available_seats, @Bind("vat_included") boolean vat_included,
+               @Bind("vat") BigDecimal vat, @Bind("paymentProxies") String allowedPaymentProxies, @Bind("organizationId") int orgId);
 
     /**
      * TODO check: This one is kinda ugly.

@@ -44,7 +44,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
-import java.util.Date;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -150,11 +150,22 @@ public class EventManager {
         int eventId = insertEvent(em);
         Event event = eventRepository.findById(eventId);
         distributeSeats(em, event);
-        Date creation = new Date();
-        //eventOrganizationRepository.create(eventId, em.getOrganizationId());
-        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(eventId, creation, event, event.getRegularPriceInCents());
-        jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
+        createAllTicketsForEvent(eventId, event);
+    }
 
+    public void updateEvent(int id, EventModification em) {
+        final Event original = eventRepository.findById(id);
+        int availableSeats = original.getAvailableSeats();
+        if(ticketRepository.invalidateAllTickets(id) != availableSeats) {
+            throw new IllegalStateException("Cannot update the event: some tickets have been already reserved/confirmed.");
+        }
+        ticketCategoryRepository.findAllTicketCategories(id).stream()
+                .mapToInt(TicketCategory::getId)
+                .forEach(ticketCategoryRepository::deactivate);
+        internalUpdateEvent(id, em);
+        final Event updated = eventRepository.findById(id);
+        distributeSeats(em, updated);
+        createAllTicketsForEvent(id, updated);
     }
 
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
@@ -167,7 +178,7 @@ public class EventManager {
     }
 
     private MapSqlParameterSource[] prepareTicketsBulkInsertParameters(int eventId,
-                                                                       Date creation,
+                                                                       ZonedDateTime creation,
                                                                        Event event,
                                                                        int regularPrice) {
         return eventTicketCategoryRepository.findByEventId(event.getId()).stream()
@@ -179,7 +190,7 @@ public class EventManager {
     }
 
     private MapSqlParameterSource buildParams(int eventId,
-                                              Date creation,
+                                              ZonedDateTime creation,
                                               TicketCategory tc,
                                               int originalPrice,
                                               int paidPrice,
@@ -235,6 +246,11 @@ public class EventManager {
                 .toArray(MapSqlParameterSource[]::new);
     }
 
+    private void createAllTicketsForEvent(int eventId, Event event) {
+        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(eventId, ZonedDateTime.now(event.getZoneId()), event, event.getRegularPriceInCents());
+        jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
+    }
+
     static int evaluatePrice(int price, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge) {
         if(freeOfCharge) {
             return 0;
@@ -246,10 +262,7 @@ public class EventManager {
     }
 
     private int insertEvent(EventModification em) {
-        String paymentProxies = em.getAllowedPaymentProxies()
-                .stream()
-                .map(PaymentProxy::name)
-                .collect(joining(","));
+        String paymentProxies = collectPaymentProxies(em);
         int actualPrice = evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
         BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
         String privateKey = UUID.randomUUID().toString();
@@ -261,5 +274,31 @@ public class EventManager {
                 coordinates.getLeft(), coordinates.getRight(), em.getBegin().toZonedDateTime(zoneId), em.getEnd().toZonedDateTime(zoneId),
                 timeZone, actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
                 privateKey, em.getOrganizationId()).getValue();
+    }
+
+    private String collectPaymentProxies(EventModification em) {
+        return em.getAllowedPaymentProxies()
+                .stream()
+                .map(PaymentProxy::name)
+                .collect(joining(","));
+    }
+
+    private void internalUpdateEvent(int id, EventModification em) {
+        final Event existing = eventRepository.findById(id);
+        if(!em.getId().equals(existing.getId())) {
+            throw new IllegalArgumentException("invalid event id");
+        }
+
+        String paymentProxies = collectPaymentProxies(em);
+        int actualPrice = evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
+        BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
+        Pair<String, String> coordinates = locationManager.geocode(em.getLocation());
+        TimeZone tz = locationManager.getTimezone(coordinates);
+        String timeZone = tz.getID();
+        ZoneId zoneId = tz.toZoneId();
+        eventRepository.update(id, em.getDescription(), em.getShortName(), em.getLocation(),
+                coordinates.getLeft(), coordinates.getRight(), em.getBegin().toZonedDateTime(zoneId), em.getEnd().toZonedDateTime(zoneId),
+                timeZone, actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies, em.getOrganizationId());
+
     }
 }

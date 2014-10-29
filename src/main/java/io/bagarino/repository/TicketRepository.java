@@ -45,6 +45,9 @@ public interface TicketRepository {
 	@Query("update ticket set status = :status where tickets_reservation_id = :reservationId")
 	int updateTicketStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
 
+    @Query("update ticket set status = 'INVALIDATED' where event_id = :eventId and status in ('FREE', 'CANCELLED')")
+    int invalidateAllTickets(@Bind("eventId") int eventId);
+
 	@Query("update ticket set status = 'FREE', tickets_reservation_id = null where status = 'PENDING' "
 			+ " and tickets_reservation_id in (:reservationIds)")
 	int freeFromReservation(@Bind("reservationIds") List<String> reservationIds);

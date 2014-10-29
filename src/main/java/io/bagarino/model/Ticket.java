@@ -19,7 +19,10 @@ package io.bagarino.model;
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
@@ -28,16 +31,11 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.apache.commons.lang3.StringUtils;
-
 @Getter
 public class Ticket {
 
     public enum TicketStatus {
-        FREE, PENDING, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED
+        FREE, PENDING, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED, INVALIDATED
     }
 
     private final int id;
