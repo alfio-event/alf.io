@@ -24,6 +24,7 @@ import java.util.Properties;
 
 import lombok.extern.log4j.Log4j2;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ByteArrayResource;
@@ -51,7 +52,7 @@ public class DefaultMailer implements Mailer {
 	public void send(String to, String subject, String text, Optional<String> html, Attachment... attachments) {
 
 		MimeMessagePreparator preparator = (mimeMessage) -> {
-			MimeMessageHelper message = html.isPresent() ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
+			MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
 					: new MimeMessageHelper(mimeMessage, "UTF-8");
 			message.setSubject(subject);
 			message.setFrom(configurationManager.getRequiredValue(ConfigurationKeys.SMTP_FROM_EMAIL));
