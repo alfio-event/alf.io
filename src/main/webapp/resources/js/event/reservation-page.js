@@ -44,10 +44,9 @@
 			$("[data-stripe]").parent().removeClass('has-error');
 			
 			
-			// Show the errors on the form
-			// TODO: see http://stackoverflow.com/questions/23437439/non-english-texts-in-stripe-possible 
-			// use the code for handle the localization
-			$form.find('.payment-errors').append("<p><strong>"+response.error.message+"</strong></p>");
+			var attrValue = document.getElementById("stripe-key").getAttribute('data-stripe-message-'+response.error.code);
+			
+			$form.find('.payment-errors').append("<p><strong>"+(attrValue || response.error.message)+"</strong></p>");
 			$form.find('button').prop('disabled', false);
 			$form.find(errorCodeToSelectorMap[response.error.code]).parent().addClass('has-error');
 			

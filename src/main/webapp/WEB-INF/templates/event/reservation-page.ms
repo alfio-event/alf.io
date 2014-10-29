@@ -7,7 +7,23 @@
 {{^free}}
  <script src="https://js.stripe.com/v2/"></script>
  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
- <script src="{{request.contextPath}}/resources/js/event/reservation-page.js" data-stripe-key="{{stripe_p_key}}" id="stripe-key"></script>
+ <script src="{{request.contextPath}}/resources/js/event/reservation-page.js" 
+ 	id="stripe-key" 
+ 	data-stripe-key="{{stripe_p_key}}" 
+ 	
+ 	data-stripe-message-incorrect_number="{{#i18n}}error.STEP2_STRIPE_incorrect_number{{/i18n}}"
+ 	data-stripe-message-invalid_number="{{#i18n}}error.STEP2_STRIPE_invalid_number{{/i18n}}"
+ 	data-stripe-message-invalid_expiry_month="{{#i18n}}error.STEP2_STRIPE_invalid_expiry_month{{/i18n}}"
+ 	data-stripe-message-invalid_expiry_year="{{#i18n}}error.STEP2_STRIPE_invalid_expiry_year{{/i18n}}"
+ 	data-stripe-message-invalid_cvc="{{#i18n}}error.STEP2_STRIPE_invalid_cvc{{/i18n}}"
+ 	data-stripe-message-expired_card="{{#i18n}}error.STEP2_STRIPE_expired_card{{/i18n}}"
+ 	data-stripe-message-incorrect_cvc="{{#i18n}}error.STEP2_STRIPE_incorrect_cvc{{/i18n}}"
+ 	data-stripe-message-incorrect_zip="{{#i18n}}error.STEP2_STRIPE_incorrect_zip{{/i18n}}"
+ 	data-stripe-message-card_declined="{{#i18n}}error.STEP2_STRIPE_card_declined{{/i18n}}"
+ 	data-stripe-message-missing="{{#i18n}}error.STEP2_STRIPE_missing{{/i18n}}"
+ 	data-stripe-message-processing_error="{{#i18n}}error.STEP2_STRIPE_processing_error{{/i18n}}"
+ 	data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
+ ></script>
 {{/free}}
 
 <h1>{{#i18n}}reservation-page.title{{/i18n}} {{event.shortName}}</h1>
