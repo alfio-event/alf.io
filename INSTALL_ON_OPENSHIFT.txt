@@ -20,7 +20,7 @@ We will do a binary deploy using scp/sftp for moving the .war to our gear.
 
 > mvn clean install
 > scp target/bagarino.war [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN].rhcloud.com:wildfly/standalone/deployments/ROOT
-> ssh [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN] "mv wildfly/standalone/deployments/ROOT wildfly/standalone/deployments/ROOT.war"
+> ssh [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN].rhcloud.com "mv wildfly/standalone/deployments/ROOT wildfly/standalone/deployments/ROOT.war"
 
 4. Go to the log to get the admin username using
 
