@@ -35,6 +35,7 @@ import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
+import io.bagarino.repository.user.OrganizationRepository;
 import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
@@ -77,6 +78,8 @@ public class ReservationController {
     private final TicketRepository ticketRepository;
     private final TicketReservationManager tickReservationManager;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final OrganizationRepository organizationRepository;
+    
     private final StripeManager stripeManager;
     private final Mailer mailer;
     private final TemplateManager templateManager;
@@ -90,6 +93,7 @@ public class ReservationController {
 			                     TicketRepository ticketRepository,
                                  TicketReservationManager tickReservationManager,
                                  TicketCategoryRepository ticketCategoryRepository,
+                                 OrganizationRepository organizationRepository,
                                  StripeManager stripeManager,
                                  Mailer mailer,
                                  TemplateManager templateManager,
@@ -100,6 +104,7 @@ public class ReservationController {
 		this.ticketRepository = ticketRepository;
 		this.tickReservationManager = tickReservationManager;
 		this.ticketCategoryRepository = ticketCategoryRepository;
+		this.organizationRepository = organizationRepository;
         this.stripeManager = stripeManager;
         this.mailer = mailer;
         this.templateManager = templateManager;
@@ -122,7 +127,7 @@ public class ReservationController {
 		reservation.validate(bindingResult, tickReservationManager, ticketCategoryRepository, eventManager);
 		
 		if (bindingResult.hasErrors()) {
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
 			return eventController.showEvent(eventName, model);
 		}
 			
@@ -134,7 +139,7 @@ public class ReservationController {
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 		} catch (NotEnoughTicketsException nete) {
 			bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
 			return eventController.showEvent(eventName, model);
 		}
 	}
@@ -229,7 +234,7 @@ public class ReservationController {
     	//
     	
     	if (bindingResult.hasErrors()) {
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
 			return showReservationPage(eventName, reservationId, false, false, model);
     	}
     	
@@ -237,14 +242,14 @@ public class ReservationController {
     	String email = paymentForm.getEmail(), fullName = paymentForm.getFullName(), billingAddress = paymentForm.getBillingAddress();
     	
     	if(reservationCost.getPriceWithVAT() > 0) {
-    		//transition to IN_PAYMENT, so we can keep track if we have a failure between the stripe payment and the completition of the reservation
+    		//transition to IN_PAYMENT, so we can keep track if we have a failure between the stripe payment and the completion of the reservation
     		tickReservationManager.transitionToInPayment(reservationId, email, fullName, billingAddress);
     		
     		try {
     			stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost.getPriceWithVAT(), event.get().getCurrency(), reservationId, email, fullName, billingAddress);
     		} catch(StripeException se) {
     			bindingResult.reject("payment_processor_error");
-    			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
+    			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
     			return showReservationPage(eventName, reservationId, false, false, model);
     		}
     	}
@@ -279,10 +284,21 @@ public class ReservationController {
     	return "redirect:/event/" + eventName + "/reservation/" + reservationId+"?confirmation-email-sent=true";
     }
     
-    //TODO: complete, additionally, the mail should be sent asynchronously (?)
     private void sendReservationCompleteEmail(HttpServletRequest request, Event event, TicketReservation reservation) {
     	
     	Map<String, Object> model = new HashMap<>();
+    	model.put("organization", organizationRepository.getById(event.getOrganizationId()));
+		model.put("event", event);
+		model.put("ticketReservation", reservation);
+		
+		TotalPrice reservationCost = tickReservationManager.totalReservationCostWithVAT(reservation.getId());
+		
+		model.put("summary", extractSummary(reservation.getId()));
+		model.put("free", reservationCost.getPriceWithVAT() == 0);
+		model.put("totalPrice", formatCents(reservationCost.getPriceWithVAT()));
+		model.put("totalVAT", formatCents(reservationCost.getVAT()));
+		model.put("reservationUrl", tickReservationManager.reservationUrl(reservation.getId()));
+
     	String reservationTxt = templateManager.render("/io/bagarino/templates/confirmation-email-txt.ms", model, request);
     	mailer.send(reservation.getEmail(), messageSource.getMessage("reservation-email-subject", new Object[] {event.getShortName()}, RequestContextUtils.getLocale(request)), reservationTxt, Optional.empty());
     }
@@ -324,10 +340,13 @@ public class ReservationController {
 			
 			if(selectionCount <= 0) {
 				bindingResult.reject(ErrorsCode.STEP_1_SELECT_AT_LEAST_ONE);
+				return;
 			}
 			
-			if(selectionCount >  tickReservationManager.maxAmountOfTickets()) {
-				bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM);//FIXME: we must display the maximum amount of tickets
+			final int maxAmountOfTicket = tickReservationManager.maxAmountOfTickets();
+			
+			if(selectionCount >  maxAmountOfTicket) {
+				bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM, new Object[]{maxAmountOfTicket}, null);
 			}
 
             final List<TicketReservationModification> selected = selected();
@@ -342,7 +361,7 @@ public class ReservationController {
                 SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, eventZoneId);
 
                 if (!ticketCategory.getSaleable()) {
-                    bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); // TODO add correct field
+                    bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); //
                 }
                 if (ticketCategory.isAccessRestricted()) {
                     bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED); //

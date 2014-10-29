@@ -38,7 +38,7 @@
 <div class="alert alert-danger" role="alert">
 
 {{#error.globalErrors}}
-	<p><strong>{{#i18n}}{{code}}{{/i18n}}</strong></p>
+	<p><strong>{{#i18n}}{{.}}{{/i18n}}</strong></p>
 {{/error.globalErrors}}
 
 </div>

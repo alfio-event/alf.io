@@ -48,7 +48,6 @@ import com.samskivert.mustache.Mustache;
  * <li>optional: locale:YOUR_LOCALE you can define the locale</li>
  * </ul>
  */
-// TODO: not happy about that, but meh, it's too late
 public class DateFormatterInterceptor extends HandlerInterceptorAdapter {
 
 	private static final String LOCALE_LABEL = "locale:";

@@ -52,4 +52,5 @@ insert into ticket (uuid, creation, category_id, event_id, status, original_pric
   
 insert into configuration (c_key, c_value, description) values
 	('STRIPE_SECRET_KEY', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'Stripe''s secret key'),
-	('STRIPE_PUBLIC_KEY', 'pk_test_gY3X0UiTgKCeStUG67i2kEFq', 'Stripe''s public key');
+	('STRIPE_PUBLIC_KEY', 'pk_test_gY3X0UiTgKCeStUG67i2kEFq', 'Stripe''s public key'),
+	('BASE_URL', 'http://localhost:8080/', 'Base application url');

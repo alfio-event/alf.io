@@ -30,7 +30,9 @@ import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
 import io.bagarino.util.MonetaryUtil;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -103,6 +105,12 @@ public class TicketReservationManager {
     	int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.IN_PAYMENT.toString(), email, fullName, billingAddress);
 		Validate.isTrue(updatedReservation == 1);
     }
+    
+    public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, String ticketIdentifier) {
+    	return optionally(() -> Triple.of(eventRepository.findByShortName(eventName), 
+				ticketReservationRepository.findReservationById(reservationId), 
+				ticketRepository.findByUUID(ticketIdentifier)));
+    }
 
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress.
@@ -153,6 +161,12 @@ public class TicketReservationManager {
     		return new TotalPrice(priceWithVAT, priceWithVAT - total);
     	}
     	
+    }
+    
+    public String reservationUrl(String reservationId) {
+    	Event event = eventRepository.findByReservationId(reservationId);
+		return StringUtils.removeEnd(configurationManager.getRequiredValue(ConfigurationKeys.BASE_URL), "/")
+				+ "/event/" + event.getShortName() + "/reservation/" + reservationId;
     }
 
 

@@ -16,8 +16,8 @@
  */
 package io.bagarino.controller;
 
-import static io.bagarino.util.OptionalWrapper.optionally;
 import io.bagarino.controller.support.TemplateManager;
+import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.manager.system.Mailer;
 import io.bagarino.manager.system.Mailer.Attachment;
 import io.bagarino.model.Event;
@@ -26,10 +26,8 @@ import io.bagarino.model.TicketCategory;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.user.Organization;
-import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
-import io.bagarino.repository.TicketReservationRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 
 import java.io.ByteArrayOutputStream;
@@ -46,7 +44,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import lombok.Data;
 
-import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -73,25 +70,24 @@ import com.lowagie.text.DocumentException;
 @Controller
 public class TicketController {
 
-	private final EventRepository eventRepository;
 	private final OrganizationRepository organizationRepository;
-	private final TicketReservationRepository ticketReservationRepository;
 	private final TicketRepository ticketRepository;
+	private final TicketReservationManager ticketReservationManager;
 	private final TicketCategoryRepository ticketCategoryRepository;
 	private final Mailer mailer;
 	private final MessageSource messageSource;
 	private final TemplateManager templateManager;
 
 	@Autowired
-	public TicketController(EventRepository eventRepository, OrganizationRepository organizationRepository, 
-			TicketReservationRepository ticketReservationRepository,
-			TicketRepository ticketRepository, TicketCategoryRepository ticketCategoryRepository,
+	public TicketController(OrganizationRepository organizationRepository, 
+			TicketReservationManager ticketReservationManager,
+			TicketRepository ticketRepository, 
+			TicketCategoryRepository ticketCategoryRepository,
 			Mailer mailer,
 			MessageSource messageSource,
 			TemplateManager templateManager) {
-		this.eventRepository = eventRepository;
 		this.organizationRepository = organizationRepository;
-		this.ticketReservationRepository = ticketReservationRepository;
+		this.ticketReservationManager = ticketReservationManager;
 		this.ticketRepository = ticketRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.mailer = mailer;
@@ -105,8 +101,11 @@ public class TicketController {
 			@RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
 			Model model) {
 		
-		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
-		check(data.getMiddle(), data.getRight());
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetch(eventName, reservationId, ticketIdentifier);
+		if(!oData.isPresent()) {
+			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+		}
+		Triple<Event, TicketReservation, Ticket> data = oData.get();
 		
 		
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId());
@@ -144,9 +143,13 @@ public class TicketController {
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		
 		
-		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetch(eventName, reservationId, ticketIdentifier);
+		if(!oData.isPresent()) {
+			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+		}
+		Triple<Event, TicketReservation, Ticket> data = oData.get();
+		
 		Ticket ticket = data.getRight();
-		check(data.getMiddle(), ticket);
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		preparePdfTicket(request, response, data.getLeft(), data.getMiddle(), ticket).createPDF(baos);
@@ -172,11 +175,15 @@ public class TicketController {
 			@PathVariable("reservationId") String reservationId,
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletRequest request, HttpServletResponse response) throws IOException, DocumentException, WriterException {
 
-		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetch(eventName, reservationId, ticketIdentifier);
+		if(!oData.isPresent()) {
+			response.sendError(HttpServletResponse.SC_FORBIDDEN);
+			return;
+		}
+		Triple<Event, TicketReservation, Ticket> data = oData.get();
+		
 		Ticket ticket = data.getRight();
 		
-		check(data.getMiddle(), ticket);
-
 		response.setContentType("application/pdf");
 		response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
 		try (OutputStream os = response.getOutputStream()) {
@@ -189,11 +196,16 @@ public class TicketController {
 			@PathVariable("reservationId") String reservationId,
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response) throws IOException, WriterException {
 		
-		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetch(eventName, reservationId, ticketIdentifier);
+		if(!oData.isPresent()) {
+			response.sendError(HttpServletResponse.SC_FORBIDDEN);
+			return;
+		}
+		
+		Triple<Event, TicketReservation, Ticket> data = oData.get();
+		
 		Event event = data.getLeft();
 		Ticket ticket = data.getRight();
-		
-		check(data.getMiddle(), ticket);
 		
 		String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
 		
@@ -202,20 +214,22 @@ public class TicketController {
 		
 	}
 	
-	private void check(TicketReservation reservation, Ticket ticket) {
-		Validate.isTrue(reservation.getStatus() == TicketReservationStatus.COMPLETE);
-		Validate.isTrue(ticket.getAssigned(), "can only generate a pdf if the ticket is assigned to a person");
-	}
-	
-	
-	private Triple<Event, TicketReservation, Ticket> fetch(String eventName, String reservationId, String ticketIdentifier) {
-		Event event = optionally(() -> eventRepository.findByShortName(eventName)).orElseThrow(
-				IllegalArgumentException::new);
-		TicketReservation reservation = optionally(() -> ticketReservationRepository.findReservationById(reservationId))
-				.orElseThrow(IllegalArgumentException::new);
-		Ticket ticket = optionally(() -> ticketRepository.findByUUID(ticketIdentifier)).orElseThrow(
-				IllegalArgumentException::new);
-		return Triple.of(event, reservation, ticket);
+	/**
+	 * Return a fully present triple only if the values are present (obviously) and the the reservation has a COMPLETE status and the ticket is considered assigned.
+	 * 
+	 * @param eventName
+	 * @param reservationId
+	 * @param ticketIdentifier
+	 * @return
+	 */
+	private Optional<Triple<Event, TicketReservation, Ticket>> fetch(String eventName, String reservationId, String ticketIdentifier) {
+		return ticketReservationManager.from(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
+					if(t.getMiddle().getStatus() != TicketReservationStatus.COMPLETE || !t.getRight().getAssigned()) {
+						return Optional.empty();
+					} else {
+						return Optional.of(t);
+					}
+				});
 	}
 
 	private ITextRenderer preparePdfTicket(HttpServletRequest request, HttpServletResponse response, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
