@@ -76,9 +76,9 @@ public class StripeManager {
         initialMetadata.put("reservationId", reservationId);
         initialMetadata.put("email", email);
         initialMetadata.put("fullName", fullName);
-        if(StringUtils.isNotBlank(billingAddress)) {
-        	initialMetadata.put("billingAddress", billingAddress);
-        }
+		if (StringUtils.isNotBlank(billingAddress)) {
+			initialMetadata.put("billingAddress", billingAddress);
+		}
 
 
 

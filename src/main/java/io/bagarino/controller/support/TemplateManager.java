@@ -18,21 +18,25 @@ package io.bagarino.controller.support;
 
 import io.bagarino.util.DateFormatterInterceptor;
 
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.mustache.jmustache.LocalizationMessageInterceptor;
 
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
+import com.samskivert.mustache.Template;
 
 /**
  * For hiding the uglyness :)
@@ -40,6 +44,9 @@ import com.samskivert.mustache.Mustache.Compiler;
 public class TemplateManager {
 
 	private final LocalizationMessageInterceptor localizationMessageInterceptor;
+	private final boolean cache;
+	private Map<String, Template> templateCache = new ConcurrentHashMap<>(5); // 1 pdf, 2 email confirmation, 2 email
+																				// ticket
 
 	private final Compiler templateCompiler = Mustache
 			.compiler()
@@ -51,22 +58,36 @@ public class TemplateManager {
 					});
 
 	@Autowired
-	public TemplateManager(LocalizationMessageInterceptor localizationMessageInterceptor) {
+	public TemplateManager(LocalizationMessageInterceptor localizationMessageInterceptor, Environment environment) {
 		this.localizationMessageInterceptor = localizationMessageInterceptor;
+		this.cache = environment.acceptsProfiles("!dev");
 	}
 
-	public String render(String classPathResource, Map<String, Object> model, HttpServletRequest request)
-			throws Exception {
+	public String render(String classPathResource, Map<String, Object> model, HttpServletRequest request) {
+		try {
+			ModelAndView mv = new ModelAndView((String) null, model);
 
-		ModelAndView mv = new ModelAndView((String) null, model);
+			//
+			mv.addObject("format-date", DateFormatterInterceptor.FORMAT_DATE);
+			localizationMessageInterceptor.postHandle(request, null, null, mv);
+			//
 
-		//
-		mv.addObject("format-date", DateFormatterInterceptor.FORMAT_DATE);
-		localizationMessageInterceptor.postHandle(request, null, null, mv);
-		//
+			Template tmpl = cache ? templateCache.computeIfAbsent(classPathResource, this::compile)
+					: compile(classPathResource);
 
-		InputStreamReader tmpl = new InputStreamReader(new ClassPathResource(classPathResource).getInputStream(),
-				StandardCharsets.UTF_8);
-		return templateCompiler.compile(tmpl).execute(mv.getModel());
+			return tmpl.execute(mv.getModel());
+		} catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+	private Template compile(String classPathResource) {
+		try {
+			InputStreamReader tmpl = new InputStreamReader(new ClassPathResource(classPathResource).getInputStream(),
+					StandardCharsets.UTF_8);
+			return templateCompiler.compile(tmpl);
+		} catch (IOException ioe) {
+			throw new IllegalStateException(ioe);
+		}
 	}
 }

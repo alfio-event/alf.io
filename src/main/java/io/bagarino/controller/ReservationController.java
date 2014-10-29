@@ -19,10 +19,12 @@ package io.bagarino.controller;
 import com.stripe.exception.StripeException;
 
 import io.bagarino.controller.decorator.SaleableTicketCategory;
+import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.manager.EventManager;
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.manager.TicketReservationManager.NotEnoughTicketsException;
+import io.bagarino.manager.TicketReservationManager.TotalPrice;
 import io.bagarino.manager.system.Mailer;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
@@ -39,6 +41,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -46,14 +49,19 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
 
 import static io.bagarino.util.MonetaryUtil.formatCents;
 import static io.bagarino.util.OptionalWrapper.optionally;
@@ -71,6 +79,8 @@ public class ReservationController {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final StripeManager stripeManager;
     private final Mailer mailer;
+    private final TemplateManager templateManager;
+    private final MessageSource messageSource;
     //
     private final EventController eventController;
     
@@ -82,6 +92,8 @@ public class ReservationController {
                                  TicketCategoryRepository ticketCategoryRepository,
                                  StripeManager stripeManager,
                                  Mailer mailer,
+                                 TemplateManager templateManager,
+                                 MessageSource messageSource,
                                  EventController eventController) {
         this.eventRepository = eventRepository;
         this.eventManager = eventManager;
@@ -90,6 +102,8 @@ public class ReservationController {
 		this.ticketCategoryRepository = ticketCategoryRepository;
         this.stripeManager = stripeManager;
         this.mailer = mailer;
+        this.templateManager = templateManager;
+        this.messageSource = messageSource;
         this.eventController = eventController;
 	}
 	
@@ -148,15 +162,16 @@ public class ReservationController {
     		return "/event/reservation-page-not-found";
     	} else if(reservation.get().getStatus() == TicketReservationStatus.PENDING) {
     		
-    		int reservationCost = totalReservationCost(reservationId);
+    		TotalPrice reservationCost = tickReservationManager.totalReservationCostWithVAT(reservationId);
     		
     		model.addAttribute("summary", extractSummary(reservationId));
-    		model.addAttribute("free", reservationCost == 0);
-    		model.addAttribute("totalPrice", formatCents(reservationCost));
+    		model.addAttribute("free", reservationCost.getPriceWithVAT() == 0);
+    		model.addAttribute("totalPrice", formatCents(reservationCost.getPriceWithVAT()));
+    		model.addAttribute("totalVAT", formatCents(reservationCost.getVAT()));
     		model.addAttribute("reservationId", reservationId);
     		model.addAttribute("reservation", reservation.get());
     		
-    		if(reservationCost > 0) {
+    		if(reservationCost.getPriceWithVAT() > 0) {
     			model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
     		}
     		
@@ -184,7 +199,7 @@ public class ReservationController {
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
     public String handleReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, 
     								PaymentForm paymentForm, BindingResult bindingResult,
-                                    Model model) throws StripeException {
+                                    Model model, HttpServletRequest request) throws StripeException {
     	
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
@@ -207,7 +222,7 @@ public class ReservationController {
     		bindingResult.reject("ticket_reservation_no_more_valid");
     	}
     	
-    	final int reservationCost = totalReservationCost(reservationId);
+    	final TotalPrice reservationCost = tickReservationManager.totalReservationCostWithVAT(reservationId);
     	
     	//
     	paymentForm.validate(bindingResult, reservationCost);
@@ -221,12 +236,12 @@ public class ReservationController {
     	
     	String email = paymentForm.getEmail(), fullName = paymentForm.getFullName(), billingAddress = paymentForm.getBillingAddress();
     	
-    	if(reservationCost > 0) {
+    	if(reservationCost.getPriceWithVAT() > 0) {
     		//transition to IN_PAYMENT, so we can keep track if we have a failure between the stripe payment and the completition of the reservation
     		tickReservationManager.transitionToInPayment(reservationId, email, fullName, billingAddress);
     		
     		try {
-    			stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost, event.get().getCurrency(), reservationId, email, fullName, billingAddress);
+    			stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost.getPriceWithVAT(), event.get().getCurrency(), reservationId, email, fullName, billingAddress);
     		} catch(StripeException se) {
     			bindingResult.reject("payment_processor_error");
     			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//TODO: refactor
@@ -239,7 +254,7 @@ public class ReservationController {
         //
         
         //
-        sendReservationCompleteEmail(tickReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new));
+        sendReservationCompleteEmail(request, event.get(), tickReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new));
         //
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId;
@@ -247,7 +262,7 @@ public class ReservationController {
     
     
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/re-send-email", method = RequestMethod.POST)
-    public String reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {
+    public String reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, HttpServletRequest request) {
     	
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
@@ -259,31 +274,28 @@ public class ReservationController {
     		return "redirect:/event/" + eventName + "/";
     	}
     	
-    	sendReservationCompleteEmail(ticketReservation.orElseThrow(IllegalStateException::new));
+    	sendReservationCompleteEmail(request, event.get(), ticketReservation.orElseThrow(IllegalStateException::new));
     	
     	return "redirect:/event/" + eventName + "/reservation/" + reservationId+"?confirmation-email-sent=true";
     }
     
-    //TODO: complete, additionally, the mail should be sent asynchronously
-    private void sendReservationCompleteEmail(TicketReservation reservation) {
-    	mailer.send(reservation.getEmail(), "reservation complete :D", "here be link", Optional.of("here be link html"));
+    //TODO: complete, additionally, the mail should be sent asynchronously (?)
+    private void sendReservationCompleteEmail(HttpServletRequest request, Event event, TicketReservation reservation) {
+    	
+    	Map<String, Object> model = new HashMap<>();
+    	String reservationTxt = templateManager.render("/io/bagarino/templates/confirmation-email-txt.ms", model, request);
+    	mailer.send(reservation.getEmail(), messageSource.getMessage("reservation-email-subject", new Object[] {event.getShortName()}, RequestContextUtils.getLocale(request)), reservationTxt, Optional.empty());
     }
     
     
-    private static int totalFrom(List<Ticket> tickets) {
-    	return tickets.stream().mapToInt(Ticket::getPaidPriceInCents).sum();
-    }
     
-    private int totalReservationCost(String reservationId) {
-    	return totalFrom(ticketRepository.findTicketsInReservation(reservationId));
-    }
     
     private List<SummaryRow> extractSummary(String reservationId) {
     	List<SummaryRow> summary = new ArrayList<>();
     	List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
     	tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).forEach((categoryId, ticketsByCategory) -> {
     		String categoryName = ticketCategoryRepository.getById(categoryId).getName();
-    		summary.add(new SummaryRow(categoryName, formatCents(ticketsByCategory.get(0).getPaidPriceInCents()), ticketsByCategory.size(), formatCents(totalFrom(ticketsByCategory))));
+    		summary.add(new SummaryRow(categoryName, formatCents(ticketsByCategory.get(0).getPaidPriceInCents()), ticketsByCategory.size(), formatCents(tickReservationManager.totalFrom(ticketsByCategory))));
     	});
     	return summary;
     } 
@@ -349,10 +361,10 @@ public class ReservationController {
         private String billingAddress;
         private Boolean cancelReservation;
         
-        private void validate(BindingResult bindingResult, int reservationCost) {
+        private void validate(BindingResult bindingResult, TotalPrice reservationCost) {
         	
         	
-			if (reservationCost > 0 && StringUtils.isBlank(stripeToken)) {
+			if (reservationCost.getPriceWithVAT() > 0 && StringUtils.isBlank(stripeToken)) {
 				bindingResult.reject("missing_stripe_token");
 			}
 			

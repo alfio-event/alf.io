@@ -18,13 +18,17 @@ package io.bagarino.manager;
 
 import static io.bagarino.util.OptionalWrapper.optionally;
 import io.bagarino.manager.system.ConfigurationManager;
+import io.bagarino.model.Event;
 import io.bagarino.model.Ticket.TicketStatus;
+import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.model.system.ConfigurationKeys;
+import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
+import io.bagarino.util.MonetaryUtil;
 
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,12 +41,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import lombok.Data;
+
 @Component
 @Transactional
 public class TicketReservationManager {
 	
 	public static final int RESERVATION_MINUTE = 25;
 
+	private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
 	private final TicketReservationRepository ticketReservationRepository;
 	private final ConfigurationManager configurationManager;
@@ -51,8 +58,15 @@ public class TicketReservationManager {
 		
 	}
 	
+	@Data
+	public static class TotalPrice {
+		private final int priceWithVAT;
+		private final int VAT;
+	}
+	
 	@Autowired
-	public TicketReservationManager(TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository, ConfigurationManager configurationManager) {
+	public TicketReservationManager(EventRepository eventRepository, TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository, ConfigurationManager configurationManager) {
+		this.eventRepository = eventRepository;
 		this.ticketRepository = ticketRepository;
 		this.ticketReservationRepository = ticketReservationRepository;
 		this.configurationManager = configurationManager;
@@ -117,6 +131,29 @@ public class TicketReservationManager {
 		ticketRepository.freeFromReservation(expired);
 		ticketReservationRepository.remove(expired);
 	}
+	
+	public int totalFrom(List<Ticket> tickets) {
+    	return tickets.stream().mapToInt(Ticket::getPaidPriceInCents).sum();
+    }
+    
+	/**
+	 * Get the total cost with VAT if it's not included in the ticket price.
+	 * 
+	 * @param reservationId
+	 * @return
+	 */
+    public TotalPrice totalReservationCostWithVAT(String reservationId) {
+    	Event event = eventRepository.findByReservationId(reservationId);
+    	int total = totalFrom(ticketRepository.findTicketsInReservation(reservationId));
+    	if(event.isVatIncluded()) {
+    		int priceWithoutVAT = MonetaryUtil.removeVAT(total, event.getVat());
+    		return new TotalPrice(total, total - priceWithoutVAT);
+    	} else {
+    		int priceWithVAT = MonetaryUtil.addVAT(total, event.getVat());
+    		return new TotalPrice(priceWithVAT, priceWithVAT - total);
+    	}
+    	
+    }
 
 
 	public int maxAmountOfTickets() {

@@ -18,6 +18,18 @@ package io.bagarino.manager.system;
 
 import java.util.Optional;
 
+import lombok.Data;
+
+import org.springframework.core.io.InputStreamSource;
+
 public interface Mailer {
+
 	void send(String to, String subject, String text, Optional<String> html, Attachment... attachment);
+
+	@Data
+	public class Attachment {
+		private final String filename;
+		private final InputStreamSource source;
+		private final String contentType;
+	}
 }

@@ -16,26 +16,47 @@
  */
 package io.bagarino.config;
 
-import org.hsqldb.util.DatabaseManagerSwing;
-import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+import io.bagarino.filter.RedirectToHttpsFilter;
 
+import javax.servlet.FilterRegistration.Dynamic;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.SessionCookieConfig;
+
+import org.apache.commons.lang3.StringUtils;
+import org.hsqldb.util.DatabaseManagerSwing;
+import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
 	@Override
 	public void onStartup(ServletContext servletContext) throws ServletException {
 		super.onStartup(servletContext);
-		
-		
-		//FIXME and CHECKME what a mess, ouch: https://issues.jboss.org/browse/WFLY-3448 ?
-		servletContext.getSessionCookieConfig().setPath("/");
-		//
+
+		configureSessionCookie(servletContext);
+
+		Dynamic redirectFilter = servletContext.addFilter("RedirectToHttpsFilter", RedirectToHttpsFilter.class);
+		redirectFilter.setAsyncSupported(true);
+		redirectFilter.addMappingForUrlPatterns(null, false, "/*");
 
 		if (System.getProperty("startDBManager") != null) {
 			DatabaseManagerSwing.main(new String[] { "--url", "jdbc:hsqldb:mem:bagarino", "--noexit" });
 		}
+	}
+
+	private void configureSessionCookie(ServletContext servletContext) {
+		SessionCookieConfig config = servletContext.getSessionCookieConfig();
+
+		config.setHttpOnly(true);
+		
+		// set cookie https only too :D (TODO: check: I'm not able to get the Environment :( )
+		config.setSecure(!StringUtils.contains(System.getProperty("spring.profiles.active"), "dev"));
+		//
+		
+
+		// FIXME and CHECKME what a mess, ouch: https://issues.jboss.org/browse/WFLY-3448 ?
+		config.setPath(servletContext.getContextPath() + "/");
+		//
 	}
 
 	@Override
@@ -52,5 +73,4 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 	protected String[] getServletMappings() {
 		return new String[] { "/" };
 	}
-
 }

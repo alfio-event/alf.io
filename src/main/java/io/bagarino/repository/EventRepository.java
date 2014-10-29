@@ -21,6 +21,7 @@ import io.bagarino.datamapper.Bind;
 import io.bagarino.datamapper.Query;
 import io.bagarino.datamapper.QueryRepository;
 import io.bagarino.model.Event;
+
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
@@ -52,5 +53,11 @@ public interface EventRepository {
                @Bind("vat") BigDecimal vat, @Bind("paymentProxies") String allowedPaymentProxies,
                @Bind("privateKey") String privateKey,
                @Bind("organizationId") int orgId);
+
+    /**
+     * TODO check: This one is kinda ugly.
+     * */
+    @Query("select * from event where id = (select event_id from ticket where tickets_reservation_id = :reservationId limit 1)")
+	Event findByReservationId(@Bind("reservationId") String reservationId);
 
 }

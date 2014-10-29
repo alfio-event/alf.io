@@ -18,8 +18,8 @@ package io.bagarino.controller;
 
 import static io.bagarino.util.OptionalWrapper.optionally;
 import io.bagarino.controller.support.TemplateManager;
-import io.bagarino.manager.system.Attachment;
 import io.bagarino.manager.system.Mailer;
+import io.bagarino.manager.system.Mailer.Attachment;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
@@ -49,6 +49,7 @@ import lombok.Data;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -57,6 +58,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.support.RequestContextUtils;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import com.google.zxing.BarcodeFormat;
@@ -66,6 +68,7 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import com.lowagie.text.DocumentException;
 
 @Controller
 public class TicketController {
@@ -76,6 +79,7 @@ public class TicketController {
 	private final TicketRepository ticketRepository;
 	private final TicketCategoryRepository ticketCategoryRepository;
 	private final Mailer mailer;
+	private final MessageSource messageSource;
 	private final TemplateManager templateManager;
 
 	@Autowired
@@ -83,6 +87,7 @@ public class TicketController {
 			TicketReservationRepository ticketReservationRepository,
 			TicketRepository ticketRepository, TicketCategoryRepository ticketCategoryRepository,
 			Mailer mailer,
+			MessageSource messageSource,
 			TemplateManager templateManager) {
 		this.eventRepository = eventRepository;
 		this.organizationRepository = organizationRepository;
@@ -90,6 +95,7 @@ public class TicketController {
 		this.ticketRepository = ticketRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.mailer = mailer;
+		this.messageSource = messageSource;
 		this.templateManager = templateManager;
 	}
 	
@@ -147,8 +153,14 @@ public class TicketController {
 		
 		Attachment attachment = new Attachment("ticket-" + ticketIdentifier + ".pdf", new ByteArrayResource(baos.toByteArray()), "application/pdf");
 		
-		//TODO: complete
-		mailer.send(ticket.getEmail(), "your ticket", "here attached your ticket", Optional.of("here attached your ticket"), attachment);
+		Map<String, Object> model = new HashMap<>();
+		model.put("organization", organizationRepository.getById(data.getLeft().getOrganizationId()));
+		model.put("event", data.getLeft());
+		model.put("ticketReservation", data.getMiddle());
+		model.put("ticket", ticket);
+    	String ticketEmailTxt = templateManager.render("/io/bagarino/templates/ticket-email-txt.ms", model, request);
+		
+		mailer.send(ticket.getEmail(), messageSource.getMessage("ticket-email-subject", new Object[] {data.getLeft().getShortName()}, RequestContextUtils.getLocale(request)), ticketEmailTxt, Optional.empty(), attachment);
 		
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId
 				+ ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "") + "?ticket-email-sent=true";
@@ -158,8 +170,7 @@ public class TicketController {
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}/download-ticket", method = RequestMethod.GET)
 	public void generateTicketPdf(@PathVariable("eventName") String eventName,
 			@PathVariable("reservationId") String reservationId,
-			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletRequest request, HttpServletResponse response)
-			throws Exception {
+			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletRequest request, HttpServletResponse response) throws IOException, DocumentException, WriterException {
 
 		Triple<Event, TicketReservation, Ticket> data = fetch(eventName, reservationId, ticketIdentifier);
 		Ticket ticket = data.getRight();
@@ -207,8 +218,7 @@ public class TicketController {
 		return Triple.of(event, reservation, ticket);
 	}
 
-	private ITextRenderer preparePdfTicket(HttpServletRequest request, HttpServletResponse response, Event event, TicketReservation ticketReservation, Ticket ticket)
-			throws Exception {
+	private ITextRenderer preparePdfTicket(HttpServletRequest request, HttpServletResponse response, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
 		
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
 		Organization organization = organizationRepository.getById(event.getOrganizationId());
@@ -224,7 +234,7 @@ public class TicketController {
 		model.put("ticketCategory", ticketCategory);
 		model.put("event", event);
 		model.put("organization", organization);
-		model.put("qrCodeDataUri", toDataUri(createQRCode(qrCodeText)));
+		model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
 			
 		String page = templateManager.render("/io/bagarino/templates/ticket.ms", model, request);
 
@@ -241,10 +251,6 @@ public class TicketController {
 		BitMatrix matrix = new MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, 200, 200, hintMap);
 		MatrixToImageWriter.writeToStream(matrix, "png", baos);
 		return baos.toByteArray();
-	}
-
-	private static String toDataUri(byte[] content) {
-		return "data:image/png;base64," + Base64.getEncoder().encodeToString(content);
 	}
 	
 	@Data

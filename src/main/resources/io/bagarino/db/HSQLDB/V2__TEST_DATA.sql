@@ -51,5 +51,5 @@ insert into ticket (uuid, creation, category_id, event_id, status, original_pric
   ('abcdefghilmo46', '2014-01-10 00:00:00', 3, 0, 'FREE', 500, 500);
   
 insert into configuration (c_key, c_value, description) values
-	('STRIPE_SECRET_KEY', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'test api key'),
-	('STRIPE_PUBLIC_KEY', 'pk_test_gY3X0UiTgKCeStUG67i2kEFq', 'test client side api key');
+	('STRIPE_SECRET_KEY', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'Stripe''s secret key'),
+	('STRIPE_PUBLIC_KEY', 'pk_test_gY3X0UiTgKCeStUG67i2kEFq', 'Stripe''s public key');
