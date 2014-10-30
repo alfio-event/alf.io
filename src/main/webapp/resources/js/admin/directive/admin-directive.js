@@ -83,9 +83,14 @@
                 };
                 var startDate, endDate;
 
-                if(angular.isDefined(scope.startModelObj.date)) {
-                    startDate = moment(scope.startModelObj.date + 'T' + scope.startModelObj.time);
-                    endDate = moment(scope.endModelObj.date + 'T' + scope.endModelObj.time);
+                if(angular.isDefined(scope.startModelObj.date) && moment(scope.startModelObj.date).isValid()) {
+                    var startTime = angular.isDefined(scope.startModelObj.time) ? scope.startModelObj.time : '00:00';
+                    startDate = moment(scope.startModelObj.date + 'T' + startTime);
+                    if(moment(scope.endModelObj.date + 'T' + scope.endModelObj.time).isValid()) {
+                        endDate = moment(scope.endModelObj.date + 'T' + scope.endModelObj.time);
+                    } else {
+                        endDate = startDate.add(12, 'hours');
+                    }
                     var result = startDate.format(dateFormat) + ' / ' + endDate.format(dateFormat);
                     ctrl.$setViewValue(result);
                     element.val(result);
