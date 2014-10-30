@@ -16,11 +16,10 @@
  */
 package io.bagarino.manager;
 
-import static io.bagarino.util.OptionalWrapper.optionally;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.Event;
-import io.bagarino.model.Ticket.TicketStatus;
 import io.bagarino.model.Ticket;
+import io.bagarino.model.Ticket.TicketStatus;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
@@ -29,7 +28,7 @@ import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
 import io.bagarino.util.MonetaryUtil;
-
+import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
@@ -37,13 +36,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
-import lombok.Data;
+import static io.bagarino.util.OptionalWrapper.optionally;
 
 @Component
 @Transactional
@@ -140,10 +135,10 @@ public class TicketReservationManager {
 		ticketReservationRepository.remove(expired);
 	}
 	
-	public int totalFrom(List<Ticket> tickets) {
+	private int totalFrom(List<Ticket> tickets) {
     	return tickets.stream().mapToInt(Ticket::getPaidPriceInCents).sum();
     }
-    
+
 	/**
 	 * Get the total cost with VAT if it's not included in the ticket price.
 	 * 
@@ -154,8 +149,8 @@ public class TicketReservationManager {
     	Event event = eventRepository.findByReservationId(reservationId);
     	int total = totalFrom(ticketRepository.findTicketsInReservation(reservationId));
     	if(event.isVatIncluded()) {
-    		int priceWithoutVAT = MonetaryUtil.removeVAT(total, event.getVat());
-    		return new TotalPrice(total, total - priceWithoutVAT);
+            final int vat = MonetaryUtil.calcVat(total, event.getVat());
+            return new TotalPrice(total + vat, vat);
     	} else {
     		int priceWithVAT = MonetaryUtil.addVAT(total, event.getVat());
     		return new TotalPrice(priceWithVAT, priceWithVAT - total);

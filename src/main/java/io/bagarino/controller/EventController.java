@@ -88,7 +88,7 @@ public class EventController {
 		//hide access restricted ticket categories
 		List<SaleableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(ev.getId()).stream()
                 .filter((c) -> !c.isAccessRestricted())
-                .map((m) -> new SaleableTicketCategory(m, now, ev.getZoneId()))
+                .map((m) -> new SaleableTicketCategory(m, now, ev))
                 .collect(Collectors.toList());
 		//
 

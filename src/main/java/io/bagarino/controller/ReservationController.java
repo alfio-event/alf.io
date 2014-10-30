@@ -17,7 +17,6 @@
 package io.bagarino.controller;
 
 import com.stripe.exception.StripeException;
-
 import io.bagarino.controller.decorator.SaleableTicketCategory;
 import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.manager.EventManager;
@@ -36,8 +35,8 @@ import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
+import io.bagarino.util.MonetaryUtil;
 import lombok.Data;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -52,17 +51,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
 
 import static io.bagarino.util.MonetaryUtil.formatCents;
 import static io.bagarino.util.OptionalWrapper.optionally;
@@ -124,7 +117,7 @@ public class ReservationController {
 			return "redirect:/event/" + eventName + "/";
 		}
 		
-		reservation.validate(bindingResult, tickReservationManager, ticketCategoryRepository, eventManager);
+		reservation.validate(bindingResult, tickReservationManager, ticketCategoryRepository, eventManager, event.get());
 		
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
@@ -169,7 +162,7 @@ public class ReservationController {
     		
     		TotalPrice reservationCost = tickReservationManager.totalReservationCostWithVAT(reservationId);
     		
-    		model.addAttribute("summary", extractSummary(reservationId));
+    		model.addAttribute("summary", extractSummary(reservationId, event.get()));
     		model.addAttribute("free", reservationCost.getPriceWithVAT() == 0);
     		model.addAttribute("totalPrice", formatCents(reservationCost.getPriceWithVAT()));
     		model.addAttribute("totalVAT", formatCents(reservationCost.getVAT()));
@@ -290,12 +283,15 @@ public class ReservationController {
     	model.put("organization", organizationRepository.getById(event.getOrganizationId()));
 		model.put("event", event);
 		model.put("ticketReservation", reservation);
-		
-		TotalPrice reservationCost = tickReservationManager.totalReservationCostWithVAT(reservation.getId());
-		
-		model.put("summary", extractSummary(reservation.getId()));
-		model.put("free", reservationCost.getPriceWithVAT() == 0);
-		model.put("totalPrice", formatCents(reservationCost.getPriceWithVAT()));
+
+
+        TotalPrice reservationCost = tickReservationManager.totalReservationCostWithVAT(reservation.getId());
+
+        final List<SummaryRow> summaryRows = extractSummary(reservation.getId(), event);
+        final int subTotal = summaryRows.stream().mapToInt(SummaryRow::getOriginalSubTotal).sum();
+        model.put("summary", summaryRows);
+		model.put("free", subTotal == 0);
+        model.put("totalPrice", formatCents(subTotal));
 		model.put("totalVAT", formatCents(reservationCost.getVAT()));
 		model.put("reservationUrl", tickReservationManager.reservationUrl(reservation.getId()));
 
@@ -306,12 +302,17 @@ public class ReservationController {
     
     
     
-    private List<SummaryRow> extractSummary(String reservationId) {
+    private List<SummaryRow> extractSummary(String reservationId, Event event) {
     	List<SummaryRow> summary = new ArrayList<>();
     	List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
     	tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).forEach((categoryId, ticketsByCategory) -> {
+            int paidPriceInCents = ticketsByCategory.get(0).getPaidPriceInCents();
+            if(event.isVatIncluded()) {
+                paidPriceInCents = MonetaryUtil.addVAT(paidPriceInCents, event.getVat());
+            }
     		String categoryName = ticketCategoryRepository.getById(categoryId).getName();
-    		summary.add(new SummaryRow(categoryName, formatCents(ticketsByCategory.get(0).getPaidPriceInCents()), ticketsByCategory.size(), formatCents(tickReservationManager.totalFrom(ticketsByCategory))));
+            final int subTotal = paidPriceInCents * ticketsByCategory.size();
+            summary.add(new SummaryRow(categoryName, formatCents(paidPriceInCents), ticketsByCategory.size(), formatCents(subTotal), subTotal));
     	});
     	return summary;
     } 
@@ -335,7 +336,8 @@ public class ReservationController {
 		private void validate(BindingResult bindingResult,
                               TicketReservationManager tickReservationManager,
                               TicketCategoryRepository ticketCategoryRepository,
-                              EventManager eventManager) {
+                              EventManager eventManager,
+                              Event event) {
 			int selectionCount = selectionCount();
 			
 			if(selectionCount <= 0) {
@@ -358,7 +360,7 @@ public class ReservationController {
             selected.forEach((r) -> {
 
                 TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId());
-                SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, eventZoneId);
+                SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event);
 
                 if (!ticketCategory.getSaleable()) {
                     bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); //
@@ -412,6 +414,7 @@ public class ReservationController {
     	private final String price;
     	private final int amount;
     	private final String subTotal;
+        private final int originalSubTotal;
     }
 
 }

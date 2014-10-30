@@ -29,10 +29,21 @@ public final class MonetaryUtil {
 
     public static int addVAT(int priceInCents, BigDecimal vat) {
         BigDecimal price = new BigDecimal(priceInCents);
-        return price.add(price.multiply(vat.divide(HUNDRED))).setScale(0, HALF_UP).intValueExact();
+        return addVAT(price, vat).intValueExact();
+    }
+
+    public static BigDecimal addVAT(BigDecimal price, BigDecimal vat) {
+        return price.add(price.multiply(vat.divide(HUNDRED))).setScale(0, HALF_UP);
     }
 
     public static int removeVAT(int priceInCents, BigDecimal vat) {
+        return new BigDecimal(priceInCents)
+                .divide(BigDecimal.ONE.add(vat.divide(HUNDRED)), 5, HALF_UP)
+                .setScale(0, HALF_UP)
+                .intValueExact();
+    }
+
+    public static int calcVat(int priceInCents, BigDecimal vat) {
         return new BigDecimal(priceInCents)
                 .divide(BigDecimal.ONE.add(vat.divide(HUNDRED)), 5, HALF_UP)
                 .setScale(0, HALF_UP)

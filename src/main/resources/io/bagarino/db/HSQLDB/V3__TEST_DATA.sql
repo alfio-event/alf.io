@@ -22,8 +22,8 @@ insert into event(description, short_name, location, latitude, longitude, start_
 
 insert into ticket_category(inception, expiration, name, description, max_tickets, price_cts, access_restricted, tc_status) values
   ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Normal', 'Very good category', 2, 0, false, 'ACTIVE'),
-  ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Not normal', 'Very very good category', 4, 500, false, 'ACTIVE'),
-  ('2015-09-10 00:00:00', '2015-10-10 00:00:00', 'Still not in sale', 'Last day category', 1, 600, false, 'ACTIVE'),
+  ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Not normal', 'Very very good category', 4, 463, false, 'ACTIVE'),
+  ('2015-09-10 00:00:00', '2015-10-10 00:00:00', 'Still not in sale', 'Last day category', 1, 556, false, 'ACTIVE'),
   ('2014-01-01 00:00:00', '2014-09-01 00:00:00', 'Expired', 'Expired', 1, 400, false, 'ACTIVE');
   
 insert into j_event_ticket_category(event_id, ticket_category_id) values (0,0);
@@ -39,16 +39,16 @@ insert into ticket (uuid, creation, category_id, event_id, status, original_pric
   ('abcdefghilmo', '2014-01-10 00:00:00', 0, 0, 'FREE', 0, 0),
   
   -- paid ticket
-  ('abcdefghilmn41', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500),
-  ('abcdefghilmn42', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500),
-  ('abcdefghilmn43', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500),
-  ('abcdefghilmo44', '2014-01-10 00:00:00', 1, 0, 'FREE', 500, 500),
+  ('abcdefghilmn41', '2014-01-10 00:00:00', 1, 0, 'FREE', 463, 463),
+  ('abcdefghilmn42', '2014-01-10 00:00:00', 1, 0, 'FREE', 463, 463),
+  ('abcdefghilmn43', '2014-01-10 00:00:00', 1, 0, 'FREE', 463, 463),
+  ('abcdefghilmo44', '2014-01-10 00:00:00', 1, 0, 'FREE', 463, 463),
   
   -- still not in sale
-  ('abcdefghilmo45', '2014-01-10 00:00:00', 2, 0, 'FREE', 500, 500),
+  ('abcdefghilmo45', '2014-01-10 00:00:00', 2, 0, 'FREE', 463, 463),
   
   --expired
-  ('abcdefghilmo46', '2014-01-10 00:00:00', 3, 0, 'FREE', 500, 500);
+  ('abcdefghilmo46', '2014-01-10 00:00:00', 3, 0, 'FREE', 463, 463);
   
 insert into configuration (c_key, c_value, description) values
 	('STRIPE_SECRET_KEY', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'Stripe''s secret key'),

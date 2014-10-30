@@ -69,7 +69,7 @@
 							{{#i18n}}common.free{{/i18n}}	
 						{{/free}}
 						{{^free}}
-							{{price}} {{event.currency}}
+							{{finalPrice}} {{event.currency}}
 						{{/free}}
 					</label>
 					<div>
