@@ -155,7 +155,6 @@ public class TicketReservationManager {
     		int priceWithVAT = MonetaryUtil.addVAT(total, event.getVat());
     		return new TotalPrice(priceWithVAT, priceWithVAT - total);
     	}
-    	
     }
     
     public String reservationUrl(String reservationId) {

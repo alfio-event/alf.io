@@ -28,8 +28,7 @@ public final class MonetaryUtil {
     }
 
     public static int addVAT(int priceInCents, BigDecimal vat) {
-        BigDecimal price = new BigDecimal(priceInCents);
-        return addVAT(price, vat).intValueExact();
+        return addVAT(new BigDecimal(priceInCents), vat).intValueExact();
     }
 
     public static BigDecimal addVAT(BigDecimal price, BigDecimal vat) {
@@ -44,8 +43,7 @@ public final class MonetaryUtil {
     }
 
     public static int calcVat(int priceInCents, BigDecimal vat) {
-        return new BigDecimal(priceInCents)
-                .divide(BigDecimal.ONE.add(vat.divide(HUNDRED)), 5, HALF_UP)
+        return new BigDecimal(priceInCents).multiply(vat.divide(HUNDRED))
                 .setScale(0, HALF_UP)
                 .intValueExact();
     }
