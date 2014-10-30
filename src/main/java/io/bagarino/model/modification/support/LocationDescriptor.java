@@ -18,6 +18,7 @@ package io.bagarino.model.modification.support;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.commons.lang3.tuple.Pair;
@@ -28,6 +29,7 @@ import java.util.Optional;
 import java.util.TimeZone;
 
 @Getter
+@EqualsAndHashCode
 public class LocationDescriptor {
 
     private static final String MAP_URL = "https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&key=${key}&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C${latitude},${longitude}";
