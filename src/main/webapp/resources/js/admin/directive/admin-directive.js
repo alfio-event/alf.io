@@ -81,27 +81,28 @@
                         modelObject.time = {};
                     }
                 };
-                var startDate, endDate;
 
-                if(angular.isDefined(scope.startModelObj.date) && moment(scope.startModelObj.date).isValid()) {
-                    var startTime = angular.isDefined(scope.startModelObj.time) ? scope.startModelObj.time : '00:00';
-                    startDate = moment(scope.startModelObj.date + 'T' + startTime);
-                    if(moment(scope.endModelObj.date + 'T' + scope.endModelObj.time).isValid()) {
-                        endDate = moment(scope.endModelObj.date + 'T' + scope.endModelObj.time);
-                    } else {
-                        endDate = startDate.add(12, 'hours');
+                var getTodayTruncatedToNextHour = function() {
+                    return moment().startOf('hour').add(1,'hours');
+                };
+
+                var initDateUsingNow = function(modelObj) {
+                    if(!angular.isDefined(modelObj) || !angular.isDefined(modelObj.date) || !angular.isDefined(modelObj.time)) {
+                        return getTodayTruncatedToNextHour();
                     }
-                    var result = startDate.format(dateFormat) + ' / ' + endDate.format(dateFormat);
-                    ctrl.$setViewValue(result);
-                    element.val(result);
-                } else {
-                    fillDate(scope.startModelObj);
-                    fillDate(scope.endModelObj);
-                    startDate = scope.startDate;
-                    endDate = scope.endDate;
-                }
+                    var date = moment(modelObj.date + 'T' + modelObj.time);
+                    return date.isValid() ? date : getTodayTruncatedToNextHour();
+                };
 
-                var minDate = scope.minDate || moment();
+
+                var startDate = initDateUsingNow(scope.startModelObj);
+                var endDate = initDateUsingNow(scope.endModelObj).add(12, 'hours');
+
+                var result = startDate.format(dateFormat) + ' / ' + endDate.format(dateFormat);
+                ctrl.$setViewValue(result);
+                element.val(result);
+
+                var minDate = scope.minDate || getTodayTruncatedToNextHour();
 
                 element.daterangepicker({
                     format: dateFormat,
@@ -112,7 +113,7 @@
                     maxDate: scope.maxDate,
                     timePicker: true,
                     timePicker12Hour: false,
-                    timePickerIncrement: 15
+                    timePickerIncrement: 1
                 });
 
                 element.on('apply.daterangepicker', function(ev, picker) {
