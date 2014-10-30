@@ -39,7 +39,9 @@ For updating the application, you only need to upload the war and rename it:
 > scp target/bagarino.war [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN].rhcloud.com:wildfly/standalone/deployments/ROOT
 > ssh [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN] "mv wildfly/standalone/deployments/ROOT wildfly/standalone/deployments/ROOT.war"
 
- 
+Reminder
+========
+1. if you are using the scalable gears, you should enable the basic auth for haproxy
 
 Additional notes:
 =================
