@@ -17,12 +17,14 @@
 package io.bagarino.controller;
 
 import com.stripe.exception.StripeException;
+
 import io.bagarino.controller.decorator.SaleableTicketCategory;
 import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.manager.EventManager;
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.manager.TicketReservationManager.NotEnoughTicketsException;
+import io.bagarino.manager.TicketReservationManager.OrderSummary;
 import io.bagarino.manager.TicketReservationManager.TotalPrice;
 import io.bagarino.manager.system.Mailer;
 import io.bagarino.model.Event;
@@ -35,8 +37,8 @@ import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
-import io.bagarino.util.MonetaryUtil;
 import lombok.Data;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -52,12 +54,12 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static io.bagarino.util.MonetaryUtil.formatCents;
 import static io.bagarino.util.OptionalWrapper.optionally;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -160,16 +162,13 @@ public class ReservationController {
     		return "/event/reservation-page-not-found";
     	} else if(reservation.get().getStatus() == TicketReservationStatus.PENDING) {
     		
-    		TotalPrice reservationCost = tickReservationManager.totalReservationCostWithVAT(reservationId);
+    		OrderSummary orderSummary = tickReservationManager.orderSummaryForReservationId(reservationId, event.get());
     		
-    		model.addAttribute("summary", extractSummary(reservationId, event.get()));
-    		model.addAttribute("free", reservationCost.getPriceWithVAT() == 0);
-    		model.addAttribute("totalPrice", formatCents(reservationCost.getPriceWithVAT()));
-    		model.addAttribute("totalVAT", formatCents(reservationCost.getVAT()));
+    		model.addAttribute("orderSummary", orderSummary);
     		model.addAttribute("reservationId", reservationId);
     		model.addAttribute("reservation", reservation.get());
     		
-    		if(reservationCost.getPriceWithVAT() > 0) {
+    		if(orderSummary.getOriginalTotalPrice().getPriceWithVAT() > 0) {
     			model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
     		}
     		
@@ -283,16 +282,10 @@ public class ReservationController {
     	model.put("organization", organizationRepository.getById(event.getOrganizationId()));
 		model.put("event", event);
 		model.put("ticketReservation", reservation);
-
-
-        TotalPrice reservationCost = tickReservationManager.totalReservationCostWithVAT(reservation.getId());
-
-        final List<SummaryRow> summaryRows = extractSummary(reservation.getId(), event);
-        final int subTotal = summaryRows.stream().mapToInt(SummaryRow::getOriginalSubTotal).sum();
-        model.put("summary", summaryRows);
-		model.put("free", subTotal == 0);
-        model.put("totalPrice", formatCents(subTotal));
-		model.put("totalVAT", formatCents(reservationCost.getVAT()));
+		
+		OrderSummary orderSummary = tickReservationManager.orderSummaryForReservationId(reservation.getId(), event);
+        model.put("orderSummary", orderSummary);
+		
 		model.put("reservationUrl", tickReservationManager.reservationUrl(reservation.getId()));
 
     	String reservationTxt = templateManager.render("/io/bagarino/templates/confirmation-email-txt.ms", model, request);
@@ -301,21 +294,6 @@ public class ReservationController {
     
     
     
-    
-    private List<SummaryRow> extractSummary(String reservationId, Event event) {
-    	List<SummaryRow> summary = new ArrayList<>();
-    	List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
-    	tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).forEach((categoryId, ticketsByCategory) -> {
-            int paidPriceInCents = ticketsByCategory.get(0).getPaidPriceInCents();
-            if(event.isVatIncluded()) {
-                paidPriceInCents = MonetaryUtil.addVAT(paidPriceInCents, event.getVat());
-            }
-    		String categoryName = ticketCategoryRepository.getById(categoryId).getName();
-            final int subTotal = paidPriceInCents * ticketsByCategory.size();
-            summary.add(new SummaryRow(categoryName, formatCents(paidPriceInCents), ticketsByCategory.size(), formatCents(subTotal), subTotal));
-    	});
-    	return summary;
-    } 
     
  // step 1 : choose tickets
     @Data
@@ -407,14 +385,4 @@ public class ReservationController {
         	return Optional.ofNullable(cancelReservation).orElse(false);
         }
     }
-    
-    @Data
-    public static class SummaryRow {
-    	private final String name;
-    	private final String price;
-    	private final int amount;
-    	private final String subTotal;
-        private final int originalSubTotal;
-    }
-
 }

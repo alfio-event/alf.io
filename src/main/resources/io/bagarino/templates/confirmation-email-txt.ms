@@ -4,13 +4,13 @@
 
 #### {{#i18n}}email-confirmation.reservation-summary{{/i18n}} ####
 
-{{#summary}}
-{{#i18n}}email-confirmation.summary [{{name}}] [{{amount}}] [{{subTotal}}] [{{event.currency}}]{{/i18n}}{{/summary}}
-{{^free}}{{^event.vatIncluded}}
-{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}: {{totalVAT}} {{event.currency}}{{/event.vatIncluded}}{{/free}}
-{{#i18n}}reservation-page.total{{/i18n}} {{totalPrice}} {{event.currency}}
-{{^free}}{{#event.vatIncluded}}
-{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}: {{totalVAT}} {{event.currency}}{{/event.vatIncluded}}{{/free}}
+{{#orderSummary.summary}}
+{{#i18n}}email-confirmation.summary [{{name}}] [{{amount}}] [{{subTotal}}] [{{event.currency}}]{{/i18n}}{{/orderSummary.summary}}
+{{^orderSummary.free}}{{^event.vatIncluded}}
+{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}: {{orderSummary.totalVAT}} {{event.currency}}{{/event.vatIncluded}}{{/orderSummary.free}}
+{{#i18n}}reservation-page.total{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}
+{{^orderSummary.free}}{{#event.vatIncluded}}
+{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}: {{orderSummary.totalVAT}} {{event.currency}}{{/event.vatIncluded}}{{/orderSummary.free}}
 
 {{#i18n}}email-confirmation.order-information [{{ticketReservation.id}}]{{/i18n}}
 

@@ -25,10 +25,12 @@ import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.repository.EventRepository;
+import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Data;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
@@ -37,7 +39,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
+import static io.bagarino.util.MonetaryUtil.formatCents;
 import static io.bagarino.util.OptionalWrapper.optionally;
 
 @Component
@@ -49,6 +53,7 @@ public class TicketReservationManager {
 	private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
 	private final TicketReservationRepository ticketReservationRepository;
+	private final TicketCategoryRepository ticketCategoryRepository;
 	private final ConfigurationManager configurationManager;
 	
 	public static class NotEnoughTicketsException extends Exception {
@@ -62,10 +67,14 @@ public class TicketReservationManager {
 	}
 	
 	@Autowired
-	public TicketReservationManager(EventRepository eventRepository, TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository, ConfigurationManager configurationManager) {
+	public TicketReservationManager(EventRepository eventRepository, 
+			TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository, 
+			TicketCategoryRepository ticketCategoryRepository, 
+			ConfigurationManager configurationManager) {
 		this.eventRepository = eventRepository;
 		this.ticketRepository = ticketRepository;
 		this.ticketReservationRepository = ticketReservationRepository;
+		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.configurationManager = configurationManager;
 	}
 	
@@ -155,6 +164,51 @@ public class TicketReservationManager {
     		int priceWithVAT = MonetaryUtil.addVAT(total, event.getVat());
     		return new TotalPrice(priceWithVAT, priceWithVAT - total);
     	}
+    }
+    
+    public OrderSummary orderSummaryForReservationId(String reservationId, Event event) {
+    	TotalPrice reservationCost = totalReservationCostWithVAT(reservationId);
+    	List<SummaryRow> summary = extractSummary(reservationId, event);
+    	return new OrderSummary(reservationCost, summary, reservationCost.getPriceWithVAT() == 0, formatCents(reservationCost.getPriceWithVAT()), formatCents(reservationCost.getVAT()));
+    }
+    
+    private List<SummaryRow> extractSummary(String reservationId, Event event) {
+    	List<SummaryRow> summary = new ArrayList<>();
+    	List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
+    	tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).forEach((categoryId, ticketsByCategory) -> {
+            int paidPriceInCents = ticketsByCategory.get(0).getPaidPriceInCents();
+            if(event.isVatIncluded()) {
+                paidPriceInCents = MonetaryUtil.addVAT(paidPriceInCents, event.getVat());
+            }
+    		String categoryName = ticketCategoryRepository.getById(categoryId).getName();
+            final int subTotal = paidPriceInCents * ticketsByCategory.size();
+            summary.add(new SummaryRow(categoryName, formatCents(paidPriceInCents), ticketsByCategory.size(), formatCents(subTotal), subTotal));
+    	});
+    	return summary;
+    } 
+    
+    
+    @Data
+    public static class OrderSummary {
+    	private final TotalPrice originalTotalPrice;
+    	private final List<SummaryRow> summary; 
+    	private final boolean free;
+    	private final String totalPrice;
+    	private final String totalVAT;
+    	
+    	/* lol jmustache */
+    	public boolean getFree() {
+    		return free;
+    	}
+    }
+    
+    @Data
+    public static class SummaryRow {
+    	private final String name;
+    	private final String price;
+    	private final int amount;
+    	private final String subTotal;
+        private final int originalSubTotal;
     }
     
     public String reservationUrl(String reservationId) {

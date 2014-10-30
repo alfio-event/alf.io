@@ -1,10 +1,10 @@
 {{>/event/page-top}}
 
-{{#free}}
+{{#orderSummary.free}}
  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
  <script src="{{request.contextPath}}/resources/js/event/reservation-page.js"></script>
-{{/free}}
-{{^free}}
+{{/orderSummary.free}}
+{{^orderSummary.free}}
  <script src="https://js.stripe.com/v2/"></script>
  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
  <script src="{{request.contextPath}}/resources/js/event/reservation-page.js" 
@@ -24,7 +24,7 @@
  	data-stripe-message-processing_error="{{#i18n}}error.STEP2_STRIPE_processing_error{{/i18n}}"
  	data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
  ></script>
-{{/free}}
+{{/orderSummary.free}}
 
 <h1>{{#i18n}}reservation-page.title{{/i18n}} {{event.shortName}}</h1>
 <table class="table">
@@ -37,28 +37,28 @@
 		</tr>
 	</thead>
 	<tbody>
-{{#summary}}
+{{#orderSummary.summary}}
 		<tr>
 			<td>{{name}}</td>
 			<td style="text-align:right">{{price}}</td>
 			<td style="text-align:center">{{amount}}</td>
 			<td style="text-align:right">{{subTotal}} {{event.currency}}</td>
 		</tr>
-{{/summary}}
+{{/orderSummary.summary}}
 	</tbody>
 	<tfoot>
-		{{^free}}
+		{{^orderSummary.free}}
 		{{^event.vatIncluded}}
-			<tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</td><td style="text-align:right">{{totalVAT}} {{event.currency}}</td></tr>
+			<tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</td><td style="text-align:right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
 		{{/event.vatIncluded}}
-		{{/free}}
-		<tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td style="text-align:right"><strong>{{totalPrice}} {{event.currency}}</strong></td></tr>
+		{{/orderSummary.free}}
+		<tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td style="text-align:right"><strong>{{orderSummary.totalPrice}} {{event.currency}}</strong></td></tr>
 		
-		{{^free}}
+		{{^orderSummary.free}}
 		{{#event.vatIncluded}}
-			<tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}</td><td style="text-align:right">{{totalVAT}} {{event.currency}}</td></tr>
+			<tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}</td><td style="text-align:right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
 		{{/event.vatIncluded}}
-		{{/free}}
+		{{/orderSummary.free}}
 	</tfoot>
 </table>
 
@@ -83,11 +83,11 @@
 		<label for="email">{{#i18n}}common.email{{/i18n}}</label>
 		<input type="email" name="email" id="email" required class="form-control" autocomplete="email" maxlength="255">
 	</div>
-	{{#free}}
+	{{#orderSummary.free}}
 	<button type="submit" class="btn btn-primary pull-right">{{#i18n}}reservation-page.continue{{/i18n}}</button>
 	<button type="submit" class="btn btn-info pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
-	{{/free}}
-	{{^free}}
+	{{/orderSummary.free}}
+	{{^orderSummary.free}}
 	
 	<div class="form-group">
 		<label for="billing-address">{{#i18n}}reservation-page.billing-address{{/i18n}}</label>
@@ -136,10 +136,10 @@
 	</div>
 	
 	<div class="form-group">
-		<button type="submit" class="btn btn-success pull-right">{{#i18n}}reservation-page.pay{{/i18n}} {{totalPrice}} {{event.currency}}</button>
+		<button type="submit" class="btn btn-success pull-right">{{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}</button>
 		<button type="submit" class="btn btn-info pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
 	</div>
-	{{/free}}
+	{{/orderSummary.free}}
  
  	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
  	
