@@ -111,15 +111,17 @@
                 });
 
                 element.on('apply.daterangepicker', function(ev, picker) {
-                    scope.$apply(function() {
-                        var start = picker.startDate();
-                        var end = picker.endDate();
-                        scope.startModelObj['date'] = start.format('YYYY-MM-DD');
-                        scope.startModelObj['time'] = start.format('HH:mm');
-                        scope.endModelObj['date'] = end.format('YYYY-MM-DD');
-                        scope.endModelObj['time'] = end.format('HH:mm');
-                        ctrl.$setViewValue(element.val());
-                    });
+                    if(angular.isDefined(picker)) {
+                        scope.$apply(function() {
+                            var start = picker.startDate;
+                            var end = picker.endDate;
+                            scope.startModelObj['date'] = start.format('YYYY-MM-DD');
+                            scope.startModelObj['time'] = start.format('HH:mm');
+                            scope.endModelObj['date'] = end.format('YYYY-MM-DD');
+                            scope.endModelObj['time'] = end.format('HH:mm');
+                            ctrl.$setViewValue(element.val());
+                        });
+                    }
                 });
             }
         };
