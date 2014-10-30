@@ -73,7 +73,7 @@ public class EventModification {
                              @JsonProperty("allowedPaymentProxies") List<PaymentProxy> allowedPaymentProxies,
                              @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories,
                              @JsonProperty("freeOfCharge") boolean freeOfCharge,
-                             @JsonProperty("location") LocationDescriptor locationDescriptor) {
+                             @JsonProperty("geoLocation") LocationDescriptor locationDescriptor) {
         this.id = id;
         this.shortName = shortName;
         this.organizationId = organizationId;

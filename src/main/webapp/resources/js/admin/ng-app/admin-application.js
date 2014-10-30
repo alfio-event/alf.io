@@ -237,6 +237,7 @@
         EventService.getEventForUpdate($stateParams.eventName).success(function(result) {
             $scope.event = result;
             initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, $state);
+
         });
 
         $scope.save = function(form, event) {

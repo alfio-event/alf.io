@@ -45,6 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -153,19 +154,28 @@ public class EventManager {
         createAllTicketsForEvent(eventId, event);
     }
 
-    public void updateEvent(int id, EventModification em) {
-        final Event original = eventRepository.findById(id);
-        int availableSeats = original.getAvailableSeats();
-        if(ticketRepository.invalidateAllTickets(id) != availableSeats) {
+    public void updateEvent(int eventId, EventModification em, String username) {
+        final Event original = eventRepository.findById(eventId);
+        final List<TicketCategoryWithStatistic> ticketCategories = getSingleEventWithStatistics(original.getShortName(), username)
+                .getTicketCategories();
+        int soldTickets = ticketCategories.stream()
+                .mapToInt(TicketCategoryWithStatistic::getSoldTickets)
+                .sum();
+        int existingTickets = ticketCategories.stream()
+                .mapToInt(TicketCategoryWithStatistic::getMaxTickets)
+                .sum();
+
+        if(soldTickets > 0 || ticketRepository.invalidateAllTickets(eventId) != existingTickets) {
             throw new IllegalStateException("Cannot update the event: some tickets have been already reserved/confirmed.");
         }
-        ticketCategoryRepository.findAllTicketCategories(id).stream()
+        ticketCategoryRepository.findAllTicketCategories(eventId).stream()
                 .mapToInt(TicketCategory::getId)
                 .forEach(ticketCategoryRepository::deactivate);
-        internalUpdateEvent(id, em);
-        final Event updated = eventRepository.findById(id);
+        eventTicketCategoryRepository.unbindCategoriesFromEvent(eventId);
+        internalUpdateEvent(eventId, em);
+        final Event updated = eventRepository.findById(eventId);
         distributeSeats(em, updated);
-        createAllTicketsForEvent(id, updated);
+        createAllTicketsForEvent(eventId, updated);
     }
 
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
@@ -181,16 +191,20 @@ public class EventManager {
                                                                        ZonedDateTime creation,
                                                                        Event event,
                                                                        int regularPrice) {
+
+        //FIXME: the date should be inserted as ZonedDateTime !
+        Date creationDate = Date.from(creation.toInstant());
+
         return eventTicketCategoryRepository.findByEventId(event.getId()).stream()
                     .map(etc -> ticketCategoryRepository.getById(etc.getTicketCategoryId()))
                     .flatMap(tc -> Stream.generate(MapSqlParameterSource::new)
                             .limit(tc.getMaxTickets())
-                            .map(ps -> buildParams(eventId, creation, tc, regularPrice, tc.getPriceInCents(), ps)))
+                            .map(ps -> buildParams(eventId, creationDate, tc, regularPrice, tc.getPriceInCents(), ps)))
                     .toArray(MapSqlParameterSource[]::new);
     }
 
     private MapSqlParameterSource buildParams(int eventId,
-                                              ZonedDateTime creation,
+                                              Date creation,
                                               TicketCategory tc,
                                               int originalPrice,
                                               int paidPrice,

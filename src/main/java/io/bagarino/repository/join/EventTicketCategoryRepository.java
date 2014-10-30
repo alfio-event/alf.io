@@ -35,4 +35,7 @@ public interface EventTicketCategoryRepository {
     @Query("select * from j_event_ticket_category where ticket_category_id = :ticket_category_id")
     EventTicketCategory findByTicketCategoryId(@Bind("ticket_category_id") int ticketCategoryId);
 
+    @Query("delete from j_event_ticket_category where event_id = :event_id")
+    int unbindCategoriesFromEvent(@Bind("event_id") int eventId);
+
 }

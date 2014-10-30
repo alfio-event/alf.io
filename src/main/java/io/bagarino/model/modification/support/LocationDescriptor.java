@@ -16,7 +16,9 @@
  */
 package io.bagarino.model.modification.support;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -25,7 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 
-@Data
+@Getter
 public class LocationDescriptor {
 
     private static final String MAP_URL = "https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&key=${key}&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C${latitude},${longitude}";
@@ -35,6 +37,17 @@ public class LocationDescriptor {
     private final String latitude;
     private final String longitude;
     private final String mapUrl;
+
+    @JsonCreator
+    public LocationDescriptor(@JsonProperty("timeZone") String timeZone,
+                              @JsonProperty("latitude") String latitude,
+                              @JsonProperty("longitude") String longitude,
+                              @JsonProperty("mapUrl") String mapUrl) {
+        this.timeZone = timeZone;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.mapUrl = mapUrl;
+    }
 
     public static LocationDescriptor fromGeoData(Pair<String, String> coordinates, TimeZone timeZone, Optional<String> apiKey) {
         Map<String, String> params = new HashMap<>();

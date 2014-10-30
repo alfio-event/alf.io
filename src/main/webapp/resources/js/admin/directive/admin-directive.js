@@ -74,29 +74,46 @@
             },
             require: '^ngModel',
             link: function(scope, element, attrs, ctrl) {
-
+                var dateFormat = 'YYYY-MM-DD HH:mm';
                 var fillDate = function(modelObject) {
                     if(!angular.isDefined(modelObject.date)) {
                         modelObject.date = {};
                         modelObject.time = {};
                     }
                 };
-                fillDate(scope.startModelObj);
-                fillDate(scope.endModelObj);
+                var startDate, endDate;
+
+                if(angular.isDefined(scope.startModelObj.date)) {
+                    startDate = moment(scope.startModelObj.date + 'T' + scope.startModelObj.time);
+                    endDate = moment(scope.endModelObj.date + 'T' + scope.endModelObj.time);
+                    var result = startDate.format(dateFormat) + ' / ' + endDate.format(dateFormat);
+                    ctrl.$setViewValue(result);
+                    element.val(result);
+                } else {
+                    fillDate(scope.startModelObj);
+                    fillDate(scope.endModelObj);
+                    startDate = scope.startDate;
+                    endDate = scope.endDate;
+                }
+
                 var minDate = scope.minDate || moment();
 
                 element.daterangepicker({
-                    format: 'YYYY-MM-DD HH:mm',
+                    format: dateFormat,
                     separator: ' / ',
-                    startDate: scope.startDate,
+                    startDate: startDate,
+                    endDate: endDate,
                     minDate: minDate,
                     maxDate: scope.maxDate,
                     timePicker: true,
                     timePicker12Hour: false,
                     timePickerIncrement: 15
-                },
-                function(start, end, label) {
+                });
+
+                element.on('apply.daterangepicker', function(ev, picker) {
                     scope.$apply(function() {
+                        var start = picker.startDate();
+                        var end = picker.endDate();
                         scope.startModelObj['date'] = start.format('YYYY-MM-DD');
                         scope.startModelObj['time'] = start.format('HH:mm');
                         scope.endModelObj['date'] = end.format('YYYY-MM-DD');

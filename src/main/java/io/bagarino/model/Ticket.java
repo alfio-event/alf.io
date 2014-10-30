@@ -27,8 +27,8 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.ZonedDateTime;
 import java.util.Base64;
-import java.util.Date;
 import java.util.Optional;
 
 @Getter
@@ -40,7 +40,7 @@ public class Ticket {
 
     private final int id;
     private final String uuid;
-    private final Date creation;
+    private final ZonedDateTime creation;
     private final int categoryId;
     private final int eventId;
     private final TicketStatus status;
@@ -52,7 +52,7 @@ public class Ticket {
     
     public Ticket(@Column("id") int id,
                   @Column("uuid") String uuid,
-                  @Column("creation") Date creation,
+                  @Column("creation") ZonedDateTime creation,
                   @Column("category_id") int categoryId,
                   @Column("status") String status,
                   @Column("event_id") int eventId,

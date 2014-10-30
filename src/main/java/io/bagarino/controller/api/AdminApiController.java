@@ -142,8 +142,8 @@ public class AdminApiController {
     }
 
     @RequestMapping(value = "/events/{id}/update", method = POST)
-    public String updateEvent(@PathVariable("id") int id, @RequestBody EventModification eventModification) {
-        eventManager.updateEvent(id, eventModification);
+    public String updateEvent(@PathVariable("id") int id, @RequestBody EventModification eventModification, Principal principal) {
+        eventManager.updateEvent(id, eventModification, principal.getName());
         return OK;
     }
 
