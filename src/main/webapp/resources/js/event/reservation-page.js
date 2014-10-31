@@ -40,7 +40,7 @@
 		};
 		
 		if (response.error) {
-			$(".payment-errors").show().empty();
+			$(".payment-errors").removeClass('hide').empty();
 			$("[data-stripe]").parent().removeClass('has-error');
 			
 			
@@ -51,7 +51,7 @@
 			$form.find(errorCodeToSelectorMap[response.error.code]).parent().addClass('has-error');
 			
 		} else {
-			$(".payment-errors").hide();
+			$(".payment-errors").addClass('hide');
 			// token contains id, last4, and card type
 			var token = response.id;
 			// Insert the token into the form so it gets submitted to the server
@@ -71,8 +71,6 @@
 	
 	 
 	jQuery(function($) {
-		
-		$(".payment-errors").hide();
 		
 		function submitForm(e) {
 			var $form = $(this);
@@ -122,6 +120,9 @@
 				// Find all invalid fields within the form.
 				var invalidFields = form.find( ":invalid" ).each( function( index, node ) {
 					$(node).parent().addClass('has-error');
+					if($(node).parent().parent().parent().hasClass('form-group')) {
+						$(node).parent().parent().parent().addClass('has-error');
+					}
 				});
 			};
 
@@ -147,8 +148,14 @@
 		$("input,select,textarea").change(function() {
 			if($(this).is(":invalid")) {
 				$(this).parent().addClass('has-error');
+				if($(this).parent().parent().parent().hasClass('form-group')) {
+					$(this).parent().parent().parent().addClass('has-error');
+				}
 			} else {
 				$(this).parent().removeClass('has-error');
+				if($(this).parent().parent().parent().hasClass('form-group')) {
+					$(this).parent().parent().parent().removeClass('has-error');
+				}
 			}
 		})
 	});
