@@ -375,6 +375,10 @@ public class ReservationController {
 			if (reservationCost.getPriceWithVAT() > 0 && StringUtils.isBlank(stripeToken)) {
 				bindingResult.reject(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
 			}
+			
+			email = StringUtils.trim(email);
+			fullName = StringUtils.trim(fullName);
+			billingAddress = StringUtils.trim(billingAddress);
 
 			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "email", ErrorsCode.STEP_2_EMPTY_EMAIL);
 			rejectIfOverLength(bindingResult, "email", ErrorsCode.STEP_2_MAX_LENGTH_EMAIL, email, 255);
