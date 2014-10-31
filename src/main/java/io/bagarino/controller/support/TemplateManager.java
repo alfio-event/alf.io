@@ -16,7 +16,7 @@
  */
 package io.bagarino.controller.support;
 
-import io.bagarino.util.DateFormatterInterceptor;
+import io.bagarino.util.MustacheCustomTagInterceptor;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -68,7 +68,7 @@ public class TemplateManager {
 			ModelAndView mv = new ModelAndView((String) null, model);
 
 			//
-			mv.addObject("format-date", DateFormatterInterceptor.FORMAT_DATE);
+			mv.addObject("format-date", MustacheCustomTagInterceptor.FORMAT_DATE);
 			localizationMessageInterceptor.postHandle(request, null, null, mv);
 			//
 

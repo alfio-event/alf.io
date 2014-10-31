@@ -63,20 +63,20 @@
 </table>
 
 {{#hasErrors}}
-<div class="alert alert-danger" role="alert">
 	{{#error.globalErrors}}
-		<p><strong>{{#i18n}}{{.}}{{/i18n}}</strong></p>
-	{{/error.globalErrors}}
-</div>
+		<div class="alert alert-danger" role="alert">
+			<p><strong>{{#i18n}}{{.}}{{/i18n}}</strong></p>
+		</div>
+{{/error.globalErrors}}
 {{/hasErrors}}
 
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
 	<h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
-	<div class="form-group">
+	<div class="form-group {{#field-has-error}}[fullName] has-error{{/field-has-error}}">
 		<label for="full-name">{{#i18n}}common.full-name{{/i18n}}</label>
 		<input type="text" name="fullName" id="full-name" required class="form-control" autocomplete="name" maxlength="255" value="{{paymentForm.fullName}}">
 	</div>
-	<div class="form-group">
+	<div class="form-group {{#field-has-error}}[email] has-error{{/field-has-error}}">
 		<label for="email">{{#i18n}}common.email{{/i18n}}</label>
 		<input type="email" name="email" id="email" required class="form-control" autocomplete="email" maxlength="255" value="{{paymentForm.email}}">
 	</div>
@@ -86,7 +86,7 @@
 	{{/orderSummary.free}}
 	{{^orderSummary.free}}
 	
-	<div class="form-group">
+	<div class="form-group {{#field-has-error}}[billingAddress] has-error{{/field-has-error}}">
 		<label for="billing-address">{{#i18n}}reservation-page.billing-address{{/i18n}}</label>
 		<textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450">{{paymentForm.billingAddress}}</textarea>
 	</div>

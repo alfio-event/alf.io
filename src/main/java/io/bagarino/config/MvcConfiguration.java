@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.samskivert.mustache.Mustache;
 import io.bagarino.controller.support.TemplateManager;
-import io.bagarino.util.DateFormatterInterceptor;
+import io.bagarino.util.MustacheCustomTagInterceptor;
 import org.springframework.context.MessageSource;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
@@ -82,7 +82,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(getTemplateMessagesInterceptor());
-        registry.addInterceptor(new DateFormatterInterceptor());
+        registry.addInterceptor(new MustacheCustomTagInterceptor());
         registry.addInterceptor(getCsrfInterceptor());
         registry.addInterceptor(getCSPInterceptor());
         registry.addInterceptor(getLocaleChangeInterceptor());

@@ -23,11 +23,17 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
@@ -48,7 +54,7 @@ import com.samskivert.mustache.Mustache;
  * <li>optional: locale:YOUR_LOCALE you can define the locale</li>
  * </ul>
  */
-public class DateFormatterInterceptor extends HandlerInterceptorAdapter {
+public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 
 	private static final String LOCALE_LABEL = "locale:";
 
@@ -56,12 +62,11 @@ public class DateFormatterInterceptor extends HandlerInterceptorAdapter {
 		String execution = frag.execute().trim();
 		ZonedDateTime d = ZonedDateTime.parse(substring(execution, 0, execution.indexOf(" ")));
 		Pair<String, Optional<Locale>> p = parseParams(execution);
-		if(p.getRight().isPresent()) {
+		if (p.getRight().isPresent()) {
 			out.write(DateTimeFormatter.ofPattern(p.getLeft(), p.getRight().get()).format(d));
 		} else {
 			out.write(DateTimeFormatter.ofPattern(p.getLeft()).format(d));
 		}
-		
 	};
 
 	private static Pair<String, Optional<Locale>> parseParams(String r) {
@@ -81,12 +86,29 @@ public class DateFormatterInterceptor extends HandlerInterceptorAdapter {
 		return Pair.of(format, locale);
 	}
 
+	private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*?)\\]");
+
+	private static Function<ModelAndView, Mustache.Lambda> HAS_ERROR = (mv) -> {
+		return (frag, out) -> {
+			Errors err = (Errors) mv.getModelMap().get("error");
+			String execution = frag.execute().trim();
+			Matcher matcher = ARG_PATTERN.matcher(execution);
+			if (matcher.find()) {
+				String field = matcher.group(1);
+				if (err != null && err.hasFieldErrors(field)) {
+					out.write(execution.substring(matcher.end(1)));
+				}
+			}
+		};
+	};
+
 	@Override
 	public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
 			ModelAndView modelAndView) throws Exception {
 
 		if (modelAndView != null) {
 			modelAndView.addObject("format-date", FORMAT_DATE);
+			modelAndView.addObject("field-has-error", HAS_ERROR.apply(modelAndView));
 		}
 
 		super.postHandle(request, response, handler, modelAndView);

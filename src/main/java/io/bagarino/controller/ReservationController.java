@@ -353,8 +353,8 @@ public class ReservationController {
 		}
 	}
     
-    // step 2 : payment/claim ticketss
-    
+    // step 2 : payment/claim tickets
+    //
     @Data
     public static class PaymentForm {
     	private String stripeToken;
@@ -362,6 +362,12 @@ public class ReservationController {
         private String fullName;
         private String billingAddress;
         private Boolean cancelReservation;
+        
+        private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode, String value, int maxLength) {
+        	if(StringUtils.isNotEmpty(value) && value.length() > maxLength) {
+        		bindingResult.rejectValue(field, errorCode);
+        	}
+        }
         
         private void validate(BindingResult bindingResult, TotalPrice reservationCost) {
         	
@@ -371,18 +377,17 @@ public class ReservationController {
 			}
 			
 			
-			//TODO: check email/fullname length/billing address
 			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "email", "email_missing");
-			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "fullName", "fullname_missing");
+			rejectIfOverLength(bindingResult, "email", "email_max_length", email, 255);
 			
-			//email, fullname maxlength is 255
-			//billing address maxlength is 450(500 for stripe limit)
+			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "fullName", "fullname_missing");
+			rejectIfOverLength(bindingResult, "fullName", "fullname_max_length", fullName, 255);
+			
+			rejectIfOverLength(bindingResult, "billingAddress", "billing-address_max_length", billingAddress, 450);
 			
 			if(email != null && !email.contains("@")) {
 				bindingResult.rejectValue("email", "not_an_email");
 			}
-			
-			
         }
         
         public Boolean shouldCancelReservation() {
