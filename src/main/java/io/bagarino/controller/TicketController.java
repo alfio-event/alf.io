@@ -44,6 +44,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import lombok.Data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -101,7 +102,7 @@ public class TicketController {
 			@RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
 			Model model) {
 		
-		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetch(eventName, reservationId, ticketIdentifier);
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
 		if(!oData.isPresent()) {
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 		}
@@ -127,11 +128,32 @@ public class TicketController {
 			@PathVariable("ticketIdentifier") String ticketIdentifier,
 			UpdateTicketOwnerForm updateTicketOwner, BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetchComplete(eventName, reservationId, ticketIdentifier);
+		if(!oData.isPresent()) {
+			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+		}
+		
+		Ticket t = oData.get().getRight();
+		
 		//TODO: validate email, fullname (not null, maxlength 255)
-		ticketRepository.updateTicketOwner(ticketIdentifier, updateTicketOwner.getEmail(), updateTicketOwner.getFullName());
+		ticketRepository.updateTicketOwner(ticketIdentifier, updateTicketOwner.getEmail().trim(), updateTicketOwner.getFullName().trim());
 
 		//
 		sendTicketByEmail(eventName, reservationId, ticketIdentifier, request, response);
+		
+		if (StringUtils.isNotBlank(t.getEmail()) && !t.getEmail().equals(updateTicketOwner.getEmail().trim())) {
+			Map<String, Object> emailModel = new HashMap<String, Object>();
+			emailModel.put("ticket", t);
+			emailModel.put("organization", organizationRepository.getById(oData.get().getLeft().getId()));
+			emailModel.put("eventName", eventName);
+			emailModel.put("previousEmail", t.getEmail());
+			emailModel.put("newEmail", updateTicketOwner.getEmail().trim());
+			emailModel.put("reservationUrl", ticketReservationManager.reservationUrl(t.getTicketsReservationId()));
+			String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {eventName}, RequestContextUtils.getLocale(request));
+			String emailText = templateManager.render("/io/bagarino/templates/ticket-has-changed-owner-txt.ms", emailModel, request);
+			mailer.send(t.getEmail(), subject, emailText, Optional.empty());
+		}
+		
 		//
 		
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
@@ -143,7 +165,7 @@ public class TicketController {
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		
 		
-		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetch(eventName, reservationId, ticketIdentifier);
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
 		if(!oData.isPresent()) {
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 		}
@@ -175,7 +197,7 @@ public class TicketController {
 			@PathVariable("reservationId") String reservationId,
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletRequest request, HttpServletResponse response) throws IOException, DocumentException, WriterException {
 
-		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetch(eventName, reservationId, ticketIdentifier);
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
 		if(!oData.isPresent()) {
 			response.sendError(HttpServletResponse.SC_FORBIDDEN);
 			return;
@@ -196,7 +218,7 @@ public class TicketController {
 			@PathVariable("reservationId") String reservationId,
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response) throws IOException, WriterException {
 		
-		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetch(eventName, reservationId, ticketIdentifier);
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
 		if(!oData.isPresent()) {
 			response.sendError(HttpServletResponse.SC_FORBIDDEN);
 			return;
@@ -214,6 +236,16 @@ public class TicketController {
 		
 	}
 	
+	private Optional<Triple<Event, TicketReservation, Ticket>> fetchComplete(String eventName, String reservationId, String ticketIdentifier) {
+		return ticketReservationManager.from(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
+			if(t.getMiddle().getStatus() == TicketReservationStatus.COMPLETE) {
+				return Optional.of(t);
+			} else {
+				return Optional.empty();
+			}
+		});
+	}
+	
 	/**
 	 * Return a fully present triple only if the values are present (obviously) and the the reservation has a COMPLETE status and the ticket is considered assigned.
 	 * 
@@ -222,12 +254,12 @@ public class TicketController {
 	 * @param ticketIdentifier
 	 * @return
 	 */
-	private Optional<Triple<Event, TicketReservation, Ticket>> fetch(String eventName, String reservationId, String ticketIdentifier) {
-		return ticketReservationManager.from(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
-					if(t.getMiddle().getStatus() != TicketReservationStatus.COMPLETE || !t.getRight().getAssigned()) {
-						return Optional.empty();
-					} else {
+	private Optional<Triple<Event, TicketReservation, Ticket>> fetchCompleteAndAssigned(String eventName, String reservationId, String ticketIdentifier) {
+		return fetchComplete(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
+					if(t.getRight().getAssigned()) {
 						return Optional.of(t);
+					} else {
+						return Optional.empty();
 					}
 				});
 	}

@@ -68,7 +68,7 @@ public class ReservationController {
 	private final EventRepository eventRepository;
 	private final EventManager eventManager;
 	private final TicketRepository ticketRepository;
-	private final TicketReservationManager tickReservationManager;
+	private final TicketReservationManager ticketReservationManager;
 	private final TicketCategoryRepository ticketCategoryRepository;
 	private final OrganizationRepository organizationRepository;
 
@@ -81,14 +81,14 @@ public class ReservationController {
 
 	@Autowired
 	public ReservationController(EventRepository eventRepository, EventManager eventManager,
-			TicketRepository ticketRepository, TicketReservationManager tickReservationManager,
+			TicketRepository ticketRepository, TicketReservationManager ticketReservationManager,
 			TicketCategoryRepository ticketCategoryRepository, OrganizationRepository organizationRepository,
 			StripeManager stripeManager, Mailer mailer, TemplateManager templateManager, MessageSource messageSource,
 			EventController eventController) {
 		this.eventRepository = eventRepository;
 		this.eventManager = eventManager;
 		this.ticketRepository = ticketRepository;
-		this.tickReservationManager = tickReservationManager;
+		this.ticketReservationManager = ticketReservationManager;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.organizationRepository = organizationRepository;
 		this.stripeManager = stripeManager;
@@ -113,7 +113,7 @@ public class ReservationController {
 		}
 
 		reservation
-				.validate(bindingResult, tickReservationManager, ticketCategoryRepository, eventManager, event.get());
+				.validate(bindingResult, ticketReservationManager, ticketCategoryRepository, eventManager, event.get());
 
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
@@ -123,7 +123,7 @@ public class ReservationController {
 		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
 
 		try {
-			String reservationId = tickReservationManager.createTicketReservation(event.get().getId(),
+			String reservationId = ticketReservationManager.createTicketReservation(event.get().getId(),
 					reservation.selected(), expiration);
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 		} catch (NotEnoughTicketsException nete) {
@@ -146,7 +146,7 @@ public class ReservationController {
 			return "redirect:/";
 		}
 
-		Optional<TicketReservation> reservation = tickReservationManager.findById(reservationId);
+		Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
 
 		model.addAttribute("event", event.get());
 		model.asMap().putIfAbsent("hasErrors", false);
@@ -156,7 +156,7 @@ public class ReservationController {
 			return "/event/reservation-page-not-found";
 		} else if (reservation.get().getStatus() == TicketReservationStatus.PENDING) {
 
-			OrderSummary orderSummary = tickReservationManager.orderSummaryForReservationId(reservationId, event.get());
+			OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event.get());
 
 			model.addAttribute("orderSummary", orderSummary);
 			model.addAttribute("reservationId", reservationId);
@@ -200,7 +200,7 @@ public class ReservationController {
 			return "redirect:/";
 		}
 
-		Optional<TicketReservation> ticketReservation = tickReservationManager.findById(reservationId);
+		Optional<TicketReservation> ticketReservation = ticketReservationManager.findById(reservationId);
 
 		if (!ticketReservation.isPresent()) {
 			model.addAttribute("reservationId", reservationId);
@@ -208,7 +208,7 @@ public class ReservationController {
 		}
 
 		if (paymentForm.shouldCancelReservation()) {
-			tickReservationManager.cancelPendingReservation(reservationId);
+			ticketReservationManager.cancelPendingReservation(reservationId);
 			return "redirect:/event/" + eventName + "/";
 		}
 
@@ -216,7 +216,7 @@ public class ReservationController {
 			bindingResult.reject("ticket_reservation_no_more_valid");
 		}
 
-		final TotalPrice reservationCost = tickReservationManager.totalReservationCostWithVAT(reservationId);
+		final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
 
 		//
 		paymentForm.validate(bindingResult, reservationCost);
@@ -234,13 +234,13 @@ public class ReservationController {
 		if (reservationCost.getPriceWithVAT() > 0) {
 			// transition to IN_PAYMENT, so we can keep track if we have a failure between the stripe payment and the
 			// completion of the reservation
-			tickReservationManager.transitionToInPayment(reservationId, email, fullName, billingAddress);
+			ticketReservationManager.transitionToInPayment(reservationId, email, fullName, billingAddress);
 
 			try {
 				stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost.getPriceWithVAT(),
                         event.get(), reservationId, email, fullName, billingAddress);
 			} catch (StripeException se) {
-				tickReservationManager.reTransitionToPending(reservationId);
+				ticketReservationManager.reTransitionToPending(reservationId);
 				bindingResult
 						.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[] { se.getMessage() }, null);
 				model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors())
@@ -250,12 +250,12 @@ public class ReservationController {
 		}
 
 		// we can enter here only if the reservation is done correctly
-		tickReservationManager.completeReservation(reservationId, email, fullName, billingAddress);
+		ticketReservationManager.completeReservation(reservationId, email, fullName, billingAddress);
 		//
 
 		//
 		sendReservationCompleteEmail(request, event.get(),
-				tickReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new));
+				ticketReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new));
 		//
 
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
@@ -270,7 +270,7 @@ public class ReservationController {
 			return "redirect:/";
 		}
 
-		Optional<TicketReservation> ticketReservation = tickReservationManager.findById(reservationId);
+		Optional<TicketReservation> ticketReservation = ticketReservationManager.findById(reservationId);
 		if (!ticketReservation.isPresent()) {
 			return "redirect:/event/" + eventName + "/";
 		}
@@ -287,10 +287,10 @@ public class ReservationController {
 		model.put("event", event);
 		model.put("ticketReservation", reservation);
 
-		OrderSummary orderSummary = tickReservationManager.orderSummaryForReservationId(reservation.getId(), event);
+		OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservation.getId(), event);
 		model.put("orderSummary", orderSummary);
 
-		model.put("reservationUrl", tickReservationManager.reservationUrl(reservation.getId()));
+		model.put("reservationUrl", ticketReservationManager.reservationUrl(reservation.getId()));
 
 		String reservationTxt = templateManager.render("/io/bagarino/templates/confirmation-email-txt.ms", model,
 				request);

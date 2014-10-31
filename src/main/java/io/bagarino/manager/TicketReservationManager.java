@@ -16,6 +16,8 @@
  */
 package io.bagarino.manager;
 
+import static io.bagarino.util.MonetaryUtil.formatCents;
+import static io.bagarino.util.OptionalWrapper.optionally;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
@@ -29,6 +31,15 @@ import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
 import io.bagarino.util.MonetaryUtil;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
@@ -37,12 +48,6 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static io.bagarino.util.MonetaryUtil.formatCents;
-import static io.bagarino.util.OptionalWrapper.optionally;
 
 @Component
 @Transactional
@@ -116,10 +121,23 @@ public class TicketReservationManager {
 		
 	}
     
+	//check internal consistency between the 3 values
     public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, String ticketIdentifier) {
     	return optionally(() -> Triple.of(eventRepository.findByShortName(eventName), 
 				ticketReservationRepository.findReservationById(reservationId), 
-				ticketRepository.findByUUID(ticketIdentifier)));
+				ticketRepository.findByUUID(ticketIdentifier))).flatMap((x) -> {
+					
+					Ticket t = x.getRight();
+					Event e = x.getLeft();
+					TicketReservation tr = x.getMiddle();
+					
+					if(tr.getId().equals(t.getTicketsReservationId()) && e.getId() == t.getEventId()) {
+						return Optional.of(x);
+					} else {
+						return Optional.empty();
+					}
+					
+				});
     }
 
     /**
