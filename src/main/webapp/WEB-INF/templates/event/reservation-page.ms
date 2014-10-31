@@ -73,12 +73,14 @@
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
 	<h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
 	<div class="form-group {{#field-has-error}}[fullName] has-error{{/field-has-error}}">
-		<label for="full-name">{{#i18n}}common.full-name{{/i18n}}</label>
+		<label for="full-name" class="control-label">{{#i18n}}common.full-name{{/i18n}}</label>
 		<input type="text" name="fullName" id="full-name" required class="form-control" autocomplete="name" maxlength="255" value="{{paymentForm.fullName}}">
+		{{#field-has-error}}[fullName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}fullName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
 	</div>
 	<div class="form-group {{#field-has-error}}[email] has-error{{/field-has-error}}">
-		<label for="email">{{#i18n}}common.email{{/i18n}}</label>
+		<label for="email" class="control-label">{{#i18n}}common.email{{/i18n}}</label>
 		<input type="email" name="email" id="email" required class="form-control" autocomplete="email" maxlength="255" value="{{paymentForm.email}}">
+		{{#field-has-error}}[email]<span class="help-block text-danger">{{#i18n}}{{#field-error}}email{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
 	</div>
 	{{#orderSummary.free}}
 	<button type="submit" class="btn btn-primary pull-right">{{#i18n}}reservation-page.continue{{/i18n}}</button>
@@ -87,22 +89,23 @@
 	{{^orderSummary.free}}
 	
 	<div class="form-group {{#field-has-error}}[billingAddress] has-error{{/field-has-error}}">
-		<label for="billing-address">{{#i18n}}reservation-page.billing-address{{/i18n}}</label>
+		<label for="billing-address" class="control-label">{{#i18n}}reservation-page.billing-address{{/i18n}}</label>
 		<textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450">{{paymentForm.billingAddress}}</textarea>
+		{{#field-has-error}}[billingAddress]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddress{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
 	</div>
 	
 	<h2>{{#i18n}}reservation-page.payment{{/i18n}}</h2>
 
-	<div class="alert alert-danger payment-errors" role="alert">
+	<div class="alert alert-danger payment-errors hide" role="alert">
 	</div>
 
 	<div class="form-group">
-		<label for="card-number">{{#i18n}}reservation-page.card-number{{/i18n}}</label>
+		<label for="card-number" class="control-label">{{#i18n}}reservation-page.card-number{{/i18n}}</label>
 		<input type="text" size="20" data-stripe="number" required class="form-control" id="card-number" autocomplete="off">
 	</div>
  
 	<div class="form-group">
-		<div><label for="card-cvc"> {{#i18n}}reservation-page.cvc{{/i18n}}</label></div>
+		<div><label for="card-cvc" class="control-label"> {{#i18n}}reservation-page.cvc{{/i18n}}</label></div>
 		<div class="row">
 			<div class="col-sm-2">
 				<input type="text" size="4" data-stripe="cvc" required class="form-control" id="card-cvc" autocomplete="off">
@@ -113,7 +116,7 @@
  
 	<div class="form-group">
 		<div>
-			<label>
+			<label class="control-label">
 				<span class="hidden-xs">{{#i18n}}reservation-page.expiration{{/i18n}}</span>
 				<span class="visible-xs">{{#i18n}}reservation-page.expiration-month{{/i18n}}</span>
 			</label>
@@ -124,7 +127,7 @@
 			</div>
 			<div class="col-sm-1 hidden-xs">/</div>
 			<div class="col-sm-2 visible-xs" style="margin-top:15px">
-				<label>{{#i18n}}reservation-page.expiration-year{{/i18n}}</label>
+				<label class="control-label">{{#i18n}}reservation-page.expiration-year{{/i18n}}</label>
 			</div>
 			<div class="col-sm-2">
 				<input type="text" size="4" data-stripe="exp-year" required class="form-control" maxlength="4" autocomplete="off" id="card-yyyy" pattern="\d+"/>

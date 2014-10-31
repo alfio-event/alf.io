@@ -26,14 +26,14 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
@@ -96,8 +96,24 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 			if (matcher.find()) {
 				String field = matcher.group(1);
 				if (err != null && err.hasFieldErrors(field)) {
-					out.write(execution.substring(matcher.end(1)));
+					out.write(execution.substring(matcher.end(1) + 1));
 				}
+			}
+		};
+	};
+
+	private static Function<ModelAndView, Mustache.Lambda> FIELD_ERROR = (mv) -> {
+		return (frag, out) -> {
+			Errors err = (Errors) mv.getModelMap().get("error");
+			String field = frag.execute().trim();
+			if (err != null && err.hasFieldErrors(field)) {
+				FieldError fe = err.getFieldError(field);
+				out.write(fe.getCode()
+						+ " "
+						+ Arrays.stream(Optional.ofNullable(fe.getArguments()).orElse(new Object[] {}))
+								.map(x -> "[" + x.toString() + "]").collect(Collectors.joining(" ")));
+			} else {
+				out.write("empty");
 			}
 		};
 	};
@@ -109,6 +125,7 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 		if (modelAndView != null) {
 			modelAndView.addObject("format-date", FORMAT_DATE);
 			modelAndView.addObject("field-has-error", HAS_ERROR.apply(modelAndView));
+			modelAndView.addObject("field-error", FIELD_ERROR.apply(modelAndView));
 		}
 
 		super.postHandle(request, response, handler, modelAndView);
