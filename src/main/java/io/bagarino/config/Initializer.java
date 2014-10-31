@@ -23,10 +23,14 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.SessionCookieConfig;
 
+import lombok.extern.log4j.Log4j2;
+
+import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.hsqldb.util.DatabaseManagerSwing;
+import org.apache.commons.lang3.reflect.MethodUtils;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
+@Log4j2
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
 	@Override
@@ -40,7 +44,13 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 		redirectFilter.addMappingForUrlPatterns(null, false, "/*");
 
 		if (System.getProperty("startDBManager") != null) {
-			DatabaseManagerSwing.main(new String[] { "--url", "jdbc:hsqldb:mem:bagarino", "--noexit" });
+			Class<?> cls;
+			try {
+				cls = ClassUtils.getClass("org.hsqldb.util.DatabaseManagerSwing");
+				MethodUtils.invokeStaticMethod(cls, "main", new Object[] { new String[] { "--url", "jdbc:hsqldb:mem:bagarino", "--noexit" } });
+			} catch (ReflectiveOperationException e) {
+				log.warn("error starting db manager", e);
+			}
 		}
 	}
 

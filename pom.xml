@@ -19,6 +19,7 @@
         <org.apache.logging.log4j.version>2.1</org.apache.logging.log4j.version>
         <jackson.version>2.4.3</jackson.version>
         <stripe.version>1.19.1</stripe.version>
+        <hsqldb.version>2.3.2</hsqldb.version>
     </properties>
 
 	<dependencies>
@@ -155,7 +156,8 @@
 		<dependency>
 			<groupId>org.hsqldb</groupId>
 			<artifactId>hsqldb</artifactId>
-			<version>2.3.2</version>
+			<version>${hsqldb.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.postgresql</groupId>
@@ -324,6 +326,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <dependencies>
+                	<dependency>
+						<groupId>org.hsqldb</groupId>
+						<artifactId>hsqldb</artifactId>
+						<version>${hsqldb.version}</version>
+					</dependency>
+                </dependencies>
 				</plugin>
 		</plugins>
 	</build>
