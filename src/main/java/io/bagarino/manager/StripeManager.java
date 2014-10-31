@@ -17,10 +17,11 @@
 package io.bagarino.manager;
 
 
-import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
 import io.bagarino.manager.system.ConfigurationManager;
+import io.bagarino.model.Event;
+import io.bagarino.repository.TicketRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -35,55 +36,53 @@ import static io.bagarino.model.system.ConfigurationKeys.STRIPE_SECRET_KEY;
 public class StripeManager {
 
     private final ConfigurationManager configurationManager;
+    private final TicketRepository ticketRepository;
 
-	@Autowired
-	public StripeManager(ConfigurationManager configurationManager) {
+    @Autowired
+    public StripeManager(ConfigurationManager configurationManager,
+                         TicketRepository ticketRepository) {
         this.configurationManager = configurationManager;
-	}
+        this.ticketRepository = ticketRepository;
+    }
 
-	public String getSecretKey() {
+    public String getSecretKey() {
         return configurationManager.getRequiredValue(STRIPE_SECRET_KEY);
-	}
+    }
 
-	public String getPublicKey() {
-		return configurationManager.getRequiredValue(STRIPE_PUBLIC_KEY);
-	}
+    public String getPublicKey() {
+        return configurationManager.getRequiredValue(STRIPE_PUBLIC_KEY);
+    }
 
     /**
      * After client side integration with stripe widget, our server receives the stripeToken
      * StripeToken is a single-use token that allows our server to effectively charge the credit card and
      * get money on our account.
-     *
+     * <p>
      * as documented in https://stripe.com/docs/tutorials/charges
-     * @return 
      *
+     * @return
      * @throws StripeException
      */
-    public Charge chargeCreditCard(String stripeToken, long amountInCent, String currency, String reservationId, String email, String fullName, String billingAddress) throws StripeException {
-        // Use Stripe's bindings...
-        Stripe.apiKey = getSecretKey();
+    public Charge chargeCreditCard(String stripeToken, long amountInCent, Event event,
+                                   String reservationId, String email, String fullName, String billingAddress) throws StripeException {
 
         Map<String, Object> chargeParams = new HashMap<>();
         chargeParams.put("amount", amountInCent);
-        chargeParams.put("currency", currency);
-        chargeParams.put("card", stripeToken); // obtained with Stripe.js
+        chargeParams.put("currency", event.getCurrency());
+        chargeParams.put("card", stripeToken);
 
+        int tickets = ticketRepository.countTicketsInReservation(reservationId);
+        chargeParams.put("description", String.format("%d ticket(s) for event %s", tickets, event.getShortName()));
 
-        chargeParams.put("description", "Charge for test@example.com");//TODO replace
-
-        Map<String, String> initialMetadata = new HashMap<String, String>();
-
+        Map<String, String> initialMetadata = new HashMap<>();
         initialMetadata.put("reservationId", reservationId);
         initialMetadata.put("email", email);
         initialMetadata.put("fullName", fullName);
-		if (StringUtils.isNotBlank(billingAddress)) {
-			initialMetadata.put("billingAddress", billingAddress);
-		}
-
-
-
+        if (StringUtils.isNotBlank(billingAddress)) {
+            initialMetadata.put("billingAddress", billingAddress);
+        }
         chargeParams.put("metadata", initialMetadata);
-        return Charge.create(chargeParams);
+        return Charge.create(chargeParams, getSecretKey());
     }
 
 }

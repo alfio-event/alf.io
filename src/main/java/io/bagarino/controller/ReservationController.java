@@ -17,7 +17,6 @@
 package io.bagarino.controller;
 
 import com.stripe.exception.StripeException;
-
 import io.bagarino.controller.decorator.SaleableTicketCategory;
 import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.manager.EventManager;
@@ -38,7 +37,6 @@ import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 import lombok.Data;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -54,7 +52,6 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -240,8 +237,8 @@ public class ReservationController {
 			tickReservationManager.transitionToInPayment(reservationId, email, fullName, billingAddress);
 
 			try {
-				stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost.getPriceWithVAT(), event
-						.get().getCurrency(), reservationId, email, fullName, billingAddress);
+				stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost.getPriceWithVAT(),
+                        event.get(), reservationId, email, fullName, billingAddress);
 			} catch (StripeException se) {
 				tickReservationManager.reTransitionToPending(reservationId);
 				bindingResult
