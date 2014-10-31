@@ -63,25 +63,22 @@
 </table>
 
 {{#hasErrors}}
-<ul>
+<div class="alert alert-danger" role="alert">
 	{{#error.globalErrors}}
-		<li>global error: {{code}}</li>
+		<p><strong>{{#i18n}}{{.}}{{/i18n}}</strong></p>
 	{{/error.globalErrors}}
-	{{#error.fieldErrors}}
-		<li>field error : {{field}} : {{code}}</li>
-	{{/error.fieldErrors}}
-</ul>
+</div>
 {{/hasErrors}}
 
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
 	<h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
 	<div class="form-group">
 		<label for="full-name">{{#i18n}}common.full-name{{/i18n}}</label>
-		<input type="text" name="fullName" id="full-name" required class="form-control" autocomplete="name" maxlength="255">
+		<input type="text" name="fullName" id="full-name" required class="form-control" autocomplete="name" maxlength="255" value="{{paymentForm.fullName}}">
 	</div>
 	<div class="form-group">
 		<label for="email">{{#i18n}}common.email{{/i18n}}</label>
-		<input type="email" name="email" id="email" required class="form-control" autocomplete="email" maxlength="255">
+		<input type="email" name="email" id="email" required class="form-control" autocomplete="email" maxlength="255" value="{{paymentForm.email}}">
 	</div>
 	{{#orderSummary.free}}
 	<button type="submit" class="btn btn-primary pull-right">{{#i18n}}reservation-page.continue{{/i18n}}</button>
@@ -91,7 +88,7 @@
 	
 	<div class="form-group">
 		<label for="billing-address">{{#i18n}}reservation-page.billing-address{{/i18n}}</label>
-		<textarea name="billingAddress" id="billing-address" class="form-control" maxlength="2048"></textarea>
+		<textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450">{{paymentForm.billingAddress}}</textarea>
 	</div>
 	
 	<h2>{{#i18n}}reservation-page.payment{{/i18n}}</h2>

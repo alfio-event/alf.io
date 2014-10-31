@@ -110,6 +110,12 @@ public class TicketReservationManager {
 		Validate.isTrue(updatedReservation == 1);
     }
     
+	public void reTransitionToPending(String reservationId) {
+		int updatedReservation = ticketReservationRepository.updateTicketStatus(reservationId, TicketReservationStatus.PENDING.toString());
+		Validate.isTrue(updatedReservation == 1);
+		
+	}
+    
     public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, String ticketIdentifier) {
     	return optionally(() -> Triple.of(eventRepository.findByShortName(eventName), 
 				ticketReservationRepository.findReservationById(reservationId), 

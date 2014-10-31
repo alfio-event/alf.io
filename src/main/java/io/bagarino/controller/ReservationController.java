@@ -172,6 +172,8 @@ public class ReservationController {
     			model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
     		}
     		
+    		model.asMap().putIfAbsent("paymentForm", new PaymentForm());
+    		
     		return "/event/reservation-page";
     	} else if (reservation.get().getStatus() == TicketReservationStatus.COMPLETE ){
     		model.addAttribute("reservationId", reservationId);
@@ -196,7 +198,7 @@ public class ReservationController {
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
     public String handleReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, 
     								PaymentForm paymentForm, BindingResult bindingResult,
-                                    Model model, HttpServletRequest request) throws StripeException {
+                                    Model model, HttpServletRequest request) {
     	
     	Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
     	if(!event.isPresent()) {
@@ -226,7 +228,7 @@ public class ReservationController {
     	//
     	
     	if (bindingResult.hasErrors()) {
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors()).addAttribute("paymentForm", paymentForm);//
 			return showReservationPage(eventName, reservationId, false, false, model);
     	}
     	
@@ -240,8 +242,9 @@ public class ReservationController {
     		try {
     			stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost.getPriceWithVAT(), event.get().getCurrency(), reservationId, email, fullName, billingAddress);
     		} catch(StripeException se) {
-    			bindingResult.reject("payment_processor_error");
-    			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
+    			tickReservationManager.reTransitionToPending(reservationId);
+    			bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[] {se.getMessage()}, null);
+    			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors()).addAttribute("paymentForm", paymentForm);//
     			return showReservationPage(eventName, reservationId, false, false, model);
     		}
     	}
@@ -370,15 +373,16 @@ public class ReservationController {
 			
 			//TODO: check email/fullname length/billing address
 			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "email", "email_missing");
+			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "fullName", "fullname_missing");
 			
 			//email, fullname maxlength is 255
-			//billing address maxlength is 2048
+			//billing address maxlength is 450(500 for stripe limit)
 			
 			if(email != null && !email.contains("@")) {
 				bindingResult.rejectValue("email", "not_an_email");
 			}
 			
-			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "fullName", "fullname_missing");
+			
         }
         
         public Boolean shouldCancelReservation() {
