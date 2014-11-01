@@ -128,6 +128,9 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     public MessageSource messageSource() {
         ResourceBundleMessageSource source = new ResourceBundleMessageSource();
         source.setBasenames("io.bagarino.i18n.application", "io.bagarino.i18n.admin");
+        //since we have all the english translations in the default file, we don't need
+        //the fallback to the system locale.
+        source.setFallbackToSystemLocale(false);
         return source;
     }
 
