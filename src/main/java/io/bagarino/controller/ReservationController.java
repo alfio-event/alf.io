@@ -17,6 +17,7 @@
 package io.bagarino.controller;
 
 import com.stripe.exception.StripeException;
+import com.stripe.model.Charge;
 import io.bagarino.controller.decorator.SaleableTicketCategory;
 import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.manager.EventManager;
@@ -37,6 +38,7 @@ import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 import lombok.Data;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -57,12 +59,14 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static io.bagarino.controller.ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR;
 import static io.bagarino.util.OptionalWrapper.optionally;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 @Controller
+@Log4j2
 public class ReservationController {
 
 	private final EventRepository eventRepository;
@@ -193,7 +197,7 @@ public class ReservationController {
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
 	public String handleReservation(@PathVariable("eventName") String eventName,
 			@PathVariable("reservationId") String reservationId, PaymentForm paymentForm, BindingResult bindingResult,
-			Model model, HttpServletRequest request) {
+			Model model, HttpServletRequest request, Locale locale) {
 
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
 		if (!event.isPresent()) {
@@ -235,17 +239,21 @@ public class ReservationController {
 			// transition to IN_PAYMENT, so we can keep track if we have a failure between the stripe payment and the
 			// completion of the reservation
 			ticketReservationManager.transitionToInPayment(reservationId, email, fullName, billingAddress);
-
 			try {
-				stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost.getPriceWithVAT(),
+                final Optional<Charge> charge = stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost.getPriceWithVAT(),
                         event.get(), reservationId, email, fullName, billingAddress);
-			} catch (StripeException se) {
-				ticketReservationManager.reTransitionToPending(reservationId);
-				bindingResult
-						.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[] { se.getMessage() }, null);
-				model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors())
-						.addAttribute("paymentForm", paymentForm);//
-				return showReservationPage(eventName, reservationId, false, false, model);
+                log.info("transaction {} paid: {}", reservationId, charge.isPresent());
+            } catch (Exception e) {
+                ticketReservationManager.reTransitionToPending(reservationId);
+                String errorMessageCode = "error.STEP2_STRIPE_abort";
+                if(e instanceof StripeException) {
+                    errorMessageCode = stripeManager.handleException((StripeException)e);
+                }
+				bindingResult.reject(STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(errorMessageCode, null, locale)}, null);
+				model.addAttribute("error", bindingResult)
+                        .addAttribute("hasErrors", bindingResult.hasErrors())
+						.addAttribute("paymentForm", paymentForm);
+                return showReservationPage(eventName, reservationId, false, false, model);
 			}
 		}
 

@@ -22,6 +22,7 @@
  	data-stripe-message-card_declined="{{#i18n}}error.STEP2_STRIPE_card_declined{{/i18n}}"
  	data-stripe-message-missing="{{#i18n}}error.STEP2_STRIPE_missing{{/i18n}}"
  	data-stripe-message-processing_error="{{#i18n}}error.STEP2_STRIPE_processing_error{{/i18n}}"
+    data-stripe-message-abort="{{#i18n}}error.STEP2_STRIPE_abort{{/i18n}}"
  	data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
  ></script>
 {{/orderSummary.free}}
