@@ -24,7 +24,9 @@ import io.bagarino.model.Event;
 import io.bagarino.model.modification.support.LocationDescriptor;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
+import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -47,15 +49,19 @@ import static io.bagarino.util.OptionalWrapper.optionally;
 public class EventController {
 
     private final EventRepository eventRepository;
+    private final TicketRepository ticketRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
 
 	@Autowired
-	public EventController(ConfigurationManager configurationManager, EventRepository eventRepository,
+	public EventController(ConfigurationManager configurationManager,
+			TicketRepository ticketRepository,
+			EventRepository eventRepository,
 			OrganizationRepository organizationRepository,
 			TicketCategoryRepository ticketCategoryRepository) {
 		this.configurationManager = configurationManager;
+		this.ticketRepository = ticketRepository;
 		this.eventRepository = eventRepository;
 		this.organizationRepository = organizationRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
@@ -88,7 +94,7 @@ public class EventController {
 		//hide access restricted ticket categories
 		List<SaleableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(ev.getId()).stream()
                 .filter((c) -> !c.isAccessRestricted())
-                .map((m) -> new SaleableTicketCategory(m, now, ev))
+                .map((m) -> new SaleableTicketCategory(m, now, ev, Integer.valueOf(0).equals(ticketRepository.countUnsoldTicket(ev.getId(), m.getId()))))
                 .collect(Collectors.toList());
 		//
 

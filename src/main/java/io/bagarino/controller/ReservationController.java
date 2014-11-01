@@ -18,6 +18,7 @@ package io.bagarino.controller;
 
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
+
 import io.bagarino.controller.decorator.SaleableTicketCategory;
 import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.manager.EventManager;
@@ -39,6 +40,7 @@ import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -54,6 +56,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -116,8 +119,7 @@ public class ReservationController {
 			return "redirect:/event/" + eventName + "/";
 		}
 
-		reservation
-				.validate(bindingResult, ticketReservationManager, ticketCategoryRepository, eventManager, event.get());
+		reservation.validate(bindingResult, ticketReservationManager, ticketRepository, ticketCategoryRepository, eventManager, event.get());
 
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
@@ -325,7 +327,7 @@ public class ReservationController {
 			return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
 		}
 
-		private void validate(BindingResult bindingResult, TicketReservationManager tickReservationManager,
+		private void validate(BindingResult bindingResult, TicketReservationManager tickReservationManager, TicketRepository ticketRepository,
 				TicketCategoryRepository ticketCategoryRepository, EventManager eventManager, Event event) {
 			int selectionCount = selectionCount();
 
@@ -349,7 +351,7 @@ public class ReservationController {
 			selected.forEach((r) -> {
 
 				TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId());
-				SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event);
+				SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, Integer.valueOf(0).equals(ticketRepository.countUnsoldTicket(event.getId(), tc.getId())));
 
 				if (!ticketCategory.getSaleable()) {
 					bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); //

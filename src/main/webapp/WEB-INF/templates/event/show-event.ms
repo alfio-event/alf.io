@@ -91,7 +91,14 @@
 						</select>
 					{{/saleable}}
 					{{^saleable}}
-						<label class="control-label">N/A</label>
+						<label class="control-label">
+							{{#soldout}}
+								{{#i18n}}show-event.soldout{{/i18n}}
+							{{/soldout}}
+							{{^soldout}}
+								{{#i18n}}show-event.not-available{{/i18n}}
+							{{/soldout}}
+						</label>
 					{{/saleable}}
 				</div>
 			</div>

@@ -33,18 +33,21 @@ public class SaleableTicketCategory {
     private final ZonedDateTime now;
     private final ZoneId zoneId;
     private final Event event;
+    private final boolean soldout;
 
     public SaleableTicketCategory(TicketCategory ticketCategory,
                                   ZonedDateTime now,
-                                  Event event) {
+                                  Event event,
+                                  boolean soldout) {
         this.ticketCategory = ticketCategory;
         this.now = now;
         this.zoneId = event.getZoneId();
         this.event = event;
+        this.soldout = soldout;
     }
 
     public boolean getSaleable() {
-        return getInception(zoneId).isBefore(now) && getExpiration(zoneId).isAfter(now);
+        return getInception(zoneId).isBefore(now) && getExpiration(zoneId).isAfter(now) && !soldout;
     }
 
     public boolean getExpired() {
@@ -53,6 +56,10 @@ public class SaleableTicketCategory {
 
     public boolean getSaleInFuture() {
         return getInception(zoneId).isAfter(now);
+    }
+    
+    public boolean getSouldout() {
+    	return soldout;
     }
 
     public String getFormattedExpiration() {
