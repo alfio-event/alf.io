@@ -56,7 +56,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -144,9 +143,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
 
     @Bean(name = "localeResolver")
     public LocaleResolver getLocaleResolver() {
-        SessionLocaleResolver localeResolver = new SessionLocaleResolver();
-        localeResolver.setDefaultLocale(Locale.ENGLISH);
-        return localeResolver;
+        return new SessionLocaleResolver();
     }
 
     @Bean
