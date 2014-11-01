@@ -72,6 +72,32 @@
 	 
 	jQuery(function($) {
 		
+		//validity
+		var validity = new Date(Number.parseInt($("#validity").attr('data-validity')));
+		
+		var interval = null;
+		
+		var displayMessage = function() {
+			var totalSec = Math.max(validity.getTime() - new Date().getTime(), 0) / 1000;
+			var sec = totalSec % 60;
+			var min = (totalSec - sec) / 60;
+			
+			if(totalSec <= 0) {
+				$("#validity strong").html($("#validity").attr('data-message-time-elapsed'));
+				$("#continue-button").addClass('hide');
+				clearInterval(interval);
+			} else {
+				$("#validity strong").html($("#validity").attr('data-message').replace('#minutes#', min).replace('#seconds#',  Math.floor(sec)));
+			}
+		}
+		
+		displayMessage();
+		
+		var interval = setInterval(displayMessage, 1000);
+		//
+		
+		
+		
 		function submitForm(e) {
 			var $form = $(this);
 			 

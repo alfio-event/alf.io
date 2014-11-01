@@ -62,7 +62,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static io.bagarino.controller.ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR;
+import static io.bagarino.controller.ErrorsCode.*;
 import static io.bagarino.util.OptionalWrapper.optionally;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -209,6 +209,7 @@ public class ReservationController {
 		Optional<TicketReservation> ticketReservation = ticketReservationManager.findById(reservationId);
 
 		if (!ticketReservation.isPresent()) {
+			model.addAttribute("event", event.get());
 			model.addAttribute("reservationId", reservationId);
 			return "/event/reservation-page-not-found";
 		}
@@ -219,7 +220,7 @@ public class ReservationController {
 		}
 
 		if (!ticketReservation.get().getValidity().after(new Date())) {
-			bindingResult.reject("ticket_reservation_no_more_valid");
+			bindingResult.reject(STEP_2_ORDER_EXPIRED);
 		}
 
 		final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);

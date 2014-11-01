@@ -71,6 +71,10 @@
 {{/error.globalErrors}}
 {{/hasErrors}}
 
+<div class="alert alert-info" data-validity="{{reservation.validity.time}}" data-message="{{#i18n}}reservation-page.time-for-completition{{/i18n}}" data-message-time-elapsed="{{#i18n}}error.STEP_2_ORDER_HAS_EXPIRED{{/i18n}}" id="validity">
+	<p><strong></strong></p>
+</div>
+
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
 	<h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
 	<div class="form-group {{#field-has-error}}[fullName] has-error{{/field-has-error}}">
@@ -84,7 +88,7 @@
 		{{#field-has-error}}[email]<span class="help-block text-danger">{{#i18n}}{{#field-error}}email{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
 	</div>
 	{{#orderSummary.free}}
-	<button type="submit" class="btn btn-primary pull-right">{{#i18n}}reservation-page.continue{{/i18n}}</button>
+	<button type="submit" class="btn btn-primary pull-right" id="continue-button">{{#i18n}}reservation-page.continue{{/i18n}}</button>
 	<button type="submit" class="btn btn-info pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
 	{{/orderSummary.free}}
 	{{^orderSummary.free}}
@@ -137,7 +141,7 @@
 	</div>
 	
 	<div class="form-group">
-		<button type="submit" class="btn btn-success pull-right">{{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}</button>
+		<button type="submit" class="btn btn-success pull-right" id="continue-button">{{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}</button>
 		<button type="submit" class="btn btn-info pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
 	</div>
 	{{/orderSummary.free}}

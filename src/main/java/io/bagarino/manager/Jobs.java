@@ -38,7 +38,7 @@ public class Jobs {
 
 	@Scheduled(initialDelay = 1000 * 60, fixedDelay = 1000 * 30)
 	public void cleanupExpiredPendingReservation() {
-		//TODO CHECK
+		//cleanup reservation that have a expiration older than "now minus 10 minutes": this give some additional slack.
 		ticketReservationManager.cleanupExpiredPendingReservation(DateUtils.addMinutes(new Date(), -10));
 	}
 
