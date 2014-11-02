@@ -37,7 +37,7 @@ import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 import lombok.Data;
-import lombok.extern.log4j.Log4j2;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -54,11 +54,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
+
 import javax.servlet.http.HttpServletRequest;
+
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
 
 import static io.bagarino.controller.ErrorsCode.STEP_2_ORDER_EXPIRED;
 import static io.bagarino.controller.ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR;
@@ -69,7 +72,6 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 @Controller
-@Log4j2
 public class ReservationController {
 
 	private final EventRepository eventRepository;
@@ -186,7 +188,7 @@ public class ReservationController {
 			model.addAttribute(
 					"ticketsByCategory",
 					tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
-							.map((e) -> Pair.of(ticketCategoryRepository.getById(e.getKey()), e.getValue()))
+							.map((e) -> Pair.of(ticketCategoryRepository.getById(e.getKey(), event.get().getId()), e.getValue()))
 							.collect(Collectors.toList()));
 			model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
 
@@ -318,13 +320,13 @@ public class ReservationController {
 
 			final List<TicketReservationModification> selected = selected();
 			final ZoneId eventZoneId = selected.stream().findFirst().map(r -> {
-				TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId());
+				TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId(), event.getId());
 				return eventManager.findEventByTicketCategory(tc).getZoneId();
 			}).orElseThrow(IllegalStateException::new);
 			final ZonedDateTime now = ZonedDateTime.now(eventZoneId);
 			selected.forEach((r) -> {
 
-				TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId());
+				TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId(), event.getId());
 				SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, Integer.valueOf(0).equals(ticketRepository.countUnsoldTicket(event.getId(), tc.getId())));
 
 				if (!ticketCategory.getSaleable()) {

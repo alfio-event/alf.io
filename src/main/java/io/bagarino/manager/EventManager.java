@@ -117,7 +117,7 @@ public class EventManager {
     }
 
     public TicketCategoryWithStatistic loadTicketCategoryWithStats(int categoryId, Event event) {
-        final TicketCategory tc = ticketCategoryRepository.getById(categoryId);
+        final TicketCategory tc = ticketCategoryRepository.getById(categoryId, event.getId());
         return new TicketCategoryWithStatistic(tc,
                 ticketRepository.countConfirmedTickets(event.getId(), tc.getId()),
                 specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId());
@@ -172,7 +172,7 @@ public class EventManager {
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
         Event event = eventRepository.findById(eventId);
         TicketCategoryWithStatistic src = loadTicketCategoryWithStats(srcCategoryId, event);
-        TicketCategory target = ticketCategoryRepository.getById(targetCategoryId);
+        TicketCategory target = ticketCategoryRepository.getById(targetCategoryId, eventId);
         ticketCategoryRepository.updateSeatsAvailability(srcCategoryId, src.getSoldTickets());
         ticketCategoryRepository.updateSeatsAvailability(targetCategoryId, target.getMaxTickets() + src.getNotSoldTickets());
         specialPriceRepository.cancelExpiredTokens(srcCategoryId);
@@ -219,7 +219,7 @@ public class EventManager {
             final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                     tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested(), eventId);
             if(tc.isTokenGenerationRequested()) {
-                final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategoryRepository.getById(category.getValue()));
+                final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategoryRepository.getById(category.getValue(), event.getId()));
                 jdbc.batchUpdate(specialPriceRepository.bulkInsert(), args);
             }
         });

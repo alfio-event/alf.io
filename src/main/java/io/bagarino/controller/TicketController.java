@@ -109,7 +109,7 @@ public class TicketController {
 		Triple<Event, TicketReservation, Ticket> data = oData.get();
 		
 		
-		TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId());
+		TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId(), data.getLeft().getId());
 		Organization organization = organizationRepository.getById(data.getLeft().getOrganizationId());
 		
 		model.addAttribute("ticket", data.getRight())//
@@ -266,7 +266,7 @@ public class TicketController {
 
 	private ITextRenderer preparePdfTicket(HttpServletRequest request, HttpServletResponse response, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
 		
-		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
+		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
 		Organization organization = organizationRepository.getById(event.getOrganizationId());
 		
 		//

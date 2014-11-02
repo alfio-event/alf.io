@@ -230,7 +230,7 @@ public class TicketReservationManager {
             if(event.isVatIncluded()) {
                 paidPriceInCents = MonetaryUtil.addVAT(paidPriceInCents, event.getVat());
             }
-    		String categoryName = ticketCategoryRepository.getById(categoryId).getName();
+    		String categoryName = ticketCategoryRepository.getById(categoryId, event.getId()).getName();
             final int subTotal = paidPriceInCents * ticketsByCategory.size();
             summary.add(new SummaryRow(categoryName, formatCents(paidPriceInCents), ticketsByCategory.size(), formatCents(subTotal), subTotal));
     	});
