@@ -23,7 +23,7 @@ import lombok.Getter;
 public class SpecialPrice {
 
     public enum Status {
-        WAITING, FREE, TAKEN, CANCELLED
+        WAITING, FREE, PENDING, TAKEN, CANCELLED
     }
 
     private final int id;

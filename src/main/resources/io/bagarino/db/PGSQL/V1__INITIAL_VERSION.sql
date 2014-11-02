@@ -20,7 +20,7 @@
 --entities
 create table special_price (
   id serial primary key not null,
-  code varchar(2048) not null,
+  code varchar(64) not null,
   price_cts integer not null,
   ticket_category_id integer not null,
   status varchar(255) not null
