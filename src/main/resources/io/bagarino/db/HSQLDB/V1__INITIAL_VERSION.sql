@@ -23,26 +23,13 @@ create table special_price (
   ticket_category_id integer not null,
   status varchar(255) not null
 );
+alter table special_price add constraint "unique_code" unique(code);
 
 create table organization ( 
 	id integer identity not null, 
 	name varchar(255) not null,
 	description varchar(2048) not null,
 	email varchar(2048) not null
-);
-
-create table customer (
-  id integer identity not null,
-  username varchar(255) not null,
-  password varchar(255) not null,
-  first_name varchar(255) not null,
-  last_name varchar(255) not null,
-  address varchar(255) not null,
-  zip varchar(255) not null,
-  city varchar(255) not null,
-  state varchar(255) not null,
-  country varchar(255) not null,
-  email_address varchar(255) not null
 );
 
 create table ba_user (
@@ -66,9 +53,10 @@ create table ticket_category (
 	expiration timestamp with time zone not null,
 	max_tickets integer not null,
 	name varchar(255) not null,
-  description varchar(1024),
-  price_cts integer not null,
-  access_restricted boolean not null
+    description varchar(1024),
+    price_cts integer not null,
+    access_restricted boolean not null,
+    tc_status varchar(255)
 );
 
 create table event(
@@ -95,15 +83,8 @@ alter table event add constraint "unique_event_name" unique(short_name);
 alter table event add constraint "unique_private_key" unique(private_key);
 alter table event add foreign key(org_id) references organization(id);
 
-create table payment_proxy(
-	id integer identity not null, 
-	key varchar(255) not null, 
-	address varchar(1024) not null, 
-	name varchar(255) not null
-);
-
 create table tickets_reservation(
-	id varchar(36) primary key not null,
+	id character(36) primary key not null,
 	validity timestamp with time zone not null,
 	status varchar(255) not null,
 	full_name varchar(255),
@@ -114,7 +95,7 @@ create table tickets_reservation(
 
 create table ticket (
 	id integer identity not null,
-  uuid varchar(36) not null,
+    uuid varchar(36) not null,
 	creation timestamp with time zone not null, 
 	category_id integer not null, 
 	event_id integer not null, 
@@ -123,7 +104,8 @@ create table ticket (
 	paid_price_cts integer not null,
 	tickets_reservation_id varchar(36),
 	full_name varchar(255),
-	email_address varchar(255)
+	email_address varchar(255),
+	special_price_id_fk integer
 	
 );
 -- constraints
@@ -131,13 +113,8 @@ alter table ticket add constraint "unique_ticket_uuid" unique(uuid);
 alter table ticket add foreign key(category_id) references ticket_category(id);
 alter table ticket add foreign key(event_id) references event(id);
 alter table ticket add foreign key(tickets_reservation_id) references tickets_reservation(id);
-
-create table waiting_queue(
-	id integer identity not null, 
-	event_id integer not null
-);
--- constraints
-alter table waiting_queue add foreign key(event_id) references event(id);
+alter table ticket add foreign key(special_price_id_fk) references special_price(id);
+alter table ticket add constraint "unique_special_price" unique(special_price_id_fk);
 
 --join tables
 create table j_user_organization (
@@ -148,15 +125,6 @@ create table j_user_organization (
 alter table j_user_organization add foreign key(user_id) references ba_user(id);
 alter table j_user_organization add foreign key(org_id) references organization(id);
 
-
-create table j_ticket_category_organization (
-	cat_id integer not null, 
-	org_id integer not null
-);
--- constraints
-alter table j_ticket_category_organization add foreign key(cat_id) references ticket_category(id);
-alter table j_ticket_category_organization add foreign key(org_id) references organization(id);
-
 create table j_event_ticket_category(
 	event_id integer not null, 
 	ticket_category_id integer not null
@@ -165,14 +133,6 @@ create table j_event_ticket_category(
 alter table j_event_ticket_category add foreign key(event_id) references event(id);
 alter table j_event_ticket_category add foreign key(ticket_category_id) references ticket_category(id);
 
-create table j_waiting_queue_customer(
-	waiting_queue_id integer not null, 
-	customer_id integer not null
-);
--- constraints
-alter table j_waiting_queue_customer add foreign key(waiting_queue_id) references waiting_queue(id);
-alter table j_waiting_queue_customer add foreign key(customer_id) references customer(id);
-
 create table configuration(
   id integer identity not null,
   c_key varchar(255) not null,
@@ -180,6 +140,19 @@ create table configuration(
   description varchar(2048)
 );
 alter table configuration add constraint "unique_configuration_c_key" unique(c_key);
+
+
+create table b_transaction (
+  id integer identity not null,
+  gtw_tx_id varchar(2048) not null,
+  reservation_id character(36) not null,
+  t_timestamp timestamp with time zone not null,
+  price_cts integer not null,
+  currency varchar(255) not null,
+  description varchar(2048) not null,
+  payment_proxy varchar(2048) not null
+);
+alter table b_transaction add foreign key(reservation_id) references tickets_reservation(id);
 
 
 insert into configuration (c_key, c_value, description) values

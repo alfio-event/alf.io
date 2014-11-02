@@ -166,9 +166,6 @@ public class DataSourceConfiguration {
 		String sqlDialect = platform.getDialect(env);
 		Flyway migration = new Flyway();
 		migration.setDataSource(dataSource);
-		// TODO remove the validation = false when the schemas will be stable
-		migration.setValidateOnMigrate(false);
-		//
 
 		migration.setTarget(MigrationVersion.LATEST);
 
