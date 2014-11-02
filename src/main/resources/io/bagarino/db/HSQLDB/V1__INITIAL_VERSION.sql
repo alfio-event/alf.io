@@ -47,17 +47,6 @@ create table authority(
   role varchar(255) not null
 );
 
-create table ticket_category (
-	id integer identity not null, 
-	inception timestamp with time zone not null, 
-	expiration timestamp with time zone not null,
-	max_tickets integer not null,
-	name varchar(255) not null,
-    description varchar(1024),
-    price_cts integer not null,
-    access_restricted boolean not null,
-    tc_status varchar(255)
-);
 
 create table event(
 	id integer identity not null,
@@ -82,6 +71,20 @@ create table event(
 alter table event add constraint "unique_event_name" unique(short_name);
 alter table event add constraint "unique_private_key" unique(private_key);
 alter table event add foreign key(org_id) references organization(id);
+
+create table ticket_category (
+	id integer identity not null, 
+	inception timestamp with time zone not null, 
+	expiration timestamp with time zone not null,
+	max_tickets integer not null,
+	name varchar(255) not null,
+    description varchar(1024),
+    price_cts integer not null,
+    access_restricted boolean not null,
+    tc_status varchar(255),
+    event_id integer not null
+);
+alter table ticket_category add foreign key(event_id) references event(id);
 
 create table tickets_reservation(
 	id character(36) primary key not null,
@@ -125,13 +128,6 @@ create table j_user_organization (
 alter table j_user_organization add foreign key(user_id) references ba_user(id);
 alter table j_user_organization add foreign key(org_id) references organization(id);
 
-create table j_event_ticket_category(
-	event_id integer not null, 
-	ticket_category_id integer not null
-);
--- constraints
-alter table j_event_ticket_category add foreign key(event_id) references event(id);
-alter table j_event_ticket_category add foreign key(ticket_category_id) references ticket_category(id);
 
 create table configuration(
   id integer identity not null,

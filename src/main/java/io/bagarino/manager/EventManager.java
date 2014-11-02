@@ -22,7 +22,6 @@ import io.bagarino.model.Event;
 import io.bagarino.model.SpecialPrice;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
-import io.bagarino.model.join.EventTicketCategory;
 import io.bagarino.model.modification.EventModification;
 import io.bagarino.model.modification.EventWithStatistics;
 import io.bagarino.model.modification.TicketCategoryWithStatistic;
@@ -32,7 +31,6 @@ import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.SpecialPriceRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
-import io.bagarino.repository.join.EventTicketCategoryRepository;
 import io.bagarino.util.MonetaryUtil;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +60,6 @@ public class EventManager {
     private final UserManager userManager;
     private final EventRepository eventRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
-    private final EventTicketCategoryRepository eventTicketCategoryRepository;
     private final TicketRepository ticketRepository;
     private final SpecialPriceRepository specialPriceRepository;
     private final LocationManager locationManager;
@@ -72,7 +69,6 @@ public class EventManager {
     public EventManager(UserManager userManager,
                         EventRepository eventRepository,
                         TicketCategoryRepository ticketCategoryRepository,
-                        EventTicketCategoryRepository eventTicketCategoryRepository,
                         TicketRepository ticketRepository,
                         SpecialPriceRepository specialPriceRepository,
                         LocationManager locationManager,
@@ -80,7 +76,6 @@ public class EventManager {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
-        this.eventTicketCategoryRepository = eventTicketCategoryRepository;
         this.ticketRepository = ticketRepository;
         this.specialPriceRepository = specialPriceRepository;
         this.locationManager = locationManager;
@@ -118,10 +113,7 @@ public class EventManager {
     }
 
     public List<TicketCategory> loadTicketCategories(Event event) {
-        return eventTicketCategoryRepository.findByEventId(event.getId())
-                    .stream()
-                    .map(etc -> ticketCategoryRepository.getById(etc.getTicketCategoryId()))
-                    .collect(toList());
+        return ticketCategoryRepository.findByEventId(event.getId());
     }
 
     public TicketCategoryWithStatistic loadTicketCategoryWithStats(int categoryId, Event event) {
@@ -143,8 +135,7 @@ public class EventManager {
     }
 
     public Event findEventByTicketCategory(TicketCategory ticketCategory) {
-        final EventTicketCategory etc = eventTicketCategoryRepository.findByTicketCategoryId(ticketCategory.getId());
-        return eventRepository.findById(etc.getEventId());
+        return eventRepository.findById(ticketCategory.getEventId());
     }
 
     public void createEvent(EventModification em) {
@@ -171,7 +162,7 @@ public class EventManager {
         ticketCategoryRepository.findAllTicketCategories(eventId).stream()
                 .mapToInt(TicketCategory::getId)
                 .forEach(ticketCategoryRepository::deactivate);
-        eventTicketCategoryRepository.unbindCategoriesFromEvent(eventId);
+        
         internalUpdateEvent(eventId, em);
         final Event updated = eventRepository.findById(eventId);
         distributeSeats(em, updated);
@@ -195,8 +186,7 @@ public class EventManager {
         //FIXME: the date should be inserted as ZonedDateTime !
         Date creationDate = Date.from(creation.toInstant());
 
-        return eventTicketCategoryRepository.findByEventId(event.getId()).stream()
-                    .map(etc -> ticketCategoryRepository.getById(etc.getTicketCategoryId()))
+        return ticketCategoryRepository.findByEventId(event.getId()).stream()
                     .flatMap(tc -> Stream.generate(MapSqlParameterSource::new)
                             .limit(tc.getMaxTickets())
                             .map(ps -> buildParams(eventId, creationDate, tc, regularPrice, tc.getPriceInCents(), ps)))
@@ -227,16 +217,13 @@ public class EventManager {
         em.getTicketCategories().stream().forEach(tc -> {
             final int price = evaluatePrice(tc.getPriceInCents(), em.getVat(), vatIncluded, freeOfCharge);
             final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
-                    tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested());
-            eventTicketCategoryRepository.insert(eventId, category.getValue());
+                    tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested(), eventId);
             if(tc.isTokenGenerationRequested()) {
                 final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategoryRepository.getById(category.getValue()));
                 jdbc.batchUpdate(specialPriceRepository.bulkInsert(), args);
             }
         });
-        final List<TicketCategory> ticketCategories = eventTicketCategoryRepository.findByEventId(eventId).stream()
-                .map(etc -> ticketCategoryRepository.getById(etc.getTicketCategoryId()))
-                .collect(Collectors.toList());
+        final List<TicketCategory> ticketCategories = ticketCategoryRepository.findByEventId(event.getId());
         int notAssignedTickets = em.getAvailableSeats() - ticketCategories.stream().mapToInt(TicketCategory::getMaxTickets).sum();
 
         if(notAssignedTickets < 0) {

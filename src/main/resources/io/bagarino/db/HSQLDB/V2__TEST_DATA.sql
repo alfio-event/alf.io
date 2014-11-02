@@ -20,17 +20,12 @@ INSERT INTO organization(name, description, email) VALUES ('demo', 'demo organiz
 insert into event(description, short_name, location, latitude, longitude, start_ts, end_ts, regular_price_cts, currency, available_seats, vat_included, vat, allowed_payment_proxies, private_key, org_id, time_zone)
   values('event desc', 'eventname', 'demo location', '0', '0', '2015-01-10 05:00:00' , '2015-01-11 04:59:00' , 1000, 'CHF', 440, 'true', 8, 'STRIPE', 'bagarino-rulez', 0, 'America/New_York');
 
-insert into ticket_category(inception, expiration, name, description, max_tickets, price_cts, access_restricted, tc_status) values
-  ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Normal', 'Very good category', 2, 0, false, 'ACTIVE'),
-  ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Not normal', 'Very very good category', 4, 463, false, 'ACTIVE'),
-  ('2015-09-10 00:00:00', '2015-10-10 00:00:00', 'Still not in sale', 'Last day category', 1, 556, false, 'ACTIVE'),
-  ('2014-01-01 00:00:00', '2014-09-01 00:00:00', 'Expired', 'Expired', 1, 400, false, 'ACTIVE');
+insert into ticket_category(inception, expiration, name, description, max_tickets, price_cts, access_restricted, tc_status, event_id) values
+  ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Normal', 'Very good category', 2, 0, false, 'ACTIVE', 0),
+  ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Not normal', 'Very very good category', 4, 463, false, 'ACTIVE', 0),
+  ('2015-09-10 00:00:00', '2015-10-10 00:00:00', 'Still not in sale', 'Last day category', 1, 556, false, 'ACTIVE', 0),
+  ('2014-01-01 00:00:00', '2014-09-01 00:00:00', 'Expired', 'Expired', 1, 400, false, 'ACTIVE', 0);
   
-insert into j_event_ticket_category(event_id, ticket_category_id) values (0,0);
-insert into j_event_ticket_category(event_id, ticket_category_id) values (0,1);
-insert into j_event_ticket_category(event_id, ticket_category_id) values (0,2);
-insert into j_event_ticket_category(event_id, ticket_category_id) values (0,3);
-
 insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts)
   values
   
