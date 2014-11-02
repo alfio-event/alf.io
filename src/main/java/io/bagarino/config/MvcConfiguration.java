@@ -131,6 +131,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         //since we have all the english translations in the default file, we don't need
         //the fallback to the system locale.
         source.setFallbackToSystemLocale(false);
+        source.setAlwaysUseMessageFormat(true);
         return source;
     }
 
