@@ -16,8 +16,9 @@
  */
 package io.bagarino.manager;
 
-import static io.bagarino.util.MonetaryUtil.formatCents;
-import static io.bagarino.util.OptionalWrapper.optionally;
+import io.bagarino.manager.support.OrderSummary;
+import io.bagarino.manager.support.PaymentResult;
+import io.bagarino.manager.support.SummaryRow;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
@@ -31,17 +32,8 @@ import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
 import io.bagarino.util.MonetaryUtil;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 import lombok.Data;
-
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
@@ -49,8 +41,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static io.bagarino.util.MonetaryUtil.formatCents;
+import static io.bagarino.util.OptionalWrapper.optionally;
+
 @Component
 @Transactional
+@Log4j2
 public class TicketReservationManager {
 	
 	public static final int RESERVATION_MINUTE = 25;
@@ -60,7 +59,8 @@ public class TicketReservationManager {
 	private final TicketReservationRepository ticketReservationRepository;
 	private final TicketCategoryRepository ticketCategoryRepository;
 	private final ConfigurationManager configurationManager;
-	
+    private final PaymentManager paymentManager;
+
 	public static class NotEnoughTicketsException extends Exception {
 		
 	}
@@ -72,16 +72,18 @@ public class TicketReservationManager {
 	}
 	
 	@Autowired
-	public TicketReservationManager(EventRepository eventRepository, 
-			TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository, 
-			TicketCategoryRepository ticketCategoryRepository, 
-			ConfigurationManager configurationManager) {
+	public TicketReservationManager(EventRepository eventRepository,
+                                    TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository,
+                                    TicketCategoryRepository ticketCategoryRepository,
+                                    ConfigurationManager configurationManager,
+                                    PaymentManager paymentManager) {
 		this.eventRepository = eventRepository;
 		this.ticketRepository = ticketRepository;
 		this.ticketReservationRepository = ticketReservationRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.configurationManager = configurationManager;
-	}
+        this.paymentManager = paymentManager;
+    }
 	
     /**
      * Create a ticket reservation. It will create a reservation _only_ if it can find enough tickets. Note that it will not do date/validity validation. This must be ensured by the
@@ -99,8 +101,8 @@ public class TicketReservationManager {
         
         for(TicketReservationModification ticketReservation : ticketReservations) {
             List<Integer> reservedForUpdate = ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount());
-            
-			if (reservedForUpdate.size() != ticketReservation.getAmount().intValue()) {
+            int requested = ticketReservation.getAmount();
+			if (reservedForUpdate.size() != requested) {
 				throw new NotEnoughTicketsException();
 			}
             
@@ -109,13 +111,39 @@ public class TicketReservationManager {
 
     	return transactionId;
     }
-    
-    public void transitionToInPayment(String reservationId, String email, String fullName, String billingAddress) {
+
+    public PaymentResult confirm(String gatewayToken, Event event, String reservationId,
+                        String email, String fullName, String billingAddress,
+                        TotalPrice reservationCost) {
+        try {
+            PaymentResult paymentResult;
+            if(reservationCost.getPriceWithVAT() > 0) {
+                transitionToInPayment(reservationId, email, fullName, billingAddress);
+                paymentResult = paymentManager.processPayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, fullName, billingAddress);
+                if(!paymentResult.isSuccessful()) {
+                    reTransitionToPending(reservationId);
+                    return paymentResult;
+                }
+            } else {
+                paymentResult = PaymentResult.successful("not-paid");
+            }
+            completeReservation(reservationId, email, fullName, billingAddress);
+            return paymentResult;
+        } catch(Exception ex) {
+            //it is guaranteed that in this case we're dealing with "local" error (e.g. database failure),
+            //thus it is safer to not rollback the reservation status
+            log.error("unexpected error during payment confirmation", ex);
+            return PaymentResult.unsuccessful("error.STEP2_STRIPE_unexpected");
+        }
+
+    }
+
+    private void transitionToInPayment(String reservationId, String email, String fullName, String billingAddress) {
     	int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.IN_PAYMENT.toString(), email, fullName, billingAddress);
 		Validate.isTrue(updatedReservation == 1);
     }
     
-	public void reTransitionToPending(String reservationId) {
+	private void reTransitionToPending(String reservationId) {
 		int updatedReservation = ticketReservationRepository.updateTicketStatus(reservationId, TicketReservationStatus.PENDING.toString());
 		Validate.isTrue(updatedReservation == 1);
 		
@@ -142,15 +170,13 @@ public class TicketReservationManager {
 
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress.
-     * 
-     * TODO: should save the transaction id from stripe&co too!
-     * 
+     *
      * @param reservationId
      * @param email
      * @param fullName
      * @param billingAddress
      */
-	public void completeReservation(String reservationId, String email, String fullName, String billingAddress) {
+	private void completeReservation(String reservationId, String email, String fullName, String billingAddress) {
 		int updatedTickets = ticketRepository.updateTicketStatus(reservationId, TicketStatus.ACQUIRED.toString());
 		Validate.isTrue(updatedTickets > 0);
 		int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, billingAddress);
@@ -210,30 +236,6 @@ public class TicketReservationManager {
     	});
     	return summary;
     } 
-    
-    
-    @Data
-    public static class OrderSummary {
-    	private final TotalPrice originalTotalPrice;
-    	private final List<SummaryRow> summary; 
-    	private final boolean free;
-    	private final String totalPrice;
-    	private final String totalVAT;
-    	
-    	/* lol jmustache */
-    	public boolean getFree() {
-    		return free;
-    	}
-    }
-    
-    @Data
-    public static class SummaryRow {
-    	private final String name;
-    	private final String price;
-    	private final int amount;
-    	private final String subTotal;
-        private final int originalSubTotal;
-    }
     
     public String reservationUrl(String reservationId) {
     	Event event = eventRepository.findByReservationId(reservationId);

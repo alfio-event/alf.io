@@ -16,14 +16,39 @@
  */
 package io.bagarino.model.transaction;
 
-import lombok.Data;
+import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
-@Data
+@Getter
 public class Transaction {
+
+    private final int id;
+    private final String transactionId;
+    private final String reservationId;
+    private final ZonedDateTime timestamp;
+    private final int priceInCents;
+    private final String currency;
+    private final String description;
     private final PaymentProxy paymentProxy;
-    private final LocalDateTime timestamp;
-    private final String sourceIp;
-    private final int userID;
+
+
+    public Transaction(@Column("id") int id,
+                       @Column("gtw_tx_id") String transactionId,
+                       @Column("reservation_id") String reservationId,
+                       @Column("t_timestamp") ZonedDateTime timestamp,
+                       @Column("price_cts") int priceInCents,
+                       @Column("currency") String currency,
+                       @Column("description") String description,
+                       @Column("payment_proxy") String paymentProxy) {
+        this.id = id;
+        this.transactionId = transactionId;
+        this.reservationId = reservationId;
+        this.timestamp = timestamp;
+        this.priceInCents = priceInCents;
+        this.currency = currency;
+        this.description = description;
+        this.paymentProxy = PaymentProxy.valueOf(paymentProxy);
+    }
 }

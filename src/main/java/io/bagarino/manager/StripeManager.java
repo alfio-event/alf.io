@@ -38,6 +38,7 @@ import static io.bagarino.model.system.ConfigurationKeys.STRIPE_SECRET_KEY;
 @Log4j2
 public class StripeManager {
 
+    public static final String STRIPE_UNEXPECTED = "error.STEP2_STRIPE_unexpected";
     private final Map<Class<? extends StripeException>, StripeExceptionHandler> handlers;
     private final ConfigurationManager configurationManager;
     private final TicketRepository ticketRepository;
@@ -53,6 +54,7 @@ public class StripeManager {
         handlers.put(InvalidRequestException.class, this::handleInvalidRequestException);
         handlers.put(AuthenticationException.class, this::handleAuthenticationException);
         handlers.put(APIConnectionException.class, this::handleApiConnectionException);
+        handlers.put(RateLimitException.class, this::handleRateLimitException);
         handlers.put(StripeException.class, this::handleGenericException);
     }
 
@@ -74,7 +76,7 @@ public class StripeManager {
      * @return
      * @throws StripeException
      */
-    public Optional<Charge> chargeCreditCard(String stripeToken, long amountInCent, Event event,
+    public Charge chargeCreditCard(String stripeToken, long amountInCent, Event event,
                                    String reservationId, String email, String fullName, String billingAddress) throws StripeException {
 
         Map<String, Object> chargeParams = new HashMap<>();
@@ -93,11 +95,7 @@ public class StripeManager {
             initialMetadata.put("billingAddress", billingAddress);
         }
         chargeParams.put("metadata", initialMetadata);
-        Charge result = Charge.create(chargeParams, getSecretKey());
-        if(result.getPaid()) {
-            return Optional.of(result);
-        }
-        return Optional.empty();
+        return Charge.create(chargeParams, getSecretKey());
     }
 
     public String handleException(StripeException exc) {
@@ -160,9 +158,19 @@ public class StripeManager {
      * @param e
      * @return
      */
+    private String handleRateLimitException(StripeException e) {
+        log.error("rate limit exceeded", e);
+        return "error.STEP2_STRIPE_abort";
+    }
+
+    /**
+     * Logs the failure and report the failure to the admin (to be done)
+     * @param e
+     * @return
+     */
     private String handleGenericException(StripeException e) {
         log.error("unexpected error during transaction", e);
-        return "error.STEP2_STRIPE_unexpected";
+        return STRIPE_UNEXPECTED;
     }
 
 

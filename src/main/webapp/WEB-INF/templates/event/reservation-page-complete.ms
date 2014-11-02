@@ -52,7 +52,7 @@
 				</div>
 			{{/assigned}}
 			{{^assigned}}
-				<p>You need to fill fullname/email to download the ticket:</p>
+				<p>{{#i18n}}reservation-page-complete.assign-ticket-warning{{/i18n}}</p>
 			{{/assigned}}
 			<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}" class="form-horizontal {{#assigned}}hide-by-default{{/assigned}}" id="ticket-{{uuid}}">
 				<div class="form-group">

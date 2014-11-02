@@ -16,17 +16,15 @@
  */
 package io.bagarino.controller;
 
-import com.stripe.exception.StripeException;
-import com.stripe.model.Charge;
-
 import io.bagarino.controller.decorator.SaleableTicketCategory;
 import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.manager.EventManager;
 import io.bagarino.manager.StripeManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.manager.TicketReservationManager.NotEnoughTicketsException;
-import io.bagarino.manager.TicketReservationManager.OrderSummary;
 import io.bagarino.manager.TicketReservationManager.TotalPrice;
+import io.bagarino.manager.support.OrderSummary;
+import io.bagarino.manager.support.PaymentResult;
 import io.bagarino.manager.system.Mailer;
 import io.bagarino.model.Event;
 import io.bagarino.model.Ticket;
@@ -40,12 +38,13 @@ import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -56,13 +55,14 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static io.bagarino.controller.ErrorsCode.*;
+import static io.bagarino.controller.ErrorsCode.STEP_2_ORDER_EXPIRED;
+import static io.bagarino.controller.ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR;
+import static io.bagarino.manager.StripeManager.STRIPE_UNEXPECTED;
 import static io.bagarino.util.OptionalWrapper.optionally;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -201,71 +201,45 @@ public class ReservationController {
 			@PathVariable("reservationId") String reservationId, PaymentForm paymentForm, BindingResult bindingResult,
 			Model model, HttpServletRequest request, Locale locale) {
 
-		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
-		if (!event.isPresent()) {
+		Optional<Event> eventOptional = optionally(() -> eventRepository.findByShortName(eventName));
+		if (!eventOptional.isPresent()) {
 			return "redirect:/";
 		}
-
+        Event event = eventOptional.get();
 		Optional<TicketReservation> ticketReservation = ticketReservationManager.findById(reservationId);
-
 		if (!ticketReservation.isPresent()) {
-			model.addAttribute("event", event.get());
+			model.addAttribute("event", event);
 			model.addAttribute("reservationId", reservationId);
 			return "/event/reservation-page-not-found";
 		}
-
 		if (paymentForm.shouldCancelReservation()) {
 			ticketReservationManager.cancelPendingReservation(reservationId);
 			return "redirect:/event/" + eventName + "/";
 		}
-
 		if (!ticketReservation.get().getValidity().after(new Date())) {
 			bindingResult.reject(STEP_2_ORDER_EXPIRED);
 		}
-
 		final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-
-		//
 		paymentForm.validate(bindingResult, reservationCost);
-		//
-
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors())
 					.addAttribute("paymentForm", paymentForm);//
 			return showReservationPage(eventName, reservationId, false, false, model);
 		}
+        final PaymentResult status = ticketReservationManager.confirm(paymentForm.getStripeToken(), event, reservationId, paymentForm.getEmail(),
+                paymentForm.getFullName(), paymentForm.getBillingAddress(), reservationCost);
 
-		String email = paymentForm.getEmail(), fullName = paymentForm.getFullName(), billingAddress = paymentForm
-				.getBillingAddress();
+        if(!status.isSuccessful()) {
+            String errorMessageCode = status.getErrorCode().get();
+            MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, STRIPE_UNEXPECTED});
+            bindingResult.reject(STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
+            model.addAttribute("error", bindingResult)
+                    .addAttribute("hasErrors", bindingResult.hasErrors())
+                    .addAttribute("paymentForm", paymentForm);
+            return showReservationPage(eventName, reservationId, false, false, model);
+        }
 
-		if (reservationCost.getPriceWithVAT() > 0) {
-			// transition to IN_PAYMENT, so we can keep track if we have a failure between the stripe payment and the
-			// completion of the reservation
-			ticketReservationManager.transitionToInPayment(reservationId, email, fullName, billingAddress);
-			try {
-                final Optional<Charge> charge = stripeManager.chargeCreditCard(paymentForm.getStripeToken(), reservationCost.getPriceWithVAT(),
-                        event.get(), reservationId, email, fullName, billingAddress);
-                log.info("transaction {} paid: {}", reservationId, charge.isPresent());
-            } catch (Exception e) {
-                ticketReservationManager.reTransitionToPending(reservationId);
-                String errorMessageCode = "error.STEP2_STRIPE_abort";
-                if(e instanceof StripeException) {
-                    errorMessageCode = stripeManager.handleException((StripeException)e);
-                }
-				bindingResult.reject(STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(errorMessageCode, null, locale)}, null);
-				model.addAttribute("error", bindingResult)
-                        .addAttribute("hasErrors", bindingResult.hasErrors())
-						.addAttribute("paymentForm", paymentForm);
-                return showReservationPage(eventName, reservationId, false, false, model);
-			}
-		}
-
-		// we can enter here only if the reservation is done correctly
-		ticketReservationManager.completeReservation(reservationId, email, fullName, billingAddress);
-		//
-
-		//
-		sendReservationCompleteEmail(request, event.get(),
+        sendReservationCompleteEmail(request, eventOptional.get(),
 				ticketReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new));
 		//
 
@@ -287,7 +261,6 @@ public class ReservationController {
 		}
 
 		sendReservationCompleteEmail(request, event.get(), ticketReservation.orElseThrow(IllegalStateException::new));
-
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId + "?confirmation-email-sent=true";
 	}
 
