@@ -26,7 +26,6 @@ import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -34,6 +33,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +48,7 @@ import static io.bagarino.util.OptionalWrapper.optionally;
 @Controller
 public class EventController {
 
+    private static final String REDIRECT = "redirect:";
     private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
@@ -67,11 +68,16 @@ public class EventController {
 		this.ticketCategoryRepository = ticketCategoryRepository;
 	}
 
+    @RequestMapping(value = "/session-expired", method = RequestMethod.GET)
+    public String sessionExpired(HttpServletRequest request) {
+        return "/event/session-expired";
+    }
+
 	@RequestMapping(value = {"/"}, method = RequestMethod.GET)
 	public String listEvents(Model model) {
 		List<Event> events = eventRepository.findAll();
 		if(events.size() == 1) {
-			return "redirect:/event/" + events.get(0).getShortName() + "/";
+			return REDIRECT + "/event/" + events.get(0).getShortName() + "/";
 		} else {
 			model.addAttribute("events", events.stream().map(EventDescriptor::new).collect(Collectors.toList()));
 			return "/event/event-list";
@@ -86,7 +92,7 @@ public class EventController {
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
 		
 		if(!event.isPresent()) {
-			return "redirect:/";
+			return REDIRECT + "/";
 		}
 
 		Event ev = event.get();
