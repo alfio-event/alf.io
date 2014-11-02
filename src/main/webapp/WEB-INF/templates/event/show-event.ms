@@ -47,7 +47,7 @@
 <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reserve-tickets" class="form-horizontal">
 	<ul class="list-group">
 	{{#ticketCategories}}
-		<li class="list-group-item {{#expired}}event-expired{{/expired}}">
+		<li class="list-group-item {{#expired}}event-expired{{/expired}} ticket-category-restricted-{{accessRestricted}}">
 			<div class="form-group">
 				<div class="col-sm-7">
 					<label class="control-label">{{name}}</label>
@@ -87,7 +87,13 @@
 					{{#saleable}}
 						<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
 						<select name="reservation[{{-index}}].amount" class="form-control text-align-center" placeholder="0" autocomplete="off">
-							{{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
+							{{#accessRestricted}}
+								<option value="0">0</option>
+								<option value="1">1</option>
+							{{/accessRestricted}}
+							{{^accessRestricted}}
+								{{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
+							{{/accessRestricted}}
 						</select>
 					{{/saleable}}
 					{{^saleable}}
@@ -105,7 +111,17 @@
 		</li>
 	{{/ticketCategories}}
 	</ul>
+	
+	{{#hasAccessRestrictedCategory}}
+		<div class="form-inline" style="text-align:center">
+			<label>Apply promotional code: <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label> <button class="btn btn-default" type="button" id="apply-promo-codes">Apply</button>
+		</div>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<script src="{{request.contextPath}}/resources/js/event/show-event.js"></script>
+	{{/hasAccessRestrictedCategory}}
+	
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
+	<input type="hidden" name="promoCode" value="{{promoCode}}">
 	<button type="submit" class="btn btn-primary pull-right">{{#i18n}}show-event.continue{{/i18n}}</button>
 	
 	<div class="clearfix"></div>

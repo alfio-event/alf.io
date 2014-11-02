@@ -58,6 +58,11 @@ public class SaleableTicketCategory {
         return getInception(zoneId).isAfter(now);
     }
     
+    //jmustache
+    public boolean getAccessRestricted() {
+    	return isAccessRestricted();
+    }
+    
     public boolean getSouldout() {
     	return soldout;
     }

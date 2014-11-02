@@ -24,7 +24,8 @@ insert into ticket_category(inception, expiration, name, description, max_ticket
   ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Normal', 'Very good category', 2, 0, false, 'ACTIVE', 0),
   ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Not normal', 'Very very good category', 4, 463, false, 'ACTIVE', 0),
   ('2015-09-10 00:00:00', '2015-10-10 00:00:00', 'Still not in sale', 'Last day category', 1, 556, false, 'ACTIVE', 0),
-  ('2014-01-01 00:00:00', '2014-09-01 00:00:00', 'Expired', 'Expired', 1, 400, false, 'ACTIVE', 0);
+  ('2014-01-01 00:00:00', '2014-09-01 00:00:00', 'Expired', 'Expired', 1, 400, false, 'ACTIVE', 0),
+  ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Restricted', 'Very very good category', 4, 463, true, 'ACTIVE', 0);
   
 insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts)
   values
@@ -43,7 +44,14 @@ insert into ticket (uuid, creation, category_id, event_id, status, original_pric
   ('abcdefghilmo45', '2014-01-10 00:00:00', 2, 0, 'FREE', 463, 463),
   
   --expired
-  ('abcdefghilmo46', '2014-01-10 00:00:00', 3, 0, 'FREE', 463, 463);
+  ('abcdefghilmo46', '2014-01-10 00:00:00', 3, 0, 'FREE', 463, 463),
+  
+  --restricted
+  ('abcdefghilmo47', '2014-01-10 00:00:00', 4, 0, 'FREE', 463, 463);
+  
+insert into special_price (code, price_cts, ticket_category_id, status) values 
+  ('424242', 463, 4, 'FREE'),
+  ('424243', 463, 4, 'CANCELLED'); 
   
 insert into configuration (c_key, c_value, description) values
 	('STRIPE_SECRET_KEY', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'Stripe''s secret key'),

@@ -21,19 +21,23 @@ import io.bagarino.manager.support.PaymentResult;
 import io.bagarino.manager.support.SummaryRow;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.Event;
+import io.bagarino.model.SpecialPrice;
 import io.bagarino.model.Ticket;
+import io.bagarino.model.SpecialPrice.Status;
 import io.bagarino.model.Ticket.TicketStatus;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
-import io.bagarino.model.modification.TicketReservationModification;
+import io.bagarino.model.modification.TicketReservationWithOptionalCodeModification;
 import io.bagarino.model.system.ConfigurationKeys;
 import io.bagarino.repository.EventRepository;
+import io.bagarino.repository.SpecialPriceRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.TicketReservationRepository;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
@@ -60,6 +64,7 @@ public class TicketReservationManager {
 	private final TicketCategoryRepository ticketCategoryRepository;
 	private final ConfigurationManager configurationManager;
     private final PaymentManager paymentManager;
+    private final SpecialPriceRepository specialPriceRepository;
 
 	public static class NotEnoughTicketsException extends Exception {
 		
@@ -76,13 +81,15 @@ public class TicketReservationManager {
                                     TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository,
                                     TicketCategoryRepository ticketCategoryRepository,
                                     ConfigurationManager configurationManager,
-                                    PaymentManager paymentManager) {
+                                    PaymentManager paymentManager,
+                                    SpecialPriceRepository specialPriceRepository) {
 		this.eventRepository = eventRepository;
 		this.ticketRepository = ticketRepository;
 		this.ticketReservationRepository = ticketReservationRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.configurationManager = configurationManager;
         this.paymentManager = paymentManager;
+        this.specialPriceRepository = specialPriceRepository;
     }
 	
     /**
@@ -90,23 +97,31 @@ public class TicketReservationManager {
      * caller.
      * 
      * @param eventId
-     * @param ticketReservations
+     * @param list
      * @param reservationExpiration
      * @return
      */
-    public String createTicketReservation(int eventId, List<TicketReservationModification> ticketReservations, Date reservationExpiration) throws NotEnoughTicketsException {
+    public String createTicketReservation(int eventId, List<TicketReservationWithOptionalCodeModification> list, Date reservationExpiration) throws NotEnoughTicketsException {
     	
         String transactionId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(transactionId, reservationExpiration);
         
-        for(TicketReservationModification ticketReservation : ticketReservations) {
+        for(TicketReservationWithOptionalCodeModification ticketReservation : list) {
             List<Integer> reservedForUpdate = ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount());
             int requested = ticketReservation.getAmount();
 			if (reservedForUpdate.size() != requested) {
 				throw new NotEnoughTicketsException();
 			}
             
-            ticketRepository.reserveTickets(transactionId, reservedForUpdate);
+            
+			if (ticketReservation.getSpecialPrice().isPresent()) {
+				Validate.isTrue(reservedForUpdate.size() == 1, "can assign exactly one special code");
+				SpecialPrice specialPrice = ticketReservation.getSpecialPrice().get();
+				ticketRepository.reserveTicket(transactionId, reservedForUpdate.stream().findFirst().orElseThrow(IllegalStateException::new),specialPrice.getId());
+				specialPriceRepository.updateStatus(specialPrice.getId(), Status.PENDING.toString());
+			} else {
+				ticketRepository.reserveTickets(transactionId, reservedForUpdate);
+			}
         }
 
     	return transactionId;
@@ -179,19 +194,24 @@ public class TicketReservationManager {
 	private void completeReservation(String reservationId, String email, String fullName, String billingAddress) {
 		int updatedTickets = ticketRepository.updateTicketStatus(reservationId, TicketStatus.ACQUIRED.toString());
 		Validate.isTrue(updatedTickets > 0);
+		
+		
+		specialPriceRepository.updateStatusForReservation(Collections.singletonList(reservationId), Status.TAKEN.toString());
+		
 		int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, billingAddress);
 		Validate.isTrue(updatedReservation == 1);
 	}
 
 
 	public void cleanupExpiredPendingReservation(Date expirationDate) {
-		List<String> expired = ticketReservationRepository.findExpiredReservation(expirationDate);
-		if(expired.isEmpty()) {
+		List<String> expiredReservationIds = ticketReservationRepository.findExpiredReservation(expirationDate);
+		if(expiredReservationIds.isEmpty()) {
 			return;
 		}
 		
-		ticketRepository.freeFromReservation(expired);
-		ticketReservationRepository.remove(expired);
+		specialPriceRepository.updateStatusForReservation(expiredReservationIds, Status.FREE.toString());
+		ticketRepository.freeFromReservation(expiredReservationIds);
+		ticketReservationRepository.remove(expiredReservationIds);
 	}
 	
 	private int totalFrom(List<Ticket> tickets) {
@@ -257,10 +277,11 @@ public class TicketReservationManager {
 		
 		Validate.isTrue(ticketReservationRepository.findReservationById(reservationId).getStatus() == TicketReservationStatus.PENDING);
 		
-		List<String> toRemove = Collections.singletonList(reservationId);
-		int updatedTickets = ticketRepository.freeFromReservation(toRemove);
+		List<String> reservationIdsToRemove = Collections.singletonList(reservationId);
+		specialPriceRepository.updateStatusForReservation(reservationIdsToRemove, Status.FREE.toString());
+		int updatedTickets = ticketRepository.freeFromReservation(reservationIdsToRemove);
 		Validate.isTrue(updatedTickets > 0);
-		int removedReservation = ticketReservationRepository.remove(toRemove);
+		int removedReservation = ticketReservationRepository.remove(reservationIdsToRemove);
 		Validate.isTrue(removedReservation == 1);
 	}
 }

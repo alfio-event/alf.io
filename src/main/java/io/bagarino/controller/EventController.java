@@ -21,19 +21,28 @@ import io.bagarino.controller.decorator.EventDescriptor;
 import io.bagarino.controller.decorator.SaleableTicketCategory;
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.Event;
+import io.bagarino.model.SpecialPrice;
+import io.bagarino.model.SpecialPrice.Status;
 import io.bagarino.model.modification.support.LocationDescriptor;
 import io.bagarino.repository.EventRepository;
+import io.bagarino.repository.SpecialPriceRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -54,18 +63,21 @@ public class EventController {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
+    private final SpecialPriceRepository specialPriceRepository;
 
 	@Autowired
 	public EventController(ConfigurationManager configurationManager,
 			TicketRepository ticketRepository,
 			EventRepository eventRepository,
 			OrganizationRepository organizationRepository,
-			TicketCategoryRepository ticketCategoryRepository) {
+			TicketCategoryRepository ticketCategoryRepository,
+			SpecialPriceRepository specialPriceRepository) {
 		this.configurationManager = configurationManager;
 		this.ticketRepository = ticketRepository;
 		this.eventRepository = eventRepository;
 		this.organizationRepository = organizationRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
+		this.specialPriceRepository = specialPriceRepository;
 	}
 
     @RequestMapping(value = "/session-expired", method = RequestMethod.GET)
@@ -83,23 +95,52 @@ public class EventController {
 			return "/event/event-list";
 		}
 	}
+	
+	
+	private static BindingResult fromModelIfPresent(Model model, String specialCode) {
+		if(model.containsAttribute("error")) {
+			return (BindingResult) model.asMap().get("error");
+		} else {
+			BeanPropertyBindingResult error = new BeanPropertyBindingResult(specialCode, "promoCode");
+			model.addAttribute("error", error);
+			return error;
+		}
+	}
 
 	@RequestMapping(value = "/event/{eventName}", method = RequestMethod.GET)
-	public String showEvent(@PathVariable("eventName") String eventName, Model model) {
+	public String showEvent(@PathVariable("eventName") String eventName, @RequestParam(value = "promoCode", required = false) String promoCode, Model model) {
 
-		// TODO: for each ticket categories we should check if there are available tickets (to show sold out text)
 		
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
 		
 		if(!event.isPresent()) {
 			return REDIRECT + "/";
 		}
+		
+		Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
+		Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
+		
+		if (maybeSpecialCode.isPresent() && !specialCode.isPresent()) {
+			BindingResult errors = fromModelIfPresent(model, maybeSpecialCode.get());
+			//TODO add only if ErrorsCode.STEP_1_CODE_NOT_FOUND / ErrorsCode.STEP_1_CODE_USED are not present
+			errors.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND, new Object[]{maybeSpecialCode.get()}, null);
+			model.addAttribute("hasErrors", true);
+			
+		}
+		if (specialCode.isPresent() && specialCode.get().getStatus() != Status.FREE) {
+			BindingResult errors = fromModelIfPresent(model, maybeSpecialCode.get());
+			//TODO add only if ErrorsCode.STEP_1_CODE_NOT_FOUND / ErrorsCode.STEP_1_CODE_USED are not present
+			errors.reject(ErrorsCode.STEP_1_CODE_USED, new Object[]{maybeSpecialCode.get()}, null);
+			model.addAttribute("hasErrors", true);
+		}
+		
+		
 
 		Event ev = event.get();
 		final ZonedDateTime now = ZonedDateTime.now(ev.getZoneId());
 		//hide access restricted ticket categories
 		List<SaleableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(ev.getId()).stream()
-                .filter((c) -> !c.isAccessRestricted())
+                .filter((c) -> !c.isAccessRestricted() || (c.isAccessRestricted() && specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId() && specialCode.get().getStatus() == Status.FREE))
                 .map((m) -> new SaleableTicketCategory(m, now, ev, Integer.valueOf(0).equals(ticketRepository.countUnsoldTicket(ev.getId(), m.getId()))))
                 .collect(Collectors.toList());
 		//
@@ -112,6 +153,8 @@ public class EventController {
 			.addAttribute("organizer", organizationRepository.getById(ev.getOrganizationId()))
 			.addAttribute("ticketCategories", t)//
 			.addAttribute("amountOfTickets", IntStream.rangeClosed(0, configurationManager.getIntConfigValue(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5)).toArray())//
+			.addAttribute("hasAccessRestrictedCategory", ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(ev.getId()).intValue() > 0)
+			.addAttribute("promoCode", promoCode)
 			.addAttribute("locationDescriptor", ld);
 		model.asMap().putIfAbsent("hasErrors", false);//
 		return "/event/show-event";

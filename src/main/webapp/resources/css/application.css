@@ -58,3 +58,7 @@ p.ticket-info {
 .list-group-item:last-child {
 	border-bottom:none;
 }
+
+.ticket-category-restricted-true {
+	background-color: #F5F5DC
+}

@@ -144,7 +144,7 @@ public class TicketController {
 		if (StringUtils.isNotBlank(t.getEmail()) && !t.getEmail().equals(updateTicketOwner.getEmail().trim())) {
 			Map<String, Object> emailModel = new HashMap<String, Object>();
 			emailModel.put("ticket", t);
-			emailModel.put("organization", organizationRepository.getById(oData.get().getLeft().getId()));
+			emailModel.put("organization", organizationRepository.getById(oData.get().getLeft().getOrganizationId()));
 			emailModel.put("eventName", eventName);
 			emailModel.put("previousEmail", t.getEmail());
 			emailModel.put("newEmail", updateTicketOwner.getEmail().trim());

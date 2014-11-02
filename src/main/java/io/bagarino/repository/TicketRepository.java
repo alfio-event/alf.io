@@ -44,6 +44,9 @@ public interface TicketRepository {
 	@Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING' where id in (:reservedForUpdate)")
 	int reserveTickets(@Bind("reservationId") String reservationId,
 			@Bind("reservedForUpdate") List<Integer> reservedForUpdate);
+	
+	@Query("update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId, status = 'PENDING' where id = :ticketId")
+	void reserveTicket(@Bind("reservationId")String transactionId, @Bind("ticketId") int ticketId, @Bind("specialCodeId") int specialCodeId);
 
 	@Query("update ticket set status = :status where tickets_reservation_id = :reservationId")
 	int updateTicketStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);

@@ -33,11 +33,17 @@ public interface SpecialPriceRepository {
     @Query("select * from special_price where ticket_category_id = :ticketCategoryId and status = 'FREE'")
     List<SpecialPrice> findActiveByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
 
-    @Query("select * from special_price where code = :code and status = 'FREE'")
+    @Query("select * from special_price where code = :code")
     SpecialPrice getByCode(@Bind("code") String code);
 
     @Query("select count(*) from special_price where code = :code")
     Integer countByCode(@Bind("code") String code);
+    
+    @Query("update special_price set status = :status where id = :id")
+    int updateStatus(@Bind("id") int id, @Bind("status") String status);
+    
+    @Query("update special_price set status = :status where id in (select special_price_id_fk from ticket where tickets_reservation_id in (:reservationIds) and special_price_id_fk is not null)")
+    int updateStatusForReservation(@Bind("reservationIds") List<String> expiredReservationIds, @Bind("status") String string);
 
     @Query("update special_price set code = :code, status = 'FREE' where id = :id")
     int updateCode(@Bind("code") String code, @Bind("id") int id);
@@ -51,5 +57,4 @@ public interface SpecialPriceRepository {
 
     @Query("select * from special_price where status = 'WAITING' for update")
     List<SpecialPrice> findWaitingElements();
-
 }

@@ -27,12 +27,16 @@ import io.bagarino.manager.support.OrderSummary;
 import io.bagarino.manager.support.PaymentResult;
 import io.bagarino.manager.system.Mailer;
 import io.bagarino.model.Event;
+import io.bagarino.model.SpecialPrice;
+import io.bagarino.model.SpecialPrice.Status;
 import io.bagarino.model.Ticket;
 import io.bagarino.model.TicketCategory;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
+import io.bagarino.model.modification.TicketReservationWithOptionalCodeModification;
 import io.bagarino.repository.EventRepository;
+import io.bagarino.repository.SpecialPriceRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
@@ -55,12 +59,26 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 
+
+
+
+
+
+
+
 import javax.servlet.http.HttpServletRequest;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+
+
+
+
+
+
 
 
 import static io.bagarino.controller.ErrorsCode.STEP_2_ORDER_EXPIRED;
@@ -80,6 +98,7 @@ public class ReservationController {
 	private final TicketReservationManager ticketReservationManager;
 	private final TicketCategoryRepository ticketCategoryRepository;
 	private final OrganizationRepository organizationRepository;
+	private final SpecialPriceRepository specialPriceRepository;
 
 	private final StripeManager stripeManager;
 	private final Mailer mailer;
@@ -89,10 +108,17 @@ public class ReservationController {
 	private final EventController eventController;
 
 	@Autowired
-	public ReservationController(EventRepository eventRepository, EventManager eventManager,
-			TicketRepository ticketRepository, TicketReservationManager ticketReservationManager,
-			TicketCategoryRepository ticketCategoryRepository, OrganizationRepository organizationRepository,
-			StripeManager stripeManager, Mailer mailer, TemplateManager templateManager, MessageSource messageSource,
+	public ReservationController(EventRepository eventRepository, 
+			EventManager eventManager,
+			TicketRepository ticketRepository, 
+			TicketReservationManager ticketReservationManager,
+			TicketCategoryRepository ticketCategoryRepository, 
+			OrganizationRepository organizationRepository,
+			SpecialPriceRepository specialPriceRepository,
+			StripeManager stripeManager, 
+			Mailer mailer, 
+			TemplateManager templateManager, 
+			MessageSource messageSource,
 			EventController eventController) {
 		this.eventRepository = eventRepository;
 		this.eventManager = eventManager;
@@ -100,6 +126,7 @@ public class ReservationController {
 		this.ticketReservationManager = ticketReservationManager;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.organizationRepository = organizationRepository;
+		this.specialPriceRepository = specialPriceRepository;
 		this.stripeManager = stripeManager;
 		this.mailer = mailer;
 		this.templateManager = templateManager;
@@ -121,23 +148,23 @@ public class ReservationController {
 			return "redirect:/event/" + eventName + "/";
 		}
 
-		reservation.validate(bindingResult, ticketReservationManager, ticketRepository, ticketCategoryRepository, eventManager, event.get());
+		Optional<List<TicketReservationWithOptionalCodeModification>> selected = reservation.validate(bindingResult, ticketReservationManager, ticketRepository, ticketCategoryRepository, eventManager, specialPriceRepository, event.get());
 
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
-			return eventController.showEvent(eventName, model);
+			return eventController.showEvent(eventName, reservation.getPromoCode(), model);
 		}
 
 		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
 
 		try {
 			String reservationId = ticketReservationManager.createTicketReservation(event.get().getId(),
-					reservation.selected(), expiration);
+					selected.get(), expiration);
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 		} catch (NotEnoughTicketsException nete) {
 			bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
 			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
-			return eventController.showEvent(eventName, model);
+			return eventController.showEvent(eventName, reservation.getPromoCode(), model);
 		}
 	}
 
@@ -289,6 +316,7 @@ public class ReservationController {
 	@Data
 	public static class ReservationForm {
 
+		private String promoCode;
 		private List<TicketReservationModification> reservation;
 
 		private List<TicketReservationModification> selected() {
@@ -303,13 +331,18 @@ public class ReservationController {
 			return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
 		}
 
-		private void validate(BindingResult bindingResult, TicketReservationManager tickReservationManager, TicketRepository ticketRepository,
-				TicketCategoryRepository ticketCategoryRepository, EventManager eventManager, Event event) {
+		private Optional<List<TicketReservationWithOptionalCodeModification>> validate(BindingResult bindingResult, 
+				TicketReservationManager tickReservationManager, 
+				TicketRepository ticketRepository,
+				TicketCategoryRepository ticketCategoryRepository, 
+				EventManager eventManager, 
+				SpecialPriceRepository specialPriceRepository, 
+				Event event) {
 			int selectionCount = selectionCount();
 
 			if (selectionCount <= 0) {
 				bindingResult.reject(ErrorsCode.STEP_1_SELECT_AT_LEAST_ONE);
-				return;
+				return Optional.empty();
 			}
 
 			final int maxAmountOfTicket = tickReservationManager.maxAmountOfTickets();
@@ -323,6 +356,12 @@ public class ReservationController {
 				TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId(), event.getId());
 				return eventManager.findEventByTicketCategory(tc).getZoneId();
 			}).orElseThrow(IllegalStateException::new);
+			
+			
+			List<TicketReservationWithOptionalCodeModification> res = new ArrayList<>();
+			//
+			Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode)).flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
+			//
 			final ZonedDateTime now = ZonedDateTime.now(eventZoneId);
 			selected.forEach((r) -> {
 
@@ -332,10 +371,20 @@ public class ReservationController {
 				if (!ticketCategory.getSaleable()) {
 					bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); //
 				}
-				if (ticketCategory.isAccessRestricted()) {
+				
+				boolean canAccessRestrictedCategory = specialCode.isPresent() && specialCode.get().getStatus() == Status.FREE && specialCode.get().getTicketCategoryId() == ticketCategory.getId();
+				if(canAccessRestrictedCategory && r.getAmount().intValue() > 1) {
+					bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM_FOR_RESTRICTED_CATEGORY, new Object[] { 1, tc.getName() }, null);
+				}
+				
+				if (!canAccessRestrictedCategory && ticketCategory.isAccessRestricted()) {
 					bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED); //
 				}
+				
+				res.add(new TicketReservationWithOptionalCodeModification(r, canAccessRestrictedCategory && r.getAmount().intValue() == 1 ? specialCode : Optional.empty()));
 			});
+			
+			return bindingResult.hasErrors() ? Optional.empty() : Optional.of(res);
 		}
 	}
 
