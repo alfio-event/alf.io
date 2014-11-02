@@ -122,14 +122,12 @@ public class EventController {
 		
 		if (maybeSpecialCode.isPresent() && !specialCode.isPresent()) {
 			BindingResult errors = fromModelIfPresent(model, maybeSpecialCode.get());
-			//TODO add only if ErrorsCode.STEP_1_CODE_NOT_FOUND / ErrorsCode.STEP_1_CODE_USED are not present
 			errors.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND, new Object[]{maybeSpecialCode.get()}, null);
 			model.addAttribute("hasErrors", true);
 			
 		}
 		if (specialCode.isPresent() && specialCode.get().getStatus() != Status.FREE) {
 			BindingResult errors = fromModelIfPresent(model, maybeSpecialCode.get());
-			//TODO add only if ErrorsCode.STEP_1_CODE_NOT_FOUND / ErrorsCode.STEP_1_CODE_USED are not present
 			errors.reject(ErrorsCode.STEP_1_CODE_USED, new Object[]{maybeSpecialCode.get()}, null);
 			model.addAttribute("hasErrors", true);
 		}
