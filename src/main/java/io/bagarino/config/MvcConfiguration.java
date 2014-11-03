@@ -76,6 +76,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         registry.addViewController("/admin/").setViewName("/admin/index");
         registry.addViewController("/admin/partials/index.html").setViewName("/admin/partials/main");
         registry.addViewController("/admin/partials/main/organizations.html").setViewName("/admin/partials/organizations");
+        registry.addViewController("/session-expired").setViewName("/event/session-expired");
     }
 
     @Override

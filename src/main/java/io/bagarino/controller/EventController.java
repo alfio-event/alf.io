@@ -29,7 +29,6 @@ import io.bagarino.repository.SpecialPriceRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -40,8 +39,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import javax.servlet.http.HttpServletRequest;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -79,11 +76,6 @@ public class EventController {
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.specialPriceRepository = specialPriceRepository;
 	}
-
-    @RequestMapping(value = "/session-expired", method = RequestMethod.GET)
-    public String sessionExpired(HttpServletRequest request) {
-        return "/event/session-expired";
-    }
 
 	@RequestMapping(value = {"/"}, method = RequestMethod.GET)
 	public String listEvents(Model model) {
