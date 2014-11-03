@@ -35,15 +35,17 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
     private final TicketCategory ticketCategory;
     private final int soldTickets;
     private final BigDecimal soldTicketsPercent;
+    private final List<TicketWithStatistic> tickets;
     private final List<SpecialPrice> tokenStatus;
     private final ZoneId eventZoneId;
 
     public TicketCategoryWithStatistic(TicketCategory ticketCategory,
-                                       int soldTickets,
+                                       List<TicketWithStatistic> tickets,
                                        List<SpecialPrice> tokenStatus,
                                        ZoneId eventZoneId) {
         this.ticketCategory = ticketCategory;
-        this.soldTickets = soldTickets;
+        this.tickets = tickets;
+        this.soldTickets = (int) tickets.stream().filter(TicketWithStatistic::hasBeenSold).count();
         this.tokenStatus = tokenStatus;
         this.eventZoneId = eventZoneId;
         this.soldTicketsPercent = calcSoldTicketsPercent(ticketCategory, soldTickets);
@@ -63,6 +65,10 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
 
     public boolean isContainingOrphans() {
         return isExpired() && getNotSoldTickets() > 0;
+    }
+
+    public boolean isContainingStuckTickets() {
+        return tickets.stream().anyMatch(TicketWithStatistic::isStuck);
     }
 
     @Override

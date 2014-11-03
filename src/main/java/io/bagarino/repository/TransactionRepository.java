@@ -39,4 +39,7 @@ public interface TransactionRepository {
                @Bind("currency") String currency,
                @Bind("description") String description,
                @Bind("paymentProxy") String paymentProxy);
+
+    @Query("select * from b_transaction where reservation_id = :reservationId")
+    Transaction loadByReservationId(@Bind("reservationId") String reservationId);
 }

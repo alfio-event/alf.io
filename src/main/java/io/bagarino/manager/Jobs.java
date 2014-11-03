@@ -39,7 +39,9 @@ public class Jobs {
 	@Scheduled(initialDelay = 1000 * 60, fixedDelay = 1000 * 30)
 	public void cleanupExpiredPendingReservation() {
 		//cleanup reservation that have a expiration older than "now minus 10 minutes": this give some additional slack.
-		ticketReservationManager.cleanupExpiredPendingReservation(DateUtils.addMinutes(new Date(), -10));
+        final Date expirationDate = DateUtils.addMinutes(new Date(), -10);
+        ticketReservationManager.cleanupExpiredPendingReservation(expirationDate);
+        ticketReservationManager.markExpiredInPaymentReservationAsStuck(expirationDate);
 	}
 
     @Scheduled(fixedDelay = 1000 * 30)

@@ -32,14 +32,14 @@ public class EventWithStatistics {
     private final Event event;
     private final List<TicketCategoryWithStatistic> ticketCategories;
 
-    public EventWithStatistics(Event event, List<TicketCategoryWithStatistic> ticketCategories) {
+    public EventWithStatistics(Event event,
+                               List<TicketCategoryWithStatistic> ticketCategories) {
         this.event = event;
         this.ticketCategories = ticketCategories;
     }
 
     public boolean isWarningNeeded() {
-        return ticketCategories.stream()
-                .anyMatch(TicketCategoryWithStatistic::isContainingOrphans);
+        return containsOrphanTickets() || containsStuckReservations();
     }
 
     public String getFormattedBegin() {
@@ -48,6 +48,14 @@ public class EventWithStatistics {
 
     public String getFormattedEnd() {
         return getEnd().format(JSON_DATE_FORMATTER);
+    }
+
+    private boolean containsOrphanTickets() {
+        return ticketCategories.stream().anyMatch(TicketCategoryWithStatistic::isContainingOrphans);
+    }
+
+    private boolean containsStuckReservations() {
+        return ticketCategories.stream().anyMatch(TicketCategoryWithStatistic::isContainingStuckTickets);
     }
 
 }

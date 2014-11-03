@@ -61,6 +61,7 @@ public class EventManager {
     private final EventRepository eventRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
+    private final TicketReservationManager ticketReservationManager;
     private final SpecialPriceRepository specialPriceRepository;
     private final LocationManager locationManager;
     private final NamedParameterJdbcTemplate jdbc;
@@ -70,6 +71,7 @@ public class EventManager {
                         EventRepository eventRepository,
                         TicketCategoryRepository ticketCategoryRepository,
                         TicketRepository ticketRepository,
+                        TicketReservationManager ticketReservationManager,
                         SpecialPriceRepository specialPriceRepository,
                         LocationManager locationManager,
                         NamedParameterJdbcTemplate jdbc) {
@@ -77,6 +79,7 @@ public class EventManager {
         this.eventRepository = eventRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.ticketRepository = ticketRepository;
+        this.ticketReservationManager = ticketReservationManager;
         this.specialPriceRepository = specialPriceRepository;
         this.locationManager = locationManager;
         this.jdbc = jdbc;
@@ -119,13 +122,13 @@ public class EventManager {
     public TicketCategoryWithStatistic loadTicketCategoryWithStats(int categoryId, Event event) {
         final TicketCategory tc = ticketCategoryRepository.getById(categoryId, event.getId());
         return new TicketCategoryWithStatistic(tc,
-                ticketRepository.countConfirmedTickets(event.getId(), tc.getId()),
+                ticketReservationManager.loadModifiedTickets(event.getId(), tc.getId()),
                 specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId());
     }
 
     public List<TicketCategoryWithStatistic> loadTicketCategoriesWithStats(Event event) {
         return loadTicketCategories(event).stream()
-                    .map(tc -> new TicketCategoryWithStatistic(tc, ticketRepository.countConfirmedTickets(event.getId(), tc.getId()), specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId()))
+                    .map(tc -> new TicketCategoryWithStatistic(tc, ticketReservationManager.loadModifiedTickets(tc.getEventId(), tc.getId()), specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId()))
                     .sorted()
                     .collect(toList());
     }

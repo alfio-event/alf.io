@@ -20,26 +20,25 @@ import io.bagarino.manager.support.OrderSummary;
 import io.bagarino.manager.support.PaymentResult;
 import io.bagarino.manager.support.SummaryRow;
 import io.bagarino.manager.system.ConfigurationManager;
+import io.bagarino.manager.system.Mailer;
 import io.bagarino.model.Event;
 import io.bagarino.model.SpecialPrice;
-import io.bagarino.model.Ticket;
 import io.bagarino.model.SpecialPrice.Status;
+import io.bagarino.model.Ticket;
 import io.bagarino.model.Ticket.TicketStatus;
 import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationWithOptionalCodeModification;
+import io.bagarino.model.modification.TicketWithStatistic;
 import io.bagarino.model.system.ConfigurationKeys;
-import io.bagarino.repository.EventRepository;
-import io.bagarino.repository.SpecialPriceRepository;
-import io.bagarino.repository.TicketCategoryRepository;
-import io.bagarino.repository.TicketRepository;
-import io.bagarino.repository.TicketReservationRepository;
+import io.bagarino.repository.*;
+import io.bagarino.repository.user.OrganizationRepository;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -57,14 +56,19 @@ import static io.bagarino.util.OptionalWrapper.optionally;
 public class TicketReservationManager {
 	
 	public static final int RESERVATION_MINUTE = 25;
+    public static final String STUCK_TICKETS_MSG = "there are stuck tickets for the event %s. Please check admin area.";
+    public static final String STUCK_TICKETS_SUBJECT = "warning: stuck tickets found";
 
-	private final EventRepository eventRepository;
+    private final EventRepository eventRepository;
+	private final OrganizationRepository organizationRepository;
     private final TicketRepository ticketRepository;
 	private final TicketReservationRepository ticketReservationRepository;
 	private final TicketCategoryRepository ticketCategoryRepository;
 	private final ConfigurationManager configurationManager;
     private final PaymentManager paymentManager;
     private final SpecialPriceRepository specialPriceRepository;
+    private final Mailer mailer;
+    private final TransactionRepository transactionRepository;
 
 	public static class NotEnoughTicketsException extends Exception {
 		
@@ -78,18 +82,25 @@ public class TicketReservationManager {
 	
 	@Autowired
 	public TicketReservationManager(EventRepository eventRepository,
-                                    TicketRepository ticketRepository, TicketReservationRepository ticketReservationRepository,
+                                    OrganizationRepository organizationRepository,
+                                    TicketRepository ticketRepository,
+                                    TicketReservationRepository ticketReservationRepository,
                                     TicketCategoryRepository ticketCategoryRepository,
                                     ConfigurationManager configurationManager,
                                     PaymentManager paymentManager,
-                                    SpecialPriceRepository specialPriceRepository) {
+                                    SpecialPriceRepository specialPriceRepository,
+                                    TransactionRepository transactionRepository,
+                                    Mailer mailer) {
 		this.eventRepository = eventRepository;
-		this.ticketRepository = ticketRepository;
+        this.organizationRepository = organizationRepository;
+        this.ticketRepository = ticketRepository;
 		this.ticketReservationRepository = ticketReservationRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.configurationManager = configurationManager;
         this.paymentManager = paymentManager;
         this.specialPriceRepository = specialPriceRepository;
+        this.mailer = mailer;
+        this.transactionRepository = transactionRepository;
     }
 	
     /**
@@ -213,6 +224,36 @@ public class TicketReservationManager {
 		ticketRepository.freeFromReservation(expiredReservationIds);
 		ticketReservationRepository.remove(expiredReservationIds);
 	}
+
+    /**
+     * Finds all the reservations that are "stuck" in payment status.
+     * This could happen when there is an internal error after a successful credit card charge.
+     *
+     * @param expirationDate expiration date
+     */
+    public void markExpiredInPaymentReservationAsStuck(Date expirationDate) {
+        final List<String> stuckReservations = ticketReservationRepository.findStuckReservations(expirationDate);
+        stuckReservations.forEach(reservationId -> ticketReservationRepository.updateTicketStatus(reservationId, TicketReservationStatus.STUCK.name()));
+        stuckReservations.stream()
+                .map(id -> ticketRepository.findTicketsInReservation(id).stream().findFirst())
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .mapToInt(Ticket::getEventId)
+                .distinct()
+                .mapToObj(eventRepository::findById)
+                .map(e -> Pair.of(e, organizationRepository.getById(e.getOrganizationId())))
+                .forEach(pair -> mailer.send(pair.getRight().getEmail(),
+                                    STUCK_TICKETS_SUBJECT,
+                                    String.format(STUCK_TICKETS_MSG, pair.getLeft().getShortName()),
+                                    Optional.empty())
+                );
+    }
+
+    public List<TicketWithStatistic> loadModifiedTickets(int eventId, int categoryId) {
+        return ticketRepository.findAllModifiedTickets(eventId, categoryId).stream()
+                .map(t -> new TicketWithStatistic(t, ticketReservationRepository.findReservationById(t.getTicketsReservationId()), optionally(() -> transactionRepository.loadByReservationId(t.getTicketsReservationId()))))
+                .collect(Collectors.toList());
+    }
 	
 	private int totalFrom(List<Ticket> tickets) {
     	return tickets.stream().mapToInt(Ticket::getPaidPriceInCents).sum();

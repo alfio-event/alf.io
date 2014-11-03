@@ -98,6 +98,10 @@ public class Ticket {
     	String code = StringUtils.join(new String[]{ticketsReservationId , uuid, fullName, email}, '/');
 		return uuid + '/' + hmacSHA256Base64(eventKey, code);
     }
+
+    public boolean hasBeenSold() {
+        return status == TicketStatus.ACQUIRED || status == TicketStatus.CANCELLED || status == TicketStatus.CHECKED_IN;
+    }
     
     private static String hmacSHA256Base64(String key, String code) {
     	try {

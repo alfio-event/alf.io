@@ -44,6 +44,9 @@ public interface TicketReservationRepository {
 	@Query("select id from tickets_reservation where validity < :date and status = 'PENDING'")
 	List<String> findExpiredReservation(@Bind("date") Date date);
 
+    @Query("select id from tickets_reservation where validity < :date and status = 'IN_PAYMENT'")
+    List<String> findStuckReservations(@Bind("date") Date date);
+
 	@Query("delete from tickets_reservation where id in (:ids)")
 	int remove(@Bind("ids") List<String> ids);
 }

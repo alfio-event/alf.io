@@ -17,18 +17,15 @@
 package io.bagarino.model;
 
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
 import java.util.Date;
 
-import lombok.Getter;
-
-//TODO: add in the admin tool the possibility to handle reservation that are stuck in the IN_PAYMENT status.
-//      They can be caused if the database goes down just after the payment has been ACK by stripes.
 @Getter
 public class TicketReservation {
 
 	public enum TicketReservationStatus {
-		PENDING, IN_PAYMENT, COMPLETE
+		PENDING, IN_PAYMENT, COMPLETE, STUCK
 	}
 
 	private final String id;
@@ -50,4 +47,8 @@ public class TicketReservation {
 		this.email = email;
 		this.billingAddress = billingAddress;
 	}
+
+    public boolean isStuck() {
+        return status == TicketReservationStatus.STUCK;
+    }
 }
