@@ -132,7 +132,7 @@
                     </thead>
                     <tbody>
                         <tr data-ng-repeat="ticket in ::ticketCategory.tickets">
-                            <td data-ng-class-even="'active'">{{::ticket.status}}</td>
+                            <td data-ng-class-even="'active'"><i data-ng-class="evaluateTicketStatus(ticket.status)"></i></td>
                             <td data-ng-class-even="'active'">{{::ticket.uuid}}</td>
                             <td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
                             <td data-ng-class-even="'active'">{{::ticket.fullName}}</td>

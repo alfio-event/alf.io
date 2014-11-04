@@ -306,6 +306,23 @@
             category.isTicketViewExpanded = !category.isTicketViewExpanded;
         };
 
+        $scope.evaluateTicketStatus = function(status) {
+            var cls = 'fa ';
+
+            switch(status) {
+                case 'PENDING':
+                    return cls + 'fa-warning text-warning';
+                case 'ACQUIRED':
+                    return cls + 'fa-bookmark text-success';
+                case 'CHECKED_IN':
+                    return cls + 'fa-check-circle text-success';
+                case 'CANCELLED':
+                    return cls + 'fa-close text-danger';
+            }
+
+            return cls + 'fa-cog';
+        };
+
         $scope.isPending = function(token) {
             return token.status === 'WAITING';
         };
