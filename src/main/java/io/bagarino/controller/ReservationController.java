@@ -220,8 +220,10 @@ public class ReservationController {
 			model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
 
 			return "/event/reservation-page-complete";
-		} else { // reservation status is in payment.
-			throw new IllegalStateException();// FIXME
+		} else { // reservation status has status IN_PAYMENT or STUCK.
+			model.addAttribute("reservation", reservation.get());
+			model.addAttribute("organizer", organizationRepository.getById(event.get().getOrganizationId()));
+			return "/event/reservation-page-error-status";
 		}
 	}
 
