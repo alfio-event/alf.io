@@ -16,6 +16,7 @@
  */
 package io.bagarino.model.modification;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.bagarino.model.SpecialPrice;
 import io.bagarino.model.TicketCategory;
 import io.bagarino.util.MonetaryUtil;
@@ -28,15 +29,19 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+import static java.util.stream.Collectors.toList;
+
 @Getter
 public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWithStatistic> {
 
     @Delegate
+    @JsonIgnore
     private final TicketCategory ticketCategory;
     private final int soldTickets;
     private final BigDecimal soldTicketsPercent;
     private final List<TicketWithStatistic> tickets;
     private final List<SpecialPrice> tokenStatus;
+    @JsonIgnore
     private final ZoneId eventZoneId;
 
     public TicketCategoryWithStatistic(TicketCategory ticketCategory,
@@ -44,8 +49,8 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
                                        List<SpecialPrice> tokenStatus,
                                        ZoneId eventZoneId) {
         this.ticketCategory = ticketCategory;
-        this.tickets = tickets;
-        this.soldTickets = (int) tickets.stream().filter(TicketWithStatistic::hasBeenSold).count();
+        this.tickets = tickets.stream().filter(tc -> tc.hasBeenSold() || tc.isStuck()).collect(toList());
+        this.soldTickets = (int) this.tickets.stream().filter(TicketWithStatistic::hasBeenSold).count();
         this.tokenStatus = tokenStatus;
         this.eventZoneId = eventZoneId;
         this.soldTicketsPercent = calcSoldTicketsPercent(ticketCategory, soldTickets);
@@ -69,6 +74,10 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
 
     public boolean isContainingStuckTickets() {
         return tickets.stream().anyMatch(TicketWithStatistic::isStuck);
+    }
+
+    public boolean isContainingTickets() {
+        return !tickets.isEmpty();
     }
 
     @Override

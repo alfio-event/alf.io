@@ -290,12 +290,20 @@
             }
         };
 
-        $scope.isCollapsed = function(category) {
+        $scope.isTokenViewCollapsed = function(category) {
             return !category.isTokenViewExpanded;
         };
 
-        $scope.toggleCollapse = function(category) {
+        $scope.isTicketViewCollapsed = function(category) {
+            return !category.isTicketViewExpanded;
+        };
+
+        $scope.toggleTokenViewCollapse = function(category) {
             category.isTokenViewExpanded = !category.isTokenViewExpanded;
+        };
+
+        $scope.toggleTicketViewCollapse = function(category) {
+            category.isTicketViewExpanded = !category.isTicketViewExpanded;
         };
 
         $scope.isPending = function(token) {

@@ -12,10 +12,11 @@
     });
 
     filters.filter('formatDate' , function() {
-        return function(dateAsString) {
+        return function(dateAsString, pattern) {
+            var formatPattern = angular.isDefined(pattern) ? pattern : 'DD.MM.YYYY HH:mm';
             var date = moment(dateAsString);
             if(date.isValid()) {
-                return date.format('DD.MM.YYYY HH:mm');
+                return date.format(formatPattern);
             }
             return dateAsString;
         };

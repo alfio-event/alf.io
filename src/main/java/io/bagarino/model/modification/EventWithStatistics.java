@@ -16,6 +16,7 @@
  */
 package io.bagarino.model.modification;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.bagarino.model.Event;
 import lombok.Getter;
 import lombok.experimental.Delegate;
@@ -29,6 +30,7 @@ public class EventWithStatistics {
     public static final DateTimeFormatter JSON_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm");
 
     @Delegate
+    @JsonIgnore
     private final Event event;
     private final List<TicketCategoryWithStatistic> ticketCategories;
 

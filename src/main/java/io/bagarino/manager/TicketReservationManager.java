@@ -250,8 +250,10 @@ public class TicketReservationManager {
     }
 
     public List<TicketWithStatistic> loadModifiedTickets(int eventId, int categoryId) {
+        Event event = eventRepository.findById(eventId);
         return ticketRepository.findAllModifiedTickets(eventId, categoryId).stream()
-                .map(t -> new TicketWithStatistic(t, ticketReservationRepository.findReservationById(t.getTicketsReservationId()), optionally(() -> transactionRepository.loadByReservationId(t.getTicketsReservationId()))))
+                .map(t -> new TicketWithStatistic(t, ticketReservationRepository.findReservationById(t.getTicketsReservationId()),
+                        event.getZoneId(), optionally(() -> transactionRepository.loadByReservationId(t.getTicketsReservationId()))))
                 .collect(Collectors.toList());
     }
 	

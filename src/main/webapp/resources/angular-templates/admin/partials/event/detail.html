@@ -79,21 +79,21 @@
             </div>
             <div class="row">
                 <div class="col-sm-4">
-                    <h4>{{ticketCategory.name}}</h4>
-                    <h5 class="text-muted">{{ticketCategory.description}}</h5>
+                    <h4>{{::ticketCategory.name}}</h4>
+                    <h5 class="text-muted">{{::ticketCategory.description}}</h5>
                 </div>
                 <div class="col-sm-6">
                     <div class="row">
                         <div class="col-sm-4"><strong>Available seats</strong></div>
-                        <div class="col-sm-8">{{ticketCategory.maxTickets}}</div>
+                        <div class="col-sm-8">{{::ticketCategory.maxTickets}}</div>
                     </div>
                     <div class="row">
                         <div class="col-sm-4"><strong>Initial sale date</strong></div>
-                        <div class="col-sm-8">{{ticketCategory.formattedInception | formatDate}} </div>
+                        <div class="col-sm-8">{{::ticketCategory.formattedInception | formatDate}} </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-4"><strong>End sale date</strong></div>
-                        <div class="col-sm-8">{{ticketCategory.formattedExpiration | formatDate}} </div>
+                        <div class="col-sm-8">{{::ticketCategory.formattedExpiration | formatDate}} </div>
                     </div>
                     <div class="row" data-ng-if="!event.freeOfCharge">
                         <div class="col-sm-4"><strong>Final price</strong></div>
@@ -109,17 +109,52 @@
                     <bar data-ng-if="ticketCategory.notSoldTickets > 0" type="danger" value="ticketCategory.notSoldTicketsPercent">{{ticketCategory.notSoldTickets}}</bar>
                 </progress>
             </div>
-            <div class="col-sm-4">sold: {{ticketCategory.soldTickets}}, available: {{ticketCategory.notSoldTickets}}</div>
+            <div class="col-sm-4">sold: {{::ticketCategory.soldTickets}}, available: {{::ticketCategory.notSoldTickets}}</div>
+        </div>
+        <div data-ng-if="ticketCategory.containingTickets">
+            <div class="wMarginBottom">
+                <button class="btn btn-default" data-ng-click="toggleTicketViewCollapse(ticketCategory)">
+                    <span data-ng-if="isTicketViewCollapsed(ticketCategory)">show</span><span data-ng-if="!isTicketViewCollapsed(ticketCategory)">hide</span> tickets
+                </button>
+            </div>
+            <div class="wMarginBottom table-responsive" data-collapse="isTicketViewCollapsed(ticketCategory)">
+                <table class="table">
+                    <thead>
+                        <th>status</th>
+                        <th>id</th>
+                        <th>timestamp</th>
+                        <th>Owner's name</th>
+                        <th>Owner's e-mail</th>
+                        <th>Customer's name</th>
+                        <th>Customer's e-mail</th>
+                        <th>transaction id</th>
+                        <th>transaction timestamp</th>
+                    </thead>
+                    <tbody>
+                        <tr data-ng-repeat="ticket in ::ticketCategory.tickets">
+                            <td data-ng-class-even="'active'">{{::ticket.status}}</td>
+                            <td data-ng-class-even="'active'">{{::ticket.uuid}}</td>
+                            <td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
+                            <td data-ng-class-even="'active'">{{::ticket.fullName}}</td>
+                            <td data-ng-class-even="'active'">{{::ticket.email}}</td>
+                            <td data-ng-class-even="'active'">{{::ticket.ticketReservation.fullName}}</td>
+                            <td data-ng-class-even="'active'">{{::ticket.ticketReservation.email}}</td>
+                            <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
+                            <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
         <div data-ng-if="ticketCategory.accessRestricted">
             <div class="wMarginBottom">
-                <button class="btn btn-default" data-ng-click="toggleCollapse(ticketCategory)">
-                    <span data-ng-if="isCollapsed(ticketCategory)">show</span><span data-ng-if="!isCollapsed(ticketCategory)">hide</span> tokens
+                <button class="btn btn-default" data-ng-click="toggleTokenViewCollapse(ticketCategory)">
+                    <span data-ng-if="isTokenViewCollapsed(ticketCategory)">show</span><span data-ng-if="!isTokenViewCollapsed(ticketCategory)">hide</span> tokens
                 </button>
             </div>
-            <div class="wMarginBottom" data-collapse="isCollapsed(ticketCategory)">
+            <div class="wMarginBottom" data-collapse="isTokenViewCollapsed(ticketCategory)">
                 <div class="row">
-                    <div class="col-sm-2" data-ng-repeat="token in ticketCategory.tokenStatus"><i class="status-icon" data-ng-class="evaluateClass(token)"></i> {{token.code}}</div>
+                    <div class="col-sm-2" data-ng-repeat="token in ::ticketCategory.tokenStatus"><i class="status-icon" data-ng-class="evaluateClass(token)"></i> {{::token.code}}</div>
                 </div>
             </div>
         </div>

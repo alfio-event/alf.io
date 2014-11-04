@@ -23,19 +23,28 @@ import io.bagarino.model.transaction.Transaction;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 @Getter
 public class TicketWithStatistic {
     @Delegate
+    @JsonIgnore
     private final Ticket ticket;
     private final TicketReservation ticketReservation;
     @JsonIgnore
-    private final Optional<Transaction> transaction;
+    private final ZoneId zoneId;
+    @JsonIgnore
+    private final Optional<Transaction> tx;
 
-    public TicketWithStatistic(Ticket ticket, TicketReservation ticketReservation, Optional<Transaction> transaction) {
+    public TicketWithStatistic(Ticket ticket,
+                               TicketReservation ticketReservation,
+                               ZoneId zoneId,
+                               Optional<Transaction> tx) {
         this.ticket = ticket;
         this.ticketReservation = ticketReservation;
-        this.transaction = transaction;
+        this.zoneId = zoneId;
+        this.tx = tx;
     }
 
     public boolean isStuck() {
@@ -43,11 +52,19 @@ public class TicketWithStatistic {
     }
 
     public boolean isPaid() {
-        return transaction.isPresent();
+        return tx.isPresent();
     }
 
     public Transaction getTransaction() {
-        return transaction.get();
+        return tx.orElse(null);
+    }
+
+    public LocalDateTime getTransactionTimestamp() {
+        return tx.map(Transaction::getTimestamp).map(d -> d.withZoneSameInstant(zoneId).toLocalDateTime()).orElse(null);
+    }
+
+    public LocalDateTime getTimestamp() {
+        return ticket.getCreation().withZoneSameInstant(zoneId).toLocalDateTime();
     }
 
 }
