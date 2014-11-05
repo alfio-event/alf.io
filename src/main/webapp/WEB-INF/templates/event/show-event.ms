@@ -113,7 +113,7 @@
 	</ul>
 	
 	{{#hasAccessRestrictedCategory}}
-		<div class="form-inline" style="text-align:center">
+		<div class="form-inline wMarginBottom" style="text-align:center">
 			<label>Apply promotional code: <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label> <button class="btn btn-default" type="button" id="apply-promo-codes">Apply</button>
 		</div>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>

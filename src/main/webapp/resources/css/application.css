@@ -62,3 +62,7 @@ p.ticket-info {
 .ticket-category-restricted-true {
 	background-color: #F5F5DC
 }
+
+.wMarginBottom {
+    margin-bottom: 20px;
+}
