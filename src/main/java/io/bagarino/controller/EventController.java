@@ -145,7 +145,8 @@ public class EventController {
 			.addAttribute("amountOfTickets", IntStream.rangeClosed(0, configurationManager.getIntConfigValue(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5)).toArray())//
 			.addAttribute("hasAccessRestrictedCategory", ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(ev.getId()).intValue() > 0)
 			.addAttribute("promoCode", promoCode)
-			.addAttribute("locationDescriptor", ld);
+			.addAttribute("locationDescriptor", ld)
+            .addAttribute("forwardButtonDisabled", t.stream().noneMatch(SaleableTicketCategory::getSaleable));
 		model.asMap().putIfAbsent("hasErrors", false);//
 		return "/event/show-event";
 	}

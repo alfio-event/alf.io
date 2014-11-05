@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 public class Event {
     private final int id;
     private final String shortName;
+    private final String websiteUrl;
     private final String description;
     private final String location;
     private final String latitude;
@@ -63,6 +64,7 @@ public class Event {
                  @Column("start_ts") ZonedDateTime begin,
                  @Column("end_ts") ZonedDateTime end,
                  @Column("time_zone") String timeZone,
+                 @Column("website_url") String websiteUrl,
                  @Column("regular_price_cts") int regularPriceInCents,
                  @Column("currency") String currency,
                  @Column("available_seats") int availableSeats,
@@ -71,6 +73,7 @@ public class Event {
                  @Column("allowed_payment_proxies") String allowedPaymentProxies,
                  @Column("private_key") String privateKey,
                  @Column("org_id") int organizationId) {
+        this.websiteUrl = websiteUrl;
 
         final ZoneId zoneId = TimeZone.getTimeZone(timeZone).toZoneId();
         this.id = id;

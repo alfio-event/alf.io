@@ -274,7 +274,7 @@ public class EventManager {
         TimeZone tz = locationManager.getTimezone(coordinates);
         String timeZone = tz.getID();
         ZoneId zoneId = tz.toZoneId();
-        return eventRepository.insert(em.getDescription(), em.getShortName(), em.getLocation(),
+        return eventRepository.insert(em.getDescription(), em.getShortName(), em.getWebsiteUrl(), em.getLocation(),
                 coordinates.getLeft(), coordinates.getRight(), em.getBegin().toZonedDateTime(zoneId), em.getEnd().toZonedDateTime(zoneId),
                 timeZone, actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
                 privateKey, em.getOrganizationId()).getValue();
@@ -300,7 +300,7 @@ public class EventManager {
         TimeZone tz = locationManager.getTimezone(coordinates);
         String timeZone = tz.getID();
         ZoneId zoneId = tz.toZoneId();
-        eventRepository.update(id, em.getDescription(), em.getShortName(), em.getLocation(),
+        eventRepository.update(id, em.getDescription(), em.getShortName(), em.getWebsiteUrl(), em.getLocation(),
                 coordinates.getLeft(), coordinates.getRight(), em.getBegin().toZonedDateTime(zoneId), em.getEnd().toZonedDateTime(zoneId),
                 timeZone, actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies, em.getOrganizationId());
 

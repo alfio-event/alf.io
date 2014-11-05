@@ -76,7 +76,7 @@ public class EventRepositoryTest {
         ZonedDateTime beginEventDate = ZonedDateTime.of(2015, 4, 18, 0, 0, 0, 0, ZoneId.of("America/New_York"));
         ZonedDateTime endEventDate = ZonedDateTime.of(2015, 4, 19, 23, 59, 59, 0, ZoneId.of("America/New_York"));
 
-        Pair<Integer, Integer> pair = eventRepository.insert("test from unit test", "unittest", "Lugano", "9", "8", beginEventDate, endEventDate, NEW_YORK_TZ, 0, "CHF", 4, true, new BigDecimal(1), "", "", 0);
+        Pair<Integer, Integer> pair = eventRepository.insert("test from unit test", "unittest","http://localhost:8080/", "Lugano", "9", "8", beginEventDate, endEventDate, NEW_YORK_TZ, 0, "CHF", 4, true, new BigDecimal(1), "", "", 0);
         Event e = eventRepository.findById(pair.getValue());
         assertNotNull("Event not found in DB", e);
 

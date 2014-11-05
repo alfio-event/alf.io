@@ -26,6 +26,10 @@
                     <label for="description">Event Description</label>
                     <textarea data-ng-model="event.description" name="description" id="description" required class="form-control" data-minlength="10"></textarea>
                     <field-error data-form-obj="editEvent" data-field-obj="editEvent.description" data-min-char="10"></field-error>
+
+                    <label for="websiteUrl">Website URL</label>
+                    <input type="url" data-ng-model="event.websiteUrl" name="websiteUrl" id="websiteUrl" required class="form-control" />
+                    <field-error data-form-obj="editEvent" data-field-obj="editEvent.websiteUrl"></field-error>
                 </div>
                 <div class="form-group">
                     <label for="date">Event Date</label>

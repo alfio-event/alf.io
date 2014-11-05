@@ -77,6 +77,11 @@
                     <button class="btn btn-danger" data-ng-click="moveOrphans(ticketCategory, targetCategoryId, event.id)">apply</button>
                 </div>
             </div>
+            <div class="alert alert-warning" data-ng-if="ticketCategory.containingStuckTickets">
+                <div class="container">
+                    <i class="fa fa-warning"></i> This category contains tickets that have been paid but not yet confirmed. This is usually due to a Database failure after a successful payment. Please fix them.
+                </div>
+            </div>
             <div class="row">
                 <div class="col-sm-4">
                     <h4>{{::ticketCategory.name}}</h4>
