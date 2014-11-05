@@ -25,7 +25,10 @@ import lombok.experimental.Delegate;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.function.Function;
+
 @Getter
 public class TicketWithStatistic {
     @Delegate
@@ -36,6 +39,7 @@ public class TicketWithStatistic {
     private final ZoneId zoneId;
     @JsonIgnore
     private final Optional<Transaction> tx;
+    private final Function<ZonedDateTime, LocalDateTime> dateMapper;
 
     public TicketWithStatistic(Ticket ticket,
                                TicketReservation ticketReservation,
@@ -45,6 +49,7 @@ public class TicketWithStatistic {
         this.ticketReservation = ticketReservation;
         this.zoneId = zoneId;
         this.tx = tx;
+        this.dateMapper = d -> d.withZoneSameInstant(this.zoneId).toLocalDateTime();
     }
 
     public boolean isStuck() {
@@ -60,11 +65,11 @@ public class TicketWithStatistic {
     }
 
     public LocalDateTime getTransactionTimestamp() {
-        return tx.map(Transaction::getTimestamp).map(d -> d.withZoneSameInstant(zoneId).toLocalDateTime()).orElse(null);
+        return tx.map(Transaction::getTimestamp).map(dateMapper).orElse(null);
     }
 
     public LocalDateTime getTimestamp() {
-        return ticket.getCreation().withZoneSameInstant(zoneId).toLocalDateTime();
+        return Optional.ofNullable(ticketReservation.getConfirmationTimestamp()).map(dateMapper).orElse(null);
     }
 
 }

@@ -19,6 +19,7 @@ package io.bagarino.model;
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 @Getter
@@ -33,20 +34,24 @@ public class TicketReservation {
 	private final TicketReservationStatus status;
 	private final String fullName;
 	private final String email;
-	private final String billingAddress; 
+	private final String billingAddress;
+    private final ZonedDateTime confirmationTimestamp;
 	
-	public TicketReservation(@Column("id") String id, @Column("validity") Date validity,
-			@Column("status") TicketReservationStatus status,
-			@Column("full_name") String fullName,
-			@Column("email_address") String email,
-			@Column("billing_address") String billingAddress) {
+	public TicketReservation(@Column("id") String id,
+                             @Column("validity") Date validity,
+                             @Column("status") TicketReservationStatus status,
+                             @Column("full_name") String fullName,
+                             @Column("email_address") String email,
+                             @Column("billing_address") String billingAddress,
+                             @Column("confirmation_ts") ZonedDateTime confirmationTimestamp) {
 		this.id = id;
 		this.validity = validity;
 		this.status = status;
 		this.fullName = fullName;
 		this.email = email;
 		this.billingAddress = billingAddress;
-	}
+        this.confirmationTimestamp = confirmationTimestamp;
+    }
 
     public boolean isStuck() {
         return status == TicketReservationStatus.STUCK;

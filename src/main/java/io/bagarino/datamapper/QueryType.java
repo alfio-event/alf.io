@@ -173,7 +173,7 @@ public enum QueryType {
 		for (int i = 0; i < args.length; i++) {
 			String name = parameterName(parameterAnnotations[i]);
             if(name != null) {
-                if(ZonedDateTime.class.isAssignableFrom(parameterTypes[i])) {
+                if(args[i] != null && ZonedDateTime.class.isAssignableFrom(parameterTypes[i])) {
                     ZonedDateTime dateTime = ZonedDateTime.class.cast(args[i]);
                     final ZonedDateTime utc = dateTime.withZoneSameInstant(ZoneId.of("UTC"));
                     Calendar c = Calendar.getInstance();

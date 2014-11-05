@@ -206,6 +206,9 @@ public class ConstructorAnnotationRowMapper<T> implements RowMapper<T> {
 
         public Object getObject(ResultSet rs) throws SQLException {
             Timestamp timestamp = rs.getTimestamp(name, Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+            if(timestamp == null) {
+                return null;
+            }
             return ZonedDateTime.ofInstant(timestamp.toInstant(), ZoneId.of("UTC"));
         }
     }

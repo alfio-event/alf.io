@@ -21,6 +21,7 @@ import io.bagarino.datamapper.Query;
 import io.bagarino.datamapper.QueryRepository;
 import io.bagarino.model.TicketReservation;
 
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -30,10 +31,10 @@ public interface TicketReservationRepository {
 	@Query("insert into tickets_reservation(id, validity, status) values (:id, :validity, 'PENDING')")
 	int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity);
 
-	@Query("update tickets_reservation set status = :status, full_name = :fullName, email_address = :email, billing_address = :billingAddress where id = :reservationId")
+	@Query("update tickets_reservation set status = :status, full_name = :fullName, email_address = :email, billing_address = :billingAddress, confirmation_ts = :timestamp where id = :reservationId")
 	int updateTicketReservation(@Bind("reservationId") String reservationId, @Bind("status") String status,
 			@Bind("email") String email, @Bind("fullName") String fullName,
-			@Bind("billingAddress") String billingAddress);
+			@Bind("billingAddress") String billingAddress, @Bind("timestamp") ZonedDateTime timestamp);
 	
 	@Query("update tickets_reservation set status = :status where id = :reservationId")
 	int updateTicketStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
