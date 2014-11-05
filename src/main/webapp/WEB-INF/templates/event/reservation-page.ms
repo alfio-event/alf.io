@@ -115,13 +115,13 @@
 	<div class="row">
 		<div class="col-md-4">
 			<div class="form-group">
-				<label>{{#i18n}}reservation-page.expiration-month{{/i18n}}</label>
+				<label for="card-mm">{{#i18n}}reservation-page.expiration-month{{/i18n}}</label>
 				<input type="text" class="form-control" placeholder="MM" size="2" data-stripe="exp-month" required class="form-control" maxlength="2" autocomplete="off" id="card-mm" pattern="\d+">
 			</div>
 		</div>
 		<div class="col-md-4">
 			<div class="form-group">
-				<label>{{#i18n}}reservation-page.expiration-year{{/i18n}}</label>
+				<label for="card-yyyy">{{#i18n}}reservation-page.expiration-year{{/i18n}}</label>
 				<input type="text" class="form-control" placeholder="YYYY" size="4" data-stripe="exp-year" required class="form-control" maxlength="4" autocomplete="off" id="card-yyyy" pattern="\d+">
 			</div>
 		</div>
