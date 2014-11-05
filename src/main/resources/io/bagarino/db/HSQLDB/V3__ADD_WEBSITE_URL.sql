@@ -16,3 +16,4 @@
 --
 
 alter table event add column website_url varchar(2048) DEFAULT '' NOT null;
+alter table event add column website_t_c_url varchar(2048) DEFAULT '' NOT null;

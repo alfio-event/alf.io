@@ -42,6 +42,7 @@ public class EventModification {
 
     private final Integer id;
     private final String websiteUrl;
+    private final String termsAndConditionsUrl;
     private final String shortName;
     private final int organizationId;
     private final String location;
@@ -61,6 +62,7 @@ public class EventModification {
     @JsonCreator
     public EventModification(@JsonProperty("id") Integer id,
                              @JsonProperty("websiteUrl") String websiteUrl,
+                             @JsonProperty("termsAndConditionsUrl") String termsAndConditionsUrl,
                              @JsonProperty("shortName") String shortName,
                              @JsonProperty("organizationId") int organizationId,
                              @JsonProperty("location") String location,
@@ -78,6 +80,7 @@ public class EventModification {
                              @JsonProperty("geoLocation") LocationDescriptor locationDescriptor) {
         this.id = id;
         this.websiteUrl = websiteUrl;
+        this.termsAndConditionsUrl = termsAndConditionsUrl;
         this.shortName = shortName;
         this.organizationId = organizationId;
         this.location = location;
@@ -107,6 +110,7 @@ public class EventModification {
         final ZoneId zoneId = event.getZoneId();
         return new EventModification(event.getId(),
                 event.getWebsiteUrl(),
+                event.getTermAndConditionsUrl(),
                 event.getShortName(),
                 event.getOrganizationId(),
                 event.getLocation(),
