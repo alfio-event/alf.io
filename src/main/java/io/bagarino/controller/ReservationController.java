@@ -31,12 +31,14 @@ import io.bagarino.model.SpecialPrice.Status;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.model.modification.TicketReservationWithOptionalCodeModification;
+import io.bagarino.model.user.Organization;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.SpecialPriceRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 import lombok.Data;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -54,6 +56,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -248,8 +251,10 @@ public class ReservationController {
             return showReservationPage(eventName, reservationId, false, false, model);
         }
 
-        sendReservationCompleteEmail(request, eventOptional.get(),
-				ticketReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new));
+        //
+        TicketReservation reservation = ticketReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new);
+        sendReservationCompleteEmail(request, event,reservation);
+        sendReservationCompleteEmailToOrganizer(request, event, reservation);
 		//
 
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
@@ -275,21 +280,33 @@ public class ReservationController {
 
 	private void sendReservationCompleteEmail(HttpServletRequest request, Event event, TicketReservation reservation) {
 
+		String reservationTxt = templateManager.render("/io/bagarino/templates/confirmation-email-txt.ms", 
+				prepareModelForReservationEmail(event, reservation), request);
+		
+		mailer.send(reservation.getEmail(), messageSource.getMessage("reservation-email-subject",
+				new Object[] { event.getShortName() }, RequestContextUtils.getLocale(request)), reservationTxt,
+				Optional.empty());
+	}
+	
+	private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
+		Organization organization = organizationRepository.getById(event.getOrganizationId());
+		String reservationInfo = templateManager.render("/io/bagarino/templates/confirmation-email-for-organizer-txt.ms", 
+				prepareModelForReservationEmail(event, reservation), request);
+		
+		mailer.send(organization.getEmail(), "Reservation complete " + reservation.getId(), reservationInfo, Optional.empty());
+	}
+
+	private Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation) {
 		Map<String, Object> model = new HashMap<>();
 		model.put("organization", organizationRepository.getById(event.getOrganizationId()));
 		model.put("event", event);
 		model.put("ticketReservation", reservation);
 
 		OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservation.getId(), event);
+		model.put("tickets", ticketRepository.findTicketsInReservation(reservation.getId()));
 		model.put("orderSummary", orderSummary);
-
 		model.put("reservationUrl", ticketReservationManager.reservationUrl(reservation.getId()));
-
-		String reservationTxt = templateManager.render("/io/bagarino/templates/confirmation-email-txt.ms", model,
-				request);
-		mailer.send(reservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-				new Object[] { event.getShortName() }, RequestContextUtils.getLocale(request)), reservationTxt,
-				Optional.empty());
+		return model;
 	}
 
 	// step 1 : choose tickets
