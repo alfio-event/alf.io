@@ -23,3 +23,7 @@ alter table ticket add column phone_number varchar(255);
 alter table ticket add column address varchar(450);
 alter table ticket add column country varchar(255);
 alter table ticket add column tshirt_size varchar(32);
+
+
+-- event
+alter table event add column image_url varchar(2048);
