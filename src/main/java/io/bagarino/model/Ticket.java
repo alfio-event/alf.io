@@ -49,6 +49,7 @@ public class Ticket {
     private final String ticketsReservationId;
     private final String fullName;
     private final String email;
+    private final boolean lockedAssignment;
     
     public Ticket(@Column("id") int id,
                   @Column("uuid") String uuid,
@@ -60,7 +61,8 @@ public class Ticket {
                   @Column("paid_price_cts") int paidPriceInCents,
                   @Column("tickets_reservation_id") String ticketsReservationId,
                   @Column("full_name") String fullName,
-                  @Column("email_address") String email) {
+                  @Column("email_address") String email,
+                  @Column("locked_assignment") boolean lockedAssignment) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
@@ -72,10 +74,15 @@ public class Ticket {
         this.ticketsReservationId = ticketsReservationId;
         this.fullName = Optional.ofNullable(fullName).orElse("");
         this.email = Optional.ofNullable(email).orElse("");
+        this.lockedAssignment = lockedAssignment;
     }
     
     public boolean getAssigned() {
     	return StringUtils.isNotBlank(fullName) && StringUtils.isNotBlank(email);
+    }
+    
+    public boolean getLockedAssignment() {
+    	return lockedAssignment;
     }
 
     public BigDecimal getOriginalPrice() {

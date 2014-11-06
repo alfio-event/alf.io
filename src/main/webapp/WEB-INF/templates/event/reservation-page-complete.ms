@@ -46,7 +46,7 @@
 						<li> <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}" class="btn btn-link">{{#i18n}}reservation-page-complete.show-ticket{{/i18n}}</a>
 						<li> <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/download-ticket" class="btn btn-link">{{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a>
 						<li> <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/send-ticket-by-email" class="form-inline"><button type="submit" class="btn btn-link">{{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{email}}]{{/i18n}}</button><input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}"></form>
-						<li> <a href="#ticket-{{uuid}}" class="btn btn-link update-ticket-owner">{{#i18n}}reservation-page-complete.update-ticket-owner{{/i18n}}</a>
+						{{^lockedAssignment}}<li> <a href="#ticket-{{uuid}}" class="btn btn-link update-ticket-owner">{{#i18n}}reservation-page-complete.update-ticket-owner{{/i18n}}</a>{{/lockedAssignment}}
 					</ul>
 					
 				</div>

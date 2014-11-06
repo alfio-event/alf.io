@@ -45,6 +45,7 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -134,6 +135,8 @@ public class TicketController {
 		}
 		
 		Ticket t = oData.get().getRight();
+		
+		Validate.isTrue(!t.getLockedAssignment(), "cannot change a locked ticket");
 		
 		//TODO: validate email, fullname (not null, maxlength 255)
 		ticketRepository.updateTicketOwner(ticketIdentifier, updateTicketOwner.getEmail().trim(), updateTicketOwner.getFullName().trim());
