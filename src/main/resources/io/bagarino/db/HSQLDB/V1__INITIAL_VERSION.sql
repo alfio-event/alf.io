@@ -92,7 +92,7 @@ create table tickets_reservation(
 	status varchar(255) not null,
 	full_name varchar(255),
 	email_address varchar(255),
-	billing_address varchar(2048)
+	billing_address varchar(450)
 );
 -- constraints
 
