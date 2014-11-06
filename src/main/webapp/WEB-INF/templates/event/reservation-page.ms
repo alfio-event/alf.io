@@ -87,10 +87,7 @@
 		<input type="email" name="email" id="email" required class="form-control" autocomplete="email" maxlength="255" value="{{paymentForm.email}}">
 		{{#field-has-error}}[email]<span class="help-block text-danger">{{#i18n}}{{#field-error}}email{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
 	</div>
-	{{#orderSummary.free}}
-	<button type="submit" class="btn btn-primary pull-right" id="continue-button">{{#i18n}}reservation-page.continue{{/i18n}}</button>
-	<button type="submit" class="btn btn-info pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
-	{{/orderSummary.free}}
+
 	{{^orderSummary.free}}
 	
 	<div class="form-group {{#field-has-error}}[billingAddress] has-error{{/field-has-error}}">
@@ -132,11 +129,24 @@
 			</div>
 		</div>
 	</div>
-	
+
+	{{/orderSummary.free}}
+
+    <div class="checkbox">
+        <label>
+            <input type="checkbox" required name="termAndConditionsAccepted">
+			{{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
+        </label>
+    </div>
+	{{#orderSummary.free}}
+        <button type="submit" class="btn btn-primary pull-right" id="continue-button">{{#i18n}}reservation-page.continue{{/i18n}}</button>
+        <button type="submit" class="btn btn-info pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
+	{{/orderSummary.free}}
+	{{^orderSummary.free}}
 	<div class="form-group">
-		<button type="submit" class="btn btn-success pull-right" id="continue-button">{{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}</button>
-		<button type="submit" class="btn btn-info pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
-	</div>
+        <button type="submit" class="btn btn-success pull-right" id="continue-button">{{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}</button>
+        <button type="submit" class="btn btn-default pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
+    </div>
 	{{/orderSummary.free}}
  
  	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">

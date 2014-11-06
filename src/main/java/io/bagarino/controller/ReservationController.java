@@ -26,12 +26,8 @@ import io.bagarino.manager.TicketReservationManager.TotalPrice;
 import io.bagarino.manager.support.OrderSummary;
 import io.bagarino.manager.support.PaymentResult;
 import io.bagarino.manager.system.Mailer;
-import io.bagarino.model.Event;
-import io.bagarino.model.SpecialPrice;
+import io.bagarino.model.*;
 import io.bagarino.model.SpecialPrice.Status;
-import io.bagarino.model.Ticket;
-import io.bagarino.model.TicketCategory;
-import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.model.modification.TicketReservationWithOptionalCodeModification;
@@ -41,7 +37,6 @@ import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 import lombok.Data;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -58,28 +53,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
-
-
-
-
-
-
-
-
 import javax.servlet.http.HttpServletRequest;
-
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-
-
-
-
-
-
-
-
 
 import static io.bagarino.controller.ErrorsCode.STEP_2_ORDER_EXPIRED;
 import static io.bagarino.controller.ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR;
@@ -399,6 +377,7 @@ public class ReservationController {
 		private String fullName;
 		private String billingAddress;
 		private Boolean cancelReservation;
+		private Boolean termAndConditionsAccepted;
 
 		private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
 				String value, int maxLength) {
@@ -411,6 +390,10 @@ public class ReservationController {
 
 			if (reservationCost.getPriceWithVAT() > 0 && StringUtils.isBlank(stripeToken)) {
 				bindingResult.reject(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
+			}
+
+			if(Objects.isNull(termAndConditionsAccepted) || !termAndConditionsAccepted) {
+				bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
 			}
 			
 			email = StringUtils.trim(email);
