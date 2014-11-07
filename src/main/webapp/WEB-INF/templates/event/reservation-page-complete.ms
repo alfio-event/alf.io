@@ -83,7 +83,7 @@
 				<div class="form-group">
 					 <label class="col-sm-3 control-label" for="phone-number-{{uuid}}">{{#i18n}}reservation-page-complete.phone-number{{/i18n}}</label>
 					 <div class="col-sm-9">
-						<input type="text" name="phone-number" value="{{phoneNumber}}" id="phone-number-{{uuid}}" class="form-control"  maxlength="255">
+						<input type="tel" name="phoneNumber" value="{{phoneNumber}}" id="phone-number-{{uuid}}" class="form-control"  maxlength="255">
 					</div>
 				</div>
 				<div class="form-group">
@@ -95,7 +95,7 @@
 				<div class="form-group">
 					 <label class="col-sm-3 control-label" for="country-{{uuid}}">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
 					 <div class="col-sm-9">
-					 	<select  name="country" value="{{country}}" id="country-{{uuid}}" class="form-control">
+					 	<select name="country" value="{{country}}" id="country-{{uuid}}" class="form-control">
 					 		<option value=""></option>
 					 		{{#countries}}
 					 			<option value="{{left}}">{{right}}</option>
@@ -106,7 +106,7 @@
 				<div class="form-group">
 					 <label class="col-sm-3 control-label" for="t-shirt-size-{{uuid}}">{{#i18n}}reservation-page-complete.t-shirt-size{{/i18n}}</label>
 					 <div class="col-sm-9">
-					 	<select name="t-shirt-size" id="t-shirt-size-{{uuid}}" class="form-control">
+					 	<select name="tShirtSize" value="{{tshirtSize}}" id="t-shirt-size-{{uuid}}" class="form-control">
 					 		<option value=""></option>
 					 		<option value="SMALL">Small</option>
 					 		<option value="MEDIUM">Medium</option>

@@ -16,7 +16,15 @@
 		
 		$("[data-dismiss=alert]").click(function() {
 			$(this).parent().hide('medium');
-		})
+		});
+		
+		
+		$("select").map(function() {
+			
+			if($(this).attr('value').length > 0) {
+				$(this).find("option[value="+$(this).attr('value')+"]").attr('selected','selected');
+			}
+		});
 	});
 	
 	

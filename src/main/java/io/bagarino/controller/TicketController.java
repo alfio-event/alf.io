@@ -16,6 +16,7 @@
  */
 package io.bagarino.controller;
 
+import io.bagarino.controller.form.UpdateTicketOwnerForm;
 import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.manager.TicketReservationManager;
 import io.bagarino.manager.system.Mailer;
@@ -41,8 +42,6 @@ import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import lombok.Data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -139,12 +138,23 @@ public class TicketController {
 		Validate.isTrue(!t.getLockedAssignment(), "cannot change a locked ticket");
 		
 		//TODO: validate email, fullname (not null, maxlength 255)
-		ticketRepository.updateTicketOwner(ticketIdentifier, updateTicketOwner.getEmail().trim(), updateTicketOwner.getFullName().trim());
-
+		//TODO validate the others fields for size too.
+		String newEmail = updateTicketOwner.getEmail().trim();
+		String newFullName = updateTicketOwner.getFullName().trim();
+		ticketRepository.updateTicketOwner(ticketIdentifier, newEmail, newFullName);
 		//
-		sendTicketByEmail(eventName, reservationId, ticketIdentifier, request, response);
+		ticketRepository.updateOptionalTicketInfo(ticketIdentifier, updateTicketOwner.getJobTitle(), 
+				updateTicketOwner.getCompany(), 
+				updateTicketOwner.getPhoneNumber(), 
+				updateTicketOwner.getAddress(), 
+				updateTicketOwner.getCountry(), 
+				updateTicketOwner.getTShirtSize());
 		
-		if (StringUtils.isNotBlank(t.getEmail()) && !t.getEmail().equals(updateTicketOwner.getEmail().trim())) {
+		if (!newEmail.equals(t.getEmail()) || !newFullName.equals(t.getFullName())) {
+			sendTicketByEmail(eventName, reservationId, ticketIdentifier, request, response);
+		}
+		
+		if (!newEmail.equals(t.getEmail())) {
 			sendEmailForOwnerChange(updateTicketOwner.getEmail().trim(), oData.get().getLeft(), t, request);
 		}
 		
@@ -309,11 +319,5 @@ public class TicketController {
 		BitMatrix matrix = new MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, 200, 200, hintMap);
 		MatrixToImageWriter.writeToStream(matrix, "png", baos);
 		return baos.toByteArray();
-	}
-	
-	@Data
-	public static class UpdateTicketOwnerForm {
-		private String email;
-		private String fullName;
 	}
 }
