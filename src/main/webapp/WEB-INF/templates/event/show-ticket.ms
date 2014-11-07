@@ -1,7 +1,16 @@
 {{>/event/page-top}}
 <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}">{{#i18n}}show-ticket.go-back-to-reservation{{/i18n}}</a>
 
-<h1>{{event.shortName}}</h1>
+<div class="page-header">
+<h1>
+    	{{#event.imageIsPresent}}
+    		<img src="{{event.imageUrl}}" alt="{{event.shortName}}" class="img-responsive img-center">
+    	{{/event.imageIsPresent}}
+    	{{^event.imageIsPresent}}
+    		{{event.shortName}}
+    	{{/event.imageIsPresent}}
+</h1>
+</div>
 
 {{#ticketEmailSent}}
 <div class="alert alert-success alert-dismissible" role="alert">

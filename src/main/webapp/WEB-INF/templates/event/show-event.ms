@@ -1,7 +1,14 @@
 {{>/event/page-top}}
 
 <div class="page-header">
-    <h1>{{event.shortName}}</h1>
+    <h1>
+    	{{#event.imageIsPresent}}
+    		<img src="{{event.imageUrl}}" alt="{{event.shortName}}" class="img-responsive img-center">
+    	{{/event.imageIsPresent}}
+    	{{^event.imageIsPresent}}
+    		{{event.shortName}}
+    	{{/event.imageIsPresent}}
+    </h1>
 </div>
 <div class="row">
 	<div class="col-md-7">

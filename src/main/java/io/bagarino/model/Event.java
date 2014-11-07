@@ -158,5 +158,9 @@ public class Event {
     public boolean isFreeOfCharge() {
         return regularPriceInCents == 0;
     }
+    
+    public boolean getImageIsPresent() {
+    	return StringUtils.isNotBlank(imageUrl);
+    }
 
 }
