@@ -96,6 +96,7 @@
 					 <label class="col-sm-3 control-label" for="country-{{uuid}}">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
 					 <div class="col-sm-9">
 					 	<select  name="country" value="{{country}}" id="country-{{uuid}}" class="form-control">
+					 		<option value=""></option>
 					 		{{#countries}}
 					 			<option value="{{left}}">{{right}}</option>
 					 		{{/countries}}
@@ -106,6 +107,7 @@
 					 <label class="col-sm-3 control-label" for="t-shirt-size-{{uuid}}">{{#i18n}}reservation-page-complete.t-shirt-size{{/i18n}}</label>
 					 <div class="col-sm-9">
 					 	<select name="t-shirt-size" id="t-shirt-size-{{uuid}}" class="form-control">
+					 		<option value=""></option>
 					 		<option value="SMALL">Small</option>
 					 		<option value="MEDIUM">Medium</option>
 					 		<option value="LARGE">Large</option>
