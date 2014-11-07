@@ -16,7 +16,8 @@
  */
 package io.bagarino.controller;
 
-import io.bagarino.controller.decorator.SaleableTicketCategory;
+import io.bagarino.controller.form.PaymentForm;
+import io.bagarino.controller.form.ReservationForm;
 import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.manager.EventManager;
 import io.bagarino.manager.StripeManager;
@@ -27,9 +28,7 @@ import io.bagarino.manager.support.OrderSummary;
 import io.bagarino.manager.support.PaymentResult;
 import io.bagarino.manager.system.Mailer;
 import io.bagarino.model.*;
-import io.bagarino.model.SpecialPrice.Status;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
-import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.model.modification.TicketReservationWithOptionalCodeModification;
 import io.bagarino.model.user.Organization;
 import io.bagarino.repository.EventRepository;
@@ -37,8 +36,7 @@ import io.bagarino.repository.SpecialPriceRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
-import lombok.Data;
-import org.apache.commons.lang3.StringUtils;
+
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,24 +47,20 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.bagarino.controller.ErrorsCode.STEP_2_ORDER_EXPIRED;
 import static io.bagarino.controller.ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR;
 import static io.bagarino.manager.StripeManager.STRIPE_UNEXPECTED;
 import static io.bagarino.util.OptionalWrapper.optionally;
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
 
 @Controller
 public class ReservationController {
@@ -153,7 +147,8 @@ public class ReservationController {
 			@PathVariable("reservationId") String reservationId,
 			@RequestParam(value = "confirmation-email-sent", required = false, defaultValue = "false") boolean confirmationEmailSent,
 			@RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
-			Model model) {
+			Model model,
+			HttpServletRequest request) {
 
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
 		if (!event.isPresent()) {
@@ -184,6 +179,8 @@ public class ReservationController {
 
 			return "/event/reservation-page";
 		} else if (reservation.get().getStatus() == TicketReservationStatus.COMPLETE) {
+			
+			
 			model.addAttribute("reservationId", reservationId);
 			model.addAttribute("reservation", reservation.get());
 			model.addAttribute("confirmationEmailSent", confirmationEmailSent);
@@ -197,8 +194,10 @@ public class ReservationController {
 							.map((e) -> Pair.of(ticketCategoryRepository.getById(e.getKey(), event.get().getId()), e.getValue()))
 							.collect(Collectors.toList()));
 			model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
+			model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
 
 			return "/event/reservation-page-complete";
+			
 		} else { // reservation status has status IN_PAYMENT or STUCK.
 			model.addAttribute("reservation", reservation.get());
 			model.addAttribute("organizer", organizationRepository.getById(event.get().getOrganizationId()));
@@ -234,7 +233,7 @@ public class ReservationController {
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors())
 					.addAttribute("paymentForm", paymentForm);//
-			return showReservationPage(eventName, reservationId, false, false, model);
+			return showReservationPage(eventName, reservationId, false, false, model, request);
 		}
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getStripeToken(), event, reservationId, paymentForm.getEmail(),
                 paymentForm.getFullName(), paymentForm.getBillingAddress(), reservationCost);
@@ -246,7 +245,7 @@ public class ReservationController {
             model.addAttribute("error", bindingResult)
                     .addAttribute("hasErrors", bindingResult.hasErrors())
                     .addAttribute("paymentForm", paymentForm);
-            return showReservationPage(eventName, reservationId, false, false, model);
+            return showReservationPage(eventName, reservationId, false, false, model, request);
         }
 
         //
@@ -306,131 +305,12 @@ public class ReservationController {
 		model.put("reservationUrl", ticketReservationManager.reservationUrl(reservation.getId()));
 		return model;
 	}
-
-	// step 1 : choose tickets
-	@Data
-	public static class ReservationForm {
-
-		private String promoCode;
-		private List<TicketReservationModification> reservation;
-
-		private List<TicketReservationModification> selected() {
-			return ofNullable(reservation)
-					.orElse(emptyList())
-					.stream()
-					.filter((e) -> e != null && e.getAmount() != null && e.getTicketCategoryId() != null
-							&& e.getAmount() > 0).collect(toList());
-		}
-
-		private int selectionCount() {
-			return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
-		}
-
-		private Optional<List<TicketReservationWithOptionalCodeModification>> validate(BindingResult bindingResult, 
-				TicketReservationManager tickReservationManager, 
-				TicketRepository ticketRepository,
-				TicketCategoryRepository ticketCategoryRepository, 
-				EventManager eventManager, 
-				SpecialPriceRepository specialPriceRepository, 
-				Event event) {
-			int selectionCount = selectionCount();
-
-			if (selectionCount <= 0) {
-				bindingResult.reject(ErrorsCode.STEP_1_SELECT_AT_LEAST_ONE);
-				return Optional.empty();
-			}
-
-			final int maxAmountOfTicket = tickReservationManager.maxAmountOfTickets();
-
-			if (selectionCount > maxAmountOfTicket) {
-				bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM, new Object[] { maxAmountOfTicket }, null);
-			}
-
-			final List<TicketReservationModification> selected = selected();
-			final ZoneId eventZoneId = selected.stream().findFirst().map(r -> {
-				TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId(), event.getId());
-				return eventManager.findEventByTicketCategory(tc).getZoneId();
-			}).orElseThrow(IllegalStateException::new);
-			
-			
-			List<TicketReservationWithOptionalCodeModification> res = new ArrayList<>();
-			//
-			Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode)).flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
-			//
-			final ZonedDateTime now = ZonedDateTime.now(eventZoneId);
-			selected.forEach((r) -> {
-
-				TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId(), event.getId());
-				SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, ticketRepository.countUnsoldTicket(event.getId(), tc.getId()), maxAmountOfTicket);
-
-				if (!ticketCategory.getSaleable()) {
-					bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); //
-				}
-				
-				boolean canAccessRestrictedCategory = specialCode.isPresent() && specialCode.get().getStatus() == Status.FREE && specialCode.get().getTicketCategoryId() == ticketCategory.getId();
-				if(canAccessRestrictedCategory && r.getAmount().intValue() > 1) {
-					bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM_FOR_RESTRICTED_CATEGORY, new Object[] { 1, tc.getName() }, null);
-				}
-				
-				if (!canAccessRestrictedCategory && ticketCategory.isAccessRestricted()) {
-					bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED); //
-				}
-				
-				res.add(new TicketReservationWithOptionalCodeModification(r, canAccessRestrictedCategory && r.getAmount().intValue() == 1 ? specialCode : Optional.empty()));
-			});
-			
-			return bindingResult.hasErrors() ? Optional.empty() : Optional.of(res);
-		}
+	
+	private static List<Pair<String, String>> getLocalizedCountries(Locale locale) {
+		return Stream.of(Locale.getISOCountries())
+				.map(isoCode -> Pair.of(isoCode, new Locale("", isoCode).getDisplayCountry(locale)))
+				.sorted(Comparator.comparing(Pair::getRight))
+				.collect(Collectors.toList());
 	}
 
-	// step 2 : payment/claim tickets
-	//
-	@Data
-	public static class PaymentForm {
-		private String stripeToken;
-		private String email;
-		private String fullName;
-		private String billingAddress;
-		private Boolean cancelReservation;
-		private Boolean termAndConditionsAccepted;
-
-		private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
-				String value, int maxLength) {
-			if (value != null && value.length() > maxLength) {
-				bindingResult.rejectValue(field, errorCode);
-			}
-		}
-
-		private void validate(BindingResult bindingResult, TotalPrice reservationCost) {
-
-			if (reservationCost.getPriceWithVAT() > 0 && StringUtils.isBlank(stripeToken)) {
-				bindingResult.reject(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
-			}
-
-			if(Objects.isNull(termAndConditionsAccepted) || !termAndConditionsAccepted) {
-				bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
-			}
-			
-			email = StringUtils.trim(email);
-			fullName = StringUtils.trim(fullName);
-			billingAddress = StringUtils.trim(billingAddress);
-
-			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "email", ErrorsCode.STEP_2_EMPTY_EMAIL);
-			rejectIfOverLength(bindingResult, "email", ErrorsCode.STEP_2_MAX_LENGTH_EMAIL, email, 255);
-
-			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "fullName", ErrorsCode.STEP_2_EMPTY_FULLNAME);
-			rejectIfOverLength(bindingResult, "fullName", ErrorsCode.STEP_2_MAX_LENGTH_FULLNAME, fullName, 255);
-
-			rejectIfOverLength(bindingResult, "billingAddress", ErrorsCode.STEP_2_MAX_LENGTH_BILLING_ADDRESS,
-					billingAddress, 450);
-
-			if (email != null && !email.contains("@") && !bindingResult.hasFieldErrors("email")) {
-				bindingResult.rejectValue("email", ErrorsCode.STEP_2_INVALID_EMAIL);
-			}
-		}
-
-		public Boolean shouldCancelReservation() {
-			return Optional.ofNullable(cancelReservation).orElse(false);
-		}
-	}
 }

@@ -50,6 +50,13 @@ public class Ticket {
     private final String fullName;
     private final String email;
     private final boolean lockedAssignment;
+    //
+    private final String jobTitle;
+    private final String company;
+    private final String phoneNumber;
+    private final String address;
+    private final String country;
+    private final String tshirtSize;
     
     public Ticket(@Column("id") int id,
                   @Column("uuid") String uuid,
@@ -62,7 +69,14 @@ public class Ticket {
                   @Column("tickets_reservation_id") String ticketsReservationId,
                   @Column("full_name") String fullName,
                   @Column("email_address") String email,
-                  @Column("locked_assignment") boolean lockedAssignment) {
+                  @Column("locked_assignment") boolean lockedAssignment,
+                  //
+                  @Column("job_title") String jobTitle,
+                  @Column("company") String company,
+                  @Column("phone_number") String phoneNumber,
+                  @Column("address") String address,
+                  @Column("country") String country,
+                  @Column("tshirt_size") String tshirtSize) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
@@ -75,6 +89,13 @@ public class Ticket {
         this.fullName = Optional.ofNullable(fullName).orElse("");
         this.email = Optional.ofNullable(email).orElse("");
         this.lockedAssignment = lockedAssignment;
+        //
+        this.jobTitle = jobTitle;
+        this.company = company;
+        this.phoneNumber = phoneNumber;
+        this.address = address;
+        this.country = country;
+        this.tshirtSize = tshirtSize;
     }
     
     public boolean getAssigned() {
