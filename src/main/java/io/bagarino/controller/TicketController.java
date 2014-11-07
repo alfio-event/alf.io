@@ -145,21 +145,30 @@ public class TicketController {
 		sendTicketByEmail(eventName, reservationId, ticketIdentifier, request, response);
 		
 		if (StringUtils.isNotBlank(t.getEmail()) && !t.getEmail().equals(updateTicketOwner.getEmail().trim())) {
-			Map<String, Object> emailModel = new HashMap<String, Object>();
-			emailModel.put("ticket", t);
-			emailModel.put("organization", organizationRepository.getById(oData.get().getLeft().getOrganizationId()));
-			emailModel.put("eventName", eventName);
-			emailModel.put("previousEmail", t.getEmail());
-			emailModel.put("newEmail", updateTicketOwner.getEmail().trim());
-			emailModel.put("reservationUrl", ticketReservationManager.reservationUrl(t.getTicketsReservationId()));
-			String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {eventName}, RequestContextUtils.getLocale(request));
-			String emailText = templateManager.render("/io/bagarino/templates/ticket-has-changed-owner-txt.ms", emailModel, request);
-			mailer.send(t.getEmail(), subject, emailText, Optional.empty());
+			sendEmailForOwnerChange(updateTicketOwner.getEmail().trim(), oData.get().getLeft(), t, request);
 		}
 		
 		//
 		
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+	}
+
+	private void sendEmailForOwnerChange(String newEmailOwner,
+			Event e, Ticket t,
+			HttpServletRequest request) {
+		
+		String eventName = e.getShortName();
+		
+		Map<String, Object> emailModel = new HashMap<String, Object>();
+		emailModel.put("ticket", t);
+		emailModel.put("organization", organizationRepository.getById(e.getOrganizationId()));
+		emailModel.put("eventName", eventName);
+		emailModel.put("previousEmail", t.getEmail());
+		emailModel.put("newEmail", newEmailOwner);
+		emailModel.put("reservationUrl", ticketReservationManager.reservationUrl(t.getTicketsReservationId()));
+		String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {eventName}, RequestContextUtils.getLocale(request));
+		String emailText = templateManager.render("/io/bagarino/templates/ticket-has-changed-owner-txt.ms", emailModel, request);
+		mailer.send(t.getEmail(), subject, emailText, Optional.empty());
 	}
 
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}/send-ticket-by-email", method = RequestMethod.POST)
