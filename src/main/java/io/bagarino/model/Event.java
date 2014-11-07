@@ -17,10 +17,12 @@
 package io.bagarino.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -39,6 +41,7 @@ public class Event {
     private final String shortName;
     private final String websiteUrl;
     private final String termAndConditionsUrl;
+    private final String imageUrl;
     private final String description;
     private final String location;
     private final String latitude;
@@ -67,6 +70,7 @@ public class Event {
                  @Column("time_zone") String timeZone,
                  @Column("website_url") String websiteUrl,
                  @Column("website_t_c_url") String termAndConditionsUrl,
+                 @Column("image_url") String imageUrl,
                  @Column("regular_price_cts") int regularPriceInCents,
                  @Column("currency") String currency,
                  @Column("available_seats") int availableSeats,
@@ -77,6 +81,7 @@ public class Event {
                  @Column("org_id") int organizationId) {
         this.websiteUrl = websiteUrl;
         this.termAndConditionsUrl = termAndConditionsUrl;
+        this.imageUrl = imageUrl;
 
         final ZoneId zoneId = TimeZone.getTimeZone(timeZone).toZoneId();
         this.id = id;
