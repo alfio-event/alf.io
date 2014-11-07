@@ -38,7 +38,6 @@ import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 import lombok.Data;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -56,7 +55,6 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -363,7 +361,7 @@ public class ReservationController {
 			selected.forEach((r) -> {
 
 				TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId(), event.getId());
-				SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, Integer.valueOf(0).equals(ticketRepository.countUnsoldTicket(event.getId(), tc.getId())));
+				SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, ticketRepository.countUnsoldTicket(event.getId(), tc.getId()), maxAmountOfTicket);
 
 				if (!ticketCategory.getSaleable()) {
 					bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); //

@@ -1,32 +1,34 @@
 {{>/event/page-top}}
 
-<h1>{{event.shortName}}</h1>
+<div class="page-header">
+    <h1>{{event.shortName}}</h1>
+</div>
 <div class="row">
 	<div class="col-md-7">
-		<div>{{#i18n}}show-event.by{{/i18n}} <strong>{{organizer.name}}</strong> &lt;<a href="mailto:{{organizer.email}}">{{organizer.email}}</a>&gt;</div>
-		<div>	
-			{{#event.sameDay}}
-				{{#i18n}}event-days.same-day 
-					[{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] 
-					[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] 
-					[{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
-				{{/i18n}}
-			{{/event.sameDay}}
-			{{^event.sameDay}}
-				{{#i18n}}event-days.not-same-day 
-					[{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-					[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
-				{{/i18n}} 
-				- 
-				{{#i18n}}event-days.not-same-day 
-					[{{#format-date}}{{event.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-					[{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
-				{{/i18n}} 
-			{{/event.sameDay}}
-		</div>
-		<div>{{event.location}}</div>
-		<div class="event-description">{{event.description}}</div>
-	</div>
+        <div>{{#i18n}}show-event.by{{/i18n}} <strong>{{organizer.name}}</strong> &lt;<a href="mailto:{{organizer.email}}">{{organizer.email}}</a>&gt;</div>
+        <div>
+            {{#event.sameDay}}
+                {{#i18n}}event-days.same-day
+                    [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+                    [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
+                    [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
+                {{/i18n}}
+            {{/event.sameDay}}
+            {{^event.sameDay}}
+                {{#i18n}}event-days.not-same-day
+                    [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+                    [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
+                {{/i18n}}
+                -
+                {{#i18n}}event-days.not-same-day
+                    [{{#format-date}}{{event.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+                    [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
+                {{/i18n}}
+            {{/event.sameDay}}
+        </div>
+        <div>{{event.location}}</div>
+        <div class="event-description">{{event.description}}</div>
+    </div>
 	<div class="col-md-5">
 		<img src="{{locationDescriptor.mapUrl}}" class="img-responsive img-center">
 	</div>
@@ -113,17 +115,18 @@
 	</ul>
 	
 	{{#hasAccessRestrictedCategory}}
-		<div class="form-inline wMarginBottom" style="text-align:center">
+		<div class="form-inline wMarginBottom text-center">
 			<label>Apply promotional code: <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label> <button class="btn btn-default" type="button" id="apply-promo-codes">Apply</button>
 		</div>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 		<script src="{{request.contextPath}}/resources/js/event/show-event.js"></script>
 	{{/hasAccessRestrictedCategory}}
-	
+
+	<hr />
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 	<input type="hidden" name="promoCode" value="{{promoCode}}">
     <a href="{{event.websiteUrl}}" class="btn btn-default pull-left">{{#i18n}}to-event-site{{/i18n}}</a>
-    <button type="submit" class="btn btn-primary {{#forwardButtonDisabled}}disabled{{/forwardButtonDisabled}} pull-right">{{#i18n}}show-event.continue{{/i18n}}</button>
+    <button type="submit" class="btn btn-success {{#forwardButtonDisabled}}disabled{{/forwardButtonDisabled}} pull-right">{{#i18n}}show-event.continue{{/i18n}}</button>
 
 	<div class="clearfix"></div>
 </form>

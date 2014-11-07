@@ -26,8 +26,9 @@
  	data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
  ></script>
 {{/orderSummary.free}}
-
-<h1>{{#i18n}}reservation-page.title{{/i18n}} {{event.shortName}}</h1>
+<div class="page-header">
+	<h1>{{#i18n}}reservation-page.title{{/i18n}} {{event.shortName}}</h1>
+</div>
 <table class="table">
 	<thead>
 		<tr>
@@ -138,6 +139,9 @@
 			{{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
         </label>
     </div>
+
+	<hr />
+
 	{{#orderSummary.free}}
         <button type="submit" class="btn btn-primary pull-right" id="continue-button">{{#i18n}}reservation-page.continue{{/i18n}}</button>
         <button type="submit" class="btn btn-info pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>

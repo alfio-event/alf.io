@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static io.bagarino.model.system.ConfigurationKeys.MAPS_CLIENT_API_KEY;
 import static io.bagarino.model.system.ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION;
@@ -128,10 +127,11 @@ public class EventController {
 
 		Event ev = event.get();
 		final ZonedDateTime now = ZonedDateTime.now(ev.getZoneId());
+		final int maxTickets = configurationManager.getIntConfigValue(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
 		//hide access restricted ticket categories
 		List<SaleableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(ev.getId()).stream()
-                .filter((c) -> !c.isAccessRestricted() || (c.isAccessRestricted() && specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId() && specialCode.get().getStatus() == Status.FREE))
-                .map((m) -> new SaleableTicketCategory(m, now, ev, Integer.valueOf(0).equals(ticketRepository.countUnsoldTicket(ev.getId(), m.getId()))))
+                .filter((c) -> !c.isAccessRestricted() || (specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId() && specialCode.get().getStatus() == Status.FREE))
+                .map((m) -> new SaleableTicketCategory(m, now, ev, ticketRepository.countUnsoldTicket(ev.getId(), m.getId()), maxTickets))
                 .collect(Collectors.toList());
 		//
 
@@ -139,10 +139,9 @@ public class EventController {
 		LocationDescriptor ld = LocationDescriptor.fromGeoData(ev.getLatLong(), TimeZone.getTimeZone(ev.getTimeZone()),
 				configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY));
         final EventDescriptor eventDescriptor = new EventDescriptor(ev);
-        model.addAttribute("event", eventDescriptor)//
+		model.addAttribute("event", eventDescriptor)//
 			.addAttribute("organizer", organizationRepository.getById(ev.getOrganizationId()))
 			.addAttribute("ticketCategories", t)//
-			.addAttribute("amountOfTickets", IntStream.rangeClosed(0, configurationManager.getIntConfigValue(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5)).toArray())//
 			.addAttribute("hasAccessRestrictedCategory", ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(ev.getId()).intValue() > 0)
 			.addAttribute("promoCode", promoCode)
 			.addAttribute("locationDescriptor", ld)
