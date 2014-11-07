@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.stream.IntStream;
 
 public class SaleableTicketCategory {
 
@@ -34,16 +35,21 @@ public class SaleableTicketCategory {
     private final ZoneId zoneId;
     private final Event event;
     private final boolean soldout;
+    private final int availableTickets;
+    private final int maxTickets;
 
     public SaleableTicketCategory(TicketCategory ticketCategory,
                                   ZonedDateTime now,
                                   Event event,
-                                  boolean soldout) {
+                                  int availableTickets,
+                                  int maxTickets) {
         this.ticketCategory = ticketCategory;
         this.now = now;
         this.zoneId = event.getZoneId();
         this.event = event;
-        this.soldout = soldout;
+        this.soldout = availableTickets == 0;
+        this.availableTickets = availableTickets;
+        this.maxTickets = maxTickets;
     }
 
     public boolean getSaleable() {
@@ -80,6 +86,10 @@ public class SaleableTicketCategory {
             return MonetaryUtil.addVAT(ticketCategory.getPrice(), event.getVat());
         }
         return ticketCategory.getPrice();
+    }
+
+    public int[] getAmountOfTickets() {
+        return IntStream.rangeClosed(0, maxTickets).limit(Math.min(maxTickets, availableTickets)).toArray();
     }
 
 
