@@ -14,6 +14,7 @@
 	<div class="col-md-7">
         <div>{{#i18n}}show-event.by{{/i18n}} <strong>{{organizer.name}}</strong> &lt;<a href="mailto:{{organizer.email}}">{{organizer.email}}</a>&gt;</div>
         <div>
+			<i class="fa fa-calendar"></i>
             {{#event.sameDay}}
                 {{#i18n}}event-days.same-day
                     [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
@@ -34,13 +35,19 @@
             {{/event.sameDay}}
 			<i class="fa fa-info-circle text-info tooltip-handler" title="{{#i18n}}show-event.timezone.warn [{{event.timeZone}}]{{/i18n}}"></i>
         </div>
-        <div>{{event.location}}</div>
+        <div><i class="fa fa-compass"></i> {{event.location}}</div>
         <div class="event-description">{{event.description}}</div>
     </div>
 	<div class="col-md-5">
 		<img src="{{locationDescriptor.mapUrl}}" class="img-responsive img-center">
 	</div>
 </div>
+
+<ol class="breadcrumb wMarginBottom wMarginTop">
+    <li><i class="fa fa-check-square-o"></i> {{#i18n}}breadcrumb.step1{{/i18n}}</li>
+    <li class="active">{{#i18n}}breadcrumb.step2{{/i18n}}</li>
+    <li class="active">{{#i18n}}breadcrumb.step3{{/i18n}}</li>
+</ol>
 
 <h2>{{#i18n}}show-event.tickets{{/i18n}}</h2>
 
@@ -118,14 +125,16 @@
 	</ul>
 
 	<div class="row wMarginBottom">
-		<div class="col-sm-8 col-sm-offset-4">
+		<div class="col-sm-9 col-sm-offset-3">
 			{{#hasAccessRestrictedCategory}}
                 <div class="form-inline text-center">
-                    <label>Apply promotional code: <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label> <button class="btn btn-default" type="button" id="apply-promo-codes">Apply</button>
+                    <label>{{#i18n}}show-event.promo-code{{/i18n}}: <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label> <button class="btn btn-default" type="button" id="apply-promo-codes">{{#i18n}}show-event.promo-code.apply{{/i18n}}</button>
                 </div>
 			{{/hasAccessRestrictedCategory}}
 		</div>
 	</div>
+
+	<hr/>
 
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 	<input type="hidden" name="promoCode" value="{{promoCode}}">

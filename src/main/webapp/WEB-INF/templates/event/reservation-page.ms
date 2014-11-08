@@ -31,8 +31,13 @@
             <img src="{{event.imageUrl}}" alt="{{event.shortName}}" class="img-responsive img-center">
 		{{/event.imageIsPresent}}
 </div>
+<ol class="breadcrumb wMarginBottom wMarginTop">
+    <li class="active">{{#i18n}}breadcrumb.step1{{/i18n}}</li>
+    <li><i class="fa fa-credit-card"></i> {{#i18n}}breadcrumb.step2{{/i18n}}</li>
+    <li class="active">{{#i18n}}breadcrumb.step3{{/i18n}}</li>
+</ol>
 <div class="page-header">
-	<h1>{{#i18n}}reservation-page.title{{/i18n}} {{event.shortName}}</h1>
+	<h2>{{#i18n}}reservation-page.title{{/i18n}} {{event.shortName}}</h2>
 </div>
 <table class="table">
 	<thead>
@@ -56,14 +61,14 @@
 	<tfoot>
 		{{^orderSummary.free}}
 		{{^event.vatIncluded}}
-			<tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</td><td style="text-align:right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+			<tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
 		{{/event.vatIncluded}}
 		{{/orderSummary.free}}
-		<tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td style="text-align:right"><strong>{{orderSummary.totalPrice}} {{event.currency}}</strong></td></tr>
+		<tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td class="text-right"><strong>{{orderSummary.totalPrice}} {{event.currency}}</strong></td></tr>
 		
 		{{^orderSummary.free}}
 		{{#event.vatIncluded}}
-			<tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}</td><td style="text-align:right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+			<tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
 		{{/event.vatIncluded}}
 		{{/orderSummary.free}}
 	</tfoot>
@@ -148,8 +153,8 @@
 	<hr />
 
 	{{#orderSummary.free}}
-        <button type="submit" class="btn btn-primary pull-right" id="continue-button">{{#i18n}}reservation-page.continue{{/i18n}}</button>
-        <button type="submit" class="btn btn-info pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
+        <button type="submit" class="btn btn-success pull-right" id="continue-button">{{#i18n}}reservation-page.continue{{/i18n}}</button>
+        <button type="submit" class="btn btn-default pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
 	{{/orderSummary.free}}
 	{{^orderSummary.free}}
 	<div class="form-group">

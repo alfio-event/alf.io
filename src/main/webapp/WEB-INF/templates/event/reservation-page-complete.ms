@@ -5,6 +5,13 @@
         <img src="{{event.imageUrl}}" alt="{{event.shortName}}" class="img-responsive img-center">
 	{{/event.imageIsPresent}}
 </div>
+
+<ol class="breadcrumb wMarginBottom wMarginTop">
+    <li class="active">{{#i18n}}breadcrumb.step1{{/i18n}}</li>
+    <li class="active">{{#i18n}}breadcrumb.step2{{/i18n}}</li>
+    <li><i class="fa fa-download"></i> {{#i18n}}breadcrumb.step3{{/i18n}}</li>
+</ol>
+
 <h1>
 	{{#ticketsAreAllAssigned}}
 		{{#i18n}}reservation-page-complete.your-tickets [{{event.shortName}}]{{/i18n}} 
@@ -27,16 +34,12 @@
 </div>
 {{/ticketEmailSent}}
 
-<form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/re-send-email" method="post">
-	<button type="submit" class="btn btn-link">{{#i18n}}reservation-page-complete.resend-reservation-email [{{reservation.email}}]{{/i18n}}</button>
-	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
-</form>
-
 {{#ticketsAreAllAssigned}}
 <p class="bg-info ticket-info">{{#i18n}}reservation-page-complete.info-update{{/i18n}}</p>
 {{/ticketsAreAllAssigned}}
+
 {{^ticketsAreAllAssigned}}
-<p class="bg-info ticket-info">{{#i18n}}reservation-page-complete.info-assign{{/i18n}}</p>
+<p class="alert alert-success">{{#i18n}}reservation-page-complete.info-assign [{{event.shortName}}]{{/i18n}}</p>
 {{/ticketsAreAllAssigned}}
 
 <ul class="list-group">
@@ -44,20 +47,20 @@
 	{{#value}}
 		<li class="list-group-item">{{#i18n}}reservation-page-complete.ticket-type{{/i18n}} <strong>{{key.name}}</strong>
 			{{#assigned}}
-				<div>
+				<div class="wMarginBottom">
 					<p>{{#i18n}}reservation-page-complete.assigned-to [{{fullName}}] [{{email}}]{{/i18n}}</p>
-					<ul>
-						<li> <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}" class="btn btn-link">{{#i18n}}reservation-page-complete.show-ticket{{/i18n}}</a>
-						<li> <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/download-ticket" class="btn btn-link">{{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a>
-						<li> <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/send-ticket-by-email" class="form-inline"><button type="submit" class="btn btn-link">{{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{email}}]{{/i18n}}</button><input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}"></form>
-						{{^lockedAssignment}}<li> <a href="#ticket-{{uuid}}" class="btn btn-link update-ticket-owner">{{#i18n}}reservation-page-complete.update-ticket-owner{{/i18n}}</a>{{/lockedAssignment}}
+					<ul class="list-inline">
+						<li><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}" class="btn btn-primary"><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.show-ticket{{/i18n}}</a>
+						<li><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/download-ticket" class="btn btn-primary"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a>
+						<li><form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/send-ticket-by-email" class="form-inline"><button type="submit" class="btn btn-primary"><i class="fa fa-envelope-o"></i> {{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{email}}]{{/i18n}}</button><input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}"></form>
+						{{^lockedAssignment}}
+						<li><a href="#ticket-{{uuid}}" class="btn btn-primary update-ticket-owner"><i class="fa fa-mail-forward"></i> {{#i18n}}reservation-page-complete.update-ticket-owner{{/i18n}}</a>
+						{{/lockedAssignment}}
 					</ul>
-					
+
 				</div>
 			{{/assigned}}
-			{{^assigned}}
-				<p>{{#i18n}}reservation-page-complete.assign-ticket-warning{{/i18n}}</p>
-			{{/assigned}}
+
 			<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}" class="form-horizontal {{#assigned}}hide-by-default{{/assigned}}" id="ticket-{{uuid}}">
 				<div class="form-group">
 					<label class="col-sm-3 control-label" for="full-name-{{uuid}}">{{#i18n}}common.full-name{{/i18n}} *</label>
@@ -123,7 +126,7 @@
 				<!-- -->
 				<div class="form-group">
 					<div class="col-sm-offset-3 col-sm-9">	
-						<button type="submit" class="btn btn-primary pull-right">
+						<button type="submit" class="btn btn-success pull-right">
 							{{#i18n}}{{#assigned}}reservation-page-complete.update{{/assigned}}{{^assigned}}reservation-page-complete.assign{{/assigned}}{{/i18n}}
 						</button>
 
