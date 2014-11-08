@@ -99,7 +99,9 @@ public class EventController {
 	}
 
 	@RequestMapping(value = "/event/{eventName}", method = RequestMethod.GET)
-	public String showEvent(@PathVariable("eventName") String eventName, @RequestParam(value = "promoCode", required = false) String promoCode, Model model) {
+	public String showEvent(@PathVariable("eventName") String eventName,
+							@RequestParam(value = "promoCode", required = false) String promoCode,
+							Model model) {
 
 		
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));

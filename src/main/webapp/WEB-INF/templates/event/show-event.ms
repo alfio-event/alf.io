@@ -18,7 +18,7 @@
                 {{#i18n}}event-days.same-day
                     [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
                     [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
-                    [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
+                    [{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
                 {{/i18n}}
             {{/event.sameDay}}
             {{^event.sameDay}}
@@ -29,7 +29,7 @@
                 -
                 {{#i18n}}event-days.not-same-day
                     [{{#format-date}}{{event.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-                    [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
+                    [{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
                 {{/i18n}}
             {{/event.sameDay}}
         </div>
@@ -58,14 +58,14 @@
 	{{#ticketCategories}}
 		<li class="list-group-item {{#expired}}event-expired{{/expired}} ticket-category-restricted-{{accessRestricted}}">
 			<div class="form-group">
-				<div class="col-sm-7">
+				<div class="col-sm-7" id="{{id}}-label">
 					<label class="control-label">{{name}}</label>
 					<div>
 						{{#saleInFuture}}
 							{{#i18n}}show-event.sales-not-started{{/i18n}}
 						{{/saleInFuture}}
 						{{^saleInFuture}}
-							{{#i18n}}show-event.sales-end [{{#format-date}}{{zonedExpiration}} dd.MM.yyyy HH:mm (z) locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}
+							{{#i18n}}show-event.sales-end [{{#format-date}}{{zonedExpiration}} dd.MM.yyyy HH:mm locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}
 						{{/saleInFuture}}
 					</div>
 					<div>
@@ -81,21 +81,11 @@
 							{{finalPrice}} {{event.currency}}
 						{{/free}}
 					</label>
-					<div>
-						{{^free}}
-							{{#event.vatIncluded}}
-								{{#i18n}}show-event.incVat [{{event.vat}}]{{/i18n}}
-							{{/event.vatIncluded}}
-							{{^event.vatIncluded}}
-								{{#i18n}}show-event.excVat [{{event.vat}}]{{/i18n}}
-							{{/event.vatIncluded}}
-						{{/free}}
-					</div>
 				</div>
 				<div class="col-sm-2 text-align-center">
 					{{#saleable}}
 						<input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
-						<select name="reservation[{{-index}}].amount" class="form-control text-align-center" placeholder="0" autocomplete="off">
+						<select aria-labelledby="{{id}}-label" name="reservation[{{-index}}].amount" class="form-control text-align-center" placeholder="0" autocomplete="off">
 							{{#accessRestricted}}
 								<option value="0">0</option>
 								<option value="1">1</option>
@@ -120,16 +110,37 @@
 		</li>
 	{{/ticketCategories}}
 	</ul>
-	
-	{{#hasAccessRestrictedCategory}}
-		<div class="form-inline wMarginBottom text-center">
-			<label>Apply promotional code: <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label> <button class="btn btn-default" type="button" id="apply-promo-codes">Apply</button>
-		</div>
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-		<script src="{{request.contextPath}}/resources/js/event/show-event.js"></script>
-	{{/hasAccessRestrictedCategory}}
 
-	<hr />
+	<div class="row wMarginBottom">
+		<div class="col-sm-8 col-sm-offset-4">
+			{{#hasAccessRestrictedCategory}}
+                <div class="form-inline text-center">
+                    <label>Apply promotional code: <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label> <button class="btn btn-default" type="button" id="apply-promo-codes">Apply</button>
+                </div>
+                <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+                <script src="{{request.contextPath}}/resources/js/event/show-event.js"></script>
+			{{/hasAccessRestrictedCategory}}
+		</div>
+	</div>
+
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <i class="fa fa-info-circle text-info"></i><br/>
+            <small class="text-muted">
+				{{^event.free}}
+					{{#event.vatIncluded}}
+						{{#i18n}}show-event.incVat [{{event.vat}}]{{/i18n}}
+					{{/event.vatIncluded}}
+					{{^event.vatIncluded}}
+						{{#i18n}}show-event.excVat [{{event.vat}}]{{/i18n}}
+					{{/event.vatIncluded}}
+				{{/event.free}}
+            </small>
+            <br/>
+            <small class="text-muted">{{#i18n}}show-event.timezone.warn [{{event.timeZone}}]{{/i18n}}</small>
+        </div>
+    </div>
+
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 	<input type="hidden" name="promoCode" value="{{promoCode}}">
     <a href="{{event.websiteUrl}}" class="btn btn-default pull-left">{{#i18n}}to-event-site{{/i18n}}</a>
@@ -137,5 +148,4 @@
 
 	<div class="clearfix"></div>
 </form>
-
 {{>/event/page-bottom}}

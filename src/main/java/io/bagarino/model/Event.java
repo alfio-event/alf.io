@@ -17,12 +17,10 @@
 package io.bagarino.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import io.bagarino.datamapper.ConstructorAnnotationRowMapper.Column;
 import io.bagarino.model.transaction.PaymentProxy;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Getter;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -157,6 +155,10 @@ public class Event {
 
     public boolean isFreeOfCharge() {
         return regularPriceInCents == 0;
+    }
+
+    public boolean getFree() {
+        return isFreeOfCharge();
     }
     
     public boolean getImageIsPresent() {
