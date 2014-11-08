@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="{{request.contextPath}}/resources/css/application.css">
+    <title>{{#i18n}}{{pageTitle}}[{{event.shortName}}]{{/i18n}}</title>
 </head>
 <body>
 

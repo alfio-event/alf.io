@@ -83,8 +83,17 @@ public class EventController {
 			return REDIRECT + "/event/" + events.get(0).getShortName() + "/";
 		} else {
 			model.addAttribute("events", events.stream().map(EventDescriptor::new).collect(Collectors.toList()));
+			model.addAttribute("pageTitle", "event-list.header.title");
 			return "/event/event-list";
 		}
+	}
+
+
+	@RequestMapping("/session-expired")
+	public String sessionExpired(Model model) {
+		model.addAttribute("pageTitle", "session-expired.header.title");
+		model.addAttribute("event", null);
+		return "/event/session-expired";
 	}
 	
 	
@@ -147,7 +156,8 @@ public class EventController {
 			.addAttribute("hasAccessRestrictedCategory", ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(ev.getId()).intValue() > 0)
 			.addAttribute("promoCode", promoCode)
 			.addAttribute("locationDescriptor", ld)
-            .addAttribute("forwardButtonDisabled", t.stream().noneMatch(SaleableTicketCategory::getSaleable));
+			.addAttribute("pageTitle", "show-event.header.title")
+				.addAttribute("forwardButtonDisabled", t.stream().noneMatch(SaleableTicketCategory::getSaleable));
 		model.asMap().putIfAbsent("hasErrors", false);//
 		return "/event/show-event";
 	}

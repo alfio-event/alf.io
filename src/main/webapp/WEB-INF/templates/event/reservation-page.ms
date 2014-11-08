@@ -33,18 +33,18 @@
 	<thead>
 		<tr>
 			<th>{{#i18n}}reservation-page.category{{/i18n}}</th>
-			<th style="text-align:right">{{#i18n}}reservation-page.price{{/i18n}}</th>
-			<th style="text-align:center">{{#i18n}}reservation-page.amount{{/i18n}}</th>
-			<th style="text-align:right">{{#i18n}}reservation-page.subtotal{{/i18n}}</th>
+			<th class="text-right">{{#i18n}}reservation-page.price{{/i18n}}</th>
+			<th class="text-center">{{#i18n}}reservation-page.amount{{/i18n}}</th>
+			<th class="text-right">{{#i18n}}reservation-page.subtotal{{/i18n}}</th>
 		</tr>
 	</thead>
 	<tbody>
 {{#orderSummary.summary}}
 		<tr>
 			<td>{{name}}</td>
-			<td style="text-align:right">{{price}}</td>
-			<td style="text-align:center">{{amount}}</td>
-			<td style="text-align:right">{{subTotal}} {{event.currency}}</td>
+			<td class="text-right">{{price}}</td>
+			<td class="text-center">{{amount}}</td>
+			<td class="text-right">{{subTotal}} {{event.currency}}</td>
 		</tr>
 {{/orderSummary.summary}}
 	</tbody>

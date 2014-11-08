@@ -27,13 +27,14 @@ import io.bagarino.manager.TicketReservationManager.TotalPrice;
 import io.bagarino.manager.support.OrderSummary;
 import io.bagarino.manager.support.PaymentResult;
 import io.bagarino.manager.system.Mailer;
-import io.bagarino.model.*;
+import io.bagarino.model.Event;
+import io.bagarino.model.Ticket;
+import io.bagarino.model.TicketReservation;
 import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationWithOptionalCodeModification;
 import io.bagarino.model.user.Organization;
 import io.bagarino.repository.EventRepository;
 import io.bagarino.repository.user.OrganizationRepository;
-
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +50,6 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -150,6 +150,7 @@ public class ReservationController {
 
 		if (!reservation.isPresent()) {
 			model.addAttribute("reservationId", reservationId);
+			model.addAttribute("pageTitle", "reservation-page-not-found.header.title");
 			return "/event/reservation-page-not-found";
 		} else if (reservation.get().getStatus() == TicketReservationStatus.PENDING) {
 
@@ -158,6 +159,7 @@ public class ReservationController {
 			model.addAttribute("orderSummary", orderSummary);
 			model.addAttribute("reservationId", reservationId);
 			model.addAttribute("reservation", reservation.get());
+			model.addAttribute("pageTitle", "reservation-page.header.title");
 
 			if (orderSummary.getOriginalTotalPrice().getPriceWithVAT() > 0) {
 				model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
@@ -183,12 +185,13 @@ public class ReservationController {
 							.collect(Collectors.toList()));
 			model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
 			model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
-
+			model.addAttribute("pageTitle", "reservation-page-complete.header.title");
 			return "/event/reservation-page-complete";
 			
 		} else { // reservation status has status IN_PAYMENT or STUCK.
 			model.addAttribute("reservation", reservation.get());
 			model.addAttribute("organizer", organizationRepository.getById(event.get().getOrganizationId()));
+			model.addAttribute("pageTitle", "reservation-page-error-status.header.title");
 			return "/event/reservation-page-error-status";
 		}
 	}
@@ -207,6 +210,7 @@ public class ReservationController {
 		if (!ticketReservation.isPresent()) {
 			model.addAttribute("event", event);
 			model.addAttribute("reservationId", reservationId);
+			model.addAttribute("pageTitle", "reservation-page-not-found.header.title");
 			return "/event/reservation-page-not-found";
 		}
 		if (paymentForm.shouldCancelReservation()) {
