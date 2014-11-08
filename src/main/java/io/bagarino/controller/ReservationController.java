@@ -32,9 +32,6 @@ import io.bagarino.model.TicketReservation.TicketReservationStatus;
 import io.bagarino.model.modification.TicketReservationWithOptionalCodeModification;
 import io.bagarino.model.user.Organization;
 import io.bagarino.repository.EventRepository;
-import io.bagarino.repository.SpecialPriceRepository;
-import io.bagarino.repository.TicketCategoryRepository;
-import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
 
 import org.apache.commons.lang3.time.DateUtils;
@@ -67,11 +64,8 @@ public class ReservationController {
 
 	private final EventRepository eventRepository;
 	private final EventManager eventManager;
-	private final TicketRepository ticketRepository;
 	private final TicketReservationManager ticketReservationManager;
-	private final TicketCategoryRepository ticketCategoryRepository;
 	private final OrganizationRepository organizationRepository;
-	private final SpecialPriceRepository specialPriceRepository;
 
 	private final StripeManager stripeManager;
 	private final Mailer mailer;
@@ -83,11 +77,8 @@ public class ReservationController {
 	@Autowired
 	public ReservationController(EventRepository eventRepository, 
 			EventManager eventManager,
-			TicketRepository ticketRepository, 
 			TicketReservationManager ticketReservationManager,
-			TicketCategoryRepository ticketCategoryRepository, 
 			OrganizationRepository organizationRepository,
-			SpecialPriceRepository specialPriceRepository,
 			StripeManager stripeManager, 
 			Mailer mailer, 
 			TemplateManager templateManager, 
@@ -95,11 +86,8 @@ public class ReservationController {
 			EventController eventController) {
 		this.eventRepository = eventRepository;
 		this.eventManager = eventManager;
-		this.ticketRepository = ticketRepository;
 		this.ticketReservationManager = ticketReservationManager;
-		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.organizationRepository = organizationRepository;
-		this.specialPriceRepository = specialPriceRepository;
 		this.stripeManager = stripeManager;
 		this.mailer = mailer;
 		this.templateManager = templateManager;
@@ -121,7 +109,7 @@ public class ReservationController {
 			return "redirect:/event/" + eventName + "/";
 		}
 
-		Optional<List<TicketReservationWithOptionalCodeModification>> selected = reservation.validate(bindingResult, ticketReservationManager, ticketRepository, ticketCategoryRepository, eventManager, specialPriceRepository, event.get());
+		Optional<List<TicketReservationWithOptionalCodeModification>> selected = reservation.validate(bindingResult, ticketReservationManager, eventManager, event.get());
 
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
@@ -186,12 +174,12 @@ public class ReservationController {
 			model.addAttribute("confirmationEmailSent", confirmationEmailSent);
 			model.addAttribute("ticketEmailSent", ticketEmailSent);
 
-			List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
+			List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
 
 			model.addAttribute(
 					"ticketsByCategory",
 					tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
-							.map((e) -> Pair.of(ticketCategoryRepository.getById(e.getKey(), event.get().getId()), e.getValue()))
+							.map((e) -> Pair.of(eventManager.getTicketCategoryById(e.getKey(), event.get().getId()), e.getValue()))
 							.collect(Collectors.toList()));
 			model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
 			model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
@@ -300,7 +288,7 @@ public class ReservationController {
 		model.put("ticketReservation", reservation);
 
 		OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservation.getId(), event);
-		model.put("tickets", ticketRepository.findTicketsInReservation(reservation.getId()));
+		model.put("tickets", ticketReservationManager.findTicketsInReservation(reservation.getId()));
 		model.put("orderSummary", orderSummary);
 		model.put("reservationUrl", ticketReservationManager.reservationUrl(reservation.getId()));
 		return model;

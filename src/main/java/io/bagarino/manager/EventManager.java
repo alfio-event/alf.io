@@ -32,6 +32,7 @@ import io.bagarino.repository.SpecialPriceRepository;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.util.MonetaryUtil;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -305,4 +306,8 @@ public class EventManager {
                 timeZone, actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies, em.getOrganizationId());
 
     }
+
+	public TicketCategory getTicketCategoryById(int id, int eventId) {
+		return ticketCategoryRepository.getById(id, eventId);
+	}
 }

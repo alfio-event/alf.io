@@ -30,9 +30,6 @@ import io.bagarino.model.SpecialPrice.Status;
 import io.bagarino.model.TicketCategory;
 import io.bagarino.model.modification.TicketReservationModification;
 import io.bagarino.model.modification.TicketReservationWithOptionalCodeModification;
-import io.bagarino.repository.SpecialPriceRepository;
-import io.bagarino.repository.TicketCategoryRepository;
-import io.bagarino.repository.TicketRepository;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -65,9 +62,9 @@ public class ReservationForm {
 	}
 
 	public Optional<List<TicketReservationWithOptionalCodeModification>> validate(BindingResult bindingResult,
-			TicketReservationManager tickReservationManager, TicketRepository ticketRepository,
-			TicketCategoryRepository ticketCategoryRepository, EventManager eventManager,
-			SpecialPriceRepository specialPriceRepository, Event event) {
+			TicketReservationManager tickReservationManager,
+			EventManager eventManager,
+			Event event) {
 		int selectionCount = selectionCount();
 
 		if (selectionCount <= 0) {
@@ -83,20 +80,20 @@ public class ReservationForm {
 
 		final List<TicketReservationModification> selected = selected();
 		final ZoneId eventZoneId = selected.stream().findFirst().map(r -> {
-			TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId(), event.getId());
+			TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
 			return eventManager.findEventByTicketCategory(tc).getZoneId();
 		}).orElseThrow(IllegalStateException::new);
 
 		List<TicketReservationWithOptionalCodeModification> res = new ArrayList<>();
 		//
 		Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode)).flatMap(
-				(trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
+				(trimmedCode) -> optionally(() -> tickReservationManager.getSpecialPriceByCode(trimmedCode)));
 		//
 		final ZonedDateTime now = ZonedDateTime.now(eventZoneId);
 		selected.forEach((r) -> {
 
-			TicketCategory tc = ticketCategoryRepository.getById(r.getTicketCategoryId(), event.getId());
-			SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, ticketRepository
+			TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
+			SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, tickReservationManager
 					.countUnsoldTicket(event.getId(), tc.getId()), maxAmountOfTicket);
 
 			if (!ticketCategory.getSaleable()) {

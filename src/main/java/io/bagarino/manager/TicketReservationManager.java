@@ -36,6 +36,7 @@ import io.bagarino.repository.user.OrganizationRepository;
 import io.bagarino.util.MonetaryUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -330,5 +331,17 @@ public class TicketReservationManager {
 		Validate.isTrue(updatedTickets > 0);
 		int removedReservation = ticketReservationRepository.remove(reservationIdsToRemove);
 		Validate.isTrue(removedReservation == 1);
+	}
+
+	public SpecialPrice getSpecialPriceByCode(String code) {
+		return specialPriceRepository.getByCode(code);
+	}
+
+	public List<Ticket> findTicketsInReservation(String reservationId) {
+		return ticketRepository.findTicketsInReservation(reservationId);
+	}
+
+	public int countUnsoldTicket(int eventId, int categoryId) {
+		return ticketRepository.countUnsoldTicket(eventId, categoryId);
 	}
 }
