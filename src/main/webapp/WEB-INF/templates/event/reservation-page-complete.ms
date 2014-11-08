@@ -1,6 +1,10 @@
 {{>/event/page-top}}
 
-
+<div>
+	{{#event.imageIsPresent}}
+        <img src="{{event.imageUrl}}" alt="{{event.shortName}}" class="img-responsive img-center">
+	{{/event.imageIsPresent}}
+</div>
 <h1>
 	{{#ticketsAreAllAssigned}}
 		{{#i18n}}reservation-page-complete.your-tickets [{{event.shortName}}]{{/i18n}} 

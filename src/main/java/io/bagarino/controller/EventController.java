@@ -84,6 +84,7 @@ public class EventController {
 		} else {
 			model.addAttribute("events", events.stream().map(EventDescriptor::new).collect(Collectors.toList()));
 			model.addAttribute("pageTitle", "event-list.header.title");
+			model.addAttribute("event", null);
 			return "/event/event-list";
 		}
 	}
@@ -157,7 +158,7 @@ public class EventController {
 			.addAttribute("promoCode", promoCode)
 			.addAttribute("locationDescriptor", ld)
 			.addAttribute("pageTitle", "show-event.header.title")
-				.addAttribute("forwardButtonDisabled", t.stream().noneMatch(SaleableTicketCategory::getSaleable));
+			.addAttribute("forwardButtonDisabled", t.stream().noneMatch(SaleableTicketCategory::getSaleable));
 		model.asMap().putIfAbsent("hasErrors", false);//
 		return "/event/show-event";
 	}

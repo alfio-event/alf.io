@@ -73,7 +73,9 @@
 	jQuery(function($) {
 		
 		//validity
-		var validity = new Date(Number.parseInt($("#validity").attr('data-validity')));
+		//ready for ECMAScript6?
+		var parser = Number && Number.parseInt ? Number : window;
+		var validity = new Date(parser.parseInt($("#validity").attr('data-validity')));
 		
 		var interval = null;
 		

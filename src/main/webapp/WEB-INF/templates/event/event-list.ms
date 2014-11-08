@@ -6,7 +6,14 @@
 	<li class="list-group-item">
 		<a href="{{request.contextPath}}/event/{{shortName}}/">
 			<div>
-				<h2>{{shortName}}</h2>
+                <div>
+					{{#imageIsPresent}}
+                        <img src="{{imageUrl}}" alt="{{shortName}}" class="img-responsive">
+					{{/imageIsPresent}}
+					{{^imageIsPresent}}
+					<h2>{{shortName}}</h2>
+					{{/imageIsPresent}}
+                </div>
 				<div>
 	            {{#sameDay}}
 					{{#i18n}}event-days.same-day 

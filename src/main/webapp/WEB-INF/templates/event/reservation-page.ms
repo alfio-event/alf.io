@@ -26,6 +26,11 @@
  	data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
  ></script>
 {{/orderSummary.free}}
+<div>
+		{{#event.imageIsPresent}}
+            <img src="{{event.imageUrl}}" alt="{{event.shortName}}" class="img-responsive img-center">
+		{{/event.imageIsPresent}}
+</div>
 <div class="page-header">
 	<h1>{{#i18n}}reservation-page.title{{/i18n}} {{event.shortName}}</h1>
 </div>
@@ -33,8 +38,8 @@
 	<thead>
 		<tr>
 			<th>{{#i18n}}reservation-page.category{{/i18n}}</th>
-			<th class="text-right">{{#i18n}}reservation-page.price{{/i18n}}</th>
 			<th class="text-center">{{#i18n}}reservation-page.amount{{/i18n}}</th>
+			<th class="text-right">{{#i18n}}reservation-page.price{{/i18n}}</th>
 			<th class="text-right">{{#i18n}}reservation-page.subtotal{{/i18n}}</th>
 		</tr>
 	</thead>
@@ -42,8 +47,8 @@
 {{#orderSummary.summary}}
 		<tr>
 			<td>{{name}}</td>
-			<td class="text-right">{{price}}</td>
 			<td class="text-center">{{amount}}</td>
+			<td class="text-right">{{price}}</td>
 			<td class="text-right">{{subTotal}} {{event.currency}}</td>
 		</tr>
 {{/orderSummary.summary}}

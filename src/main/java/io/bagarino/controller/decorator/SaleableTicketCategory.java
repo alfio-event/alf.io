@@ -89,7 +89,7 @@ public class SaleableTicketCategory {
     }
 
     public int[] getAmountOfTickets() {
-        return IntStream.rangeClosed(0, maxTickets).limit(Math.min(maxTickets, availableTickets)).toArray();
+        return IntStream.rangeClosed(0, maxTickets).limit(Math.min(maxTickets, availableTickets+1)).toArray();
     }
 
 

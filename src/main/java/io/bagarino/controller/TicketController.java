@@ -16,6 +16,14 @@
  */
 package io.bagarino.controller;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import com.lowagie.text.DocumentException;
 import io.bagarino.controller.form.UpdateTicketOwnerForm;
 import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.manager.TicketReservationManager;
@@ -30,19 +38,6 @@ import io.bagarino.model.user.Organization;
 import io.bagarino.repository.TicketCategoryRepository;
 import io.bagarino.repository.TicketRepository;
 import io.bagarino.repository.user.OrganizationRepository;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Base64;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,14 +54,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.support.RequestContextUtils;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.EncodeHintType;
-import com.google.zxing.MultiFormatWriter;
-import com.google.zxing.WriterException;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
-import com.lowagie.text.DocumentException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.*;
 
 @Controller
 public class TicketController {
@@ -117,7 +110,8 @@ public class TicketController {
 				.addAttribute("event", data.getLeft())//
 				.addAttribute("ticketCategory", ticketCategory)//
 				.addAttribute("organization", organization)//
-				.addAttribute("ticketEmailSent", ticketEmailSent);
+				.addAttribute("ticketEmailSent", ticketEmailSent)
+				.addAttribute("pageTitle", "show-ticket.header.title");
 		
 		return "/event/show-ticket";
 	}
