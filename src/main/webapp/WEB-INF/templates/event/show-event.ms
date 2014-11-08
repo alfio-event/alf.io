@@ -32,6 +32,7 @@
                     [{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
                 {{/i18n}}
             {{/event.sameDay}}
+			<i class="fa fa-info-circle text-info tooltip-handler" title="{{#i18n}}show-event.timezone.warn [{{event.timeZone}}]{{/i18n}}"></i>
         </div>
         <div>{{event.location}}</div>
         <div class="event-description">{{event.description}}</div>
@@ -56,7 +57,7 @@
 <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reserve-tickets" class="form-horizontal">
 	<ul class="list-group">
 	{{#ticketCategories}}
-		<li class="list-group-item {{#expired}}event-expired{{/expired}} ticket-category-restricted-{{accessRestricted}}">
+		<li class="list-group-item {{#expired}}text-muted{{/expired}} ticket-category-restricted-{{accessRestricted}}">
 			<div class="form-group">
 				<div class="col-sm-7" id="{{id}}-label">
 					<label class="control-label">{{name}}</label>
@@ -79,6 +80,7 @@
 						{{/free}}
 						{{^free}}
 							{{finalPrice}} {{event.currency}}
+                            <i class="fa fa-info-circle text-info tooltip-handler" title="{{#event.vatIncluded}}{{#i18n}}show-event.incVat [{{event.vat}}]{{/i18n}}{{/event.vatIncluded}}{{^event.vatIncluded}}{{#i18n}}show-event.excVat [{{event.vat}}]{{/i18n}}{{/event.vatIncluded}}"></i>
 						{{/free}}
 					</label>
 				</div>
@@ -117,29 +119,9 @@
                 <div class="form-inline text-center">
                     <label>Apply promotional code: <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label> <button class="btn btn-default" type="button" id="apply-promo-codes">Apply</button>
                 </div>
-                <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-                <script src="{{request.contextPath}}/resources/js/event/show-event.js"></script>
 			{{/hasAccessRestrictedCategory}}
 		</div>
 	</div>
-
-    <div class="panel panel-default">
-        <div class="panel-body">
-            <i class="fa fa-info-circle text-info"></i><br/>
-            <small class="text-muted">
-				{{^event.free}}
-					{{#event.vatIncluded}}
-						{{#i18n}}show-event.incVat [{{event.vat}}]{{/i18n}}
-					{{/event.vatIncluded}}
-					{{^event.vatIncluded}}
-						{{#i18n}}show-event.excVat [{{event.vat}}]{{/i18n}}
-					{{/event.vatIncluded}}
-				{{/event.free}}
-            </small>
-            <br/>
-            <small class="text-muted">{{#i18n}}show-event.timezone.warn [{{event.timeZone}}]{{/i18n}}</small>
-        </div>
-    </div>
 
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 	<input type="hidden" name="promoCode" value="{{promoCode}}">
@@ -148,4 +130,10 @@
 
 	<div class="clearfix"></div>
 </form>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+{{#hasAccessRestrictedCategory}}
+<script src="{{request.contextPath}}/resources/js/event/show-event.js"></script>
+{{/hasAccessRestrictedCategory}}
+<script src="{{request.contextPath}}/resources/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="{{request.contextPath}}/resources/js/event/bootstrap-handler.js"></script>
 {{>/event/page-bottom}}
