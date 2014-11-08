@@ -61,6 +61,7 @@
 			<div class="form-group">
 				<div class="col-sm-7" id="{{id}}-label">
 					<label class="control-label">{{name}}</label>
+					{{^expired}}
 					<div>
 						{{#saleInFuture}}
 							{{#i18n}}show-event.sales-not-started{{/i18n}}
@@ -69,6 +70,7 @@
 							{{#i18n}}show-event.sales-end [{{#format-date}}{{zonedExpiration}} dd.MM.yyyy HH:mm locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}
 						{{/saleInFuture}}
 					</div>
+					{{/expired}}
 					<div>
 						{{description}}
 					</div>
@@ -80,7 +82,9 @@
 						{{/free}}
 						{{^free}}
 							{{finalPrice}} {{event.currency}}
+							{{^expired}}
                             <i class="fa fa-info-circle text-info tooltip-handler" title="{{#event.vatIncluded}}{{#i18n}}show-event.incVat [{{event.vat}}]{{/i18n}}{{/event.vatIncluded}}{{^event.vatIncluded}}{{#i18n}}show-event.excVat [{{event.vat}}]{{/i18n}}{{/event.vatIncluded}}"></i>
+							{{/expired}}
 						{{/free}}
 					</label>
 				</div>
