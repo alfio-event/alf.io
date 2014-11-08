@@ -50,6 +50,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -153,7 +154,7 @@ public class TicketController {
 			sendTicketByEmail(eventName, reservationId, ticketIdentifier, request, response);
 		}
 		
-		if (!newEmail.equals(t.getEmail())) {
+		if (StringUtils.hasText(t.getEmail()) && !newEmail.equals(t.getEmail())) {
 			sendEmailForOwnerChange(updateTicketOwner.getEmail().trim(), oData.get().getLeft(), t, request);
 		}
 		
