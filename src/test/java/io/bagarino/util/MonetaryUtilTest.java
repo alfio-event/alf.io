@@ -46,6 +46,7 @@ public class MonetaryUtilTest {{
             it.should("convert 10000", expect -> expect.that(MonetaryUtil.centsToUnit(10000)).is(new BigDecimal("100.00")));
             it.should("convert 10001", expect -> expect.that(MonetaryUtil.centsToUnit(10001)).is(new BigDecimal("100.01")));
             it.should("convert 10099", expect -> expect.that(MonetaryUtil.centsToUnit(10099)).is(new BigDecimal("100.99")));
+            it.should("convert 9750", expect -> expect.that(MonetaryUtil.centsToUnit(9750)).is(new BigDecimal("97.50")));
         });
 
         describe("MonetaryUtil.unitToCents", it -> {

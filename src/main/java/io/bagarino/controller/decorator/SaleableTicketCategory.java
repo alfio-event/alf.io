@@ -18,14 +18,15 @@ package io.bagarino.controller.decorator;
 
 import io.bagarino.model.Event;
 import io.bagarino.model.TicketCategory;
-import io.bagarino.util.MonetaryUtil;
 import lombok.experimental.Delegate;
 
-import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.IntStream;
+
+import static io.bagarino.util.MonetaryUtil.addVAT;
+import static io.bagarino.util.MonetaryUtil.formatCents;
 
 public class SaleableTicketCategory {
 
@@ -81,11 +82,11 @@ public class SaleableTicketCategory {
     	return getExpiration(zoneId);
     }
 
-    public BigDecimal getFinalPrice() {
+    public String getFinalPrice() {
         if(event.isVatIncluded()) {
-            return MonetaryUtil.addVAT(ticketCategory.getPrice(), event.getVat());
+            return formatCents(addVAT(ticketCategory.getPriceInCents(), event.getVat()));
         }
-        return ticketCategory.getPrice();
+        return formatCents(ticketCategory.getPriceInCents());
     }
 
     public int[] getAmountOfTickets() {
