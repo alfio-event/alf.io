@@ -37,6 +37,7 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.ModelAndView;
@@ -89,7 +90,12 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     		@Override
     		public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
     				ModelAndView modelAndView) throws Exception {
-    			Optional.ofNullable(modelAndView).ifPresent(mv -> mv.addObject("request", request));
+    			Optional.ofNullable(modelAndView).ifPresent(mv -> {
+                    mv.addObject("request", request);
+                    final ModelMap modelMap = mv.getModelMap();
+                    modelMap.putIfAbsent("pageTitle", "empty");
+                    modelMap.putIfAbsent("event", null);
+                });
     		}
 		});
     }
