@@ -93,7 +93,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     		}
 		});
     }
-    
+
     @Bean
     public HandlerInterceptor getLocaleChangeInterceptor(){
         LocaleChangeInterceptor localeChangeInterceptor= new LocaleChangeInterceptor();
@@ -108,7 +108,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     				ModelAndView modelAndView) throws Exception {
     			// TODO: complete the policy: to add: connect-src, style-src (other?)
     			// http://www.html5rocks.com/en/tutorials/security/content-security-policy/
-    			response.addHeader("Content-Security-Policy", "script-src 'self' https://ajax.googleapis.com/ https://js.stripe.com/ https://api.stripe.com/");
+    			response.addHeader("Content-Security-Policy", "script-src 'self' https://ajax.googleapis.com/ https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/");
     		}
     	};
 	}
@@ -162,9 +162,10 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
 
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-        StringHttpMessageConverter converter = new StringHttpMessageConverter();
-        converter.setSupportedMediaTypes(Arrays.asList(MediaType.TEXT_HTML));
         converters.add(jacksonMessageConverter());
+        StringHttpMessageConverter converter = new StringHttpMessageConverter();
+        converter.setSupportedMediaTypes(Arrays.asList(MediaType.ALL));
+        converters.add(converter);
     }
 
     @Bean

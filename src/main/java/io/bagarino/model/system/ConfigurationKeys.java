@@ -45,7 +45,8 @@ public enum ConfigurationKeys {
     SMTP_USERNAME("SMTP Username", false),
     SMTP_PASSWORD("SMTP Password", false),
     SMTP_FROM_EMAIL("E-Mail sender", false),
-    SMTP_PROPERTIES("SMTP Properties", false);
+    SMTP_PROPERTIES("SMTP Properties", false),
+    GOOGLE_ANALYTICS_KEY("Google Analytics tracking ID", false);
 
     private static final Predicate<ConfigurationKeys> INTERNAL = ConfigurationKeys::isInternal;
     private final String description;
