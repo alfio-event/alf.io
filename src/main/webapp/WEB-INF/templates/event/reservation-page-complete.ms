@@ -6,11 +6,13 @@
 	{{/event.imageIsPresent}}
 </div>
 
+{{^ticketsAreAllAssigned}}
 <ol class="breadcrumb wMarginBottom wMarginTop">
     <li class="active">{{#i18n}}breadcrumb.step1{{/i18n}}</li>
     <li class="active">{{#i18n}}breadcrumb.step2{{/i18n}}</li>
     <li><i class="fa fa-download"></i> {{#i18n}}breadcrumb.step3{{/i18n}}</li>
 </ol>
+{{/ticketsAreAllAssigned}}
 
 <h1>
 	{{#ticketsAreAllAssigned}}
