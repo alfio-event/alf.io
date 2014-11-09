@@ -19,8 +19,14 @@ package io.bagarino.manager.system;
 import io.bagarino.model.system.ConfigurationKeys;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Optional;
 import java.util.Properties;
+
+import javax.activation.FileTypeMap;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.internet.MimeMessage;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -30,6 +36,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.springframework.mail.MailException;
+import org.springframework.mail.MailParseException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -50,7 +58,7 @@ public class DefaultMailer implements Mailer {
 
 	@Override
 	public void send(String to, String subject, String text, Optional<String> html, Attachment... attachments) {
-
+		
 		MimeMessagePreparator preparator = (mimeMessage) -> {
 			MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
 					: new MimeMessageHelper(mimeMessage, "UTF-8");
@@ -76,7 +84,7 @@ public class DefaultMailer implements Mailer {
 	}
 
 	private JavaMailSender toMailSender() {
-		JavaMailSenderImpl r = new JavaMailSenderImpl();
+		JavaMailSenderImpl r = new CustomJavaMailSenderImpl();
 		r.setDefaultEncoding("UTF-8");
 		r.setHost(configurationManager.getRequiredValue(ConfigurationKeys.SMTP_HOST));
 		r.setPort(Integer.valueOf(configurationManager.getRequiredValue(ConfigurationKeys.SMTP_PORT)));
@@ -96,5 +104,58 @@ public class DefaultMailer implements Mailer {
 			}
 		}
 		return r;
+	}
+	
+	static class CustomMimeMessage extends MimeMessage {
+		
+		private String defaultEncoding;
+		private FileTypeMap defaultFileTypeMap;
+
+		CustomMimeMessage(Session session, String defaultEncoding, FileTypeMap defaultFileTypeMap) {
+			super(session);
+			this.defaultEncoding = defaultEncoding;
+			this.defaultFileTypeMap = defaultFileTypeMap;
+		}
+
+		CustomMimeMessage(Session session, InputStream contentStream) throws MessagingException {
+			super(session, contentStream);
+		}
+		
+		public final String getDefaultEncoding() {
+			return this.defaultEncoding;
+		}
+
+		public final FileTypeMap getDefaultFileTypeMap() {
+			return this.defaultFileTypeMap;
+		}
+		
+		@Override
+		protected void updateMessageID() throws MessagingException {
+		    removeHeader("Message-Id");
+		}
+		
+		@Override
+		public void setHeader(String name, String value) throws MessagingException {
+			if(!"Message-Id".equals(name)) {
+				super.setHeader(name, value);
+			}
+		}
+	}
+	
+	static class CustomJavaMailSenderImpl extends JavaMailSenderImpl {
+		@Override
+		public MimeMessage createMimeMessage() {
+			return new CustomMimeMessage(getSession(), getDefaultEncoding(), getDefaultFileTypeMap());
+		}
+		
+		@Override
+		public MimeMessage createMimeMessage(InputStream contentStream) throws MailException {
+			try {
+				return new CustomMimeMessage(getSession(), contentStream);
+			}
+			catch (MessagingException ex) {
+				throw new MailParseException("Could not parse raw MIME content", ex);
+			}
+		}
 	}
 }
