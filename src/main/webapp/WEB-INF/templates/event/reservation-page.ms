@@ -26,9 +26,9 @@
  	data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
  ></script>
 {{/orderSummary.free}}
-<div>
+<div class="center">
 		{{#event.imageIsPresent}}
-            <img src="{{event.imageUrl}}" alt="{{event.shortName}}" class="img-responsive img-center">
+            <img src="{{event.imageUrl}}" alt="{{event.shortName}}">
 		{{/event.imageIsPresent}}
 </div>
 <ol class="breadcrumb wMarginBottom wMarginTop">
