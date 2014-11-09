@@ -63,6 +63,10 @@ p.ticket-info {
 	background-color: #F5F5DC
 }
 
+.center {
+	text-align: center;
+}
+
 .wMarginBottom {
     margin-bottom: 20px;
 }

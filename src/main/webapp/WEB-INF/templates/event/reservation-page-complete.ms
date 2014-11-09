@@ -6,11 +6,13 @@
 	{{/event.imageIsPresent}}
 </div>
 
+{{^ticketsAreAllAssigned}}
 <ol class="breadcrumb wMarginBottom wMarginTop">
     <li class="active">{{#i18n}}breadcrumb.step1{{/i18n}}</li>
     <li class="active">{{#i18n}}breadcrumb.step2{{/i18n}}</li>
     <li><i class="fa fa-download"></i> {{#i18n}}breadcrumb.step3{{/i18n}}</li>
 </ol>
+{{/ticketsAreAllAssigned}}
 
 <h1>
 	{{#ticketsAreAllAssigned}}
@@ -49,9 +51,11 @@
 			{{#assigned}}
 				<div class="wMarginBottom">
 					<p>{{#i18n}}reservation-page-complete.assigned-to [{{fullName}}] [{{email}}]{{/i18n}}</p>
-					<ul class="list-inline">
+					<ul class="list-inline center">
 						<li><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}" class="btn btn-primary"><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.show-ticket{{/i18n}}</a>
 						<li><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/download-ticket" class="btn btn-primary"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a>
+					</ul>
+					<ul class="list-inline wMarginTop center">
 						<li><form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/send-ticket-by-email" class="form-inline"><button type="submit" class="btn btn-primary"><i class="fa fa-envelope-o"></i> {{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{email}}]{{/i18n}}</button><input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}"></form>
 						{{^lockedAssignment}}
 						<li><a href="#ticket-{{uuid}}" class="btn btn-primary update-ticket-owner"><i class="fa fa-mail-forward"></i> {{#i18n}}reservation-page-complete.update-ticket-owner{{/i18n}}</a>
