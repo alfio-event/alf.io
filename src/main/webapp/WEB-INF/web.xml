@@ -23,4 +23,9 @@
         <extension>svg</extension>
         <mime-type>image/svg+xml</mime-type>
     </mime-mapping>
+    
+    <!-- 4h -->
+    <session-config>
+        <session-timeout>240</session-timeout>
+	</session-config>
 </web-app>

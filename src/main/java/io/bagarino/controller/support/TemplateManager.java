@@ -51,6 +51,9 @@ public class TemplateManager {
 	private final Compiler templateCompiler = Mustache
 			.compiler()
 			.escapeHTML(false)
+			.standardsMode(false)
+			.defaultValue("")
+        	.nullValue("")
 			.withFormatter(
 					(o) -> {
 						return (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME
