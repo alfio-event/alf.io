@@ -68,6 +68,9 @@ public class DefaultMailer implements Mailer {
 					message.addAttachment(a.getFilename(), a.getSource(), a.getContentType());
 				}
 			}
+			
+			message.getMimeMessage().saveChanges();
+			message.getMimeMessage().removeHeader("Message-ID");
 		};
 		toMailSender().send(preparator);
 	}
