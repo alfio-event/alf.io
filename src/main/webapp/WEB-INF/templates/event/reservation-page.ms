@@ -90,7 +90,7 @@
 	<h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
 	<div class="form-group {{#field-has-error}}[fullName] has-error{{/field-has-error}}">
 		<label for="full-name" class="control-label">{{#i18n}}common.full-name{{/i18n}}</label>
-		<input type="text" name="fullName" id="full-name" required class="form-control" autocomplete="name" maxlength="255" value="{{paymentForm.fullName}}">
+		<input type="text" name="fullName" id="full-name" required class="form-control" autocomplete="name" maxlength="255" value="{{paymentForm.fullName}}" data-stripe="name">
 		{{#field-has-error}}[fullName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}fullName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
 	</div>
 	<div class="form-group {{#field-has-error}}[email] has-error{{/field-has-error}}">
