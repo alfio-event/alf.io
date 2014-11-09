@@ -1,9 +1,9 @@
 {{>/event/page-top}}
 
 <div class="page-header">
-    <h1>
+    <h1 class="center">
     	{{#event.imageIsPresent}}
-    		<img src="{{event.imageUrl}}" alt="{{event.shortName}}" class="img-responsive img-center">
+    		<img src="{{event.imageUrl}}" alt="{{event.shortName}}">
     	{{/event.imageIsPresent}}
     	{{^event.imageIsPresent}}
     		{{event.shortName}}
