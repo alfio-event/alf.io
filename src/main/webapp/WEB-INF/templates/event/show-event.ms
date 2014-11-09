@@ -124,15 +124,29 @@
 	{{/ticketCategories}}
 	</ul>
 
-	<div class="row wMarginBottom">
-		<div class="col-sm-9 col-sm-offset-3">
-			{{#hasAccessRestrictedCategory}}
-                <div class="form-inline text-center">
-                    <label>{{#i18n}}show-event.promo-code{{/i18n}}: <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label> <button class="btn btn-default" type="button" id="apply-promo-codes">{{#i18n}}show-event.promo-code.apply{{/i18n}}</button>
-                </div>
-			{{/hasAccessRestrictedCategory}}
+<div class="wMarginBottom"></div>
+{{#hasAccessRestrictedCategory}}
+<div id="accessRestrictedTokens" class="wMarginBottom">
+	<div class="panel panel-default">
+		<div class="panel-heading" role="tab" id="headingOne">
+			<h4 class="panel-title">
+				<i class="fa fa-gift"></i>
+				<a data-toggle="collapse" href="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+					{{#i18n}}show-event.promo-code{{/i18n}}
+				</a>
+			</h4>
+		</div>
+		<div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+			<div class="panel-body">
+				<div class="form-inline text-center">
+					<label>{{#i18n}}show-event.promo-code-insert{{/i18n}} <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label>
+					<button class="btn btn-success" type="button" id="apply-promo-codes">{{#i18n}}show-event.promo-code.apply{{/i18n}}</button>
+				</div>
+			</div>
 		</div>
 	</div>
+</div>
+{{/hasAccessRestrictedCategory}}
 
 	<hr/>
 
