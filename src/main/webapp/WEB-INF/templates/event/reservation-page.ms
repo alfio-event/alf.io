@@ -124,19 +124,19 @@
 		<div class="col-md-4">
 			<div class="form-group">
 				<label for="card-mm">{{#i18n}}reservation-page.expiration-month{{/i18n}}</label>
-				<input type="text" class="form-control" placeholder="MM" size="2" data-stripe="exp-month" required class="form-control" maxlength="2" autocomplete="off" id="card-mm" pattern="\d+">
+				<input type="text" class="form-control" size="2" data-stripe="exp-month" required maxlength="2" autocomplete="off" id="card-mm" pattern="\d+">
 			</div>
 		</div>
 		<div class="col-md-4">
 			<div class="form-group">
 				<label for="card-yyyy">{{#i18n}}reservation-page.expiration-year{{/i18n}}</label>
-				<input type="text" class="form-control" placeholder="YYYY" size="4" data-stripe="exp-year" required class="form-control" maxlength="4" autocomplete="off" id="card-yyyy" pattern="\d+">
+				<input type="text" class="form-control" size="4" data-stripe="exp-year" required maxlength="4" autocomplete="off" id="card-yyyy" pattern="\d+">
 			</div>
 		</div>
 		<div class="col-md-4">
 			<div class="form-group">
 				<label for="card-cvc">{{#i18n}}reservation-page.cvc{{/i18n}}</label>
-				<input type="text" class="form-control" placeholder="123" size="4" data-stripe="cvc" required class="form-control" id="card-cvc" autocomplete="off">
+				<input type="text" class="form-control" size="4" data-stripe="cvc" required id="card-cvc" autocomplete="off">
 			</div>
 		</div>
 	</div>
