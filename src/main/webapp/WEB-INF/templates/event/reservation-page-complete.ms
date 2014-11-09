@@ -7,12 +7,14 @@
 </div>
 
 {{^ticketsAreAllAssigned}}
-<ol class="breadcrumb wMarginBottom wMarginTop">
+<ol class="breadcrumb wMarginTop">
     <li class="active">{{#i18n}}breadcrumb.step1{{/i18n}}</li>
     <li class="active">{{#i18n}}breadcrumb.step2{{/i18n}}</li>
     <li><i class="fa fa-download"></i> {{#i18n}}breadcrumb.step3{{/i18n}}</li>
 </ol>
 {{/ticketsAreAllAssigned}}
+
+<div class="wMarginBottom"></div>
 
 <h1>
 	{{#ticketsAreAllAssigned}}
@@ -41,7 +43,26 @@
 {{/ticketsAreAllAssigned}}
 
 {{^ticketsAreAllAssigned}}
-<p class="alert alert-success">{{#i18n}}reservation-page-complete.info-assign [{{event.shortName}}]{{/i18n}}</p>
+<div class="alert alert-success">
+	<div class="row">
+		<div class="col-sm-12">
+			{{#i18n}}reservation-page-complete.info-assign [{{event.shortName}}]{{/i18n}}
+		</div>
+	</div>
+    <div class="row">
+        <div class="col-sm-12">
+			{{#i18n}}reservation-page-complete.info-assign-email [{{reservation.email}}]{{/i18n}}
+        </div>
+    </div>
+	<div class="row">
+		<div class="col-sm-4 col-sm-offset-8">
+		<form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/re-send-email" method="post" class="form-inline">
+			<button type="submit" class="btn btn-default">{{#i18n}}reservation-page-complete.resend-reservation-email{{/i18n}}</button>
+			<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
+		</form>
+		</div>
+	</div>
+</div>
 {{/ticketsAreAllAssigned}}
 
 <ul class="list-group">
