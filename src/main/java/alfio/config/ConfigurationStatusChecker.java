@@ -58,7 +58,7 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
             userRepository.create("admin", passwordEncoder.encode(adminPassword), "The", "Administrator", "admin@localhost", true);
             authorityRepository.create("admin", AuthorityRepository.ROLE_ADMIN);
             log.info("*******************************************************");
-            log.info("   This is the first time you're running alfio");
+            log.info("   This is the first time you're running alf.io");
             log.info("   here the generated admin credentials:");
             log.info("   {} ", adminPassword);
             log.info("*******************************************************");
