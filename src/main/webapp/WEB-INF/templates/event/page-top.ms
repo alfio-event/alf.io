@@ -18,5 +18,5 @@
 			<div>
 
 				<!-- lang bar -->
-				<div class="bagarino-lang"><a href="?lang=it">it</a> / <a href="?lang=en">en</a></div>
+				<div class="alfio-lang"><a href="?lang=it">it</a> / <a href="?lang=en">en</a></div>
 				<!-- -->

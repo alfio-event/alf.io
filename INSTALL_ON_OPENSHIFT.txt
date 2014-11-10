@@ -19,7 +19,7 @@ We will do a binary deploy using scp/sftp for moving the .war to our gear.
 3. Then build the application and push the war file (named ROOT.war) to your gear (we are doing a 2 step upload/move as sometimes wildfly detect the war in the middle of the upload).
 
 > mvn clean install
-> scp target/bagarino.war [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN].rhcloud.com:wildfly/standalone/deployments/ROOT
+> scp target/alfio.war [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN].rhcloud.com:wildfly/standalone/deployments/ROOT
 > ssh [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN].rhcloud.com "mv wildfly/standalone/deployments/ROOT wildfly/standalone/deployments/ROOT.war"
 
 4. Go to the log to get the admin username using
@@ -36,7 +36,7 @@ You will need to configure smtp/stripe/google maps api key in the admin, section
 
 For updating the application, you only need to upload the war and rename it:
 > mvn clean install
-> scp target/bagarino.war [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN].rhcloud.com:wildfly/standalone/deployments/ROOT
+> scp target/alfio.war [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN].rhcloud.com:wildfly/standalone/deployments/ROOT
 > ssh [YOUR_SSH_USERNAME]@[YOUR_APP_NAME]-[YOUR_DOMAIN] "mv wildfly/standalone/deployments/ROOT wildfly/standalone/deployments/ROOT.war"
 
 Reminder

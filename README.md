@@ -1,11 +1,11 @@
-bagarino
+alf.io
 ========
 
-bagarino.io
+alf.io
 
-[![Build Status](https://travis-ci.org/exteso/bagarino.png?branch=master)](https://travis-ci.org/exteso/bagarino)
+[![Build Status](https://travis-ci.org/exteso/alf.io.png?branch=master)](https://travis-ci.org/exteso/alf.io)
 
-read the [Requirements](https://github.com/exteso/bagarino/wiki/Requirements)
+read the [Requirements](https://github.com/exteso/alf.io/wiki/Requirements)
 
 ## Run with jetty
 
