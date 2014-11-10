@@ -12,6 +12,8 @@
 {{^orderSummary.free}}{{#event.vatIncluded}}
 {{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}: {{orderSummary.totalVAT}} {{event.currency}}{{/event.vatIncluded}}{{/orderSummary.free}}
 
+{{#hasVat}}{{#i18n}}email-confirmation.vatNr [{{vatNr}}]{{/i18n}}{{/hasVat}}
+
 {{#i18n}}email-confirmation.order-information [{{ticketReservation.id}}]{{/i18n}}
 
 #### {{#i18n}}email.event-info{{/i18n}} ####

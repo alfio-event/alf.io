@@ -344,4 +344,8 @@ public class TicketReservationManager {
 	public int countUnsoldTicket(int eventId, int categoryId) {
 		return ticketRepository.countUnsoldTicket(eventId, categoryId);
 	}
+	
+	public Optional<String> getVAT() {
+		return configurationManager.getStringConfigValue(ConfigurationKeys.VAT_NR);
+	}
 }

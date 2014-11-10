@@ -290,6 +290,11 @@ public class ReservationController {
 		model.put("organization", organizationRepository.getById(event.getOrganizationId()));
 		model.put("event", event);
 		model.put("ticketReservation", reservation);
+		
+		Optional<String> vat = ticketReservationManager.getVAT();
+		
+		model.put("hasVat", vat.isPresent());
+		model.put("vatNr", vat.orElse(""));
 
 		OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservation.getId(), event);
 		model.put("tickets", ticketReservationManager.findTicketsInReservation(reservation.getId()));

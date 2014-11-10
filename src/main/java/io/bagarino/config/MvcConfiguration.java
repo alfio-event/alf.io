@@ -21,8 +21,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.samskivert.mustache.Mustache;
+
 import io.bagarino.controller.support.TemplateManager;
 import io.bagarino.util.MustacheCustomTagInterceptor;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
@@ -51,8 +54,10 @@ import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplate
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 import org.springframework.web.servlet.view.mustache.jmustache.LocalizationMessageInterceptor;
 
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -92,9 +97,11 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     				ModelAndView modelAndView) throws Exception {
     			Optional.ofNullable(modelAndView).ifPresent(mv -> {
                     mv.addObject("request", request);
-                    final ModelMap modelMap = mv.getModelMap();
-                    modelMap.putIfAbsent("pageTitle", "empty");
-                    modelMap.putIfAbsent("event", null);
+                   	final ModelMap modelMap = mv.getModelMap();
+                   	modelMap.putIfAbsent("event", null);
+                   	if(!StringUtils.startsWith(mv.getViewName(), "redirect:")) {
+                    	modelMap.putIfAbsent("pageTitle", "empty");
+                    }
                 });
     		}
 		});
