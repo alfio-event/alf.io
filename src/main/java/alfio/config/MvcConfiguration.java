@@ -33,9 +33,10 @@ import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpInputMessage;
+import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.http.converter.*;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.ui.ModelMap;
@@ -54,6 +55,8 @@ import org.springframework.web.servlet.view.mustache.jmustache.LocalizationMessa
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -233,5 +236,27 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     @Override
     public void setResourceLoader(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
+    }
+
+    public static class JavascriptMessageConverter extends AbstractHttpMessageConverter<String> {
+
+        protected JavascriptMessageConverter() {
+            super(new MediaType("application", "javascript", Charset.forName("UTF-8")));
+        }
+
+        @Override
+        protected boolean supports(Class<?> clazz) {
+            return String.class.isAssignableFrom(clazz);
+        }
+
+        @Override
+        protected String readInternal(Class<? extends String> clazz, HttpInputMessage inputMessage) throws IOException, HttpMessageNotReadableException {
+            return null;
+        }
+
+        @Override
+        protected void writeInternal(String s, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
+            outputMessage.getBody().write(s.getBytes(Charset.forName("UTF-8")));
+        }
     }
 }
