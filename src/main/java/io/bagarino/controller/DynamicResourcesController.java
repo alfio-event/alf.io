@@ -18,12 +18,14 @@ package io.bagarino.controller;
 
 import io.bagarino.manager.system.ConfigurationManager;
 import io.bagarino.model.system.ConfigurationKeys;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
 import java.util.Optional;
 
 @Controller
@@ -39,10 +41,9 @@ public class DynamicResourcesController {
     }
 
     @RequestMapping("/resources/js/google-analytics")
-    @ResponseBody
-    public String getGoogleTagManagerScript(HttpServletResponse response) {
+    public void getGoogleTagManagerScript(HttpServletResponse response) throws IOException {
         response.setContentType("application/javascript");
         final Optional<String> id = configurationManager.getStringConfigValue(ConfigurationKeys.GOOGLE_ANALYTICS_KEY);
-        return id.map(x -> String.format(GOOGLE_ANALYTICS_SCRIPT, x)).orElse(EMPTY);
+        response.getWriter().write(id.map(x -> String.format(GOOGLE_ANALYTICS_SCRIPT, x)).orElse(EMPTY));
     }
 }
