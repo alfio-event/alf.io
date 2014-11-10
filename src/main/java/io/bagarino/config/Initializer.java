@@ -1,34 +1,32 @@
 /**
- * This file is part of bagarino.
+ * This file is part of alf.io.
  *
- * bagarino is free software: you can redistribute it and/or modify
+ * alf.io is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * bagarino is distributed in the hope that it will be useful,
+ * alf.io is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with bagarino.  If not, see <http://www.gnu.org/licenses/>.
+ * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
 package io.bagarino.config;
 
 import io.bagarino.filter.RedirectToHttpsFilter;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.reflect.MethodUtils;
+import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import javax.servlet.FilterRegistration.Dynamic;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.SessionCookieConfig;
-
-import lombok.extern.log4j.Log4j2;
-
-import org.apache.commons.lang3.ClassUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.reflect.MethodUtils;
-import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 @Log4j2
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {

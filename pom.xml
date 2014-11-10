@@ -2,13 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>io.bagarino</groupId>
-	<artifactId>bagarino</artifactId>
+	<groupId>alfio</groupId>
+	<artifactId>alfio</artifactId>
 	<version>1.0-SNAPSHOT</version>
 	<packaging>war</packaging>
 
-	<name>bagarino</name>
-	<url>http://www.bagarino.io</url>
+	<name>alf.io</name>
+	<url>http://alf.io</url>
 
 	<properties>
 		<java.version>1.8</java.version>
@@ -217,7 +217,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>bagarino</finalName>
+		<finalName>alfio</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -348,7 +348,7 @@
 				<jetty.host>0.0.0.0</jetty.host>
 				<datasource.dialect>HSQLDB</datasource.dialect>
 				<datasource.driver>org.hsqldb.jdbcDriver</datasource.driver>
-				<datasource.url>jdbc:hsqldb:mem:bagarino</datasource.url>
+				<datasource.url>jdbc:hsqldb:mem:alfio</datasource.url>
 				<datasource.username>sa</datasource.username>
 				<datasource.password></datasource.password>
 				<datasource.validationQuery>SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS</datasource.validationQuery>
@@ -362,7 +362,7 @@
 				<jetty.host>0.0.0.0</jetty.host>
 				<datasource.dialect>PGSQL</datasource.dialect>
 				<datasource.driver>org.postgresql.Driver</datasource.driver>
-				<datasource.url>jdbc:postgresql://localhost:5432/bagarino</datasource.url>
+				<datasource.url>jdbc:postgresql://localhost:5432/alfio</datasource.url>
 				<datasource.username>postgres</datasource.username>
 				<datasource.password>password</datasource.password>
 				<datasource.validationQuery>SELECT 1</datasource.validationQuery>
