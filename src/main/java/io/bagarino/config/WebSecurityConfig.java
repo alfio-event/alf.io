@@ -63,7 +63,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.sessionManagement()
-            .invalidSessionUrl("/session-expired")
+            //.invalidSessionUrl("/session-expired")
             .and()
             .csrf()
             .csrfTokenRepository(getCsrfTokenRepository())
