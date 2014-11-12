@@ -27,6 +27,8 @@ import java.util.stream.IntStream;
 
 import static alfio.util.MonetaryUtil.addVAT;
 import static alfio.util.MonetaryUtil.formatCents;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 public class SaleableTicketCategory {
 
@@ -90,7 +92,12 @@ public class SaleableTicketCategory {
     }
 
     public int[] getAmountOfTickets() {
-        return IntStream.rangeClosed(0, maxTickets).limit(Math.min(maxTickets+1, availableTickets+1)).toArray();
+        return generateRangeOfTicketQuantity(maxTickets, availableTickets);
+    }
+
+    static int[] generateRangeOfTicketQuantity(int maxTickets, int availableTickets) {
+        final int maximumSaleableTickets = max(0, min(maxTickets, availableTickets));
+        return IntStream.rangeClosed(0, maximumSaleableTickets).toArray();
     }
 
 
