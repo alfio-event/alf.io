@@ -165,6 +165,7 @@ public class DataSourceConfiguration {
 		Flyway migration = new Flyway();
 		migration.setDataSource(dataSource);
 
+		migration.setValidateOnMigrate(false);
 		migration.setTarget(MigrationVersion.LATEST);
 
 		migration.setLocations("alfio/db/" + sqlDialect + "/");
