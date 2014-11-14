@@ -28,6 +28,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
+import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 @Log4j2
@@ -38,6 +39,14 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 		super.onStartup(servletContext);
 
 		configureSessionCookie(servletContext);
+		
+		CharacterEncodingFilter cef = new CharacterEncodingFilter();
+		cef.setEncoding("UTF-8");
+		cef.setForceEncoding(true);
+		
+		Dynamic characterEncodingFilter = servletContext.addFilter("CharacterEncodingFilter", cef);
+		characterEncodingFilter.setAsyncSupported(true);
+		characterEncodingFilter.addMappingForUrlPatterns(null, false, "/*");
 
 		Dynamic redirectFilter = servletContext.addFilter("RedirectToHttpsFilter", RedirectToHttpsFilter.class);
 		redirectFilter.setAsyncSupported(true);
