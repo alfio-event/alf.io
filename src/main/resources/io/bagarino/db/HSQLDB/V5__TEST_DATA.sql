@@ -50,7 +50,8 @@ insert into ticket (uuid, creation, category_id, event_id, status, original_pric
   ('abcdefghilmo46', '2014-01-10 00:00:00', 3, 0, 'FREE', 463, 463, null),
   
   --restricted
-  ('abcdefghilmo47', '2014-01-10 00:00:00', 4, 0, 'FREE', 463, 463, null);
+  ('abcdefghilmo47', '2014-01-10 00:00:00', 4, 0, 'FREE', 463, 463, null),
+  ('abcdefghilmo48', '2014-01-10 00:00:00', 4, 0, 'FREE', 463, 463, null);
 
 insert into special_price (code, price_cts, ticket_category_id, status) values
   ('424242', 463, 4, 'FREE'),
