@@ -80,7 +80,7 @@ public class ConfigurationManager {
     public String getRequiredValue(ConfigurationKeys key) {
         return optionally(() -> configurationRepository.findByKey(key.getValue()))
                 .map(Configuration::getValue)
-                .orElseThrow(IllegalArgumentException::new);
+                .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + key + " not present"));
     }
 
     public List<Configuration> loadAllIncludingMissing() {
