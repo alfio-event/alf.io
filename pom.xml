@@ -9,6 +9,12 @@
 
 	<name>alf.io</name>
 	<url>http://alf.io</url>
+	
+	<scm>
+		<connection>scm:git:git@github.com:exteso/alf.io.git</connection>
+		<developerConnection>scm:git:git@github.com:exteso/alf.io.git</developerConnection>
+		<url>https://github.com/exteso/alf.io.git</url>
+  	</scm>
 
 	<properties>
 		<java.version>1.8</java.version>
