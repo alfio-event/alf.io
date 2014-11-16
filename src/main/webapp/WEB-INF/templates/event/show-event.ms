@@ -78,6 +78,11 @@
 						{{/saleInFuture}}
 					</div>
 					{{/expired}}
+					{{#expired}}
+					<div>
+						{{#i18n}}show-event.sales-ended [{{#format-date}}{{zonedExpiration}} dd.MM.yyyy HH:mm locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}
+					</div>
+					{{/expired}}
 					<div>
 						{{description}}
 					</div>
