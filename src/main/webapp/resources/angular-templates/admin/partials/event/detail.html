@@ -1,39 +1,13 @@
 <div class="fa fa-refresh fa-spin fa-2x text-muted" data-ng-if="!event">
 </div>
 <div class="container" data-ng-if="event">
-    <div class="page-header">
-        <h1>{{event.shortName}}</h1>
-        <h4 class="text-muted">{{event.description}}</h4>
-    </div>
-    <div class="page-header"><h2>Logistic info</h2></div>
-    <div class="row">
-        <div class="col-sm-12 col-md-6">
-            <div class="form-group">
-                <label>Owner Organization</label>
-                <p class="form-control-static">{{organization.name}}</p>
-
-                <label>Location</label>
-                <p class="form-control-static">{{event.location}}</p>
-
-                <label>Start Date/Time</label>
-                <p class="form-control-static">{{event.formattedBegin | formatDate}}</p>
-
-                <label>End Date/Time</label>
-                <p class="form-control-static">{{event.formattedEnd | formatDate}}</p>
-
-            </div>
-        </div>
-        <div class="col-sm-12 col-md-6">
-            <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loadingMap"></i>
-            <img data-ng-if="event.geolocation && !loadingMap" data-ng-src="{{event.geolocation.mapUrl}}" alt="{{event.location}}" />
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-sm-12">
-            <label>Description</label>
-            <p class="form-control-static">{{event.description}}</p>
-        </div>
-    </div>
+    <form name="header" role="form" data-ng-submit="saveEventHeader(eventHeader)" novalidate>
+        <event-header data-ng-if="!editEventHeader"></event-header>
+        <edit-event-header data-ng-if="editEventHeader" data-event-obj="event" data-target-obj="eventHeader" data-organizations="organizations"></edit-event-header>
+        <button class="btn btn-default" data-ng-if="!editEventHeader" data-ng-click="toggleEditHeader(false)">edit</button>
+        <button class="btn btn-success" type="submit" data-ng-if="editEventHeader" data-ng-disabled="header.$waiting || !header.$valid">save</button>
+        <button class="btn btn-default" data-ng-if="editEventHeader" data-ng-disabled="header.$waiting" data-ng-click="toggleEditHeader(true)">cancel</button>
+    </form>
     <div class="page-header">
         <h2>Tickets</h2>
         <h4>This event has been marked as <span data-ng-if="event.freeOfCharge">Free of charge</span> <span data-ng-if="!event.freeOfCharge">Paid</span></h4>

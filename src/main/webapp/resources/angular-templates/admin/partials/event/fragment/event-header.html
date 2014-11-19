@@ -1,0 +1,42 @@
+<div class="page-header">
+    <h1>{{event.shortName}}</h1>
+    <h4 class="text-muted">{{event.description}}</h4>
+</div>
+<div class="page-header"><h2>Logistic info</h2></div>
+<div class="row">
+    <div class="col-sm-12 col-md-6">
+        <div class="form-group">
+            <label>Owner Organization</label>
+            <p class="form-control-static">{{organization.name}}</p>
+
+            <label>Website URL</label>
+            <p class="form-control-static">{{event.websiteUrl}}</p>
+
+            <label>Terms and conditions URL</label>
+            <p class="form-control-static"><a data-ng-href="event.termsAndConditionsUrl">{{event.termsAndConditionsUrl}}</a></p>
+
+            <label>Image URL</label>
+            <p class="form-control-static"><a data-ng-href="event.imageUrl">{{event.imageUrl}}</a></p>
+
+            <label>Location</label>
+            <p class="form-control-static">{{event.location}}</p>
+
+            <label>Description</label>
+            <p class="form-control-static">{{event.description}}</p>
+
+            <label>Start Date/Time</label>
+            <p class="form-control-static">{{event.formattedBegin | formatDate}}</p>
+
+            <label>End Date/Time</label>
+            <p class="form-control-static">{{event.formattedEnd | formatDate}}</p>
+
+            <label>Time Zone</label>
+            <p class="form-control-static">{{event.timeZone}}</p>
+
+        </div>
+    </div>
+    <div class="col-sm-12 col-md-6">
+        <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loadingMap"></i>
+        <img data-ng-if="event.geolocation && !loadingMap" data-ng-src="{{event.geolocation.mapUrl}}" alt="{{event.location}}" />
+    </div>
+</div>

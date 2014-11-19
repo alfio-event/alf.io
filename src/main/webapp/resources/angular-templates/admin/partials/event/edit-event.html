@@ -7,52 +7,7 @@
         <h4 class="text-muted">Please fill in the required information and then save</h4>
     </div>
     <form role="form" name="editEvent" data-ng-submit="save(form, event)" novalidate>
-        <div class="page-header"><h2>Logistic info</h2></div>
-        <div class="row">
-            <div class="col-sm-12 col-md-6">
-                <div class="form-group">
-                    <label for="shortName">Name</label>
-                    <input type="text" data-ng-model="event.shortName" name="shortName" data-grab-focus id="shortName" class="form-control" required pattern="^[A-Za-z0-9]{1,}_*[A-Za-z0-9]{1,}$"/>
-                    <field-error data-form-obj="editEvent" data-required-pattern="'A-Za-z0-9_ (no spaces)'" data-field-obj="editEvent.shortName"></field-error>
-
-                    <label for="organizationId">Owner Organization</label>
-                    <select data-ng-model="event.organizationId" name="organizationId" id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>
-                    <field-error data-form-obj="editEvent" data-field-obj="editEvent.organizationId"></field-error>
-
-                    <label for="location">Location</label>
-                    <textarea data-ng-model="event.location" name="location" id="location" class="form-control" required data-minlength="10" data-ng-change="updateLocation(event.location)" data-ng-model-options="{ updateOn: 'blur'}"></textarea>
-                    <field-error data-form-obj="editEvent" data-field-obj="editEvent.location" data-min-char="10"></field-error>
-
-                    <label for="description">Event Description</label>
-                    <textarea data-ng-model="event.description" name="description" id="description" required class="form-control" data-minlength="10"></textarea>
-                    <field-error data-form-obj="editEvent" data-field-obj="editEvent.description" data-min-char="10"></field-error>
-
-                    <label for="websiteUrl">Website URL</label>
-                    <input type="url" data-ng-model="event.websiteUrl" name="websiteUrl" id="websiteUrl" required class="form-control" />
-                    <field-error data-form-obj="editEvent" data-field-obj="editEvent.websiteUrl"></field-error>
-
-                    <label for="termsAndConditionsUrl">Terms and Conditions URL</label>
-                    <input type="url" data-ng-model="event.termsAndConditionsUrl" name="termsAndConditionsUrl" id="termsAndConditionsUrl" required class="form-control" />
-                    <field-error data-form-obj="editEvent" data-field-obj="editEvent.termsAndConditionsUrl"></field-error>
-                    
-                    <label for="imageUrl">Image URL</label>
-                    <input type="url" data-ng-model="event.imageUrl" name="imageUrl" id="imageUrl" required class="form-control" pattern="^https\:\/\/.*$"/>
-                    <field-error data-form-obj="editEvent" data-field-obj="editEvent.imageUrl" data-required-pattern="'must be a https url'"></field-error>
-                </div>
-                <div class="form-group">
-                    <label for="date">Event Date</label>
-                    <input type="text" data-date-range data-start-model="event.begin" data-end-model="event.end" data-ng-model="event.dateString" name="date" id="date" class="form-control" required />
-                </div>
-                <div class="form-group">
-                    <label for="timeZone">Event time zone</label>
-                    <input class="form-control" readonly name="timeZone" data-ng-model="event.geolocation.timeZone" required />
-                </div>
-            </div>
-            <div class="col-sm-12 col-md-6">
-                <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loadingMap"></i>
-                <img data-ng-if="event.geolocation && !loadingMap" data-ng-src="{{event.geolocation.mapUrl}}" alt="{{event.location}}" />
-            </div>
-        </div>
+        <edit-event-header data-target-obj="event" data-organizations="organizations" data-full-edit-mode="true"></edit-event-header>
 
         <div class="page-header">
             <h2>Tickets</h2>

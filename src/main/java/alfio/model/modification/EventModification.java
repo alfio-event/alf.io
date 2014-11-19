@@ -112,7 +112,7 @@ public class EventModification {
         final ZoneId zoneId = event.getZoneId();
         return new EventModification(event.getId(),
                 event.getWebsiteUrl(),
-                event.getTermAndConditionsUrl(),
+                event.getTermsAndConditionsUrl(),
                 event.getImageUrl(),
                 event.getShortName(),
                 event.getOrganizationId(),

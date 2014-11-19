@@ -96,7 +96,7 @@
 
 
                 var startDate = initDateUsingNow(scope.startModelObj);
-                var endDate = initDateUsingNow(scope.endModelObj).add(12, 'hours');
+                var endDate = initDateUsingNow(scope.endModelObj);
 
                 var result = startDate.format(dateFormat) + ' / ' + endDate.format(dateFormat);
                 ctrl.$setViewValue(result);
@@ -175,4 +175,46 @@
             link:angular.noop
         };
     });
+
+    //edit event: fragments
+    directives.directive('eventHeader', function() {
+        return {
+            restrict: 'E',
+            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/event-header.html',
+            link: angular.noop
+        }
+    });
+
+    directives.directive('editEventHeader', function() {
+        return {
+            scope: {
+                obj: '=targetObj',
+                eventObj: '=',
+                organizations: '=',
+                fullEditMode: '='
+            },
+            restrict: 'E',
+            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
+            controller: function EditEventHeaderController($scope) {
+                if(!angular.isDefined($scope.fullEditMode)) {
+                    var source = _.pick($scope.eventObj, ['shortName', 'organizationId', 'location',
+                        'description', 'websiteUrl', 'termsAndConditionsUrl', 'imageUrl', 'formattedBegin',
+                        'formattedEnd', 'geolocation']);
+                    angular.extend($scope.obj, source);
+                    var beginDateTime = moment(source['formattedBegin']);
+                    var endDateTime = moment(source['formattedEnd']);
+                    $scope.obj['begin'] = {
+                        date: beginDateTime.format('YYYY-MM-DD'),
+                        time: beginDateTime.format('HH:mm')
+                    };
+                    $scope.obj['end'] = {
+                        date: endDateTime.format('YYYY-MM-DD'),
+                        time: endDateTime.format('HH:mm')
+                    };
+                }
+            }
+        }
+    });
+
+
 })();
