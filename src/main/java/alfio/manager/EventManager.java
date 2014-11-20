@@ -169,10 +169,10 @@ public class EventManager {
         getSingleEventWithStatistics(em.getShortName(), username).getTicketCategories().stream()
                 .map(tc -> Triple.of(tc, tc.getInception(zoneId), tc.getExpiration(zoneId)))
                 .filter(t -> t.getMiddle().isBefore(begin) || t.getRight().isAfter(end))
-                .forEach(t -> fixTicketCategoryDates(begin, end, t.getLeft(), t.getMiddle(), t.getRight()));
+                .forEach(t -> fixTicketCategoryDates(end, t.getLeft(), t.getMiddle(), t.getRight()));
     }
 
-    private void fixTicketCategoryDates(ZonedDateTime begin, ZonedDateTime end, TicketCategoryWithStatistic tc, ZonedDateTime inception, ZonedDateTime expiration) {
+    private void fixTicketCategoryDates(ZonedDateTime end, TicketCategoryWithStatistic tc, ZonedDateTime inception, ZonedDateTime expiration) {
         ticketCategoryRepository.fixDates(tc.getId(), inception, ObjectUtils.min(end, expiration));
     }
 
