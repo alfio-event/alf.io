@@ -173,7 +173,7 @@ public class EventManager {
     }
 
     private void fixTicketCategoryDates(ZonedDateTime begin, ZonedDateTime end, TicketCategoryWithStatistic tc, ZonedDateTime inception, ZonedDateTime expiration) {
-        ticketCategoryRepository.fixDates(tc.getId(), ObjectUtils.max(begin, inception), ObjectUtils.min(end, expiration));
+        ticketCategoryRepository.fixDates(tc.getId(), inception, ObjectUtils.min(end, expiration));
     }
 
     private GeolocationResult geolocate(String location) {
