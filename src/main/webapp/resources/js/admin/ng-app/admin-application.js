@@ -256,8 +256,7 @@
                                                         LocationService,
                                                         $rootScope,
                                                         PaymentProxyService,
-                                                        $state,
-                                                        $log) {
+                                                        $state) {
         var loadData = function() {
             $scope.loading = true;
             EventService.getEvent($stateParams.eventName).success(function(result) {
@@ -354,8 +353,22 @@
             $scope.editEventHeader = !editEventHeader;
         };
 
-        $scope.saveEventHeader = function(header) {
-            $log.debug(header);
+        $scope.saveEventHeader = function(form, header) {
+            EventService.updateEventHeader(header).then(function(result) {
+                if(result.data['errorCount'] == 0) {
+                    $scope.editEventHeader = false;
+                    loadData();
+                } else {
+                    form.$setValidity(false);
+                    _.forEach(result.data.validationErrors, function(error) {
+                        var field = form.editEventHeader[error.fieldName];
+                        if(angular.isDefined(field)) {
+                            field.$setValidity('required', false);
+                            field.$setTouched();
+                        }
+                    });
+                }
+            });
         };
     });
 

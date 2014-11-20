@@ -17,10 +17,14 @@
 package alfio.util;
 
 import lombok.Getter;
+import org.springframework.validation.FieldError;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
+
 @Getter
 public final class ValidationResult {
 
@@ -38,9 +42,21 @@ public final class ValidationResult {
         return SUCCESS;
     }
 
-    public static ValidationResult failed(ValidationError... errors) {
-        return new ValidationResult(Arrays.asList(errors));
+    public static ValidationResult failed(List<ValidationError> errors) {
+        return new ValidationResult(errors);
     }
+
+    public static ValidationResult failed(ValidationError... errors) {
+        return failed(Arrays.asList(errors));
+    }
+
+    public ValidationResult ifSuccess(Operation operation) {
+        if(errorCount == 0) {
+            operation.doIt();
+        }
+        return this;
+    }
+
     @Getter
     public static final class ValidationError {
         private final String fieldName;
@@ -50,6 +66,15 @@ public final class ValidationResult {
             this.fieldName = fieldName;
             this.message = message;
         }
+
+        public static ValidationError fromFieldError(FieldError fieldError) {
+            return new ValidationError(fieldError.getField(), fieldError.getCode());
+        }
+    }
+
+    @FunctionalInterface
+    public static interface Operation {
+        void doIt();
     }
 }
 

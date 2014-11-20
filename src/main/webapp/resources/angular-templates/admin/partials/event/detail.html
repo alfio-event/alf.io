@@ -1,7 +1,7 @@
 <div class="fa fa-refresh fa-spin fa-2x text-muted" data-ng-if="!event">
 </div>
 <div class="container" data-ng-if="event">
-    <form name="header" role="form" data-ng-submit="saveEventHeader(eventHeader)" novalidate>
+    <form name="headerForm" role="form" data-ng-submit="saveEventHeader(headerForm, eventHeader)" novalidate>
         <event-header data-ng-if="!editEventHeader"></event-header>
         <edit-event-header data-ng-if="editEventHeader" data-event-obj="event" data-target-obj="eventHeader" data-organizations="organizations"></edit-event-header>
         <button class="btn btn-default" data-ng-if="!editEventHeader" data-ng-click="toggleEditHeader(false)">edit</button>

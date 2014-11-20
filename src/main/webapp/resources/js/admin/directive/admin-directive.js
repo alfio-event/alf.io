@@ -197,7 +197,7 @@
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
             controller: function EditEventHeaderController($scope) {
                 if(!angular.isDefined($scope.fullEditMode)) {
-                    var source = _.pick($scope.eventObj, ['shortName', 'organizationId', 'location',
+                    var source = _.pick($scope.eventObj, ['id','shortName', 'organizationId', 'location',
                         'description', 'websiteUrl', 'termsAndConditionsUrl', 'imageUrl', 'formattedBegin',
                         'formattedEnd', 'geolocation']);
                     angular.extend($scope.obj, source);

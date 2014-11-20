@@ -32,7 +32,11 @@ import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.util.MonetaryUtil;
+import lombok.Data;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -43,14 +47,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.maxBy;
 import static java.util.stream.Collectors.toList;
 
 @Component
@@ -102,12 +104,17 @@ public class EventManager {
     public Event getSingleEvent(String eventName, String username) {
         final Event event = eventRepository.findByShortName(eventName);
         //final int organizer = eventOrganizationRepository.getByEventId(event.getId()).getOrganizationId();
+        checkOwnership(event, username, event.getOrganizationId());
+        return event;
+    }
+
+    private void checkOwnership(Event event, String username, int organizationId) {
+        Validate.isTrue(organizationId == event.getOrganizationId());
         userManager.findUserOrganizations(username)
                 .stream()
-                .filter(o -> o.getId() == event.getOrganizationId())
+                .filter(o -> o.getId() == organizationId)
                 .findAny()
                 .orElseThrow(IllegalArgumentException::new);
-        return event;
     }
 
     public EventWithStatistics getSingleEventWithStatistics(String eventName, String username) {
@@ -146,6 +153,32 @@ public class EventManager {
         Event event = eventRepository.findById(eventId);
         distributeSeats(em, event);
         createAllTicketsForEvent(eventId, event);
+    }
+
+    public void updateEventHeader(int eventId, EventModification em, String username) {
+        final Event original = eventRepository.findById(eventId);
+        checkOwnership(original, username, em.getOrganizationId());
+        final GeolocationResult geolocation = geolocate(em.getLocation());
+        final ZoneId zoneId = geolocation.getZoneId();
+        final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);
+        final ZonedDateTime end = em.getEnd().toZonedDateTime(zoneId);
+        eventRepository.updateHeader(eventId, em.getDescription(), em.getShortName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(),
+                em.getImageUrl(), em.getLocation(), geolocation.getLatitude(), geolocation.getLongitude(),
+                begin, end, geolocation.getTimeZone(), em.getOrganizationId());
+        //fix dates...
+        getSingleEventWithStatistics(em.getShortName(), username).getTicketCategories().stream()
+                .map(tc -> Triple.of(tc, tc.getInception(zoneId), tc.getExpiration(zoneId)))
+                .filter(t -> t.getMiddle().isBefore(begin) || t.getRight().isAfter(end))
+                .forEach(t -> fixTicketCategoryDates(begin, end, t.getLeft(), t.getMiddle(), t.getRight()));
+    }
+
+    private void fixTicketCategoryDates(ZonedDateTime begin, ZonedDateTime end, TicketCategoryWithStatistic tc, ZonedDateTime inception, ZonedDateTime expiration) {
+        ticketCategoryRepository.fixDates(tc.getId(), ObjectUtils.max(begin, inception), ObjectUtils.min(end, expiration));
+    }
+
+    private GeolocationResult geolocate(String location) {
+        Pair<String, String> coordinates = locationManager.geocode(location);
+        return new GeolocationResult(coordinates, locationManager.getTimezone(coordinates));
     }
 
     public void updateEvent(int eventId, EventModification em, String username) {
@@ -270,13 +303,10 @@ public class EventManager {
         int actualPrice = evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
         BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
         String privateKey = UUID.randomUUID().toString();
-        Pair<String, String> coordinates = locationManager.geocode(em.getLocation());
-        TimeZone tz = locationManager.getTimezone(coordinates);
-        String timeZone = tz.getID();
-        ZoneId zoneId = tz.toZoneId();
+        final GeolocationResult result = geolocate(em.getLocation());
         return eventRepository.insert(em.getDescription(), em.getShortName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(), em.getImageUrl(), em.getLocation(),
-                coordinates.getLeft(), coordinates.getRight(), em.getBegin().toZonedDateTime(zoneId), em.getEnd().toZonedDateTime(zoneId),
-                timeZone, actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
+                result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()), em.getEnd().toZonedDateTime(result.getZoneId()),
+                result.getTimeZone(), actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
                 privateKey, em.getOrganizationId()).getValue();
     }
 
@@ -296,17 +326,36 @@ public class EventManager {
         String paymentProxies = collectPaymentProxies(em);
         int actualPrice = evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
         BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
-        Pair<String, String> coordinates = locationManager.geocode(em.getLocation());
-        TimeZone tz = locationManager.getTimezone(coordinates);
-        String timeZone = tz.getID();
-        ZoneId zoneId = tz.toZoneId();
+        final GeolocationResult result = geolocate(em.getLocation());
         eventRepository.update(id, em.getDescription(), em.getShortName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(), em.getImageUrl(), em.getLocation(),
-                coordinates.getLeft(), coordinates.getRight(), em.getBegin().toZonedDateTime(zoneId), em.getEnd().toZonedDateTime(zoneId),
-                timeZone, actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies, em.getOrganizationId());
+                result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()), em.getEnd().toZonedDateTime(result.getZoneId()),
+                result.getTimeZone(), actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies, em.getOrganizationId());
 
     }
 
 	public TicketCategory getTicketCategoryById(int id, int eventId) {
 		return ticketCategoryRepository.getById(id, eventId);
 	}
+
+    @Data
+    private static final class GeolocationResult {
+        private final Pair<String, String> coordinates;
+        private final TimeZone tz;
+
+        public String getLatitude() {
+            return coordinates.getLeft();
+        }
+
+        public String getLongitude() {
+            return coordinates.getRight();
+        }
+
+        public String getTimeZone() {
+            return tz.getID();
+        }
+
+        public ZoneId getZoneId() {
+            return tz.toZoneId();
+        }
+    }
 }
