@@ -52,7 +52,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.maxBy;
 import static java.util.stream.Collectors.toList;
 
 @Component
@@ -165,15 +164,21 @@ public class EventManager {
         eventRepository.updateHeader(eventId, em.getDescription(), em.getShortName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(),
                 em.getImageUrl(), em.getLocation(), geolocation.getLatitude(), geolocation.getLongitude(),
                 begin, end, geolocation.getTimeZone(), em.getOrganizationId());
-        //fix dates...
+        fixOutOfRangeCategories(em, username, zoneId, end);
+    }
+
+    void fixOutOfRangeCategories(EventModification em, String username, ZoneId zoneId, ZonedDateTime end) {
         getSingleEventWithStatistics(em.getShortName(), username).getTicketCategories().stream()
                 .map(tc -> Triple.of(tc, tc.getInception(zoneId), tc.getExpiration(zoneId)))
-                .filter(t -> t.getMiddle().isBefore(begin) || t.getRight().isAfter(end))
+                .filter(t -> t.getRight().isAfter(end))
                 .forEach(t -> fixTicketCategoryDates(end, t.getLeft(), t.getMiddle(), t.getRight()));
     }
 
     private void fixTicketCategoryDates(ZonedDateTime end, TicketCategoryWithStatistic tc, ZonedDateTime inception, ZonedDateTime expiration) {
-        ticketCategoryRepository.fixDates(tc.getId(), inception, ObjectUtils.min(end, expiration));
+        final ZonedDateTime newExpiration = ObjectUtils.min(end, expiration);
+        Objects.requireNonNull(newExpiration);
+        Validate.isTrue(inception.isBefore(newExpiration), String.format("Cannot fix dates for category \"%s\" (id: %d), try updating that category first.", tc.getName(), tc.getId()));
+        ticketCategoryRepository.fixDates(tc.getId(), inception, newExpiration);
     }
 
     private GeolocationResult geolocate(String location) {

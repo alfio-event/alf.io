@@ -5,8 +5,8 @@
         <event-header data-ng-if="!editEventHeader"></event-header>
         <edit-event-header data-ng-if="editEventHeader" data-event-obj="event" data-target-obj="eventHeader" data-organizations="organizations"></edit-event-header>
         <button class="btn btn-default" data-ng-if="!editEventHeader" data-ng-click="toggleEditHeader(false)">edit</button>
-        <button class="btn btn-success" type="submit" data-ng-if="editEventHeader" data-ng-disabled="header.$waiting || !header.$valid">save</button>
-        <button class="btn btn-default" data-ng-if="editEventHeader" data-ng-disabled="header.$waiting" data-ng-click="toggleEditHeader(true)">cancel</button>
+        <button class="btn btn-success" type="submit" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting || !headerForm.$valid">save</button>
+        <button class="btn btn-default" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting" data-ng-click="toggleEditHeader(true)">cancel</button>
     </form>
     <div class="page-header">
         <h2>Tickets</h2>

@@ -256,7 +256,8 @@
                                                         LocationService,
                                                         $rootScope,
                                                         PaymentProxyService,
-                                                        $state) {
+                                                        $state,
+                                                        $log) {
         var loadData = function() {
             $scope.loading = true;
             EventService.getEvent($stateParams.eventName).success(function(result) {
@@ -368,6 +369,9 @@
                         }
                     });
                 }
+            }, function(error) {
+                $log.error(error.data);
+                alert(error.data);
             });
         };
     });

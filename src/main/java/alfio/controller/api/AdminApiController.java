@@ -64,6 +64,13 @@ public class AdminApiController {
         this.configurationManager = configurationManager;
     }
 
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public String unhandledException(Exception e) {
+        return e.getMessage();
+    }
+
+
     @RequestMapping(value = "/organizations", method = GET)
     @ResponseStatus(HttpStatus.OK)
     public List<Organization> getAllOrganizations(Principal principal) {
