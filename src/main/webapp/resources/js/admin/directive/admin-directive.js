@@ -191,7 +191,8 @@
                 obj: '=targetObj',
                 eventObj: '=',
                 organizations: '=',
-                fullEditMode: '='
+                fullEditMode: '=',
+                showDatesWarning: '='
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',

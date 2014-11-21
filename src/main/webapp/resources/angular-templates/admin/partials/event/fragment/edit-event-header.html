@@ -31,7 +31,7 @@
             <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.imageUrl" data-required-pattern="'must be a https url'"></field-error>
         </div>
         <div class="form-group">
-            <label for="date">Event Date</label>
+            <label for="date">Event Date <i data-ng-if="showDatesWarning" class="fa fa-warning text-warning tooltip-handler" title="You should notify all the ticket owners about a date change"></i></label>
             <input type="text" data-date-range data-start-model="obj.begin" data-end-model="obj.end" data-ng-model="obj.dateString" name="date" id="date" class="form-control" required />
         </div>
         <div class="form-group">

@@ -164,7 +164,9 @@ public class EventManager {
         eventRepository.updateHeader(eventId, em.getDescription(), em.getShortName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(),
                 em.getImageUrl(), em.getLocation(), geolocation.getLatitude(), geolocation.getLongitude(),
                 begin, end, geolocation.getTimeZone(), em.getOrganizationId());
-        fixOutOfRangeCategories(em, username, zoneId, end);
+        if(!original.getBegin().equals(begin) || !original.getEnd().equals(end)) {
+            fixOutOfRangeCategories(em, username, zoneId, end);
+        }
     }
 
     void fixOutOfRangeCategories(EventModification em, String username, ZoneId zoneId, ZonedDateTime end) {

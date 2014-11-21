@@ -3,7 +3,7 @@
 <div class="container" data-ng-if="event">
     <form name="headerForm" role="form" data-ng-submit="saveEventHeader(headerForm, eventHeader)" novalidate>
         <event-header data-ng-if="!editEventHeader"></event-header>
-        <edit-event-header data-ng-if="editEventHeader" data-event-obj="event" data-target-obj="eventHeader" data-organizations="organizations"></edit-event-header>
+        <edit-event-header data-ng-if="editEventHeader" data-show-dates-warning="true" data-event-obj="event" data-target-obj="eventHeader" data-organizations="organizations"></edit-event-header>
         <button class="btn btn-default" data-ng-if="!editEventHeader" data-ng-click="toggleEditHeader(false)">edit</button>
         <button class="btn btn-success" type="submit" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting || !headerForm.$valid">save</button>
         <button class="btn btn-default" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting" data-ng-click="toggleEditHeader(true)">cancel</button>
