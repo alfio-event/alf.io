@@ -196,7 +196,7 @@
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
-            controller: function EditEventHeaderController($scope) {
+            controller: function EditEventHeaderController($scope, LocationService) {
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'organizationId', 'location',
                         'description', 'websiteUrl', 'termsAndConditionsUrl', 'imageUrl', 'formattedBegin',
@@ -213,8 +213,54 @@
                         time: endDateTime.format('HH:mm')
                     };
                 }
+
+                $scope.updateLocation = function (location) {
+                    $scope.loadingMap = true;
+                    LocationService.geolocate(location).success(function(result) {
+                        $scope.obj['geolocation'] = result;
+                        $scope.loadingMap = false;
+                    }).error(function() {
+                        $scope.loadingMap = false;
+                    });
+                };
             }
         }
+    });
+
+    directives.directive('editPrices', function() {
+        return {
+            scope: {
+                obj: '=targetObj',
+                eventObj: '=',
+                fullEditMode: '=',
+                allowedPaymentProxies: '=',
+                showPriceWarning: '='
+            },
+            restrict: 'E',
+            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-prices.html',
+            controller: function EditPricesController($scope, PriceCalculator) {
+                if(!angular.isDefined($scope.fullEditMode)) {
+                    var source = _.pick($scope.eventObj, ['id','freeOfCharge', 'allowedPaymentProxies', 'availableSeats',
+                        'regularPrice', 'currency', 'vat', 'vatIncluded']);
+                    angular.extend($scope.obj, source);
+                }
+                $scope.calculateTotalPrice = function(event) {
+                    return PriceCalculator.calculateTotalPrice(event, false);
+                };
+            }
+        }
+    });
+
+    directives.directive('prices', function() {
+        return {
+            restrict: 'E',
+            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/prices.html',
+            controller: function ViewPricesController($scope, PriceCalculator) {
+                $scope.calculateTotalPrice = function(event) {
+                    return PriceCalculator.calculateTotalPrice(event, true);
+                };
+            }
+        };
     });
 
 

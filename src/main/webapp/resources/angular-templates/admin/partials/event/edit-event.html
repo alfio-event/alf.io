@@ -9,51 +9,7 @@
     <form role="form" name="editEvent" data-ng-submit="save(form, event)" novalidate>
         <edit-event-header data-target-obj="event" data-organizations="organizations" data-full-edit-mode="true"></edit-event-header>
 
-        <div class="page-header">
-            <h2>Tickets</h2>
-            <div class="btn-group">
-                <label class="btn btn-primary" data-ng-model="event.freeOfCharge" data-btn-radio="false">Paid</label>
-                <label class="btn btn-primary" data-ng-model="event.freeOfCharge" data-btn-radio="true">Free</label>
-            </div>
-        </div>
-
-        <div class="form-group" data-ng-if="!event.freeOfCharge">
-            <label for="allowedPaymentProxies">Accepted payment methods</label>
-            <select data-ng-model="event.allowedPaymentProxies" multiple name="allowedPaymentProxies" id="allowedPaymentProxies" class="form-control" required data-ng-options="proxy.id as proxy.description for proxy in allowedPaymentProxies"></select>
-            <field-error data-form-obj="editEvent" data-field-obj="editEvent.allowedPaymentProxies"></field-error>
-        </div>
-
-        <div class="row">
-            <div class="col-sm-2">
-                <label for="availableSeats">Available Tickets</label>
-                <input type="number" data-ng-model="event.availableSeats" name="availableSeats" id="availableSeats" class="form-control" required />
-                <field-error data-form-obj="editEvent" data-field-obj="editEvent.availableSeats"></field-error>
-            </div>
-            <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
-                <label for="regularPrice">Regular Price</label>
-                <input type="number" data-ng-model="event.regularPrice" name="regularPrice" id="regularPrice" class="form-control" required />
-                <field-error data-form-obj="editEvent" data-field-obj="editEvent.regularPrice"></field-error>
-            </div>
-            <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
-                <label for="currency">Currency</label>
-                <input type="text" data-ng-model="event.currency" name="currency" id="currency" class="form-control" required pattern="[A-Z]{3}"/>
-                <field-error data-form-obj="editEvent" data-field-obj="editEvent.currency" data-required-pattern="'Three capital letters'"></field-error>
-            </div>
-            <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
-                <label for="vat">VAT (%)</label>
-                <input type="number" data-ng-model="event.vat" name="vat" id="vat" class="form-control" required />
-                <field-error data-form-obj="editEvent" data-field-obj="editEvent.vat"></field-error>
-            </div>
-            <div class="col-sm-4" data-ng-if="!event.freeOfCharge">
-                <label for="vatIncluded">VAT included</label>
-                <div class="input-group">
-                    <span class="input-group-addon">
-                        <input type="checkbox" data-ng-model="event.vatIncluded" name="vatIncluded" id="vatIncluded">
-                    </span>
-                    <span class="form-control text-muted">Price VAT included: {{calculateTotalPrice(event, false) | currency : (event.currency || "")}}</span>
-                </div>
-            </div>
-        </div>
+        <edit-prices data-target-obj="event" data-full-edit-mode="true" data-allowed-payment-proxies="allowedPaymentProxies"></edit-prices>
 
         <div class="page-header">
             <h3>Categories</h3>

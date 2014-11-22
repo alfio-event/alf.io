@@ -18,7 +18,6 @@ package alfio.model.transaction;
 
 public enum PaymentProxy {
     STRIPE("stripe.com"),
-    PAYPAL("PayPal"),
     ON_SITE("on-site payment");
 
     private final String description;

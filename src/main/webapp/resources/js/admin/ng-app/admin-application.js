@@ -81,17 +81,6 @@
         return deferred.promise;
     };
 
-    var calcPercentage = function(fraction, total) {
-        if(isNaN(fraction) || isNaN(total)){
-            return numeral(0.0);
-        }
-        return numeral(fraction).divide(total).multiply(100);
-    };
-
-    var applyPercentage = function(total, percentage) {
-        return numeral(percentage).divide(100).multiply(total);
-    };
-
     admin.controller('CreateOrganizationController', function($scope, $state, $rootScope, $q, OrganizationService) {
         $scope.organization = {};
         $scope.save = function(form, organization) {
@@ -195,15 +184,6 @@
             $state.go('index');
         };
 
-        $scope.updateLocation = function (location) {
-            $scope.loadingMap = true;
-            LocationService.geolocate(location).success(function(result) {
-                $scope.event.geolocation = result;
-                $scope.loadingMap = false;
-            }).error(function() {
-                $scope.loadingMap = false;
-            });
-        };
     };
 
     admin.controller('CreateEventController', function($scope, $state, $rootScope,
@@ -349,9 +329,14 @@
         };
 
         $scope.eventHeader = {};
+        $scope.eventPrices = {};
 
         $scope.toggleEditHeader = function(editEventHeader) {
             $scope.editEventHeader = !editEventHeader;
+        };
+
+        $scope.toggleEditPrices = function(editPrices) {
+            $scope.editPrices = !editPrices;
         };
 
         $scope.saveEventHeader = function(form, header) {
@@ -410,7 +395,7 @@
         };
     });
 
-    admin.run(function($rootScope) {
+    admin.run(function($rootScope, PriceCalculator) {
         var calculateNetPrice = function(event) {
             if(isNaN(event.regularPrice) || isNaN(event.vat)) {
                 return numeral(0.0);
@@ -419,17 +404,6 @@
                 return numeral(event.regularPrice);
             }
             return numeral(event.regularPrice).divide(numeral(1).add(numeral(event.vat).divide(100)));
-        };
-
-        $rootScope.calculateTotalPrice = function(event, alreadySaved) {
-            if(isNaN(event.regularPrice) || isNaN(event.vat)) {
-                return '0.00';
-            }
-            var vat = numeral(0.0);
-            if(alreadySaved || !event.vatIncluded) {
-                vat = applyPercentage(event.regularPrice, event.vat);
-            }
-            return vat.add(event.regularPrice).value();
         };
 
         $rootScope.evaluateBarType = function(index) {
@@ -441,25 +415,27 @@
         };
 
         $rootScope.calcBarValue = function(categorySeats, eventSeats) {
-            return calcPercentage(categorySeats, eventSeats).format('0.00');
+            return PriceCalculator.calcBarValue(categorySeats, eventSeats);
         };
 
         $rootScope.calcCategoryPricePercent = function(category, event) {
-            if(isNaN(event.regularPrice) || isNaN(category.price)) {
-                return '0.00';
-            }
-            return calcPercentage(category.price, event.regularPrice).format('0.00');
+            return PriceCalculator.calcCategoryPricePercent(category, event);
         };
 
         $rootScope.calcCategoryPrice = function(category, event) {
-            if(isNaN(event.vat) || isNaN(category.price)) {
-                return '0.00';
-            }
-            var vat = numeral(0.0);
-            if(event.vatIncluded) {
-                vat = applyPercentage(category.price, event.vat);
-            }
-            return numeral(category.price).add(vat).format('0.00');
+            return PriceCalculator.calcCategoryPrice(category, event);
+        };
+
+        $rootScope.calcPercentage = function(fraction, total) {
+            return PriceCalculator.calcPercentage(fraction, total);
+        };
+
+        $rootScope.applyPercentage = function(total, percentage) {
+            return PriceCalculator.applyPercentage(total, percentage);
+        };
+
+        $rootScope.calculateTotalPrice = function(event) {
+            return PriceCalculator.calculateTotalPrice(event);
         };
     });
 

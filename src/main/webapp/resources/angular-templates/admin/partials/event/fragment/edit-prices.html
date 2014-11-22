@@ -1,0 +1,45 @@
+<div class="page-header">
+    <h2>Tickets</h2>
+    <div class="btn-group">
+        <label class="btn btn-primary" data-ng-model="obj.freeOfCharge" data-btn-radio="false">Paid</label>
+        <label class="btn btn-primary" data-ng-model="obj.freeOfCharge" data-btn-radio="true">Free</label>
+    </div>
+</div>
+
+<div class="form-group" data-ng-if="!obj.freeOfCharge">
+    <label for="allowedPaymentProxies">Accepted payment methods</label>
+    <select data-ng-model="obj.allowedPaymentProxies" multiple name="allowedPaymentProxies" id="allowedPaymentProxies" class="form-control" required data-ng-options="proxy.id as proxy.description for proxy in allowedPaymentProxies"></select>
+    <field-error data-form-obj="editEvent" data-field-obj="editEvent.allowedPaymentProxies"></field-error>
+</div>
+
+<div class="row wMarginBottom">
+    <div class="col-sm-2">
+        <label for="availableSeats">Available Tickets</label>
+        <input type="number" data-ng-model="obj.availableSeats" name="availableSeats" id="availableSeats" class="form-control" required />
+        <field-error data-form-obj="editEvent" data-field-obj="editEvent.availableSeats"></field-error>
+    </div>
+    <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
+        <label for="regularPrice">Regular Price <i data-ng-if="showPriceWarning" class="fa fa-warning text-warning tooltip-handler" title="Changing the regular price could lead to incoherence with categories' prices. Please do a double check before saving."></i></label>
+        <input type="number" data-ng-model="obj.regularPrice" name="regularPrice" id="regularPrice" class="form-control" required />
+        <field-error data-form-obj="editEvent" data-field-obj="editEvent.regularPrice"></field-error>
+    </div>
+    <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
+        <label for="currency">Currency</label>
+        <input type="text" data-ng-model="obj.currency" name="currency" id="currency" class="form-control" required pattern="[A-Z]{3}"/>
+        <field-error data-form-obj="editEvent" data-field-obj="editEvent.currency" data-required-pattern="'Three capital letters'"></field-error>
+    </div>
+    <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
+        <label for="vat">VAT (%)</label>
+        <input type="number" data-ng-model="obj.vat" name="vat" id="vat" class="form-control" required />
+        <field-error data-form-obj="editEvent" data-field-obj="editEvent.vat"></field-error>
+    </div>
+    <div class="col-sm-4" data-ng-if="!obj.freeOfCharge">
+        <label for="vatIncluded">VAT included</label>
+        <div class="input-group">
+                    <span class="input-group-addon">
+                        <input type="checkbox" data-ng-model="obj.vatIncluded" name="vatIncluded" id="vatIncluded">
+                    </span>
+            <span class="form-control text-muted">Price VAT included: {{calculateTotalPrice(obj) | currency : (obj.currency || "")}}</span>
+        </div>
+    </div>
+</div>

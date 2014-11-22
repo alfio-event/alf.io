@@ -114,4 +114,48 @@
             }
         };
     });
+
+    baseServices.service("PriceCalculator", function() {
+        var instance = {
+            calculateTotalPrice: function(event, viewMode) {
+                if(isNaN(event.regularPrice) || isNaN(event.vat)) {
+                    return '0.00';
+                }
+                var vat = numeral(0.0);
+                if((viewMode && angular.isDefined(event.id)) || !event.vatIncluded) {
+                    vat = instance.applyPercentage(event.regularPrice, event.vat);
+                }
+                return vat.add(event.regularPrice).value();
+            },
+            calcBarValue: function(categorySeats, eventSeats) {
+                return instance.calcPercentage(categorySeats, eventSeats).format('0.00');
+            },
+            calcCategoryPricePercent: function(category, event) {
+                if(isNaN(event.regularPrice) || isNaN(category.price)) {
+                    return '0.00';
+                }
+                return instance.calcPercentage(category.price, event.regularPrice).format('0.00');
+            },
+            calcCategoryPrice: function(category, event) {
+                if(isNaN(event.vat) || isNaN(category.price)) {
+                    return '0.00';
+                }
+                var vat = numeral(0.0);
+                if(event.vatIncluded) {
+                    vat = instance.applyPercentage(category.price, event.vat);
+                }
+                return numeral(category.price).add(vat).format('0.00');
+            },
+            calcPercentage: function(fraction, total) {
+                if(isNaN(fraction) || isNaN(total)){
+                    return numeral(0.0);
+                }
+                return numeral(fraction).divide(total).multiply(100);
+            },
+            applyPercentage: function(total, percentage) {
+                return numeral(percentage).divide(100).multiply(total);
+            }
+        };
+        return instance;
+    });
 })();

@@ -8,34 +8,13 @@
         <button class="btn btn-success" type="submit" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting || !headerForm.$valid">save</button>
         <button class="btn btn-default" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting" data-ng-click="toggleEditHeader(true)">cancel</button>
     </form>
-    <div class="page-header">
-        <h2>Tickets</h2>
-        <h4>This event has been marked as <span data-ng-if="event.freeOfCharge">Free of charge</span> <span data-ng-if="!event.freeOfCharge">Paid</span></h4>
-    </div>
-
-    <div class="form-group" data-ng-if="!event.freeOfCharge">
-        <label>Accepted payment methods</label>
-        <p class="form-control-static">{{event.allowedPaymentProxies.join(',')}}</p>
-    </div>
-
-    <div class="row">
-        <div class="col-sm-2">
-            <label>Available seats</label>
-            <p class="form-control-static">{{event.availableSeats}}</p>
-        </div>
-        <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
-            <label>Regular Price</label>
-            <p class="form-control-static">{{event.regularPrice | currency : (event.currency || "")}}</p>
-        </div>
-        <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
-            <label>VAT (%)</label>
-            <p class="form-control-static">{{event.vat}}</p>
-        </div>
-        <div class="col-sm-4" data-ng-if="!event.freeOfCharge">
-            <label>Final Price</label>
-            <p class="form-control-static">{{calculateTotalPrice(event, true) | currency : (event.currency || "")}}</p>
-        </div>
-    </div>
+    <form name="pricesForm" role="form" data-ng-submit="saveEventPrices(pricesForm, eventPrices)" novalidate>
+        <prices data-ng-if="!editPrices"></prices>
+        <edit-prices data-ng-if="editPrices" data-show-price-warning="true" data-event-obj="event" data-target-obj="eventPrices" data-allowed-payment-proxies="allowedPaymentProxies"></edit-prices>
+        <button class="btn btn-default" data-ng-if="!editPrices" data-ng-click="toggleEditPrices(false)">edit</button>
+        <button class="btn btn-success" type="submit" data-ng-if="editPrices" data-ng-disabled="pricesForm.$waiting || !pricesForm.$valid">save</button>
+        <button class="btn btn-default" data-ng-if="editPrices" data-ng-disabled="pricesForm.$waiting" data-ng-click="toggleEditPrices(true)">cancel</button>
+    </form>
 
     <div class="page-header">
         <h3>Categories</h3>
