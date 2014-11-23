@@ -21,10 +21,16 @@ import alfio.model.TicketCategory;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
+import alfio.util.ValidationResult;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -112,7 +118,7 @@ public class EventModification {
         final ZoneId zoneId = event.getZoneId();
         return new EventModification(event.getId(),
                 event.getWebsiteUrl(),
-                event.getTermAndConditionsUrl(),
+                event.getTermsAndConditionsUrl(),
                 event.getImageUrl(),
                 event.getShortName(),
                 event.getOrganizationId(),

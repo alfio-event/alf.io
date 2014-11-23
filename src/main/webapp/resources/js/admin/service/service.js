@@ -68,6 +68,9 @@
             updateEvent : function(event) {
                 return $http['post']('/admin/api/events/'+event.id+'/update', event).error(HttpErrorHandler.handle);
             },
+            updateEventHeader: function(eventHeader) {
+                return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);
+            },
             reallocateOrphans : function(srcCategory, targetCategoryId, eventId) {
                 return $http['put']('/admin/api/events/reallocate', {
                     srcCategoryId: srcCategory.id,

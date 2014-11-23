@@ -5,7 +5,6 @@
     var BASE_STATIC_URL = "/resources/angular-templates/admin/partials";
     var PAYMENT_PROXY_DESCRIPTIONS = {
         "STRIPE": "Credit card payments",
-        "PAYPAL": "PayPal account",
         "ON_SITE": "On site (cash) payment"
     };
     var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages']);
@@ -250,7 +249,15 @@
 
     });
 
-    admin.controller('EventDetailController', function($scope, $stateParams, OrganizationService, EventService, LocationService, $rootScope) {
+    admin.controller('EventDetailController', function ($scope,
+                                                        $stateParams,
+                                                        OrganizationService,
+                                                        EventService,
+                                                        LocationService,
+                                                        $rootScope,
+                                                        PaymentProxyService,
+                                                        $state,
+                                                        $log) {
         var loadData = function() {
             $scope.loading = true;
             EventService.getEvent($stateParams.eventName).success(function(result) {
@@ -263,13 +270,15 @@
                 $scope.loadingMap = true;
                 LocationService.getMapUrl(result.event.latitude, result.event.longitude).success(function(mapUrl) {
                     $scope.event.geolocation = {
-                        mapUrl: mapUrl
+                        mapUrl: mapUrl,
+                        timeZone: result.event.timeZone
                     };
                     $scope.loadingMap = false;
                 });
             });
         };
         loadData();
+        initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, $state);
         $scope.evaluateCategoryStatusClass = function(index, category) {
             if(category.expired) {
                 return 'category-expired';
@@ -336,6 +345,33 @@
                 if(result === 'OK') {
                     loadData();
                 }
+            });
+        };
+
+        $scope.eventHeader = {};
+
+        $scope.toggleEditHeader = function(editEventHeader) {
+            $scope.editEventHeader = !editEventHeader;
+        };
+
+        $scope.saveEventHeader = function(form, header) {
+            EventService.updateEventHeader(header).then(function(result) {
+                if(result.data['errorCount'] == 0) {
+                    $scope.editEventHeader = false;
+                    loadData();
+                } else {
+                    form.$setValidity(false);
+                    _.forEach(result.data.validationErrors, function(error) {
+                        var field = form.editEventHeader[error.fieldName];
+                        if(angular.isDefined(field)) {
+                            field.$setValidity('required', false);
+                            field.$setTouched();
+                        }
+                    });
+                }
+            }, function(error) {
+                $log.error(error.data);
+                alert(error.data);
             });
         };
     });

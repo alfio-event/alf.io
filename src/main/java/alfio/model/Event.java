@@ -38,7 +38,7 @@ public class Event {
     private final int id;
     private final String shortName;
     private final String websiteUrl;
-    private final String termAndConditionsUrl;
+    private final String termsAndConditionsUrl;
     private final String imageUrl;
     private final String description;
     private final String location;
@@ -67,7 +67,7 @@ public class Event {
                  @ConstructorAnnotationRowMapper.Column("end_ts") ZonedDateTime end,
                  @ConstructorAnnotationRowMapper.Column("time_zone") String timeZone,
                  @ConstructorAnnotationRowMapper.Column("website_url") String websiteUrl,
-                 @ConstructorAnnotationRowMapper.Column("website_t_c_url") String termAndConditionsUrl,
+                 @ConstructorAnnotationRowMapper.Column("website_t_c_url") String termsAndConditionsUrl,
                  @ConstructorAnnotationRowMapper.Column("image_url") String imageUrl,
                  @ConstructorAnnotationRowMapper.Column("regular_price_cts") int regularPriceInCents,
                  @ConstructorAnnotationRowMapper.Column("currency") String currency,
@@ -78,7 +78,7 @@ public class Event {
                  @ConstructorAnnotationRowMapper.Column("private_key") String privateKey,
                  @ConstructorAnnotationRowMapper.Column("org_id") int organizationId) {
         this.websiteUrl = websiteUrl;
-        this.termAndConditionsUrl = termAndConditionsUrl;
+        this.termsAndConditionsUrl = termsAndConditionsUrl;
         this.imageUrl = imageUrl;
 
         final ZoneId zoneId = TimeZone.getTimeZone(timeZone).toZoneId();

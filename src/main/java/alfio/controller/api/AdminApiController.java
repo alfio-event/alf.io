@@ -29,10 +29,12 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.User;
 import alfio.util.ValidationResult;
+import alfio.util.Validator;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -61,6 +63,13 @@ public class AdminApiController {
         this.locationManager = locationManager;
         this.configurationManager = configurationManager;
     }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public String unhandledException(Exception e) {
+        return e.getMessage();
+    }
+
 
     @RequestMapping(value = "/organizations", method = GET)
     @ResponseStatus(HttpStatus.OK)
@@ -145,6 +154,11 @@ public class AdminApiController {
     public String updateEvent(@PathVariable("id") int id, @RequestBody EventModification eventModification, Principal principal) {
         eventManager.updateEvent(id, eventModification, principal.getName());
         return OK;
+    }
+
+    @RequestMapping(value = "/events/{id}/header/update", method = POST)
+    public ValidationResult updateHeader(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
+        return Validator.validateEventHeader(eventModification, errors).ifSuccess(() -> eventManager.updateEventHeader(id, eventModification, principal.getName()));
     }
 
 

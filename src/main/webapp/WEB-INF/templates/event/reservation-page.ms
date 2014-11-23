@@ -150,7 +150,7 @@
     <div class="checkbox">
         <label>
             <input type="checkbox" required name="termAndConditionsAccepted">
-			{{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
+			{{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termsAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
         </label>
     </div>
 
