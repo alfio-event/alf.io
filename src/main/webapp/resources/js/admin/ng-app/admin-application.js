@@ -237,7 +237,8 @@
                                                         $rootScope,
                                                         PaymentProxyService,
                                                         $state,
-                                                        $log) {
+                                                        $log,
+                                                        $q) {
         var loadData = function() {
             $scope.loading = true;
             EventService.getEvent($stateParams.eventName).success(function(result) {
@@ -339,25 +340,45 @@
             $scope.editPrices = !editPrices;
         };
 
-        $scope.saveEventHeader = function(form, header) {
-            EventService.updateEventHeader(header).then(function(result) {
+        var validationErrorHandler = function(result, form, fieldsContainer) {
+            return $q(function(resolve, reject) {
                 if(result.data['errorCount'] == 0) {
-                    $scope.editEventHeader = false;
-                    loadData();
+                    resolve(result);
                 } else {
                     form.$setValidity(false);
                     _.forEach(result.data.validationErrors, function(error) {
-                        var field = form.editEventHeader[error.fieldName];
+                        var field = fieldsContainer[error.fieldName];
                         if(angular.isDefined(field)) {
                             field.$setValidity('required', false);
                             field.$setTouched();
                         }
                     });
+                    reject('validation error');
                 }
-            }, function(error) {
-                $log.error(error.data);
-                alert(error.data);
             });
+        };
+
+        var errorHandler = function(error) {
+            $log.error(error.data);
+            alert(error.data);
+        };
+
+        $scope.saveEventHeader = function(form, header) {
+            EventService.updateEventHeader(header).then(function(result) {
+                validationErrorHandler(result, form, form.editEventHeader).then(function(result) {
+                    $scope.editEventHeader = false;
+                    loadData();
+                });
+            }, errorHandler);
+        };
+
+        $scope.saveEventPrices = function(form, eventPrices) {
+            EventService.updateEventPrices(eventPrices).then(function(result) {
+                validationErrorHandler(result, form, form.editPrices).then(function(result) {
+                    $scope.editPrices = false;
+                    loadData();
+                });
+            }, errorHandler);
         };
     });
 

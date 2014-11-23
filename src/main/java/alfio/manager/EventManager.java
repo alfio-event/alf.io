@@ -51,6 +51,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -96,7 +97,7 @@ public class EventManager {
     @Cacheable
     public List<EventWithStatistics> getAllEventsWithStatistics(String username) {
         return getAllEvents(username).stream()
-                 .map(e -> new EventWithStatistics(e, loadTicketCategoriesWithStats(e)))
+                 .map(this::fillWithStatistics)
                  .collect(toList());
     }
 
@@ -117,7 +118,10 @@ public class EventManager {
     }
 
     public EventWithStatistics getSingleEventWithStatistics(String eventName, String username) {
-        final Event event = getSingleEvent(eventName, username);
+        return fillWithStatistics(getSingleEvent(eventName, username));
+    }
+
+    private EventWithStatistics fillWithStatistics(Event event) {
         return new EventWithStatistics(event, loadTicketCategoriesWithStats(event));
     }
 
@@ -169,6 +173,24 @@ public class EventManager {
         }
     }
 
+    public void updateEventPrices(int eventId, EventModification em, String username) {
+        final Event original = eventRepository.findById(eventId);
+        checkOwnership(original, username, em.getOrganizationId());
+        if(original.getAvailableSeats() > em.getAvailableSeats()) {
+            final EventWithStatistics eventWithStatistics = fillWithStatistics(original);
+            int allocatedSeats = eventWithStatistics.getTicketCategories().stream()
+                    .mapToInt(TicketCategoryWithStatistic::getMaxTickets)
+                    .sum();
+            if(em.getAvailableSeats() < allocatedSeats) {
+                throw new IllegalArgumentException(format("cannot reduce available seats to %d. There are already %d seats allocated. Try updating categories first.", em.getAvailableSeats(), allocatedSeats));
+            }
+        }
+        String paymentProxies = collectPaymentProxies(em);
+        int actualPrice = evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
+        BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
+        eventRepository.updatePrices(actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies);
+    }
+
     void fixOutOfRangeCategories(EventModification em, String username, ZoneId zoneId, ZonedDateTime end) {
         getSingleEventWithStatistics(em.getShortName(), username).getTicketCategories().stream()
                 .map(tc -> Triple.of(tc, tc.getInception(zoneId), tc.getExpiration(zoneId)))
@@ -179,7 +201,7 @@ public class EventManager {
     private void fixTicketCategoryDates(ZonedDateTime end, TicketCategoryWithStatistic tc, ZonedDateTime inception, ZonedDateTime expiration) {
         final ZonedDateTime newExpiration = ObjectUtils.min(end, expiration);
         Objects.requireNonNull(newExpiration);
-        Validate.isTrue(inception.isBefore(newExpiration), String.format("Cannot fix dates for category \"%s\" (id: %d), try updating that category first.", tc.getName(), tc.getId()));
+        Validate.isTrue(inception.isBefore(newExpiration), format("Cannot fix dates for category \"%s\" (id: %d), try updating that category first.", tc.getName(), tc.getId()));
         ticketCategoryRepository.fixDates(tc.getId(), inception, newExpiration);
     }
 

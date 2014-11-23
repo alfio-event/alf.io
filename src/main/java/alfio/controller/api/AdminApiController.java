@@ -161,6 +161,11 @@ public class AdminApiController {
         return Validator.validateEventHeader(eventModification, errors).ifSuccess(() -> eventManager.updateEventHeader(id, eventModification, principal.getName()));
     }
 
+    @RequestMapping(value = "/events/{id}/prices/update", method = POST)
+    public ValidationResult updatePrices(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
+        return Validator.validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(id, eventModification, principal.getName()));
+    }
+
 
     @RequestMapping(value = "/events/reallocate", method = PUT)
     public String reallocateTickets(@RequestBody TicketAllocationModification form) {

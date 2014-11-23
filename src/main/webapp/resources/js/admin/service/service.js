@@ -71,6 +71,9 @@
             updateEventHeader: function(eventHeader) {
                 return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);
             },
+            updateEventPrices: function(eventPrices) {
+                return $http['post']('/admin/api/events/'+eventPrices.id+'/prices/update', eventPrices).error(HttpErrorHandler.handle);
+            },
             reallocateOrphans : function(srcCategory, targetCategoryId, eventId) {
                 return $http['put']('/admin/api/events/reallocate', {
                     srcCategoryId: srcCategory.id,
@@ -125,7 +128,7 @@
                 if((viewMode && angular.isDefined(event.id)) || !event.vatIncluded) {
                     vat = instance.applyPercentage(event.regularPrice, event.vat);
                 }
-                return vat.add(event.regularPrice).value();
+                return numeral(vat.add(event.regularPrice).format('0.00')).value();
             },
             calcBarValue: function(categorySeats, eventSeats) {
                 return instance.calcPercentage(categorySeats, eventSeats).format('0.00');
@@ -153,7 +156,7 @@
                 return numeral(fraction).divide(total).multiply(100);
             },
             applyPercentage: function(total, percentage) {
-                return numeral(percentage).divide(100).multiply(total);
+                return numeral(numeral(percentage).divide(100).multiply(total).format('0.00'));
             }
         };
         return instance;

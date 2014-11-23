@@ -242,11 +242,16 @@
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','freeOfCharge', 'allowedPaymentProxies', 'availableSeats',
                         'regularPrice', 'currency', 'vat', 'vatIncluded']);
+                    if(source.vatIncluded) {
+                        source.regularPrice = PriceCalculator.calculateTotalPrice(source, true);
+                    }
                     angular.extend($scope.obj, source);
                 }
+
                 $scope.calculateTotalPrice = function(event) {
                     return PriceCalculator.calculateTotalPrice(event, false);
                 };
+
             }
         }
     });

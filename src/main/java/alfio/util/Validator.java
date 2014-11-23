@@ -21,6 +21,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 
+import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public final class Validator {
@@ -42,6 +45,33 @@ public final class Validator {
         if (!StringUtils.startsWith(ev.getImageUrl(),"https://")) {
             errors.reject("imageUrl", "error.imageUrl");
         }
+        return evaluateValidationResult(errors);
+    }
+
+    public static ValidationResult validateEventPrices(EventModification ev, Errors errors) {
+        if(!ev.isFreeOfCharge()) {
+            if(isCollectionEmpty(ev.getAllowedPaymentProxies())) {
+                errors.reject("allowedPaymentProxies", "error.allowedpaymentproxies");
+            }
+            if(ev.getRegularPrice() == null || BigDecimal.ZERO.compareTo(ev.getRegularPrice()) <= 0) {
+                errors.reject("regularPrice", "error.regularprice");
+            }
+            if(ev.getVat() == null || BigDecimal.ZERO.compareTo(ev.getRegularPrice()) < 0) {
+                errors.reject("vat", "error.vat");
+            }
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "currency", "error.currency");
+        }
+        if(ev.getAvailableSeats() < 1) {
+            errors.reject("availableSeats", "error.availableseats");
+        }
+        return evaluateValidationResult(errors);
+    }
+
+    private static boolean isCollectionEmpty(Collection<?> collection) {
+        return collection == null || collection.isEmpty();
+    }
+
+    private static ValidationResult evaluateValidationResult(Errors errors) {
         if (errors.hasFieldErrors()) {
             return ValidationResult.failed(errors.getFieldErrors()
                     .stream().map(ValidationResult.ValidationError::fromFieldError)
