@@ -19,10 +19,7 @@ package alfio.model.modification;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 
 @Getter
 public class DateTimeModification {
@@ -39,7 +36,16 @@ public class DateTimeModification {
         return ZonedDateTime.of(date, time, zoneId);
     }
 
+    public boolean isBefore(DateTimeModification other) {
+        return toLocalDateTime().isBefore(other.toLocalDateTime());
+    }
+
+    private LocalDateTime toLocalDateTime() {
+        return LocalDateTime.of(date, time);
+    }
+
     public static DateTimeModification fromZonedDateTime(ZonedDateTime zonedDateTime) {
         return new DateTimeModification(zonedDateTime.toLocalDate(), zonedDateTime.toLocalTime());
     }
+
 }

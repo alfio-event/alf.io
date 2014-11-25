@@ -16,12 +16,15 @@
  */
 package alfio.util;
 
+import alfio.model.Event;
 import alfio.model.modification.EventModification;
+import alfio.model.modification.TicketCategoryModification;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -63,6 +66,17 @@ public final class Validator {
         }
         if(ev.getAvailableSeats() < 1) {
             errors.reject("availableSeats", "error.availableseats");
+        }
+        return evaluateValidationResult(errors);
+    }
+
+    public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors) {
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "name", "error.name");
+        if(category.getMaxTickets() < 1) {
+            errors.reject("maxTickets", "error.maxtickets");
+        }
+        if(!category.getInception().isBefore(category.getExpiration())) {
+            errors.reject("dateString", "error.date");
         }
         return evaluateValidationResult(errors);
     }

@@ -1,0 +1,13 @@
+<div class="modal-header">
+    <h3><span data-ng-if="category.id">Edit</span><span data-ng-if="!category.id">Insert new</span> category <span data-ng-if="category.id">{{category.name}}</span></h3>
+</div>
+<form name="categoryForm" data-ng-submit="update(categoryForm, ticketCategory, event)">
+    <div class="modal-body">
+        <edit-category></edit-category>
+        <div class="clearfix"></div>
+    </div>
+
+    <div class="modal-footer">
+        <control-buttons data-form-obj="categoryForm"></control-buttons>
+    </div>
+</form>

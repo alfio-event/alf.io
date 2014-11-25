@@ -60,4 +60,10 @@ public class EventWithStatistics {
         return ticketCategories.stream().anyMatch(TicketCategoryWithStatistic::isContainingStuckTickets);
     }
 
+    public boolean isAddCategoryEnabled() {
+        return ticketCategories.stream()
+                .mapToInt(TicketCategoryWithStatistic::getMaxTickets)
+                .sum() < getAvailableSeats();
+    }
+
 }

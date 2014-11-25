@@ -166,6 +166,17 @@ public class AdminApiController {
         return Validator.validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(id, eventModification, principal.getName()));
     }
 
+    ///admin/api/events/' + event.id + '/categories/' + ticketCategory.id + '/update
+    @RequestMapping(value = "/events/{eventId}/categories/{categoryId}/update", method = POST)
+    public ValidationResult updateExistingCategory(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
+        return Validator.validateCategory(category, errors).ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
+    }
+
+    @RequestMapping(value = "/events/{eventId}/categories/new", method = POST)
+    public ValidationResult createCategory(@PathVariable("eventId") int eventId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
+        return Validator.validateCategory(category, errors).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
+    }
+
 
     @RequestMapping(value = "/events/reallocate", method = PUT)
     public String reallocateTickets(@RequestBody TicketAllocationModification form) {

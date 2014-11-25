@@ -74,6 +74,10 @@
             updateEventPrices: function(eventPrices) {
                 return $http['post']('/admin/api/events/'+eventPrices.id+'/prices/update', eventPrices).error(HttpErrorHandler.handle);
             },
+            saveTicketCategory: function(event, ticketCategory) {
+                var url = ticketCategory.id ? ('/admin/api/events/' + event.id + '/categories/' + ticketCategory.id + '/update') : ('/admin/api/events/' + event.id + '/categories/new');
+                return $http['post'](url, ticketCategory).error(HttpErrorHandler.handle);
+            },
             reallocateOrphans : function(srcCategory, targetCategoryId, eventId) {
                 return $http['put']('/admin/api/events/reallocate', {
                     srcCategoryId: srcCategory.id,
@@ -153,7 +157,7 @@
                 if(isNaN(fraction) || isNaN(total)){
                     return numeral(0.0);
                 }
-                return numeral(fraction).divide(total).multiply(100);
+                return numeral(numeral(fraction).divide(total).multiply(100).format('0.00'));
             },
             applyPercentage: function(total, percentage) {
                 return numeral(numeral(percentage).divide(100).multiply(total).format('0.00'));

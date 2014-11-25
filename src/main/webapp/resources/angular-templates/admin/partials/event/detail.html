@@ -21,6 +21,10 @@
         <h5 class="text-muted">Here the categories that have been defined for this event.</h5>
     </div>
 
+    <div class="wMarginBottom">
+        <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory()"><i class="fa fa-plus"></i> add category</button>
+    </div>
+
     <div data-ng-repeat="ticketCategory in event.ticketCategories" class="container wMarginBottom" data-ng-class="evaluateCategoryStatusClass($index, ticketCategory)">
         <div class="page-header">
             <div class="alert alert-danger" data-ng-if="ticketCategory.containingOrphans" data-ng-form="moveTickets">
@@ -117,7 +121,8 @@
             </div>
         </div>
     </div>
-    <div class="row">
-        <button class="btn btn-default" data-ui-sref="events.edit({eventName: event.shortName})">edit</button>
+    <div class="clearfix"></div>
+    <div class="wMarginBottom">
+        <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory()"><i class="fa fa-plus"></i> add category</button>
     </div>
 </div>

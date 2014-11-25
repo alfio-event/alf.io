@@ -268,5 +268,12 @@
         };
     });
 
+    directives.directive('editCategory', function() {
+        return {
+            restrict: 'E',
+            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-category.html'
+        };
+    });
+
 
 })();

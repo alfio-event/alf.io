@@ -52,8 +52,17 @@ public interface SpecialPriceRepository {
             "values(:code, :priceInCents, :ticketCategoryId, :status)")
     String bulkInsert();
 
-    @Query("update special_price set status = 'CANCELLED' where ticket_category_id = :oldCategoryId and status in ('FREE', 'PENDING')")
-    int cancelExpiredTokens(@Bind("oldCategoryId") int oldCategoryId);
+
+    @Query("update special_price set status = 'CANCELLED' where ticket_category_id = :categoryId and status in ('FREE', 'WAITING')")
+    int cancelExpiredTokens(@Bind("categoryId") int categoryId);
+
+    @Query("select id from special_price where ticket_category_id = :categoryId and status in ('FREE', 'WAITING') for update limit :limit")
+    List<Integer> lockTokens(@Bind("categoryId") int categoryId, @Bind("limit") int limit);
+
+    @Query("update special_price where id in :ids")
+    int cancelTokens(@Bind("ids") List<Integer> ids);
+
+
 
     @Query("select * from special_price where status = 'WAITING' for update")
     List<SpecialPrice> findWaitingElements();

@@ -124,18 +124,19 @@
 
     });
 
-    var createCategory = function(sticky, $scope) {
+    var createCategory = function(sticky, $scope, expirationExtractor) {
         var lastCategory = _.last($scope.event.ticketCategories);
         var inceptionDate, notBefore;
         if(angular.isDefined(lastCategory)) {
-            inceptionDate = moment(lastCategory.expiration.date).format('YYYY-MM-DD');
+            var lastExpiration = angular.isFunction(expirationExtractor) ? expirationExtractor(lastCategory) : lastCategory.expiration.date;
+            inceptionDate = moment(lastExpiration).format('YYYY-MM-DD');
             notBefore = inceptionDate;
         } else {
             inceptionDate = moment().format('YYYY-MM-DD');
             notBefore = undefined;
         }
 
-        var category = {
+        return {
             inception: {
                 date: inceptionDate
             },
@@ -144,7 +145,11 @@
             sticky: sticky,
             notBefore: notBefore
         };
-        $scope.event.ticketCategories.push(category);
+
+    };
+
+    var createAndPushCategory = function(sticky, $scope, expirationExtractor) {
+        $scope.event.ticketCategories.push(createCategory(sticky, $scope, expirationExtractor));
     };
 
     var initScopeForEventEditing = function ($scope, OrganizationService, PaymentProxyService, LocationService, $state) {
@@ -164,7 +169,7 @@
         });
 
         $scope.addCategory = function() {
-            createCategory(false, $scope);
+            createAndPushCategory(false, $scope);
         };
 
         $scope.canAddCategory = function(categories) {
@@ -197,7 +202,7 @@
         };
         initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, $state);
         $scope.event.ticketCategories = [];
-        createCategory(true, $scope);
+        createAndPushCategory(true, $scope);
 
         $scope.save = function(form, event) {
             validationPerformer($q, EventService.checkEvent, event, form).then(function() {
@@ -238,7 +243,8 @@
                                                         PaymentProxyService,
                                                         $state,
                                                         $log,
-                                                        $q) {
+                                                        $q,
+                                                        $modal) {
         var loadData = function() {
             $scope.loading = true;
             EventService.getEvent($stateParams.eventName).success(function(result) {
@@ -379,6 +385,38 @@
                     loadData();
                 });
             }, errorHandler);
+        };
+
+        var openCategoryDialog = function(category, event) {
+            var editCategory = $modal.open({
+                size:'lg',
+                templateUrl:BASE_STATIC_URL + '/event/fragment/edit-category-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                    $scope.ticketCategory = category;
+                    $scope.event = event;
+                    $scope.cancel = function() {
+                        $scope.$dismiss('canceled');
+                    };
+                    $scope.update = function(form, category, event) {
+                        if(!form.$valid) {
+                            return;
+                        }
+                        EventService.saveTicketCategory(event, category).then(function(result) {
+                            validationErrorHandler(result, form, form.ticketCategory).then(function() {
+                                $scope.$close(true);
+                            });
+                        }, errorHandler);
+                    };
+                }
+            });
+            return editCategory.result;
+        };
+
+        $scope.addCategory = function() {
+            openCategoryDialog(createCategory(true, $scope, function(obj) {return obj.formattedExpiration}), $scope.event).then(function() {
+                loadData();
+            });
         };
     });
 
