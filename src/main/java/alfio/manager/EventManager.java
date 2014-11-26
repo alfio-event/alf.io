@@ -200,7 +200,7 @@ public class EventManager {
                 .mapToInt(TicketCategory::getMaxTickets)
                 .sum();
         Validate.isTrue(sum + tcm.getMaxTickets() <= event.getAvailableSeats(), "Not enough seats");
-        Validate.isTrue(tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()));
+        Validate.isTrue(tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), "expiration must be before the end of the event");
         insertCategory(tcm, event.getVat(), event.isVatIncluded(), event.isFreeOfCharge(), event.getZoneId(), eventId);
     }
 
