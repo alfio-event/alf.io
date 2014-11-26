@@ -82,16 +82,16 @@
                     }
                 };
 
-                var getTodayTruncatedToNextHour = function() {
-                    return moment().startOf('hour').add(1,'hours');
+                var getNowPlusTenMinutes = function() {
+                    return moment().startOf('minute').add(10,'minutes');
                 };
 
                 var initDateUsingNow = function(modelObj) {
                     if(!angular.isDefined(modelObj) || !angular.isDefined(modelObj.date) || !angular.isDefined(modelObj.time)) {
-                        return getTodayTruncatedToNextHour();
+                        return getNowPlusTenMinutes();
                     }
                     var date = moment(modelObj.date + 'T' + modelObj.time);
-                    return date.isValid() ? date : getTodayTruncatedToNextHour();
+                    return date.isValid() ? date : getNowPlusTenMinutes();
                 };
 
 
@@ -102,7 +102,7 @@
                 ctrl.$setViewValue(result);
                 element.val(result);
 
-                var minDate = scope.minDate || getTodayTruncatedToNextHour();
+                var minDate = scope.minDate || getNowPlusTenMinutes();
 
                 element.daterangepicker({
                     format: dateFormat,
