@@ -56,17 +56,11 @@
             getEvent: function(name) {
                 return $http.get('/admin/api/events/'+name+'.json').error(HttpErrorHandler.handle);
             },
-            getEventForUpdate: function(name) {
-                return $http.get('/admin/api/events/'+name+'/for-update.json').error(HttpErrorHandler.handle);
-            },
             checkEvent : function(event) {
                 return $http['post']('/admin/api/events/check', event).error(HttpErrorHandler.handle);
             },
             createEvent : function(event) {
                 return $http['post']('/admin/api/events/new', event).error(HttpErrorHandler.handle);
-            },
-            updateEvent : function(event) {
-                return $http['post']('/admin/api/events/'+event.id+'/update', event).error(HttpErrorHandler.handle);
             },
             updateEventHeader: function(eventHeader) {
                 return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);

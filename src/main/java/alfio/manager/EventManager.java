@@ -236,30 +236,6 @@ public class EventManager {
         return new GeolocationResult(coordinates, locationManager.getTimezone(coordinates));
     }
 
-    public void updateEvent(int eventId, EventModification em, String username) {
-        final Event original = eventRepository.findById(eventId);
-        final List<TicketCategoryWithStatistic> ticketCategories = getSingleEventWithStatistics(original.getShortName(), username)
-                .getTicketCategories();
-        int soldTickets = ticketCategories.stream()
-                .mapToInt(TicketCategoryWithStatistic::getSoldTickets)
-                .sum();
-        int existingTickets = ticketCategories.stream()
-                .mapToInt(TicketCategoryWithStatistic::getMaxTickets)
-                .sum();
-
-        if(soldTickets > 0 || ticketRepository.invalidateAllTickets(eventId) != existingTickets) {
-            throw new IllegalStateException("Cannot update the event: some tickets have been already reserved/confirmed.");
-        }
-        ticketCategoryRepository.findAllTicketCategories(eventId).stream()
-                .mapToInt(TicketCategory::getId)
-                .forEach(ticketCategoryRepository::deactivate);
-        
-        internalUpdateEvent(eventId, em);
-        final Event updated = eventRepository.findById(eventId);
-        distributeSeats(em, updated);
-        createAllTicketsForEvent(eventId, updated);
-    }
-
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
         Event event = eventRepository.findById(eventId);
         TicketCategoryWithStatistic src = loadTicketCategoryWithStats(srcCategoryId, event);
@@ -457,22 +433,6 @@ public class EventManager {
                 .stream()
                 .map(PaymentProxy::name)
                 .collect(joining(","));
-    }
-
-    private void internalUpdateEvent(int id, EventModification em) {
-        final Event existing = eventRepository.findById(id);
-        if(!em.getId().equals(existing.getId())) {
-            throw new IllegalArgumentException("invalid event id");
-        }
-
-        String paymentProxies = collectPaymentProxies(em);
-        int actualPrice = evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
-        BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
-        final GeolocationResult result = geolocate(em.getLocation());
-        eventRepository.update(id, em.getDescription(), em.getShortName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(), em.getImageUrl(), em.getLocation(),
-                result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()), em.getEnd().toZonedDateTime(result.getZoneId()),
-                result.getTimeZone(), actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies, em.getOrganizationId());
-
     }
 
 	public TicketCategory getTicketCategoryById(int id, int eventId) {

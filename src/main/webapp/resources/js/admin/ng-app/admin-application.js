@@ -49,11 +49,6 @@
                 templateUrl: BASE_STATIC_URL + '/event/detail.html',
                 controller: 'EventDetailController'
             })
-            .state('events.edit', {
-                url: '/:eventName/edit',
-                templateUrl: BASE_STATIC_URL + '/event/edit-event.html',
-                controller: 'EditEventController'
-            })
             .state('configuration', {
                 url: '/configuration',
                 templateUrl: BASE_STATIC_URL + '/configuration/index.html',
@@ -207,26 +202,6 @@
         $scope.save = function(form, event) {
             validationPerformer($q, EventService.checkEvent, event, form).then(function() {
                 EventService.createEvent(event).success(function() {
-                    $state.go('index');
-                });
-            }, angular.noop);
-        };
-
-    });
-
-    admin.controller('EditEventController', function($scope, $state, $rootScope, $stateParams,
-                                                       $q, OrganizationService, PaymentProxyService,
-                                                       EventService, LocationService) {
-
-        EventService.getEventForUpdate($stateParams.eventName).success(function(result) {
-            $scope.event = result;
-            initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, $state);
-
-        });
-
-        $scope.save = function(form, event) {
-            validationPerformer($q, EventService.checkEvent, event, form).then(function() {
-                EventService.updateEvent(event).success(function() {
                     $state.go('index');
                 });
             }, angular.noop);
@@ -413,8 +388,33 @@
             return editCategory.result;
         };
 
-        $scope.addCategory = function() {
-            openCategoryDialog(createCategory(true, $scope, function(obj) {return obj.formattedExpiration}), $scope.event).then(function() {
+        $scope.addCategory = function(event) {
+            openCategoryDialog(createCategory(true, $scope, function(obj) {return obj.formattedExpiration}), event).then(function() {
+                loadData();
+            });
+        };
+
+        $scope.editCategory = function(category, event) {
+            var inception = moment(category.formattedInception);
+            var expiration = moment(category.formattedExpiration);
+            var categoryObj = {
+                name: category.name,
+                price: category.price,
+                description: category.description,
+                maxTickets: category.maxTickets,
+                inception: {
+                    date: inception.format('YYYY-MM-DD'),
+                    time: inception.format('HH:mm')
+                },
+                expiration: {
+                    date: expiration.format('YYYY-MM-DD'),
+                    time: expiration.format('HH:mm')
+                },
+                tokenGenerationRequested: category.accessRestricted,
+                sticky: false
+            };
+
+            openCategoryDialog(categoryObj, event).then(function() {
                 loadData();
             });
         };

@@ -22,7 +22,7 @@
     </div>
 
     <div class="wMarginBottom">
-        <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory()"><i class="fa fa-plus"></i> add category</button>
+        <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory(event)"><i class="fa fa-plus"></i> add category</button>
     </div>
 
     <div data-ng-repeat="ticketCategory in event.ticketCategories" class="container wMarginBottom" data-ng-class="evaluateCategoryStatusClass($index, ticketCategory)">
@@ -72,6 +72,11 @@
                 </progress>
             </div>
             <div class="col-sm-4">sold: {{::ticketCategory.soldTickets}}, available: {{::ticketCategory.notSoldTickets}}</div>
+        </div>
+        <div class="row wMarginBottom">
+            <div class="col-sm-4">
+                <button class="btn btn-warning" data-ng-click="editCategory(ticketCategory, event)"><i class="fa fa-edit"></i> edit</button>
+            </div>
         </div>
         <div data-ng-if="ticketCategory.containingTickets">
             <div class="wMarginBottom">
@@ -123,6 +128,6 @@
     </div>
     <div class="clearfix"></div>
     <div class="wMarginBottom">
-        <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory()"><i class="fa fa-plus"></i> add category</button>
+        <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory(event)"><i class="fa fa-plus"></i> add category</button>
     </div>
 </div>

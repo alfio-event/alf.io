@@ -133,12 +133,6 @@ public class AdminApiController {
         return out;
     }
 
-    @RequestMapping(value = "/events/{name}/for-update", method = GET)
-    public EventModification getSingleEventForUpdate(@PathVariable("name") String eventName, Principal principal) {
-        final Event event = eventManager.getSingleEvent(eventName, principal.getName());
-        return EventModification.fromEvent(event, eventManager.loadTicketCategories(event), getMapsClientApiKey());
-    }
-
     @RequestMapping(value = "/events/check", method = POST)
     public ValidationResult validateEvent(@RequestBody EventModification eventModification) {
         return ValidationResult.success();
@@ -147,12 +141,6 @@ public class AdminApiController {
     @RequestMapping(value = "/events/new", method = POST)
     public String insertEvent(@RequestBody EventModification eventModification) {
         eventManager.createEvent(eventModification);
-        return OK;
-    }
-
-    @RequestMapping(value = "/events/{id}/update", method = POST)
-    public String updateEvent(@PathVariable("id") int id, @RequestBody EventModification eventModification, Principal principal) {
-        eventManager.updateEvent(id, eventModification, principal.getName());
         return OK;
     }
 
@@ -166,7 +154,6 @@ public class AdminApiController {
         return Validator.validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(id, eventModification, principal.getName()));
     }
 
-    ///admin/api/events/' + event.id + '/categories/' + ticketCategory.id + '/update
     @RequestMapping(value = "/events/{eventId}/categories/{categoryId}/update", method = POST)
     public ValidationResult updateExistingCategory(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
         return Validator.validateCategory(category, errors).ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
@@ -176,7 +163,6 @@ public class AdminApiController {
     public ValidationResult createCategory(@PathVariable("eventId") int eventId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
         return Validator.validateCategory(category, errors).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
     }
-
 
     @RequestMapping(value = "/events/reallocate", method = PUT)
     public String reallocateTickets(@RequestBody TicketAllocationModification form) {
