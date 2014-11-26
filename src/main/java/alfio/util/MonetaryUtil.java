@@ -17,8 +17,11 @@
 package alfio.util;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import static java.math.RoundingMode.HALF_UP;
+import static java.math.RoundingMode.UNNECESSARY;
+import static java.math.RoundingMode.UP;
 
 public final class MonetaryUtil {
 
@@ -32,18 +35,18 @@ public final class MonetaryUtil {
     }
 
     public static BigDecimal addVAT(BigDecimal price, BigDecimal vat) {
-        return price.add(price.multiply(vat.divide(HUNDRED))).setScale(0, HALF_UP);
+        return price.add(price.multiply(vat.divide(HUNDRED, 5, UP))).setScale(0, HALF_UP);
     }
 
     public static int removeVAT(int priceInCents, BigDecimal vat) {
         return new BigDecimal(priceInCents)
-                .divide(BigDecimal.ONE.add(vat.divide(HUNDRED)), 5, HALF_UP)
+                .divide(BigDecimal.ONE.add(vat.divide(HUNDRED, 5, UP)), 5, HALF_UP)
                 .setScale(0, HALF_UP)
                 .intValueExact();
     }
 
     public static int calcVat(int priceInCents, BigDecimal vat) {
-        return new BigDecimal(priceInCents).multiply(vat.divide(HUNDRED))
+        return new BigDecimal(priceInCents).multiply(vat.divide(HUNDRED, 5, UP))
                 .setScale(0, HALF_UP)
                 .intValueExact();
     }

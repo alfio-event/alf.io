@@ -29,6 +29,7 @@ public class MonetaryUtilTest {{
         describe("MonetaryUtil.addVAT", it -> {
             it.should("include 7.5% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("7.50"))).is(10750));
             it.should("include 8% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("8.00"))).is(10800));
+            it.should("include 8% of VAT (corner case)", expect -> expect.that(MonetaryUtil.addVAT(7407, new BigDecimal("8.00"))).is(8000));
             it.should("include 7.99% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("7.99"))).is(10799));
             it.should("include 7.999% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("7.999"))).is(10800));
             it.should("include 21% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("21.00"))).is(12100));
@@ -37,6 +38,7 @@ public class MonetaryUtilTest {{
         describe("MonetaryUtil.removeVAT", it -> {
             it.should("remove 7.5% of VAT", expect -> expect.that(MonetaryUtil.removeVAT(10750, new BigDecimal("7.50"))).is(price));
             it.should("remove 8% of VAT", expect -> expect.that(MonetaryUtil.removeVAT(10800, new BigDecimal("8.00"))).is(price));
+            it.should("remove 8% of VAT (corner case)", expect -> expect.that(MonetaryUtil.removeVAT(8000, new BigDecimal("8.00"))).is(7407));
             it.should("remove 7.99% of VAT", expect -> expect.that(MonetaryUtil.removeVAT(10799, new BigDecimal("7.99"))).is(price));
             it.should("remove 7.999% of VAT", expect -> expect.that(MonetaryUtil.removeVAT(10800, new BigDecimal("7.999"))).is(price));
             it.should("remove 21% of VAT", expect -> expect.that(MonetaryUtil.removeVAT(12100, new BigDecimal("21.00"))).is(price));
