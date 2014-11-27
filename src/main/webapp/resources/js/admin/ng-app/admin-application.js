@@ -398,8 +398,9 @@
             var inception = moment(category.formattedInception);
             var expiration = moment(category.formattedExpiration);
             var categoryObj = {
+                id: category.id,
                 name: category.name,
-                price: category.price,
+                price: category.actualPrice,
                 description: category.description,
                 maxTickets: category.maxTickets,
                 inception: {

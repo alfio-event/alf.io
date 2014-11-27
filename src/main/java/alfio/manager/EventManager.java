@@ -50,6 +50,7 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -135,12 +136,13 @@ public class EventManager {
         final TicketCategory tc = ticketCategoryRepository.getById(categoryId, event.getId());
         return new TicketCategoryWithStatistic(tc,
                 ticketReservationManager.loadModifiedTickets(event.getId(), tc.getId()),
-                specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId());
+                specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId(),
+                categoryPriceCalculator(event));
     }
 
     public List<TicketCategoryWithStatistic> loadTicketCategoriesWithStats(Event event) {
         return loadTicketCategories(event).stream()
-                    .map(tc -> new TicketCategoryWithStatistic(tc, ticketReservationManager.loadModifiedTickets(tc.getEventId(), tc.getId()), specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId()))
+                    .map(tc -> new TicketCategoryWithStatistic(tc, ticketReservationManager.loadModifiedTickets(tc.getEventId(), tc.getId()), specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId(), categoryPriceCalculator(event)))
                     .sorted()
                     .collect(toList());
     }
@@ -209,9 +211,9 @@ public class EventManager {
         checkOwnership(event, username, event.getOrganizationId());
         final List<TicketCategory> categories = ticketCategoryRepository.findByEventId(eventId);
         final TicketCategory existing = categories.stream().filter(tc -> tc.getId() == categoryId).findFirst().orElseThrow(IllegalArgumentException::new);
+        Validate.isTrue(tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), "expiration must be before the end of the event");
         Validate.isTrue(existing.getMaxTickets() - tcm.getMaxTickets() + categories.stream().mapToInt(TicketCategory::getMaxTickets).sum() <= event.getAvailableSeats(), "not enough seats");
-
-        if((tcm.isTokenGenerationRequested() ^ existing.isAccessRestricted()) && ticketRepository.countConfirmedTickets(eventId, categoryId) > 0) {
+        if((tcm.isTokenGenerationRequested() ^ existing.isAccessRestricted()) && ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) > 0) {
             throw new IllegalStateException("cannot update the category. There are tickets already sold.");
         }
         updateCategory(tcm, event.getVat(), event.isVatIncluded(), event.isFreeOfCharge(), event.getZoneId(), eventId);
@@ -264,7 +266,7 @@ public class EventManager {
                                                                      int regularPrice,
                                                                      int existing) {
         return Stream.generate(MapSqlParameterSource::new)
-                    .limit(tc.getMaxTickets() - existing)
+                    .limit(Math.abs(tc.getMaxTickets() - existing))
                     .map(ps -> buildParams(eventId, creationDate, tc, regularPrice, tc.getPriceInCents(), ps));
     }
 
@@ -331,10 +333,11 @@ public class EventManager {
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getMaxTickets(), price, tc.isTokenGenerationRequested(),
                 tc.getDescription());
         TicketCategory updated = ticketCategoryRepository.getById(tc.getId(), eventId);
-        int difference = original.getMaxTickets() - updated.getMaxTickets();
-        handleTicketNumberModification(eventId, original, updated, difference);
+        int addedTickets = updated.getMaxTickets() - original.getMaxTickets();
+        Validate.isTrue(addedTickets >= 0 || ticketRepository.countConfirmedAndPendingTickets(eventId, updated.getId()).equals(0), "cannot shrink a category that already contains reservations");
+        handleTicketNumberModification(eventId, original, updated, addedTickets);
         handlePriceChange(eventId, original, updated);
-        handleTokenModification(original, updated, difference);
+        handleTokenModification(original, updated, addedTickets);
     }
 
     private void handlePriceChange(int eventId, TicketCategory original, TicketCategory updated) {
@@ -348,43 +351,46 @@ public class EventManager {
         ticketRepository.updateTicketPrice(updated.getId(), eventId, updated.getPriceInCents());
     }
 
-    private void handleTokenModification(TicketCategory original, TicketCategory updated, int difference) {
+    private void handleTokenModification(TicketCategory original, TicketCategory updated, int addedTickets) {
         if(original.isAccessRestricted() ^ updated.isAccessRestricted()) {
             if(updated.isAccessRestricted()) {
                 final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(updated, updated.getMaxTickets());
                 jdbc.batchUpdate(specialPriceRepository.bulkInsert(), args);
             } else {
-                int result = specialPriceRepository.cancelExpiredTokens(updated.getId());
-                Validate.isTrue(result == original.getMaxTickets());
+                specialPriceRepository.cancelExpiredTokens(updated.getId());
             }
-        } else if(updated.isAccessRestricted() && difference != 0) {
-            if(difference > 0) {
-                jdbc.batchUpdate(specialPriceRepository.bulkInsert(), prepareTokenBulkInsertParameters(updated, difference));
+        } else if(updated.isAccessRestricted() && addedTickets != 0) {
+            if(addedTickets > 0) {
+                jdbc.batchUpdate(specialPriceRepository.bulkInsert(), prepareTokenBulkInsertParameters(updated, addedTickets));
             } else {
-                final List<Integer> ids = specialPriceRepository.lockTokens(updated.getId(), -difference);
-                Validate.isTrue(ids.size() - difference == 0);
+                int absDifference = Math.abs(addedTickets);
+                final List<Integer> ids = specialPriceRepository.lockTokens(updated.getId(), absDifference);
+                Validate.isTrue(ids.size() - absDifference == 0, "not enough tokens");
                 specialPriceRepository.cancelTokens(ids);
             }
         }
 
     }
 
-    private void handleTicketNumberModification(int eventId, TicketCategory original, TicketCategory updated, int difference) {
-        if(difference == 0) {
+    private void handleTicketNumberModification(int eventId, TicketCategory original, TicketCategory updated, int addedTickets) {
+        if(addedTickets == 0) {
             log.debug("ticket handling not required since the number of ticket wasn't modified");
             return;
         }
 
-        log.info("there was a modification in ticket number the difference is: {}", difference);
+        log.info("modification detected in ticket number. The difference is: {}", addedTickets);
 
-        if(difference > 0) {
-            final List<Integer> ids = ticketRepository.selectTicketInCategoryForUpdate(eventId, updated.getId(), difference);
-            if(ids.size() < difference) {
+        if(addedTickets > 0) {
+            //the updated category contains more tickets than the older one
+            final Stream<MapSqlParameterSource> args = generateTicketsForCategory(updated, eventId, new Date(), updated.getPriceInCents(), original.getMaxTickets());
+            jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), args.toArray(MapSqlParameterSource[]::new));
+        } else {
+            int absDifference = Math.abs(addedTickets);
+            final List<Integer> ids = ticketRepository.selectTicketInCategoryForUpdate(eventId, updated.getId(), absDifference);
+            if(ids.size() < Math.abs(absDifference)) {
                 throw new IllegalStateException("cannot update the category. There are tickets already sold.");
             }
             ticketRepository.invalidateTickets(ids);
-        } else {
-            generateTicketsForCategory(updated, eventId, new Date(), updated.getPriceInCents(), original.getMaxTickets());
         }
     }
 
@@ -404,6 +410,24 @@ public class EventManager {
     private void createAllTicketsForEvent(int eventId, Event event) {
         final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(eventId, ZonedDateTime.now(event.getZoneId()), event, event.getRegularPriceInCents());
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
+    }
+
+    /**
+     * Calculate the price for ticket category edit page
+     *
+     * @param e
+     * @return
+     */
+    private static UnaryOperator<Integer> categoryPriceCalculator(Event e) {
+        return p -> {
+            if(e.isFreeOfCharge()) {
+                return 0;
+            }
+            if(e.isVatIncluded()) {
+                return MonetaryUtil.addVAT(p, e.getVat());
+            }
+            return p;
+        };
     }
 
     static int evaluatePrice(int price, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge) {

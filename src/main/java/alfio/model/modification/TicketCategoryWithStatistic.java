@@ -28,6 +28,7 @@ import java.math.RoundingMode;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 import static java.util.stream.Collectors.toList;
 
@@ -41,19 +42,22 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
     private final BigDecimal soldTicketsPercent;
     private final List<TicketWithStatistic> tickets;
     private final List<SpecialPrice> tokenStatus;
+    private final int actualPrice;
     @JsonIgnore
     private final ZoneId eventZoneId;
 
     public TicketCategoryWithStatistic(TicketCategory ticketCategory,
                                        List<TicketWithStatistic> tickets,
                                        List<SpecialPrice> tokenStatus,
-                                       ZoneId eventZoneId) {
+                                       ZoneId eventZoneId,
+                                       UnaryOperator<Integer> vatAdder) {
         this.ticketCategory = ticketCategory;
         this.tickets = tickets.stream().filter(tc -> tc.hasBeenSold() || tc.isStuck()).collect(toList());
         this.soldTickets = (int) this.tickets.stream().filter(TicketWithStatistic::hasBeenSold).count();
         this.tokenStatus = tokenStatus;
         this.eventZoneId = eventZoneId;
         this.soldTicketsPercent = calcSoldTicketsPercent(ticketCategory, soldTickets);
+        this.actualPrice = vatAdder.apply(ticketCategory.getPriceInCents());
     }
 
     public BigDecimal getNotSoldTicketsPercent() {
@@ -96,6 +100,10 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
 
     public String getFormattedExpiration() {
         return getExpiration(eventZoneId).format(EventWithStatistics.JSON_DATE_FORMATTER);
+    }
+
+    public BigDecimal getActualPrice() {
+        return MonetaryUtil.centsToUnit(actualPrice);
     }
 
 }

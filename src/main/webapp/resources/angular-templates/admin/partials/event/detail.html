@@ -59,7 +59,7 @@
                     </div>
                     <div class="row" data-ng-if="!event.freeOfCharge">
                         <div class="col-sm-4"><strong>Final price</strong></div>
-                        <div class="col-sm-8">{{calcCategoryPrice(ticketCategory, event) | currency : (event.currency || "")}}</div>
+                        <div class="col-sm-8">{{ticketCategory.actualPrice | currency : (event.currency || "")}}</div>
                     </div>
                 </div>
             </div>

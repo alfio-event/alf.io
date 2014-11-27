@@ -27,58 +27,7 @@
             </div>
         </div>
         <div class="row category" data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories" data-ng-class="'category-' + evaluateBarType($index)">
-            <div class="col-sm-12">
-                <div class="row">
-                    <div class="col-sm-12 col-md-4">
-                        <label for="{{$index}}-name">Name</label>
-                        <input type="text" data-ng-model="ticketCategory.name" name="{{$index}}-name" id="{{$index}}-name" class="form-control" required />
-                        <field-error data-form-obj="category" data-field-obj="category.name"></field-error>
-                    </div>
-
-                    <div class="col-sm-12 col-md-3">
-                        <label class="control-label">Category type</label>
-                        <div class="form-group">
-                            <div class="radio-inline">
-                                <label>
-                                    <input type="radio" name="{{$index}}-tokenGenerationRequested" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="false">
-                                    Public
-                                </label>
-                            </div>
-                            <div class="radio-inline">
-                                <label>
-                                    <input type="radio" name="{{$index}}-tokenGenerationRequested" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="true">
-                                    Restricted
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-sm-12 col-md-5">
-                        <label for="{{$index}}-maxTickets">Available seats</label>
-                        <input type="number" data-ng-model="ticketCategory.maxTickets" name="{{$index}}-maxTickets" id="{{$index}}-maxTickets" class="form-control" required />
-                        <field-error data-form-obj="category" data-field-obj="category.maxTickets"></field-error>
-                    </div>
-
-                </div>
-                <div class="row">
-
-                    <div class="col-sm-12 col-md-4">
-                        <label for="{{$index}}-date">Validity range</label>
-                        <input type="text" data-date-range data-start-model="ticketCategory.inception" data-end-model="ticketCategory.expiration" data-start-date="ticketCategory.notBefore" data-ng-model="ticketCategory.dateString" name="{{$index}}-date" id="{{$index}}-date" class="form-control" required />
-                    </div>
-
-                    <div class="col-sm-12 col-md-3" data-ng-if="!event.freeOfCharge">
-                        <label for="{{$index}}-price">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event)}}%)</span></label>
-                        <input type="number" data-ng-model="ticketCategory.price" name="{{$index}}-price" id="{{$index}}-price" class="form-control" required />
-                    </div>
-
-                    <div class="col-sm-12 col-md-5">
-                        <label for="{{$index}}-description">Description</label>
-                        <textarea data-ng-model="ticketCategory.description" name="{{$index}}-description" id="{{$index}}-description" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
-                    </div>
-
-                </div>
-            </div>
+            <edit-category></edit-category>
         </div>
 
         <div class="row">
