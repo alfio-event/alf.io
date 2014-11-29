@@ -340,7 +340,7 @@ public class EventManager {
         handleTokenModification(original, updated, addedTickets);
     }
 
-    private void handlePriceChange(int eventId, TicketCategory original, TicketCategory updated) {
+    void handlePriceChange(int eventId, TicketCategory original, TicketCategory updated) {
         if(original.getPriceInCents() == updated.getPriceInCents()) {
             return;
         }
@@ -351,7 +351,7 @@ public class EventManager {
         ticketRepository.updateTicketPrice(updated.getId(), eventId, updated.getPriceInCents());
     }
 
-    private void handleTokenModification(TicketCategory original, TicketCategory updated, int addedTickets) {
+    void handleTokenModification(TicketCategory original, TicketCategory updated, int addedTickets) {
         if(original.isAccessRestricted() ^ updated.isAccessRestricted()) {
             if(updated.isAccessRestricted()) {
                 final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(updated, updated.getMaxTickets());
@@ -372,7 +372,7 @@ public class EventManager {
 
     }
 
-    private void handleTicketNumberModification(int eventId, TicketCategory original, TicketCategory updated, int addedTickets) {
+    void handleTicketNumberModification(int eventId, TicketCategory original, TicketCategory updated, int addedTickets) {
         if(addedTickets == 0) {
             log.debug("ticket handling not required since the number of ticket wasn't modified");
             return;
@@ -387,7 +387,7 @@ public class EventManager {
         } else {
             int absDifference = Math.abs(addedTickets);
             final List<Integer> ids = ticketRepository.selectTicketInCategoryForUpdate(eventId, updated.getId(), absDifference);
-            if(ids.size() < Math.abs(absDifference)) {
+            if(ids.size() < absDifference) {
                 throw new IllegalStateException("cannot update the category. There are tickets already sold.");
             }
             ticketRepository.invalidateTickets(ids);
