@@ -4,4 +4,4 @@
 .settings/
 .idea/
 *.iml
-deploy.sh
+deploy*.sh

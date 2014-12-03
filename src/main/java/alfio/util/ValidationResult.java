@@ -57,6 +57,10 @@ public final class ValidationResult {
         return this;
     }
 
+    public boolean isSuccess() {
+        return errorCount == 0;
+    }
+
     @Getter
     public static final class ValidationError {
         private final String fieldName;

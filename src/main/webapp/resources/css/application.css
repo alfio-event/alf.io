@@ -45,6 +45,10 @@ p.ticket-info {
 	display: none;
 }
 
+.show-by-default {
+
+}
+
 
 .list-group-item {
 	border-left:none;

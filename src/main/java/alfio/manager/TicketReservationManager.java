@@ -16,9 +16,8 @@
  */
 package alfio.manager;
 
-import alfio.manager.support.OrderSummary;
-import alfio.manager.support.PaymentResult;
-import alfio.manager.support.SummaryRow;
+import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.manager.support.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.Event;
@@ -34,6 +33,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.MonetaryUtil;
+import com.lowagie.text.DocumentException;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -41,6 +41,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,6 +72,8 @@ public class TicketReservationManager {
     private final SpecialPriceRepository specialPriceRepository;
     private final Mailer mailer;
     private final TransactionRepository transactionRepository;
+	private final NotificationManager notificationManager;
+	private final MessageSource messageSource;
 
 	public static class NotEnoughTicketsException extends Exception {
 		
@@ -84,15 +87,17 @@ public class TicketReservationManager {
 	
 	@Autowired
 	public TicketReservationManager(EventRepository eventRepository,
-                                    OrganizationRepository organizationRepository,
-                                    TicketRepository ticketRepository,
-                                    TicketReservationRepository ticketReservationRepository,
-                                    TicketCategoryRepository ticketCategoryRepository,
-                                    ConfigurationManager configurationManager,
-                                    PaymentManager paymentManager,
-                                    SpecialPriceRepository specialPriceRepository,
-                                    TransactionRepository transactionRepository,
-                                    Mailer mailer) {
+									OrganizationRepository organizationRepository,
+									TicketRepository ticketRepository,
+									TicketReservationRepository ticketReservationRepository,
+									TicketCategoryRepository ticketCategoryRepository,
+									ConfigurationManager configurationManager,
+									PaymentManager paymentManager,
+									SpecialPriceRepository specialPriceRepository,
+									TransactionRepository transactionRepository,
+									Mailer mailer,
+									NotificationManager notificationManager,
+									MessageSource messageSource) {
 		this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -103,7 +108,9 @@ public class TicketReservationManager {
         this.specialPriceRepository = specialPriceRepository;
         this.mailer = mailer;
         this.transactionRepository = transactionRepository;
-    }
+		this.notificationManager = notificationManager;
+		this.messageSource = messageSource;
+	}
 	
     /**
      * Create a ticket reservation. It will create a reservation _only_ if it can find enough tickets. Note that it will not do date/validity validation. This must be ensured by the
@@ -346,5 +353,72 @@ public class TicketReservationManager {
 	
 	public Optional<String> getVAT() {
 		return configurationManager.getStringConfigValue(ConfigurationKeys.VAT_NR);
+	}
+
+	public void updateTicketOwner(Ticket ticket,
+								  Locale locale,
+								  Event event,
+								  UpdateTicketOwnerForm updateTicketOwner,
+								  TextTemplateBuilder confirmationTextBuilder,
+								  TextTemplateBuilder ownerChangeTextBuilder,
+								  PDFTemplateBuilder pdfTemplateBuilder) {
+
+		String newEmail = updateTicketOwner.getEmail().trim();
+		String newFullName = updateTicketOwner.getFullName().trim();
+		ticketRepository.updateTicketOwner(ticket.getUuid(), newEmail, newFullName);
+		//
+		ticketRepository.updateOptionalTicketInfo(ticket.getUuid(), updateTicketOwner.getJobTitle(),
+				updateTicketOwner.getCompany(),
+				updateTicketOwner.getPhoneNumber(),
+				updateTicketOwner.getAddress(),
+				updateTicketOwner.getCountry(),
+				updateTicketOwner.getTShirtSize(),
+				updateTicketOwner.getNotes(),
+				locale.getLanguage());
+
+		if (!StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) || !StringUtils.equalsIgnoreCase(newFullName, ticket.getFullName())) {
+			sendTicketByEmail(ticket, locale, event, confirmationTextBuilder, pdfTemplateBuilder);
+		}
+
+		if (StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail())) {
+			String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getShortName()}, locale);
+			notificationManager.sendSimpleEmail(ticket.getEmail(), subject, ownerChangeTextBuilder);
+		}
+	}
+
+	private void sendTicketByEmail(Ticket ticket, Locale locale, Event event, TextTemplateBuilder confirmationTextBuilder, PDFTemplateBuilder pdfTemplateBuilder) {
+		try {
+            notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, pdfTemplateBuilder);
+        } catch (DocumentException e) {
+            throw new IllegalStateException(e);
+        }
+	}
+
+	public Optional<Triple<Event, TicketReservation, Ticket>> fetchComplete(String eventName, String reservationId, String ticketIdentifier) {
+		return from(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
+			if(t.getMiddle().getStatus() == TicketReservationStatus.COMPLETE) {
+				return Optional.of(t);
+			} else {
+				return Optional.empty();
+			}
+		});
+	}
+
+	/**
+	 * Return a fully present triple only if the values are present (obviously) and the the reservation has a COMPLETE status and the ticket is considered assigned.
+	 *
+	 * @param eventName
+	 * @param reservationId
+	 * @param ticketIdentifier
+	 * @return
+	 */
+	public Optional<Triple<Event, TicketReservation, Ticket>> fetchCompleteAndAssigned(String eventName, String reservationId, String ticketIdentifier) {
+		return fetchComplete(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
+			if(t.getRight().getAssigned()) {
+				return Optional.of(t);
+			} else {
+				return Optional.empty();
+			}
+		});
 	}
 }

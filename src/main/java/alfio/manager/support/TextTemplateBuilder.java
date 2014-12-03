@@ -14,19 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.form;
+package alfio.manager.support;
 
-import lombok.Data;
-
-@Data
-public class UpdateTicketOwnerForm {
-	private String email;
-	private String fullName;
-	private String jobTitle;
-	private String company;
-	private String phoneNumber;
-	private String address;
-	private String country;
-	private String tShirtSize;
-	private String notes;
+@FunctionalInterface
+public interface TextTemplateBuilder {
+    String build();
 }

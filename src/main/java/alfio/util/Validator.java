@@ -16,6 +16,7 @@
  */
 package alfio.util;
 
+import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.model.Event;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -27,9 +28,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public final class Validator {
+
+    private static final Pattern SIMPLE_E_MAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9]+@.+?\\..+$");
 
     private Validator() {
     }
@@ -92,5 +96,23 @@ public final class Validator {
                     .collect(Collectors.toList()));
         }
         return ValidationResult.success();
+    }
+
+    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, Errors errors) {
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "email", "error.email");
+        String email = form.getEmail();
+        if(StringUtils.isNotEmpty(email) && !SIMPLE_E_MAIL_PATTERN.matcher(email).matches()) {
+            errors.reject("email", "error.email");
+        }
+
+        if(StringUtils.isBlank(form.getFullName()) || StringUtils.length(form.getFullName()) > 255) {
+            errors.reject("fullName", "error.fullname");
+        }
+
+        if(StringUtils.isNotBlank(form.getNotes()) && StringUtils.length(form.getNotes()) > 1024) {
+            errors.reject("fullName", "error.notes");
+        }
+
+        return evaluateValidationResult(errors);
     }
 }

@@ -25,6 +25,8 @@
 				$(this).find("option[value="+$(this).attr('value')+"]").attr('selected','selected');
 			}
 		});
+
+		$('.show-by-default').not(':eq(0)').hide();
 	});
 	
 	

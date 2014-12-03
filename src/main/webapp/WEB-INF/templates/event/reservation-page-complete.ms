@@ -68,7 +68,12 @@
 <ul class="list-group">
 {{#ticketsByCategory}}
 	{{#value}}
-		<li class="list-group-item">{{#i18n}}reservation-page-complete.ticket-type{{/i18n}} <strong>{{key.name}}</strong>
+		<li class="list-group-item">
+			<div class="wMarginBottom">
+				<h3><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.ticket-nr [{{-index}}]{{/i18n}}</h3>
+				<span class="text-muted">{{^assigned}}{{#i18n}}reservation-page-complete.ticket-not-assigned{{/i18n}}{{/assigned}}</span>
+			</div>
+			{{#i18n}}reservation-page-complete.ticket-type{{/i18n}} <strong>{{key.name}}</strong>
 			{{#assigned}}
 				<div class="wMarginBottom">
 					<p>{{#i18n}}reservation-page-complete.assigned-to [{{fullName}}] [{{email}}]{{/i18n}}</p>
@@ -84,7 +89,7 @@
 				</div>
 			{{/assigned}}
 
-			<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}" class="form-horizontal {{#assigned}}hide-by-default{{/assigned}}" id="ticket-{{uuid}}">
+			<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}" class="form-horizontal {{^assigned}}show-by-default{{/assigned}}{{#assigned}}hide-by-default{{/assigned}}" id="ticket-{{uuid}}">
 				<div class="form-group">
 					<label class="col-sm-3 control-label" for="full-name-{{uuid}}">{{#i18n}}common.full-name{{/i18n}} *</label>
 					<div class="col-sm-9">
@@ -146,6 +151,12 @@
 					 	</select>
 					</div>
 				</div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label" for="notes-{{uuid}}">{{#i18n}}reservation-page-complete.notes{{/i18n}}</label>
+                    <div class="col-sm-9">
+                        <textarea name="notes" id="notes-{{uuid}}" class="form-control" maxlength="1024" placeholder="{{#i18n}}reservation-page-complete.notes.placeholder{{/i18n}}">{{notes}}</textarea>
+                    </div>
+                </div>
 				<!-- -->
 				<div class="form-group">
 					<div class="col-sm-offset-3 col-sm-9">	

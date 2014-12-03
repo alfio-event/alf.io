@@ -16,20 +16,21 @@
  */
 package alfio.controller;
 
-import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateManager;
+import alfio.controller.support.TemplateProcessor;
+import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.support.PDFTemplateBuilder;
 import alfio.manager.system.Mailer;
-import alfio.manager.system.Mailer.Attachment;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
-import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.TicketUtil;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.MultiFormatWriter;
@@ -38,15 +39,11 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.lowagie.text.DocumentException;
-import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -71,15 +68,17 @@ public class TicketController {
 	private final Mailer mailer;
 	private final MessageSource messageSource;
 	private final TemplateManager templateManager;
+	private final NotificationManager notificationManager;
 
 	@Autowired
-	public TicketController(OrganizationRepository organizationRepository, 
-			TicketReservationManager ticketReservationManager,
-			TicketRepository ticketRepository, 
-			TicketCategoryRepository ticketCategoryRepository,
-			Mailer mailer,
-			MessageSource messageSource,
-			TemplateManager templateManager) {
+	public TicketController(OrganizationRepository organizationRepository,
+							TicketReservationManager ticketReservationManager,
+							TicketRepository ticketRepository,
+							TicketCategoryRepository ticketCategoryRepository,
+							Mailer mailer,
+							MessageSource messageSource,
+							TemplateManager templateManager,
+							NotificationManager notificationManager) {
 		this.organizationRepository = organizationRepository;
 		this.ticketReservationManager = ticketReservationManager;
 		this.ticketRepository = ticketRepository;
@@ -87,6 +86,7 @@ public class TicketController {
 		this.mailer = mailer;
 		this.messageSource = messageSource;
 		this.templateManager = templateManager;
+		this.notificationManager = notificationManager;
 	}
 	
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.GET)
@@ -95,7 +95,7 @@ public class TicketController {
 			@RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
 			Model model) {
 		
-		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
 		if(!oData.isPresent()) {
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 		}
@@ -116,93 +116,25 @@ public class TicketController {
 		return "/event/show-ticket";
 	}
 
-	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.POST)
-	public String assignTicketToPerson(@PathVariable("eventName") String eventName,
-			@PathVariable("reservationId") String reservationId,
-			@PathVariable("ticketIdentifier") String ticketIdentifier,
-			UpdateTicketOwnerForm updateTicketOwner, BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) throws Exception {
-		
-		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetchComplete(eventName, reservationId, ticketIdentifier);
-		if(!oData.isPresent()) {
-			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
-		}
-		
-		Ticket t = oData.get().getRight();
-		
-		Validate.isTrue(!t.getLockedAssignment(), "cannot change a locked ticket");
-		
-		//TODO: validate email, fullname (not null, maxlength 255)
-		//TODO validate the others fields for size too.
-		String newEmail = updateTicketOwner.getEmail().trim();
-		String newFullName = updateTicketOwner.getFullName().trim();
-		ticketRepository.updateTicketOwner(ticketIdentifier, newEmail, newFullName);
-		//
-		ticketRepository.updateOptionalTicketInfo(ticketIdentifier, updateTicketOwner.getJobTitle(), 
-				updateTicketOwner.getCompany(), 
-				updateTicketOwner.getPhoneNumber(), 
-				updateTicketOwner.getAddress(), 
-				updateTicketOwner.getCountry(), 
-				updateTicketOwner.getTShirtSize());
-		
-		if (!newEmail.equals(t.getEmail()) || !newFullName.equals(t.getFullName())) {
-			sendTicketByEmail(eventName, reservationId, ticketIdentifier, request, response);
-		}
-		
-		if (StringUtils.hasText(t.getEmail()) && !newEmail.equals(t.getEmail())) {
-			sendEmailForOwnerChange(updateTicketOwner.getEmail().trim(), oData.get().getLeft(), t, request);
-		}
-		
-		//
-		
-		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
-	}
-
-	private void sendEmailForOwnerChange(String newEmailOwner,
-			Event e, Ticket t,
-			HttpServletRequest request) {
-		
-		String eventName = e.getShortName();
-		
-		Map<String, Object> emailModel = new HashMap<String, Object>();
-		emailModel.put("ticket", t);
-		emailModel.put("organization", organizationRepository.getById(e.getOrganizationId()));
-		emailModel.put("eventName", eventName);
-		emailModel.put("previousEmail", t.getEmail());
-		emailModel.put("newEmail", newEmailOwner);
-		emailModel.put("reservationUrl", ticketReservationManager.reservationUrl(t.getTicketsReservationId()));
-		String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {eventName}, RequestContextUtils.getLocale(request));
-		String emailText = templateManager.render("/alfio/templates/ticket-has-changed-owner-txt.ms", emailModel, request);
-		mailer.send(t.getEmail(), subject, emailText, Optional.empty());
-	}
-
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}/send-ticket-by-email", method = RequestMethod.POST)
 	public String sendTicketByEmail(@PathVariable("eventName") String eventName,
-			@PathVariable("reservationId") String reservationId, 
-			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletRequest request, HttpServletResponse response) throws Exception {
+									@PathVariable("reservationId") String reservationId,
+									@PathVariable("ticketIdentifier") String ticketIdentifier,
+									HttpServletRequest request,
+									Locale locale) throws Exception {
 		
-		
-		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
 		if(!oData.isPresent()) {
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 		}
 		Triple<Event, TicketReservation, Ticket> data = oData.get();
 		
 		Ticket ticket = data.getRight();
-		
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		preparePdfTicket(request, response, data.getLeft(), data.getMiddle(), ticket).createPDF(baos);
-		
-		Attachment attachment = new Attachment("ticket-" + ticketIdentifier + ".pdf", new ByteArrayResource(baos.toByteArray()), "application/pdf");
-		
-		Map<String, Object> model = new HashMap<>();
-		model.put("organization", organizationRepository.getById(data.getLeft().getOrganizationId()));
-		model.put("event", data.getLeft());
-		model.put("ticketReservation", data.getMiddle());
-		model.put("ticket", ticket);
-    	String ticketEmailTxt = templateManager.render("/alfio/templates/ticket-email-txt.ms", model, request);
-		
-		mailer.send(ticket.getEmail(), messageSource.getMessage("ticket-email-subject", new Object[] {data.getLeft().getShortName()}, RequestContextUtils.getLocale(request)), ticketEmailTxt, Optional.empty(), attachment);
-		
+		Event event = data.getLeft();
+
+		notificationManager.sendTicketByEmail(ticket,
+				event, locale, TemplateProcessor.buildEmail(event, organizationRepository, data.getMiddle(), ticket, templateManager, request),
+				preparePdfTicket(request, event, data.getMiddle(), ticket));
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId
 				+ ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "") + "?ticket-email-sent=true";
 	}
@@ -213,7 +145,7 @@ public class TicketController {
 			@PathVariable("reservationId") String reservationId,
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletRequest request, HttpServletResponse response) throws IOException, DocumentException, WriterException {
 
-		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
 		if(!oData.isPresent()) {
 			response.sendError(HttpServletResponse.SC_FORBIDDEN);
 			return;
@@ -225,7 +157,7 @@ public class TicketController {
 		response.setContentType("application/pdf");
 		response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
 		try (OutputStream os = response.getOutputStream()) {
-			preparePdfTicket(request, response, data.getLeft(), data.getMiddle(), ticket).createPDF(os);
+			preparePdfTicket(request, data.getLeft(), data.getMiddle(), ticket).build().createPDF(os);
 		}
 	}
 	
@@ -234,7 +166,7 @@ public class TicketController {
 			@PathVariable("reservationId") String reservationId,
 			@PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response) throws IOException, WriterException {
 		
-		Optional<Triple<Event, TicketReservation, Ticket>> oData = fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
 		if(!oData.isPresent()) {
 			response.sendError(HttpServletResponse.SC_FORBIDDEN);
 			return;
@@ -248,70 +180,13 @@ public class TicketController {
 		String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
 		
 		response.setContentType("image/png");
-		response.getOutputStream().write(createQRCode(qrCodeText));
+		response.getOutputStream().write(TicketUtil.createQRCode(qrCodeText));
 		
-	}
-	
-	private Optional<Triple<Event, TicketReservation, Ticket>> fetchComplete(String eventName, String reservationId, String ticketIdentifier) {
-		return ticketReservationManager.from(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
-			if(t.getMiddle().getStatus() == TicketReservationStatus.COMPLETE) {
-				return Optional.of(t);
-			} else {
-				return Optional.empty();
-			}
-		});
-	}
-	
-	/**
-	 * Return a fully present triple only if the values are present (obviously) and the the reservation has a COMPLETE status and the ticket is considered assigned.
-	 * 
-	 * @param eventName
-	 * @param reservationId
-	 * @param ticketIdentifier
-	 * @return
-	 */
-	private Optional<Triple<Event, TicketReservation, Ticket>> fetchCompleteAndAssigned(String eventName, String reservationId, String ticketIdentifier) {
-		return fetchComplete(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
-					if(t.getRight().getAssigned()) {
-						return Optional.of(t);
-					} else {
-						return Optional.empty();
-					}
-				});
 	}
 
-	private ITextRenderer preparePdfTicket(HttpServletRequest request, HttpServletResponse response, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
-		
+	private PDFTemplateBuilder preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
 		Organization organization = organizationRepository.getById(event.getOrganizationId());
-		
-		//
-		String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
-		//
-		
-		//
-		Map<String, Object> model = new HashMap<String, Object>();
-		model.put("ticket", ticket);
-		model.put("reservation", ticketReservation);
-		model.put("ticketCategory", ticketCategory);
-		model.put("event", event);
-		model.put("organization", organization);
-		model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
-			
-		String page = templateManager.render("/alfio/templates/ticket.ms", model, request);
-
-		ITextRenderer renderer = new ITextRenderer();
-		renderer.setDocumentFromString(page);
-		renderer.layout();
-		return renderer;
-	}
-
-	private static byte[] createQRCode(String text) throws WriterException, IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		Map<EncodeHintType, Object> hintMap = new EnumMap<>(EncodeHintType.class);
-		hintMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
-		BitMatrix matrix = new MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, 200, 200, hintMap);
-		MatrixToImageWriter.writeToStream(matrix, "png", baos);
-		return baos.toByteArray();
+		return TemplateProcessor.buildPDFTicket(request, event, ticketReservation, ticket, ticketCategory, organization, templateManager);
 	}
 }

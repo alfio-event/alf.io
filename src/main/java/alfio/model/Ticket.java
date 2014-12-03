@@ -16,7 +16,7 @@
  */
 package alfio.model;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper;
+import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import alfio.util.MonetaryUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -57,31 +57,37 @@ public class Ticket {
     private final String address;
     private final String country;
     private final String tshirtSize;
+    private final String notes;
+    private final String userLanguage;
     
-    public Ticket(@ConstructorAnnotationRowMapper.Column("id") int id,
-                  @ConstructorAnnotationRowMapper.Column("uuid") String uuid,
-                  @ConstructorAnnotationRowMapper.Column("creation") ZonedDateTime creation,
-                  @ConstructorAnnotationRowMapper.Column("category_id") int categoryId,
-                  @ConstructorAnnotationRowMapper.Column("status") String status,
-                  @ConstructorAnnotationRowMapper.Column("event_id") int eventId,
-                  @ConstructorAnnotationRowMapper.Column("original_price_cts") int originalPriceInCents,
-                  @ConstructorAnnotationRowMapper.Column("paid_price_cts") int paidPriceInCents,
-                  @ConstructorAnnotationRowMapper.Column("tickets_reservation_id") String ticketsReservationId,
-                  @ConstructorAnnotationRowMapper.Column("full_name") String fullName,
-                  @ConstructorAnnotationRowMapper.Column("email_address") String email,
-                  @ConstructorAnnotationRowMapper.Column("locked_assignment") boolean lockedAssignment,
+    public Ticket(@Column("id") int id,
+                  @Column("uuid") String uuid,
+                  @Column("creation") ZonedDateTime creation,
+                  @Column("category_id") int categoryId,
+                  @Column("status") String status,
+                  @Column("event_id") int eventId,
+                  @Column("original_price_cts") int originalPriceInCents,
+                  @Column("paid_price_cts") int paidPriceInCents,
+                  @Column("tickets_reservation_id") String ticketsReservationId,
+                  @Column("full_name") String fullName,
+                  @Column("email_address") String email,
+                  @Column("locked_assignment") boolean lockedAssignment,
                   //
-                  @ConstructorAnnotationRowMapper.Column("job_title") String jobTitle,
-                  @ConstructorAnnotationRowMapper.Column("company") String company,
-                  @ConstructorAnnotationRowMapper.Column("phone_number") String phoneNumber,
-                  @ConstructorAnnotationRowMapper.Column("address") String address,
-                  @ConstructorAnnotationRowMapper.Column("country") String country,
-                  @ConstructorAnnotationRowMapper.Column("tshirt_size") String tshirtSize) {
+                  @Column("job_title") String jobTitle,
+                  @Column("company") String company,
+                  @Column("phone_number") String phoneNumber,
+                  @Column("address") String address,
+                  @Column("country") String country,
+                  @Column("tshirt_size") String tshirtSize,
+                  @Column("notes") String notes,
+                  @Column("user_language") String userLanguage) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
         this.categoryId = categoryId;
         this.eventId = eventId;
+        this.notes = notes;
+        this.userLanguage = userLanguage;
         this.status = TicketStatus.valueOf(status);
         this.originalPriceInCents = originalPriceInCents;
         this.paidPriceInCents = paidPriceInCents;
