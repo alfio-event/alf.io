@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.samskivert.mustache.Mustache;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
@@ -70,6 +71,9 @@ import java.util.stream.Collectors;
 public class MvcConfiguration extends WebMvcConfigurerAdapter implements ResourceLoaderAware {
 
     private ResourceLoader resourceLoader;
+
+    @Autowired
+    private MessageSource messageSource;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -137,21 +141,10 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     }
 
     @Bean
-    public MessageSource messageSource() {
-        ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-        source.setBasenames("alfio.i18n.application", "alfio.i18n.admin");
-        //since we have all the english translations in the default file, we don't need
-        //the fallback to the system locale.
-        source.setFallbackToSystemLocale(false);
-        source.setAlwaysUseMessageFormat(true);
-        return source;
-    }
-
-    @Bean
     public LocalizationMessageInterceptor getTemplateMessagesInterceptor() {
         LocalizationMessageInterceptor interceptor = new LocalizationMessageInterceptor();
         interceptor.setLocaleResolver(getLocaleResolver());
-        interceptor.setMessageSource(messageSource());
+        interceptor.setMessageSource(messageSource);
         return interceptor;
     }
 

@@ -18,23 +18,35 @@ package alfio.controller;
 
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
+import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateManager;
+import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EventManager;
 import alfio.manager.StripeManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.OrderSummary;
+import alfio.manager.support.PDFTemplateBuilder;
 import alfio.manager.support.PaymentResult;
+import alfio.manager.support.TextTemplateBuilder;
 import alfio.manager.system.Mailer;
 import alfio.model.Event;
 import alfio.model.Ticket;
+import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.OptionalWrapper;
+import alfio.util.ValidationResult;
+import alfio.util.Validator;
+import com.google.zxing.WriterException;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
@@ -48,6 +60,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,19 +77,22 @@ public class ReservationController {
 	private final Mailer mailer;
 	private final TemplateManager templateManager;
 	private final MessageSource messageSource;
+	private final TicketRepository ticketRepository;
+	private final TicketCategoryRepository ticketCategoryRepository;
 	//
 	private final EventController eventController;
 
 	@Autowired
-	public ReservationController(EventRepository eventRepository, 
-			EventManager eventManager,
-			TicketReservationManager ticketReservationManager,
-			OrganizationRepository organizationRepository,
-			StripeManager stripeManager, 
-			Mailer mailer, 
-			TemplateManager templateManager, 
-			MessageSource messageSource,
-			EventController eventController) {
+	public ReservationController(EventRepository eventRepository,
+								 EventManager eventManager,
+								 TicketReservationManager ticketReservationManager,
+								 OrganizationRepository organizationRepository,
+								 StripeManager stripeManager,
+								 Mailer mailer,
+								 TemplateManager templateManager,
+								 MessageSource messageSource,
+								 TicketRepository ticketRepository,
+								 TicketCategoryRepository ticketCategoryRepository, EventController eventController) {
 		this.eventRepository = eventRepository;
 		this.eventManager = eventManager;
 		this.ticketReservationManager = ticketReservationManager;
@@ -85,6 +101,8 @@ public class ReservationController {
 		this.mailer = mailer;
 		this.templateManager = templateManager;
 		this.messageSource = messageSource;
+		this.ticketRepository = ticketRepository;
+		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.eventController = eventController;
 	}
 
@@ -162,8 +180,7 @@ public class ReservationController {
 
 			return "/event/reservation-page";
 		} else if (reservation.get().getStatus() == TicketReservation.TicketReservationStatus.COMPLETE) {
-			
-			
+
 			model.addAttribute("reservationId", reservationId);
 			model.addAttribute("reservation", reservation.get());
 			model.addAttribute("confirmationEmailSent", confirmationEmailSent);
@@ -179,6 +196,7 @@ public class ReservationController {
 			model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
 			model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
 			model.addAttribute("pageTitle", "reservation-page-complete.header.title");
+			model.asMap().putIfAbsent("validationResult", ValidationResult.success());
 			return "/event/reservation-page-complete";
 			
 		} else { // reservation status has status IN_PAYMENT or STUCK.
@@ -258,6 +276,79 @@ public class ReservationController {
 
 		sendReservationCompleteEmail(request, event.get(), ticketReservation.orElseThrow(IllegalStateException::new));
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId + "?confirmation-email-sent=true";
+	}
+
+
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/assign", method = RequestMethod.POST, headers = "X-Requested-With=XMLHttpRequest")
+	public String ajaxAssignTicketToPerson(@PathVariable("eventName") String eventName,
+									   @PathVariable("reservationId") String reservationId,
+									   @PathVariable("ticketIdentifier") String ticketIdentifier,
+									   UpdateTicketOwnerForm updateTicketOwner,
+									   BindingResult bindingResult,
+									   HttpServletRequest request,
+									   Model model) throws Exception {
+
+		assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, model);
+		return "/event/assign-ticket-result";
+
+	}
+
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/assign", method = RequestMethod.POST)
+	public String assignTicketToPerson(@PathVariable("eventName") String eventName,
+									   @PathVariable("reservationId") String reservationId,
+									   @PathVariable("ticketIdentifier") String ticketIdentifier,
+									   UpdateTicketOwnerForm updateTicketOwner,
+									   BindingResult bindingResult,
+									   HttpServletRequest request,
+									   Model model) throws Exception {
+
+		Optional<Triple<ValidationResult, Event, Ticket>> result = assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, model);
+		return result.map(t -> "redirect:/event/"+t.getMiddle().getShortName()+"/reservation/"+t.getRight().getTicketsReservationId()).orElse("redirect:/");
+	}
+
+	private Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName, String reservationId, String ticketIdentifier, UpdateTicketOwnerForm updateTicketOwner, BindingResult bindingResult, HttpServletRequest request, Model model) {
+		Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.fetchComplete(eventName, reservationId, ticketIdentifier)
+				.map(result -> {
+					Ticket t = result.getRight();
+					Validate.isTrue(!t.getLockedAssignment(), "cannot change a locked ticket");
+					final Event event = result.getLeft();
+					final TicketReservation ticketReservation = result.getMiddle();
+					ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, bindingResult)
+							.ifSuccess(() -> updateTicketOwner(updateTicketOwner, request, t, event, ticketReservation));
+					return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
+				});
+		triple.ifPresent(t -> {
+			model.addAttribute("value", t.getRight());
+			model.addAttribute("validationResult", t.getLeft());
+			model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
+			model.addAttribute("event", t.getMiddle());
+		});
+		return triple;
+	}
+
+	private void updateTicketOwner(UpdateTicketOwnerForm updateTicketOwner, HttpServletRequest request, Ticket t, Event event, TicketReservation ticketReservation) {
+		ticketReservationManager.updateTicketOwner(t, RequestContextUtils.getLocale(request), event, updateTicketOwner,
+				getConfirmationTextBuilder(request, t, event, ticketReservation),
+				getOwnerChangeTextBuilder(request, t, event),
+				preparePdfTicket(request, event, ticketReservation, t));
+	}
+
+	private TextTemplateBuilder getOwnerChangeTextBuilder(HttpServletRequest request, Ticket t, Event event) {
+		return TemplateProcessor.buildEmailForOwnerChange(t.getEmail(), event, t, organizationRepository, ticketReservationManager, templateManager, request);
+	}
+
+	private TextTemplateBuilder getConfirmationTextBuilder(HttpServletRequest request, Ticket t, Event event, TicketReservation ticketReservation) {
+		return TemplateProcessor.buildEmail(event, organizationRepository, ticketReservation, t, templateManager, request);
+	}
+
+	private PDFTemplateBuilder preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {
+		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
+		Organization organization = organizationRepository.getById(event.getOrganizationId());
+		try {
+			return TemplateProcessor.buildPDFTicket(request, event, ticketReservation, ticket, ticketCategory, organization, templateManager);
+		} catch (WriterException | IOException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	private void sendReservationCompleteEmail(HttpServletRequest request, Event event, TicketReservation reservation) {
