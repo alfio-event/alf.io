@@ -5,9 +5,7 @@
             <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}" class="btn btn-primary btn-block"><i class="fa fa-search-plus"></i> {{#i18n}}reservation-page-complete.show-ticket{{/i18n}}</a></div>
             <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/download-ticket" class="btn btn-primary btn-block"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div>
             <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/send-ticket-by-email" class="form-inline"><button type="submit" class="btn btn-primary btn-block"><i class="fa fa-envelope-o"></i> {{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{email}}]{{/i18n}}</button><input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}"></form></div>
-            {{^lockedAssignment}}
             <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="#ticket-{{uuid}}" class="btn btn-primary btn-block update-ticket-owner"><i class="fa fa-edit"></i> {{#i18n}}reservation-page-complete.update-ticket-owner{{/i18n}}</a></div>
-            {{/lockedAssignment}}
         </div>
     </div>
 {{/assigned}}
@@ -20,13 +18,23 @@
     <div class="form-group">
         <label class="col-sm-3 control-label" for="full-name-{{uuid}}">{{#i18n}}common.full-name{{/i18n}} *</label>
         <div class="col-sm-9">
-            <input type="text" name="fullName" value="{{fullName}}" required id="full-name-{{uuid}}" class="form-control"  maxlength="255" autocomplete="name">
+            {{^lockedAssignment}}
+                <input type="text" name="fullName" value="{{fullName}}" required id="full-name-{{uuid}}" class="form-control"  maxlength="255" autocomplete="name">
+            {{/lockedAssignment}}
+            {{#lockedAssignment}}
+                <p class="form-control-static">{{fullName}}</p>
+            {{/lockedAssignment}}
         </div>
     </div>
     <div class="form-group">
         <label class="col-sm-3 control-label" for="email-{{uuid}}">{{#i18n}}common.email{{/i18n}} *</label>
         <div class="col-sm-9">
-            <input type="email" name="email" value="{{email}}" required id="email-{{uuid}}" class="form-control"  maxlength="255" autocomplete="email">
+            {{^lockedAssignment}}
+                <input type="email" name="email" value="{{email}}" required id="email-{{uuid}}" class="form-control"  maxlength="255" autocomplete="email">
+            {{/lockedAssignment}}
+            {{#lockedAssignment}}
+                <p class="form-control-static">{{email}}</p>
+            {{/lockedAssignment}}
         </div>
     </div>
     <!-- -->

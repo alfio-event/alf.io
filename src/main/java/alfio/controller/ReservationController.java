@@ -43,6 +43,7 @@ import alfio.util.OptionalWrapper;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.google.zxing.WriterException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -310,7 +311,11 @@ public class ReservationController {
 		Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.fetchComplete(eventName, reservationId, ticketIdentifier)
 				.map(result -> {
 					Ticket t = result.getRight();
-					Validate.isTrue(!t.getLockedAssignment(), "cannot change a locked ticket");
+					if(t.getLockedAssignment()) {
+						//in case of locked assignment, fullName and Email will be overwritten
+						updateTicketOwner.setFullName(t.getFullName());
+						updateTicketOwner.setEmail(t.getEmail());
+					}
 					final Event event = result.getLeft();
 					final TicketReservation ticketReservation = result.getMiddle();
 					ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, bindingResult)
