@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 public final class Validator {
 
-    private static final Pattern SIMPLE_E_MAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9]+@.+?\\..+$");
+    private static final Pattern SIMPLE_E_MAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9]+.*?@.+?\\..+$");
 
     private Validator() {
     }
@@ -42,7 +42,7 @@ public final class Validator {
 
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "shortName", "error.shortname");
         if(ev.getOrganizationId() < 0) {
-            errors.reject("organizationId", "error.organizationId");
+            errors.rejectValue("organizationId", "error.organizationId");
         }
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "location", "error.location");
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "description", "error.description");
@@ -50,7 +50,7 @@ public final class Validator {
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "termsAndConditionsUrl", "error.termsandconditionsurl");
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "imageUrl", "error.imageurl");
         if (!StringUtils.startsWith(ev.getImageUrl(),"https://")) {
-            errors.reject("imageUrl", "error.imageUrl");
+            errors.rejectValue("imageUrl", "error.imageurl");
         }
         return evaluateValidationResult(errors);
     }
@@ -58,29 +58,29 @@ public final class Validator {
     public static ValidationResult validateEventPrices(EventModification ev, Errors errors) {
         if(!ev.isFreeOfCharge()) {
             if(isCollectionEmpty(ev.getAllowedPaymentProxies())) {
-                errors.reject("allowedPaymentProxies", "error.allowedpaymentproxies");
+                errors.rejectValue("allowedPaymentProxies", "error.allowedpaymentproxies");
             }
             if(ev.getRegularPrice() == null || BigDecimal.ZERO.compareTo(ev.getRegularPrice()) <= 0) {
-                errors.reject("regularPrice", "error.regularprice");
+                errors.rejectValue("regularPrice", "error.regularprice");
             }
             if(ev.getVat() == null || BigDecimal.ZERO.compareTo(ev.getRegularPrice()) < 0) {
-                errors.reject("vat", "error.vat");
+                errors.rejectValue("vat", "error.vat");
             }
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "currency", "error.currency");
         }
         if(ev.getAvailableSeats() < 1) {
-            errors.reject("availableSeats", "error.availableseats");
+            errors.rejectValue("availableSeats", "error.availableseats");
         }
         return evaluateValidationResult(errors);
     }
 
     public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors) {
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "name", "error.name");
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "name", "error.category.name");
         if(category.getMaxTickets() < 1) {
-            errors.reject("maxTickets", "error.maxtickets");
+            errors.rejectValue("maxTickets", "error.category.maxtickets");
         }
         if(!category.getInception().isBefore(category.getExpiration())) {
-            errors.reject("dateString", "error.date");
+            errors.rejectValue("dateString", "error.date");
         }
         return evaluateValidationResult(errors);
     }
@@ -102,15 +102,15 @@ public final class Validator {
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "email", "error.email");
         String email = form.getEmail();
         if(StringUtils.isNotEmpty(email) && !SIMPLE_E_MAIL_PATTERN.matcher(email).matches()) {
-            errors.reject("email", "error.email");
+            errors.rejectValue("email", "error.email");
         }
 
         if(StringUtils.isBlank(form.getFullName()) || StringUtils.length(form.getFullName()) > 255) {
-            errors.reject("fullName", "error.fullname");
+            errors.rejectValue("fullName", "error.fullname");
         }
 
         if(StringUtils.isNotBlank(form.getNotes()) && StringUtils.length(form.getNotes()) > 1024) {
-            errors.reject("fullName", "error.notes");
+            errors.rejectValue("fullName", "error.notes");
         }
 
         return evaluateValidationResult(errors);

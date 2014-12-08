@@ -13,7 +13,7 @@
 {{/assigned}}
 {{#validationResult}}
     {{^isSuccess}}
-        <div class="alert alert-danger wMarginBottom">{{#i18n}}reservation-page-complete.please-check-input-fields{{/i18n}}</div>
+        <div class="alert alert-danger wMarginTop wMarginBottom">{{#i18n}}reservation-page-complete.please-check-input-fields{{/i18n}}</div>
     {{/isSuccess}}
 {{/validationResult}}
 <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/ticket/{{uuid}}/assign" class="form-horizontal {{^assigned}}show-by-default{{/assigned}} {{#assigned}}hide-by-default{{/assigned}}" id="ticket-{{uuid}}" data-ticket-uuid="{{uuid}}">
