@@ -1,5 +1,5 @@
 {{#value}}
     <div id="ticket-detail-{{uuid}}">
-        {{> /event/assign-ticket-form}}
+        {{> /WEB-INF/templates/event/assign-ticket-form.ms }}
     </div>
 {{/value}}

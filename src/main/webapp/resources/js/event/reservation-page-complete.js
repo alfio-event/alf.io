@@ -40,7 +40,9 @@
 					type: 'POST',
 					data: frm.serialize(),
 					success: function(result) {
-						$('#ticket-detail-'+uuid).replaceWith(result);
+						if(result.validationResult.success) {
+							$('#ticket-detail-'+uuid).replaceWith(result.partial);
+						}
 						initListeners();
 					}
 				});

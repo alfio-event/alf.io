@@ -43,8 +43,6 @@ import alfio.util.OptionalWrapper;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.google.zxing.WriterException;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -281,17 +279,22 @@ public class ReservationController {
 
 
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/assign", method = RequestMethod.POST, headers = "X-Requested-With=XMLHttpRequest")
-	public String ajaxAssignTicketToPerson(@PathVariable("eventName") String eventName,
-									   @PathVariable("reservationId") String reservationId,
-									   @PathVariable("ticketIdentifier") String ticketIdentifier,
-									   UpdateTicketOwnerForm updateTicketOwner,
-									   BindingResult bindingResult,
-									   HttpServletRequest request,
-									   Model model) throws Exception {
+	@ResponseBody
+	public Map<String, Object> ajaxAssignTicketToPerson(@PathVariable("eventName") String eventName,
+														@PathVariable("reservationId") String reservationId,
+														@PathVariable("ticketIdentifier") String ticketIdentifier,
+														UpdateTicketOwnerForm updateTicketOwner,
+														BindingResult bindingResult,
+														HttpServletRequest request,
+														Model model) throws Exception {
 
-		assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, model);
-		return "/event/assign-ticket-result";
+		Optional<Triple<ValidationResult, Event, Ticket>> assignmentResult = assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, model);
+		Map<String, Object> result = new HashMap<>();
+		model.addAttribute("reservationId", reservationId);
 
+		result.put("partial", templateManager.renderServletContextResource("/WEB-INF/templates/event/assign-ticket-result.ms", model.asMap(), request));
+		result.put("validationResult", assignmentResult.map(Triple::getLeft).orElse(ValidationResult.failed(new ValidationResult.ValidationError("fullName", "error.fullname"))));
+		return result;
 	}
 
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/assign", method = RequestMethod.POST)

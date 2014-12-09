@@ -31,7 +31,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpInputMessage;
@@ -176,9 +175,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     @Bean
     public JMustacheTemplateFactory getTemplateFactory() throws Exception {
         final JMustacheTemplateFactory templateFactory = new JMustacheTemplateFactory();
-        
-        JMustacheTemplateLoader loader = new JMustacheTemplateLoader();
-        loader.setResourceLoader(resourceLoader);
+
+        JMustacheTemplateLoader loader = getTemplateLoader();
         
         templateFactory.setPrefix("/WEB-INF/templates");
         templateFactory.setSuffix(".ms");
@@ -206,6 +204,13 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     }
 
     @Bean
+    public JMustacheTemplateLoader getTemplateLoader() {
+        JMustacheTemplateLoader loader = new JMustacheTemplateLoader();
+        loader.setResourceLoader(resourceLoader);
+        return loader;
+    }
+
+    @Bean
     public MappingJackson2HttpMessageConverter jacksonMessageConverter() {
         final MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
         converter.setObjectMapper(objectMapper());
@@ -223,7 +228,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     
     @Bean
     public TemplateManager getTemplateManager(LocalizationMessageInterceptor localizationMessageInterceptor, Environment environment) {
-    	return new TemplateManager(localizationMessageInterceptor, environment);
+    	return new TemplateManager(localizationMessageInterceptor, environment, getTemplateLoader());
     }
 
     @Override
