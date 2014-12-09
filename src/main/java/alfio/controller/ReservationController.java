@@ -292,8 +292,11 @@ public class ReservationController {
 		Map<String, Object> result = new HashMap<>();
 		model.addAttribute("reservationId", reservationId);
 
-		result.put("partial", templateManager.renderServletContextResource("/WEB-INF/templates/event/assign-ticket-result.ms", model.asMap(), request));
-		result.put("validationResult", assignmentResult.map(Triple::getLeft).orElse(ValidationResult.failed(new ValidationResult.ValidationError("fullName", "error.fullname"))));
+		Optional<ValidationResult> validationResult = assignmentResult.map(Triple::getLeft);
+		if(validationResult.isPresent() && validationResult.get().isSuccess()) {
+			result.put("partial", templateManager.renderServletContextResource("/WEB-INF/templates/event/assign-ticket-result.ms", model.asMap(), request));
+		}
+		result.put("validationResult", validationResult.orElse(ValidationResult.failed(new ValidationResult.ValidationError("fullName", "error.fullname"))));
 		return result;
 	}
 

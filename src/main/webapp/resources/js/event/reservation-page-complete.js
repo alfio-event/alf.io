@@ -32,6 +32,8 @@
 				var frm = $(this.form);
 				var action = frm.attr('action');
 				var uuid = frm.attr('data-ticket-uuid');
+				frm.find('.has-error').removeClass('has-error');
+				$('#generic-'+uuid+'-error').removeClass('show');
 				if (!frm[0].checkValidity()) {
 					return true;//trigger the HTML5 error messages. Thanks to Abraham http://stackoverflow.com/a/11867013
 				}
@@ -40,10 +42,20 @@
 					type: 'POST',
 					data: frm.serialize(),
 					success: function(result) {
-						if(result.validationResult.success) {
+						var validationResult = result.validationResult;
+						if(validationResult.success) {
 							$('#ticket-detail-'+uuid).replaceWith(result.partial);
+							initListeners();
+						} else {
+							validationResult.validationErrors.forEach(function(error) {
+								var element = frm.find('[name='+error.fieldName+']').parents('.form-group');
+								if(element.length > 0) {
+									element.addClass('has-error');
+								} else {
+									$('#generic-'+uuid+'-error').addClass('show');
+								}
+							});
 						}
-						initListeners();
 					}
 				});
 				return false;

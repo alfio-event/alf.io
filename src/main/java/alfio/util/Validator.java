@@ -17,7 +17,6 @@
 package alfio.util;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.model.Event;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import org.apache.commons.lang3.StringUtils;
@@ -25,9 +24,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -105,14 +102,20 @@ public final class Validator {
             errors.rejectValue("email", "error.email");
         }
 
-        if(StringUtils.isBlank(form.getFullName()) || StringUtils.length(form.getFullName()) > 255) {
-            errors.rejectValue("fullName", "error.fullname");
-        }
-
-        if(StringUtils.isNotBlank(form.getNotes()) && StringUtils.length(form.getNotes()) > 1024) {
-            errors.rejectValue("fullName", "error.notes");
-        }
+        validateMaxLength(form.getFullName(), "fullName", "error.fullname", 255, errors);
+        validateMaxLength(form.getJobTitle(), "jobTitle", "error.jobtitle", 255, errors);
+        validateMaxLength(form.getCompany(), "company", "error.company", 255, errors);
+        validateMaxLength(form.getPhoneNumber(), "phoneNumber", "error.phonenumber", 255, errors);
+        validateMaxLength(form.getCountry(), "country", "error.country", 255, errors);
+        validateMaxLength(form.getTShirtSize(), "tShirtSize", "error.tshirtsize", 32, errors);
+        validateMaxLength(form.getNotes(), "notes", "error.notes", 1024, errors);
 
         return evaluateValidationResult(errors);
+    }
+
+    public static void validateMaxLength(String value, String fieldName, String errorCode, int maxLength, Errors errors) {
+        if(StringUtils.isNotBlank(value) && StringUtils.length(value) > maxLength) {
+            errors.rejectValue(fieldName, errorCode);
+        }
     }
 }

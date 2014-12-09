@@ -106,4 +106,5 @@
             <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
         </div>
     </div>
+    <div class="alert alert-danger wMarginTop wMarginBottom hide" id="generic-{{uuid}}-error">{{#i18n}}reservation-page-complete.please-check-input-fields{{/i18n}}</div>
 </form>
