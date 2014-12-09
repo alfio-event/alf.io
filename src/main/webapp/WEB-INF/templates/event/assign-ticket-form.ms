@@ -93,7 +93,7 @@
         </div>
     </div>
     <!-- -->
-    <div class="form-group">
+    <div class="form-group" id="buttons-bar-{{uuid}}">
         <div class="col-sm-offset-3 col-sm-9">
             <button type="submit" class="btn btn-success pull-right submit-assignee-data">
                 {{#i18n}}{{#assigned}}reservation-page-complete.update{{/assigned}}{{^assigned}}reservation-page-complete.assign{{/assigned}}{{/i18n}}
@@ -106,5 +106,6 @@
             <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
         </div>
     </div>
+    <div class="text-center loading" id="loading-{{uuid}}"><i class="fa fa-cog fa-2x fa-spin"></i></div>
     <div class="alert alert-danger wMarginTop wMarginBottom hide" id="generic-{{uuid}}-error">{{#i18n}}reservation-page-complete.please-check-input-fields{{/i18n}}</div>
 </form>

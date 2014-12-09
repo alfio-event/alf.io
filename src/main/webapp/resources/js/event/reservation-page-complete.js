@@ -22,11 +22,12 @@
 
 
 			$("select").map(function() {
-
 				if($(this).attr('value').length > 0) {
 					$(this).find("option[value="+$(this).attr('value')+"]").attr('selected','selected');
 				}
 			});
+
+			$('.loading').hide();
 
 			$('.submit-assignee-data').click(function() {
 				var frm = $(this.form);
@@ -37,6 +38,8 @@
 				if (!frm[0].checkValidity()) {
 					return true;//trigger the HTML5 error messages. Thanks to Abraham http://stackoverflow.com/a/11867013
 				}
+				$('#loading-'+uuid).show();
+				$('#buttons-bar-'+uuid).hide();
 				jQuery.ajax({
 					url: action,
 					type: 'POST',
@@ -56,6 +59,10 @@
 								}
 							});
 						}
+					},
+					complete: function() {
+						$('#loading-'+uuid).hide();
+						$('#buttons-bar-'+uuid).show();
 					}
 				});
 				return false;
