@@ -81,6 +81,9 @@ public interface TicketRepository {
 
 	@Query("update ticket set email_address = :email, full_name = :fullName where uuid = :ticketIdentifier")
 	int updateTicketOwner(@Bind("ticketIdentifier") String ticketIdentifier, @Bind("email") String email, @Bind("fullName") String fullName);
+
+	@Query("update ticket set locked_assignment = :lockedAssignment where id = :id and category_id = :categoryId")
+	int toggleTicketLocking(@Bind("id") int ticketId, @Bind("categoryId") int categoryId, @Bind("lockedAssignment") boolean locked);
 	
 	@Query("update ticket set job_title = :jobTitle, company = :company, phone_number = :phoneNumber, address = :address, country = :country, tshirt_size = :tShirtSize, notes = :notes, user_language = :userLanguage where uuid = :ticketIdentifier")
 	int updateOptionalTicketInfo(@Bind("ticketIdentifier") String ticketIdentifier,
@@ -92,4 +95,7 @@ public interface TicketRepository {
 								 @Bind("tShirtSize") String tShirtSize,
 								 @Bind("notes") String notes,
 								 @Bind("userLanguage") String userLanguage);
+
+	@Query("select * from ticket where id = :id and category_id = :categoryId")
+	Ticket findById(@Bind("id") int ticketId, @Bind("categoryId") int categoryId);
 }

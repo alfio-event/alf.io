@@ -463,6 +463,12 @@ public class EventManager {
 		return ticketCategoryRepository.getById(id, eventId);
 	}
 
+    public boolean toggleTicketLocking(int categoryId, int ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId, categoryId);
+        Validate.isTrue(ticketRepository.toggleTicketLocking(ticketId, categoryId, !ticket.getLockedAssignment()) == 1);
+        return true;
+    }
+
     @Data
     private static final class GeolocationResult {
         private final Pair<String, String> coordinates;

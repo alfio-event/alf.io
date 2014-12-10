@@ -394,6 +394,12 @@
             });
         };
 
+        $scope.toggleLocking = function(ticket, category) {
+            EventService.toggleTicketLocking(ticket, category).then(function() {
+                loadData();
+            });
+        };
+
         $scope.editCategory = function(category, event) {
             var inception = moment(category.formattedInception);
             var expiration = moment(category.formattedExpiration);

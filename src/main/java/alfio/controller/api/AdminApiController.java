@@ -20,7 +20,6 @@ import alfio.manager.EventManager;
 import alfio.manager.location.LocationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
 import alfio.model.modification.*;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
@@ -204,6 +203,11 @@ public class AdminApiController {
     public boolean deleteKey(@PathVariable("key") String key) {
         configurationManager.deleteKey(key);
         return true;
+    }
+
+    @RequestMapping(value = "/categories/{categoryId}/tickets/{ticketId}/toggle-locking", method = PUT)
+    public boolean toggleTicketLocking(@PathVariable("categoryId") int categoryId, @PathVariable("ticketId") int ticketId) {
+        return eventManager.toggleTicketLocking(categoryId, ticketId);
     }
 
 }
