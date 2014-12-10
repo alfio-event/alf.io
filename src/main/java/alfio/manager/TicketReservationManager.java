@@ -41,7 +41,6 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -265,10 +264,11 @@ public class TicketReservationManager {
         Event event = eventRepository.findById(eventId);
         return ticketRepository.findAllModifiedTickets(eventId, categoryId).stream()
                 .map(t -> new TicketWithStatistic(t, ticketReservationRepository.findReservationById(t.getTicketsReservationId()),
-                        event.getZoneId(), optionally(() -> transactionRepository.loadByReservationId(t.getTicketsReservationId()))))
+						event.getZoneId(), optionally(() -> transactionRepository.loadByReservationId(t.getTicketsReservationId()))))
+				.sorted()
                 .collect(Collectors.toList());
     }
-	
+
 	private int totalFrom(List<Ticket> tickets) {
     	return tickets.stream().mapToInt(Ticket::getPaidPriceInCents).sum();
     }

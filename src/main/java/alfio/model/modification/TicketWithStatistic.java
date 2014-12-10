@@ -22,6 +22,7 @@ import alfio.model.transaction.Transaction;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -30,7 +31,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 @Getter
-public class TicketWithStatistic {
+public class TicketWithStatistic implements Comparable<TicketWithStatistic> {
     @Delegate
     @JsonIgnore
     private final Ticket ticket;
@@ -70,6 +71,11 @@ public class TicketWithStatistic {
 
     public LocalDateTime getTimestamp() {
         return Optional.ofNullable(ticketReservation.getConfirmationTimestamp()).map(dateMapper).orElse(null);
+    }
+
+    @Override
+    public int compareTo(TicketWithStatistic o) {
+        return new CompareToBuilder().append(getTimestamp(), o.getTimestamp()).toComparison();
     }
 
 }
