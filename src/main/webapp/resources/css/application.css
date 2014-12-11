@@ -78,3 +78,12 @@ p.ticket-info {
 .wMarginTop {
 	margin-top:20px;
 }
+
+body {
+  counter-reset: ticket-counter;
+}
+
+.ticket-counter:before {
+	counter-increment: ticket-counter;
+  	content: counter(ticket-counter)
+}
