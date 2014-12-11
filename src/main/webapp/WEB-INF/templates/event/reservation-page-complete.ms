@@ -70,7 +70,7 @@
 	{{#value}}
 	<li class="list-group-item">
 			<div class="wMarginBottom">
-				<h3><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.ticket-nr [{{-index}}]{{/i18n}}</h3>
+				<h3><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.ticket-nr{{/i18n}}<span class="ticket-counter"></span></h3>
 			</div>
 			{{#i18n}}reservation-page-complete.ticket-type{{/i18n}} <strong>{{key.name}}</strong>
 			<div id="ticket-detail-{{uuid}}">

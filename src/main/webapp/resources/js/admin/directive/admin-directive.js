@@ -82,16 +82,16 @@
                     }
                 };
 
-                var getNowPlusTenMinutes = function() {
-                    return moment().startOf('minute').add(10,'minutes');
+                var getNowAtStartOfHour = function() {
+                    return moment().startOf('hour');
                 };
 
                 var initDateUsingNow = function(modelObj) {
                     if(!angular.isDefined(modelObj) || !angular.isDefined(modelObj.date) || !angular.isDefined(modelObj.time)) {
-                        return getNowPlusTenMinutes();
+                        return getNowAtStartOfHour();
                     }
                     var date = moment(modelObj.date + 'T' + modelObj.time);
-                    return date.isValid() ? date : getNowPlusTenMinutes();
+                    return date.isValid() ? date : getNowAtStartOfHour();
                 };
 
 
@@ -102,7 +102,7 @@
                 ctrl.$setViewValue(result);
                 element.val(result);
 
-                var minDate = scope.minDate || getNowPlusTenMinutes();
+                var minDate = scope.minDate || getNowAtStartOfHour();
 
                 element.daterangepicker({
                     format: dateFormat,

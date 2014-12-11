@@ -30,6 +30,8 @@ public class MonetaryUtilTest {{
             it.should("include 7.5% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("7.50"))).is(10750));
             it.should("include 8% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("8.00"))).is(10800));
             it.should("include 8% of VAT (corner case)", expect -> expect.that(MonetaryUtil.addVAT(7407, new BigDecimal("8.00"))).is(8000));
+            it.should("include 8% of VAT (another corner case)", expect -> expect.that(MonetaryUtil.addVAT(370, new BigDecimal("8.00"))).is(400));
+            it.should("include 8% of VAT (yet another corner case)", expect -> expect.that(MonetaryUtil.addVAT(648, new BigDecimal("8.00"))).is(700));
             it.should("include 7.99% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("7.99"))).is(10799));
             it.should("include 7.999% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("7.999"))).is(10800));
             it.should("include 21% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("21.00"))).is(12100));

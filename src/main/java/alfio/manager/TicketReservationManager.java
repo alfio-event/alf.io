@@ -45,6 +45,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -281,15 +282,15 @@ public class TicketReservationManager {
 	 */
     public TotalPrice totalReservationCostWithVAT(String reservationId) {
     	Event event = eventRepository.findByReservationId(reservationId);
-    	int total = totalFrom(ticketRepository.findTicketsInReservation(reservationId));
-    	if(event.isVatIncluded()) {
-            final int vat = MonetaryUtil.calcVat(total, event.getVat());
-            return new TotalPrice(total + vat, vat);
-    	} else {
-    		int priceWithVAT = MonetaryUtil.addVAT(total, event.getVat());
-    		return new TotalPrice(priceWithVAT, priceWithVAT - total);
-    	}
+		List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
+		int net = totalFrom(tickets);
+		int vat = totalVat(tickets, event.getVat());
+    	return new TotalPrice(net + vat, vat);
     }
+
+	private int totalVat(List<Ticket> tickets, BigDecimal vat) {
+		return tickets.stream().mapToInt(Ticket::getPaidPriceInCents).map(p -> MonetaryUtil.calcVat(p, vat)).sum();
+	}
     
     public OrderSummary orderSummaryForReservationId(String reservationId, Event event) {
     	TotalPrice reservationCost = totalReservationCostWithVAT(reservationId);
