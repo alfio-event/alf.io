@@ -29,6 +29,11 @@
 
 			$('.loading').hide();
 
+			var activeForms = $('form.show-by-default');
+			if(activeForms.length === 0) {
+				$('#back-to-event-site').removeClass('hidden');
+			}
+
 			$('.submit-assignee-data').click(function() {
 				var frm = $(this.form);
 				var action = frm.attr('action');
