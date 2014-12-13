@@ -8,7 +8,7 @@
         <button class="btn btn-success" type="submit" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting || !headerForm.$valid">save</button>
         <button class="btn btn-default" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting" data-ng-click="toggleEditHeader(true)">cancel</button>
     </form>
-    <form name="pricesForm" role="form" data-ng-submit="saveEventPrices(pricesForm, eventPrices)" novalidate>
+    <form name="pricesForm" role="form" data-ng-submit="saveEventPrices(pricesForm, eventPrices, event.organizationId)" novalidate>
         <prices data-ng-if="!editPrices"></prices>
         <edit-prices data-ng-if="editPrices" data-show-price-warning="true" data-event-obj="event" data-target-obj="eventPrices" data-allowed-payment-proxies="allowedPaymentProxies"></edit-prices>
         <button class="btn btn-warning" data-ng-if="!editPrices" data-ng-click="toggleEditPrices(false)"><i class="fa fa-edit"></i> edit</button>

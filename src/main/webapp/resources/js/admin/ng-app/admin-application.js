@@ -353,8 +353,10 @@
             }, errorHandler);
         };
 
-        $scope.saveEventPrices = function(form, eventPrices) {
-            EventService.updateEventPrices(eventPrices).then(function(result) {
+        $scope.saveEventPrices = function(form, eventPrices, organizationId) {
+            var obj = {'organizationId':organizationId};
+            angular.extend(obj, eventPrices);
+            EventService.updateEventPrices(obj).then(function(result) {
                 validationErrorHandler(result, form, form.editPrices).then(function(result) {
                     $scope.editPrices = false;
                     loadData();
@@ -370,6 +372,7 @@
                 controller: function($scope) {
                     $scope.ticketCategory = category;
                     $scope.event = event;
+                    $scope.editMode = true;
                     $scope.cancel = function() {
                         $scope.$dismiss('canceled');
                     };

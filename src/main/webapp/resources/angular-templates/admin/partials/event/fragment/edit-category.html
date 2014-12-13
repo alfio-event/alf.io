@@ -39,7 +39,7 @@
         </div>
 
         <div class="col-sm-12 col-md-3" data-ng-if="!event.freeOfCharge">
-            <label for="{{$index}}-price">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event)}}%)</span></label>
+            <label for="{{$index}}-price">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event, editMode)}}%)</span></label>
             <input type="number" data-ng-model="ticketCategory.price" name="{{$index}}-price" id="{{$index}}-price" class="form-control" required />
         </div>
 
