@@ -134,11 +134,12 @@
             calcBarValue: function(categorySeats, eventSeats) {
                 return instance.calcPercentage(categorySeats, eventSeats).format('0.00');
             },
-            calcCategoryPricePercent: function(category, event) {
+            calcCategoryPricePercent: function(category, event, editMode) {
                 if(isNaN(event.regularPrice) || isNaN(category.price)) {
                     return '0.00';
                 }
-                return instance.calcPercentage(category.price, event.regularPrice).format('0.00');
+                var regularPrice = instance.calculateTotalPrice(event, !editMode);
+                return instance.calcPercentage(category.price, regularPrice).format('0.00');
             },
             calcCategoryPrice: function(category, event) {
                 if(isNaN(event.vat) || isNaN(category.price)) {
