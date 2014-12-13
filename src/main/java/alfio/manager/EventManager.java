@@ -242,8 +242,15 @@ public class EventManager {
         Event event = eventRepository.findById(eventId);
         TicketCategoryWithStatistic src = loadTicketCategoryWithStats(srcCategoryId, event);
         TicketCategory target = ticketCategoryRepository.getById(targetCategoryId, eventId);
+        int notSoldTickets = src.getNotSoldTickets();
+        List<Integer> lockedTickets = ticketRepository.selectTicketInCategoryForUpdate(eventId, srcCategoryId, notSoldTickets);
+        int locked = lockedTickets.size();
+        if(locked != notSoldTickets) {
+            throw new IllegalStateException(String.format("Expected %d free tickets, got %d.", notSoldTickets, locked));
+        }
         ticketCategoryRepository.updateSeatsAvailability(srcCategoryId, src.getSoldTickets());
-        ticketCategoryRepository.updateSeatsAvailability(targetCategoryId, target.getMaxTickets() + src.getNotSoldTickets());
+        ticketCategoryRepository.updateSeatsAvailability(targetCategoryId, target.getMaxTickets() + locked);
+        ticketRepository.moveToAnotherCategory(lockedTickets, targetCategoryId, target.getPriceInCents(), target.getPriceInCents());
         specialPriceRepository.cancelExpiredTokens(srcCategoryId);
     }
 
