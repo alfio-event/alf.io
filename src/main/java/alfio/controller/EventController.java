@@ -19,6 +19,8 @@ package alfio.controller;
 
 import alfio.controller.decorator.EventDescriptor;
 import alfio.controller.decorator.SaleableTicketCategory;
+import alfio.controller.support.SessionUtil;
+import alfio.manager.EventManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.SpecialPrice;
@@ -28,6 +30,7 @@ import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.ValidationResult;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -37,8 +40,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -59,20 +63,22 @@ public class EventController {
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
     private final SpecialPriceRepository specialPriceRepository;
+	private final EventManager eventManager;
 
 	@Autowired
 	public EventController(ConfigurationManager configurationManager,
-			TicketRepository ticketRepository,
-			EventRepository eventRepository,
-			OrganizationRepository organizationRepository,
-			TicketCategoryRepository ticketCategoryRepository,
-			SpecialPriceRepository specialPriceRepository) {
+						   TicketRepository ticketRepository,
+						   EventRepository eventRepository,
+						   OrganizationRepository organizationRepository,
+						   TicketCategoryRepository ticketCategoryRepository,
+						   SpecialPriceRepository specialPriceRepository, EventManager eventManager) {
 		this.configurationManager = configurationManager;
 		this.ticketRepository = ticketRepository;
 		this.eventRepository = eventRepository;
 		this.organizationRepository = organizationRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.specialPriceRepository = specialPriceRepository;
+		this.eventManager = eventManager;
 	}
 
 	@RequestMapping(value = {"/"}, method = RequestMethod.GET)
@@ -107,10 +113,38 @@ public class EventController {
 		}
 	}
 
+	@RequestMapping(value = "/event/{eventName}/promoCode/{promoCode}", method = RequestMethod.POST)
+	@ResponseBody
+	public ValidationResult savePromoCode(@PathVariable("eventName") String eventName,
+								 @PathVariable("promoCode") String promoCode,
+								 Model model,
+								 HttpServletRequest request) {
+
+		Optional<Event> optional = optionally(() -> eventRepository.findByShortName(eventName));
+		if(!optional.isPresent()) {
+			return ValidationResult.failed(new ValidationResult.ValidationError("event", ""));
+		}
+		Event event = optional.get();
+		Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
+		Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
+		if (maybeSpecialCode.isPresent() && (!specialCode.isPresent() || !optionally(() -> eventManager.getTicketCategoryById(specialCode.get().getTicketCategoryId(), event.getId())).isPresent())) {
+			return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
+		}
+
+		if (specialCode.isPresent() && specialCode.get().getStatus() != SpecialPrice.Status.FREE) {
+			return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
+		}
+
+		if(maybeSpecialCode.isPresent() && !model.asMap().containsKey("hasErrors")) {
+			SessionUtil.saveSpecialPriceCode(maybeSpecialCode.get(), request);
+			return ValidationResult.success();
+		}
+		return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
+	}
+
 	@RequestMapping(value = "/event/{eventName}", method = RequestMethod.GET)
 	public String showEvent(@PathVariable("eventName") String eventName,
-							@RequestParam(value = "promoCode", required = false) String promoCode,
-							Model model) {
+							Model model, HttpServletRequest request) {
 
 		
 		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
@@ -119,29 +153,15 @@ public class EventController {
 			return REDIRECT + "/";
 		}
 		
-		Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
+		Optional<String> maybeSpecialCode = SessionUtil.retrieveSpecialPriceCode(request);
 		Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
-		
-		if (maybeSpecialCode.isPresent() && !specialCode.isPresent()) {
-			BindingResult errors = fromModelIfPresent(model, maybeSpecialCode.get());
-			errors.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND, new Object[]{maybeSpecialCode.get()}, null);
-			model.addAttribute("hasErrors", true);
-			
-		}
-		if (specialCode.isPresent() && specialCode.get().getStatus() != SpecialPrice.Status.FREE) {
-			BindingResult errors = fromModelIfPresent(model, maybeSpecialCode.get());
-			errors.reject(ErrorsCode.STEP_1_CODE_USED, new Object[]{maybeSpecialCode.get()}, null);
-			model.addAttribute("hasErrors", true);
-		}
-		
-		
 
 		Event ev = event.get();
 		final ZonedDateTime now = ZonedDateTime.now(ev.getZoneId());
 		final int maxTickets = configurationManager.getIntConfigValue(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
 		//hide access restricted ticket categories
 		List<SaleableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(ev.getId()).stream()
-                .filter((c) -> !c.isAccessRestricted() || (specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId() && specialCode.get().getStatus() == SpecialPrice.Status.FREE))
+                .filter((c) -> !c.isAccessRestricted() || (specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId()))
                 .map((m) -> new SaleableTicketCategory(m, now, ev, ticketRepository.countUnsoldTicket(ev.getId(), m.getId()), maxTickets))
                 .collect(Collectors.toList());
 		//
@@ -154,7 +174,7 @@ public class EventController {
 			.addAttribute("organizer", organizationRepository.getById(ev.getOrganizationId()))
 			.addAttribute("ticketCategories", t)//
 			.addAttribute("hasAccessRestrictedCategory", ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(ev.getId()).intValue() > 0)
-			.addAttribute("promoCode", promoCode)
+			.addAttribute("promoCode", specialCode.map(SpecialPrice::getCode).orElse(null))
 			.addAttribute("locationDescriptor", ld)
 			.addAttribute("pageTitle", "show-event.header.title")
 			.addAttribute("forwardButtonDisabled", t.stream().noneMatch(SaleableTicketCategory::getSaleable));

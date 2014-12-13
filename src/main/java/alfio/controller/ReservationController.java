@@ -19,6 +19,7 @@ package alfio.controller;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TemplateManager;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EventManager;
@@ -39,6 +40,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
@@ -119,23 +121,32 @@ public class ReservationController {
 			return "redirect:/event/" + eventName + "/";
 		}
 
-		Optional<List<TicketReservationWithOptionalCodeModification>> selected = reservation.validate(bindingResult, ticketReservationManager, eventManager, event.get());
+		Optional<List<TicketReservationWithOptionalCodeModification>> selected = reservation.validate(bindingResult, ticketReservationManager, eventManager, event.get(), request.getRequest());
 
 		if (bindingResult.hasErrors()) {
 			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
-			return eventController.showEvent(eventName, reservation.getPromoCode(), model);
+			return eventController.showEvent(eventName, model, request.getRequest());
 		}
 
 		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
 
 		try {
 			String reservationId = ticketReservationManager.createTicketReservation(event.get().getId(),
-					selected.get(), expiration);
+					selected.get(), expiration, SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()));
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 		} catch (TicketReservationManager.NotEnoughTicketsException nete) {
 			bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
-			return eventController.showEvent(eventName, reservation.getPromoCode(), model);
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());
+			return eventController.showEvent(eventName, model, request.getRequest());
+		} catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
+			bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());
+			return eventController.showEvent(eventName, model, request.getRequest());
+		} catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
+			bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());
+			SessionUtil.removeSpecialPriceData(request.getRequest());
+			return eventController.showEvent(eventName, model, request.getRequest());
 		}
 	}
 
@@ -185,6 +196,8 @@ public class ReservationController {
 			model.addAttribute("confirmationEmailSent", confirmationEmailSent);
 			model.addAttribute("ticketEmailSent", ticketEmailSent);
 
+			SessionUtil.removeSpecialPriceData(request);
+
 			List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
 
 			model.addAttribute(
@@ -225,6 +238,7 @@ public class ReservationController {
 		}
 		if (paymentForm.shouldCancelReservation()) {
 			ticketReservationManager.cancelPendingReservation(reservationId);
+			SessionUtil.removeSpecialPriceData(request);
 			return "redirect:/event/" + eventName + "/";
 		}
 		if (!ticketReservation.get().getValidity().after(new Date())) {
@@ -238,7 +252,7 @@ public class ReservationController {
 			return showReservationPage(eventName, reservationId, false, false, model, request);
 		}
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getStripeToken(), event, reservationId, paymentForm.getEmail(),
-                paymentForm.getFullName(), paymentForm.getBillingAddress(), reservationCost);
+                paymentForm.getFullName(), paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request));
 
         if(!status.isSuccessful()) {
             String errorMessageCode = status.getErrorCode().get();

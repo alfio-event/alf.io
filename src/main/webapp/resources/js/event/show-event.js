@@ -14,9 +14,23 @@
 			});
 
 			$("#apply-promo-codes").click(function() {
+				var button = $(this);
+				var frm = $(this.form);
 				var promoCodeVal = $("#promo-code").val();
+				$('#error-code-not-found').addClass('hidden');
 				if(promoCodeVal != null && promoCodeVal.trim() != "") {
-					window.location.href = window.location.pathname +"?promoCode="+promoCodeVal;
+					jQuery.ajax({
+						url: 'promoCode/'+promoCodeVal,
+						type: 'POST',
+						data: frm.serialize(),
+						success: function(result) {
+							if(result.success) {
+								window.location.reload();
+							} else {
+								$('#error-code-not-found').removeClass('hidden');
+							}
+						}
+					});
 				}
 			});
 		} else {

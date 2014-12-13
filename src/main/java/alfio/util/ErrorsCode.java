@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller;
+package alfio.util;
 
 public interface ErrorsCode {
 
@@ -27,8 +27,7 @@ public interface ErrorsCode {
 	String STEP_1_NOT_ENOUGH_TICKETS = "error.STEP_1_NOT_ENOUGH_TICKETS";
 	
 	String STEP_1_CODE_NOT_FOUND = "error.STEP_1_CODE_NOT_FOUND";
-	String STEP_1_CODE_USED = "error.STEP_1_CODE_USED";
-	
+
 	String STEP_2_PAYMENT_PROCESSING_ERROR = "error.STEP_2_PAYMENT_PROCESSING_ERROR";
 	
 	String STEP_2_ORDER_EXPIRED = "error.STEP_2_ORDER_HAS_EXPIRED";

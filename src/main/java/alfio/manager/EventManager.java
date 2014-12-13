@@ -112,7 +112,7 @@ public class EventManager {
     }
 
     private void checkOwnership(Event event, String username, int organizationId) {
-        Validate.isTrue(organizationId == event.getOrganizationId());
+        Validate.isTrue(organizationId == event.getOrganizationId(), "invalid organizationId");
         userManager.findUserOrganizations(username)
                 .stream()
                 .filter(o -> o.getId() == organizationId)
@@ -316,8 +316,10 @@ public class EventManager {
         final int price = evaluatePrice(tc.getPriceInCents(), vat, vatIncluded, freeOfCharge);
         final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested(), eventId);
+        TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getValue(), eventId);
+        jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), generateTicketsForCategory(ticketCategory, eventId, new Date(), price, 0).toArray(MapSqlParameterSource[]::new));
         if(tc.isTokenGenerationRequested()) {
-            insertTokens(ticketCategoryRepository.getById(category.getValue(), eventId));
+            insertTokens(ticketCategory);
         }
     }
 
@@ -465,7 +467,7 @@ public class EventManager {
 
     public boolean toggleTicketLocking(int categoryId, int ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId, categoryId);
-        Validate.isTrue(ticketRepository.toggleTicketLocking(ticketId, categoryId, !ticket.getLockedAssignment()) == 1);
+        Validate.isTrue(ticketRepository.toggleTicketLocking(ticketId, categoryId, !ticket.getLockedAssignment()) == 1, "unwanted result from ticket locking");
         return true;
     }
 

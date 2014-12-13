@@ -16,8 +16,8 @@
  */
 package alfio.controller.form;
 
-import alfio.controller.ErrorsCode;
 import alfio.manager.TicketReservationManager;
+import alfio.util.ErrorsCode;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;

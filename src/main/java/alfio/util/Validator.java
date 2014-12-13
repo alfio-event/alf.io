@@ -57,10 +57,10 @@ public final class Validator {
             if(isCollectionEmpty(ev.getAllowedPaymentProxies())) {
                 errors.rejectValue("allowedPaymentProxies", "error.allowedpaymentproxies");
             }
-            if(ev.getRegularPrice() == null || BigDecimal.ZERO.compareTo(ev.getRegularPrice()) <= 0) {
+            if(ev.getRegularPrice() == null || BigDecimal.ZERO.compareTo(ev.getRegularPrice()) >= 0) {
                 errors.rejectValue("regularPrice", "error.regularprice");
             }
-            if(ev.getVat() == null || BigDecimal.ZERO.compareTo(ev.getRegularPrice()) < 0) {
+            if(ev.getVat() == null || BigDecimal.ZERO.compareTo(ev.getVat()) > 0) {
                 errors.rejectValue("vat", "error.vat");
             }
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "currency", "error.currency");
@@ -86,7 +86,7 @@ public final class Validator {
         return collection == null || collection.isEmpty();
     }
 
-    private static ValidationResult evaluateValidationResult(Errors errors) {
+    public static ValidationResult evaluateValidationResult(Errors errors) {
         if (errors.hasFieldErrors()) {
             return ValidationResult.failed(errors.getFieldErrors()
                     .stream().map(ValidationResult.ValidationError::fromFieldError)

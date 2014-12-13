@@ -143,6 +143,7 @@
 		</div>
 		<div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
 			<div class="panel-body">
+				<div class="hidden text-danger text-center wMarginBottom" id="error-code-not-found">{{#i18n}}error.STEP_1_CODE_NOT_FOUND{{/i18n}}</div>
 				<div class="form-inline text-center">
 					<label>{{#i18n}}show-event.promo-code-insert{{/i18n}} <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label>
 					<button class="btn btn-success" type="button" id="apply-promo-codes">{{#i18n}}show-event.promo-code.apply{{/i18n}}</button>

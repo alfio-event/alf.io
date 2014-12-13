@@ -16,7 +16,6 @@
  */
 package alfio.controller.form;
 
-import alfio.controller.ErrorsCode;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
@@ -25,11 +24,13 @@ import alfio.model.SpecialPrice;
 import alfio.model.TicketCategory;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -60,9 +61,9 @@ public class ReservationForm {
 	}
 
 	public Optional<List<TicketReservationWithOptionalCodeModification>> validate(BindingResult bindingResult,
-			TicketReservationManager tickReservationManager,
-			EventManager eventManager,
-			Event event) {
+																				  TicketReservationManager tickReservationManager,
+																				  EventManager eventManager,
+																				  Event event, HttpServletRequest request) {
 		int selectionCount = selectionCount();
 
 		if (selectionCount <= 0) {
@@ -74,6 +75,7 @@ public class ReservationForm {
 
 		if (selectionCount > maxAmountOfTicket) {
 			bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM, new Object[] { maxAmountOfTicket }, null);
+			return Optional.empty();
 		}
 
 		final List<TicketReservationModification> selected = selected();
@@ -88,32 +90,20 @@ public class ReservationForm {
 				(trimmedCode) -> OptionalWrapper.optionally(() -> tickReservationManager.getSpecialPriceByCode(trimmedCode)));
 		//
 		final ZonedDateTime now = ZonedDateTime.now(eventZoneId);
-		selected.forEach((r) -> {
-
-			TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
-			SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, tickReservationManager
-					.countUnsoldTicket(event.getId(), tc.getId()), maxAmountOfTicket);
-
-			if (!ticketCategory.getSaleable()) {
-				bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE); //
-			}
-
-			boolean canAccessRestrictedCategory = specialCode.isPresent()
-					&& specialCode.get().getStatus() == SpecialPrice.Status.FREE
-					&& specialCode.get().getTicketCategoryId() == ticketCategory.getId();
-			if (canAccessRestrictedCategory && r.getAmount().intValue() > 1) {
-				bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM_FOR_RESTRICTED_CATEGORY,
-						new Object[] { 1, tc.getName() }, null);
-			}
-
-			if (!canAccessRestrictedCategory && ticketCategory.isAccessRestricted()) {
-				bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED); //
-			}
-
-			res.add(new TicketReservationWithOptionalCodeModification(r, canAccessRestrictedCategory
-					&& r.getAmount().intValue() == 1 ? specialCode : Optional.empty()));
-		});
-
+		selected.forEach((r) -> validateCategory(bindingResult, tickReservationManager, eventManager, event, maxAmountOfTicket, res, specialCode, now, r, request));
 		return bindingResult.hasErrors() ? Optional.empty() : Optional.of(res);
+	}
+
+	private static void validateCategory(BindingResult bindingResult, TicketReservationManager tickReservationManager, EventManager eventManager, Event event, int maxAmountOfTicket, List<TicketReservationWithOptionalCodeModification> res, Optional<SpecialPrice> specialCode, ZonedDateTime now, TicketReservationModification r, HttpServletRequest request) {
+		TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
+		SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, tickReservationManager
+                .countUnsoldTicket(event.getId(), tc.getId()), maxAmountOfTicket);
+
+		if (!ticketCategory.getSaleable()) {
+            bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE);
+			return;
+        }
+
+		res.add(new TicketReservationWithOptionalCodeModification(r, ticketCategory.isAccessRestricted() ? specialCode : Optional.empty()));
 	}
 }

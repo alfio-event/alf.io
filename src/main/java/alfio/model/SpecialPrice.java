@@ -16,7 +16,7 @@
  */
 package alfio.model;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper;
+import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 @Getter
@@ -31,16 +31,19 @@ public class SpecialPrice {
     private final int priceInCents;
     private final int ticketCategoryId;
     private final Status status;
+    private final String sessionIdentifier;
 
-    public SpecialPrice(@ConstructorAnnotationRowMapper.Column("id") int id,
-                        @ConstructorAnnotationRowMapper.Column("code") String code,
-                        @ConstructorAnnotationRowMapper.Column("price_cts") int priceInCents,
-                        @ConstructorAnnotationRowMapper.Column("ticket_category_id") int ticketCategoryId,
-                        @ConstructorAnnotationRowMapper.Column("status") String status) {
+    public SpecialPrice(@Column("id") int id,
+                        @Column("code") String code,
+                        @Column("price_cts") int priceInCents,
+                        @Column("ticket_category_id") int ticketCategoryId,
+                        @Column("status") String status,
+                        @Column("session_id") String sessionIdentifier) {
         this.id = id;
         this.code = code;
         this.priceInCents = priceInCents;
         this.ticketCategoryId = ticketCategoryId;
         this.status = Status.valueOf(status);
+        this.sessionIdentifier = sessionIdentifier;
     }
 }

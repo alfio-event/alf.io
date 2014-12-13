@@ -20,12 +20,9 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.support.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
-import alfio.model.Event;
-import alfio.model.SpecialPrice;
+import alfio.model.*;
 import alfio.model.SpecialPrice.Status;
-import alfio.model.Ticket;
 import alfio.model.Ticket.TicketStatus;
-import alfio.model.TicketReservation;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.TicketWithStatistic;
@@ -76,8 +73,15 @@ public class TicketReservationManager {
 	private final NotificationManager notificationManager;
 	private final MessageSource messageSource;
 
-	public static class NotEnoughTicketsException extends Exception {
+	public static class NotEnoughTicketsException extends RuntimeException {
 		
+	}
+
+	public static class MissingSpecialPriceTokenException extends RuntimeException {
+	}
+
+	public static class InvalidSpecialPriceTokenException extends RuntimeException {
+
 	}
 	
 	@Data
@@ -122,35 +126,66 @@ public class TicketReservationManager {
      * @param reservationExpiration
      * @return
      */
-    public String createTicketReservation(int eventId, List<TicketReservationWithOptionalCodeModification> list, Date reservationExpiration) throws NotEnoughTicketsException {
-    	
+    public String createTicketReservation(int eventId, List<TicketReservationWithOptionalCodeModification> list, Date reservationExpiration, Optional<String> specialPriceSessionId) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
         String transactionId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(transactionId, reservationExpiration);
-        
-        for(TicketReservationWithOptionalCodeModification ticketReservation : list) {
-            List<Integer> reservedForUpdate = ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount());
-            int requested = ticketReservation.getAmount();
-			if (reservedForUpdate.size() != requested) {
-				throw new NotEnoughTicketsException();
-			}
-            
-            
-			if (ticketReservation.getSpecialPrice().isPresent()) {
-				Validate.isTrue(reservedForUpdate.size() == 1, "can assign exactly one special code");
-				SpecialPrice specialPrice = ticketReservation.getSpecialPrice().get();
-				ticketRepository.reserveTicket(transactionId, reservedForUpdate.stream().findFirst().orElseThrow(IllegalStateException::new),specialPrice.getId());
-				specialPriceRepository.updateStatus(specialPrice.getId(), Status.PENDING.toString());
-			} else {
-				ticketRepository.reserveTickets(transactionId, reservedForUpdate);
-			}
-        }
-
+		list.forEach(t -> reserveTicketsForCategory(eventId, specialPriceSessionId, transactionId, t));
     	return transactionId;
     }
 
+	private void reserveTicketsForCategory(int eventId, Optional<String> specialPriceSessionId, String transactionId, TicketReservationWithOptionalCodeModification ticketReservation) {
+		List<Integer> reservedForUpdate = ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount());
+		int requested = ticketReservation.getAmount();
+		if (reservedForUpdate.size() != requested) {
+            throw new NotEnoughTicketsException();
+        }
+
+		Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), eventId, specialPriceSessionId, ticketReservation);
+		if (specialPrice.isPresent()) {
+			if(reservedForUpdate.size() != 1) {
+				throw new NotEnoughTicketsException();
+			}
+            SpecialPrice sp = specialPrice.get();
+            ticketRepository.reserveTicket(transactionId, reservedForUpdate.stream().findFirst().orElseThrow(IllegalStateException::new),sp.getId());
+            specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), sp.getSessionIdentifier());
+        } else {
+            ticketRepository.reserveTickets(transactionId, reservedForUpdate);
+        }
+	}
+
+	private Optional<SpecialPrice> fixToken(Optional<SpecialPrice> token, int ticketCategoryId, int eventId, Optional<String> specialPriceSessionId, TicketReservationWithOptionalCodeModification ticketReservation) {
+
+		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticketCategoryId, eventId);
+		if(!ticketCategory.isAccessRestricted()) {
+			return Optional.empty();
+		}
+
+		Optional<SpecialPrice> specialPrice = renewSpecialPrice(token, specialPriceSessionId);
+
+		if(token.isPresent() && !specialPrice.isPresent()) {
+			//there is a special price in the request but this isn't valid anymore
+			throw new InvalidSpecialPriceTokenException();
+		}
+
+		boolean canAccessRestrictedCategory = specialPrice.isPresent()
+				&& specialPrice.get().getStatus() == SpecialPrice.Status.FREE
+				&& specialPrice.get().getTicketCategoryId() == ticketCategoryId;
+
+
+		if (canAccessRestrictedCategory && ticketReservation.getAmount() > 1) {
+			throw new NotEnoughTicketsException();
+		}
+
+		if (!canAccessRestrictedCategory && ticketCategory.isAccessRestricted()) {
+			throw new MissingSpecialPriceTokenException();
+		}
+
+		return specialPrice;
+	}
+
     public PaymentResult confirm(String gatewayToken, Event event, String reservationId,
-                        String email, String fullName, String billingAddress,
-                        TotalPrice reservationCost) {
+								 String email, String fullName, String billingAddress,
+								 TotalPrice reservationCost, Optional<String> specialPriceSessionId) {
         try {
             PaymentResult paymentResult;
             if(reservationCost.getPriceWithVAT() > 0) {
@@ -163,7 +198,7 @@ public class TicketReservationManager {
             } else {
                 paymentResult = PaymentResult.successful("not-paid");
             }
-            completeReservation(reservationId, email, fullName, billingAddress);
+            completeReservation(reservationId, email, fullName, billingAddress, specialPriceSessionId);
             return paymentResult;
         } catch(Exception ex) {
             //it is guaranteed that in this case we're dealing with "local" error (e.g. database failure),
@@ -176,12 +211,12 @@ public class TicketReservationManager {
 
     private void transitionToInPayment(String reservationId, String email, String fullName, String billingAddress) {
     	int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.IN_PAYMENT.toString(), email, fullName, billingAddress, null);
-		Validate.isTrue(updatedReservation == 1);
+		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
     }
     
 	private void reTransitionToPending(String reservationId) {
 		int updatedReservation = ticketReservationRepository.updateTicketStatus(reservationId, TicketReservationStatus.PENDING.toString());
-		Validate.isTrue(updatedReservation == 1);
+		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
 		
 	}
     
@@ -206,23 +241,21 @@ public class TicketReservationManager {
 
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress.
-     *
-     * @param reservationId
+     *  @param reservationId
      * @param email
-     * @param fullName
-     * @param billingAddress
-     */
-	private void completeReservation(String reservationId, String email, String fullName, String billingAddress) {
+	 * @param fullName
+	 * @param billingAddress
+	 * @param specialPriceSessionId
+	 */
+	private void completeReservation(String reservationId, String email, String fullName, String billingAddress, Optional<String> specialPriceSessionId) {
 		int updatedTickets = ticketRepository.updateTicketStatus(reservationId, TicketStatus.ACQUIRED.toString());
-		Validate.isTrue(updatedTickets > 0);
+		Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
 		specialPriceRepository.updateStatusForReservation(Collections.singletonList(reservationId), Status.TAKEN.toString());
         ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
 		int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, billingAddress, timestamp);
-		Validate.isTrue(updatedReservation == 1);
-		
-		//
-		
-		//
+		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
+		//cleanup unused special price codes...
+		specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
 	}
 
 
@@ -329,20 +362,50 @@ public class TicketReservationManager {
 	}
 
 
+
 	public void cancelPendingReservation(String reservationId) {
-		
-		Validate.isTrue(ticketReservationRepository.findReservationById(reservationId).getStatus() == TicketReservationStatus.PENDING);
-		
+
+		Validate.isTrue(ticketReservationRepository.findReservationById(reservationId).getStatus() == TicketReservationStatus.PENDING, "status is not PENDING");
+
 		List<String> reservationIdsToRemove = Collections.singletonList(reservationId);
 		specialPriceRepository.updateStatusForReservation(reservationIdsToRemove, Status.FREE.toString());
 		int updatedTickets = ticketRepository.freeFromReservation(reservationIdsToRemove);
-		Validate.isTrue(updatedTickets > 0);
+		Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
 		int removedReservation = ticketReservationRepository.remove(reservationIdsToRemove);
-		Validate.isTrue(removedReservation == 1);
+		Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got "+removedReservation);
 	}
 
 	public SpecialPrice getSpecialPriceByCode(String code) {
 		return specialPriceRepository.getByCode(code);
+	}
+
+	public Optional<SpecialPrice> renewSpecialPrice(Optional<SpecialPrice> specialPrice, Optional<String> specialPriceSessionId) {
+		Validate.isTrue(specialPrice.isPresent(), "special price is not present");
+
+		SpecialPrice price = specialPrice.get();
+
+		if(!specialPriceSessionId.isPresent()) {
+			log.warn("cannot renew special price {}: session identifier not found or not matching", price.getCode());
+			return Optional.empty();
+		}
+
+		if(price.getStatus() == Status.PENDING && !StringUtils.equals(price.getSessionIdentifier(), specialPriceSessionId.get())) {
+			log.warn("cannot renew special price {}: session identifier not found or not matching", price.getCode());
+			return Optional.empty();
+		}
+
+		if(price.getStatus() == Status.FREE) {
+			specialPriceRepository.bindToSession(price.getId(), specialPriceSessionId.get());
+			return Optional.of(getSpecialPriceByCode(price.getCode()));
+		} else if(price.getStatus() == Status.PENDING) {
+			Optional<Ticket> optionalTicket = optionally(() -> ticketRepository.findBySpecialPriceId(price.getId()));
+			if(optionalTicket.isPresent()) {
+				cancelPendingReservation(optionalTicket.get().getTicketsReservationId());
+				return Optional.of(getSpecialPriceByCode(price.getCode()));
+			}
+		}
+
+		return specialPrice;
 	}
 
 	public List<Ticket> findTicketsInReservation(String reservationId) {
