@@ -19,31 +19,43 @@ package alfio.controller;
 
 import alfio.controller.decorator.EventDescriptor;
 import alfio.controller.decorator.SaleableTicketCategory;
+import alfio.controller.form.ReservationForm;
 import alfio.controller.support.SessionUtil;
 import alfio.manager.EventManager;
+import alfio.manager.TicketReservationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.SpecialPrice;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.repository.EventRepository;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.ErrorsCode;
+import alfio.util.OptionalWrapper;
 import alfio.util.ValidationResult;
+
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -64,6 +76,7 @@ public class EventController {
     private final OrganizationRepository organizationRepository;
     private final SpecialPriceRepository specialPriceRepository;
 	private final EventManager eventManager;
+	private final TicketReservationManager ticketReservationManager;
 
 	@Autowired
 	public EventController(ConfigurationManager configurationManager,
@@ -71,7 +84,9 @@ public class EventController {
 						   EventRepository eventRepository,
 						   OrganizationRepository organizationRepository,
 						   TicketCategoryRepository ticketCategoryRepository,
-						   SpecialPriceRepository specialPriceRepository, EventManager eventManager) {
+						   SpecialPriceRepository specialPriceRepository, 
+						   EventManager eventManager,
+						   TicketReservationManager ticketReservationManager) {
 		this.configurationManager = configurationManager;
 		this.ticketRepository = ticketRepository;
 		this.eventRepository = eventRepository;
@@ -79,6 +94,7 @@ public class EventController {
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.specialPriceRepository = specialPriceRepository;
 		this.eventManager = eventManager;
+		this.ticketReservationManager = ticketReservationManager;
 	}
 
 	@RequestMapping(value = {"/"}, method = RequestMethod.GET)
@@ -100,17 +116,6 @@ public class EventController {
 		model.addAttribute("pageTitle", "session-expired.header.title");
 		model.addAttribute("event", null);
 		return "/event/session-expired";
-	}
-	
-	
-	private static BindingResult fromModelIfPresent(Model model, String specialCode) {
-		if(model.containsAttribute("error")) {
-			return (BindingResult) model.asMap().get("error");
-		} else {
-			BeanPropertyBindingResult error = new BeanPropertyBindingResult(specialCode, "promoCode");
-			model.addAttribute("error", error);
-			return error;
-		}
 	}
 
 	@RequestMapping(value = "/event/{eventName}/promoCode/{promoCode}", method = RequestMethod.POST)
@@ -180,5 +185,48 @@ public class EventController {
 			.addAttribute("forwardButtonDisabled", t.stream().noneMatch(SaleableTicketCategory::getSaleable));
 		model.asMap().putIfAbsent("hasErrors", false);//
 		return "/event/show-event";
+	}
+	
+	@RequestMapping(value = "/event/{eventName}/reserve-tickets", method = { RequestMethod.POST, RequestMethod.GET })
+	public String reserveTicket(@PathVariable("eventName") String eventName,
+			@ModelAttribute ReservationForm reservation, BindingResult bindingResult, Model model,
+			ServletWebRequest request, RedirectAttributes redirectAttributes) {
+
+		Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+		if (!event.isPresent()) {
+			return "redirect:/";
+		}
+
+		if (request.getHttpMethod() == HttpMethod.GET) {
+			return "redirect:/event/" + eventName + "/";
+		}
+
+		Optional<List<TicketReservationWithOptionalCodeModification>> selected = reservation.validate(bindingResult, ticketReservationManager, eventManager, event.get(), request.getRequest());
+
+		if (bindingResult.hasErrors()) {
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
+			return showEvent(eventName, model, request.getRequest());
+		}
+
+		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
+
+		try {
+			String reservationId = ticketReservationManager.createTicketReservation(event.get().getId(),
+					selected.get(), expiration, SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()));
+			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+		} catch (TicketReservationManager.NotEnoughTicketsException nete) {
+			bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());
+			return showEvent(eventName, model, request.getRequest());
+		} catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
+			bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());
+			return showEvent(eventName, model, request.getRequest());
+		} catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
+			bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
+			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());
+			SessionUtil.removeSpecialPriceData(request.getRequest());
+			return showEvent(eventName, model, request.getRequest());
+		}
 	}
 }
