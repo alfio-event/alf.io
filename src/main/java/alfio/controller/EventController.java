@@ -187,6 +187,7 @@ public class EventController {
 		return "/event/show-event";
 	}
 	
+	
 	@RequestMapping(value = "/event/{eventName}/reserve-tickets", method = { RequestMethod.POST, RequestMethod.GET })
 	public String reserveTicket(@PathVariable("eventName") String eventName,
 			@ModelAttribute ReservationForm reservation, BindingResult bindingResult, Model model,
@@ -196,16 +197,18 @@ public class EventController {
 		if (!event.isPresent()) {
 			return "redirect:/";
 		}
+		
+		final String redirectToEvent = "redirect:/event/" + eventName + "/";
 
 		if (request.getHttpMethod() == HttpMethod.GET) {
-			return "redirect:/event/" + eventName + "/";
+			return redirectToEvent;
 		}
 
 		Optional<List<TicketReservationWithOptionalCodeModification>> selected = reservation.validate(bindingResult, ticketReservationManager, eventManager, event.get(), request.getRequest());
 
 		if (bindingResult.hasErrors()) {
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());//
-			return showEvent(eventName, model, request.getRequest());
+			addToFlash(bindingResult, redirectAttributes);
+			return redirectToEvent;
 		}
 
 		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
@@ -216,17 +219,21 @@ public class EventController {
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
 		} catch (TicketReservationManager.NotEnoughTicketsException nete) {
 			bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());
-			return showEvent(eventName, model, request.getRequest());
+			addToFlash(bindingResult, redirectAttributes);
+			return redirectToEvent;
 		} catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
 			bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());
-			return showEvent(eventName, model, request.getRequest());
+			addToFlash(bindingResult, redirectAttributes);
+			return redirectToEvent;
 		} catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
 			bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors());
+			addToFlash(bindingResult, redirectAttributes);
 			SessionUtil.removeSpecialPriceData(request.getRequest());
-			return showEvent(eventName, model, request.getRequest());
+			return redirectToEvent;
 		}
+	}
+
+	private static void addToFlash(BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+		redirectAttributes.addFlashAttribute("error", bindingResult).addFlashAttribute("hasErrors", true);
 	}
 }

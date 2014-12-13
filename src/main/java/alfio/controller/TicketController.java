@@ -21,39 +21,27 @@ import alfio.controller.support.TemplateProcessor;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PDFTemplateBuilder;
-import alfio.manager.system.Mailer;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.TicketUtil;
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.EncodeHintType;
-import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.lowagie.text.DocumentException;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.support.RequestContextUtils;
-import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
@@ -62,29 +50,20 @@ import java.util.*;
 public class TicketController {
 
 	private final OrganizationRepository organizationRepository;
-	private final TicketRepository ticketRepository;
 	private final TicketReservationManager ticketReservationManager;
 	private final TicketCategoryRepository ticketCategoryRepository;
-	private final Mailer mailer;
-	private final MessageSource messageSource;
 	private final TemplateManager templateManager;
 	private final NotificationManager notificationManager;
 
 	@Autowired
 	public TicketController(OrganizationRepository organizationRepository,
 							TicketReservationManager ticketReservationManager,
-							TicketRepository ticketRepository,
 							TicketCategoryRepository ticketCategoryRepository,
-							Mailer mailer,
-							MessageSource messageSource,
 							TemplateManager templateManager,
 							NotificationManager notificationManager) {
 		this.organizationRepository = organizationRepository;
 		this.ticketReservationManager = ticketReservationManager;
-		this.ticketRepository = ticketRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
-		this.mailer = mailer;
-		this.messageSource = messageSource;
 		this.templateManager = templateManager;
 		this.notificationManager = notificationManager;
 	}
