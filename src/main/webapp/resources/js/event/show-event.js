@@ -35,6 +35,10 @@
 			});
 		} else {
 			$('#accessRestrictedTokens').hide();
+			//original code: http://stackoverflow.com/a/6677069
+			$('html, body').animate({
+				scrollTop: restrictedCategories.first().offset().top
+			}, 500);
 		}
 
 	});
