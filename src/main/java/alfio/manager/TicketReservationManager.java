@@ -134,13 +134,15 @@ public class TicketReservationManager {
     }
 
 	private void reserveTicketsForCategory(int eventId, Optional<String> specialPriceSessionId, String transactionId, TicketReservationWithOptionalCodeModification ticketReservation) {
+		//first check if there is another pending special price token bound to the current sessionId
+		Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), eventId, specialPriceSessionId, ticketReservation);
+
 		List<Integer> reservedForUpdate = ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount());
 		int requested = ticketReservation.getAmount();
 		if (reservedForUpdate.size() != requested) {
             throw new NotEnoughTicketsException();
         }
 
-		Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), eventId, specialPriceSessionId, ticketReservation);
 		if (specialPrice.isPresent()) {
 			if(reservedForUpdate.size() != 1) {
 				throw new NotEnoughTicketsException();
