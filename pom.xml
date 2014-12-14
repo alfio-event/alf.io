@@ -4,7 +4,7 @@
 
 	<groupId>alfio</groupId>
 	<artifactId>alfio</artifactId>
-	<version>1.1-SNAPSHOT</version>
+	<version>1.0-SNAPSHOT</version>
 	<packaging>war</packaging>
 
 	<name>alf.io</name>
@@ -14,8 +14,7 @@
 		<connection>scm:git:git@github.com:exteso/alf.io.git</connection>
 		<developerConnection>scm:git:git@github.com:exteso/alf.io.git</developerConnection>
 		<url>https://github.com/exteso/alf.io.git</url>
-  	  <tag>HEAD</tag>
-  </scm>
+  	</scm>
 
 	<properties>
 		<java.version>1.8</java.version>
@@ -357,7 +356,7 @@
 				<datasource.driver>org.hsqldb.jdbcDriver</datasource.driver>
 				<datasource.url>jdbc:hsqldb:mem:alfio</datasource.url>
 				<datasource.username>sa</datasource.username>
-				<datasource.password />
+				<datasource.password></datasource.password>
 				<datasource.validationQuery>SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS</datasource.validationQuery>
 				<spring.profiles.active>dev</spring.profiles.active>
 			</properties>
