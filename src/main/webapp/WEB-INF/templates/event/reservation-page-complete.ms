@@ -80,11 +80,11 @@
 	{{/value}}
 {{/ticketsByCategory}}
 </ul>
-<div class="container wMarginBottom hidden" id="back-to-event-site">
-	<div class="row">
-		<div class="col-xs-12"><a href="{{event.websiteUrl}}" class="btn btn-default pull-left">{{#i18n}}to-event-site{{/i18n}}</a></div>
-	</div>
+<div class="container-fluid hidden" id="back-to-event-site">
+	<div class="pull-left"><a href="{{event.websiteUrl}}" class="btn btn-default">{{#i18n}}to-event-site{{/i18n}}</a></div>
+	<div class="pull-right"><a href="{{request.contextPath}}/event/{{event.shortName}}/" class="btn btn-success pull-right">{{#i18n}}buy-other-tickets{{/i18n}}</a></div>
 </div>
+<div class="clearfix wMarginBottom"></div>
 <div class="text-center">
 	{{#i18n}}reservation-page-complete.order-information [{{reservation.id}}] [{{reservation.fullName}}]{{/i18n}}
 </div>
