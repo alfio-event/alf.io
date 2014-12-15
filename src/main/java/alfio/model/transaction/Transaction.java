@@ -16,7 +16,7 @@
  */
 package alfio.model.transaction;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper;
+import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 import java.time.ZonedDateTime;
@@ -34,14 +34,14 @@ public class Transaction {
     private final PaymentProxy paymentProxy;
 
 
-    public Transaction(@ConstructorAnnotationRowMapper.Column("id") int id,
-                       @ConstructorAnnotationRowMapper.Column("gtw_tx_id") String transactionId,
-                       @ConstructorAnnotationRowMapper.Column("reservation_id") String reservationId,
-                       @ConstructorAnnotationRowMapper.Column("t_timestamp") ZonedDateTime timestamp,
-                       @ConstructorAnnotationRowMapper.Column("price_cts") int priceInCents,
-                       @ConstructorAnnotationRowMapper.Column("currency") String currency,
-                       @ConstructorAnnotationRowMapper.Column("description") String description,
-                       @ConstructorAnnotationRowMapper.Column("payment_proxy") String paymentProxy) {
+    public Transaction(@Column("id") int id,
+                       @Column("gtw_tx_id") String transactionId,
+                       @Column("reservation_id") String reservationId,
+                       @Column("t_timestamp") ZonedDateTime timestamp,
+                       @Column("price_cts") int priceInCents,
+                       @Column("currency") String currency,
+                       @Column("description") String description,
+                       @Column("payment_proxy") String paymentProxy) {
         this.id = id;
         this.transactionId = transactionId;
         this.reservationId = reservationId;
