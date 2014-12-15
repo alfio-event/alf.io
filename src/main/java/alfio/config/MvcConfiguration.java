@@ -123,12 +123,12 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     				ModelAndView modelAndView) throws Exception {
     			// http://www.html5rocks.com/en/tutorials/security/content-security-policy/
     			// lockdown policy
-    			response.addHeader("Content-Security-Policy", "default-src 'none'; "
+    			response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
     					+ " script-src 'self' https://ajax.googleapis.com/ https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/;"//
     					+ " style-src 'self';"//
-    					+ " img-src 'self' https:;"
+    					+ " img-src 'self' https:;"//
     					+ " font-src 'self';"//
-    					+ " connect-src 'self' https://api.stripe.com;"); //<- currently stripe.js but we never know with future updates...
+    					+ " connect-src 'self' https://api.stripe.com;"); //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
     		}
     	};
 	}
