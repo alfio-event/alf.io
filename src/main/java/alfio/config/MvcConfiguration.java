@@ -126,7 +126,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     			response.addHeader("Content-Security-Policy", "default-src 'none'; "
     					+ " script-src 'self' https://ajax.googleapis.com/ https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/;"//
     					+ " style-src 'self';"//
-    					+ " img-src 'self' https://maps.googleapis.com http://tyler-demo.herokuapp.com/;" //http://tyler-demo.herokuapp.com/ = maps for local dev mode
+    					+ " img-src 'self' https:;"
     					+ " font-src 'self';"//
     					+ " connect-src 'self' https://api.stripe.com;"); //<- currently stripe.js but we never know with future updates...
     		}
