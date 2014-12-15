@@ -243,6 +243,10 @@ public class EventManager {
         TicketCategoryWithStatistic src = loadTicketCategoryWithStats(srcCategoryId, event);
         TicketCategory target = ticketCategoryRepository.getById(targetCategoryId, eventId);
         int notSoldTickets = src.getNotSoldTickets();
+        if(notSoldTickets == 0) {
+            log.info("since all the ticket have been sold, ticket moving is not needed anymore.");
+            return;
+        }
         List<Integer> lockedTickets = ticketRepository.selectTicketInCategoryForUpdate(eventId, srcCategoryId, notSoldTickets);
         int locked = lockedTickets.size();
         if(locked != notSoldTickets) {
@@ -252,6 +256,9 @@ public class EventManager {
         ticketCategoryRepository.updateSeatsAvailability(targetCategoryId, target.getMaxTickets() + locked);
         ticketRepository.moveToAnotherCategory(lockedTickets, targetCategoryId, target.getPriceInCents(), target.getPriceInCents());
         specialPriceRepository.cancelExpiredTokens(srcCategoryId);
+        if(target.isAccessRestricted()) {
+            insertTokens(target, locked);
+        }
     }
 
     private MapSqlParameterSource[] prepareTicketsBulkInsertParameters(int eventId,
@@ -331,7 +338,11 @@ public class EventManager {
     }
 
     private void insertTokens(TicketCategory ticketCategory) {
-        final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategory, ticketCategory.getMaxTickets());
+        insertTokens(ticketCategory, ticketCategory.getMaxTickets());
+    }
+
+    private void insertTokens(TicketCategory ticketCategory, int requiredTokens) {
+        final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategory, requiredTokens);
         jdbc.batchUpdate(specialPriceRepository.bulkInsert(), args);
     }
 

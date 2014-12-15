@@ -50,11 +50,16 @@ insert into ticket (uuid, creation, category_id, event_id, status, original_pric
   ('abcdefghilmo46', '2014-01-10 00:00:00', 3, 0, 'FREE', 463, 463, null),
   
   --restricted
-  ('abcdefghilmo47', '2014-01-10 00:00:00', 4, 0, 'FREE', 463, 463, null);
+  ('abcdefghilmo47', '2014-01-10 00:00:00', 4, 0, 'FREE', 463, 463, null),
+  ('abcdefghilmo48', '2014-01-10 00:00:00', 4, 0, 'FREE', 463, 463, null),
+  ('abcdefghilmo49', '2014-01-10 00:00:00', 4, 0, 'FREE', 463, 463, null),
+  ('abcdefghilmo50', '2014-01-10 00:00:00', 4, 0, 'FREE', 463, 463, null);
 
 insert into special_price (code, price_cts, ticket_category_id, status) values
   ('424242', 463, 4, 'FREE'),
-  ('424243', 463, 4, 'CANCELLED'); 
+  ('424243', 463, 4, 'FREE'),
+  ('424244', 463, 4, 'FREE'),
+  ('424245', 463, 4, 'CANCELLED');
   
 insert into configuration (c_key, c_value, description) values
 	('STRIPE_SECRET_KEY', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'Stripe''s secret key'),
