@@ -1,5 +1,5 @@
 {{>/event/page-top}}
-<a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}">{{#i18n}}show-ticket.go-back-to-reservation{{/i18n}}</a>
+<a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/success">{{#i18n}}show-ticket.go-back-to-reservation{{/i18n}}</a>
 
 <div class="page-header">
 <h1 class="center">

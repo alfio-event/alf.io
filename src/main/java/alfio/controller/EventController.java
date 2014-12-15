@@ -36,7 +36,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
 import alfio.util.ValidationResult;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,16 +43,11 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
@@ -61,6 +55,7 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+import static alfio.controller.support.SessionUtil.addToFlash;
 import static alfio.model.system.ConfigurationKeys.MAPS_CLIENT_API_KEY;
 import static alfio.model.system.ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION;
 import static alfio.util.OptionalWrapper.optionally;
@@ -216,7 +211,7 @@ public class EventController {
 		try {
 			String reservationId = ticketReservationManager.createTicketReservation(event.get().getId(),
 					selected.get(), expiration, SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()));
-			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+			return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/book";
 		} catch (TicketReservationManager.NotEnoughTicketsException nete) {
 			bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
 			addToFlash(bindingResult, redirectAttributes);
@@ -233,7 +228,4 @@ public class EventController {
 		}
 	}
 
-	private static void addToFlash(BindingResult bindingResult, RedirectAttributes redirectAttributes) {
-		redirectAttributes.addFlashAttribute("error", bindingResult).addFlashAttribute("hasErrors", true);
-	}
 }

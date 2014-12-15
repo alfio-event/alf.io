@@ -33,6 +33,7 @@ import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
+import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
@@ -42,9 +43,7 @@ import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
-
 import com.google.zxing.WriterException;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,10 +54,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -103,15 +102,11 @@ public class ReservationController {
 		this.ticketCategoryRepository = ticketCategoryRepository;
 	}
 
-
-	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.GET)
-	public String showReservationPage(
-			@PathVariable("eventName") String eventName,
-			@PathVariable("reservationId") String reservationId,
-			@RequestParam(value = "confirmation-email-sent", required = false, defaultValue = "false") boolean confirmationEmailSent,
-			@RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
-			Model model,
-			HttpServletRequest request) {
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
+	public String showPaymentPage(@PathVariable("eventName") String eventName,
+								  @PathVariable("reservationId") String reservationId,
+								  Model model,
+								  HttpServletRequest request) {
 
 		Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
 		if (!event.isPresent()) {
@@ -119,38 +114,47 @@ public class ReservationController {
 		}
 
 		Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
-
-		model.addAttribute("event", event.get());
-		model.asMap().putIfAbsent("hasErrors", false);
-
-		if (!reservation.isPresent()) {
-			model.addAttribute("reservationId", reservationId);
-			model.addAttribute("pageTitle", "reservation-page-not-found.header.title");
-			return "/event/reservation-page-not-found";
-		} else if (reservation.get().getStatus() == TicketReservation.TicketReservationStatus.PENDING) {
-
+		if(reservation.isPresent() && reservation.get().getStatus() == TicketReservationStatus.PENDING) {
 			OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event.get());
-
 			model.addAttribute("orderSummary", orderSummary);
 			model.addAttribute("reservationId", reservationId);
 			model.addAttribute("reservation", reservation.get());
 			model.addAttribute("pageTitle", "reservation-page.header.title");
-
+			model.addAttribute("event", event.get());
 			if (orderSummary.getOriginalTotalPrice().getPriceWithVAT() > 0) {
 				model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
 			}
-
-			model.asMap().putIfAbsent("paymentForm", new PaymentForm());
-
+			Map<String, Object> modelMap = model.asMap();
+			modelMap.putIfAbsent("paymentForm", new PaymentForm());
+			modelMap.putIfAbsent("hasErrors", false);
 			return "/event/reservation-page";
-		} else if (reservation.get().getStatus() == TicketReservation.TicketReservationStatus.COMPLETE) {
+		} else {
+			return redirectReservation(reservation, eventName, reservationId);
+		}
+	}
+
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/success", method = RequestMethod.GET)
+	public String showConfirmationPage(@PathVariable("eventName") String eventName,
+									   @PathVariable("reservationId") String reservationId,
+									   @RequestParam(value = "confirmation-email-sent", required = false, defaultValue = "false") boolean confirmationEmailSent,
+									   @RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
+									   Model model,
+									   HttpServletRequest request) {
+
+		Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+		if (!event.isPresent()) {
+			return "redirect:/";
+		}
+
+		Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
+		if (reservation.isPresent() && reservation.get().getStatus() == TicketReservationStatus.COMPLETE) {
+
+			SessionUtil.removeSpecialPriceData(request);
 
 			model.addAttribute("reservationId", reservationId);
 			model.addAttribute("reservation", reservation.get());
 			model.addAttribute("confirmationEmailSent", confirmationEmailSent);
 			model.addAttribute("ticketEmailSent", ticketEmailSent);
-
-			SessionUtil.removeSpecialPriceData(request);
 
 			List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
 
@@ -162,21 +166,105 @@ public class ReservationController {
 			model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
 			model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
 			model.addAttribute("pageTitle", "reservation-page-complete.header.title");
+			model.addAttribute("event", event.get());
 			model.asMap().putIfAbsent("validationResult", ValidationResult.success());
 			return "/event/reservation-page-complete";
-			
-		} else { // reservation status has status IN_PAYMENT or STUCK.
+		} else {
+			return redirectReservation(reservation, eventName, reservationId);
+		}
+	}
+
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/failure", method = RequestMethod.GET)
+	public String showFailurePage(@PathVariable("eventName") String eventName,
+									   @PathVariable("reservationId") String reservationId,
+									   @RequestParam(value = "confirmation-email-sent", required = false, defaultValue = "false") boolean confirmationEmailSent,
+									   @RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
+									   Model model) {
+		Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+		if (!event.isPresent()) {
+			return "redirect:/";
+		}
+
+		Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
+		Optional<TicketReservationStatus> status = reservation.map(TicketReservation::getStatus);
+
+		if(!status.isPresent()) {
+			return redirectReservation(reservation, eventName, reservationId);
+		}
+
+		TicketReservationStatus ticketReservationStatus = status.get();
+		if(ticketReservationStatus == TicketReservationStatus.IN_PAYMENT || ticketReservationStatus == TicketReservationStatus.STUCK) {
 			model.addAttribute("reservation", reservation.get());
 			model.addAttribute("organizer", organizationRepository.getById(event.get().getOrganizationId()));
 			model.addAttribute("pageTitle", "reservation-page-error-status.header.title");
+			model.addAttribute("event", event.get());
 			return "/event/reservation-page-error-status";
 		}
+
+		return redirectReservation(reservation, eventName, reservationId);
 	}
+
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.GET)
+	public String showReservationPage(@PathVariable("eventName") String eventName,
+									  @PathVariable("reservationId") String reservationId,
+									  Model model) {
+		Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+		if (!event.isPresent()) {
+			return "redirect:/";
+		}
+
+		return redirectReservation(ticketReservationManager.findById(reservationId), eventName, reservationId);
+	}
+
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/notfound", method = RequestMethod.GET)
+	public String showNotFoundPage(@PathVariable("eventName") String eventName,
+								   @PathVariable("reservationId") String reservationId,
+								   Model model) {
+
+		Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+		if (!event.isPresent()) {
+			return "redirect:/";
+		}
+
+		Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
+
+		if(!reservation.isPresent()) {
+			model.addAttribute("reservationId", reservationId);
+			model.addAttribute("pageTitle", "reservation-page-not-found.header.title");
+			model.addAttribute("event", event.get());
+			return "/event/reservation-page-not-found";
+		}
+
+		return redirectReservation(reservation, eventName, reservationId);
+	}
+
+
+
+	private String redirectReservation(Optional<TicketReservation> ticketReservation, String eventName, String reservationId) {
+		String baseUrl = "redirect:/event/" + eventName + "/reservation/" + reservationId;
+		if(!ticketReservation.isPresent()) {
+			return baseUrl + "/notfound";
+		}
+		TicketReservation reservation = ticketReservation.get();
+
+		switch(reservation.getStatus()) {
+			case PENDING:
+				return baseUrl + "/book";
+			case COMPLETE:
+				return baseUrl + "/success";
+			case IN_PAYMENT:
+			case STUCK:
+				return baseUrl + "/failure";
+		}
+
+		return "redirect:/";
+	}
+
 
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
 	public String handleReservation(@PathVariable("eventName") String eventName,
 			@PathVariable("reservationId") String reservationId, PaymentForm paymentForm, BindingResult bindingResult,
-			Model model, HttpServletRequest request, Locale locale) {
+			Model model, HttpServletRequest request, Locale locale, RedirectAttributes redirectAttributes) {
 
 		Optional<Event> eventOptional = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
 		if (!eventOptional.isPresent()) {
@@ -201,9 +289,8 @@ public class ReservationController {
 		final TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
 		paymentForm.validate(bindingResult, reservationCost);
 		if (bindingResult.hasErrors()) {
-			model.addAttribute("error", bindingResult).addAttribute("hasErrors", bindingResult.hasErrors())
-					.addAttribute("paymentForm", paymentForm);//
-			return showReservationPage(eventName, reservationId, false, false, model, request);
+			SessionUtil.addToFlash(bindingResult, redirectAttributes);
+			return redirectReservation(ticketReservation, eventName, reservationId);
 		}
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getStripeToken(), event, reservationId, paymentForm.getEmail(),
                 paymentForm.getFullName(), paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request));
@@ -212,10 +299,8 @@ public class ReservationController {
             String errorMessageCode = status.getErrorCode().get();
             MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeManager.STRIPE_UNEXPECTED});
             bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
-            model.addAttribute("error", bindingResult)
-                    .addAttribute("hasErrors", bindingResult.hasErrors())
-                    .addAttribute("paymentForm", paymentForm);
-            return showReservationPage(eventName, reservationId, false, false, model, request);
+			SessionUtil.addToFlash(bindingResult, redirectAttributes);
+			return redirectReservation(ticketReservation, eventName, reservationId);
         }
 
         //
@@ -224,7 +309,7 @@ public class ReservationController {
         sendReservationCompleteEmailToOrganizer(request, event, reservation);
 		//
 
-		return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+		return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
 	}
 
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/re-send-email", method = RequestMethod.POST)
@@ -242,7 +327,7 @@ public class ReservationController {
 		}
 
 		sendReservationCompleteEmail(request, event.get(), ticketReservation.orElseThrow(IllegalStateException::new));
-		return "redirect:/event/" + eventName + "/reservation/" + reservationId + "?confirmation-email-sent=true";
+		return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success?confirmation-email-sent=true";
 	}
 
 
@@ -278,7 +363,7 @@ public class ReservationController {
 									   Model model) throws Exception {
 
 		Optional<Triple<ValidationResult, Event, Ticket>> result = assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, model);
-		return result.map(t -> "redirect:/event/"+t.getMiddle().getShortName()+"/reservation/"+t.getRight().getTicketsReservationId()).orElse("redirect:/");
+		return result.map(t -> "redirect:/event/"+t.getMiddle().getShortName()+"/reservation/"+t.getRight().getTicketsReservationId()+"/success").orElse("redirect:/");
 	}
 
 	private Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName, String reservationId, String ticketIdentifier, UpdateTicketOwnerForm updateTicketOwner, BindingResult bindingResult, HttpServletRequest request, Model model) {

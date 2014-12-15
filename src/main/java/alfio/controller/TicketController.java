@@ -44,7 +44,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.Locale;
+import java.util.Optional;
 
 @Controller
 public class TicketController {
@@ -115,7 +116,7 @@ public class TicketController {
 				event, locale, TemplateProcessor.buildEmail(event, organizationRepository, data.getMiddle(), ticket, templateManager, request),
 				preparePdfTicket(request, event, data.getMiddle(), ticket));
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId
-				+ ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "") + "?ticket-email-sent=true";
+				+ ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "/success") + "?ticket-email-sent=true";
 	}
 	
 

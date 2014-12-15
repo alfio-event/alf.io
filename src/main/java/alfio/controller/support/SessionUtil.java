@@ -17,6 +17,8 @@
 package alfio.controller.support;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
@@ -47,6 +49,10 @@ public final class SessionUtil {
     public static void removeSpecialPriceData(HttpServletRequest request) {
         request.getSession().removeAttribute(SPECIAL_PRICE_CODE_SESSION_ID);
         request.getSession().removeAttribute(SPECIAL_PRICE_CODE);
+    }
+
+    public static void addToFlash(BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("error", bindingResult).addFlashAttribute("hasErrors", true);
     }
 
 }
