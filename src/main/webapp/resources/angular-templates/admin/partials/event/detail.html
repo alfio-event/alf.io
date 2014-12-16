@@ -99,7 +99,7 @@
                         <th></th>
                     </thead>
                     <tbody>
-                        <tr data-ng-repeat="ticket in ::ticketCategory.tickets">
+                        <tr data-ng-repeat="ticket in ::ticketCategory.tickets | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
                             <td data-ng-class-even="'active'"><i data-ng-class="evaluateTicketStatus(ticket.status)"></i></td>
                             <td data-ng-class-even="'active'">{{::ticket.uuid}}</td>
                             <td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
@@ -123,7 +123,7 @@
             </div>
             <div class="wMarginBottom" data-collapse="isTokenViewCollapsed(ticketCategory)">
                 <div class="row">
-                    <div class="col-sm-2" data-ng-repeat="token in ::ticketCategory.tokenStatus"><i class="status-icon" data-ng-class="evaluateClass(token)"></i> {{::token.code}}</div>
+                    <div class="col-sm-2" data-ng-repeat="token in ::ticketCategory.tokenStatus | orderBy: ['status', 'code']"><i class="status-icon" data-ng-class="evaluateClass(token)" title="{{::token.status}}"></i> {{::token.code}}</div>
                 </div>
             </div>
         </div>
