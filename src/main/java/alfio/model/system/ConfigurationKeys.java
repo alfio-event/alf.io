@@ -37,6 +37,10 @@ public enum ConfigurationKeys {
     
     SPECIAL_PRICE_CODE_LENGTH("Length of special price code", false),
     MAX_AMOUNT_OF_TICKETS_BY_RESERVATION("Max amount of tickets", false),
+    
+    //
+    MAILER_TYPE("Mailer type (if not set, default will be smtp)", false),//valid values: smtp | mailgun
+    //
 
     //smtp configuration related keys
     SMTP_HOST("SMTP hostname", false),
