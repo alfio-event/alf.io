@@ -35,6 +35,10 @@ public interface TicketReservationRepository {
 	int updateTicketReservation(@Bind("reservationId") String reservationId, @Bind("status") String status,
 			@Bind("email") String email, @Bind("fullName") String fullName,
 			@Bind("billingAddress") String billingAddress, @Bind("timestamp") ZonedDateTime timestamp);
+
+	@Query("update tickets_reservation set validity = :validity, status = 'OFFLINE_PAYMENT', full_name = :fullName, email_address = :email, billing_address = :billingAddress where id = :reservationId")
+	int postponePayment(@Bind("reservationId") String reservationId, @Bind("validity") Date validity, @Bind("email") String email, @Bind("fullName") String fullName,
+						@Bind("billingAddress") String billingAddress);
 	
 	@Query("update tickets_reservation set status = :status where id = :reservationId")
 	int updateTicketStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);

@@ -28,12 +28,14 @@ import alfio.manager.support.OrderSummary;
 import alfio.manager.support.PDFTemplateBuilder;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.TextTemplateBuilder;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
 import alfio.model.TicketReservation.TicketReservationStatus;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
@@ -59,6 +61,7 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -77,7 +80,7 @@ public class ReservationController {
 	private final MessageSource messageSource;
 	private final TicketRepository ticketRepository;
 	private final TicketCategoryRepository ticketCategoryRepository;
-	//
+	private final ConfigurationManager configurationManager;
 
 	@Autowired
 	public ReservationController(EventRepository eventRepository,
@@ -89,7 +92,8 @@ public class ReservationController {
 								 TemplateManager templateManager,
 								 MessageSource messageSource,
 								 TicketRepository ticketRepository,
-								 TicketCategoryRepository ticketCategoryRepository) {
+								 TicketCategoryRepository ticketCategoryRepository,
+								 ConfigurationManager configurationManager) {
 		this.eventRepository = eventRepository;
 		this.eventManager = eventManager;
 		this.ticketReservationManager = ticketReservationManager;
@@ -100,6 +104,7 @@ public class ReservationController {
 		this.messageSource = messageSource;
 		this.ticketRepository = ticketRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
+		this.configurationManager = configurationManager;
 	}
 
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
@@ -120,6 +125,7 @@ public class ReservationController {
 			model.addAttribute("reservationId", reservationId);
 			model.addAttribute("reservation", reservation.get());
 			model.addAttribute("pageTitle", "reservation-page.header.title");
+			model.addAttribute("delayForOfflinePayment", configurationManager.getIntConfigValue(ConfigurationKeys.OFFLINE_PAYMENT_DAYS, 5));
 			model.addAttribute("event", event.get());
 			if (orderSummary.getOriginalTotalPrice().getPriceWithVAT() > 0) {
 				model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
@@ -238,6 +244,32 @@ public class ReservationController {
 		return redirectReservation(reservation, eventName, reservationId);
 	}
 
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/waitingPayment", method = RequestMethod.GET)
+	public String showWaitingPaymentPage(@PathVariable("eventName") String eventName,
+								   @PathVariable("reservationId") String reservationId,
+								   Model model) {
+
+		Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+		if (!event.isPresent()) {
+			return "redirect:/";
+		}
+
+		Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
+		TicketReservationStatus status = reservation.map(TicketReservation::getStatus).orElse(TicketReservationStatus.PENDING);
+		if(reservation.isPresent() && status == TicketReservationStatus.OFFLINE_PAYMENT) {
+			OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event.get());
+			model.addAttribute("totalPrice", orderSummary.getTotalPrice());
+			model.addAttribute("reservationId", reservationId);
+			model.addAttribute("pageTitle", "reservation-page-waiting.header.title");
+			model.addAttribute("bankAccount", configurationManager.getStringConfigValue(ConfigurationKeys.BANK_ACCOUNT_NR).orElse(""));
+			model.addAttribute("expires", ZonedDateTime.ofInstant(reservation.get().getValidity().toInstant(), event.get().getZoneId()));
+			model.addAttribute("event", event.get());
+			return "/event/reservation-waiting-for-payment";
+		}
+
+		return redirectReservation(reservation, eventName, reservationId);
+	}
+
 
 
 	private String redirectReservation(Optional<TicketReservation> ticketReservation, String eventName, String reservationId) {
@@ -252,6 +284,8 @@ public class ReservationController {
 				return baseUrl + "/book";
 			case COMPLETE:
 				return baseUrl + "/success";
+			case OFFLINE_PAYMENT:
+				return baseUrl + "/waitingPayment";
 			case IN_PAYMENT:
 			case STUCK:
 				return baseUrl + "/failure";
@@ -273,10 +307,7 @@ public class ReservationController {
         Event event = eventOptional.get();
 		Optional<TicketReservation> ticketReservation = ticketReservationManager.findById(reservationId);
 		if (!ticketReservation.isPresent()) {
-			model.addAttribute("event", event);
-			model.addAttribute("reservationId", reservationId);
-			model.addAttribute("pageTitle", "reservation-page-not-found.header.title");
-			return "/event/reservation-page-not-found";
+			return redirectReservation(ticketReservation, eventName, reservationId);
 		}
 		if (paymentForm.shouldCancelReservation()) {
 			ticketReservationManager.cancelPendingReservation(reservationId);
@@ -287,13 +318,13 @@ public class ReservationController {
 			bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
 		}
 		final TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-		paymentForm.validate(bindingResult, reservationCost);
+		paymentForm.validate(bindingResult, reservationCost, event.getMultiplePaymentMethods());
 		if (bindingResult.hasErrors()) {
 			SessionUtil.addToFlash(bindingResult, redirectAttributes);
 			return redirectReservation(ticketReservation, eventName, reservationId);
 		}
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getStripeToken(), event, reservationId, paymentForm.getEmail(),
-                paymentForm.getFullName(), paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request));
+                paymentForm.getFullName(), paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request), Optional.ofNullable(paymentForm.getPaymentMethod()));
 
         if(!status.isSuccessful()) {
             String errorMessageCode = status.getErrorCode().get();

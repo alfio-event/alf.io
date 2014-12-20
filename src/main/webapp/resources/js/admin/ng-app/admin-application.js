@@ -4,8 +4,9 @@
     var BASE_TEMPLATE_URL = "/admin/partials";
     var BASE_STATIC_URL = "/resources/angular-templates/admin/partials";
     var PAYMENT_PROXY_DESCRIPTIONS = {
-        "STRIPE": "Credit card payments",
-        "ON_SITE": "On site (cash) payment"
+        'STRIPE': 'Credit card payments',
+        'ON_SITE': 'On site (cash) payment',
+        'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)'
     };
     var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages']);
 

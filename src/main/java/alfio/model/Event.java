@@ -16,7 +16,7 @@
  */
 package alfio.model;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper;
+import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -57,26 +57,26 @@ public class Event {
     private final ZoneId timeZone;
 
 
-    public Event(@ConstructorAnnotationRowMapper.Column("id") int id,
-                 @ConstructorAnnotationRowMapper.Column("short_name") String shortName,
-                 @ConstructorAnnotationRowMapper.Column("description") String description,
-                 @ConstructorAnnotationRowMapper.Column("location") String location,
-                 @ConstructorAnnotationRowMapper.Column("latitude") String latitude,
-                 @ConstructorAnnotationRowMapper.Column("longitude") String longitude,
-                 @ConstructorAnnotationRowMapper.Column("start_ts") ZonedDateTime begin,
-                 @ConstructorAnnotationRowMapper.Column("end_ts") ZonedDateTime end,
-                 @ConstructorAnnotationRowMapper.Column("time_zone") String timeZone,
-                 @ConstructorAnnotationRowMapper.Column("website_url") String websiteUrl,
-                 @ConstructorAnnotationRowMapper.Column("website_t_c_url") String termsAndConditionsUrl,
-                 @ConstructorAnnotationRowMapper.Column("image_url") String imageUrl,
-                 @ConstructorAnnotationRowMapper.Column("regular_price_cts") int regularPriceInCents,
-                 @ConstructorAnnotationRowMapper.Column("currency") String currency,
-                 @ConstructorAnnotationRowMapper.Column("available_seats") int availableSeats,
-                 @ConstructorAnnotationRowMapper.Column("vat_included") boolean vatIncluded,
-                 @ConstructorAnnotationRowMapper.Column("vat") BigDecimal vat,
-                 @ConstructorAnnotationRowMapper.Column("allowed_payment_proxies") String allowedPaymentProxies,
-                 @ConstructorAnnotationRowMapper.Column("private_key") String privateKey,
-                 @ConstructorAnnotationRowMapper.Column("org_id") int organizationId) {
+    public Event(@Column("id") int id,
+                 @Column("short_name") String shortName,
+                 @Column("description") String description,
+                 @Column("location") String location,
+                 @Column("latitude") String latitude,
+                 @Column("longitude") String longitude,
+                 @Column("start_ts") ZonedDateTime begin,
+                 @Column("end_ts") ZonedDateTime end,
+                 @Column("time_zone") String timeZone,
+                 @Column("website_url") String websiteUrl,
+                 @Column("website_t_c_url") String termsAndConditionsUrl,
+                 @Column("image_url") String imageUrl,
+                 @Column("regular_price_cts") int regularPriceInCents,
+                 @Column("currency") String currency,
+                 @Column("available_seats") int availableSeats,
+                 @Column("vat_included") boolean vatIncluded,
+                 @Column("vat") BigDecimal vat,
+                 @Column("allowed_payment_proxies") String allowedPaymentProxies,
+                 @Column("private_key") String privateKey,
+                 @Column("org_id") int organizationId) {
         this.websiteUrl = websiteUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
         this.imageUrl = imageUrl;
@@ -163,6 +163,14 @@ public class Event {
     
     public boolean getImageIsPresent() {
     	return StringUtils.isNotBlank(imageUrl);
+    }
+
+    public boolean getMultiplePaymentMethods() {
+        return allowedPaymentProxies.size() > 1;
+    }
+
+    public PaymentProxy getFirstPaymentMethod() {
+        return allowedPaymentProxies.get(0);//it is guaranteed that this list is not empty.
     }
 
 }

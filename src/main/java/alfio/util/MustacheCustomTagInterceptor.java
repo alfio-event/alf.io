@@ -16,6 +16,7 @@
  */
 package alfio.util;
 
+import alfio.model.transaction.PaymentProxy;
 import com.samskivert.mustache.Mustache;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.Errors;
@@ -100,6 +101,19 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 		};
 	};
 
+	private static final Mustache.Lambda IS_PAYMENT_METHOD = (frag, out) -> {
+		String execution = frag.execute().trim();
+		Matcher matcher = ARG_PATTERN.matcher(execution);
+		if(matcher.find()) {
+			String[] values = matcher.group(1).split(",");
+			Optional<PaymentProxy> first = PaymentProxy.safeValueOf(values[0]);
+			Optional<PaymentProxy> second = PaymentProxy.safeValueOf(values[1]);
+			if(first.isPresent() && second.isPresent() && first.get().equals(second.get())) {
+				out.write(execution.substring(matcher.end(1) + 1));
+			}
+		}
+	};
+
 	private static Function<ModelAndView, Mustache.Lambda> FIELD_ERROR = (mv) -> {
 		return (frag, out) -> {
 			Errors err = (Errors) mv.getModelMap().get("error");
@@ -124,6 +138,7 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 			modelAndView.addObject("format-date", FORMAT_DATE);
 			modelAndView.addObject("field-has-error", HAS_ERROR.apply(modelAndView));
 			modelAndView.addObject("field-error", FIELD_ERROR.apply(modelAndView));
+			modelAndView.addObject("is-payment-method", IS_PAYMENT_METHOD);
 		}
 
 		super.postHandle(request, response, handler, modelAndView);

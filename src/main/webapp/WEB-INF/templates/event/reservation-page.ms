@@ -7,7 +7,9 @@
 {{^orderSummary.free}}
  <script src="https://js.stripe.com/v2/"></script>
  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
- <script src="{{request.contextPath}}/resources/js/event/reservation-page.js" 
+ <script src="{{request.contextPath}}/resources/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+ <script src="{{request.contextPath}}/resources/js/event/bootstrap-handler.js"></script>
+ <script src="{{request.contextPath}}/resources/js/event/reservation-page.js"
  	id="stripe-key" 
  	data-stripe-key="{{stripe_p_key}}" 
  	
@@ -79,7 +81,7 @@
 		<div class="alert alert-danger" role="alert">
 			<p><strong>{{#i18n}}{{.}}{{/i18n}}</strong></p>
 		</div>
-{{/error.globalErrors}}
+	{{/error.globalErrors}}
 {{/hasErrors}}
 
 <div class="alert alert-info" data-validity="{{reservation.validity.time}}" data-message="{{#i18n}}reservation-page.time-for-completition{{/i18n}}" data-message-time-elapsed="{{#i18n}}error.STEP_2_ORDER_HAS_EXPIRED{{/i18n}}" id="validity">
@@ -106,45 +108,38 @@
 		<textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450">{{paymentForm.billingAddress}}</textarea>
 		{{#field-has-error}}[billingAddress]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddress{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
 	</div>
-	
-	<h2>{{#i18n}}reservation-page.payment{{/i18n}}
-	
-		<a href="https://stripe.com/" target="_blank"><img src="{{request.contextPath}}/resources/images/outline.png"></a>
-	</h2>
+	<h2>{{#i18n}}reservation-page.payment{{/i18n}}</h2>
 
-	<div class="alert alert-danger payment-errors hide" role="alert">
-	</div>
-
-	<div class="form-group">
-		<label for="card-name" class="control-label">{{#i18n}}reservation-page.cardholder.name{{/i18n}}</label>
-		<input type="text" size="20" data-stripe="name" required class="form-control" id="card-name" autocomplete="name">
-	</div>
-	<div class="form-group">
-		<label for="card-number" class="control-label">{{#i18n}}reservation-page.card-number{{/i18n}}</label>
-		<input type="text" size="20" data-stripe="number" required class="form-control" id="card-number" autocomplete="off">
-	</div>
- 
-	<div class="row">
-		<div class="col-md-4">
-			<div class="form-group">
-				<label for="card-mm">{{#i18n}}reservation-page.expiration-month{{/i18n}}</label>
-				<input type="text" class="form-control" size="2" data-stripe="exp-month" required maxlength="2" autocomplete="off" id="card-mm" pattern="\d+">
+		{{#event.multiplePaymentMethods}}
+			<div class="btn-group" data-toggle="buttons">
+				{{#event.allowedPaymentProxies}}
+				<label class="btn btn-default tooltip-handler" {{#is-payment-method}}[STRIPE,{{.}}]  title="Powered by Stripe"{{/is-payment-method}}>
+					<input type="radio" required name="paymentMethod" id="option-{{.}}" data-payment-method="{{.}}" autocomplete="off" value="{{.}}">
+					{{#is-payment-method}}[STRIPE,{{.}}]
+						<i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
+					{{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
+					{{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
+				</label>
+				{{/event.allowedPaymentProxies}}
 			</div>
-		</div>
-		<div class="col-md-4">
-			<div class="form-group">
-				<label for="card-yyyy">{{#i18n}}reservation-page.expiration-year{{/i18n}}</label>
-				<input type="text" class="form-control" size="4" data-stripe="exp-year" required maxlength="4" autocomplete="off" id="card-yyyy" pattern="\d+">
+		{{/event.multiplePaymentMethods}}
+		{{^event.multiplePaymentMethods}}
+			{{#event.firstPaymentMethod}}
+				<h4 class="wMarginTop">
+				{{#is-payment-method}}[STRIPE,{{.}}]
+					<i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
+				{{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
+				{{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
+                </h4>
+			{{/event.firstPaymentMethod}}
+		{{/event.multiplePaymentMethods}}
+		{{#event.allowedPaymentProxies}}
+			<div class="payment-method-detail" id="payment-method-{{.}}">
+				{{#is-payment-method}}[STRIPE,{{.}}]{{> /event/payment/stripe }}{{/is-payment-method}}
+				{{#is-payment-method}}[ON_SITE,{{.}}]{{> /event/payment/on-site }}{{/is-payment-method}}
+				{{#is-payment-method}}[OFFLINE,{{.}}]{{> /event/payment/offline }}{{/is-payment-method}}
 			</div>
-		</div>
-		<div class="col-md-4">
-			<div class="form-group">
-				<label for="card-cvc">{{#i18n}}reservation-page.cvc{{/i18n}}</label>
-				<input type="text" class="form-control" size="4" data-stripe="cvc" required id="card-cvc" autocomplete="off">
-			</div>
-		</div>
-	</div>
-
+		{{/event.allowedPaymentProxies}}
 	{{/orderSummary.free}}
 
     <div class="checkbox">

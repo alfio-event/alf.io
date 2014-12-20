@@ -16,9 +16,15 @@
  */
 package alfio.model.transaction;
 
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Arrays;
+import java.util.Optional;
+
 public enum PaymentProxy {
     STRIPE("stripe.com"),
-    ON_SITE("on-site payment");
+    ON_SITE("on-site payment"),
+    OFFLINE("offline payment");
 
     private final String description;
 
@@ -28,6 +34,14 @@ public enum PaymentProxy {
 
     public String getDescription() {
         return description;
+    }
+
+    public String getKey() {
+        return name();
+    }
+
+    public static Optional<PaymentProxy> safeValueOf(String name) {
+        return Arrays.stream(values()).filter(p -> StringUtils.equals(p.name(), name)).findFirst();
     }
 
 }

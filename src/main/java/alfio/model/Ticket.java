@@ -35,7 +35,7 @@ import java.util.Optional;
 public class Ticket {
 
     public enum TicketStatus {
-        FREE, PENDING, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED, INVALIDATED
+        FREE, PENDING, TO_BE_PAID, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED, INVALIDATED
     }
 
     private final int id;

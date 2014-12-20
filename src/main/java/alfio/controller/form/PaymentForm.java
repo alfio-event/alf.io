@@ -17,6 +17,7 @@
 package alfio.controller.form;
 
 import alfio.manager.TicketReservationManager;
+import alfio.model.transaction.PaymentProxy;
 import alfio.util.ErrorsCode;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +37,7 @@ public class PaymentForm {
 	private String billingAddress;
 	private Boolean cancelReservation;
 	private Boolean termAndConditionsAccepted;
+	private PaymentProxy paymentMethod;
 
 	private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
 			String value, int maxLength) {
@@ -44,9 +46,14 @@ public class PaymentForm {
 		}
 	}
 
-	public void validate(BindingResult bindingResult, TicketReservationManager.TotalPrice reservationCost) {
+	public void validate(BindingResult bindingResult, TicketReservationManager.TotalPrice reservationCost, boolean multiplePaymentMethods) {
 
-		if (reservationCost.getPriceWithVAT() > 0 && StringUtils.isBlank(stripeToken)) {
+		Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentMethod);
+		PaymentProxy paymentProxy = paymentProxyOptional.orElse(PaymentProxy.STRIPE);
+		boolean priceGreaterThanZero = reservationCost.getPriceWithVAT() > 0;
+		if (multiplePaymentMethods && priceGreaterThanZero && !paymentProxyOptional.isPresent()) {
+			bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
+		} else if (priceGreaterThanZero && (paymentProxy == PaymentProxy.STRIPE && StringUtils.isBlank(stripeToken))) {
 			bindingResult.reject(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
 		}
 

@@ -27,6 +27,7 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.TicketWithStatistic;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.MonetaryUtil;
@@ -35,6 +36,7 @@ import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +50,8 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
+import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
 import static alfio.util.MonetaryUtil.formatCents;
 import static alfio.util.OptionalWrapper.optionally;
 
@@ -187,20 +191,33 @@ public class TicketReservationManager {
 
     public PaymentResult confirm(String gatewayToken, Event event, String reservationId,
 								 String email, String fullName, String billingAddress,
-								 TotalPrice reservationCost, Optional<String> specialPriceSessionId) {
+								 TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method) {
         try {
+			PaymentProxy paymentProxy = method.orElse(PaymentProxy.STRIPE);
             PaymentResult paymentResult;
-            if(reservationCost.getPriceWithVAT() > 0) {
-                transitionToInPayment(reservationId, email, fullName, billingAddress);
-                paymentResult = paymentManager.processPayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, fullName, billingAddress);
-                if(!paymentResult.isSuccessful()) {
-                    reTransitionToPending(reservationId);
-                    return paymentResult;
-                }
-            } else {
+			if(reservationCost.getPriceWithVAT() > 0) {
+				switch(paymentProxy) {
+					case STRIPE:
+						transitionToInPayment(reservationId, email, fullName, billingAddress);
+						paymentResult = paymentManager.processPayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, fullName, billingAddress);
+						if(!paymentResult.isSuccessful()) {
+							reTransitionToPending(reservationId);
+							return paymentResult;
+						}
+						break;
+					case OFFLINE:
+						transitionToOfflinePayment(reservationId, email, fullName, billingAddress);
+						return PaymentResult.successful("not-paid");
+					case ON_SITE:
+						paymentResult = PaymentResult.successful("not-paid");
+						break;
+					default:
+						throw new IllegalArgumentException("Payment proxy "+paymentProxy+ " not recognized");
+				}
+			} else {
                 paymentResult = PaymentResult.successful("not-paid");
             }
-            completeReservation(reservationId, email, fullName, billingAddress, specialPriceSessionId);
+            completeReservation(reservationId, email, fullName, billingAddress, specialPriceSessionId, paymentProxy);
             return paymentResult;
         } catch(Exception ex) {
             //it is guaranteed that in this case we're dealing with "local" error (e.g. database failure),
@@ -212,14 +229,19 @@ public class TicketReservationManager {
     }
 
     private void transitionToInPayment(String reservationId, String email, String fullName, String billingAddress) {
-    	int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.IN_PAYMENT.toString(), email, fullName, billingAddress, null);
+    	int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, IN_PAYMENT.toString(), email, fullName, billingAddress, null);
 		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
     }
-    
+
+	private void transitionToOfflinePayment(String reservationId, String email, String fullName, String billingAddress) {
+		Date newExpiration = DateUtils.addDays(DateUtils.truncate(new Date(), Calendar.DATE), configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5));
+    	int updatedReservation = ticketReservationRepository.postponePayment(reservationId, newExpiration, email, fullName, billingAddress);
+		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
+    }
+
 	private void reTransitionToPending(String reservationId) {
 		int updatedReservation = ticketReservationRepository.updateTicketStatus(reservationId, TicketReservationStatus.PENDING.toString());
 		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
-		
 	}
     
 	//check internal consistency between the 3 values
@@ -249,19 +271,21 @@ public class TicketReservationManager {
 	 * @param billingAddress
 	 * @param specialPriceSessionId
 	 */
-	private void completeReservation(String reservationId, String email, String fullName, String billingAddress, Optional<String> specialPriceSessionId) {
-		int updatedTickets = ticketRepository.updateTicketStatus(reservationId, TicketStatus.ACQUIRED.toString());
-		Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
-		specialPriceRepository.updateStatusForReservation(Collections.singletonList(reservationId), Status.TAKEN.toString());
-        ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
-		int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, billingAddress, timestamp);
-		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
+	private void completeReservation(String reservationId, String email, String fullName, String billingAddress, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
+		if(paymentProxy != PaymentProxy.OFFLINE) {
+			TicketStatus ticketStatus = paymentProxy == PaymentProxy.STRIPE ? TicketStatus.ACQUIRED : TicketStatus.TO_BE_PAID;
+			int updatedTickets = ticketRepository.updateTicketStatus(reservationId, ticketStatus.toString());
+			Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
+			specialPriceRepository.updateStatusForReservation(Collections.singletonList(reservationId), Status.TAKEN.toString());
+			ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
+			int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, billingAddress, timestamp);
+			Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
+		}
 		//cleanup unused special price codes...
 		specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
 	}
 
-
-	public void cleanupExpiredPendingReservation(Date expirationDate) {
+	public void cleanupExpiredReservations(Date expirationDate) {
 		List<String> expiredReservationIds = ticketReservationRepository.findExpiredReservation(expirationDate);
 		if(expiredReservationIds.isEmpty()) {
 			return;

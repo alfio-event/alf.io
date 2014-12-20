@@ -16,7 +16,7 @@
  */
 package alfio.model;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper;
+import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 import java.time.ZonedDateTime;
@@ -26,7 +26,7 @@ import java.util.Date;
 public class TicketReservation {
 
 	public enum TicketReservationStatus {
-		PENDING, IN_PAYMENT, COMPLETE, STUCK
+		PENDING, IN_PAYMENT, OFFLINE_PAYMENT, COMPLETE, STUCK
 	}
 
 	private final String id;
@@ -37,13 +37,13 @@ public class TicketReservation {
 	private final String billingAddress;
     private final ZonedDateTime confirmationTimestamp;
 	
-	public TicketReservation(@ConstructorAnnotationRowMapper.Column("id") String id,
-                             @ConstructorAnnotationRowMapper.Column("validity") Date validity,
-                             @ConstructorAnnotationRowMapper.Column("status") TicketReservationStatus status,
-                             @ConstructorAnnotationRowMapper.Column("full_name") String fullName,
-                             @ConstructorAnnotationRowMapper.Column("email_address") String email,
-                             @ConstructorAnnotationRowMapper.Column("billing_address") String billingAddress,
-                             @ConstructorAnnotationRowMapper.Column("confirmation_ts") ZonedDateTime confirmationTimestamp) {
+	public TicketReservation(@Column("id") String id,
+                             @Column("validity") Date validity,
+                             @Column("status") TicketReservationStatus status,
+                             @Column("full_name") String fullName,
+                             @Column("email_address") String email,
+                             @Column("billing_address") String billingAddress,
+                             @Column("confirmation_ts") ZonedDateTime confirmationTimestamp) {
 		this.id = id;
 		this.validity = validity;
 		this.status = status;

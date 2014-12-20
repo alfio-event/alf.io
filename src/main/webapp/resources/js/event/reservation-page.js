@@ -105,11 +105,14 @@
 			 
 			// Disable the submit button to prevent repeated clicks
 			$form.find('button').prop('disabled', true);
-		 
-			Stripe.card.createToken($form, stripeResponseHandler);
-	 
-			// Prevent the form from submitting with the default action
-			return false;
+
+			var selectedPaymentMethod = $form.find('input[name=paymentMethod]');
+			if(selectedPaymentMethod.length === 0 || selectedPaymentMethod.find('[selected]').val() === 'STRIPE') {
+				Stripe.card.createToken($form, stripeResponseHandler);
+				// Prevent the form from submitting with the default action
+				return false;
+			}
+			return true;
 		}
 		
 		
@@ -132,11 +135,7 @@
 		if(hasStripe) {
 			$('#payment-form').submit(submitForm);
 		}
-		
-		
-		
-		
-		
+
 		
 		// based on http://tjvantoll.com/2012/08/05/html5-form-validation-showing-all-error-messages/
 		// http://stackoverflow.com/questions/13798313/set-custom-html5-required-field-validation-message
@@ -185,9 +184,27 @@
 					$(this).parent().parent().parent().removeClass('has-error');
 				}
 			}
-		})
+		});
+
+		var paymentMethod = $('input[name=paymentMethod]');
+		if(paymentMethod.length > 0) {
+			$('#payment-method-STRIPE').find('input').removeAttr('required');
+			$('.payment-method-detail').hide();
+
+			paymentMethod.change(function() {
+				var method = $(this).attr('data-payment-method');
+				$('.payment-method-detail').hide();
+				$('#payment-method-'+method).show();
+				if(method === 'STRIPE') {
+
+					var inputFields = $('#payment-method-STRIPE').find('input');
+					inputFields.attr('required', true);
+					inputFields.first().focus();
+
+				} else {
+					$('#payment-method-STRIPE').find('input').val('').removeAttr('required');
+				}
+			});
+		}
 	});
-	
-	
-	
 })();

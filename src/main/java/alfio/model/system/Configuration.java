@@ -16,7 +16,7 @@
  */
 package alfio.model.system;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper;
+import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 @Getter
@@ -28,10 +28,10 @@ public class Configuration {
     private final String description;
 
 
-    public Configuration(@ConstructorAnnotationRowMapper.Column("id") int id,
-                         @ConstructorAnnotationRowMapper.Column("c_key") String key,
-                         @ConstructorAnnotationRowMapper.Column("c_value") String value,
-                         @ConstructorAnnotationRowMapper.Column("description") String description) {
+    public Configuration(@Column("id") int id,
+                         @Column("c_key") String key,
+                         @Column("c_value") String value,
+                         @Column("description") String description) {
         this.id = id;
         this.key = key;
         this.value = value;
