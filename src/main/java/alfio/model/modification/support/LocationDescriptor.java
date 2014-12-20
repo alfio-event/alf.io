@@ -33,7 +33,7 @@ import java.util.TimeZone;
 public class LocationDescriptor {
 
     private static final String MAP_URL = "https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&key=${key}&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C${latitude},${longitude}";
-    private static final String OPENSTREETMAP = "http://tyler-demo.herokuapp.com/?center=${latitude},${longitude}&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C${latitude},${longitude}";
+    private static final String OPENSTREETMAP = "https://tyler-demo.herokuapp.com/?center=${latitude},${longitude}&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C${latitude},${longitude}";
 
     private final String timeZone;
     private final String latitude;

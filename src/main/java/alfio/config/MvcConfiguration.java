@@ -121,9 +121,14 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     		@Override
     		public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
     				ModelAndView modelAndView) throws Exception {
-    			// TODO: complete the policy: to add: connect-src, style-src (other?)
     			// http://www.html5rocks.com/en/tutorials/security/content-security-policy/
-    			response.addHeader("Content-Security-Policy", "script-src 'self' https://ajax.googleapis.com/ https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/");
+    			// lockdown policy
+    			response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
+    					+ " script-src 'self' https://ajax.googleapis.com/ https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/;"//
+    					+ " style-src 'self';"//
+    					+ " img-src 'self' https:;"//
+    					+ " font-src 'self';"//
+    					+ " connect-src 'self' https://api.stripe.com;"); //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
     		}
     	};
 	}
