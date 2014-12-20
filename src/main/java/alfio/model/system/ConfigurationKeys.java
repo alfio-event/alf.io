@@ -44,8 +44,16 @@ public enum ConfigurationKeys {
     SMTP_PROTOCOL("SMTP Protocol (smtp or smtps)", false), //smtp or smtps
     SMTP_USERNAME("SMTP Username", false),
     SMTP_PASSWORD("SMTP Password", false),
-    SMTP_FROM_EMAIL("E-Mail sender", false),
+    SMTP_FROM_EMAIL("SMTP E-Mail sender", false),
     SMTP_PROPERTIES("SMTP Properties", false),
+    //
+    
+    //mailgun configuration related info
+    MAILGUN_KEY("Mailgun key", false),
+    MAILGUN_DOMAIN("Mailgun domain", false),
+    MAILGUN_FROM("Mailgun E-Mail sender", false),
+    //
+    
     GOOGLE_ANALYTICS_KEY("Google Analytics tracking ID", false);
 
     private static final Predicate<ConfigurationKeys> INTERNAL = ConfigurationKeys::isInternal;

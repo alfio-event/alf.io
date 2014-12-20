@@ -18,7 +18,6 @@ package alfio.manager;
 
 import alfio.model.TicketCategory;
 import alfio.repository.SpecialPriceRepository;
-import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
@@ -28,7 +27,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 
