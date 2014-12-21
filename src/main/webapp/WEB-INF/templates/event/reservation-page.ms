@@ -131,6 +131,7 @@
 				{{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
 				{{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
                 </h4>
+				<input type="hidden" name="paymentMethod" value="{{.}}">
 			{{/event.firstPaymentMethod}}
 		{{/event.multiplePaymentMethods}}
 		{{#event.allowedPaymentProxies}}

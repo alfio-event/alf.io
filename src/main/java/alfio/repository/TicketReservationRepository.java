@@ -31,12 +31,12 @@ public interface TicketReservationRepository {
 	@Query("insert into tickets_reservation(id, validity, status) values (:id, :validity, 'PENDING')")
 	int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity);
 
-	@Query("update tickets_reservation set status = :status, full_name = :fullName, email_address = :email, billing_address = :billingAddress, confirmation_ts = :timestamp where id = :reservationId")
+	@Query("update tickets_reservation set status = :status, full_name = :fullName, email_address = :email, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod where id = :reservationId")
 	int updateTicketReservation(@Bind("reservationId") String reservationId, @Bind("status") String status,
 			@Bind("email") String email, @Bind("fullName") String fullName,
-			@Bind("billingAddress") String billingAddress, @Bind("timestamp") ZonedDateTime timestamp);
+			@Bind("billingAddress") String billingAddress, @Bind("timestamp") ZonedDateTime timestamp, @Bind("paymentMethod") String paymentMethod);
 
-	@Query("update tickets_reservation set validity = :validity, status = 'OFFLINE_PAYMENT', full_name = :fullName, email_address = :email, billing_address = :billingAddress where id = :reservationId")
+	@Query("update tickets_reservation set validity = :validity, status = 'OFFLINE_PAYMENT', payment_method = 'OFFLINE', full_name = :fullName, email_address = :email, billing_address = :billingAddress where id = :reservationId")
 	int postponePayment(@Bind("reservationId") String reservationId, @Bind("validity") Date validity, @Bind("email") String email, @Bind("fullName") String fullName,
 						@Bind("billingAddress") String billingAddress);
 	

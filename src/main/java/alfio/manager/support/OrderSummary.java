@@ -28,9 +28,23 @@ public class OrderSummary {
     private final boolean free;
     private final String totalPrice;
     private final String totalVAT;
+    private final boolean waitingForPayment;
+    private final boolean cashPayment;
 
     /* lol jmustache */
     public boolean getFree() {
         return free;
+    }
+
+    public boolean getWaitingForPayment() {
+        return waitingForPayment;
+    }
+
+    public boolean getCashPayment() {
+        return cashPayment;
+    }
+
+    public boolean getNotYetPaid() {
+        return waitingForPayment || cashPayment;
     }
 }

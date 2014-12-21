@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -46,11 +47,12 @@ public class PaymentForm {
 		}
 	}
 
-	public void validate(BindingResult bindingResult, TicketReservationManager.TotalPrice reservationCost, boolean multiplePaymentMethods) {
+	public void validate(BindingResult bindingResult, TicketReservationManager.TotalPrice reservationCost, List<PaymentProxy> allowedPaymentMethods) {
 
 		Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentMethod);
-		PaymentProxy paymentProxy = paymentProxyOptional.orElse(PaymentProxy.STRIPE);
+		PaymentProxy paymentProxy = paymentProxyOptional.filter(allowedPaymentMethods::contains).orElse(PaymentProxy.STRIPE);
 		boolean priceGreaterThanZero = reservationCost.getPriceWithVAT() > 0;
+		boolean multiplePaymentMethods = allowedPaymentMethods.size() > 1;
 		if (multiplePaymentMethods && priceGreaterThanZero && !paymentProxyOptional.isPresent()) {
 			bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
 		} else if (priceGreaterThanZero && (paymentProxy == PaymentProxy.STRIPE && StringUtils.isBlank(stripeToken))) {

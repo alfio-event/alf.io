@@ -107,7 +107,9 @@
 			$form.find('button').prop('disabled', true);
 
 			var selectedPaymentMethod = $form.find('input[name=paymentMethod]');
-			if(selectedPaymentMethod.length === 0 || selectedPaymentMethod.find('[selected]').val() === 'STRIPE') {
+			if(selectedPaymentMethod.length === 0 ||
+				(selectedPaymentMethod.length === 1 && selectedPaymentMethod.val() === 'STRIPE') ||
+				selectedPaymentMethod.filter(':checked').val() === 'STRIPE') {
 				Stripe.card.createToken($form, stripeResponseHandler);
 				// Prevent the form from submitting with the default action
 				return false;
@@ -187,7 +189,7 @@
 		});
 
 		var paymentMethod = $('input[name=paymentMethod]');
-		if(paymentMethod.length > 0) {
+		if(paymentMethod.length > 1) {
 			$('#payment-method-STRIPE').find('input').removeAttr('required');
 			$('.payment-method-detail').hide();
 
@@ -196,7 +198,6 @@
 				$('.payment-method-detail').hide();
 				$('#payment-method-'+method).show();
 				if(method === 'STRIPE') {
-
 					var inputFields = $('#payment-method-STRIPE').find('input');
 					inputFields.attr('required', true);
 					inputFields.first().focus();

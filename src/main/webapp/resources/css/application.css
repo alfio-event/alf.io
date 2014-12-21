@@ -87,3 +87,8 @@ body {
 	counter-increment: ticket-counter;
   	content: counter(ticket-counter)
 }
+
+.ticket-header-col {
+	width:150px
+}
+

@@ -173,4 +173,8 @@ public class Event {
         return allowedPaymentProxies.get(0);//it is guaranteed that this list is not empty.
     }
 
+    public boolean supportsPaymentMethod(PaymentProxy paymentProxy) {
+        return allowedPaymentProxies.contains(paymentProxy);
+    }
+
 }

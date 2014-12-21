@@ -23,7 +23,7 @@
 
 <table>
 	<tr>
-		<td style="width:150px">{{#i18n}}ticket.date-time{{/i18n}}</td>
+		<td class="ticket-header-col">{{#i18n}}ticket.date-time{{/i18n}}</td>
 		<td>
 			{{#event.sameDay}}
 				{{#i18n}}event-days.same-day 
@@ -58,7 +58,7 @@
 <h2>{{#i18n}}ticket.ticket{{/i18n}}</h2>
 <table>
 	<tr>
-		<td style="width:150px">{{#i18n}}ticket.holder{{/i18n}}</td>
+		<td class="ticket-header-col">{{#i18n}}ticket.holder{{/i18n}}</td>
 		<td>{{ticket.fullName}} &lt;{{ticket.email}}&gt;</td>
 	</tr>
 	<tr>
@@ -76,6 +76,10 @@
 </table>
 
 <p class="text-center"><img src="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{ticket.uuid}}/code.png"></p>
+
+{{^alreadyPaid}}
+	<h3 class="text-center">{{#i18n}}ticket.payment-required{{/i18n}}</h3>
+{{/alreadyPaid}}
 
 
 <div><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{ticket.uuid}}/download-ticket" class="btn btn-link">{{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div> 

@@ -23,6 +23,7 @@ import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.user.OrganizationRepository;
 import com.google.zxing.WriterException;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static alfio.util.TicketUtil.createQRCode;
 
@@ -93,6 +95,7 @@ public final class TemplateProcessor {
             model.put("event", event);
             model.put("organization", organization);
             model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
+            model.put("hasBeenPaid", Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE) == PaymentProxy.STRIPE);
 
             String page = templateManager.render("/alfio/templates/ticket.ms", model, request);
 

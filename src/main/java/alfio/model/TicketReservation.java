@@ -17,6 +17,7 @@
 package alfio.model;
 
 import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
+import alfio.model.transaction.PaymentProxy;
 import lombok.Getter;
 
 import java.time.ZonedDateTime;
@@ -36,14 +37,16 @@ public class TicketReservation {
 	private final String email;
 	private final String billingAddress;
     private final ZonedDateTime confirmationTimestamp;
+	private final PaymentProxy paymentMethod;
 	
 	public TicketReservation(@Column("id") String id,
-                             @Column("validity") Date validity,
-                             @Column("status") TicketReservationStatus status,
-                             @Column("full_name") String fullName,
-                             @Column("email_address") String email,
-                             @Column("billing_address") String billingAddress,
-                             @Column("confirmation_ts") ZonedDateTime confirmationTimestamp) {
+							 @Column("validity") Date validity,
+							 @Column("status") TicketReservationStatus status,
+							 @Column("full_name") String fullName,
+							 @Column("email_address") String email,
+							 @Column("billing_address") String billingAddress,
+							 @Column("confirmation_ts") ZonedDateTime confirmationTimestamp,
+							 @Column("payment_method") PaymentProxy paymentMethod) {
 		this.id = id;
 		this.validity = validity;
 		this.status = status;
@@ -51,7 +54,8 @@ public class TicketReservation {
 		this.email = email;
 		this.billingAddress = billingAddress;
         this.confirmationTimestamp = confirmationTimestamp;
-    }
+		this.paymentMethod = paymentMethod;
+	}
 
     public boolean isStuck() {
         return status == TicketReservationStatus.STUCK;

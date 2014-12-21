@@ -1,6 +1,7 @@
 {{#i18n}}email.hello [{{ticketReservation.fullName}}]{{/i18n}}
 
-{{#i18n}}email-confirmation.completed [{{event.shortName}}] [{{reservationUrl}}]{{/i18n}} 
+{{^orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.completed [{{event.shortName}}] [{{reservationUrl}}]{{/i18n}}{{/orderSummary.waitingForPayment}}
+{{#orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.waiting-for-payment [{{event.shortName}}] [{{reservationUrl}}]{{/i18n}}{{/orderSummary.waitingForPayment}}
 
 #### {{#i18n}}email-confirmation.reservation-summary{{/i18n}} ####
 
@@ -11,6 +12,8 @@
 {{#i18n}}reservation-page.total{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}
 {{^orderSummary.free}}{{#event.vatIncluded}}
 {{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}: {{orderSummary.totalVAT}} {{event.currency}}{{/event.vatIncluded}}{{/orderSummary.free}}
+
+{{#orderSummary.notYetPaid}}{{#i18n}}reservation.not-yet-paid [{{orderSummary.totalPrice}} {{event.currency}}]{{/i18n}}{{/orderSummary.notYetPaid}}
 
 {{#hasVat}}{{#i18n}}email-confirmation.vatNr [{{vatNr}}]{{/i18n}}{{/hasVat}}
 

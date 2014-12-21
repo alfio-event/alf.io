@@ -79,5 +79,8 @@
 			</tr>
 		</table>
 		<p style="text-align:center"><img src="{{qrCodeDataUri}}"/></p>
+		{{^hasBeenPaid}}
+			<h3 style="text-align:center"><strong>{{#i18n}}ticket.payment-required{{/i18n}}</strong></h3>
+		{{/hasBeenPaid}}
 	</body>
 </html>

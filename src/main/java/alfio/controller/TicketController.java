@@ -25,6 +25,7 @@ import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -84,13 +85,15 @@ public class TicketController {
 		
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId(), data.getLeft().getId());
 		Organization organization = organizationRepository.getById(data.getLeft().getOrganizationId());
-		
+
+		TicketReservation reservation = data.getMiddle();
 		model.addAttribute("ticket", data.getRight())//
-				.addAttribute("reservation", data.getMiddle())//
+				.addAttribute("reservation", reservation)//
 				.addAttribute("event", data.getLeft())//
 				.addAttribute("ticketCategory", ticketCategory)//
 				.addAttribute("organization", organization)//
 				.addAttribute("ticketEmailSent", ticketEmailSent)
+				.addAttribute("alreadyPaid", Optional.ofNullable(reservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE) == PaymentProxy.STRIPE)
 				.addAttribute("pageTitle", "show-ticket.header.title");
 		
 		return "/event/show-ticket";

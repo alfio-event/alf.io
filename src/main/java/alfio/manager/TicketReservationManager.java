@@ -229,7 +229,7 @@ public class TicketReservationManager {
     }
 
     private void transitionToInPayment(String reservationId, String email, String fullName, String billingAddress) {
-    	int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, IN_PAYMENT.toString(), email, fullName, billingAddress, null);
+    	int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, IN_PAYMENT.toString(), email, fullName, billingAddress, null, PaymentProxy.STRIPE.toString());
 		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
     }
 
@@ -278,7 +278,7 @@ public class TicketReservationManager {
 			Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
 			specialPriceRepository.updateStatusForReservation(Collections.singletonList(reservationId), Status.TAKEN.toString());
 			ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
-			int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, billingAddress, timestamp);
+			int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, billingAddress, timestamp, paymentProxy.toString());
 			Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
 		}
 		//cleanup unused special price codes...
@@ -352,9 +352,15 @@ public class TicketReservationManager {
 	}
     
     public OrderSummary orderSummaryForReservationId(String reservationId, Event event) {
-    	TotalPrice reservationCost = totalReservationCostWithVAT(reservationId);
+		TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+		TotalPrice reservationCost = totalReservationCostWithVAT(reservationId);
     	List<SummaryRow> summary = extractSummary(reservationId, event);
-    	return new OrderSummary(reservationCost, summary, reservationCost.getPriceWithVAT() == 0, formatCents(reservationCost.getPriceWithVAT()), formatCents(reservationCost.getVAT()));
+		boolean free = reservationCost.getPriceWithVAT() == 0;
+		return new OrderSummary(reservationCost,
+				summary, free,
+				formatCents(reservationCost.getPriceWithVAT()), formatCents(reservationCost.getVAT()),
+				reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
+				reservation.getPaymentMethod() == PaymentProxy.ON_SITE);
     }
     
     private List<SummaryRow> extractSummary(String reservationId, Event event) {

@@ -18,7 +18,7 @@
 INSERT INTO organization(name, description, email) VALUES ('demo', 'demo organization', 'info@pippobaudo.com');
 
 insert into event(description, short_name, website_url, website_t_c_url, location, latitude, longitude, start_ts, end_ts, regular_price_cts, currency, available_seats, vat_included, vat, allowed_payment_proxies, private_key, org_id, time_zone, image_url)
-  values('event desc', 'eventname', 'http://localhost:8080', 'http://localhost:8080', 'demo location', '0', '0', '2015-01-10 05:00:00' , '2015-01-11 04:59:00' , 1000, 'CHF', 440, 'true', 8, 'STRIPE', 'alfio-uberall', 0, 'America/New_York', 'http://localhost:8080/resources/images/sample-logo.png');
+values('event desc', 'eventname', 'http://localhost:8080', 'http://localhost:8080', 'demo location', '0', '0', '2015-01-10 05:00:00' , '2015-01-11 04:59:00' , 1000, 'CHF', 440, 'true', 8, 'STRIPE', 'alfio-uberall', 0, 'America/New_York', 'http://localhost:8080/resources/images/sample-logo.png');
 
 insert into ticket_category(inception, expiration, name, description, max_tickets, price_cts, access_restricted, tc_status, event_id) values
   ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Normal', 'Very good category', 2, 0, false, 'ACTIVE', 0),
@@ -29,27 +29,27 @@ insert into ticket_category(inception, expiration, name, description, max_ticket
 
 insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address) values('abcdefghi', '2014-01-10 00:00:00', 'IN_PAYMENT', 'ciccio', 'cc@cc.uu', null);
 insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts, tickets_reservation_id)
-  values
-  
-  -- free tickets
+values
+
+-- free tickets
   ('abcdefghilmn', '2014-01-10 00:00:00', 0, 0, 'FREE', 0, 0, null),
   ('abcdefghilmo', '2014-01-10 00:00:00', 0, 0, 'FREE', 0, 0, null),
-  
-  -- paid ticket
+
+-- paid ticket
   ('abcdefghilmn41', '2014-01-10 00:00:00', 1, 0, 'FREE', 463, 463, null),
   ('abcdefghilmn42', '2014-01-10 00:00:00', 1, 0, 'FREE', 463, 463, null),
   ('abcdefghilmn43', '2014-01-10 00:00:00', 1, 0, 'FREE', 463, 463, null),
   ('abcdefghilmo44', '2014-01-10 00:00:00', 1, 0, 'FREE', 463, 463, null),
-  -- stuck reservation
+-- stuck reservation
   ('abcdefghilmo55', '2014-01-10 00:00:00', 1, 0, 'PENDING', 463, 463, 'abcdefghi'),
 
-  -- still not in sale
+-- still not in sale
   ('abcdefghilmo45', '2014-01-10 00:00:00', 2, 0, 'FREE', 463, 463, null),
-  
-  --expired
+
+--expired
   ('abcdefghilmo46', '2014-01-10 00:00:00', 3, 0, 'FREE', 463, 463, null),
-  
-  --restricted
+
+--restricted
   ('abcdefghilmo47', '2014-01-10 00:00:00', 4, 0, 'FREE', 463, 463, null),
   ('abcdefghilmo48', '2014-01-10 00:00:00', 4, 0, 'FREE', 463, 463, null),
   ('abcdefghilmo49', '2014-01-10 00:00:00', 4, 0, 'FREE', 463, 463, null),
@@ -60,8 +60,8 @@ insert into special_price (code, price_cts, ticket_category_id, status) values
   ('424243', 463, 4, 'FREE'),
   ('424244', 463, 4, 'FREE'),
   ('424245', 463, 4, 'CANCELLED');
-  
+
 insert into configuration (c_key, c_value, description) values
-	('STRIPE_SECRET_KEY', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'Stripe''s secret key'),
-	('STRIPE_PUBLIC_KEY', 'pk_test_gY3X0UiTgKCeStUG67i2kEFq', 'Stripe''s public key'),
-	('BASE_URL', 'http://localhost:8080/', 'Base application url');
+  ('STRIPE_SECRET_KEY', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'Stripe''s secret key'),
+  ('STRIPE_PUBLIC_KEY', 'pk_test_gY3X0UiTgKCeStUG67i2kEFq', 'Stripe''s public key'),
+  ('BASE_URL', 'http://localhost:8080/', 'Base application url');

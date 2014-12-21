@@ -320,7 +320,7 @@ public class ReservationController {
 			bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
 		}
 		final TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-		paymentForm.validate(bindingResult, reservationCost, event.getMultiplePaymentMethods());
+		paymentForm.validate(bindingResult, reservationCost, event.getAllowedPaymentProxies());
 		if (bindingResult.hasErrors()) {
 			SessionUtil.addToFlash(bindingResult, redirectAttributes);
 			return redirectReservation(ticketReservation, eventName, reservationId);
