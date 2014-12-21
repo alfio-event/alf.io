@@ -50,7 +50,6 @@ public enum ConfigurationKeys {
     SMTP_PASSWORD("SMTP Password", false),
     SMTP_FROM_EMAIL("E-Mail sender", false),
     SMTP_PROPERTIES("SMTP Properties", false),
-    GOOGLE_ANALYTICS_KEY("Google Analytics tracking ID", false),
 
     OFFLINE_PAYMENT_DAYS("Maximum number of days allowed to pay an offline ticket", false),
     BANK_ACCOUNT_NR("Bank Account number", false),

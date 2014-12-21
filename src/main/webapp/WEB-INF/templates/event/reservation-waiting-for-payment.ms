@@ -1,6 +1,28 @@
 {{>/event/page-top}}
-<div class="alert alert-warning">
-    <h3 class="text-center"><i class="fa fa-warning fa-2x"></i> {{#i18n}}reservation-page-waiting.title{{/i18n}}</h3>
+
+<div>
+    {{#event.imageIsPresent}}
+        <img src="{{event.imageUrl}}" alt="{{event.shortName}}" class="img-responsive img-center">
+    {{/event.imageIsPresent}}
 </div>
-<div class="wMarginBottom wMarginTop center-block">{{#i18n}}reservation-page-waiting.description [{{event.currency}} {{totalPrice}}] [{{#format-date}}{{expires}} dd MMMM yyyy HH:mm locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{bankAccount}}] [{{reservationId}}]{{/i18n}}</div>
+
+<div class="alert alert-warning wMarginTop wMarginBottom">
+    <h2><i class="fa fa-warning"></i> {{#i18n}}reservation-page-waiting.title [{{#format-date}}{{expires}} dd/MM/yyyy HH:mm locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}</h2>
+</div>
+
+<div class="wMarginBottom wMarginTop center-block">
+    <h4>{{#i18n}}reservation-page-waiting.required-steps{{/i18n}}</h4>
+    <ol>
+        <li>{{#i18n}}reservation-page-waiting.required-steps.1 [{{event.currency}} {{totalPrice}}] [{{bankAccount}}] [{{reservation.id}}]{{/i18n}}</li>
+        <li>{{#i18n}}reservation-page-waiting.required-steps.2 [{{emailAddress}}] [{{reservation.id}}]{{/i18n}}</li>
+        <li>{{#i18n}}reservation-page-waiting.required-steps.3{{/i18n}}</li>
+    </ol>
+</div>
+<div class="container-fluid" id="back-to-event-site">
+    <div class="pull-left"><a href="{{event.websiteUrl}}" class="btn btn-default">{{#i18n}}to-event-site{{/i18n}}</a></div>
+</div>
+<div class="clearfix wMarginBottom"></div>
+<div class="text-center">
+    {{#i18n}}reservation-page-complete.order-information [{{reservation.id}}] [{{reservation.fullName}}]{{/i18n}}
+</div>
 {{>/event/page-bottom}}

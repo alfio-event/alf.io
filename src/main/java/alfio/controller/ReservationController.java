@@ -257,13 +257,15 @@ public class ReservationController {
 		Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
 		TicketReservationStatus status = reservation.map(TicketReservation::getStatus).orElse(TicketReservationStatus.PENDING);
 		if(reservation.isPresent() && status == TicketReservationStatus.OFFLINE_PAYMENT) {
-			OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event.get());
+			Event ev = event.get();
+			OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, ev);
 			model.addAttribute("totalPrice", orderSummary.getTotalPrice());
-			model.addAttribute("reservationId", reservationId);
+			model.addAttribute("emailAddress", organizationRepository.getById(ev.getOrganizationId()).getEmail());
+			model.addAttribute("reservation", reservation.get());
 			model.addAttribute("pageTitle", "reservation-page-waiting.header.title");
 			model.addAttribute("bankAccount", configurationManager.getStringConfigValue(ConfigurationKeys.BANK_ACCOUNT_NR).orElse(""));
-			model.addAttribute("expires", ZonedDateTime.ofInstant(reservation.get().getValidity().toInstant(), event.get().getZoneId()));
-			model.addAttribute("event", event.get());
+			model.addAttribute("expires", ZonedDateTime.ofInstant(reservation.get().getValidity().toInstant(), ev.getZoneId()));
+			model.addAttribute("event", ev);
 			return "/event/reservation-waiting-for-payment";
 		}
 
