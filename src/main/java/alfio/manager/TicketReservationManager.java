@@ -468,7 +468,7 @@ public class TicketReservationManager {
 				locale.getLanguage());
 
 		if (!StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) || !StringUtils.equalsIgnoreCase(newFullName, ticket.getFullName())) {
-			sendTicketByEmail(ticket, locale, event, confirmationTextBuilder, pdfTemplateBuilder);
+			sendTicketByEmail(ticketRepository.findByUUID(ticket.getUuid()), locale, event, confirmationTextBuilder, pdfTemplateBuilder);
 		}
 
 		if (StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail())) {

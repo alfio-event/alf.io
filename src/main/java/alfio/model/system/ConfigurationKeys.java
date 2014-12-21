@@ -37,6 +37,10 @@ public enum ConfigurationKeys {
     
     SPECIAL_PRICE_CODE_LENGTH("Length of special price code", false),
     MAX_AMOUNT_OF_TICKETS_BY_RESERVATION("Max amount of tickets", false),
+    
+    //
+    MAILER_TYPE("Mailer type (if not set, default will be smtp)", false),//valid values: smtp | mailgun
+    //
 
     //smtp configuration related keys
     SMTP_HOST("SMTP hostname", false),
@@ -49,7 +53,16 @@ public enum ConfigurationKeys {
     GOOGLE_ANALYTICS_KEY("Google Analytics tracking ID", false),
 
     OFFLINE_PAYMENT_DAYS("Maximum number of days allowed to pay an offline ticket", false),
-    BANK_ACCOUNT_NR("Bank Account number", false);
+    BANK_ACCOUNT_NR("Bank Account number", false),
+    //
+    
+    //mailgun configuration related info
+    MAILGUN_KEY("Mailgun key", false),
+    MAILGUN_DOMAIN("Mailgun domain", false),
+    MAILGUN_FROM("Mailgun E-Mail sender", false),
+    //
+    
+    GOOGLE_ANALYTICS_KEY("Google Analytics tracking ID", false);
 
     private static final Predicate<ConfigurationKeys> INTERNAL = ConfigurationKeys::isInternal;
     private final String description;

@@ -17,10 +17,8 @@
 package alfio.util;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 import static java.math.RoundingMode.HALF_UP;
-import static java.math.RoundingMode.UNNECESSARY;
 import static java.math.RoundingMode.UP;
 
 public final class MonetaryUtil {
