@@ -18,7 +18,6 @@ package alfio.config;
 
 import alfio.filter.RedirectToHttpsFilter;
 import lombok.extern.log4j.Log4j2;
-
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
@@ -79,7 +78,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 
 	@Override
 	protected Class<?>[] getRootConfigClasses() {
-		return new Class<?>[] { SystemConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class };
+		return new Class<?>[] { DataSourceConfiguration.class, WebSecurityConfig.class };
 	}
 
 	@Override

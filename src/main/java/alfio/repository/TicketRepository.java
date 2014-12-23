@@ -47,12 +47,11 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status not in ('ACQUIRED', 'CHECKED_IN')  and category_id = :categoryId and event_id = :eventId")
     Integer countUnsoldTicket(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
-	@Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING' where id in (:reservedForUpdate)")
-	int reserveTickets(@Bind("reservationId") String reservationId,
-			@Bind("reservedForUpdate") List<Integer> reservedForUpdate);
+	@Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', user_language = :userLanguage where id in (:reservedForUpdate)")
+	int reserveTickets(@Bind("reservationId") String reservationId,	@Bind("reservedForUpdate") List<Integer> reservedForUpdate, @Bind("userLanguage") String userLanguage);
 	
-	@Query("update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId, status = 'PENDING' where id = :ticketId")
-	void reserveTicket(@Bind("reservationId")String transactionId, @Bind("ticketId") int ticketId, @Bind("specialCodeId") int specialCodeId);
+	@Query("update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId, user_language = :userLanguage status = 'PENDING' where id = :ticketId")
+	void reserveTicket(@Bind("reservationId")String transactionId, @Bind("ticketId") int ticketId, @Bind("specialCodeId") int specialCodeId, @Bind("userLanguage") String userLanguage);
 
 	@Query("update ticket set status = :status where tickets_reservation_id = :reservationId")
 	int updateTicketStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
@@ -104,4 +103,7 @@ public interface TicketRepository {
 
 	@Query("update ticket set category_id = :targetCategoryId, original_price_cts = :originalPrice, paid_price_cts = :paidPrice where id in (:ticketIds)")
 	int moveToAnotherCategory(@Bind("ticketIds") List<Integer> ticketIds, @Bind("targetCategoryId") int targetCategoryId, @Bind("originalPrice") int originalPrice, @Bind("paidPrice") int paidPrice);
+
+	@Query("select * from ticket where category_id in (:categories) and status = 'PENDING'")
+	List<Ticket> findPendingTicketsInCategories(@Bind("categories") List<Integer> categories);
 }

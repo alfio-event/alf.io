@@ -16,7 +16,6 @@
  */
 package alfio.controller;
 
-import alfio.controller.support.TemplateManager;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
@@ -29,6 +28,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.TemplateManager;
 import alfio.util.TicketUtil;
 import com.google.zxing.WriterException;
 import com.lowagie.text.DocumentException;
@@ -93,7 +93,7 @@ public class TicketController {
 				.addAttribute("ticketCategory", ticketCategory)//
 				.addAttribute("organization", organization)//
 				.addAttribute("ticketEmailSent", ticketEmailSent)
-				.addAttribute("alreadyPaid", Optional.ofNullable(reservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE) == PaymentProxy.STRIPE)
+				.addAttribute("deskPaymentRequired", Optional.ofNullable(reservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired())
 				.addAttribute("pageTitle", "show-ticket.header.title");
 		
 		return "/event/show-ticket";

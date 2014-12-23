@@ -81,6 +81,15 @@
                     targetCategoryId: targetCategoryId,
                     eventId: eventId
                 }).error(HttpErrorHandler.handle);
+            },
+            getPendingPayments: function(eventName) {
+                return $http.get('/admin/api/events/'+eventName+'/pending-payments').error(HttpErrorHandler.handle);
+            },
+            registerPayment: function(eventName, reservationId) {
+                return $http['post']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId+'/confirm').error(HttpErrorHandler.handle);
+            },
+            cancelPayment: function(eventName, reservationId) {
+                return $http['delete']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId).error(HttpErrorHandler.handle);
             }
         };
     });

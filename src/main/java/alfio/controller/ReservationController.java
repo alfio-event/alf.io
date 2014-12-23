@@ -19,7 +19,6 @@ package alfio.controller;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
-import alfio.controller.support.TemplateManager;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EventManager;
 import alfio.manager.StripeManager;
@@ -41,10 +40,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
-import alfio.util.ErrorsCode;
-import alfio.util.OptionalWrapper;
-import alfio.util.ValidationResult;
-import alfio.util.Validator;
+import alfio.util.*;
 import com.google.zxing.WriterException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -450,40 +446,23 @@ public class ReservationController {
 
 	private void sendReservationCompleteEmail(HttpServletRequest request, Event event, TicketReservation reservation) {
 
-		String reservationTxt = templateManager.render("/alfio/templates/confirmation-email-txt.ms",
-				prepareModelForReservationEmail(event, reservation), request);
+		Locale locale = RequestContextUtils.getLocale(request);
+		String reservationTxt = templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms",
+				ticketReservationManager.prepareModelForReservationEmail(event, reservation), locale);
 		
 		mailer.send(reservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-				new Object[] { event.getShortName() }, RequestContextUtils.getLocale(request)), reservationTxt,
+				new Object[] { event.getShortName() }, locale), reservationTxt,
 				Optional.empty());
 	}
 	
 	private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
 		Organization organization = organizationRepository.getById(event.getOrganizationId());
-		String reservationInfo = templateManager.render("/alfio/templates/confirmation-email-for-organizer-txt.ms",
-				prepareModelForReservationEmail(event, reservation), request);
+		String reservationInfo = templateManager.renderClassPathResource("/alfio/templates/confirmation-email-for-organizer-txt.ms",
+				ticketReservationManager.prepareModelForReservationEmail(event, reservation), RequestContextUtils.getLocale(request));
 		
 		mailer.send(organization.getEmail(), "Reservation complete " + reservation.getId(), reservationInfo, Optional.empty());
 	}
 
-	private Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation) {
-		Map<String, Object> model = new HashMap<>();
-		model.put("organization", organizationRepository.getById(event.getOrganizationId()));
-		model.put("event", event);
-		model.put("ticketReservation", reservation);
-		
-		Optional<String> vat = ticketReservationManager.getVAT();
-		
-		model.put("hasVat", vat.isPresent());
-		model.put("vatNr", vat.orElse(""));
-
-		OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservation.getId(), event);
-		model.put("tickets", ticketReservationManager.findTicketsInReservation(reservation.getId()));
-		model.put("orderSummary", orderSummary);
-		model.put("reservationUrl", ticketReservationManager.reservationUrl(reservation.getId()));
-		return model;
-	}
-	
 	private static List<Pair<String, String>> getLocalizedCountries(Locale locale) {
 		return Stream.of(Locale.getISOCountries())
 				.map(isoCode -> Pair.of(isoCode, new Locale("", isoCode).getDisplayCountry(locale)))

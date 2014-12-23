@@ -77,9 +77,9 @@
 
 <p class="text-center"><img src="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{ticket.uuid}}/code.png"></p>
 
-{{^alreadyPaid}}
+{{#deskPaymentRequired}}
 	<h3 class="text-center">{{#i18n}}ticket.payment-required{{/i18n}}</h3>
-{{/alreadyPaid}}
+{{/deskPaymentRequired}}
 
 
 <div><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{ticket.uuid}}/download-ticket" class="btn btn-link">{{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div> 

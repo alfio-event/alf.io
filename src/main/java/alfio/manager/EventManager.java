@@ -17,11 +17,9 @@
 package alfio.manager;
 
 import alfio.manager.location.LocationManager;
+import alfio.manager.support.OrderSummary;
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
-import alfio.model.SpecialPrice;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
+import alfio.model.*;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.EventWithStatistics;
 import alfio.model.modification.TicketCategoryModification;
@@ -487,6 +485,21 @@ public class EventManager {
         Ticket ticket = ticketRepository.findById(ticketId, categoryId);
         Validate.isTrue(ticketRepository.toggleTicketLocking(ticketId, categoryId, !ticket.getLockedAssignment()) == 1, "unwanted result from ticket locking");
         return true;
+    }
+
+    public List<Pair<TicketReservation, OrderSummary>> getPendingPayments(String eventName, String username) {
+        EventWithStatistics eventWithStatistics = getSingleEventWithStatistics(eventName, username);
+        Event event = eventWithStatistics.getEvent();
+        List<String> reservationIds = ticketRepository.findPendingTicketsInCategories(eventWithStatistics.getTicketCategories().stream().map(TicketCategoryWithStatistic::getId).collect(toList()))
+                .stream()
+                .map(Ticket::getTicketsReservationId)
+                .distinct()
+                .collect(toList());
+        return ticketReservationManager.fetchWaitingForPayment(reservationIds, event);
+    }
+
+    public void confirmPayment(String eventName, String reservationId, String username) {
+        ticketReservationManager.confirmOfflinePayment(getSingleEvent(eventName, username), reservationId);
     }
 
     @Data

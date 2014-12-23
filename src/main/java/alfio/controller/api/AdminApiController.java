@@ -18,8 +18,10 @@ package alfio.controller.api;
 
 import alfio.manager.EventManager;
 import alfio.manager.location.LocationManager;
+import alfio.manager.support.OrderSummary;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.TicketReservation;
 import alfio.model.modification.*;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
@@ -167,6 +169,22 @@ public class AdminApiController {
     public String reallocateTickets(@RequestBody TicketAllocationModification form) {
         eventManager.reallocateTickets(form.getSrcCategoryId(), form.getTargetCategoryId(), form.getEventId());
         return OK;
+    }
+
+    @RequestMapping(value = "/events/{eventName}/pending-payments")
+    public List<Pair<TicketReservation, OrderSummary>> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {
+        return eventManager.getPendingPayments(eventName, principal.getName());
+    }
+
+    @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)
+    public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+        eventManager.confirmPayment(eventName, reservationId, principal.getName());
+        return OK;
+    }
+
+    @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}", method = DELETE)
+    public String deletePendingPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") int reservationId) {
+        throw new UnsupportedOperationException("not yet implemented");
     }
 
     @RequestMapping(value = "/location/geo", method = GET)

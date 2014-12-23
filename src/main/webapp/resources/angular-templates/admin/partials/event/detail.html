@@ -16,6 +16,34 @@
         <button class="btn btn-default" data-ng-if="editPrices" data-ng-disabled="pricesForm.$waiting" data-ng-click="toggleEditPrices(true)">cancel</button>
     </form>
 
+    <div class="page-header" data-ng-if="pendingReservations.length > 0">
+        <h3>Payments to be confirmed</h3>
+        <h5>Here the reservations for which a payment has not yet confirmed</h5>
+    </div>
+
+    <div class="wMarginTop wMarginBottom table-responsive" data-ng-if="pendingReservations.length > 0">
+        <table class="table">
+            <thead>
+                <th>ID</th>
+                <th>Expiration Date</th>
+                <th>Amount</th>
+                <th>Customer's name</th>
+                <th>Customer's email</th>
+                <th></th>
+            </thead>
+            <tbody>
+                <tr data-ng-repeat="reservation in pendingReservations">
+                    <td data-ng-class-even="'active'">{{reservation.left.id}}</td>
+                    <td data-ng-class-even="'active'">{{reservation.left.validity | formatDate}}</td>
+                    <td data-ng-class-even="'active'">{{reservation.right.totalPrice}}</td>
+                    <td data-ng-class-even="'active'">{{reservation.left.fullName}}</td>
+                    <td data-ng-class-even="'active'">{{reservation.left.email}}</td>
+                    <td data-ng-class-even="'active'"><button class="btn btn-success" data-ng-disabled="loading" data-ng-click="registerPayment(event.shortName, reservation.left.id)"><i class="fa fa-check"></i></button> <button data-ng-disabled="loading" class="btn btn-danger"><i class="fa fa-trash-o"></i></button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
     <div class="page-header">
         <h3>Categories</h3>
         <h5 class="text-muted">Here the categories that have been defined for this event.</h5>

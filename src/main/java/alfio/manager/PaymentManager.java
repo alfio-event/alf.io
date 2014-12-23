@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 @Component
 @Log4j2
@@ -78,6 +79,12 @@ public class PaymentManager {
             throw new IllegalStateException(e);
         }
 
+    }
+
+    public PaymentResult processOfflinePayment(String reservationId, int price, Event event) {
+        String transactionId = UUID.randomUUID().toString();
+        transactionRepository.insert(transactionId, reservationId, ZonedDateTime.now(event.getZoneId()), price, event.getCurrency(), "Offline payment confirmation", PaymentProxy.OFFLINE.toString());
+        return PaymentResult.successful(transactionId);
     }
 
 }

@@ -22,14 +22,16 @@ import java.util.Arrays;
 import java.util.Optional;
 
 public enum PaymentProxy {
-    STRIPE("stripe.com"),
-    ON_SITE("on-site payment"),
-    OFFLINE("offline payment");
+    STRIPE("stripe.com", false),
+    ON_SITE("on-site payment", true),
+    OFFLINE("offline payment", false);
 
     private final String description;
+    private final boolean deskPayment;
 
-    private PaymentProxy(String description) {
+    private PaymentProxy(String description, boolean deskPayment) {
         this.description = description;
+        this.deskPayment = deskPayment;
     }
 
     public String getDescription() {
@@ -38,6 +40,10 @@ public enum PaymentProxy {
 
     public String getKey() {
         return name();
+    }
+
+    public boolean isDeskPaymentRequired() {
+        return deskPayment;
     }
 
     public static Optional<PaymentProxy> safeValueOf(String name) {

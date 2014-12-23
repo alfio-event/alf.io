@@ -18,11 +18,17 @@ package alfio.config;
 
 import alfio.datamapper.QueryFactory;
 import alfio.datamapper.QueryRepositoryScanner;
+import alfio.util.TemplateManager;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -31,6 +37,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 
 import javax.sql.DataSource;
 import java.net.URISyntaxException;
@@ -40,9 +47,11 @@ import java.util.Objects;
 @EnableScheduling
 @EnableAsync
 @ComponentScan(basePackages = {"alfio.manager"})
-public class DataSourceConfiguration {
-	
-	
+public class DataSourceConfiguration implements ResourceLoaderAware {
+
+	@Autowired
+	private ResourceLoader resourceLoader;
+
 	/**
 	 * For handling the various differences between the cloud providers.
 	 * 
@@ -173,8 +182,36 @@ public class DataSourceConfiguration {
 		return migration;
 	}
 	
-	 @Bean
-	 public PasswordEncoder getPasswordEncoder() {
+	@Bean
+	public PasswordEncoder getPasswordEncoder() {
 		 return new BCryptPasswordEncoder();
 	 }
+
+	@Bean
+	public MessageSource messageSource() {
+		ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+		source.setBasenames("alfio.i18n.application", "alfio.i18n.admin");
+		//since we have all the english translations in the default file, we don't need
+		//the fallback to the system locale.
+		source.setFallbackToSystemLocale(false);
+		source.setAlwaysUseMessageFormat(true);
+		return source;
+	}
+
+	@Bean
+	public TemplateManager getTemplateManager(Environment environment) {
+		return new TemplateManager(environment, getTemplateLoader(), messageSource());
+	}
+
+	@Bean
+	public JMustacheTemplateLoader getTemplateLoader() {
+		JMustacheTemplateLoader loader = new JMustacheTemplateLoader();
+		loader.setResourceLoader(resourceLoader);
+		return loader;
+	}
+
+	@Override
+	public void setResourceLoader(ResourceLoader resourceLoader) {
+		this.resourceLoader = resourceLoader;
+	}
 }

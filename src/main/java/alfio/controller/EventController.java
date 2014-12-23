@@ -49,10 +49,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.controller.support.SessionUtil.addToFlash;
@@ -186,7 +183,7 @@ public class EventController {
 	@RequestMapping(value = "/event/{eventName}/reserve-tickets", method = { RequestMethod.POST, RequestMethod.GET })
 	public String reserveTicket(@PathVariable("eventName") String eventName,
 			@ModelAttribute ReservationForm reservation, BindingResult bindingResult, Model model,
-			ServletWebRequest request, RedirectAttributes redirectAttributes) {
+			ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale) {
 
 		Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
 		if (!event.isPresent()) {
@@ -210,7 +207,7 @@ public class EventController {
 
 		try {
 			String reservationId = ticketReservationManager.createTicketReservation(event.get().getId(),
-					selected.get(), expiration, SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()));
+					selected.get(), expiration, SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()), locale);
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/book";
 		} catch (TicketReservationManager.NotEnoughTicketsException nete) {
 			bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);

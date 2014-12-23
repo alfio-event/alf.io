@@ -429,6 +429,23 @@
                 loadData();
             });
         };
+
+        var getPendingPayments = function() {
+            EventService.getPendingPayments($stateParams.eventName).success(function(data) {
+                $scope.pendingReservations = data;
+            });
+        };
+
+        getPendingPayments();
+        $scope.registerPayment = function(eventName, id) {
+            $scope.loading = true;
+            EventService.registerPayment(eventName, id).success(function() {
+                loadData();
+                getPendingPayments();
+            }).error(function() {
+                $scope.loading = false;
+            });
+        };
     });
 
     admin.controller('MessageBarController', function($scope, $rootScope) {

@@ -31,6 +31,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.MonetaryUtil;
+import alfio.util.TemplateManager;
 import com.lowagie.text.DocumentException;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -76,6 +77,7 @@ public class TicketReservationManager {
     private final TransactionRepository transactionRepository;
 	private final NotificationManager notificationManager;
 	private final MessageSource messageSource;
+	private final TemplateManager templateManager;
 
 	public static class NotEnoughTicketsException extends RuntimeException {
 		
@@ -106,7 +108,8 @@ public class TicketReservationManager {
 									TransactionRepository transactionRepository,
 									Mailer mailer,
 									NotificationManager notificationManager,
-									MessageSource messageSource) {
+									MessageSource messageSource,
+									TemplateManager templateManager) {
 		this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -119,6 +122,7 @@ public class TicketReservationManager {
         this.transactionRepository = transactionRepository;
 		this.notificationManager = notificationManager;
 		this.messageSource = messageSource;
+		this.templateManager = templateManager;
 	}
 	
     /**
@@ -130,14 +134,14 @@ public class TicketReservationManager {
      * @param reservationExpiration
      * @return
      */
-    public String createTicketReservation(int eventId, List<TicketReservationWithOptionalCodeModification> list, Date reservationExpiration, Optional<String> specialPriceSessionId) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
+    public String createTicketReservation(int eventId, List<TicketReservationWithOptionalCodeModification> list, Date reservationExpiration, Optional<String> specialPriceSessionId, Locale locale) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
         String transactionId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(transactionId, reservationExpiration);
-		list.forEach(t -> reserveTicketsForCategory(eventId, specialPriceSessionId, transactionId, t));
+		list.forEach(t -> reserveTicketsForCategory(eventId, specialPriceSessionId, transactionId, t, locale));
     	return transactionId;
     }
 
-	private void reserveTicketsForCategory(int eventId, Optional<String> specialPriceSessionId, String transactionId, TicketReservationWithOptionalCodeModification ticketReservation) {
+	private void reserveTicketsForCategory(int eventId, Optional<String> specialPriceSessionId, String transactionId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale) {
 		//first check if there is another pending special price token bound to the current sessionId
 		Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), eventId, specialPriceSessionId, ticketReservation);
 
@@ -152,10 +156,10 @@ public class TicketReservationManager {
 				throw new NotEnoughTicketsException();
 			}
             SpecialPrice sp = specialPrice.get();
-            ticketRepository.reserveTicket(transactionId, reservedForUpdate.stream().findFirst().orElseThrow(IllegalStateException::new),sp.getId());
+            ticketRepository.reserveTicket(transactionId, reservedForUpdate.stream().findFirst().orElseThrow(IllegalStateException::new),sp.getId(), locale.getLanguage());
             specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), sp.getSessionIdentifier());
         } else {
-            ticketRepository.reserveTickets(transactionId, reservedForUpdate);
+            ticketRepository.reserveTickets(transactionId, reservedForUpdate, locale.getLanguage());
         }
 	}
 
@@ -195,6 +199,7 @@ public class TicketReservationManager {
         try {
 			PaymentProxy paymentProxy = method.orElse(PaymentProxy.STRIPE);
             PaymentResult paymentResult;
+			ticketReservationRepository.lockReservationForUpdate(reservationId);
 			if(reservationCost.getPriceWithVAT() > 0) {
 				switch(paymentProxy) {
 					case STRIPE:
@@ -227,6 +232,39 @@ public class TicketReservationManager {
         }
 
     }
+
+	public void confirmOfflinePayment(Event event, String reservationId) {
+		TicketReservation ticketReservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
+		ticketReservationRepository.lockReservationForUpdate(reservationId);
+		Validate.isTrue(ticketReservation.getPaymentMethod() == PaymentProxy.OFFLINE, "invalid payment method");
+		ticketReservationRepository.updateTicketReservationStatus(reservationId, TicketReservationStatus.COMPLETE.name());
+		acquireTickets(TicketStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getBillingAddress());
+		Locale language = ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().map(t -> Locale.forLanguageTag(t.getUserLanguage())).orElse(Locale.ENGLISH);
+		String reservationTxt = templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language);
+
+		mailer.send(ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
+						new Object[] { event.getShortName() }, language), reservationTxt,
+				Optional.empty());
+	}
+
+	@Transactional(readOnly = true)
+	public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation) {
+		Map<String, Object> model = new HashMap<>();
+		model.put("organization", organizationRepository.getById(event.getOrganizationId()));
+		model.put("event", event);
+		model.put("ticketReservation", reservation);
+
+		Optional<String> vat = getVAT();
+
+		model.put("hasVat", vat.isPresent());
+		model.put("vatNr", vat.orElse(""));
+
+		OrderSummary orderSummary = orderSummaryForReservationId(reservation.getId(), event);
+		model.put("tickets", findTicketsInReservation(reservation.getId()));
+		model.put("orderSummary", orderSummary);
+		model.put("reservationUrl", reservationUrl(reservation.getId()));
+		return model;
+	}
 
     private void transitionToInPayment(String reservationId, String email, String fullName, String billingAddress) {
     	int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, IN_PAYMENT.toString(), email, fullName, billingAddress, null, PaymentProxy.STRIPE.toString());
@@ -274,15 +312,19 @@ public class TicketReservationManager {
 	private void completeReservation(String reservationId, String email, String fullName, String billingAddress, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
 		if(paymentProxy != PaymentProxy.OFFLINE) {
 			TicketStatus ticketStatus = paymentProxy == PaymentProxy.STRIPE ? TicketStatus.ACQUIRED : TicketStatus.TO_BE_PAID;
-			int updatedTickets = ticketRepository.updateTicketStatus(reservationId, ticketStatus.toString());
-			Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
-			specialPriceRepository.updateStatusForReservation(Collections.singletonList(reservationId), Status.TAKEN.toString());
-			ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
-			int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, billingAddress, timestamp, paymentProxy.toString());
-			Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
+			acquireTickets(ticketStatus, paymentProxy, reservationId, email, fullName, billingAddress);
 		}
 		//cleanup unused special price codes...
 		specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
+	}
+
+	private void acquireTickets(TicketStatus ticketStatus, PaymentProxy paymentProxy, String reservationId, String email, String fullName, String billingAddress) {
+		int updatedTickets = ticketRepository.updateTicketStatus(reservationId, ticketStatus.toString());
+		Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
+		specialPriceRepository.updateStatusForReservation(Collections.singletonList(reservationId), Status.TAKEN.toString());
+		ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
+		int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, billingAddress, timestamp, paymentProxy.toString());
+		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
 	}
 
 	public void cleanupExpiredReservations(Date expirationDate) {
@@ -517,5 +559,12 @@ public class TicketReservationManager {
 				return Optional.empty();
 			}
 		});
+	}
+
+	public List<Pair<TicketReservation, OrderSummary>> fetchWaitingForPayment(List<String> reservationIds, Event event) {
+		return ticketReservationRepository.findAllReservationsWaitingForPayment().stream()
+					.filter(reservationIds::contains)
+					.map(id -> Pair.of(ticketReservationRepository.findReservationById(id), orderSummaryForReservationId(id, event)))
+					.collect(Collectors.toList());
 	}
 }

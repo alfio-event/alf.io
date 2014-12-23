@@ -16,7 +16,6 @@
  */
 package alfio.config;
 
-import alfio.controller.support.TemplateManager;
 import alfio.util.MustacheCustomTagInterceptor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,17 +25,14 @@ import com.samskivert.mustache.Mustache;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
-import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.http.HttpInputMessage;
-import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.*;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.ui.ModelMap;
@@ -55,8 +51,6 @@ import org.springframework.web.servlet.view.mustache.jmustache.LocalizationMessa
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.nio.charset.Charset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -67,12 +61,12 @@ import java.util.stream.Collectors;
 @Configuration
 @ComponentScan(basePackages = {"alfio.controller", "alfio.config"})
 @EnableWebMvc
-public class MvcConfiguration extends WebMvcConfigurerAdapter implements ResourceLoaderAware {
-
-    private ResourceLoader resourceLoader;
+public class MvcConfiguration extends WebMvcConfigurerAdapter {
 
     @Autowired
     private MessageSource messageSource;
+    @Autowired
+    private JMustacheTemplateLoader templateLoader;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -181,11 +175,9 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
     public JMustacheTemplateFactory getTemplateFactory() throws Exception {
         final JMustacheTemplateFactory templateFactory = new JMustacheTemplateFactory();
 
-        JMustacheTemplateLoader loader = getTemplateLoader();
-        
         templateFactory.setPrefix("/WEB-INF/templates");
         templateFactory.setSuffix(".ms");
-        templateFactory.setTemplateLoader(loader);
+        templateFactory.setTemplateLoader(templateLoader);
         templateFactory.setCompiler(Mustache.compiler()
         		.escapeHTML(true)
         		.standardsMode(false)
@@ -202,18 +194,12 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
 								return String.valueOf(o);
 							}
 						})
-        		.withLoader(loader));
+        		.withLoader(templateLoader));
         
         templateFactory.afterPropertiesSet();
         return templateFactory;
     }
 
-    @Bean
-    public JMustacheTemplateLoader getTemplateLoader() {
-        JMustacheTemplateLoader loader = new JMustacheTemplateLoader();
-        loader.setResourceLoader(resourceLoader);
-        return loader;
-    }
 
     @Bean
     public MappingJackson2HttpMessageConverter jacksonMessageConverter() {
@@ -231,35 +217,4 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter implements Resourc
         return mapper;
     }
     
-    @Bean
-    public TemplateManager getTemplateManager(LocalizationMessageInterceptor localizationMessageInterceptor, Environment environment) {
-    	return new TemplateManager(localizationMessageInterceptor, environment, getTemplateLoader());
-    }
-
-    @Override
-    public void setResourceLoader(ResourceLoader resourceLoader) {
-        this.resourceLoader = resourceLoader;
-    }
-
-    public static class JavascriptMessageConverter extends AbstractHttpMessageConverter<String> {
-
-        protected JavascriptMessageConverter() {
-            super(new MediaType("application", "javascript", Charset.forName("UTF-8")));
-        }
-
-        @Override
-        protected boolean supports(Class<?> clazz) {
-            return String.class.isAssignableFrom(clazz);
-        }
-
-        @Override
-        protected String readInternal(Class<? extends String> clazz, HttpInputMessage inputMessage) throws IOException, HttpMessageNotReadableException {
-            return null;
-        }
-
-        @Override
-        protected void writeInternal(String s, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
-            outputMessage.getBody().write(s.getBytes(Charset.forName("UTF-8")));
-        }
-    }
 }
