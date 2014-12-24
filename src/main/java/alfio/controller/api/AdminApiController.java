@@ -183,8 +183,9 @@ public class AdminApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}", method = DELETE)
-    public String deletePendingPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") int reservationId) {
-        throw new UnsupportedOperationException("not yet implemented");
+    public String deletePendingPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+        eventManager.deletePendingOfflinePayment(eventName, reservationId, principal.getName());
+        return OK;
     }
 
     @RequestMapping(value = "/location/geo", method = GET)

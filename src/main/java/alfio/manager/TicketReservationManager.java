@@ -52,6 +52,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
+import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
 import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
 import static alfio.util.MonetaryUtil.formatCents;
 import static alfio.util.OptionalWrapper.optionally;
@@ -247,6 +248,12 @@ public class TicketReservationManager {
 				Optional.empty());
 	}
 
+	public void deleteOfflinePayment(Event singleEvent, String reservationId) {
+		TicketReservation reservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
+		Validate.isTrue(reservation.getStatus() == OFFLINE_PAYMENT, "Invalid reservation status");
+		cancelReservation(reservationId);
+	}
+
 	@Transactional(readOnly = true)
 	public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation) {
 		Map<String, Object> model = new HashMap<>();
@@ -438,9 +445,11 @@ public class TicketReservationManager {
 
 
 	public void cancelPendingReservation(String reservationId) {
-
 		Validate.isTrue(ticketReservationRepository.findReservationById(reservationId).getStatus() == TicketReservationStatus.PENDING, "status is not PENDING");
+		cancelReservation(reservationId);
+	}
 
+	private void cancelReservation(String reservationId) {
 		List<String> reservationIdsToRemove = Collections.singletonList(reservationId);
 		specialPriceRepository.updateStatusForReservation(reservationIdsToRemove, Status.FREE.toString());
 		int updatedTickets = ticketRepository.freeFromReservation(reservationIdsToRemove);

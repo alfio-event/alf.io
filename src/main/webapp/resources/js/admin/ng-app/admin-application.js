@@ -446,6 +446,15 @@
                 $scope.loading = false;
             });
         };
+        $scope.deletePayment = function(eventName, id) {
+            $scope.loading = true;
+            EventService.cancelPayment(eventName, id).success(function() {
+                loadData();
+                getPendingPayments();
+            }).error(function() {
+                $scope.loading = false;
+            });
+        };
     });
 
     admin.controller('MessageBarController', function($scope, $rootScope) {

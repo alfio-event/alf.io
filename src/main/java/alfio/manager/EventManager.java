@@ -502,6 +502,10 @@ public class EventManager {
         ticketReservationManager.confirmOfflinePayment(getSingleEvent(eventName, username), reservationId);
     }
 
+    public void deletePendingOfflinePayment(String eventName, String reservationId, String username) {
+        ticketReservationManager.deleteOfflinePayment(getSingleEvent(eventName, username), reservationId);
+    }
+
     @Data
     private static final class GeolocationResult {
         private final Pair<String, String> coordinates;
