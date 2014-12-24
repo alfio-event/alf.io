@@ -15,5 +15,5 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-alter table tickets_reservation add column reminder_sent boolean;
-alter table ticket add column reminder_sent boolean;
+alter table tickets_reservation add column reminder_sent boolean default false;
+alter table ticket add column reminder_sent boolean default false;

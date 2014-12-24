@@ -19,7 +19,6 @@ package alfio.manager;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.support.*;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.SpecialPrice.Status;
 import alfio.model.Ticket.TicketStatus;
@@ -54,8 +53,11 @@ import java.util.stream.Collectors;
 import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
 import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
 import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
+import static alfio.model.system.ConfigurationKeys.OFFLINE_REMINDER_HOURS;
 import static alfio.util.MonetaryUtil.formatCents;
 import static alfio.util.OptionalWrapper.optionally;
+import static org.apache.commons.lang3.time.DateUtils.addHours;
+import static org.apache.commons.lang3.time.DateUtils.truncate;
 
 @Component
 @Transactional
@@ -74,7 +76,6 @@ public class TicketReservationManager {
 	private final ConfigurationManager configurationManager;
     private final PaymentManager paymentManager;
     private final SpecialPriceRepository specialPriceRepository;
-    private final Mailer mailer;
     private final TransactionRepository transactionRepository;
 	private final NotificationManager notificationManager;
 	private final MessageSource messageSource;
@@ -107,7 +108,6 @@ public class TicketReservationManager {
 									PaymentManager paymentManager,
 									SpecialPriceRepository specialPriceRepository,
 									TransactionRepository transactionRepository,
-									Mailer mailer,
 									NotificationManager notificationManager,
 									MessageSource messageSource,
 									TemplateManager templateManager) {
@@ -119,7 +119,6 @@ public class TicketReservationManager {
 		this.configurationManager = configurationManager;
         this.paymentManager = paymentManager;
         this.specialPriceRepository = specialPriceRepository;
-        this.mailer = mailer;
         this.transactionRepository = transactionRepository;
 		this.notificationManager = notificationManager;
 		this.messageSource = messageSource;
@@ -241,11 +240,8 @@ public class TicketReservationManager {
 		ticketReservationRepository.updateTicketReservationStatus(reservationId, TicketReservationStatus.COMPLETE.name());
 		acquireTickets(TicketStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getBillingAddress());
 		Locale language = ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().map(t -> Locale.forLanguageTag(t.getUserLanguage())).orElse(Locale.ENGLISH);
-		String reservationTxt = templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language);
-
-		mailer.send(ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-						new Object[] { event.getShortName() }, language), reservationTxt,
-				Optional.empty());
+		notificationManager.sendSimpleEmail(ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
+				new Object[]{event.getShortName()}, language), () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language));
 	}
 
 	public void deleteOfflinePayment(Event singleEvent, String reservationId) {
@@ -279,7 +275,7 @@ public class TicketReservationManager {
     }
 
 	private void transitionToOfflinePayment(String reservationId, String email, String fullName, String billingAddress) {
-		Date newExpiration = DateUtils.addDays(DateUtils.truncate(new Date(), Calendar.DATE), configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5));
+		Date newExpiration = DateUtils.addDays(truncate(new Date(), Calendar.DATE), configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5));
     	int updatedReservation = ticketReservationRepository.postponePayment(reservationId, newExpiration, email, fullName, billingAddress);
 		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
     }
@@ -362,10 +358,9 @@ public class TicketReservationManager {
                 .distinct()
                 .mapToObj(eventRepository::findById)
                 .map(e -> Pair.of(e, organizationRepository.getById(e.getOrganizationId())))
-                .forEach(pair -> mailer.send(pair.getRight().getEmail(),
-                                    STUCK_TICKETS_SUBJECT,
-                                    String.format(STUCK_TICKETS_MSG, pair.getLeft().getShortName()),
-                                    Optional.empty())
+                .forEach(pair -> notificationManager.sendSimpleEmail(pair.getRight().getEmail(),
+								STUCK_TICKETS_SUBJECT,
+								() -> String.format(STUCK_TICKETS_MSG, pair.getLeft().getShortName()))
                 );
     }
 
@@ -575,5 +570,27 @@ public class TicketReservationManager {
 					.filter(reservationIds::contains)
 					.map(id -> Pair.of(ticketReservationRepository.findReservationById(id), orderSummaryForReservationId(id, event)))
 					.collect(Collectors.toList());
+	}
+
+	public void sendReminderForOfflinePayments() {
+		Date expiration = truncate(addHours(new Date(), configurationManager.getIntConfigValue(OFFLINE_REMINDER_HOURS, 24)), Calendar.DATE);
+		ticketReservationRepository.findAllOfflinePaymentReservationForNotification(expiration).stream()
+				.map(reservation -> {
+					Optional<Ticket> ticket = ticketRepository.findTicketsInReservation(reservation.getId()).stream().findFirst();
+					Optional<Event> event = ticket.map(t -> eventRepository.findById(t.getEventId()));
+					Optional<Locale> locale = ticket.map(t -> Locale.forLanguageTag(t.getUserLanguage()));
+					return Triple.of(reservation, event, locale);
+				})
+				.filter(p -> p.getMiddle().isPresent())
+				.map(p -> Triple.of(p.getLeft(), p.getMiddle().get(), p.getRight().get()))
+				.forEach(p -> {
+					TicketReservation reservation = p.getLeft();
+					Event event = p.getMiddle();
+					Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
+					model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
+					Locale locale = p.getRight();
+					ticketReservationRepository.flagAsReminderSent(reservation.getId());
+					notificationManager.sendSimpleEmail(reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", null, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-email-txt.ms", model, locale));
+				});
 	}
 }

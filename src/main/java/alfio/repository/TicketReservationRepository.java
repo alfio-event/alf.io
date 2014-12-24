@@ -46,6 +46,12 @@ public interface TicketReservationRepository {
 	@Query("select id from tickets_reservation where status = 'OFFLINE_PAYMENT'")
 	List<String> findAllReservationsWaitingForPayment();
 
+	@Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and reminder_sent = false")
+	List<TicketReservation> findAllOfflinePaymentReservationForNotification(@Bind("expiration") Date expiration);
+
+	@Query("update tickets_reservation set reminder_sent = true where id = :reservationId")
+	int flagAsReminderSent(@Bind("reservationId") String reservationId);
+
 	@Query("select id from tickets_reservation where id = :reservationId for update")
 	String lockReservationForUpdate(@Bind("reservationId") String reservationId);
 

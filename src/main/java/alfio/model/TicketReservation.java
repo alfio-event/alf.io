@@ -22,6 +22,7 @@ import lombok.Getter;
 
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.Optional;
 
 @Getter
 public class TicketReservation {
@@ -38,7 +39,8 @@ public class TicketReservation {
 	private final String billingAddress;
     private final ZonedDateTime confirmationTimestamp;
 	private final PaymentProxy paymentMethod;
-	
+	private final Boolean reminderSent;
+
 	public TicketReservation(@Column("id") String id,
 							 @Column("validity") Date validity,
 							 @Column("status") TicketReservationStatus status,
@@ -46,7 +48,8 @@ public class TicketReservation {
 							 @Column("email_address") String email,
 							 @Column("billing_address") String billingAddress,
 							 @Column("confirmation_ts") ZonedDateTime confirmationTimestamp,
-							 @Column("payment_method") PaymentProxy paymentMethod) {
+							 @Column("payment_method") PaymentProxy paymentMethod,
+							 @Column("reminder_sent") Boolean reminderSent) {
 		this.id = id;
 		this.validity = validity;
 		this.status = status;
@@ -55,9 +58,14 @@ public class TicketReservation {
 		this.billingAddress = billingAddress;
         this.confirmationTimestamp = confirmationTimestamp;
 		this.paymentMethod = paymentMethod;
+		this.reminderSent = reminderSent;
 	}
 
     public boolean isStuck() {
         return status == TicketReservationStatus.STUCK;
     }
+
+	public boolean isReminderSent() {
+		return Optional.ofNullable(reminderSent).orElse(false);
+	}
 }

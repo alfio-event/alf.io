@@ -26,7 +26,9 @@ import java.util.Date;
 @Component
 public class Jobs {
 
-	private final TicketReservationManager ticketReservationManager;
+    private static final int ONE_MINUTE = 1000 * 60;
+    public static final int THIRTY_SECONDS = 1000 * 30;
+    private final TicketReservationManager ticketReservationManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
 
 	@Autowired
@@ -36,7 +38,7 @@ public class Jobs {
         this.specialPriceTokenGenerator = specialPriceTokenGenerator;
     }
 
-	@Scheduled(initialDelay = 1000 * 60, fixedDelay = 1000 * 30)
+	@Scheduled(initialDelay = ONE_MINUTE, fixedDelay = THIRTY_SECONDS)
 	public void cleanupExpiredPendingReservation() {
 		//cleanup reservation that have a expiration older than "now minus 10 minutes": this give some additional slack.
         final Date expirationDate = DateUtils.addMinutes(new Date(), -10);
@@ -44,7 +46,12 @@ public class Jobs {
         ticketReservationManager.markExpiredInPaymentReservationAsStuck(expirationDate);
 	}
 
-    @Scheduled(fixedDelay = 1000 * 30)
+    @Scheduled(fixedRate = 30 * ONE_MINUTE)
+    public void sendOfflinePaymentReminder() {
+        ticketReservationManager.sendReminderForOfflinePayments();
+    }
+
+    @Scheduled(fixedDelay = THIRTY_SECONDS)
     public void generateSpecialPriceCodes() {
         specialPriceTokenGenerator.generatePendingCodes();
     }

@@ -52,6 +52,7 @@ public enum ConfigurationKeys {
     SMTP_PROPERTIES("SMTP Properties", false),
 
     OFFLINE_PAYMENT_DAYS("Maximum number of days allowed to pay an offline ticket", false),
+    OFFLINE_REMINDER_HOURS("How many hours before expiration should be sent a reminder e-mail for offline payments?", false),
     BANK_ACCOUNT_NR("Bank Account number", false),
     //
     
