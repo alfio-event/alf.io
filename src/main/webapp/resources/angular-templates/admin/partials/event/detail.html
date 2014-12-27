@@ -18,30 +18,10 @@
 
     <div class="page-header" data-ng-if="pendingReservations.length > 0">
         <h3>Payments to be confirmed</h3>
-        <h5>Here the reservations for which a payment has not yet confirmed</h5>
-    </div>
-
-    <div class="wMarginTop wMarginBottom table-responsive" data-ng-if="pendingReservations.length > 0">
-        <table class="table">
-            <thead>
-                <th>ID</th>
-                <th>Expiration Date</th>
-                <th>Amount</th>
-                <th>Customer's name</th>
-                <th>Customer's email</th>
-                <th></th>
-            </thead>
-            <tbody>
-                <tr data-ng-repeat="reservation in pendingReservations">
-                    <td data-ng-class-even="'active'">{{reservation.left.id}}</td>
-                    <td data-ng-class-even="'active'">{{reservation.left.validity | formatDate}}</td>
-                    <td data-ng-class-even="'active'">{{reservation.right.totalPrice}}</td>
-                    <td data-ng-class-even="'active'">{{reservation.left.fullName}}</td>
-                    <td data-ng-class-even="'active'">{{reservation.left.email}}</td>
-                    <td data-ng-class-even="'active'"><button class="btn btn-success" data-ng-disabled="loading" data-ng-click="registerPayment(event.shortName, reservation.left.id)"><i class="fa fa-check"></i></button> <button data-ng-disabled="loading" data-ng-click="deletePayment(event.shortName, reservation.left.id)" class="btn btn-danger"><i class="fa fa-trash-o"></i></button></td>
-                </tr>
-            </tbody>
-        </table>
+        <h5>There are reservations for which a payment has not yet confirmed.</h5>
+        <a class="btn btn-warning" data-ui-sref="pending-reservations({eventName: event.shortName})">
+            <i class="fa fa-dollar"></i> Pending payments <pending-reservations-badge data-event-name="{{event.shortName}}"></pending-reservations-badge>
+        </a>
     </div>
 
     <div class="page-header">

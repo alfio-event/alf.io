@@ -42,7 +42,6 @@
                     <ul class="nav navbar-nav">
                         <li class="active"><a href="#">Dashboard</a></li>
                         <li><a data-ui-sref="configuration">Configuration</a></li>
-                        <li><a href="#">About</a></li>
                     </ul>
                 </div>
             </div>

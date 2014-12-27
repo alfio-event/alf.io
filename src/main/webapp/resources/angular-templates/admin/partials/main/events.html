@@ -21,9 +21,12 @@
         </td>
         <td data-ng-class-even="'active'">{{event.description}}</td>
         <td data-ng-class-even="'active'">{{event.formattedBegin | formatDate}} / {{event.formattedEnd | formatDate}}</td>
-        <td data-ng-class-even="'active'">
-            <a class="icon" data-ui-sref="events.detail({eventName: event.shortName})">
-                <i class="fa fa-bar-chart" data-tooltip="go to detail"></i>
+        <td data-ng-class-even="'active'" class="text-right">
+            <a class="btn btn-primary" data-ui-sref="events.detail({eventName: event.shortName})">
+                <i class="fa fa-bar-chart"></i> Detail
+            </a>
+            <a data-ng-if="supportsOfflinePayments(event)" class="btn btn-warning" data-ui-sref="pending-reservations({eventName: event.shortName})">
+                <i class="fa fa-dollar"></i> Pending payments <pending-reservations-badge data-event-name="{{event.shortName}}"></pending-reservations-badge>
             </a>
         </td>
     </tr>

@@ -55,6 +55,11 @@
                 templateUrl: BASE_STATIC_URL + '/configuration/index.html',
                 controller: 'ConfigurationController'
             })
+            .state('pending-reservations', {
+                url: '/pending-reservations/:eventName/',
+                templateUrl: BASE_STATIC_URL + '/pending-reservations/index.html',
+                controller: 'PendingReservationsController'
+            });
     });
 
     var validationResultHandler = function(form, deferred) {
@@ -486,6 +491,34 @@
             $scope.loading = true;
             ConfigurationService.update(conf).success(function(result) {
                 $scope.settings = result;
+                $scope.loading = false;
+            });
+        };
+    });
+
+    admin.controller('PendingReservationsController', function($scope, EventService, $stateParams) {
+        var getPendingPayments = function() {
+            EventService.getPendingPayments($stateParams.eventName).success(function(data) {
+                $scope.pendingReservations = data;
+            });
+        };
+
+        $scope.eventName = $stateParams.eventName;
+
+        getPendingPayments();
+        $scope.registerPayment = function(eventName, id) {
+            $scope.loading = true;
+            EventService.registerPayment(eventName, id).success(function() {
+                getPendingPayments();
+            }).error(function() {
+                $scope.loading = false;
+            });
+        };
+        $scope.deletePayment = function(eventName, id) {
+            $scope.loading = true;
+            EventService.cancelPayment(eventName, id).success(function() {
+                getPendingPayments();
+            }).error(function() {
                 $scope.loading = false;
             });
         };

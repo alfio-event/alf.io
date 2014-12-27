@@ -57,6 +57,10 @@
                 EventService.getAllEvents().success(function(data) {
                     $scope.events = data;
                 });
+
+                $scope.supportsOfflinePayments = function(event) {
+                    return _.contains(event.allowedPaymentProxies, 'OFFLINE');
+                };
             },
             link: angular.noop
         };
@@ -273,6 +277,36 @@
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-category.html'
         };
+    });
+
+    directives.directive('pendingReservationsBadge', function($rootScope, $interval, EventService) {
+        return {
+            restrict: 'E',
+            scope: false,
+            templateUrl: '/resources/angular-templates/admin/partials/pending-reservations/badge.html',
+            link: function(scope, element, attrs) {
+                var eventName = attrs.eventName;
+                scope.pendingReservations = 0;
+                if(angular.isDefined(eventName)) {
+                    var getPendingPayments = function() {
+                        EventService.getPendingPayments(eventName).success(function(data) {
+                            scope.pendingReservations = data.length;
+                            $rootScope.$broadcast('PendingReservationsFound', data);
+                        });
+                    };
+                    getPendingPayments();
+                    var promise = $interval(getPendingPayments, 10000);
+
+                    element.on('$destroy', function() {
+                        $interval.cancel(promise);
+                    });
+                } else {
+                    $rootScope.$on('PendingReservationsFound', function(data) {
+                        scope.pendingReservations = data.length;
+                    });
+                }
+            }
+        }
     });
 
 
