@@ -58,10 +58,10 @@ public interface EventRepository {
                      @Bind("location") String location, @Bind("latitude") String latitude, @Bind("longitude") String longitude, @Bind("start_ts") ZonedDateTime begin,
                      @Bind("end_ts") ZonedDateTime end, @Bind("time_zone") String timeZone, @Bind("organizationId") int organizationId);
 
-    @Query("update event set regular_price_cts = :regular_price, currency = :currency, available_seats = :available_seats, vat_included = :vat_included, vat = :vat, allowed_payment_proxies = :paymentProxies")
+    @Query("update event set regular_price_cts = :regular_price, currency = :currency, available_seats = :available_seats, vat_included = :vat_included, vat = :vat, allowed_payment_proxies = :paymentProxies where id = :eventId")
     int updatePrices(@Bind("regular_price") int regular_price, @Bind("currency") String currency,
                      @Bind("available_seats") int available_seats, @Bind("vat_included") boolean vat_included,
-                     @Bind("vat") BigDecimal vat, @Bind("paymentProxies") String allowedPaymentProxies);
+                     @Bind("vat") BigDecimal vat, @Bind("paymentProxies") String allowedPaymentProxies, @Bind("eventId") int eventId);
 
     /**
      * TODO check: This one is kinda ugly.

@@ -191,7 +191,7 @@ public class EventManager {
         String paymentProxies = collectPaymentProxies(em);
         int actualPrice = evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
         BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
-        eventRepository.updatePrices(actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies);
+        eventRepository.updatePrices(actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies, eventId);
     }
 
     public void insertCategory(int eventId, TicketCategoryModification tcm, String username) {
