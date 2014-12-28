@@ -33,13 +33,21 @@ import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.*;
+import java.util.regex.MatchResult;
+import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.MAPS_CLIENT_API_KEY;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
@@ -186,6 +194,28 @@ public class AdminApiController {
     public String deletePendingPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
         eventManager.deletePendingOfflinePayment(eventName, reservationId, principal.getName());
         return OK;
+    }
+
+    @RequestMapping(value = "/events/{eventName}/pending-payments/bulk-confirmation", method = POST)
+    public List<Triple<Boolean, String, String>> bulkConfirmation(@PathVariable("eventName") String eventName, Principal principal, @RequestParam("file") MultipartFile file) throws IOException {
+        try(BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String username = principal.getName();
+            return reader.lines()
+                    .map(line -> {
+                        String reservationID = null;
+                        try {
+                            Scanner scanner = new Scanner(line);
+                            scanner.findInLine("([a-zA-Z0-9\\-]+);(\\d+(\\.\\d+)?)");
+                            MatchResult match = scanner.match();
+                            reservationID = match.group(1);
+                            eventManager.confirmPayment(eventName, reservationID, new BigDecimal(match.group(2)), username);
+                            return Triple.of(Boolean.TRUE, reservationID, "");
+                        } catch (Exception e) {
+                            return Triple.of(Boolean.FALSE, Optional.ofNullable(reservationID).orElse(""), e.getMessage());
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
     }
 
     @RequestMapping(value = "/location/geo", method = GET)

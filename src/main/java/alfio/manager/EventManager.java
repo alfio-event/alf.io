@@ -52,6 +52,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.util.OptionalWrapper.optionally;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -500,6 +501,17 @@ public class EventManager {
 
     public void confirmPayment(String eventName, String reservationId, String username) {
         ticketReservationManager.confirmOfflinePayment(getSingleEvent(eventName, username), reservationId);
+    }
+
+    public void confirmPayment(String eventName, String reservationId, BigDecimal paidAmount, String username) {
+        Optional<Event> eventOptional = optionally(() -> getSingleEvent(eventName, username));
+        Validate.isTrue(eventOptional.isPresent(), "Event not found");
+        Event event = eventOptional.get();
+        Optional<OrderSummary> optionalOrderSummary = optionally(() -> ticketReservationManager.orderSummaryForReservationId(reservationId, event));
+        Validate.isTrue(optionalOrderSummary.isPresent(), "Reservation not found");
+        OrderSummary orderSummary = optionalOrderSummary.get();
+        Validate.isTrue(MonetaryUtil.centsToUnit(orderSummary.getOriginalTotalPrice().getPriceWithVAT()).compareTo(paidAmount) == 0, "paid price differs from due price");
+        ticketReservationManager.confirmOfflinePayment(event, reservationId);
     }
 
     public void deletePendingOfflinePayment(String eventName, String reservationId, String username) {

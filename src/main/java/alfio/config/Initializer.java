@@ -25,9 +25,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import javax.servlet.FilterRegistration.Dynamic;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.SessionCookieConfig;
+import javax.servlet.*;
 
 @Log4j2
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
@@ -59,6 +57,11 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 				log.warn("error starting db manager", e);
 			}
 		}
+	}
+
+	@Override
+	protected void customizeRegistration(ServletRegistration.Dynamic registration) {
+		registration.setMultipartConfig(new MultipartConfigElement(null, 1024000L, -1, 1024));
 	}
 
 	private void configureSessionCookie(ServletContext servletContext) {

@@ -8,7 +8,7 @@
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)'
     };
-    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages']);
+    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'angularFileUpload']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.otherwise("/");
@@ -496,7 +496,7 @@
         };
     });
 
-    admin.controller('PendingReservationsController', function($scope, EventService, $stateParams) {
+    admin.controller('PendingReservationsController', function($scope, EventService, $stateParams, $upload, $log) {
         var getPendingPayments = function() {
             EventService.getPendingPayments($stateParams.eventName).success(function(data) {
                 $scope.pendingReservations = data;
@@ -504,6 +504,21 @@
         };
 
         $scope.eventName = $stateParams.eventName;
+        $scope.uploadFiles = function(files) {
+            $scope.results = [];
+            $scope.upload = $upload.upload({
+                url: '/admin/api/events/'+$stateParams.eventName+'/pending-payments/bulk-confirmation',
+                method: 'POST',
+                //headers: {'Authorization': 'xxx'}, // only for html5
+                //withCredentials: true,
+                file: files[0]
+            }).progress(function(evt) {
+                $log.info('progress: ' + parseInt(100.0 * evt.loaded / evt.total) + '% file :'+ evt.config.file.name);
+            }).success(function(data, status, headers, config) {
+                $scope.results = data;
+                getPendingPayments();
+            });
+        };
 
         getPendingPayments();
         $scope.registerPayment = function(eventName, id) {

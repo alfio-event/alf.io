@@ -57,3 +57,11 @@ div.wMarginBottom {
     -ms-user-select:none;
     user-select:none;
 }
+
+.drop-file-zone {
+    border: 1px dimgray dashed;
+}
+
+.drop-file-zone-hover {
+    border: 1px green dashed;
+}
