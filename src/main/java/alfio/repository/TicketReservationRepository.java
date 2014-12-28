@@ -16,9 +16,7 @@
  */
 package alfio.repository;
 
-import alfio.datamapper.Bind;
-import alfio.datamapper.Query;
-import alfio.datamapper.QueryRepository;
+import alfio.datamapper.*;
 import alfio.model.TicketReservation;
 
 import java.time.ZonedDateTime;
@@ -47,6 +45,7 @@ public interface TicketReservationRepository {
 	List<String> findAllReservationsWaitingForPayment();
 
 	@Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and reminder_sent = false")
+	@QueriesOverride(@QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and reminder_sent = false", db = "PGSQL"))
 	List<TicketReservation> findAllOfflinePaymentReservationForNotification(@Bind("expiration") Date expiration);
 
 	@Query("update tickets_reservation set reminder_sent = true where id = :reservationId")
