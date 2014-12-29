@@ -42,7 +42,7 @@
             <div class="navbar-left">
                 <div class="collapse navbar-collapse">
                     <ul class="nav navbar-nav">
-                        <li class="active"><a href="#">Dashboard</a></li>
+                        <li><a data-ui-sref="index">Dashboard</a></li>
                         <li><a data-ui-sref="configuration">Configuration</a></li>
                     </ul>
                 </div>
