@@ -102,19 +102,21 @@
                         <th>Owner's e-mail</th>
                         <th>Customer's name</th>
                         <th>Customer's e-mail</th>
+                        <th>Payment Type</th>
                         <th>transaction id</th>
                         <th>transaction timestamp</th>
                         <th></th>
                     </thead>
                     <tbody>
                         <tr data-ng-repeat="ticket in ::ticketCategory.tickets | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
-                            <td data-ng-class-even="'active'"><i data-ng-class="evaluateTicketStatus(ticket.status)"></i></td>
+                            <td data-ng-class-even="'active'"><i data-ng-class="evaluateTicketStatus(ticket.status)"></i><br/><small>{{ticket.status | statusText}}</small></td>
                             <td data-ng-class-even="'active'">{{::ticket.uuid}}</td>
                             <td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
                             <td data-ng-class-even="'active'">{{::ticket.fullName}}</td>
                             <td data-ng-class-even="'active'">{{::ticket.email}}</td>
                             <td data-ng-class-even="'active'">{{::ticket.ticketReservation.fullName}}</td>
                             <td data-ng-class-even="'active'">{{::ticket.ticketReservation.email}}</td>
+                            <td data-ng-class-even="'active'">{{::ticket.ticketReservation.paymentMethod}}</td>
                             <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
                             <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
                             <td data-ng-class-even="'active'"><button class="btn btn-warning" data-ng-click="toggleLocking(ticket, ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button></td>

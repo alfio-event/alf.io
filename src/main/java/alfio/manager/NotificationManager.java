@@ -16,8 +16,9 @@
  */
 package alfio.manager;
 
-import alfio.manager.support.PDFTemplateBuilder;
-import alfio.manager.support.TextTemplateBuilder;
+import alfio.manager.support.PartialTicketPDFGenerator;
+import alfio.manager.support.PartialTicketTextGenerator;
+import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.Mailer;
 import alfio.model.Event;
 import alfio.model.Ticket;
@@ -44,15 +45,19 @@ public class NotificationManager {
         this.messageSource = messageSource;
     }
 
-    public void sendTicketByEmail(Ticket ticket, Event event, Locale locale, TextTemplateBuilder textBuilder, PDFTemplateBuilder ticketBuilder) throws DocumentException {
+    public void sendTicketByEmail(Ticket ticket, Event event, Locale locale, PartialTicketTextGenerator textBuilder, PartialTicketPDFGenerator ticketBuilder) throws DocumentException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ticketBuilder.build().createPDF(baos);
+        ticketBuilder.generate(ticket).createPDF(baos);
         Mailer.Attachment attachment = new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", new ByteArrayResource(baos.toByteArray()), "application/pdf");
-        mailer.send(ticket.getEmail(), messageSource.getMessage("ticket-email-subject", new Object[] {event.getShortName()}, locale), textBuilder.build(), Optional.empty(), attachment);
+        mailer.send(ticket.getEmail(), messageSource.getMessage("ticket-email-subject", new Object[] {event.getShortName()}, locale), textBuilder.generate(ticket), Optional.empty(), attachment);
     }
 
-    public void sendSimpleEmail(String recipient, String subject, TextTemplateBuilder textBuilder) {
-        mailer.send(recipient, subject, textBuilder.build(), Optional.empty());
+    public void sendSimpleEmail(String recipient, String subject, TextTemplateGenerator textBuilder) {
+        mailer.send(recipient, subject, textBuilder.generate(), Optional.empty());
+    }
+
+    public void sendSimpleEmail(String recipient, String subject, String text) {
+        mailer.send(recipient, subject, text, Optional.empty());
     }
 
 

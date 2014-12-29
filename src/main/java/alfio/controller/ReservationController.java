@@ -24,9 +24,9 @@ import alfio.manager.EventManager;
 import alfio.manager.StripeManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.OrderSummary;
-import alfio.manager.support.PDFTemplateBuilder;
+import alfio.manager.support.PartialTicketPDFGenerator;
+import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.PaymentResult;
-import alfio.manager.support.TextTemplateBuilder;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.Event;
@@ -421,24 +421,24 @@ public class ReservationController {
 
 	private void updateTicketOwner(UpdateTicketOwnerForm updateTicketOwner, HttpServletRequest request, Ticket t, Event event, TicketReservation ticketReservation) {
 		ticketReservationManager.updateTicketOwner(t, RequestContextUtils.getLocale(request), event, updateTicketOwner,
-				getConfirmationTextBuilder(request, t, event, ticketReservation),
+				getConfirmationTextBuilder(request, event, ticketReservation),
 				getOwnerChangeTextBuilder(request, t, event),
 				preparePdfTicket(request, event, ticketReservation, t));
 	}
 
-	private TextTemplateBuilder getOwnerChangeTextBuilder(HttpServletRequest request, Ticket t, Event event) {
-		return TemplateProcessor.buildEmailForOwnerChange(t.getEmail(), event, t, organizationRepository, ticketReservationManager, templateManager, request);
+	private PartialTicketTextGenerator getOwnerChangeTextBuilder(HttpServletRequest request, Ticket t, Event event) {
+		return TemplateProcessor.buildEmailForOwnerChange(event, t, organizationRepository, ticketReservationManager, templateManager, request);
 	}
 
-	private TextTemplateBuilder getConfirmationTextBuilder(HttpServletRequest request, Ticket t, Event event, TicketReservation ticketReservation) {
-		return TemplateProcessor.buildEmail(event, organizationRepository, ticketReservation, t, templateManager, request);
+	private PartialTicketTextGenerator getConfirmationTextBuilder(HttpServletRequest request, Event event, TicketReservation ticketReservation) {
+		return TemplateProcessor.buildPartialEmail(event, organizationRepository, ticketReservation, templateManager, request);
 	}
 
-	private PDFTemplateBuilder preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {
+	private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
 		Organization organization = organizationRepository.getById(event.getOrganizationId());
 		try {
-			return TemplateProcessor.buildPDFTicket(request, event, ticketReservation, ticket, ticketCategory, organization, templateManager);
+			return TemplateProcessor.buildPartialPDFTicket(request, event, ticketReservation, ticketCategory, organization, templateManager);
 		} catch (WriterException | IOException e) {
 			throw new IllegalStateException(e);
 		}

@@ -16,7 +16,9 @@
  */
 package alfio.manager.support;
 
+import alfio.model.Ticket;
+
 @FunctionalInterface
-public interface TextTemplateBuilder {
-    String build();
+public interface PartialTicketTextGenerator {
+    String generate(Ticket ticket);
 }

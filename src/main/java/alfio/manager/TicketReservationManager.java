@@ -503,9 +503,9 @@ public class TicketReservationManager {
 								  Locale locale,
 								  Event event,
 								  UpdateTicketOwnerForm updateTicketOwner,
-								  TextTemplateBuilder confirmationTextBuilder,
-								  TextTemplateBuilder ownerChangeTextBuilder,
-								  PDFTemplateBuilder pdfTemplateBuilder) {
+								  PartialTicketTextGenerator confirmationTextBuilder,
+								  PartialTicketTextGenerator ownerChangeTextBuilder,
+								  PartialTicketPDFGenerator pdfTemplateGenerator) {
 
 		String newEmail = updateTicketOwner.getEmail().trim();
 		String newFullName = updateTicketOwner.getFullName().trim();
@@ -520,19 +520,20 @@ public class TicketReservationManager {
 				updateTicketOwner.getNotes(),
 				locale.getLanguage());
 
+		Ticket newTicket = ticketRepository.findByUUID(ticket.getUuid());
 		if (!StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) || !StringUtils.equalsIgnoreCase(newFullName, ticket.getFullName())) {
-			sendTicketByEmail(ticketRepository.findByUUID(ticket.getUuid()), locale, event, confirmationTextBuilder, pdfTemplateBuilder);
+			sendTicketByEmail(newTicket, locale, event, confirmationTextBuilder, pdfTemplateGenerator);
 		}
 
 		if (StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail())) {
 			String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getShortName()}, locale);
-			notificationManager.sendSimpleEmail(ticket.getEmail(), subject, ownerChangeTextBuilder);
+			notificationManager.sendSimpleEmail(ticket.getEmail(), subject, ownerChangeTextBuilder.generate(newTicket));
 		}
 	}
 
-	private void sendTicketByEmail(Ticket ticket, Locale locale, Event event, TextTemplateBuilder confirmationTextBuilder, PDFTemplateBuilder pdfTemplateBuilder) {
+	private void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder, PartialTicketPDFGenerator pdfTemplateGenerator) {
 		try {
-            notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, pdfTemplateBuilder);
+            notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, pdfTemplateGenerator);
         } catch (DocumentException e) {
             throw new IllegalStateException(e);
         }

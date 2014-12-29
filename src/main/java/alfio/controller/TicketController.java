@@ -19,7 +19,7 @@ package alfio.controller;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
-import alfio.manager.support.PDFTemplateBuilder;
+import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
@@ -116,7 +116,7 @@ public class TicketController {
 		Event event = data.getLeft();
 
 		notificationManager.sendTicketByEmail(ticket,
-				event, locale, TemplateProcessor.buildEmail(event, organizationRepository, data.getMiddle(), ticket, templateManager, request),
+				event, locale, TemplateProcessor.buildPartialEmail(event, organizationRepository, data.getMiddle(), templateManager, request),
 				preparePdfTicket(request, event, data.getMiddle(), ticket));
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId
 				+ ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "/success") + "?ticket-email-sent=true";
@@ -140,7 +140,7 @@ public class TicketController {
 		response.setContentType("application/pdf");
 		response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
 		try (OutputStream os = response.getOutputStream()) {
-			preparePdfTicket(request, data.getLeft(), data.getMiddle(), ticket).build().createPDF(os);
+			preparePdfTicket(request, data.getLeft(), data.getMiddle(), ticket).generate(ticket).createPDF(os);
 		}
 	}
 	
@@ -167,9 +167,9 @@ public class TicketController {
 		
 	}
 
-	private PDFTemplateBuilder preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
+	private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
 		Organization organization = organizationRepository.getById(event.getOrganizationId());
-		return TemplateProcessor.buildPDFTicket(request, event, ticketReservation, ticket, ticketCategory, organization, templateManager);
+		return TemplateProcessor.buildPartialPDFTicket(request, event, ticketReservation, ticketCategory, organization, templateManager);
 	}
 }

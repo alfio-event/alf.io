@@ -290,6 +290,7 @@
                 case 'PENDING':
                     return cls + 'fa-warning text-warning';
                 case 'ACQUIRED':
+                case 'TO_BE_PAID':
                     return cls + 'fa-bookmark text-success';
                 case 'CHECKED_IN':
                     return cls + 'fa-check-circle text-success';
@@ -496,10 +497,11 @@
         };
     });
 
-    admin.controller('PendingReservationsController', function($scope, EventService, $stateParams, $upload, $log) {
+    admin.controller('PendingReservationsController', function($scope, EventService, $stateParams, $upload, $log, $window) {
         var getPendingPayments = function() {
             EventService.getPendingPayments($stateParams.eventName).success(function(data) {
                 $scope.pendingReservations = data;
+                $scope.loading = false;
             });
         };
 
@@ -509,8 +511,6 @@
             $scope.upload = $upload.upload({
                 url: '/admin/api/events/'+$stateParams.eventName+'/pending-payments/bulk-confirmation',
                 method: 'POST',
-                //headers: {'Authorization': 'xxx'}, // only for html5
-                //withCredentials: true,
                 file: files[0]
             }).progress(function(evt) {
                 $log.info('progress: ' + parseInt(100.0 * evt.loaded / evt.total) + '% file :'+ evt.config.file.name);
@@ -530,6 +530,9 @@
             });
         };
         $scope.deletePayment = function(eventName, id) {
+            if(!$window.confirm('Do you really want to delete this reservation?')) {
+                return;
+            }
             $scope.loading = true;
             EventService.cancelPayment(eventName, id).success(function() {
                 getPendingPayments();

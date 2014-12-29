@@ -17,8 +17,10 @@
 package alfio.controller.support;
 
 import alfio.manager.TicketReservationManager;
-import alfio.manager.support.PDFTemplateBuilder;
-import alfio.manager.support.TextTemplateBuilder;
+import alfio.manager.support.PDFTemplateGenerator;
+import alfio.manager.support.PartialTicketPDFGenerator;
+import alfio.manager.support.PartialTicketTextGenerator;
+import alfio.manager.support.TextTemplateGenerator;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
@@ -44,7 +46,7 @@ public final class TemplateProcessor {
 
     private TemplateProcessor() {}
 
-    public static TextTemplateBuilder buildEmail(Event event,
+    public static TextTemplateGenerator buildEmail(Event event,
                                               OrganizationRepository organizationRepository,
                                               TicketReservation ticketReservation,
                                               Ticket ticket,
@@ -60,33 +62,47 @@ public final class TemplateProcessor {
         });
     }
 
-    public static TextTemplateBuilder buildEmailForOwnerChange(String newEmailOwner,
-                                                            Event e,
-                                                            Ticket t,
-                                                            OrganizationRepository organizationRepository,
-                                                            TicketReservationManager ticketReservationManager,
-                                                            TemplateManager templateManager,
-                                                            HttpServletRequest request) {
-        return () -> {
+    public static PartialTicketTextGenerator buildPartialEmail(Event event,
+                                                   OrganizationRepository organizationRepository,
+                                                   TicketReservation ticketReservation,
+                                                   TemplateManager templateManager,
+                                                   HttpServletRequest request) {
+        return (ticket) -> {
+            Map<String, Object> model = new HashMap<>();
+            model.put("organization", organizationRepository.getById(event.getOrganizationId()));
+            model.put("event", event);
+            model.put("ticketReservation", ticketReservation);
+            model.put("ticket", ticket);
+            return templateManager.renderClassPathResource("/alfio/templates/ticket-email-txt.ms", model, RequestContextUtils.getLocale(request));
+        };
+    }
+
+    public static PartialTicketTextGenerator buildEmailForOwnerChange(Event e,
+                                                                 Ticket oldTicket,
+                                                                 OrganizationRepository organizationRepository,
+                                                                 TicketReservationManager ticketReservationManager,
+                                                                 TemplateManager templateManager,
+                                                                 HttpServletRequest request) {
+        return (newTicket) -> {
             String eventName = e.getShortName();
             Map<String, Object> emailModel = new HashMap<>();
-            emailModel.put("ticket", t);
+            emailModel.put("ticket", oldTicket);
             emailModel.put("organization", organizationRepository.getById(e.getOrganizationId()));
             emailModel.put("eventName", eventName);
-            emailModel.put("previousEmail", t.getEmail());
-            emailModel.put("newEmail", newEmailOwner);
-            emailModel.put("reservationUrl", ticketReservationManager.reservationUrl(t.getTicketsReservationId()));
+            emailModel.put("previousEmail", oldTicket.getEmail());
+            emailModel.put("newEmail", newTicket.getEmail());
+            emailModel.put("reservationUrl", ticketReservationManager.reservationUrl(oldTicket.getTicketsReservationId()));
             return templateManager.renderClassPathResource("/alfio/templates/ticket-has-changed-owner-txt.ms", emailModel, RequestContextUtils.getLocale(request));
         };
     }
 
-    public static PDFTemplateBuilder buildPDFTicket(HttpServletRequest request,
+    public static PDFTemplateGenerator buildPDFTicket(HttpServletRequest request,
                                                     Event event,
                                                     TicketReservation ticketReservation,
                                                     Ticket ticket,
                                                     TicketCategory ticketCategory,
                                                     Organization organization,
-                                                    TemplateManager templateManager) throws WriterException, IOException {
+                                                    TemplateManager templateManager) {
         return () -> {
             String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
             //
@@ -106,5 +122,14 @@ public final class TemplateProcessor {
             renderer.layout();
             return renderer;
         };
+    }
+
+    public static PartialTicketPDFGenerator buildPartialPDFTicket(HttpServletRequest request,
+                                                                  Event event,
+                                                                  TicketReservation ticketReservation,
+                                                                  TicketCategory ticketCategory,
+                                                                  Organization organization,
+                                                                  TemplateManager templateManager) throws WriterException, IOException {
+        return (ticket) -> buildPDFTicket(request, event, ticketReservation, ticket, ticketCategory, organization, templateManager).generate();
     }
 }

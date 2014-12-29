@@ -29,7 +29,9 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
 import java.util.Base64;
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 
 @Getter
 public class Ticket {
@@ -37,6 +39,8 @@ public class Ticket {
     public enum TicketStatus {
         FREE, PENDING, TO_BE_PAID, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED, INVALIDATED
     }
+
+    private static final Set<TicketStatus> SOLD_STATUSES = EnumSet.of(TicketStatus.TO_BE_PAID, TicketStatus.ACQUIRED, TicketStatus.CANCELLED, TicketStatus.CHECKED_IN);
 
     private final int id;
     private final String uuid;
@@ -134,7 +138,7 @@ public class Ticket {
     }
 
     public boolean hasBeenSold() {
-        return status == TicketStatus.ACQUIRED || status == TicketStatus.CANCELLED || status == TicketStatus.CHECKED_IN;
+        return SOLD_STATUSES.contains(status);
     }
     
     private static String hmacSHA256Base64(String key, String code) {

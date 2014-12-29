@@ -38,7 +38,7 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status in ('ACQUIRED', 'CHECKED_IN') and category_id = :categoryId and event_id = :eventId")
     Integer countConfirmedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
-    @Query("select * from ticket where status in ('PENDING', 'ACQUIRED', 'CANCELLED', 'CHECKED_IN') and category_id = :categoryId and event_id = :eventId")
+    @Query("select * from ticket where status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and category_id = :categoryId and event_id = :eventId")
     List<Ticket> findAllModifiedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
 	@Query("select count(*) from ticket where status in ('ACQUIRED', 'CHECKED_IN', 'PENDING') and category_id = :categoryId and event_id = :eventId")

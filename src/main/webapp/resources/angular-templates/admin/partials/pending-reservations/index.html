@@ -30,7 +30,7 @@
                         <td data-ng-class-even="'active'">{{reservation.right.totalPrice}}</td>
                         <td data-ng-class-even="'active'">{{reservation.left.fullName}}</td>
                         <td data-ng-class-even="'active'">{{reservation.left.email}}</td>
-                        <td data-ng-class-even="'active'"><button class="btn btn-success" data-ng-disabled="loading" data-ng-click="registerPayment(eventName, reservation.left.id)"><i class="fa fa-check"></i></button> <button data-ng-disabled="loading" data-ng-click="deletePayment(event.shortName, reservation.left.id)" class="btn btn-danger"><i class="fa fa-trash-o"></i></button></td>
+                        <td data-ng-class-even="'active'"><button class="btn btn-success btn-xs" data-ng-disabled="loading" data-ng-click="registerPayment(eventName, reservation.left.id)"><i class="fa fa-check"></i> confirm</button> <button data-ng-disabled="loading" data-ng-click="deletePayment(event.shortName, reservation.left.id)" class="btn btn-danger btn-xs"><i class="fa fa-trash-o"></i> delete</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -41,7 +41,7 @@
             <small class="text-muted">Upload CSV file(s) with received payments</small>
         </div>
 
-        <div class="drop-file-zone wMarginBottom well" data-accept="text/*" data-ng-file-change="uploadFiles($files)" data-ng-file-drop data-ng-file-drag-over-class="drop-file-zone-hover">
+        <div class="drop-file-zone wMarginBottom well" data-accept="text/*" data-ng-file-change="uploadFiles($files)" data-ng-file-drop data-drag-over-class="drop-file-zone-hover">
             Drop file(s) here
         </div>
 

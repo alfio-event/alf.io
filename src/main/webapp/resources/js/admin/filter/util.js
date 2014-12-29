@@ -21,4 +21,13 @@
             return dateAsString;
         };
     });
+
+    filters.filter('statusText', function() {
+        return function(status) {
+            if(!status) {
+                return '';
+            }
+            return status.replace(/_/g, ' ').toLowerCase();
+        };
+    });
 })();
