@@ -81,8 +81,10 @@
 {{/ticketsByCategory}}
 </ul>
 <div class="container-fluid hidden" id="back-to-event-site">
-	<div class="pull-left"><a href="{{event.websiteUrl}}" class="btn btn-default">{{#i18n}}to-event-site{{/i18n}}</a></div>
-	<div class="pull-right"><a href="{{request.contextPath}}/event/{{event.shortName}}/" class="btn btn-success pull-right">{{#i18n}}buy-other-tickets{{/i18n}}</a></div>
+	<div class="row">
+		<div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom"><a href="{{request.contextPath}}/event/{{event.shortName}}/" class="form-control-static btn btn-success btn-block">{{#i18n}}buy-other-tickets{{/i18n}}</a></div>
+		<div class="col-md-4 col-md-pull-4 col-xs-12"><a href="{{event.websiteUrl}}" class="form-control-static btn btn-default btn-block">{{#i18n}}to-event-site{{/i18n}}</a></div>
+	</div>
 </div>
 <div class="clearfix wMarginBottom"></div>
 <div class="text-center">

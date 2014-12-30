@@ -92,3 +92,13 @@ body {
 	width:150px
 }
 
+.payment-method-container {
+	width:80%;
+}
+
+@media screen and (max-width: 768px) {
+	.xs-payment-method {
+		width:80%;
+		margin-bottom: 5px;
+	}
+}

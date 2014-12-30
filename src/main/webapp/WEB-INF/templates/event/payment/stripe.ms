@@ -1,6 +1,6 @@
 <div class="row wMarginTop wMarginBottom">
-    <div class="col-md-2 col-xs-3"><a href="https://stripe.com/" target="_blank"><img src="{{request.contextPath}}/resources/images/outline.png"></a></div>
-    <div class="col-md-10 col-xs-9 text-muted">{{#i18n}}reservation-page.credit-card.description{{/i18n}}</div>
+    <div class="col-md-3 col-sm-3 col-xs-9 col-md-offset-0 col-xs-offset-3"><a href="https://stripe.com/" target="_blank"><img src="{{request.contextPath}}/resources/images/outline.png"></a></div>
+    <div class="col-md-9 col-sm-9 col-xs-12 text-muted">{{#i18n}}reservation-page.credit-card.description{{/i18n}}</div>
 </div>
 
 <div class="alert alert-danger payment-errors hide" role="alert">

@@ -111,9 +111,9 @@
 	<h2>{{#i18n}}reservation-page.payment{{/i18n}}</h2>
 
 		{{#event.multiplePaymentMethods}}
-			<div class="btn-group" data-toggle="buttons">
+			<div class="btn-group-justified" data-toggle="buttons">
 				{{#event.allowedPaymentProxies}}
-				<label class="btn btn-default tooltip-handler" {{#is-payment-method}}[STRIPE,{{.}}]  title="Powered by Stripe"{{/is-payment-method}}>
+				<label class="btn btn-default tooltip-handler xs-payment-method" {{#is-payment-method}}[STRIPE,{{.}}]  title="Powered by Stripe"{{/is-payment-method}}>
 					<input type="radio" required name="paymentMethod" id="option-{{.}}" data-payment-method="{{.}}" autocomplete="off" value="{{.}}">
 					{{#is-payment-method}}[STRIPE,{{.}}]
 						<i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
@@ -153,14 +153,16 @@
 	<hr />
 
 	{{#orderSummary.free}}
-        <button type="submit" class="btn btn-success pull-right" id="continue-button">{{#i18n}}reservation-page.continue{{/i18n}}</button>
-        <button type="submit" class="btn btn-default pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
+		<div class="row">
+			<div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom"><button type="submit" class="btn btn-success btn-block" id="continue-button">{{#i18n}}reservation-page.continue{{/i18n}}</button></div>
+			<div class="col-md-4 col-md-pull-4 col-xs-12"><button type="submit" class="btn btn-default btn-block" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button></div>
+		</div>
 	{{/orderSummary.free}}
 	{{^orderSummary.free}}
-	<div class="form-group">
-        <button type="submit" class="btn btn-success pull-right" id="continue-button">{{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}</button>
-        <button type="submit" class="btn btn-default pull-left" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
-    </div>
+		<div class="row">
+			<div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom"><button type="submit" class="btn btn-success btn-block" id="continue-button">{{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}</button></div>
+			<div class="col-md-4 col-md-pull-4 col-xs-12"><button type="submit" class="btn btn-default btn-block" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button></div>
+		</div>
 	{{/orderSummary.free}}
  
  	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">

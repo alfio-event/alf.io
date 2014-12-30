@@ -158,8 +158,11 @@
 
 	<input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 	<input type="hidden" name="promoCode" value="{{promoCode}}">
-    <a href="{{event.websiteUrl}}" class="btn btn-default pull-left">{{#i18n}}to-event-site{{/i18n}}</a>
-    <button type="submit" class="btn btn-success {{#forwardButtonDisabled}}disabled{{/forwardButtonDisabled}} pull-right">{{#i18n}}show-event.continue{{/i18n}}</button>
+
+	<div class="row">
+		<div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom"><button type="submit" class="btn btn-success {{#forwardButtonDisabled}}disabled{{/forwardButtonDisabled}} btn-block">{{#i18n}}show-event.continue{{/i18n}}</button></div>
+		<div class="col-md-4 col-md-pull-4 col-xs-12"><a href="{{event.websiteUrl}}" class="btn btn-default btn-block">{{#i18n}}to-event-site{{/i18n}}</a></div>
+	</div>
 
 	<div class="clearfix"></div>
 </form>
