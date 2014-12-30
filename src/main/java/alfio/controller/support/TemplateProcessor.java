@@ -20,7 +20,6 @@ import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PDFTemplateGenerator;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
-import alfio.manager.support.TextTemplateGenerator;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
@@ -45,22 +44,6 @@ import static alfio.util.TicketUtil.createQRCode;
 public final class TemplateProcessor {
 
     private TemplateProcessor() {}
-
-    public static TextTemplateGenerator buildEmail(Event event,
-                                              OrganizationRepository organizationRepository,
-                                              TicketReservation ticketReservation,
-                                              Ticket ticket,
-                                              TemplateManager templateManager,
-                                              HttpServletRequest request) {
-        return (() -> {
-            Map<String, Object> model = new HashMap<>();
-            model.put("organization", organizationRepository.getById(event.getOrganizationId()));
-            model.put("event", event);
-            model.put("ticketReservation", ticketReservation);
-            model.put("ticket", ticket);
-            return templateManager.renderClassPathResource("/alfio/templates/ticket-email-txt.ms", model, RequestContextUtils.getLocale(request));
-        });
-    }
 
     public static PartialTicketTextGenerator buildPartialEmail(Event event,
                                                    OrganizationRepository organizationRepository,

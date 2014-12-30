@@ -13,7 +13,7 @@
 <div class="wMarginBottom wMarginTop center-block">
     <h4>{{#i18n}}reservation-page-waiting.required-steps{{/i18n}}</h4>
     <ol>
-        <li>{{#i18n}}reservation-page-waiting.required-steps.1 [{{event.currency}} {{totalPrice}}] [{{bankAccount}}] [{{reservation.id}}]{{/i18n}}</li>
+        <li>{{#i18n}}reservation-page-waiting.required-steps.1 [{{event.currency}} {{totalPrice}}] [{{bankAccount}}] [{{paymentReason}}]{{/i18n}}</li>
         <li>{{#i18n}}reservation-page-waiting.required-steps.2 [{{emailAddress}}] [{{reservation.id}}]{{/i18n}}</li>
         <li>{{#i18n}}reservation-page-waiting.required-steps.3{{/i18n}}</li>
     </ol>

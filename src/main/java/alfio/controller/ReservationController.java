@@ -254,13 +254,15 @@ public class ReservationController {
 		TicketReservationStatus status = reservation.map(TicketReservation::getStatus).orElse(TicketReservationStatus.PENDING);
 		if(reservation.isPresent() && status == TicketReservationStatus.OFFLINE_PAYMENT) {
 			Event ev = event.get();
+			TicketReservation ticketReservation = reservation.get();
 			OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, ev);
 			model.addAttribute("totalPrice", orderSummary.getTotalPrice());
 			model.addAttribute("emailAddress", organizationRepository.getById(ev.getOrganizationId()).getEmail());
-			model.addAttribute("reservation", reservation.get());
+			model.addAttribute("reservation", ticketReservation);
+			model.addAttribute("paymentReason", ticketReservationManager.getShortReservationID(reservationId));
 			model.addAttribute("pageTitle", "reservation-page-waiting.header.title");
 			model.addAttribute("bankAccount", configurationManager.getStringConfigValue(ConfigurationKeys.BANK_ACCOUNT_NR).orElse(""));
-			model.addAttribute("expires", ZonedDateTime.ofInstant(reservation.get().getValidity().toInstant(), ev.getZoneId()));
+			model.addAttribute("expires", ZonedDateTime.ofInstant(ticketReservation.getValidity().toInstant(), ev.getZoneId()));
 			model.addAttribute("event", ev);
 			return "/event/reservation-waiting-for-payment";
 		}
@@ -449,9 +451,9 @@ public class ReservationController {
 		Locale locale = RequestContextUtils.getLocale(request);
 		String reservationTxt = templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms",
 				ticketReservationManager.prepareModelForReservationEmail(event, reservation), locale);
-		
+		String shortReservationID = ticketReservationManager.getShortReservationID(reservation.getId());
 		mailer.send(reservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-				new Object[] { event.getShortName() }, locale), reservationTxt,
+				new Object[] { shortReservationID, event.getShortName() }, locale), reservationTxt,
 				Optional.empty());
 	}
 	

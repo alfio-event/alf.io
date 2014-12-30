@@ -52,8 +52,7 @@ import java.util.stream.Collectors;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
 import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
-import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
-import static alfio.model.system.ConfigurationKeys.OFFLINE_REMINDER_HOURS;
+import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.formatCents;
 import static alfio.util.OptionalWrapper.optionally;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
@@ -242,7 +241,7 @@ public class TicketReservationManager {
 		acquireTickets(TicketStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getBillingAddress());
 		Locale language = ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().map(t -> Locale.forLanguageTag(t.getUserLanguage())).orElse(Locale.ENGLISH);
 		notificationManager.sendSimpleEmail(ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-				new Object[]{event.getShortName()}, language), () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language));
+				new Object[]{ getShortReservationID(reservationId), event.getShortName()}, language), () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language));
 	}
 
 	public void deleteOfflinePayment(Event singleEvent, String reservationId) {
@@ -592,7 +591,20 @@ public class TicketReservationManager {
 					model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
 					Locale locale = p.getRight();
 					ticketReservationRepository.flagAsReminderSent(reservation.getId());
-					notificationManager.sendSimpleEmail(reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", null, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-email-txt.ms", model, locale));
+					notificationManager.sendSimpleEmail(reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{ getShortReservationID(reservation.getId()) }, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-email-txt.ms", model, locale));
 				});
+	}
+
+	public TicketReservation findByPartialID(String reservationId) {
+		Validate.notBlank(reservationId, "invalid reservationId");
+		Validate.matchesPattern(reservationId, "^[^%]*$", "invalid character found");
+		List<TicketReservation> results = ticketReservationRepository.findByPartialID(StringUtils.trimToEmpty(reservationId).toLowerCase() + "%");
+		Validate.isTrue(results.size() > 0, "reservation not found");
+		Validate.isTrue(results.size() == 1, "multiple results found. Try handling this reservation manually.");
+		return results.get(0);
+	}
+
+	public String getShortReservationID(String reservationId) {
+		return StringUtils.substring(reservationId, 0, configurationManager.getIntConfigValue(PARTIAL_RESERVATION_ID_LENGTH, 8)).toUpperCase();
 	}
 }

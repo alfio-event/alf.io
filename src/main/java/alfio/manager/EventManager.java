@@ -507,11 +507,12 @@ public class EventManager {
         Optional<Event> eventOptional = optionally(() -> getSingleEvent(eventName, username));
         Validate.isTrue(eventOptional.isPresent(), "Event not found");
         Event event = eventOptional.get();
-        Optional<OrderSummary> optionalOrderSummary = optionally(() -> ticketReservationManager.orderSummaryForReservationId(reservationId, event));
+        TicketReservation reservation = ticketReservationManager.findByPartialID(reservationId);
+        Optional<OrderSummary> optionalOrderSummary = optionally(() -> ticketReservationManager.orderSummaryForReservationId(reservation.getId(), event));
         Validate.isTrue(optionalOrderSummary.isPresent(), "Reservation not found");
         OrderSummary orderSummary = optionalOrderSummary.get();
         Validate.isTrue(MonetaryUtil.centsToUnit(orderSummary.getOriginalTotalPrice().getPriceWithVAT()).compareTo(paidAmount) == 0, "paid price differs from due price");
-        ticketReservationManager.confirmOfflinePayment(event, reservationId);
+        ticketReservationManager.confirmOfflinePayment(event, reservation.getId());
     }
 
     public void deletePendingOfflinePayment(String eventName, String reservationId, String username) {

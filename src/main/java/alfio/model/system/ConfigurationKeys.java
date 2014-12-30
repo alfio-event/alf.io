@@ -54,6 +54,7 @@ public enum ConfigurationKeys {
     OFFLINE_PAYMENT_DAYS("Maximum number of days allowed to pay an offline ticket", false),
     OFFLINE_REMINDER_HOURS("How many hours before expiration should be sent a reminder e-mail for offline payments?", false),
     BANK_ACCOUNT_NR("Bank Account number", false),
+    PARTIAL_RESERVATION_ID_LENGTH("Partial reservationID length", false),
     //
     
     //mailgun configuration related info

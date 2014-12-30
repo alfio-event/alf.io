@@ -68,4 +68,7 @@ public interface TicketReservationRepository {
 
 	@Query("delete from tickets_reservation where id in (:ids)")
 	int remove(@Bind("ids") List<String> ids);
+
+	@Query("select * from tickets_reservation where id like :partialID")
+	List<TicketReservation> findByPartialID(@Bind("partialID") String partialID);
 }
