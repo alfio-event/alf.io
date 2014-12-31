@@ -111,7 +111,7 @@
 	<h2>{{#i18n}}reservation-page.payment{{/i18n}}</h2>
 
 		{{#event.multiplePaymentMethods}}
-			<div class="btn-group-justified" data-toggle="buttons">
+			<div class="btn-group j-btn-group" data-toggle="buttons">
 				{{#event.allowedPaymentProxies}}
 				<label class="btn btn-default tooltip-handler xs-payment-method" {{#is-payment-method}}[STRIPE,{{.}}]  title="Powered by Stripe"{{/is-payment-method}}>
 					<input type="radio" required name="paymentMethod" id="option-{{.}}" data-payment-method="{{.}}" autocomplete="off" value="{{.}}">

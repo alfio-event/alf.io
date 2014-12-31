@@ -98,7 +98,22 @@ body {
 
 @media screen and (max-width: 768px) {
 	.xs-payment-method {
-		width:80%;
+		width:100%;
 		margin-bottom: 5px;
+	}
+}
+
+@media screen and (min-width: 768px) {
+	.j-btn-group {
+		display: table;
+		width: 100%;
+		table-layout: fixed;
+		border-collapse: separate;
+	}
+	.j-btn-group > .btn,
+	.j-btn-group > .btn-group {
+		display: table-cell;
+		float: none;
+		width: 1%;
 	}
 }
