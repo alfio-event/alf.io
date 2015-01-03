@@ -115,12 +115,12 @@
 					{{/saleable}}
 					{{^saleable}}
 						<label class="control-label">
-							{{#soldout}}
-								{{#i18n}}show-event.soldout{{/i18n}}
-							{{/soldout}}
-							{{^soldout}}
+							{{#soldOut}}
+								{{#i18n}}show-event.sold-out{{/i18n}}
+							{{/soldOut}}
+							{{^soldOut}}
 								{{#i18n}}show-event.not-available{{/i18n}}
-							{{/soldout}}
+							{{/soldOut}}
 						</label>
 					{{/saleable}}
 				</div>
