@@ -69,7 +69,7 @@
                 return $http['post']('/admin/api/events/'+eventPrices.id+'/prices/update', eventPrices).error(HttpErrorHandler.handle);
             },
             saveTicketCategory: function(event, ticketCategory) {
-                var url = ticketCategory.id ? ('/admin/api/events/' + event.id + '/categories/' + ticketCategory.id + '/update') : ('/admin/api/events/' + event.id + '/categories/new');
+                var url = angular.isDefined(ticketCategory.id) ? ('/admin/api/events/' + event.id + '/categories/' + ticketCategory.id + '/update') : ('/admin/api/events/' + event.id + '/categories/new');
                 return $http['post'](url, ticketCategory).error(HttpErrorHandler.handle);
             },
             toggleTicketLocking: function(ticket, category) {
