@@ -19,27 +19,32 @@ input.ng-invalid.ng-touched, select.ng-invalid.ng-touched, textarea.ng-invalid.n
 }
 
 div.category-danger {
-    border-left: 5px solid #d9534f;
+    border: 1px solid #d9534f;
+    border-left-width: 5px;
     border-radius: 2px;
 }
 
 div.category-warning {
-    border-left: 5px solid #f0ad4e;
+    border: 1px solid #f0ad4e;
+    border-left-width: 5px;
     border-radius: 2px;
 }
 
 div.category-info {
-    border-left: 5px solid #5bc0de;
+    border: 1px solid #5bc0de;
+    border-left-width: 5px;
     border-radius: 2px;
 }
 
 div.category-success {
-    border-left: 5px solid #5cb85c;
+    border: 1px solid #5cb85c;
+    border-left-width: 5px;
     border-radius: 2px;
 }
 
 div.category-expired {
-    border-left: 5px solid #545558;
+    border: 1px solid #545558;
+    border-left-width: 5px;
     border-radius: 2px;
 }
 
