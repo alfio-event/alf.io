@@ -174,7 +174,8 @@
                 formObj: '=',
                 fieldObj: '=',
                 minChar: '=',
-                requiredPattern: '='
+                requiredPattern: '=',
+                showExistingErrors: '='
             },
             link:angular.noop
         };
@@ -196,7 +197,8 @@
                 eventObj: '=',
                 organizations: '=',
                 fullEditMode: '=',
-                showDatesWarning: '='
+                showDatesWarning: '=',
+                showExistingErrors: '='
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
@@ -238,7 +240,8 @@
                 eventObj: '=',
                 fullEditMode: '=',
                 allowedPaymentProxies: '=',
-                showPriceWarning: '='
+                showPriceWarning: '=',
+                showExistingErrors: '='
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-prices.html',

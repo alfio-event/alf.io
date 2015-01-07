@@ -4,31 +4,31 @@
         <div class="form-group">
             <label for="shortName">Name</label>
             <input type="text" data-ng-model="obj.shortName" name="shortName" data-grab-focus id="shortName" class="form-control" required pattern="^[A-Za-z0-9]{1,}_*[A-Za-z0-9]{1,}$"/>
-            <field-error data-form-obj="editEventHeader" data-required-pattern="'A-Za-z0-9_ (no spaces)'" data-field-obj="editEventHeader.shortName"></field-error>
+            <field-error data-form-obj="editEventHeader" data-required-pattern="'A-Za-z0-9_ (no spaces)'" data-field-obj="editEventHeader.shortName"  data-show-existing-errors="showExistingErrors"></field-error>
 
             <label for="organizationId">Owner Organization</label>
             <select data-ng-model="obj.organizationId" name="organizationId" id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>
-            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.organizationId"></field-error>
+            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.organizationId" data-show-existing-errors="showExistingErrors"></field-error>
 
             <label for="location">Location</label>
             <textarea data-ng-model="obj.location" name="location" id="location" class="form-control" required data-minlength="10" data-ng-change="updateLocation(obj.location)" data-ng-model-options="{ updateOn: 'blur'}"></textarea>
-            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.location" data-min-char="10"></field-error>
+            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.location" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
 
             <label for="description">Event Description</label>
             <textarea data-ng-model="obj.description" name="description" id="description" required class="form-control" data-minlength="10"></textarea>
-            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.description" data-min-char="10"></field-error>
+            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.description" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
 
             <label for="websiteUrl">Website URL</label>
             <input type="url" data-ng-model="obj.websiteUrl" name="websiteUrl" id="websiteUrl" required class="form-control" />
-            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.websiteUrl"></field-error>
+            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.websiteUrl" data-show-existing-errors="showExistingErrors"></field-error>
 
             <label for="termsAndConditionsUrl">Terms and Conditions URL</label>
             <input type="url" data-ng-model="obj.termsAndConditionsUrl" name="termsAndConditionsUrl" id="termsAndConditionsUrl" required class="form-control" />
-            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.termsAndConditionsUrl"></field-error>
+            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.termsAndConditionsUrl" data-show-existing-errors="showExistingErrors"></field-error>
 
             <label for="imageUrl">Image URL</label>
             <input type="url" data-ng-model="obj.imageUrl" name="imageUrl" id="imageUrl" required class="form-control" pattern="^https\:\/\/.*$"/>
-            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.imageUrl" data-required-pattern="'must be a https url'"></field-error>
+            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.imageUrl" data-required-pattern="'must be a https url'" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
         <div class="form-group">
             <label for="date">Event Date <i data-ng-if="showDatesWarning" class="fa fa-warning text-warning tooltip-handler" title="You should notify all the ticket owners about a date change"></i></label>

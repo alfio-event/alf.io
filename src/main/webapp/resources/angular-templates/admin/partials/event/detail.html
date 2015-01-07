@@ -1,16 +1,16 @@
 <div class="fa fa-refresh fa-spin fa-2x text-muted" data-ng-if="!event">
 </div>
 <div class="container" data-ng-if="event">
-    <form name="headerForm" role="form" data-ng-submit="saveEventHeader(headerForm, eventHeader)" novalidate>
+    <form name="headerForm" role="form" data-ng-submit="saveEventHeader(headerForm, eventHeader)" novalidate class="force-show-errors">
         <event-header data-ng-if="!editEventHeader"></event-header>
-        <edit-event-header data-ng-if="editEventHeader" data-show-dates-warning="true" data-event-obj="event" data-target-obj="eventHeader" data-organizations="organizations"></edit-event-header>
+        <edit-event-header data-ng-if="editEventHeader" data-show-dates-warning="true" data-show-existing-errors="true" data-event-obj="event" data-target-obj="eventHeader" data-organizations="organizations"></edit-event-header>
         <button class="btn btn-warning" data-ng-if="!editEventHeader" data-ng-click="toggleEditHeader(false)"><i class="fa fa-edit"></i> edit</button>
         <button class="btn btn-success" type="submit" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting || !headerForm.$valid">save</button>
         <button class="btn btn-default" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting" data-ng-click="toggleEditHeader(true)">cancel</button>
     </form>
-    <form name="pricesForm" role="form" data-ng-submit="saveEventPrices(pricesForm, eventPrices, event.organizationId)" novalidate>
+    <form name="pricesForm" role="form" data-ng-submit="saveEventPrices(pricesForm, eventPrices, event.organizationId)" novalidate class="force-show-errors">
         <prices data-ng-if="!editPrices"></prices>
-        <edit-prices data-ng-if="editPrices" data-show-price-warning="true" data-event-obj="event" data-target-obj="eventPrices" data-allowed-payment-proxies="allowedPaymentProxies"></edit-prices>
+        <edit-prices data-ng-if="editPrices" data-show-price-warning="true" data-event-obj="event" data-show-existing-errors="true" data-target-obj="eventPrices" data-allowed-payment-proxies="allowedPaymentProxies"></edit-prices>
         <button class="btn btn-warning" data-ng-if="!editPrices" data-ng-click="toggleEditPrices(false)"><i class="fa fa-edit"></i> edit</button>
         <button class="btn btn-success" type="submit" data-ng-if="editPrices" data-ng-disabled="pricesForm.$waiting || !pricesForm.$valid">save</button>
         <button class="btn btn-default" data-ng-if="editPrices" data-ng-disabled="pricesForm.$waiting" data-ng-click="toggleEditPrices(true)">cancel</button>

@@ -14,8 +14,9 @@ div.category {
     border: 1px solid #c0c0c0;
 }
 
-input.ng-invalid.ng-touched, select.ng-invalid.ng-touched, textarea.ng-invalid.ng-touched {
-	border:1px solid red;
+input.ng-invalid.ng-touched, select.ng-invalid.ng-touched, textarea.ng-invalid.ng-touched,
+form.force-show-errors input.ng-invalid, form.force-show-errors select.ng-invalid, form.force-show-errors textarea.ng-invalid {
+	border:1px solid #d9534f;
 }
 
 div.category-danger {
