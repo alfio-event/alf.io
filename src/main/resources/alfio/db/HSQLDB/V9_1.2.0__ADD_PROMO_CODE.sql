@@ -35,3 +35,9 @@ END);
 alter table promo_code add foreign key(event_id_fk) references event(id);
 
 CREATE INDEX "promo_code_event_id_fk_idx" ON promo_code(event_id_fk);
+
+
+--
+alter table tickets_reservation add column promo_code_id_fk int;
+alter table tickets_reservation add foreign key(promo_code_id_fk) references promo_code(id);
+CREATE INDEX "tickets_reservation_promo_code_id_fk_idx" ON tickets_reservation(promo_code_id_fk);
