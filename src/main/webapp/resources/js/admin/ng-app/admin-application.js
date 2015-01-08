@@ -206,6 +206,9 @@
         createAndPushCategory(true, $scope);
 
         $scope.save = function(form, event) {
+            if(!form.$valid) {
+                return;
+            }
             validationPerformer($q, EventService.checkEvent, event, form).then(function() {
                 EventService.createEvent(event).success(function() {
                     $state.go('index');

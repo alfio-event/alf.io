@@ -3,7 +3,7 @@
         <div class="col-sm-12 col-md-4">
             <label for="{{$index}}-name">Name</label>
             <input type="text" data-ng-model="ticketCategory.name" name="{{$index}}-name" id="{{$index}}-name" class="form-control" required />
-            <field-error data-form-obj="category" data-field-obj="category.name"></field-error>
+            <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.name" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
 
         <div class="col-sm-12 col-md-3">
@@ -11,13 +11,13 @@
             <div class="form-group">
                 <div class="radio-inline">
                     <label>
-                        <input type="radio" name="{{$index}}-tokenGenerationRequested" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="false">
+                        <input type="radio" name="{{$index}}-tokenGenerationRequested" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="false" required="">
                         Public
                     </label>
                 </div>
                 <div class="radio-inline">
                     <label>
-                        <input type="radio" name="{{$index}}-tokenGenerationRequested" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="true">
+                        <input type="radio" name="{{$index}}-tokenGenerationRequested" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="true" required="">
                         Restricted
                     </label>
                 </div>
@@ -27,7 +27,7 @@
         <div class="col-sm-12 col-md-5">
             <label for="{{$index}}-maxTickets">Available seats</label>
             <input type="number" data-ng-model="ticketCategory.maxTickets" name="{{$index}}-maxTickets" id="{{$index}}-maxTickets" class="form-control" required />
-            <field-error data-form-obj="category" data-field-obj="category.maxTickets"></field-error>
+            <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.maxTickets" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
 
     </div>
@@ -36,11 +36,13 @@
         <div class="col-sm-12 col-md-4">
             <label for="{{$index}}-date">Validity range</label>
             <input type="text" data-date-range data-start-model="ticketCategory.inception" data-end-model="ticketCategory.expiration" data-start-date="ticketCategory.notBefore" data-ng-model="ticketCategory.dateString" name="{{$index}}-date" id="{{$index}}-date" class="form-control" required />
+            <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.dateString" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
 
         <div class="col-sm-12 col-md-3" data-ng-if="!event.freeOfCharge">
             <label for="{{$index}}-price">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event, editMode)}}%)</span></label>
             <input type="number" data-ng-model="ticketCategory.price" name="{{$index}}-price" id="{{$index}}-price" class="form-control" required />
+            <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.price" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
 
         <div class="col-sm-12 col-md-5">

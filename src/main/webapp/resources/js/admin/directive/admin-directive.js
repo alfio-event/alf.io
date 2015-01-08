@@ -149,19 +149,26 @@
     directives.directive('controlButtons', function() {
         return {
             restrict: 'E',
-            templateUrl: '/resources/angular-templates/admin/partials/form/controlButtons.html',
+            templateUrl: '/resources/angular-templates/admin/partials/form/control-buttons.html',
             scope: {
                 formObj: '=',
                 cancelHandler: '='
             },
-            link: function(scope, element, attrs) {
-                scope.cancel = function() {
-                    if(angular.isFunction(scope.cancelHandler)) {
-                        scope.cancelHandler();
-                    } else if(angular.isFunction(scope.$parent.cancel)) {
-                        scope.$parent.cancel();
+            controller: function($scope, $rootScope) {
+                $scope.cancel = function() {
+                    if(angular.isFunction($scope.cancelHandler)) {
+                        $scope.cancelHandler();
+                    } else if(angular.isFunction($scope.$parent.cancel)) {
+                        $scope.$parent.cancel();
                     }
-                }
+                };
+
+                $scope.ok = function(frm) {
+                    if(!frm.$valid) {
+                        $rootScope.$broadcast('ValidationFailed');
+                    }
+                    return frm.$valid;
+                };
             }
         };
     });
@@ -169,7 +176,7 @@
     directives.directive('fieldError', function() {
         return {
             restrict: 'E',
-            templateUrl: '/resources/angular-templates/admin/partials/form/fieldError.html',
+            templateUrl: '/resources/angular-templates/admin/partials/form/field-error.html',
             scope: {
                 formObj: '=',
                 fieldObj: '=',
@@ -311,6 +318,44 @@
             }
         }
     });
+
+    directives.directive('errorSensitive', function($rootScope, $log) {
+        return {
+            restrict: 'A',
+            require: '^form',
+            link: function(scope, element, attrs, formController) {
+                var prefixes = (attrs['errorSensitive'] || '').split(',');
+                var touchField = function(prefix, name) {
+                    var obj;
+                    if(angular.isDefined(prefix) && angular.isDefined(formController[prefix])) {
+                        obj = formController[prefix][name];
+                    } else {
+                        obj = formController[name];
+                    }
+                    if(angular.isDefined(obj)) {
+                        scope.$applyAsync(function() {
+                            obj.$setTouched();
+                        });
+                    }
+                };
+                $rootScope.$on('ValidationFailed', function() {
+                    element.addClass('force-show-errors');
+                    _.chain(element.find(':input'))
+                        .filter(function(e) {
+                            return prefixes.length > 0 && _.filter(prefixes, function(p) {
+                                    return angular.isDefined(formController[p][e.name]);
+                                }).length > 0;
+                        }).forEach(function(el) {
+                            _.forEach(prefixes, function(prefix) {
+                                touchField(prefix,el.name);
+                            });
+                            touchField(undefined, el.name);
+                        });
+                });
+
+            }
+        }
+    })
 
 
 })();
