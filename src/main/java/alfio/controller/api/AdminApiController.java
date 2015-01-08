@@ -203,8 +203,7 @@ public class AdminApiController {
             return reader.lines()
                     .map(line -> {
                         String reservationID = null;
-                        try {
-                            Scanner scanner = new Scanner(line);
+                        try (Scanner scanner = new Scanner(line)) {
                             scanner.findInLine("([a-zA-Z0-9\\-]+);(\\d+(\\.\\d+)?)");
                             MatchResult match = scanner.match();
                             reservationID = match.group(1);
