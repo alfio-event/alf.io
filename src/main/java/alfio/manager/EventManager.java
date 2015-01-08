@@ -20,6 +20,7 @@ import alfio.manager.location.LocationManager;
 import alfio.manager.support.OrderSummary;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
+import alfio.model.PromoCode.DiscountType;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.EventWithStatistics;
 import alfio.model.modification.TicketCategoryModification;
@@ -27,12 +28,14 @@ import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
+import alfio.repository.PromoCodeRepository;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.util.MonetaryUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -68,6 +71,7 @@ public class EventManager {
     private final TicketRepository ticketRepository;
     private final TicketReservationManager ticketReservationManager;
     private final SpecialPriceRepository specialPriceRepository;
+    private final PromoCodeRepository promoCodeRepository;
     private final LocationManager locationManager;
     private final NamedParameterJdbcTemplate jdbc;
 
@@ -78,6 +82,7 @@ public class EventManager {
                         TicketRepository ticketRepository,
                         TicketReservationManager ticketReservationManager,
                         SpecialPriceRepository specialPriceRepository,
+                        PromoCodeRepository promoCodeRepository,
                         LocationManager locationManager,
                         NamedParameterJdbcTemplate jdbc) {
         this.userManager = userManager;
@@ -86,6 +91,7 @@ public class EventManager {
         this.ticketRepository = ticketRepository;
         this.ticketReservationManager = ticketReservationManager;
         this.specialPriceRepository = specialPriceRepository;
+        this.promoCodeRepository = promoCodeRepository;
         this.locationManager = locationManager;
         this.jdbc = jdbc;
     }
@@ -517,6 +523,19 @@ public class EventManager {
 
     public void deletePendingOfflinePayment(String eventName, String reservationId, String username) {
         ticketReservationManager.deleteOfflinePayment(getSingleEvent(eventName, username), reservationId);
+    }
+    
+    
+    public void addPromoCode(String promoCode, int eventId, ZonedDateTime start, ZonedDateTime end, int discountAmount, DiscountType discountType) {
+    	promoCodeRepository.addPromoCode(promoCode, eventId, start, end, discountAmount, discountType.toString());
+    }
+    
+    public void deletePromoCode(int promoCodeId) {
+    	promoCodeRepository.deletePromoCode(promoCodeId);
+    }
+    
+    public List<PromoCode> findPromoCodesInEvent(int eventId) {
+    	return promoCodeRepository.findAllInEvent(eventId);
     }
 
     @Data
