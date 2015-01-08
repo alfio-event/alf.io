@@ -42,7 +42,11 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -79,6 +83,7 @@ public class TicketReservationManager {
 	private final NotificationManager notificationManager;
 	private final MessageSource messageSource;
 	private final TemplateManager templateManager;
+	private final TransactionTemplate requiresNewTransactionTemplate;
 
 	public static class NotEnoughTicketsException extends RuntimeException {
 		
@@ -109,7 +114,8 @@ public class TicketReservationManager {
 									TransactionRepository transactionRepository,
 									NotificationManager notificationManager,
 									MessageSource messageSource,
-									TemplateManager templateManager) {
+									TemplateManager templateManager,
+									PlatformTransactionManager transactionManager) {
 		this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -122,6 +128,7 @@ public class TicketReservationManager {
 		this.notificationManager = notificationManager;
 		this.messageSource = messageSource;
 		this.templateManager = templateManager;
+		this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
 	}
 	
     /**
@@ -195,14 +202,16 @@ public class TicketReservationManager {
     public PaymentResult confirm(String gatewayToken, Event event, String reservationId,
 								 String email, String fullName, String billingAddress,
 								 TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method) {
+		PaymentProxy paymentProxy = method.orElse(PaymentProxy.STRIPE);
+		if(!reservationReadyForPayment(reservationCost, paymentProxy, reservationId, email, fullName, billingAddress)) {
+			return PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION");
+		}
         try {
-			PaymentProxy paymentProxy = method.orElse(PaymentProxy.STRIPE);
             PaymentResult paymentResult;
 			ticketReservationRepository.lockReservationForUpdate(reservationId);
 			if(reservationCost.getPriceWithVAT() > 0) {
 				switch(paymentProxy) {
 					case STRIPE:
-						transitionToInPayment(reservationId, email, fullName, billingAddress);
 						paymentResult = paymentManager.processPayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, fullName, billingAddress);
 						if(!paymentResult.isSuccessful()) {
 							reTransitionToPending(reservationId);
@@ -231,6 +240,19 @@ public class TicketReservationManager {
         }
 
     }
+
+	private boolean reservationReadyForPayment(TotalPrice reservationCost, PaymentProxy paymentProxy, String reservationId, String email, String fullName, String billingAddress) {
+		if(reservationCost.getPriceWithVAT() > 0 && paymentProxy == PaymentProxy.STRIPE) {
+			try {
+				transitionToInPayment(reservationId, email, fullName, billingAddress);
+			} catch (Exception e) {
+				//unable to do the transition. Exiting.
+				log.debug(String.format("unable to flag the reservation %s as IN_PAYMENT", reservationId), e);
+				return false;
+			}
+		}
+		return true;
+	}
 
 	public void confirmOfflinePayment(Event event, String reservationId) {
 		TicketReservation ticketReservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
@@ -270,8 +292,11 @@ public class TicketReservationManager {
 	}
 
     private void transitionToInPayment(String reservationId, String email, String fullName, String billingAddress) {
-    	int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, IN_PAYMENT.toString(), email, fullName, billingAddress, null, PaymentProxy.STRIPE.toString());
-		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
+		requiresNewTransactionTemplate.execute(status -> {
+            int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, IN_PAYMENT.toString(), email, fullName, billingAddress, null, PaymentProxy.STRIPE.toString());
+            Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
+            return null;
+        });
     }
 
 	private void transitionToOfflinePayment(String reservationId, String email, String fullName, String billingAddress) {
