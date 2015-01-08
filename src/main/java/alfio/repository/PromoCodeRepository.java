@@ -40,4 +40,7 @@ public interface PromoCodeRepository {
 			@Bind("end") ZonedDateTime end,
 			@Bind("discountAmount") int discountAmount,
 			@Bind("discountType") String discountType);
+
+	@Query("select * from promo_code where event_id_fk = :eventId and promo_code = :promoCode")
+	PromoCode findPromoCodeInEvent(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
 }
