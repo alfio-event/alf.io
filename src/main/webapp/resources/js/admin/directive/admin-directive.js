@@ -319,7 +319,7 @@
         }
     });
 
-    directives.directive('errorSensitive', function($rootScope, $log) {
+    directives.directive('errorSensitive', function($rootScope) {
         return {
             restrict: 'A',
             require: '^form',

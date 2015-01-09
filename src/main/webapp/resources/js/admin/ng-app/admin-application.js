@@ -355,6 +355,9 @@
         };
 
         $scope.saveEventHeader = function(form, header) {
+            if(!form.$valid) {
+                return;
+            }
             EventService.updateEventHeader(header).then(function(result) {
                 validationErrorHandler(result, form, form.editEventHeader).then(function(result) {
                     $scope.editEventHeader = false;
@@ -364,6 +367,9 @@
         };
 
         $scope.saveEventPrices = function(form, eventPrices, organizationId) {
+            if(!form.$valid) {
+                return;
+            }
             var obj = {'organizationId':organizationId};
             angular.extend(obj, eventPrices);
             EventService.updateEventPrices(obj).then(function(result) {

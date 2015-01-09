@@ -1,4 +1,4 @@
-<form role="form" name="insertNewOrganization" ng-submit="save(insertNewOrganization, organization)" novalidate data-oncancel="cancel()">
+<form role="form" name="insertNewOrganization" data-ng-submit="save(insertNewOrganization, organization)" data-error-sensitive novalidate data-oncancel="cancel()">
     <div class="form-group">
         <label for="org-name">Name</label>
         <input class="form-control" type="text" data-grab-focus id="org-name" name="name" data-ng-model="organization.name" required data-minlength="2" />

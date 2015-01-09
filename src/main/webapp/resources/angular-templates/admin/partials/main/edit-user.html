@@ -1,4 +1,4 @@
-<form role="form" name="editUser" data-ng-submit="save(editUser, user)" novalidate>
+<form role="form" name="editUser" data-ng-submit="save(editUser, user)" data-error-sensitive novalidate>
     <div class="form-group">
         <label for="organizationId">Organization</label>
         <select data-ng-model="user.organizationId" data-grab-focus name="organizationId" class="form-control" id="organizationId" data-required data-ng-options="organization.id as organization.name for organization in organizations"></select>
