@@ -19,8 +19,12 @@ package alfio.config;
 import alfio.filter.RedirectToHttpsFilter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ClassUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.reflect.MethodUtils;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Environment;
+import org.springframework.web.context.ConfigurableWebApplicationContext;
+import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
@@ -29,6 +33,11 @@ import javax.servlet.*;
 
 @Log4j2
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
+
+	public static final String PROFILE_DEV = "dev";
+	public static final String PROFILE_LIVE = "!dev";
+	public static final String PROFILE_HTTP = "http";
+	private Environment environment;
 
 	@Override
 	public void onStartup(ServletContext servletContext) throws ServletException {
@@ -60,6 +69,17 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 	}
 
 	@Override
+	protected WebApplicationContext createRootApplicationContext() {
+		ConfigurableWebApplicationContext ctx = ((ConfigurableWebApplicationContext) super.createRootApplicationContext());
+		ConfigurableEnvironment environment = ctx.getEnvironment();
+		if(environment.acceptsProfiles(PROFILE_DEV)) {
+			environment.addActiveProfile(PROFILE_HTTP);
+		}
+		this.environment = environment;
+		return ctx;
+	}
+
+	@Override
 	protected void customizeRegistration(ServletRegistration.Dynamic registration) {
 		registration.setMultipartConfig(new MultipartConfigElement(null, 1024000L, -1, 1024));
 	}
@@ -69,8 +89,9 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 
 		config.setHttpOnly(true);
 		
-		// set cookie https only too :D (TODO: check: I'm not able to get the Environment :( )
-		config.setSecure(!StringUtils.contains(System.getProperty("spring.profiles.active"), "dev"));
+		Validate.notNull(environment, "environment cannot be null!");
+		// set secure cookie only if current environment doesn't strictly need HTTP
+		config.setSecure(!environment.acceptsProfiles(PROFILE_HTTP));
 		//
 		
 

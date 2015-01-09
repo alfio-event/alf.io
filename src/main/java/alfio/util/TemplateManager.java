@@ -16,6 +16,7 @@
  */
 package alfio.util;
 
+import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
@@ -63,7 +64,7 @@ public class TemplateManager {
 						   JMustacheTemplateLoader templateLoader,
 						   MessageSource messageSource) {
 		this.messageSource = messageSource;
-		this.cache = environment.acceptsProfiles("!dev");
+		this.cache = environment.acceptsProfiles(Initializer.PROFILE_LIVE);
 		this.templateCompiler = Mustache.compiler()
 				.escapeHTML(false)
 				.standardsMode(false)

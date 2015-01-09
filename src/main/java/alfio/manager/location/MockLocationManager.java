@@ -16,6 +16,7 @@
  */
 package alfio.manager.location;
 
+import alfio.config.Initializer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -23,7 +24,7 @@ import org.springframework.stereotype.Component;
 import java.util.TimeZone;
 
 @Component
-@Profile("dev")
+@Profile(Initializer.PROFILE_DEV)
 public class MockLocationManager implements LocationManager {
     @Override
     public Pair<String, String> geocode(String address) {

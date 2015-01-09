@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.config.DataSourceConfiguration;
+import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
 import alfio.model.Event;
 import org.apache.commons.lang3.tuple.Pair;
@@ -40,7 +41,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, WebSecurityConfig.class})
-@ActiveProfiles("dev")
+@ActiveProfiles(Initializer.PROFILE_DEV)
 public class EventRepositoryTest {
 
     private static final String NEW_YORK_TZ = "America/New_York";
@@ -53,7 +54,7 @@ public class EventRepositoryTest {
         System.setProperty("datasource.username", "sa");
         System.setProperty("datasource.password", "");
         System.setProperty("datasource.validationQuery", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
-        System.setProperty("spring.profiles.active", "dev");
+        System.setProperty("spring.profiles.active", Initializer.PROFILE_DEV);
     }
 
     @Autowired

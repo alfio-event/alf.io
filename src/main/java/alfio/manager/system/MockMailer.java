@@ -16,6 +16,7 @@
  */
 package alfio.manager.system;
 
+import alfio.config.Initializer;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.context.annotation.Profile;
@@ -25,7 +26,7 @@ import java.util.Optional;
 
 @Log4j2
 @Component
-@Profile("dev")
+@Profile(Initializer.PROFILE_DEV)
 public class MockMailer implements Mailer {
 
 	@Override

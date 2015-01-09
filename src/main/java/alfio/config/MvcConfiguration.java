@@ -159,7 +159,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
         viewResolver.setTemplateFactory(getTemplateFactory());
         viewResolver.setOrder(1);
         //disable caching if we are in dev mode
-        viewResolver.setCache(env.acceptsProfiles("!dev"));
+        viewResolver.setCache(env.acceptsProfiles(Initializer.PROFILE_LIVE));
         viewResolver.setContentType("text/html;charset=UTF-8");
         return viewResolver;
     }

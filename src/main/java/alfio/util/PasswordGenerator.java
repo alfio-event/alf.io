@@ -16,6 +16,8 @@
  */
 package alfio.util;
 
+import alfio.config.Initializer;
+
 import java.util.UUID;
 
 public final class PasswordGenerator {
@@ -23,7 +25,9 @@ public final class PasswordGenerator {
     }
 
     public static String generateRandomPassword() {
-        return "dev".equals(System.getProperty("spring.profiles.active")) ? "abcd" : 
-            Long.toHexString(UUID.randomUUID().getMostSignificantBits());
+        if(Initializer.PROFILE_DEV.equals(System.getProperty("spring.profiles.active"))) {
+            return "abcd";
+        }
+        return Long.toHexString(UUID.randomUUID().getMostSignificantBits());
     }
 }

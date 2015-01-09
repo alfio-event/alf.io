@@ -16,6 +16,7 @@
  */
 package alfio.manager.location;
 
+import alfio.config.Initializer;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import com.google.maps.GeoApiContext;
@@ -33,7 +34,7 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Component
-@Profile("!dev")
+@Profile(Initializer.PROFILE_LIVE)
 public class DefaultLocationManager implements LocationManager {
 
     private static final AtomicReference<GeoApiContext> CTX = new AtomicReference<>();

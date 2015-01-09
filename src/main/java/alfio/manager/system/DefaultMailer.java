@@ -16,19 +16,19 @@
  */
 package alfio.manager.system;
 
+import alfio.config.Initializer;
+import alfio.model.system.ConfigurationKeys;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
-
-import alfio.model.system.ConfigurationKeys;
-
 @Component
-@Profile("!dev")
+@Profile(Initializer.PROFILE_LIVE)
 public class DefaultMailer implements Mailer {
 
 	private final ConfigurationManager configurationManager;

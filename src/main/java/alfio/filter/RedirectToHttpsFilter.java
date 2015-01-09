@@ -16,6 +16,7 @@
  */
 package alfio.filter;
 
+import alfio.config.Initializer;
 import org.springframework.core.env.Environment;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -29,13 +30,13 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
 
 public class RedirectToHttpsFilter implements Filter {
 
-	private boolean isProduction;
+	private boolean isHttpsNeeded;
 
 	@Override
 	public void init(FilterConfig filterConfig) throws ServletException {
 		WebApplicationContext ctx = getRequiredWebApplicationContext(filterConfig.getServletContext());
 		Environment env = ctx.getBean(Environment.class);
-		isProduction = env.acceptsProfiles("!dev");
+		isHttpsNeeded = env.acceptsProfiles("!" + Initializer.PROFILE_HTTP);
 	}
 
 	@Override
@@ -45,7 +46,7 @@ public class RedirectToHttpsFilter implements Filter {
 		HttpServletRequest req = (HttpServletRequest) request;
 
 		// redirecting if the request is not over https: note: this will work _only_ with the default port for https
-		if (isProduction && !isOverHttps(req)) {
+		if (isHttpsNeeded && !isOverHttps(req)) {
 			HttpServletResponse resp = (HttpServletResponse) response;
 			resp.sendRedirect(req.getRequestURL()
 					.append(ofNullable(req.getQueryString()).map((x) -> "?" + x).orElse("")).toString()
