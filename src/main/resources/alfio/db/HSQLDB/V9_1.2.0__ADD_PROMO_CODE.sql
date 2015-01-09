@@ -19,8 +19,8 @@ create table promo_code (
   id integer identity not null,
   promo_code varchar(64) not null,
   event_id_fk integer not null,
-  start timestamp with time zone not null, 
-  end timestamp with time zone not null,
+  valid_from timestamp with time zone not null,
+  valid_to timestamp with time zone not null,
   discount_amount integer not null,
   discount_type varchar(16) not null
 );

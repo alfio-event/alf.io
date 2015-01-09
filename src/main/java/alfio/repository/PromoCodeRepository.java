@@ -16,13 +16,13 @@
  */
 package alfio.repository;
 
-import java.time.ZonedDateTime;
-import java.util.List;
-
 import alfio.datamapper.Bind;
 import alfio.datamapper.Query;
 import alfio.datamapper.QueryRepository;
 import alfio.model.PromoCode;
+
+import java.time.ZonedDateTime;
+import java.util.List;
 
 @QueryRepository
 public interface PromoCodeRepository {
@@ -33,7 +33,7 @@ public interface PromoCodeRepository {
 	@Query("delete from promo_code where id = :id")
 	int deletePromoCode(@Bind("id") int id);
 
-	@Query("insert into promo_code(promo_code, event_id_fk, start, end, discount_amount, discount_type) "
+	@Query("insert into promo_code(promo_code, event_id_fk, valid_from, valid_to, discount_amount, discount_type) "
 			+ " values (:promoCode, :eventId, :start, :end, :discountAmount, :discountType)")
 	int addPromoCode(@Bind("promoCode") String promoCode,
 			@Bind("eventId") int eventId, @Bind("start") ZonedDateTime start,
