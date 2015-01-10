@@ -71,3 +71,7 @@ div.wMarginBottom {
 .drop-file-zone-hover {
     border: 1px green dashed;
 }
+
+.to-uppercase {
+	text-transform: uppercase;
+}

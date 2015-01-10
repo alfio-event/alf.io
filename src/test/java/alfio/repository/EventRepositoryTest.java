@@ -94,8 +94,8 @@ public class EventRepositoryTest {
         //these are the values of what we have inserted in the SQL insert script
         TimeZone eventTimeZone = TimeZone.getTimeZone("America/New_York");
         ZoneId eventZoneId = eventTimeZone.toZoneId();
-        ZonedDateTime beginEventDate = ZonedDateTime.of(2015,1,10,0,0,0,0,eventZoneId);
-        ZonedDateTime endEventDate = ZonedDateTime.of(2015, 1, 10, 23, 59, 0, 0, eventZoneId);
+        ZonedDateTime beginEventDate = ZonedDateTime.of(2015,10,10,0,0,0,0,eventZoneId);
+        ZonedDateTime endEventDate = ZonedDateTime.of(2015, 10, 10, 23, 59, 0, 0, eventZoneId);
 
         Event e = eventRepository.findById(0);
         assertNotNull("Event not found in DB", e);

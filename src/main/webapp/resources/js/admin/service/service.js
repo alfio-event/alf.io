@@ -172,4 +172,18 @@
         };
         return instance;
     });
+    
+    baseServices.service("PromoCodeService", function($http, HttpErrorHandler) {
+    	return {
+    			add : function(eventId, promoCode) {
+    				return $http['post']('/admin/api/events/' + eventId + '/promo-code', promoCode).error(HttpErrorHandler.handle);
+    			},
+    			remove: function(eventId, promoCode) {
+    				return $http['delete']('/admin/api/events/' + eventId + '/promo-code/' + promoCode).error(HttpErrorHandler.handle);
+    			},
+    			list: function(eventId) {
+    				return $http.get('/admin/api/events/' + eventId + '/promo-code').error(HttpErrorHandler.handle);
+    			}
+    	};
+    })
 })();

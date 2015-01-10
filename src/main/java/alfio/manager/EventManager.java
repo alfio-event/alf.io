@@ -23,6 +23,7 @@ import alfio.model.*;
 import alfio.model.PromoCode.DiscountType;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.EventWithStatistics;
+import alfio.model.modification.PromoCodeWithFormattedTime;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.transaction.PaymentProxy;
@@ -534,8 +535,9 @@ public class EventManager {
     	promoCodeRepository.deletePromoCode(promoCodeId);
     }
     
-    public List<PromoCode> findPromoCodesInEvent(int eventId) {
-    	return promoCodeRepository.findAllInEvent(eventId);
+    public List<PromoCodeWithFormattedTime> findPromoCodesInEvent(int eventId) {
+    	ZoneId zoneId = eventRepository.findById(eventId).getZoneId();
+    	return promoCodeRepository.findAllInEvent(eventId).stream().map((p) -> new PromoCodeWithFormattedTime(p, zoneId)).collect(toList());
     }
 
     @Data

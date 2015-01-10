@@ -14,41 +14,33 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model;
+package alfio.model.modification;
 
-import java.time.ZonedDateTime;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
+import alfio.model.PromoCode.DiscountType;
 
 @Getter
-public class PromoCode {
-	
-	public enum DiscountType {
-		FIXED_AMOUNT, PERCENTAGE
-	}
+public class PromoCodeModification {
 
-	private final int id;
 	private final String promoCode;
-	private final int eventId;
-	private final ZonedDateTime utcStart;
-	private final ZonedDateTime utcEnd;
+	private final DateTimeModification start;
+	private final DateTimeModification end;
 	private final int discountAmount;
 	private final DiscountType discountType;
-	
-	public PromoCode(@Column("id")int id, 
-			@Column("promo_code") String promoCode, 
-			@Column("event_id_fk") int eventId,
-			@Column("valid_from") ZonedDateTime utcStart, 
-			@Column("valid_to") ZonedDateTime utcEnd, 
-			@Column("discount_amount") int discountAmount,
-			@Column("discount_type") DiscountType discountType) {
-		this.id = id;
+
+	@JsonCreator
+	public PromoCodeModification(@JsonProperty("promoCode") String promoCode,
+			@JsonProperty("start") DateTimeModification start,
+			@JsonProperty("end") DateTimeModification end,
+			@JsonProperty("discountAmount") int discountAmount,
+			@JsonProperty("discountType") DiscountType discountType) {
 		this.promoCode = promoCode;
-		this.eventId = eventId;
-		this.utcStart = utcStart;
-		this.utcEnd = utcEnd;
+		this.start = start;
+		this.end = end;
 		this.discountAmount = discountAmount;
-		this.discountType = discountType;
+		this.discountType = discountType;	
 	}
 }

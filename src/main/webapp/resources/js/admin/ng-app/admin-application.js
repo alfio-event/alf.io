@@ -221,6 +221,7 @@
     admin.controller('EventDetailController', function ($scope,
                                                         $stateParams,
                                                         OrganizationService,
+                                                        PromoCodeService,
                                                         EventService,
                                                         LocationService,
                                                         $rootScope,
@@ -245,6 +246,11 @@
                         timeZone: result.event.timeZone
                     };
                     $scope.loadingMap = false;
+                });
+                
+                
+                PromoCodeService.list(result.event.id).success(function(list) {
+                	$scope.promocodes = list;
                 });
             });
         };
@@ -468,6 +474,53 @@
                 getPendingPayments();
             }).error(function() {
                 $scope.loading = false;
+            });
+        };
+        
+        //
+        
+        $scope.deletePromocode = function(promocode) {
+        	PromoCodeService.remove($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
+        };
+        
+        $scope.addPromoCode = function(event) {
+        	$modal.open({
+                size:'lg',
+                templateUrl:BASE_STATIC_URL + '/event/fragment/edit-promo-code-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                	
+                	$scope.event = event;
+                	
+                	var now = moment();
+                	var eventBegin = moment(event.formattedBegin);
+                	
+                	console.log(event);
+                	
+                	$scope.promocode = {discountType :'PERCENTAGE', start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')}, end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}};
+                	
+                	$scope.$watch('promocode.promoCode', function(newVal) {
+                		if(newVal) {
+                			$scope.promocode.promoCode = newVal.toUpperCase();
+                		}
+                	});
+                	
+                	$scope.cancel = function() {
+                        $scope.$dismiss('canceled');
+                    };
+                    $scope.update = function(form, promocode, event) {
+                        if(!form.$valid) {
+                            return;
+                        }
+                        $scope.$close(true);
+                        
+                        PromoCodeService.add(event.id, promocode).then(function(result) {
+                            validationErrorHandler(result, form, form.promocode).then(function() {
+                                $scope.$close(true);
+                            });
+                        }, errorHandler).then(loadData);
+                    };
+                }
             });
         };
     });
