@@ -20,10 +20,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Getter;
-import alfio.model.PromoCode.DiscountType;
+import alfio.model.PromoCodeDiscount.DiscountType;
 
 @Getter
-public class PromoCodeModification {
+public class PromoCodeDiscountModification {
 
 	private final String promoCode;
 	private final DateTimeModification start;
@@ -32,7 +32,7 @@ public class PromoCodeModification {
 	private final DiscountType discountType;
 
 	@JsonCreator
-	public PromoCodeModification(@JsonProperty("promoCode") String promoCode,
+	public PromoCodeDiscountModification(@JsonProperty("promoCode") String promoCode,
 			@JsonProperty("start") DateTimeModification start,
 			@JsonProperty("end") DateTimeModification end,
 			@JsonProperty("discountAmount") int discountAmount,

@@ -19,16 +19,16 @@ package alfio.repository;
 import alfio.datamapper.Bind;
 import alfio.datamapper.Query;
 import alfio.datamapper.QueryRepository;
-import alfio.model.PromoCode;
+import alfio.model.PromoCodeDiscount;
 
 import java.time.ZonedDateTime;
 import java.util.List;
 
 @QueryRepository
-public interface PromoCodeRepository {
+public interface PromoCodeDiscountRepository {
 
 	@Query("select * from promo_code where event_id_fk = :eventId order by promo_code asc")
-	List<PromoCode> findAllInEvent(@Bind("eventId") int eventId);
+	List<PromoCodeDiscount> findAllInEvent(@Bind("eventId") int eventId);
 
 	@Query("delete from promo_code where id = :id")
 	int deletePromoCode(@Bind("id") int id);
@@ -42,5 +42,5 @@ public interface PromoCodeRepository {
 			@Bind("discountType") String discountType);
 
 	@Query("select * from promo_code where event_id_fk = :eventId and promo_code = :promoCode")
-	PromoCode findPromoCodeInEvent(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
+	PromoCodeDiscount findPromoCodeInEvent(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
 }

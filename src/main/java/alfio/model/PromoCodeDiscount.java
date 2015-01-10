@@ -22,7 +22,7 @@ import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 @Getter
-public class PromoCode {
+public class PromoCodeDiscount {
 	
 	public enum DiscountType {
 		FIXED_AMOUNT, PERCENTAGE
@@ -36,7 +36,7 @@ public class PromoCode {
 	private final int discountAmount;
 	private final DiscountType discountType;
 	
-	public PromoCode(@Column("id")int id, 
+	public PromoCodeDiscount(@Column("id")int id, 
 			@Column("promo_code") String promoCode, 
 			@Column("event_id_fk") int eventId,
 			@Column("valid_from") ZonedDateTime utcStart, 

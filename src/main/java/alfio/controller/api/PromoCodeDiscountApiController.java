@@ -30,29 +30,29 @@ import org.springframework.web.bind.annotation.RestController;
 
 import alfio.manager.EventManager;
 import alfio.model.Event;
-import alfio.model.PromoCode;
-import alfio.model.modification.PromoCodeModification;
-import alfio.model.modification.PromoCodeWithFormattedTime;
+import alfio.model.PromoCodeDiscount;
+import alfio.model.modification.PromoCodeDiscountModification;
+import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
 import alfio.repository.EventRepository;
-import alfio.repository.PromoCodeRepository;
+import alfio.repository.PromoCodeDiscountRepository;
 
 @RestController
 @RequestMapping("/admin/api")
-public class PromoCodeApiController {
+public class PromoCodeDiscountApiController {
 
 	private final EventRepository eventRepository;
-	private final PromoCodeRepository promoCodeRepository;
+	private final PromoCodeDiscountRepository promoCodeRepository;
 	private final EventManager eventManager;
 
 	@Autowired
-	public PromoCodeApiController(EventRepository eventRepository, PromoCodeRepository promoCodeRepository, EventManager eventManager) {
+	public PromoCodeDiscountApiController(EventRepository eventRepository, PromoCodeDiscountRepository promoCodeRepository, EventManager eventManager) {
 		this.eventRepository = eventRepository;
 		this.promoCodeRepository = promoCodeRepository;
 		this.eventManager = eventManager;
 	}
 
 	@RequestMapping(value = "/events/{eventId}/promo-code", method = POST)
-	public void addPromoCode(@PathVariable("eventId") int eventId, @RequestBody PromoCodeModification promoCode) {
+	public void addPromoCode(@PathVariable("eventId") int eventId, @RequestBody PromoCodeDiscountModification promoCode) {
 		Event event = eventRepository.findById(eventId);
 		ZoneId zoneId = TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
 		
@@ -61,18 +61,18 @@ public class PromoCodeApiController {
 	}
 
 	@RequestMapping(value = "/events/{eventId}/promo-code", method = GET)
-	public List<PromoCodeWithFormattedTime> listPromoCodeInEvent(@PathVariable("eventId") int eventId) {
+	public List<PromoCodeDiscountWithFormattedTime> listPromoCodeInEvent(@PathVariable("eventId") int eventId) {
 		return eventManager.findPromoCodesInEvent(eventId);
 	}
 	
 	@RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}", method = DELETE)
 	public void removePromoCode(@PathVariable("eventId") int eventId, @PathVariable("promoCodeName") String promoCodeName) {
-		PromoCode promoCode = promoCodeRepository.findPromoCodeInEvent(eventId, promoCodeName);
+		PromoCodeDiscount promoCode = promoCodeRepository.findPromoCodeInEvent(eventId, promoCodeName);
 		eventManager.deletePromoCode(promoCode.getId());
 	}
 	
 	@RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}", method = POST)
-	public void updatePromoCode(@PathVariable("eventId") int eventId, @RequestBody PromoCodeModification promoCode) {
+	public void updatePromoCode(@PathVariable("eventId") int eventId, @RequestBody PromoCodeDiscountModification promoCode) {
 		//FIXME complete. Will be used to disable and/or change validity date
 	}
 }

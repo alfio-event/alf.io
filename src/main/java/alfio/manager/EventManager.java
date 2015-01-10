@@ -20,16 +20,16 @@ import alfio.manager.location.LocationManager;
 import alfio.manager.support.OrderSummary;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
-import alfio.model.PromoCode.DiscountType;
+import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.EventWithStatistics;
-import alfio.model.modification.PromoCodeWithFormattedTime;
+import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
-import alfio.repository.PromoCodeRepository;
+import alfio.repository.PromoCodeDiscountRepository;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
@@ -72,7 +72,7 @@ public class EventManager {
     private final TicketRepository ticketRepository;
     private final TicketReservationManager ticketReservationManager;
     private final SpecialPriceRepository specialPriceRepository;
-    private final PromoCodeRepository promoCodeRepository;
+    private final PromoCodeDiscountRepository promoCodeRepository;
     private final LocationManager locationManager;
     private final NamedParameterJdbcTemplate jdbc;
 
@@ -83,7 +83,7 @@ public class EventManager {
                         TicketRepository ticketRepository,
                         TicketReservationManager ticketReservationManager,
                         SpecialPriceRepository specialPriceRepository,
-                        PromoCodeRepository promoCodeRepository,
+                        PromoCodeDiscountRepository promoCodeRepository,
                         LocationManager locationManager,
                         NamedParameterJdbcTemplate jdbc) {
         this.userManager = userManager;
@@ -535,9 +535,9 @@ public class EventManager {
     	promoCodeRepository.deletePromoCode(promoCodeId);
     }
     
-    public List<PromoCodeWithFormattedTime> findPromoCodesInEvent(int eventId) {
+    public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInEvent(int eventId) {
     	ZoneId zoneId = eventRepository.findById(eventId).getZoneId();
-    	return promoCodeRepository.findAllInEvent(eventId).stream().map((p) -> new PromoCodeWithFormattedTime(p, zoneId)).collect(toList());
+    	return promoCodeRepository.findAllInEvent(eventId).stream().map((p) -> new PromoCodeDiscountWithFormattedTime(p, zoneId)).collect(toList());
     }
 
     @Data

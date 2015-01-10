@@ -25,10 +25,12 @@ import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.PromoCodeDiscount;
 import alfio.model.SpecialPrice;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.repository.EventRepository;
+import alfio.repository.PromoCodeDiscountRepository;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
@@ -36,6 +38,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
 import alfio.util.ValidationResult;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +51,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -67,6 +71,7 @@ public class EventController {
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
     private final SpecialPriceRepository specialPriceRepository;
+    private final PromoCodeDiscountRepository promoCodeRepository;
 	private final EventManager eventManager;
 	private final TicketReservationManager ticketReservationManager;
 
@@ -76,7 +81,8 @@ public class EventController {
 						   EventRepository eventRepository,
 						   OrganizationRepository organizationRepository,
 						   TicketCategoryRepository ticketCategoryRepository,
-						   SpecialPriceRepository specialPriceRepository, 
+						   SpecialPriceRepository specialPriceRepository,
+						   PromoCodeDiscountRepository promoCodeRepository,
 						   EventManager eventManager,
 						   TicketReservationManager ticketReservationManager) {
 		this.configurationManager = configurationManager;
@@ -85,6 +91,7 @@ public class EventController {
 		this.organizationRepository = organizationRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.specialPriceRepository = specialPriceRepository;
+		this.promoCodeRepository = promoCodeRepository;
 		this.eventManager = eventManager;
 		this.ticketReservationManager = ticketReservationManager;
 	}
@@ -116,6 +123,8 @@ public class EventController {
 								 @PathVariable("promoCode") String promoCode,
 								 Model model,
 								 HttpServletRequest request) {
+		
+		SessionUtil.removeSpecialPriceData(request);
 
 		Optional<Event> optional = optionally(() -> eventRepository.findByShortName(eventName));
 		if(!optional.isPresent()) {
@@ -124,6 +133,8 @@ public class EventController {
 		Event event = optional.get();
 		Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
 		Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
+		Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> promoCodeRepository.findPromoCodeInEvent(event.getId(), trimmedCode)));
+		
 		if (maybeSpecialCode.isPresent() && (!specialCode.isPresent() || !optionally(() -> eventManager.getTicketCategoryById(specialCode.get().getTicketCategoryId(), event.getId())).isPresent())) {
 			return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
 		}

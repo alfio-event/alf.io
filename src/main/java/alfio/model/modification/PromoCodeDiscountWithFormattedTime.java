@@ -22,18 +22,18 @@ import java.time.ZonedDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.experimental.Delegate;
-import alfio.model.PromoCode;
+import alfio.model.PromoCodeDiscount;
 
-public class PromoCodeWithFormattedTime {
+public class PromoCodeDiscountWithFormattedTime {
 
 	@JsonIgnore
 	@Delegate
-	private final PromoCode promo;
+	private final PromoCodeDiscount promo;
 
 	@JsonIgnore
 	private final ZoneId eventZoneId;
 
-	public PromoCodeWithFormattedTime(PromoCode promo, ZoneId eventZoneId) {
+	public PromoCodeDiscountWithFormattedTime(PromoCodeDiscount promo, ZoneId eventZoneId) {
 		this.promo = promo;
 		this.eventZoneId = eventZoneId;
 	}
