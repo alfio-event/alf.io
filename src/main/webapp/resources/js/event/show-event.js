@@ -20,7 +20,7 @@
 				$('#error-code-not-found').addClass('hidden');
 				if(promoCodeVal != null && promoCodeVal.trim() != "") {
 					jQuery.ajax({
-						url: 'promoCode/'+promoCodeVal,
+						url: 'promoCode/'+encodeURIComponent(promoCodeVal),
 						type: 'POST',
 						data: frm.serialize(),
 						success: function(result) {
