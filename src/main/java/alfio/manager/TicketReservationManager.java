@@ -435,6 +435,8 @@ public class TicketReservationManager {
 		final int amountToBeDiscounted;
 		final int numberOfDiscountApplied;
 		
+		
+		//TODO cleanup/refactor
 		//take in account the discount code
 		if (promoCodeDiscount.isPresent()) {
 			PromoCodeDiscount discount = promoCodeDiscount.get();

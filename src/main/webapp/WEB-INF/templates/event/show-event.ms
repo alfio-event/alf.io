@@ -135,7 +135,21 @@
 	
 	<div>
 		<input type="hidden" name="promoCodeDiscount" value="{{promoCodeDiscount.promoCode}}">
-		{{promoCodeDiscount.promoCode}}
+		<ul class="list-group">
+			<li class="list-group-item">
+				<div class="row">
+					<div class="col-sm-7">{{#i18n}}show-event.promo-code-applied{{/i18n}} {{promoCodeDiscount.promoCode}}</div>
+					<div class="col-sm-5">
+						{{#promoCodeDiscount.fixedAmount}}
+							{{#i18n}}show-event.promo-code-fixed-amount-discount [{{promoCodeDiscount.formattedDiscountAmount}} {{event.currency}}]{{/i18n}}
+						{{/promoCodeDiscount.fixedAmount}}
+						{{^promoCodeDiscount.fixedAmount}}
+							{{#i18n}}show-event.promo-code-percentage-discount [{{promoCodeDiscount.discountAmount}}%]{{/i18n}}
+						{{/promoCodeDiscount.fixedAmount}}
+					</div>
+				</div>
+			</li>
+		</ul>
 	</div>
 {{/hasPromoCodeDiscount}}
 

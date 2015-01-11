@@ -63,4 +63,8 @@ public class PromoCodeDiscount {
     	//TODO: apply this conversion only for some currency. Not all are cent based.
         return MonetaryUtil.centsToUnit(discountAmount);
     }
+	
+	public boolean getFixedAmount() {
+		return DiscountType.FIXED_AMOUNT == discountType;
+	}
 }
