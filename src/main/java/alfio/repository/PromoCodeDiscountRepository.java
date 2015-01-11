@@ -52,4 +52,7 @@ public interface PromoCodeDiscountRepository {
 
 	@Query("select count(*) from promo_code inner join tickets_reservation on promo_code_id_fk = promo_code.id where event_id_fk = :eventId and promo_code = :promoCode")
 	Integer countAppliedPromoCode(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
+
+	@Query("update promo_code set valid_to = :end where event_id_fk = :eventId and promo_code = :promoCode")
+	int updateEnd(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode, @Bind("end") ZonedDateTime end);
 }

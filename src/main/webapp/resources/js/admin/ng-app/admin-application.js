@@ -490,6 +490,10 @@
         	PromoCodeService.remove($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
         };
         
+        $scope.disablePromocode = function(promocode) {
+        	PromoCodeService.disable($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
+        };
+        
         $scope.addPromoCode = function(event) {
         	$modal.open({
                 size:'lg',

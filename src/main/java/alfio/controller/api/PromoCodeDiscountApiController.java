@@ -19,6 +19,7 @@ package alfio.controller.api;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -74,9 +75,9 @@ public class PromoCodeDiscountApiController {
 		eventManager.deletePromoCode(promoCode.getId());
 	}
 	
-	@RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}", method = POST)
-	public void updatePromoCode(@PathVariable("eventId") int eventId, @RequestBody PromoCodeDiscountModification promoCode) {
-		//FIXME complete. Will be used to disable and/or change validity date
+	@RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}/disable", method = POST)
+	public void disablePromoCode(@PathVariable("eventId") int eventId, @PathVariable("promoCodeName") String promoCodeName) {
+		promoCodeRepository.updateEnd(eventId, promoCodeName, ZonedDateTime.now());
 	}
 	
 	@RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}/count-use", method = GET)

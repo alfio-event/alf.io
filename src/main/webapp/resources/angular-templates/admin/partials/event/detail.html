@@ -33,11 +33,11 @@
 	    <div class="wMarginBottom">
 	        <button type="button" class="btn btn-success" data-ng-click="addPromoCode(event)"><i class="fa fa-plus"></i> add promo code</button>
 	    </div>
-	    <div data-ng-repeat="promocode in promocodes" class="container wMarginBottom category-success">
+	    <div data-ng-repeat="promocode in promocodes" class="container wMarginBottom" data-ng-class="{'category-success': !promocode.expired, 'category-expired': promocode.expired}">
 	    	<div class="page-header">
 	    		<div class="row">
 	               	<div class="col-sm-4">
-	               		<h4>{{::promocode.promoCode}}</h4>
+	               		<h4>{{::promocode.promoCode}} <span data-ng-if="promocode.expired">(Expired)</span></h4>
 	               	</div>
 	               	<div class="col-sm-6">
 	               		<div class="row">
@@ -70,6 +70,7 @@
 			<div class="row wMarginBottom">
             	<div class="col-sm-4">
                 	<button data-ng-show="promocode.useCount === 0" class="btn btn-warning" data-ng-click="deletePromocode(promocode)"><i class="fa fa-remove"></i> Delete</button>
+                	<button data-ng-hide="promocode.expired" class="btn btn-warning" data-ng-click="disablePromocode(promocode)"><i class="fa fa-remove"></i> Disable</button>
             	</div>
 			</div>
 	    </div>
