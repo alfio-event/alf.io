@@ -32,6 +32,9 @@ public interface PromoCodeDiscountRepository {
 
 	@Query("delete from promo_code where id = :id")
 	int deletePromoCode(@Bind("id") int id);
+	
+	@Query("select * from promo_code where id = :id")
+	PromoCodeDiscount findById(@Bind("id") int id);
 
 	@Query("insert into promo_code(promo_code, event_id_fk, valid_from, valid_to, discount_amount, discount_type) "
 			+ " values (:promoCode, :eventId, :start, :end, :discountAmount, :discountType)")
@@ -43,4 +46,7 @@ public interface PromoCodeDiscountRepository {
 
 	@Query("select * from promo_code where event_id_fk = :eventId and promo_code = :promoCode")
 	PromoCodeDiscount findPromoCodeInEvent(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
+
+	@Query("select count(*) from promo_code where event_id_fk = :eventId")
+	Integer countByEventId(@Bind("eventId") int eventId);
 }

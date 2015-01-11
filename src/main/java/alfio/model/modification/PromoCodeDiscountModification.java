@@ -16,11 +16,14 @@
  */
 package alfio.model.modification;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.math.BigDecimal;
 
 import lombok.Getter;
 import alfio.model.PromoCodeDiscount.DiscountType;
+import alfio.util.MonetaryUtil;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Getter
 public class PromoCodeDiscountModification {
@@ -28,14 +31,14 @@ public class PromoCodeDiscountModification {
 	private final String promoCode;
 	private final DateTimeModification start;
 	private final DateTimeModification end;
-	private final int discountAmount;
+	private final BigDecimal discountAmount;
 	private final DiscountType discountType;
 
 	@JsonCreator
 	public PromoCodeDiscountModification(@JsonProperty("promoCode") String promoCode,
 			@JsonProperty("start") DateTimeModification start,
 			@JsonProperty("end") DateTimeModification end,
-			@JsonProperty("discountAmount") int discountAmount,
+			@JsonProperty("discountAmount") BigDecimal discountAmount,
 			@JsonProperty("discountType") DiscountType discountType) {
 		this.promoCode = promoCode;
 		this.start = start;
@@ -43,4 +46,12 @@ public class PromoCodeDiscountModification {
 		this.discountAmount = discountAmount;
 		this.discountType = discountType;	
 	}
+	
+	public int getDiscountAsPercent() {
+		return discountAmount.intValue();
+	}
+	
+	public int getDiscountInCents() {
+        return MonetaryUtil.unitToCents(discountAmount);
+    }
 }

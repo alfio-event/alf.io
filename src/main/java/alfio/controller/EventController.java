@@ -135,16 +135,27 @@ public class EventController {
 		Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
 		Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> promoCodeRepository.findPromoCodeInEvent(event.getId(), trimmedCode)));
 		
-		if (maybeSpecialCode.isPresent() && (!specialCode.isPresent() || !optionally(() -> eventManager.getTicketCategoryById(specialCode.get().getTicketCategoryId(), event.getId())).isPresent())) {
+		if(specialCode.isPresent()) {
+			if (!optionally(() -> eventManager.getTicketCategoryById(specialCode.get().getTicketCategoryId(), event.getId())).isPresent()) {
+				return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
+			}
+			
+			if (specialCode.get().getStatus() != SpecialPrice.Status.FREE) {
+				return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
+			}
+			
+		} else if (promotionCodeDiscount.isPresent() && promotionCodeDiscount.get().isExpired(event.getZoneId())) {
 			return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
-		}
-
-		if (specialCode.isPresent() && specialCode.get().getStatus() != SpecialPrice.Status.FREE) {
+		} else if(!specialCode.isPresent() && !promotionCodeDiscount.isPresent()) {
 			return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
 		}
 
 		if(maybeSpecialCode.isPresent() && !model.asMap().containsKey("hasErrors")) {
-			SessionUtil.saveSpecialPriceCode(maybeSpecialCode.get(), request);
+			if(specialCode.isPresent()) {
+				SessionUtil.saveSpecialPriceCode(maybeSpecialCode.get(), request);
+			} else if (promotionCodeDiscount.isPresent()) {
+				SessionUtil.savePromotionCodeDiscount(maybeSpecialCode.get(), request);
+			}
 			return ValidationResult.success();
 		}
 		return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
@@ -163,6 +174,9 @@ public class EventController {
 		
 		Optional<String> maybeSpecialCode = SessionUtil.retrieveSpecialPriceCode(request);
 		Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
+		
+		Optional<PromoCodeDiscount> promoCodeDiscount = SessionUtil.retrievePromotionCodeDiscount(request)
+				.flatMap((code) -> optionally(() -> promoCodeRepository.findPromoCodeInEvent(event.get().getId(), code)));
 
 		Event ev = event.get();
 		final ZonedDateTime now = ZonedDateTime.now(ev.getZoneId());
@@ -177,14 +191,20 @@ public class EventController {
 
 		LocationDescriptor ld = LocationDescriptor.fromGeoData(ev.getLatLong(), TimeZone.getTimeZone(ev.getTimeZone()),
 				configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY));
+		
+		final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(ev.getId()).intValue() > 0 || 
+				promoCodeRepository.countByEventId(ev.getId()).intValue() > 0;
+		
         final EventDescriptor eventDescriptor = new EventDescriptor(ev);
 		model.addAttribute("event", eventDescriptor)//
 			.addAttribute("organizer", organizationRepository.getById(ev.getOrganizationId()))
 			.addAttribute("ticketCategories", t)//
-			.addAttribute("hasAccessRestrictedCategory", ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(ev.getId()).intValue() > 0)
+			.addAttribute("hasAccessPromotions", hasAccessPromotions)
 			.addAttribute("promoCode", specialCode.map(SpecialPrice::getCode).orElse(null))
 			.addAttribute("locationDescriptor", ld)
 			.addAttribute("pageTitle", "show-event.header.title")
+			.addAttribute("hasPromoCodeDiscount", promoCodeDiscount.isPresent())
+			.addAttribute("promoCodeDiscount", promoCodeDiscount.orElse(null))
 			.addAttribute("forwardButtonDisabled", t.stream().noneMatch(SaleableTicketCategory::getSaleable));
 		model.asMap().putIfAbsent("hasErrors", false);//
 		return "/event/show-event";
@@ -218,7 +238,10 @@ public class EventController {
 
 		try {
 			String reservationId = ticketReservationManager.createTicketReservation(event.get().getId(),
-					selected.get(), expiration, SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()), locale);
+					selected.get(), expiration, 
+					SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()),
+					SessionUtil.retrievePromotionCodeDiscount(request.getRequest()),
+					locale);
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/book";
 		} catch (TicketReservationManager.NotEnoughTicketsException nete) {
 			bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);

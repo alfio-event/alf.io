@@ -16,9 +16,12 @@
  */
 package alfio.model;
 
+import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
+import alfio.util.MonetaryUtil;
 import lombok.Getter;
 
 @Getter
@@ -51,4 +54,13 @@ public class PromoCodeDiscount {
 		this.discountAmount = discountAmount;
 		this.discountType = discountType;
 	}
+	
+	public boolean isExpired(ZoneId eventZoneId) {
+		return ZonedDateTime.now(eventZoneId).isAfter(utcEnd.withZoneSameInstant(eventZoneId));
+	}
+	
+	public BigDecimal getFormattedDiscountAmount() {
+    	//TODO: apply this conversion only for some currency. Not all are cent based.
+        return MonetaryUtil.centsToUnit(discountAmount);
+    }
 }

@@ -21,13 +21,16 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.Optional;
 import java.util.UUID;
 
 public final class SessionUtil {
-
+	
     private static final String SPECIAL_PRICE_CODE_SESSION_ID = "SPECIAL_PRICE_CODE_SESSION_ID";
     private static final String SPECIAL_PRICE_CODE = "SPECIAL_PRICE_CODE";
+    
+    private static final String PROMOTIONAL_CODE_DISCOUNT = "PROMOTIONAL_CODE_DISCOUNT";
 
     private SessionUtil() {}
 
@@ -37,9 +40,17 @@ public final class SessionUtil {
             request.getSession().setAttribute(SPECIAL_PRICE_CODE, specialPriceCode);
         }
     }
+    
+    public static void savePromotionCodeDiscount(String promoCodeDiscount, HttpServletRequest request) {
+    	request.getSession().setAttribute(PROMOTIONAL_CODE_DISCOUNT, promoCodeDiscount);
+	}
 
     public static Optional<String> retrieveSpecialPriceCode(HttpServletRequest request) {
         return Optional.ofNullable((String)request.getSession().getAttribute(SPECIAL_PRICE_CODE));
+    }
+    
+    public static Optional<String> retrievePromotionCodeDiscount(HttpServletRequest request) {
+    	return Optional.ofNullable((String) request.getSession().getAttribute(PROMOTIONAL_CODE_DISCOUNT));
     }
 
     public static Optional<String> retrieveSpecialPriceSessionId(HttpServletRequest request) {
@@ -49,10 +60,10 @@ public final class SessionUtil {
     public static void removeSpecialPriceData(HttpServletRequest request) {
         request.getSession().removeAttribute(SPECIAL_PRICE_CODE_SESSION_ID);
         request.getSession().removeAttribute(SPECIAL_PRICE_CODE);
+        request.getSession().removeAttribute(PROMOTIONAL_CODE_DISCOUNT);
     }
 
     public static void addToFlash(BindingResult bindingResult, RedirectAttributes redirectAttributes) {
         redirectAttributes.addFlashAttribute("error", bindingResult).addFlashAttribute("hasErrors", true);
     }
-
 }

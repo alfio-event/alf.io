@@ -129,8 +129,18 @@
 	{{/ticketCategories}}
 	</ul>
 
+{{#hasPromoCodeDiscount}}
+
+	<hr/>
+	
+	<div>
+		<input type="hidden" name="promoCodeDiscount" value="{{promoCodeDiscount.promoCode}}">
+		{{promoCodeDiscount.promoCode}}
+	</div>
+{{/hasPromoCodeDiscount}}
+
 <div class="wMarginBottom"></div>
-{{#hasAccessRestrictedCategory}}
+{{#hasAccessPromotions}}
 <div id="accessRestrictedTokens" class="wMarginBottom">
 	<div class="panel panel-default">
 		<div class="panel-heading" role="tab" id="headingOne">
@@ -152,7 +162,7 @@
 		</div>
 	</div>
 </div>
-{{/hasAccessRestrictedCategory}}
+{{/hasAccessPromotions}}
 
 	<hr/>
 
@@ -167,9 +177,9 @@
 	<div class="clearfix"></div>
 </form>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-{{#hasAccessRestrictedCategory}}
+{{#hasAccessPromotions}}
 <script src="{{request.contextPath}}/resources/js/event/show-event.js"></script>
-{{/hasAccessRestrictedCategory}}
+{{/hasAccessPromotions}}
 <script src="{{request.contextPath}}/resources/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="{{request.contextPath}}/resources/js/event/bootstrap-handler.js"></script>
 {{>/event/page-bottom}}

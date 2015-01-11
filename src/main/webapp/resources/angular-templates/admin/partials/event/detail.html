@@ -54,7 +54,10 @@
 	                    </div>
 	                    <div class="row">
 	                    	<div class="col-sm-4"><strong>Discount amount</strong></div>
-	                    	<div class="col-sm-8">{{::promocode.discountAmount}} <span data-ng-if="promocode.discountType === 'PERCENTAGE'">%</span><span data-ng-if="promocode.discountType === 'FIXED_AMOUNT'">{{event.currency}}</span></div>
+	                    	<div class="col-sm-8">
+	                    		<span data-ng-if="promocode.discountType === 'PERCENTAGE'">{{::promocode.discountAmount}}%</span>
+	                    		<span data-ng-if="promocode.discountType === 'FIXED_AMOUNT'">{{::promocode.formattedDiscountAmount | currency : (event.currency || "")}}</span>
+	                    	</div>
 	                    </div>
 	               	</div>
                	</div>

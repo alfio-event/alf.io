@@ -17,7 +17,6 @@
 package alfio.model.modification;
 
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -39,7 +38,7 @@ public class PromoCodeDiscountWithFormattedTime {
 	}
 
 	public boolean isExpired() {
-		return ZonedDateTime.now(eventZoneId).isAfter(getUtcEnd().withZoneSameInstant(eventZoneId));
+		return isExpired(eventZoneId);
 	}
 	
     public String getFormattedStart() {

@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import alfio.manager.EventManager;
 import alfio.model.Event;
 import alfio.model.PromoCodeDiscount;
+import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.modification.PromoCodeDiscountModification;
 import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
 import alfio.repository.EventRepository;
@@ -56,8 +57,10 @@ public class PromoCodeDiscountApiController {
 		Event event = eventRepository.findById(eventId);
 		ZoneId zoneId = TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
 		
+		int discount = promoCode.getDiscountType() == DiscountType.FIXED_AMOUNT ? promoCode.getDiscountInCents() : promoCode.getDiscountAsPercent();
+		
 		eventManager.addPromoCode(promoCode.getPromoCode(), eventId, promoCode.getStart().toZonedDateTime(zoneId), 
-				promoCode.getEnd().toZonedDateTime(zoneId), promoCode.getDiscountAmount(), promoCode.getDiscountType());
+				promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType());
 	}
 
 	@RequestMapping(value = "/events/{eventId}/promo-code", method = GET)

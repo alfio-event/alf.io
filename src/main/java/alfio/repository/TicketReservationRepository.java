@@ -26,8 +26,8 @@ import java.util.List;
 @QueryRepository
 public interface TicketReservationRepository {
 
-	@Query("insert into tickets_reservation(id, validity, status) values (:id, :validity, 'PENDING')")
-	int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity);
+	@Query("insert into tickets_reservation(id, validity, promo_code_id_fk, status) values (:id, :validity, :promotionCodeDiscountId, 'PENDING')")
+	int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity, @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId);
 
 	@Query("update tickets_reservation set status = :status, full_name = :fullName, email_address = :email, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod where id = :reservationId")
 	int updateTicketReservation(@Bind("reservationId") String reservationId, @Bind("status") String status,

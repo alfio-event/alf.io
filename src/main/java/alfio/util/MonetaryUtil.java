@@ -43,10 +43,14 @@ public final class MonetaryUtil {
                 .intValueExact();
     }
 
-    public static int calcVat(int priceInCents, BigDecimal vat) {
+    public static int calcPercentage(int priceInCents, BigDecimal vat) {
         return new BigDecimal(priceInCents).multiply(vat.divide(HUNDRED, 5, UP))
                 .setScale(0, HALF_UP)
                 .intValueExact();
+    }
+    
+    public static int calcVat(int priceInCents, BigDecimal percentage) {
+    	return calcPercentage(priceInCents, percentage);
     }
 
     public static BigDecimal centsToUnit(int cents) {
