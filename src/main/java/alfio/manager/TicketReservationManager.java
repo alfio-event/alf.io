@@ -450,11 +450,11 @@ public class TicketReservationManager {
 			
 			// recalc the net and vat
 			if(event.isVatIncluded()) {
-				int finalPrice = net + vat - amountToBeDiscounted;
+				int finalPrice = Math.max(net + vat - amountToBeDiscounted, 0);
 				net = MonetaryUtil.removeVAT(finalPrice, event.getVat());
 				vat = finalPrice - net;
 			} else {
-				net = net - amountToBeDiscounted;
+				net = Math.max(net - amountToBeDiscounted, 0);
 				vat = MonetaryUtil.calcVat(net, event.getVat());
 			}
 		} else {
