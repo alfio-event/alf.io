@@ -251,6 +251,13 @@
                 
                 PromoCodeService.list(result.event.id).success(function(list) {
                 	$scope.promocodes = list;
+                	angular.forEach($scope.promocodes, function(v) {
+                		(function(v) {
+                			PromoCodeService.countUse(result.event.id, v.promoCode).then(function(val) {
+                				v.useCount = parseInt(val.data, 10);
+                			});
+                		})(v);
+                	});
                 });
             });
         };

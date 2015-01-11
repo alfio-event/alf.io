@@ -183,6 +183,9 @@
     			},
     			list: function(eventId) {
     				return $http.get('/admin/api/events/' + eventId + '/promo-code').error(HttpErrorHandler.handle);
+    			},
+    			countUse : function(eventId, promoCode) {
+    				return $http.get('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)+ '/count-use');
     			}
     	};
     })

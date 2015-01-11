@@ -63,8 +63,13 @@
                	</div>
 			</div>
 			<div class="row wMarginBottom">
+				<div class="col-sm-12">
+					Used {{promocode.useCount}} times.
+				</div>
+			</div>
+			<div class="row wMarginBottom">
             	<div class="col-sm-4">
-                	<button class="btn btn-warning" data-ng-click="deletePromocode(promocode)"><i class="fa fa-remove"></i> Delete</button>
+                	<button data-ng-show="promocode.useCount === 0" class="btn btn-warning" data-ng-click="deletePromocode(promocode)"><i class="fa fa-remove"></i> Delete</button>
             	</div>
 			</div>
 	    </div>

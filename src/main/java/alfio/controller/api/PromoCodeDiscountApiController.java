@@ -78,4 +78,9 @@ public class PromoCodeDiscountApiController {
 	public void updatePromoCode(@PathVariable("eventId") int eventId, @RequestBody PromoCodeDiscountModification promoCode) {
 		//FIXME complete. Will be used to disable and/or change validity date
 	}
+	
+	@RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}/count-use", method = GET)
+	public int countPromoCodeUse(@PathVariable("eventId") int eventId, @PathVariable("promoCodeName") String promoCodeName) {
+		return promoCodeRepository.countAppliedPromoCode(eventId, promoCodeName);
+	}
 }

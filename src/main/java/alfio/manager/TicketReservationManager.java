@@ -106,7 +106,7 @@ public class TicketReservationManager {
 		private final int priceWithVAT;
 		private final int VAT;
 		private final int discount;
-		private final int numberOfDiscountApplied;
+		private final int discountAppliedCount;
 	}
 	
 	@Autowired
@@ -433,7 +433,7 @@ public class TicketReservationManager {
 		int net = totalFrom(tickets, event);
 		int vat = totalVat(tickets, event.getVat());
 		final int amountToBeDiscounted;
-		final int numberOfDiscountApplied;
+		final int discountAppliedCount;
 		
 		
 		//TODO cleanup/refactor
@@ -443,11 +443,11 @@ public class TicketReservationManager {
 			
 			if(discount.getDiscountType() == DiscountType.FIXED_AMOUNT) {
 				//we apply the fixed discount for each paid ticket
-				numberOfDiscountApplied = ((int) tickets.stream().filter(t -> t.getPaidPriceInCents() > 0).count());
-				amountToBeDiscounted =  numberOfDiscountApplied * discount.getDiscountAmount();
+				discountAppliedCount = ((int) tickets.stream().filter(t -> t.getPaidPriceInCents() > 0).count());
+				amountToBeDiscounted =  discountAppliedCount * discount.getDiscountAmount();
 			} else {
 				amountToBeDiscounted = MonetaryUtil.calcPercentage(event.isVatIncluded() ? net + vat : net, new BigDecimal(discount.getDiscountAmount()));
-				numberOfDiscountApplied = 1;
+				discountAppliedCount = 1;
 			}
 			
 			// recalc the net and vat
@@ -461,10 +461,10 @@ public class TicketReservationManager {
 			}
 		} else {
 			amountToBeDiscounted = 0;
-			numberOfDiscountApplied = 0;
+			discountAppliedCount = 0;
 		}
 		
-		return new TotalPrice(net + vat, vat, -amountToBeDiscounted, numberOfDiscountApplied);
+		return new TotalPrice(net + vat, vat, -amountToBeDiscounted, discountAppliedCount);
     }
     
 
@@ -484,12 +484,14 @@ public class TicketReservationManager {
 		Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
 		
 		//add the discount summary row
-		if(!free && promoCodeDiscount.isPresent()) {
-			PromoCodeDiscount promo = promoCodeDiscount.get();
-			summary.add(new SummaryRow(promo.getPromoCode(), 
-					"-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount()) : (promo.getDiscountAmount()+"%")), 
-					reservationCost.numberOfDiscountApplied, 
-					formatCents(reservationCost.discount), reservationCost.discount));
+		if(!free) {
+			promoCodeDiscount.ifPresent((promo) -> {
+				String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount()) : (promo.getDiscountAmount()+"%"));
+				summary.add(new SummaryRow(promo.getPromoCode(), 
+						formattedSingleAmount, 
+						reservationCost.discountAppliedCount, 
+						formatCents(reservationCost.discount), reservationCost.discount));
+			});
 		}
 				
 		
