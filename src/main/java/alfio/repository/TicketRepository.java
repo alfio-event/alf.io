@@ -62,7 +62,7 @@ public interface TicketRepository {
 	@Query("update ticket set status = 'INVALIDATED' where id in (:ids)")
 	int invalidateTickets(@Bind("ids") List<Integer> ids);
 
-	@Query("update ticket set original_price_cts = :priceInCents where event_id = :eventId and category_id = :categoryId")
+	@Query("update ticket set original_price_cts = :priceInCents, paid_price_cts = :priceInCents where event_id = :eventId and category_id = :categoryId")
 	int updateTicketPrice(@Bind("categoryId") int categoryId, @Bind("eventId") int eventId, @Bind("priceInCents") int priceInCents);
 
 	@Query("update ticket set status = 'FREE', tickets_reservation_id = null, special_price_id_fk = null where status in ('PENDING', 'OFFLINE_PAYMENT') "
