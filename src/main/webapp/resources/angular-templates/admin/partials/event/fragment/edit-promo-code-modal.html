@@ -5,7 +5,7 @@
     <div class="modal-body">
     	<div class="col-sm-12 col-md-8 col-md-offset-2">
     		<div class="form-group">
-				<label for="promoCode">Promo code name</label>
+				<label for="promoCode">Promo code name (min length is 7 characters)</label>
 				<input type="text" id="promoCode" data-ng-model="promocode.promoCode" class="form-control to-uppercase" required minlength="7"/>
 				<field-error data-form-obj="promocode" data-field-obj="promocode.promoCode" data-show-existing-errors="showExistingErrors"></field-error>
 		    </div>
@@ -39,7 +39,7 @@
 			<div class="form-group">
     			<label for="promoCode">Discount amount</label>
     			<div class="input-group">
-    				<input type="number" id="discountAmount" data-ng-model="promocode.discountAmount" class="form-control" min="0"/>
+    				<input type="number" id="discountAmount" data-ng-model="promocode.discountAmount" class="form-control" min="0" required/>
     				<div class="input-group-addon">
     					<span data-ng-if="promocode.discountType === 'PERCENTAGE'">%</span>
     					<span data-ng-if="promocode.discountType === 'FIXED_AMOUNT'">{{event.currency}}</span>
@@ -53,6 +53,9 @@
     </div>
 
     <div class="modal-footer">
-        <control-buttons data-form-obj="promoCodeForm"></control-buttons>
+    	<div>
+    		<button type="submit" class="btn btn-primary" data-ng-disabled="promoCodeForm.$waiting || promoCodeForm.$invalid" data-ng-click="ok(formObj)">Save</button>
+    		<button type="button" class="btn btn-default" data-ng-disabled="promoCodeForm.$waiting" data-ng-click="cancel()">Cancel</button>
+		</div>
     </div>
 </form>

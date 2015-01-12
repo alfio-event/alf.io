@@ -506,8 +506,6 @@
                 	var now = moment();
                 	var eventBegin = moment(event.formattedBegin);
                 	
-                	console.log(event);
-                	
                 	$scope.promocode = {discountType :'PERCENTAGE', start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')}, end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}};
                 	
                 	$scope.$watch('promocode.promoCode', function(newVal) {
@@ -552,7 +550,6 @@
         $scope.removeConfigurationKey = function(key) {
         	$scope.loading = true;
             ConfigurationService.remove(key).then(function() {return ConfigurationService.loadAll();}).then(function(result) {
-            	console.log(result);
             	$scope.settings = result.data;
                 $scope.loading = false;
             });
