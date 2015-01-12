@@ -336,6 +336,11 @@
                         <configuration>
                             <scanIntervalSeconds>0</scanIntervalSeconds>
                             <daemon>true</daemon>
+							<stopPort>8887</stopPort>
+							<httpConnector>
+								<port>8888</port>
+								<host>0.0.0.0</host>
+							</httpConnector>
                         </configuration>
                     </execution>
                     <execution>
