@@ -634,29 +634,17 @@
             return index % 2 == 0 ? 'info' : 'success';
         };
 
-        $rootScope.calcBarValue = function(categorySeats, eventSeats) {
-            return PriceCalculator.calcBarValue(categorySeats, eventSeats);
-        };
+        $rootScope.calcBarValue = PriceCalculator.calcBarValue;
 
-        $rootScope.calcCategoryPricePercent = function(category, event) {
-            return PriceCalculator.calcCategoryPricePercent(category, event);
-        };
+        $rootScope.calcCategoryPricePercent = PriceCalculator.calcCategoryPricePercent;
 
-        $rootScope.calcCategoryPrice = function(category, event) {
-            return PriceCalculator.calcCategoryPrice(category, event);
-        };
+        $rootScope.calcCategoryPrice = PriceCalculator.calcCategoryPrice; 
 
-        $rootScope.calcPercentage = function(fraction, total) {
-            return PriceCalculator.calcPercentage(fraction, total);
-        };
+        $rootScope.calcPercentage = PriceCalculator.calcPercentage;
 
-        $rootScope.applyPercentage = function(total, percentage) {
-            return PriceCalculator.applyPercentage(total, percentage);
-        };
+        $rootScope.applyPercentage = PriceCalculator.applyPercentage;
 
-        $rootScope.calculateTotalPrice = function(event) {
-            return PriceCalculator.calculateTotalPrice(event);
-        };
+        $rootScope.calculateTotalPrice = PriceCalculator.calculateTotalPrice;
     });
 
 })();

@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h3><span data-ng-if="category.id">Edit</span><span data-ng-if="!category.id">Insert new</span> category <span data-ng-if="category.id">{{category.name}}</span></h3>
+    <h3><span data-ng-if="ticketCategory.id !== undefined">Edit</span><span data-ng-if="ticketCategory.id === undefined">Insert new</span> category <span data-ng-if="ticketCategory.id !== undefined">{{ticketCategory.name}}</span></h3>
 </div>
 <form name="categoryForm" data-ng-submit="update(categoryForm, ticketCategory, event)" novalidate data-error-sensitive>
     <div class="modal-body">

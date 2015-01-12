@@ -147,7 +147,13 @@
                 if(isNaN(event.regularPrice) || isNaN(category.price)) {
                     return '0.00';
                 }
-                var regularPrice = instance.calculateTotalPrice(event, !editMode);
+                
+                //TODO cleanup, not happy about that
+                var regularPrice = event.regularPrice;
+                if(editMode && event.vatIncluded) {
+                	regularPrice = instance.calculateTotalPrice(event, true);
+                }
+                //
                 return instance.calcPercentage(category.price, regularPrice).format('0.00');
             },
             calcCategoryPrice: function(category, event) {
