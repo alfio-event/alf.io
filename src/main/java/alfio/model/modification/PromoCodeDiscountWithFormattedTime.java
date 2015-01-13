@@ -17,6 +17,7 @@
 package alfio.model.modification;
 
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -37,8 +38,12 @@ public class PromoCodeDiscountWithFormattedTime {
 		this.eventZoneId = eventZoneId;
 	}
 
+	public boolean isCurrentlyValid() {
+		return isCurrentlyValid(eventZoneId, ZonedDateTime.now(eventZoneId));
+	}
+	
 	public boolean isExpired() {
-		return isExpired(eventZoneId);
+		return isExpired(eventZoneId, ZonedDateTime.now(eventZoneId));
 	}
 	
     public String getFormattedStart() {

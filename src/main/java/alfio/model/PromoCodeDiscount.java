@@ -55,8 +55,12 @@ public class PromoCodeDiscount {
 		this.discountType = discountType;
 	}
 	
-	public boolean isExpired(ZoneId eventZoneId) {
-		return ZonedDateTime.now(eventZoneId).isAfter(utcEnd.withZoneSameInstant(eventZoneId));
+	public boolean isCurrentlyValid(ZoneId eventZoneId, ZonedDateTime now) {
+		return utcStart.withZoneSameInstant(eventZoneId).isBefore(now) && utcEnd.withZoneSameInstant(eventZoneId).isAfter(now);
+	}
+	
+	public boolean isExpired(ZoneId eventZoneId, ZonedDateTime now) {
+		return now.isAfter(utcEnd.withZoneSameInstant(eventZoneId));
 	}
 	
 	public BigDecimal getFormattedDiscountAmount() {

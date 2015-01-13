@@ -131,6 +131,7 @@ public class EventController {
 			return ValidationResult.failed(new ValidationResult.ValidationError("event", ""));
 		}
 		Event event = optional.get();
+		ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
 		Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
 		Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
 		Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> promoCodeRepository.findPromoCodeInEvent(event.getId(), trimmedCode)));
@@ -144,7 +145,7 @@ public class EventController {
 				return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
 			}
 			
-		} else if (promotionCodeDiscount.isPresent() && promotionCodeDiscount.get().isExpired(event.getZoneId())) {
+		} else if (promotionCodeDiscount.isPresent() && !promotionCodeDiscount.get().isCurrentlyValid(event.getZoneId(), now)) {
 			return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
 		} else if(!specialCode.isPresent() && !promotionCodeDiscount.isPresent()) {
 			return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
