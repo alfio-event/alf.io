@@ -483,8 +483,8 @@ public class TicketReservationManager {
 		
 		Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
 		
-		//add the discount summary row
-		if(!free) {
+		//add the discount summary row only if it has an effect
+		if(reservationCost.getDiscount() != 0) {
 			promoCodeDiscount.ifPresent((promo) -> {
 				String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount()) : (promo.getDiscountAmount()+"%"));
 				summary.add(new SummaryRow(promo.getPromoCode(), 
