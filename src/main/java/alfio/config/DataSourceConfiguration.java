@@ -167,7 +167,6 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 	
 	@Bean
 	public PlatformProvider getCloudProvider() {
-		System.getenv().entrySet().stream().forEach(e -> System.out.println(e.getKey() + "="+e.getValue()));
 		Optional<String> dockerDbName = Optional.ofNullable(System.getenv("DB_ENV_DOCKER_DB_NAME"));
 		if(dockerDbName.isPresent()) {
 			return PlatformProvider.DOCKER;
