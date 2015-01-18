@@ -53,9 +53,10 @@ public interface TicketCategoryRepository {
     @Query("select count(*) from ticket_category where event_id = :eventId and access_restricted = true")
     Integer countAccessRestrictedRepositoryByEventId(@Bind("eventId") int eventId);
 
-    @Query("update ticket_category set inception = :inception, expiration = :expiration, description = :description, " +
+    @Query("update ticket_category set name = :name, inception = :inception, expiration = :expiration, description = :description, " +
             "max_tickets = :max_tickets, price_cts = :price, access_restricted = :accessRestricted where id = :id")
     int update(@Bind("id") int id,
+               @Bind("name") String name,
                @Bind("inception") ZonedDateTime inception,
                @Bind("expiration") ZonedDateTime expiration,
                @Bind("max_tickets") int maxTickets,

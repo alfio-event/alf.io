@@ -21,22 +21,13 @@ import alfio.manager.support.OrderSummary;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
-import alfio.model.modification.EventModification;
-import alfio.model.modification.EventWithStatistics;
-import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
-import alfio.model.modification.TicketCategoryModification;
-import alfio.model.modification.TicketCategoryWithStatistic;
+import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
-import alfio.repository.EventRepository;
-import alfio.repository.PromoCodeDiscountRepository;
-import alfio.repository.SpecialPriceRepository;
-import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketRepository;
+import alfio.repository.*;
 import alfio.util.MonetaryUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
-
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -355,7 +346,7 @@ public class EventManager {
     private void updateCategory(TicketCategoryModification tc, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge, ZoneId zoneId, int eventId) {
         final int price = evaluatePrice(tc.getPriceInCents(), vat, vatIncluded, freeOfCharge);
         TicketCategory original = ticketCategoryRepository.getById(tc.getId(), eventId);
-        ticketCategoryRepository.update(tc.getId(), tc.getInception().toZonedDateTime(zoneId),
+        ticketCategoryRepository.update(tc.getId(), tc.getName(), tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getMaxTickets(), price, tc.isTokenGenerationRequested(),
                 tc.getDescription());
         TicketCategory updated = ticketCategoryRepository.getById(tc.getId(), eventId);
