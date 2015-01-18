@@ -42,6 +42,7 @@ import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplate
 import javax.sql.DataSource;
 import java.net.URISyntaxException;
 import java.util.Objects;
+import java.util.Optional;
 
 @EnableTransactionManagement
 @EnableScheduling
@@ -101,6 +102,42 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 			public String getDialect(Environment env) {
 				return "PGSQL";
 			}
+		},
+
+		DOCKER {
+			@Override
+			public String getDriveClassName(Environment env) {
+				return "org.postgresql.Driver";
+			}
+
+			@Override
+			public String getUrl(Environment env) {
+				String dbHost = Objects.requireNonNull(System.getenv("DB_PORT_5432_TCP_ADDR"), "DB_PORT_5432_TCP_ADDR env variable is missing");
+				String port = Objects.requireNonNull(System.getenv("DB_PORT_5432_TCP_PORT"), "DB_PORT_5432_TCP_PORT env variable is missing");
+				String dbName = Objects.requireNonNull(System.getenv("DB_ENV_POSTGRES_USERNAME"), "DB_ENV_POSTGRES_USERNAME env variable is missing");
+				return "jdbc:postgresql://" + dbHost + ":" + port + "/" + dbName;
+			}
+
+			@Override
+			public String getUsername(Environment env) {
+				return Objects.requireNonNull(System.getenv("DB_ENV_POSTGRES_USERNAME"), "DB_ENV_POSTGRES_USERNAME env variable is missing");
+			}
+
+
+			@Override
+			public String getPassword(Environment env) {
+				return Objects.requireNonNull(System.getenv("DB_ENV_POSTGRES_PASSWORD"), "DB_ENV_POSTGRES_PASSWORD env variable is missing");
+			}
+
+			@Override
+			public String getValidationQuery(Environment env) {
+				return "SELECT 1";
+			}
+
+			@Override
+			public String getDialect(Environment env) {
+				return "PGSQL";
+			}
 		};
 		
 		public String getDriveClassName(Environment env) {
@@ -130,7 +167,13 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 	
 	@Bean
 	public PlatformProvider getCloudProvider() {
-		return System.getenv("OPENSHIFT_APP_NAME") != null ? PlatformProvider.OPENSHIFT : PlatformProvider.DEFAULT;
+		System.getenv().entrySet().stream().forEach(e -> System.out.println(e.getKey() + "="+e.getValue()));
+		Optional<String> dockerDbName = Optional.ofNullable(System.getenv("DB_ENV_DOCKER_DB_NAME"));
+		if(dockerDbName.isPresent()) {
+			return PlatformProvider.DOCKER;
+		}
+		Optional<String> openshiftAppName = Optional.ofNullable(System.getenv("OPENSHIFT_APP_NAME"));
+		return openshiftAppName.map(n -> PlatformProvider.OPENSHIFT).orElse(PlatformProvider.DEFAULT);
 	}
 
 	@Bean(destroyMethod = "close")
