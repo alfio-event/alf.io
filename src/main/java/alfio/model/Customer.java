@@ -16,7 +16,7 @@
  */
 package alfio.model;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper;
+import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 @Getter
@@ -32,10 +32,10 @@ public class Customer {
     private final String country;
     private final String emailAddress;
 
-    public Customer(@ConstructorAnnotationRowMapper.Column("id") int id, @ConstructorAnnotationRowMapper.Column("username") String username, @ConstructorAnnotationRowMapper.Column("first_name") String firstName,
-                    @ConstructorAnnotationRowMapper.Column("last_name") String lastName, @ConstructorAnnotationRowMapper.Column("address") String address, @ConstructorAnnotationRowMapper.Column("zip") String zip,
-                    @ConstructorAnnotationRowMapper.Column("city") String city, @ConstructorAnnotationRowMapper.Column("state") String state, @ConstructorAnnotationRowMapper.Column("country") String country,
-                    @ConstructorAnnotationRowMapper.Column("email_address") String emailAddress) {
+    public Customer(@Column("id") int id, @Column("username") String username, @Column("first_name") String firstName,
+                    @Column("last_name") String lastName, @Column("address") String address, @Column("zip") String zip,
+                    @Column("city") String city, @Column("state") String state, @Column("country") String country,
+                    @Column("email_address") String emailAddress) {
         this.id = id;
         this.username = username;
         this.firstName = firstName;

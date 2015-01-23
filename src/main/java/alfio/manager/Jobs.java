@@ -28,13 +28,17 @@ public class Jobs {
 
     private static final int ONE_MINUTE = 1000 * 60;
     public static final int THIRTY_SECONDS = 1000 * 30;
+    public static final int FIVE_SECONDS = 1000 * 5;
     private final TicketReservationManager ticketReservationManager;
+    private final NotificationManager notificationManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
 
 	@Autowired
 	public Jobs(TicketReservationManager ticketReservationManager,
+                NotificationManager notificationManager,
                 SpecialPriceTokenGenerator specialPriceTokenGenerator) {
 		this.ticketReservationManager = ticketReservationManager;
+        this.notificationManager = notificationManager;
         this.specialPriceTokenGenerator = specialPriceTokenGenerator;
     }
 
@@ -54,5 +58,15 @@ public class Jobs {
     @Scheduled(fixedDelay = THIRTY_SECONDS)
     public void generateSpecialPriceCodes() {
         specialPriceTokenGenerator.generatePendingCodes();
+    }
+
+    @Scheduled(fixedRate = FIVE_SECONDS)
+    public void sendEmails() {
+        notificationManager.sendWaitingMessages();
+    }
+
+    @Scheduled(fixedRate = ONE_MINUTE)
+    public void enqueueNotSentEmail() {
+        notificationManager.processNotSentEmail();
     }
 }

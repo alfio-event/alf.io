@@ -21,6 +21,7 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EventManager;
+import alfio.manager.NotificationManager;
 import alfio.manager.StripeManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.OrderSummary;
@@ -77,6 +78,7 @@ public class ReservationController {
 	private final TicketRepository ticketRepository;
 	private final TicketCategoryRepository ticketCategoryRepository;
 	private final ConfigurationManager configurationManager;
+	private final NotificationManager notificationManager;
 
 	@Autowired
 	public ReservationController(EventRepository eventRepository,
@@ -89,7 +91,8 @@ public class ReservationController {
 								 MessageSource messageSource,
 								 TicketRepository ticketRepository,
 								 TicketCategoryRepository ticketCategoryRepository,
-								 ConfigurationManager configurationManager) {
+								 ConfigurationManager configurationManager,
+								 NotificationManager notificationManager) {
 		this.eventRepository = eventRepository;
 		this.eventManager = eventManager;
 		this.ticketReservationManager = ticketReservationManager;
@@ -101,6 +104,7 @@ public class ReservationController {
 		this.ticketRepository = ticketRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.configurationManager = configurationManager;
+		this.notificationManager = notificationManager;
 	}
 
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
@@ -452,17 +456,15 @@ public class ReservationController {
 		String reservationTxt = templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms",
 				ticketReservationManager.prepareModelForReservationEmail(event, reservation), locale);
 		String shortReservationID = ticketReservationManager.getShortReservationID(reservation.getId());
-		mailer.send(reservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-				new Object[] { shortReservationID, event.getShortName() }, locale), reservationTxt,
-				Optional.empty());
+		notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation-email-subject",
+				new Object[] { shortReservationID, event.getShortName() }, locale), reservationTxt);
 	}
 	
 	private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
 		Organization organization = organizationRepository.getById(event.getOrganizationId());
 		String reservationInfo = templateManager.renderClassPathResource("/alfio/templates/confirmation-email-for-organizer-txt.ms",
 				ticketReservationManager.prepareModelForReservationEmail(event, reservation), RequestContextUtils.getLocale(request));
-		
-		mailer.send(organization.getEmail(), "Reservation complete " + reservation.getId(), reservationInfo, Optional.empty());
+		notificationManager.sendSimpleEmail(event, organization.getEmail(), "Reservation complete " + reservation.getId(), reservationInfo);
 	}
 
 	private static List<Pair<String, String>> getLocalizedCountries(Locale locale) {

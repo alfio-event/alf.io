@@ -16,29 +16,19 @@
  */
 package alfio.manager.system;
 
-import java.io.IOException;
-import java.util.Optional;
-
+import alfio.model.system.ConfigurationKeys;
+import com.squareup.okhttp.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-
 import org.apache.commons.lang3.ArrayUtils;
-import org.springframework.util.StreamUtils;
 
-import alfio.model.system.ConfigurationKeys;
-
-import com.squareup.okhttp.Credentials;
-import com.squareup.okhttp.FormEncodingBuilder;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.MultipartBuilder;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Optional;
 
 @Log4j2
 @AllArgsConstructor
-public class MailgunMailer implements Mailer {
+class MailgunMailer implements Mailer {
 
 	private final OkHttpClient client = new OkHttpClient();
 	private final ConfigurationManager configurationManager;
@@ -72,11 +62,10 @@ public class MailgunMailer implements Mailer {
 					"html", htmlContent));
 
 			for (Attachment attachment : attachments) {
+				byte[] data = attachment.getSource();
 				multipartBuilder.addFormDataPart("attachment", attachment
 						.getFilename(), RequestBody.create(MediaType
-						.parse(attachment.getContentType()), StreamUtils
-						.copyToByteArray(attachment.getSource()
-								.getInputStream())));
+						.parse(attachment.getContentType()), Arrays.copyOf(data, data.length)));
 			}
 			return multipartBuilder.build();
 		}

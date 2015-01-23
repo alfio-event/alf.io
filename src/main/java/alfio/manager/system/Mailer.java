@@ -17,20 +17,17 @@
 package alfio.manager.system;
 
 import lombok.Data;
-import org.springframework.core.io.InputStreamSource;
-import org.springframework.scheduling.annotation.Async;
 
 import java.util.Optional;
 
 public interface Mailer {
 
-	@Async
 	void send(String to, String subject, String text, Optional<String> html, Attachment... attachment);
 
 	@Data
 	public class Attachment {
 		private final String filename;
-		private final InputStreamSource source;
+		private final byte[] source;
 		private final String contentType;
 	}
 }

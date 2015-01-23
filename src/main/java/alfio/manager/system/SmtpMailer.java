@@ -16,16 +16,9 @@
  */
 package alfio.manager.system;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Optional;
-import java.util.Properties;
-
-import javax.activation.FileTypeMap;
-import javax.mail.MessagingException;
-import javax.mail.Session;
-import javax.mail.internet.MimeMessage;
-
+import alfio.model.system.ConfigurationKeys;
+import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.support.EncodedResource;
@@ -37,9 +30,14 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.MimeMessagePreparator;
 
-import alfio.model.system.ConfigurationKeys;
-import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import javax.activation.FileTypeMap;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.internet.MimeMessage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Optional;
+import java.util.Properties;
 
 @Log4j2
 @AllArgsConstructor
@@ -64,7 +62,7 @@ class SmtpMailer implements Mailer {
 
 			if (attachments != null) {
 				for (Attachment a : attachments) {
-					message.addAttachment(a.getFilename(), a.getSource(), a.getContentType());
+					message.addAttachment(a.getFilename(), new ByteArrayResource(a.getSource()), a.getContentType());
 				}
 			}
 			

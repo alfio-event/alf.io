@@ -58,7 +58,7 @@ public class SpecialPriceTokenGenerator {
         this.configurationManager = configurationManager;
     }
 
-    public void generatePendingCodes() {
+    void generatePendingCodes() {
         StopWatch stopWatch = new StopWatch();
         log.debug("start pending codes generation");
         stopWatch.start();

@@ -32,12 +32,9 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
-
 import com.lowagie.text.DocumentException;
-
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -277,7 +274,7 @@ public class TicketReservationManager {
 		ticketReservationRepository.updateTicketReservationStatus(reservationId, TicketReservationStatus.COMPLETE.name());
 		acquireTickets(TicketStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getBillingAddress());
 		Locale language = ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().map(t -> Locale.forLanguageTag(t.getUserLanguage())).orElse(Locale.ENGLISH);
-		notificationManager.sendSimpleEmail(ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
+		notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
 				new Object[]{ getShortReservationID(reservationId), event.getShortName()}, language), () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language));
 	}
 
@@ -398,7 +395,7 @@ public class TicketReservationManager {
                 .distinct()
                 .mapToObj(eventRepository::findById)
                 .map(e -> Pair.of(e, organizationRepository.getById(e.getOrganizationId())))
-                .forEach(pair -> notificationManager.sendSimpleEmail(pair.getRight().getEmail(),
+                .forEach(pair -> notificationManager.sendSimpleEmail(pair.getLeft(), pair.getRight().getEmail(),
 								STUCK_TICKETS_SUBJECT,
 								() -> String.format(STUCK_TICKETS_MSG, pair.getLeft().getShortName()))
                 );
@@ -621,7 +618,7 @@ public class TicketReservationManager {
 
 		if (StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail())) {
 			String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getShortName()}, locale);
-			notificationManager.sendSimpleEmail(ticket.getEmail(), subject, ownerChangeTextBuilder.generate(newTicket));
+			notificationManager.sendSimpleEmail(event, ticket.getEmail(), subject, ownerChangeTextBuilder.generate(newTicket));
 		}
 	}
 
@@ -668,7 +665,7 @@ public class TicketReservationManager {
 					.collect(Collectors.toList());
 	}
 
-	public void sendReminderForOfflinePayments() {
+	void sendReminderForOfflinePayments() {
 		Date expiration = truncate(addHours(new Date(), configurationManager.getIntConfigValue(OFFLINE_REMINDER_HOURS, 24)), Calendar.DATE);
 		ticketReservationRepository.findAllOfflinePaymentReservationForNotification(expiration).stream()
 				.map(reservation -> {
@@ -686,7 +683,7 @@ public class TicketReservationManager {
 					model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
 					Locale locale = p.getRight();
 					ticketReservationRepository.flagAsReminderSent(reservation.getId());
-					notificationManager.sendSimpleEmail(reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{ getShortReservationID(reservation.getId()) }, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-email-txt.ms", model, locale));
+					notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{ getShortReservationID(reservation.getId()) }, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-email-txt.ms", model, locale));
 				});
 	}
 

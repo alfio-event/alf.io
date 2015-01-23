@@ -42,6 +42,8 @@ public enum ConfigurationKeys {
     MAILER_TYPE("Mailer type (if not set, default will be smtp)", false),//valid values: smtp | mailgun
     //
 
+    MAX_EMAIL_PER_CYCLE("How many e-mail should be managed within 5 sec.", false),
+
     //smtp configuration related keys
     SMTP_HOST("SMTP hostname", false),
     SMTP_PORT("SMTP port", false),
