@@ -29,6 +29,8 @@ import java.util.stream.IntStream;
 public final class PasswordGenerator {
 
     private static final char[] PASSWORD_CHARACTERS;
+    private static final int MAX_LENGTH = 14;
+    private static final int MIN_LENGTH = 10;
 
     static {
         List<Character> chars = new LinkedList<>();
@@ -52,9 +54,6 @@ public final class PasswordGenerator {
 
         PASSWORD_CHARACTERS = ArrayUtils.toPrimitive(chars.toArray(new Character[chars.size()]));
     }
-
-    public static final int MAX_LENGTH = 14;
-    public static final int MIN_LENGTH = 10;
 
     private PasswordGenerator() {
     }
