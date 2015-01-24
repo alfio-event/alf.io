@@ -118,15 +118,15 @@ public class NotificationManager {
 
     void processNotSentEmail() {
         ZonedDateTime now = ZonedDateTime.now(UTC);
-        tx.execute(status -> {
-            String owner = UUID.randomUUID().toString();
-            int updated = emailMessageRepository.updateStatusForRetry(now, now.minusMinutes(10), owner);
-            log.debug("found {} expired messages", updated);
-            if(updated > 0) {
+        String owner = UUID.randomUUID().toString();
+        int updated = tx.execute(status -> emailMessageRepository.updateStatusForRetry(now, now.minusMinutes(10), owner));
+        log.debug("found {} expired messages", updated);
+        if(updated > 0) {
+            tx.execute(status -> {
                 emailMessageRepository.loadForRetry(owner).forEach(messages::offer);
-            }
-            return null;
-        });
+                return null;
+            });
+        }
     }
 
     private void processMessage(EmailMessage message) {

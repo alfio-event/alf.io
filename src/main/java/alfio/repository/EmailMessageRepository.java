@@ -43,7 +43,7 @@ public interface EmailMessageRepository {
     @Query("update email_message set status = :status, owner = null where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatus(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("status") String status, @Bind("expectedStatuses") List<String> expectedStatuses);
 
-    @Query("update email_message set status = 'RETRY', owner = :owner, request_ts = :requestTs where status in ('WAITING', 'ERROR') and request_ts > :expiration")
+    @Query("update email_message set status = 'RETRY', owner = :owner, request_ts = :requestTs where status in ('WAITING', 'ERROR', 'RETRY') and request_ts > :expiration")
     int updateStatusForRetry(@Bind("requestTs") ZonedDateTime now, @Bind("expiration") ZonedDateTime expiration, @Bind("owner") String owner);
 
     @Query("select id, event_id, status, recipient, subject, message, null as attachments, checksum from email_message where owner = :owner and status = 'RETRY'")
