@@ -14,7 +14,7 @@ By default, will use hsqldb with dev profile:
 
 >mvn jetty:run
 
-Use with pgsql (dev)
+Use with pgsql (dev) 
 
 >mvn jetty:run -Pdev-pgsql
 
