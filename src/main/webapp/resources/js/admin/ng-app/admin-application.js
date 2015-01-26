@@ -50,6 +50,11 @@
                 templateUrl: BASE_STATIC_URL + '/event/detail.html',
                 controller: 'EventDetailController'
             })
+            .state('events.checkIn', {
+            	url: '/:eventName/check-in',
+            	templateUrl: BASE_STATIC_URL + '/event/check-in.html',
+            	controller: 'EventCheckInController'
+            })
             .state('configuration', {
                 url: '/configuration',
                 templateUrl: BASE_STATIC_URL + '/configuration/index.html',
@@ -532,6 +537,52 @@
                 }
             });
         };
+    });
+    
+    admin.controller('EventCheckInController', function($scope, $stateParams, EventService, CheckInService) {
+    	EventService.getEvent($stateParams.eventName).success(function(result) {
+    		$scope.event = result.event;
+    		CheckInService.findAllTickets(result.event.id).success(function(tickets) {
+    			$scope.tickets = tickets;
+    		});
+    	});
+    	
+    	$scope.toBeCheckedIn = function(ticket, idx) {
+    		return  ['TO_BE_PAID', 'ACQUIRED'].indexOf(ticket.status) >= 0;
+    	};
+    	
+    	$scope.reloadTickets = function() {
+    		CheckInService.findAllTickets($scope.event.id).success(function(tickets) {
+    			$scope.tickets = tickets;
+    		});
+    	};
+    	
+    	$scope.checkIn = function(ticket) {
+    		CheckInService.checkIn($scope.event.id, ticket).success(function(result) {
+    			if(result.status === 'SUCCESS') {
+    				ticket.code = null;
+    				$scope.reloadTickets();
+    			}
+    			$scope.checkInResult = result;
+    		});
+    	};
+    	
+    	$scope.confirmPayment = function(ticket) {
+    		CheckInService.confirmPayment($scope.event.id, ticket).success(function(result) {
+    			if(result.status) {
+    				$scope.confirmPaymentResult= null;
+    				$scope.checkIn(ticket);
+    			} else {
+    				$scope.confirmPaymentResult= result;
+    			}
+    		});
+    	};
+    	
+    	$scope.resetForm = function(ticket) {
+    		ticket.code = null;
+    		$scope.checkInResult = null;
+    		$scope.confirmPaymentResult = null;
+    	};
     });
 
     admin.controller('MessageBarController', function($scope, $rootScope) {

@@ -359,7 +359,7 @@ public class TicketReservationManager {
 	}
 
 	private void acquireTickets(TicketStatus ticketStatus, PaymentProxy paymentProxy, String reservationId, String email, String fullName, String billingAddress) {
-		int updatedTickets = ticketRepository.updateTicketStatus(reservationId, ticketStatus.toString());
+		int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
 		Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
 		specialPriceRepository.updateStatusForReservation(Collections.singletonList(reservationId), Status.TAKEN.toString());
 		ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));

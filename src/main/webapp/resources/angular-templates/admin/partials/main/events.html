@@ -25,6 +25,9 @@
             <a class="btn btn-primary btn-xs" data-ui-sref="events.detail({eventName: event.shortName})">
                 <i class="fa fa-bar-chart"></i> Detail
             </a>
+            <a class="btn btn-primary btn-xs" data-ui-sref="events.checkIn({eventName: event.shortName})">
+            	<i class="fa fa-check"></i> Check-In
+            </a>
             <a data-ng-if="supportsOfflinePayments(event)" class="btn btn-warning btn-xs" data-ui-sref="pending-reservations({eventName: event.shortName})">
                 <i class="fa fa-dollar"></i> Pending payments <pending-reservations-badge data-event-name="{{event.shortName}}"></pending-reservations-badge>
             </a>

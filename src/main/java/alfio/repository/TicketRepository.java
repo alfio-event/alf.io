@@ -54,7 +54,10 @@ public interface TicketRepository {
 	void reserveTicket(@Bind("reservationId")String transactionId, @Bind("ticketId") int ticketId, @Bind("specialCodeId") int specialCodeId, @Bind("userLanguage") String userLanguage);
 
 	@Query("update ticket set status = :status where tickets_reservation_id = :reservationId")
-	int updateTicketStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
+	int updateTicketsStatusWithReservationId(@Bind("reservationId") String reservationId, @Bind("status") String status);
+	
+	@Query("update ticket set status = :status where uuid = :uuid")
+	int updateTicketStatusWithUUID(@Bind("uuid") String uuid, @Bind("status") String status);
 
     @Query("update ticket set status = 'INVALIDATED' where event_id = :eventId and status in ('FREE', 'CANCELLED')")
     int invalidateAllTickets(@Bind("eventId") int eventId);
@@ -106,4 +109,7 @@ public interface TicketRepository {
 
 	@Query("select * from ticket where category_id in (:categories) and status = 'PENDING'")
 	List<Ticket> findPendingTicketsInCategories(@Bind("categories") List<Integer> categories);
+	
+	@Query("select * from ticket where event_id = :eventId")
+	List<Ticket> findAllByEventId(@Bind("eventId") int eventId);
 }

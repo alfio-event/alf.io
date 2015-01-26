@@ -197,5 +197,23 @@
     				return $http['post']('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)+ '/disable');
     			}
     	};
-    })
+    });
+    
+    baseServices.service("CheckInService", function($http) {
+    	return {
+    		findAllTickets : function(eventId) {
+    			return $http.get('/admin/api/check-in/' + eventId + '/ticket');
+    		},
+    		
+    		checkIn: function(eventId, ticket) {
+    			var ticketIdentifier = ticket.code.split('/')[0]
+    			return $http['post']('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier, ticket);
+    		},
+    		
+    		confirmPayment: function(eventId, ticket) {
+    			var ticketIdentifier = ticket.code.split('/')[0]
+    			return $http['post']('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier + '/confirm-on-site-payment');
+    		}
+    	};
+    });
 })();

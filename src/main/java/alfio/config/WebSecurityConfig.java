@@ -69,7 +69,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .csrfTokenRepository(getCsrfTokenRepository())
             .and()
             .authorizeRequests()
-            .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/users/**", ADMIN_API + "/configuration/**").hasRole(ROLE_ADMIN)
+            .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/users/**", ADMIN_API + "/configuration/**", ADMIN_API + "/check-in/**").hasRole(ROLE_ADMIN)
             .antMatchers("/admin/**").hasAnyRole(ROLE_ADMIN, ROLE_OWNER)
             .antMatchers("/**").permitAll()
             .and()
