@@ -101,38 +101,34 @@
                 </div>
             </div>
             <div class="row">
+                <div class="col-sm-8">
+                    <div class="col-sm-5">
+                        <h4>{{::ticketCategory.name}}</h4>
+                        <h5 class="text-muted">{{::ticketCategory.description}}</h5>
+                    </div>
+                    <div class="col-sm-7">
+                        <div class="row">
+                            <div class="col-sm-4"><strong>Available seats</strong></div>
+                            <div class="col-sm-8">{{::ticketCategory.maxTickets}}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4"><strong>Initial sale date</strong></div>
+                            <div class="col-sm-8">{{::ticketCategory.formattedInception | formatDate}} </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4"><strong>End sale date</strong></div>
+                            <div class="col-sm-8">{{::ticketCategory.formattedExpiration | formatDate}} </div>
+                        </div>
+                        <div class="row" data-ng-if="!event.freeOfCharge">
+                            <div class="col-sm-4"><strong>Final price</strong></div>
+                            <div class="col-sm-8">{{ticketCategory.actualPrice | currency : (event.currency || "")}}</div>
+                        </div>
+                    </div>
+                </div>
                 <div class="col-sm-4">
-                    <h4>{{::ticketCategory.name}}</h4>
-                    <h5 class="text-muted">{{::ticketCategory.description}}</h5>
-                </div>
-                <div class="col-sm-6">
-                    <div class="row">
-                        <div class="col-sm-4"><strong>Available seats</strong></div>
-                        <div class="col-sm-8">{{::ticketCategory.maxTickets}}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-4"><strong>Initial sale date</strong></div>
-                        <div class="col-sm-8">{{::ticketCategory.formattedInception | formatDate}} </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-4"><strong>End sale date</strong></div>
-                        <div class="col-sm-8">{{::ticketCategory.formattedExpiration | formatDate}} </div>
-                    </div>
-                    <div class="row" data-ng-if="!event.freeOfCharge">
-                        <div class="col-sm-4"><strong>Final price</strong></div>
-                        <div class="col-sm-8">{{ticketCategory.actualPrice | currency : (event.currency || "")}}</div>
-                    </div>
+                    <ticket-status data-statistics-container="ticketCategory"></ticket-status>
                 </div>
             </div>
-        </div>
-        <div class="row">
-            <div class="col-sm-8">
-                <progress>
-                    <bar data-ng-if="ticketCategory.soldTickets > 0" type="success" value="ticketCategory.soldTicketsPercent">{{ticketCategory.soldTickets}}</bar>
-                    <bar data-ng-if="ticketCategory.notSoldTickets > 0" type="danger" value="ticketCategory.notSoldTicketsPercent">{{ticketCategory.notSoldTickets}}</bar>
-                </progress>
-            </div>
-            <div class="col-sm-4">sold: {{::ticketCategory.soldTickets}}, available: {{::ticketCategory.notSoldTickets}}</div>
         </div>
         <div class="row wMarginBottom">
             <div class="col-sm-4">

@@ -33,7 +33,7 @@ import java.util.function.UnaryOperator;
 import static java.util.stream.Collectors.toList;
 
 @Getter
-public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWithStatistic> {
+public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWithStatistic>, StatisticsContainer {
 
     @Delegate
     @JsonIgnore
@@ -43,6 +43,7 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
     private final List<TicketWithStatistic> tickets;
     private final List<SpecialPrice> tokenStatus;
     private final int actualPrice;
+    private final int checkedInTickets;
     @JsonIgnore
     private final ZoneId eventZoneId;
 
@@ -54,6 +55,7 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
         this.ticketCategory = ticketCategory;
         this.tickets = tickets.stream().filter(tc -> tc.hasBeenSold() || tc.isStuck()).collect(toList());
         this.soldTickets = (int) this.tickets.stream().filter(TicketWithStatistic::hasBeenSold).count();
+        this.checkedInTickets = (int) this.tickets.stream().filter(TicketWithStatistic::isCheckedIn).count();
         this.tokenStatus = tokenStatus;
         this.eventZoneId = eventZoneId;
         this.soldTicketsPercent = calcSoldTicketsPercent(ticketCategory, soldTickets);

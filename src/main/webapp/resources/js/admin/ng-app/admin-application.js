@@ -8,7 +8,7 @@
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)'
     };
-    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'angularFileUpload']);
+    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'angularFileUpload', 'chart.js']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.otherwise("/");
@@ -65,6 +65,49 @@
                 templateUrl: BASE_STATIC_URL + '/pending-reservations/index.html',
                 controller: 'PendingReservationsController'
             });
+    });
+
+    admin.run(function() {
+        Chart.defaults.global.multiTooltipTemplate = function(val) {
+            return val.label + ' ('+ val.value +')';
+        };
+        Chart.defaults.global.tooltipTemplate = function(val) {
+            return val.label + ' ('+ val.value +')';
+        };
+        Chart.defaults.global.colours = [
+            { // light grey
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,0.8)"
+            },
+            { // blue
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(151,187,205,0.8)"
+            },
+            { // green
+                fillColor: "rgba(70,191,189,0.2)",
+                strokeColor: "rgba(70,191,189,1)",
+                pointColor: "rgba(70,191,189,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(70,191,189,0.8)"
+            },
+            { // yellow
+                fillColor: "rgba(253,180,92,0.2)",
+                strokeColor: "rgba(253,180,92,1)",
+                pointColor: "rgba(253,180,92,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(253,180,92,0.8)"
+            }
+        ];
     });
 
     var validationResultHandler = function(form, deferred) {

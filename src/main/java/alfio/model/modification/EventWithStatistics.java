@@ -25,7 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Getter
-public class EventWithStatistics {
+public class EventWithStatistics implements StatisticsContainer {
 
     public static final DateTimeFormatter JSON_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm");
 
@@ -33,11 +33,15 @@ public class EventWithStatistics {
     @JsonIgnore
     private final Event event;
     private final List<TicketCategoryWithStatistic> ticketCategories;
+    private final int soldTickets;
+    private final int checkedInTickets;
 
     public EventWithStatistics(Event event,
                                List<TicketCategoryWithStatistic> ticketCategories) {
         this.event = event;
         this.ticketCategories = ticketCategories;
+        this.soldTickets = ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getSoldTickets).sum();
+        this.checkedInTickets = ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getCheckedInTickets).sum();
     }
 
     public boolean isWarningNeeded() {
@@ -64,6 +68,11 @@ public class EventWithStatistics {
         return ticketCategories.stream()
                 .mapToInt(TicketCategoryWithStatistic::getMaxTickets)
                 .sum() < getAvailableSeats();
+    }
+
+    @Override
+    public int getNotSoldTickets() {
+        return event.getAvailableSeats() - soldTickets - checkedInTickets;
     }
 
 }

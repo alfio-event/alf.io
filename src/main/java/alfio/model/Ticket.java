@@ -140,6 +140,10 @@ public class Ticket {
     public boolean hasBeenSold() {
         return SOLD_STATUSES.contains(status);
     }
+
+    public boolean isCheckedIn() {
+        return status == TicketStatus.CHECKED_IN;
+    }
     
     private static String hmacSHA256Base64(String key, String code) {
     	try {

@@ -355,7 +355,22 @@
 
             }
         }
-    })
+    });
+
+    directives.directive('ticketStatus', function() {
+        return {
+            restrict: 'E',
+            scope: {
+                statisticsContainer: '='
+            },
+            template:'<canvas id="pie" class="chart chart-pie" data-data="ticketStatistics" data-labels="ticketStatisticLabels"></canvas>',
+            link:function(scope, element, attrs) {
+                var statisticsContainer = scope.statisticsContainer;
+                scope.ticketStatistics = [statisticsContainer.notSoldTickets, statisticsContainer.soldTickets, statisticsContainer.checkedInTickets];
+                scope.ticketStatisticLabels = ['Still available', 'Sold', 'Checked in'];
+            }
+        }
+    });
 
 
 })();

@@ -20,6 +20,8 @@
     <script src="{{request.contextPath}}/resources/bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/ng-file-upload/angular-file-upload-shim.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/ng-file-upload/angular-file-upload.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/Chart.js/Chart.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/angular-chart.js/angular-chart.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/ng-app/admin-application.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/directive/admin-directive.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/filter/util.js"></script>

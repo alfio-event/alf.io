@@ -3,26 +3,32 @@
     <h4>This event has been marked as <span data-ng-if="event.freeOfCharge">Free of charge</span> <span data-ng-if="!event.freeOfCharge">Paid</span></h4>
 </div>
 
-<div class="form-group" data-ng-if="!event.freeOfCharge">
-    <label>Accepted payment methods</label>
-    <p class="form-control-static">{{event.allowedPaymentProxies.join(',')}}</p>
-</div>
-
 <div class="row">
-    <div class="col-sm-2">
-        <label>Available seats</label>
-        <p class="form-control-static">{{event.availableSeats}}</p>
+    <div class="col-sm-8">
+        <div class="row">
+            <div class="col-sm-12" data-ng-if="!event.freeOfCharge">
+                <label>Accepted payment methods</label>
+                <p class="form-control-static">{{event.allowedPaymentProxies.join(',')}}</p>
+            </div>
+            <div class="col-sm-3">
+                <label>Available seats</label>
+                <p class="form-control-static">{{event.availableSeats}}</p>
+            </div>
+            <div class="col-sm-3" data-ng-if="!event.freeOfCharge">
+                <label>Regular Price</label>
+                <p class="form-control-static">{{event.regularPrice | currency : (event.currency || "")}}</p>
+            </div>
+            <div class="col-sm-3" data-ng-if="!event.freeOfCharge">
+                <label>VAT (%)</label>
+                <p class="form-control-static">{{event.vat}}</p>
+            </div>
+            <div class="col-sm-3" data-ng-if="!event.freeOfCharge">
+                <label>Final Price</label>
+                <p class="form-control-static">{{calculateTotalPrice(event) | currency : (event.currency || "")}}</p>
+            </div>
+        </div>
     </div>
-    <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
-        <label>Regular Price</label>
-        <p class="form-control-static">{{event.regularPrice | currency : (event.currency || "")}}</p>
-    </div>
-    <div class="col-sm-2" data-ng-if="!event.freeOfCharge">
-        <label>VAT (%)</label>
-        <p class="form-control-static">{{event.vat}}</p>
-    </div>
-    <div class="col-sm-4" data-ng-if="!event.freeOfCharge">
-        <label>Final Price</label>
-        <p class="form-control-static">{{calculateTotalPrice(event) | currency : (event.currency || "")}}</p>
+    <div class="col-sm-4">
+        <ticket-status data-statistics-container="event"></ticket-status>
     </div>
 </div>
