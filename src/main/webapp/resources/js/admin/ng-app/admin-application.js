@@ -65,9 +65,6 @@
                 templateUrl: BASE_STATIC_URL + '/pending-reservations/index.html',
                 controller: 'PendingReservationsController'
             });
-    });
-
-    admin.run(function() {
         Chart.defaults.global.multiTooltipTemplate = function(val) {
             return val.label + ' ('+ val.value +')';
         };
