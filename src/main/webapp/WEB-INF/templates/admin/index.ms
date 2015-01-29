@@ -27,6 +27,23 @@
     <script src="{{request.contextPath}}/resources/js/admin/filter/util.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/service/service.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/grid.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/version.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/detector.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/formatinf.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/errorlevel.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/bitmat.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/datablock.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/bmparser.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/datamask.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/rsdecoder.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/gf256poly.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/gf256.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/decoder.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/qrcode.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/findpat.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/alignpat.js"></script>
+    <script src="{{request.contextPath}}/resources/js/jsqrcode/src/databr.js"></script>
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
 <body>
@@ -46,6 +63,7 @@
                     <ul class="nav navbar-nav">
                         <li><a data-ui-sref="index">Dashboard</a></li>
                         <li><a data-ui-sref="configuration">Configuration</a></li>
+                        <li><a data-ui-sref="scan-ticket">Scan Ticket</a></li>
                     </ul>
                 </div>
             </div>
