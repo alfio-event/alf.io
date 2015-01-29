@@ -153,6 +153,18 @@
         };
     });
 
+    admin.controller('qrCrtl', ['$scope', function($scope) {
+        $scope.onSuccess = function(data) {
+            console.log(data);
+        };
+        $scope.onError = function(error) {
+            console.log(error);
+        };
+        $scope.onVideoError = function(error) {
+            console.log(error);
+        };
+    }]);
+
     admin.controller('CreateUserController', function($scope, $state, $rootScope, $q, OrganizationService, UserService) {
         $scope.user = {};
         $scope.organizations = {};
