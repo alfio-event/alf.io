@@ -1,11 +1,13 @@
 language: java
 
+install:
+    - TERM=dumb ./gradlew -q assemble
+
+script:
+    - TERM=dumb ./gradlew build jacocoTestReport jacocoRootReport
+
 jdk:
-  - oraclejdk8
-  
-notifications:
-  email:
-    recipients:
-      - sylvain.jermini@syjer.com
-      - celestino.bellone@gmail.com
-      - yankedev@exteso.com
+    - oraclejdk8
+
+after_success:
+    ./gradlew coveralls
