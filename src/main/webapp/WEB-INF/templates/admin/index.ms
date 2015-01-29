@@ -46,6 +46,7 @@
                     <ul class="nav navbar-nav">
                         <li><a data-ui-sref="index">Dashboard</a></li>
                         <li><a data-ui-sref="configuration">Configuration</a></li>
+                        <li><a data-ui-sref="scan-ticket">Scan Ticket</a></li>
                     </ul>
                 </div>
             </div>
