@@ -4,7 +4,7 @@ install:
     - TERM=dumb ./gradlew -q assemble
 
 script:
-    - TERM=dumb ./gradlew build jacocoTestReport jacocoRootReport
+    - TERM=dumb ./gradlew build jacocoTestReport
 
 jdk:
     - oraclejdk8
