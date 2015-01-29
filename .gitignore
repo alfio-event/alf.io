@@ -4,4 +4,8 @@
 .settings/
 .idea/
 *.iml
+*.ipr
+*.iws
+/build/
+.gradle/
 deploy*.sh
