@@ -123,12 +123,11 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     					+ " style-src 'self';"//
     					+ " img-src 'self' https:;"//
     					+ " font-src 'self';"//
-                        + " media-src 'self';"
     					+ " connect-src 'self' https://api.stripe.com;"); //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
     		}
     	};
 	}
-
+    
 
 	@Bean
     public HandlerInterceptor getCsrfInterceptor() {
@@ -197,7 +196,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
 							}
 						})
         		.withLoader(templateLoader));
-
+        
         templateFactory.afterPropertiesSet();
         return templateFactory;
     }
@@ -225,5 +224,5 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     }
 
 
-
+    
 }
