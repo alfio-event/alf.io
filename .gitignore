@@ -3,5 +3,7 @@
 .project
 .settings/
 .idea/
+.gradle/
+build/
 *.iml
 deploy*.sh
