@@ -654,15 +654,34 @@
 
     admin.controller('ConfigurationController', function($scope, ConfigurationService) {
         $scope.loading = true;
-        ConfigurationService.loadAll().success(function(result) {
+        var populateScope = function(result) {
             $scope.settings = result;
+            $scope.general = {
+                settings: result['GENERAL']
+            };
+            $scope.mail = {
+                settings: _.filter(result['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
+                type: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAILER_TYPE';}),
+                maxEmailPerCycle: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';})
+            };
+            $scope.payment = {
+                settings: result['PAYMENT']
+            };
             $scope.loading = false;
+        };
+        ConfigurationService.loadAll().success(function(result) {
+            populateScope(result);
         });
 
-        $scope.removeConfigurationKey = function(key) {
-        	$scope.loading = true;
-            ConfigurationService.remove(key).then(function() {return ConfigurationService.loadAll();}).then(function(result) {
-            	$scope.settings = result.data;
+        $scope.saveSettings = function(frm, settings) {
+            if(!frm.$valid) {
+                return;
+            }
+            $scope.loading = true;
+            ConfigurationService.bulkUpdate(settings).then(function(result) {
+                populateScope(result.data);
+            }, function(e) {
+                alert(e.data);
                 $scope.loading = false;
             });
         };

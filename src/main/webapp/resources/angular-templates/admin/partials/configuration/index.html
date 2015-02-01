@@ -1,11 +1,57 @@
 <div class="container">
-    <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loading"></i>
-    <div data-ng-if="!loading">
-        <form name="options" novalidate data-ng-submit="">
-            <div class="form-group" data-ng-repeat="setting in settings">
-                <label for="{{setting.key}}">{{setting.description}} <button class="btn btn-default" data-ng-click="removeConfigurationKey(setting.key)" type="button">remove</button></label>
-                <input class="form-control" data-ng-model="setting.value" name="{{setting.key}}" id="{{setting.key}}" data-ng-change="configurationChange(setting)"  data-ng-model-options="{ updateOn: 'blur'}">
-            </div>
-        </form>
+    <div class="page-header">
+        <h1>General</h1>
+        <span>General settings</span>
     </div>
+    <form name="settingsForm" novalidate data-ng-submit="saveSettings(settingsForm, settings)">
+        <div data-ng-if="general">
+            <div data-ng-repeat="setting in general.settings">
+                <setting data-obj="setting"></setting>
+            </div>
+            <i class="fa fa-cog fa-spin fa-3x" data-ng-if="general.loading"></i>
+        </div>
+
+        <div class="page-header">
+            <h1>E-Mail</h1>
+            <span>E-Mail settings</span>
+        </div>
+
+        <div data-ng-if="mail">
+            <div class="radio-inline">
+                <label>
+                    <input type="radio" name="mailer.type" data-ng-model="mail.type.value" data-ng-value="'smtp'" required="">
+                    SMTP
+                </label>
+            </div>
+            <div class="radio-inline">
+                <label>
+                    <input type="radio" name="mailer.type" data-ng-model="mail.type.value" data-ng-value="'mailgun'" required="">
+                    Mailgun.com
+                </label>
+            </div>
+            <div data-ng-repeat="setting in mail.settings | mailSettingsFilter:mail.type.value">
+                <setting data-obj="setting"></setting>
+            </div>
+            <div>
+                <setting obj="mail.maxEmailPerCycle"></setting>
+            </div>
+        </div>
+
+        <div class="page-header">
+            <h1>Payment</h1>
+            <span>Payment provider settings</span>
+        </div>
+
+        <div data-ng-if="payment">
+            <div data-ng-repeat="setting in payment.settings">
+                <setting data-obj="setting"></setting>
+            </div>
+            <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loading"></i>
+        </div>
+
+        <div class="pull-right wMarginBottom wMarginTop">
+            <button type="submit" class="btn btn-success">save</button>
+            <a class="btn btn-default" data-ui-sref="index">cancel</a>
+        </div>
+    </form>
 </div>

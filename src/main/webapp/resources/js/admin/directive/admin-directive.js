@@ -372,6 +372,23 @@
         }
     });
 
+    directives.directive('setting', function() {
+        return {
+            restrict: 'E',
+            scope: {
+                setting: '=obj'
+            },
+            templateUrl:'/resources/angular-templates/admin/partials/configuration/setting.html',
+            link: angular.noop,
+            controller: function($scope, $rootScope, ConfigurationService) {
+                $scope.removeConfigurationKey = function(key) {
+                    $scope.loading = true;
+                    ConfigurationService.remove(key).then(function() {$rootScope.$broadcast('ReloadSettings');});
+                };
+            }
+        }
+    });
+
     directives.directive('qrScanner', ['$timeout', function($timeout) {
         return {
             restrict: 'E',

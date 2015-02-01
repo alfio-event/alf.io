@@ -24,56 +24,71 @@ import java.util.function.Predicate;
 @Getter
 public enum ConfigurationKeys {
 
-    INIT_COMPLETED("init succeeded", true),
+    INIT_COMPLETED("init succeeded", true, Type.GENERAL),
     
-    BASE_URL("Base application url", false),
-    VAT_NR("VAT number", false),
+    BASE_URL("Base application url", false, Type.GENERAL),
+    VAT_NR("VAT number", false, Type.GENERAL),
     
-    MAPS_SERVER_API_KEY("Google maps' server api key", false),
-    MAPS_CLIENT_API_KEY("Google maps' client api key", false),
+    MAPS_SERVER_API_KEY("Google maps' server api key", false, Type.GENERAL),
+    MAPS_CLIENT_API_KEY("Google maps' client api key", false, Type.GENERAL),
     
-    STRIPE_SECRET_KEY("Stripe's secret key", false),
-    STRIPE_PUBLIC_KEY("Stripe's public key", false),
+    STRIPE_SECRET_KEY("Stripe's secret key", false, Type.PAYMENT),
+    STRIPE_PUBLIC_KEY("Stripe's public key", false, Type.PAYMENT),
     
-    SPECIAL_PRICE_CODE_LENGTH("Length of special price code", false),
-    MAX_AMOUNT_OF_TICKETS_BY_RESERVATION("Max amount of tickets", false),
+    SPECIAL_PRICE_CODE_LENGTH("Length of special price code", false, Type.GENERAL),
+    MAX_AMOUNT_OF_TICKETS_BY_RESERVATION("Max amount of tickets", false, Type.GENERAL),
     
     //
-    MAILER_TYPE("Mailer type (if not set, default will be smtp)", false),//valid values: smtp | mailgun
+    MAILER_TYPE("Mailer type (if not set, default will be smtp)", false, Type.MAIL),//valid values: smtp | mailgun
     //
 
-    MAX_EMAIL_PER_CYCLE("How many e-mail should be managed within 5 sec.", false),
+    MAX_EMAIL_PER_CYCLE("How many e-mail should be managed within 5 sec.", false, Type.MAIL),
 
     //smtp configuration related keys
-    SMTP_HOST("SMTP hostname", false),
-    SMTP_PORT("SMTP port", false),
-    SMTP_PROTOCOL("SMTP Protocol (smtp or smtps)", false), //smtp or smtps
-    SMTP_USERNAME("SMTP Username", false),
-    SMTP_PASSWORD("SMTP Password", false),
-    SMTP_FROM_EMAIL("E-Mail sender", false),
-    SMTP_PROPERTIES("SMTP Properties", false),
+    SMTP_HOST("SMTP hostname", false, Type.MAIL),
+    SMTP_PORT("SMTP port", false, Type.MAIL),
+    SMTP_PROTOCOL("SMTP Protocol (smtp or smtps)", false, Type.MAIL), //smtp or smtps
+    SMTP_USERNAME("SMTP Username", false, Type.MAIL),
+    SMTP_PASSWORD("SMTP Password", false, Type.MAIL),
+    SMTP_FROM_EMAIL("E-Mail sender", false, Type.MAIL),
+    SMTP_PROPERTIES("SMTP Properties", false, Type.MAIL),
 
-    OFFLINE_PAYMENT_DAYS("Maximum number of days allowed to pay an offline ticket", false),
-    OFFLINE_REMINDER_HOURS("How many hours before expiration should be sent a reminder e-mail for offline payments?", false),
-    BANK_ACCOUNT_NR("Bank Account number", false),
-    PARTIAL_RESERVATION_ID_LENGTH("Partial reservationID length", false),
+    OFFLINE_PAYMENT_DAYS("Maximum number of days allowed to pay an offline ticket", false, Type.PAYMENT),
+    OFFLINE_REMINDER_HOURS("How many hours before expiration should be sent a reminder e-mail for offline payments?", false, Type.PAYMENT),
+    BANK_ACCOUNT_NR("Bank Account number", false, Type.PAYMENT),
+    PARTIAL_RESERVATION_ID_LENGTH("Partial reservationID length", false, Type.PAYMENT),
     //
     
     //mailgun configuration related info
-    MAILGUN_KEY("Mailgun key", false),
-    MAILGUN_DOMAIN("Mailgun domain", false),
-    MAILGUN_FROM("Mailgun E-Mail sender", false),
+    MAILGUN_KEY("Mailgun key", false, Type.MAIL),
+    MAILGUN_DOMAIN("Mailgun domain", false, Type.MAIL),
+    MAILGUN_FROM("Mailgun E-Mail sender", false, Type.MAIL),
     //
     
-    GOOGLE_ANALYTICS_KEY("Google Analytics tracking ID", false);
+    GOOGLE_ANALYTICS_KEY("Google Analytics tracking ID", false, Type.GENERAL);
+
+    @Getter
+    public enum Type {
+        GENERAL("General settings"),
+        PAYMENT("Payment provider settings"),
+        MAIL("E-Mail settings");
+
+        private final String description;
+        Type(String description) {
+            this.description = description;
+        }
+
+    }
 
     private static final Predicate<ConfigurationKeys> INTERNAL = ConfigurationKeys::isInternal;
     private final String description;
     private final boolean internal;
+    private final Type type;
 
-    private ConfigurationKeys(String description, boolean internal) {
+    private ConfigurationKeys(String description, boolean internal, Type type) {
         this.description = description;
         this.internal = internal;
+        this.type = type;
     }
 
     public String getValue() {

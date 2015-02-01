@@ -26,6 +26,7 @@ public class Configuration {
     private final String key;
     private final String value;
     private final String description;
+    private final ConfigurationKeys configurationKey;
 
 
     public Configuration(@Column("id") int id,
@@ -36,5 +37,6 @@ public class Configuration {
         this.key = key;
         this.value = value;
         this.description = description;
+        this.configurationKey = ConfigurationKeys.valueOf(key);
     }
 }

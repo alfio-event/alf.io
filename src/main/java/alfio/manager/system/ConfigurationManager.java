@@ -16,6 +16,7 @@
  */
 package alfio.manager.system;
 
+import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.system.ConfigurationRepository;
@@ -58,10 +59,15 @@ public class ConfigurationManager {
                 .orElse(defaultValue);
     }
 
+    public void saveAll(List<ConfigurationModification> list) {
+        list.forEach(c -> save(ConfigurationKeys.fromValue(c.getKey()), c.getValue()));
+    }
+
     public void save(ConfigurationKeys key, String value) {
         Optional<Configuration> conf = optionally(() -> configurationRepository.findByKey(key.getValue()));
+        Optional<String> valueOpt = Optional.ofNullable(value);
         if(!conf.isPresent()) {
-            configurationRepository.insert(key.getValue(), value, key.getDescription());
+            valueOpt.ifPresent(v -> configurationRepository.insert(key.getValue(), v, key.getDescription()));
         } else {
             configurationRepository.update(key.getValue(), value);
         }
@@ -83,7 +89,7 @@ public class ConfigurationManager {
                 .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + key + " not present"));
     }
 
-    public List<Configuration> loadAllIncludingMissing() {
+    public Map<ConfigurationKeys.Type, List<Configuration>> loadAllIncludingMissing() {
         final List<Configuration> existing = configurationRepository.findAll()
                 .stream()
                 .filter(c -> !ConfigurationKeys.fromValue(c.getKey()).isInternal())
@@ -94,8 +100,7 @@ public class ConfigurationManager {
                 .collect(Collectors.toList());
         List<Configuration> result = new LinkedList<>(existing);
         result.addAll(missing);
-        result.sort(Comparator.comparing(a -> ConfigurationKeys.valueOf(a.getKey())));
-        return result;
+        return result.stream().collect(Collectors.groupingBy(c -> c.getConfigurationKey().getType()));
     }
 
 	public void deleteKey(String key) {
