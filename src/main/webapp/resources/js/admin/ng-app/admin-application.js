@@ -64,11 +64,6 @@
                 url: '/pending-reservations/:eventName/',
                 templateUrl: BASE_STATIC_URL + '/pending-reservations/index.html',
                 controller: 'PendingReservationsController'
-            })
-            .state('scan-ticket', {
-                url: '/scan-ticket',
-                templateUrl: BASE_STATIC_URL + '/scan-ticket/index.html',
-                controller: 'ScanTicketController'
             });
         Chart.defaults.global.multiTooltipTemplate = function(val) {
             return val.label + ' ('+ val.value +')';
@@ -297,8 +292,8 @@
                     };
                     $scope.loadingMap = false;
                 });
-
-
+                
+                
                 PromoCodeService.list(result.event.id).success(function(list) {
                 	$scope.promocodes = list;
                 	angular.forEach($scope.promocodes, function(v) {
@@ -533,37 +528,37 @@
                 $scope.loading = false;
             });
         };
-
+        
         //
-
+        
         $scope.deletePromocode = function(promocode) {
         	PromoCodeService.remove($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
         };
-
+        
         $scope.disablePromocode = function(promocode) {
         	PromoCodeService.disable($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
         };
-
+        
         $scope.addPromoCode = function(event) {
         	$modal.open({
                 size:'lg',
                 templateUrl:BASE_STATIC_URL + '/event/fragment/edit-promo-code-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
-
+                	
                 	$scope.event = event;
-
+                	
                 	var now = moment();
                 	var eventBegin = moment(event.formattedBegin);
-
+                	
                 	$scope.promocode = {discountType :'PERCENTAGE', start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')}, end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}};
-
+                	
                 	$scope.$watch('promocode.promoCode', function(newVal) {
                 		if(newVal) {
                 			$scope.promocode.promoCode = newVal.toUpperCase();
                 		}
                 	});
-
+                	
                 	$scope.cancel = function() {
                         $scope.$dismiss('canceled');
                     };
@@ -572,7 +567,7 @@
                             return;
                         }
                         $scope.$close(true);
-
+                        
                         PromoCodeService.add(event.id, promocode).then(function(result) {
                             validationErrorHandler(result, form, form.promocode).then(function() {
                                 $scope.$close(true);
@@ -583,7 +578,7 @@
             });
         };
     });
-
+    
     admin.controller('EventCheckInController', function($scope, $stateParams, EventService, CheckInService) {
     	EventService.getEvent($stateParams.eventName).success(function(result) {
     		$scope.event = result.event;
@@ -591,17 +586,17 @@
     			$scope.tickets = tickets;
     		});
     	});
-
+    	
     	$scope.toBeCheckedIn = function(ticket, idx) {
     		return  ['TO_BE_PAID', 'ACQUIRED'].indexOf(ticket.status) >= 0;
     	};
-
+    	
     	$scope.reloadTickets = function() {
     		CheckInService.findAllTickets($scope.event.id).success(function(tickets) {
     			$scope.tickets = tickets;
     		});
     	};
-
+    	
     	$scope.checkIn = function(ticket) {
     		CheckInService.checkIn($scope.event.id, ticket).success(function(result) {
     			if(result.status === 'SUCCESS') {
@@ -611,7 +606,7 @@
     			$scope.checkInResult = result;
     		});
     	};
-
+    	
     	$scope.confirmPayment = function(ticket) {
     		CheckInService.confirmPayment($scope.event.id, ticket).success(function(result) {
     			if(result.status) {
@@ -622,7 +617,7 @@
     			}
     		});
     	};
-
+    	
     	$scope.resetForm = function(ticket) {
     		ticket.code = null;
     		$scope.checkInResult = null;
@@ -634,10 +629,6 @@
         $rootScope.$on('Message', function(m) {
             $scope.message = m;
         });
-    });
-
-    admin.controller('ScanTicketController', function($scope) {
-        $scope.loading = false;
     });
 
     admin.controller('ConfigurationController', function($scope, ConfigurationService) {
@@ -673,7 +664,7 @@
                 $scope.loading = false;
             });
         };
-
+        
         $scope.configurationChange = function(conf) {
             if(!conf.value) {
                 return;
@@ -754,7 +745,7 @@
 
         $rootScope.calcCategoryPricePercent = PriceCalculator.calcCategoryPricePercent;
 
-        $rootScope.calcCategoryPrice = PriceCalculator.calcCategoryPrice;
+        $rootScope.calcCategoryPrice = PriceCalculator.calcCategoryPrice; 
 
         $rootScope.calcPercentage = PriceCalculator.calcPercentage;
 
