@@ -35,6 +35,7 @@ public class EventWithStatistics implements StatisticsContainer {
     private final List<TicketCategoryWithStatistic> ticketCategories;
     private final int soldTickets;
     private final int checkedInTickets;
+    private final int allocatedTickets;
 
     public EventWithStatistics(Event event,
                                List<TicketCategoryWithStatistic> ticketCategories) {
@@ -42,6 +43,7 @@ public class EventWithStatistics implements StatisticsContainer {
         this.ticketCategories = ticketCategories;
         this.soldTickets = ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getSoldTickets).sum();
         this.checkedInTickets = ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getCheckedInTickets).sum();
+        this.allocatedTickets = ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getMaxTickets).sum();
     }
 
     public boolean isWarningNeeded() {
@@ -71,8 +73,13 @@ public class EventWithStatistics implements StatisticsContainer {
     }
 
     @Override
+    public int getNotAllocatedTickets() {
+        return event.getAvailableSeats() - allocatedTickets;
+    }
+
+    @Override
     public int getNotSoldTickets() {
-        return event.getAvailableSeats() - soldTickets - checkedInTickets;
+        return allocatedTickets - soldTickets - checkedInTickets;
     }
 
 }

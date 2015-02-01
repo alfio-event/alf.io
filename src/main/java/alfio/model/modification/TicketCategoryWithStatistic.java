@@ -66,8 +66,14 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
         return MonetaryUtil.HUNDRED.subtract(soldTicketsPercent);
     }
 
+    @Override
     public int getNotSoldTickets() {
         return ticketCategory.getMaxTickets() - soldTickets;
+    }
+
+    @Override
+    public int getNotAllocatedTickets() {
+        return 0;
     }
 
     public boolean isExpired() {

@@ -72,21 +72,13 @@
             return val.label + ' ('+ val.value +')';
         };
         Chart.defaults.global.colours = [
-            { // light grey
-                fillColor: "rgba(220,220,220,0.2)",
-                strokeColor: "rgba(220,220,220,1)",
-                pointColor: "rgba(220,220,220,1)",
+            { // yellow
+                fillColor: "rgba(253,180,92,0.2)",
+                strokeColor: "rgba(253,180,92,1)",
+                pointColor: "rgba(253,180,92,1)",
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(220,220,220,0.8)"
-            },
-            { // blue
-                fillColor: "rgba(151,187,205,0.2)",
-                strokeColor: "rgba(151,187,205,1)",
-                pointColor: "rgba(151,187,205,1)",
-                pointStrokeColor: "#fff",
-                pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(151,187,205,0.8)"
+                pointHighlightStroke: "rgba(253,180,92,0.8)"
             },
             { // green
                 fillColor: "rgba(70,191,189,0.2)",
@@ -96,14 +88,23 @@
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(70,191,189,0.8)"
             },
-            { // yellow
-                fillColor: "rgba(253,180,92,0.2)",
-                strokeColor: "rgba(253,180,92,1)",
-                pointColor: "rgba(253,180,92,1)",
+            { // blue
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(253,180,92,0.8)"
+                pointHighlightStroke: "rgba(151,187,205,0.8)"
+            },
+            { // light grey
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,0.8)"
             }
+
         ];
     });
 
