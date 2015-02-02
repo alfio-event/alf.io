@@ -65,11 +65,16 @@
                 templateUrl: BASE_STATIC_URL + '/pending-reservations/index.html',
                 controller: 'PendingReservationsController'
             });
-        Chart.defaults.global.multiTooltipTemplate = function(val) {
+
+        var printLabel = function(val) {
             return val.label + ' ('+ val.value +')';
         };
+
+        Chart.defaults.global.multiTooltipTemplate = function(val) {
+            return printLabel(val);
+        };
         Chart.defaults.global.tooltipTemplate = function(val) {
-            return val.label + ' ('+ val.value +')';
+            return printLabel(val);
         };
         Chart.defaults.global.colours = [
             { // yellow
@@ -632,7 +637,7 @@
         });
     });
 
-    admin.controller('ConfigurationController', function($scope, ConfigurationService) {
+    admin.controller('ConfigurationController', function($scope, ConfigurationService, $rootScope) {
         $scope.loading = true;
         var populateScope = function(result) {
             $scope.settings = result;
@@ -649,9 +654,13 @@
             };
             $scope.loading = false;
         };
-        ConfigurationService.loadAll().success(function(result) {
-            populateScope(result);
-        });
+        var loadAll = function() {
+            $scope.loading = true;
+            ConfigurationService.loadAll().success(function (result) {
+                populateScope(result);
+            });
+        };
+        loadAll();
 
         $scope.saveSettings = function(frm, settings) {
             if(!frm.$valid) {
@@ -676,6 +685,10 @@
                 $scope.loading = false;
             });
         };
+
+        $rootScope.$on('ReloadSettings', function() {
+            loadAll();
+        });
     });
 
     admin.controller('PendingReservationsController', function($scope, EventService, $stateParams, $upload, $log, $window) {
