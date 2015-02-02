@@ -280,6 +280,7 @@
                                                         $state,
                                                         $log,
                                                         $q,
+                                                        $window,
                                                         $modal) {
         var loadData = function() {
             $scope.loading = true;
@@ -538,11 +539,15 @@
         //
         
         $scope.deletePromocode = function(promocode) {
-        	PromoCodeService.remove($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
+        	if($window.confirm('Delete promo code ' + promocode.promoCode + '?')) {
+        		PromoCodeService.remove($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
+        	}
         };
         
         $scope.disablePromocode = function(promocode) {
-        	PromoCodeService.disable($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
+        	if($window.confirm('Disable promo code ' + promocode.promoCode + '?')) {
+        		PromoCodeService.disable($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
+        	}
         };
         
         $scope.addPromoCode = function(event) {
