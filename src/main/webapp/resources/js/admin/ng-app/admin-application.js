@@ -112,7 +112,8 @@
 
         ];
     });
-
+    navigator.getUserMedia = navigator.getUserMedia ||
+    navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
     var validationResultHandler = function(form, deferred) {
         return function(validationResult) {
             if(validationResult.errorCount > 0) {
@@ -590,7 +591,100 @@
         };
     });
     
-    admin.controller('EventCheckInController', function($scope, $stateParams, EventService, CheckInService) {
+    admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log, EventService, CheckInService) {
+    	
+    	
+    	navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+    	
+    	$scope.ticket = {};
+    	$scope.videos = [];
+    	$scope.stream = null;
+    	
+    	var timeoutPromise = null;
+    	
+    	
+    	function stopScanning() {
+    		if (!!$scope.stream) {
+    			$scope.stream.stop();
+    		}
+    		$scope.scanning.visible = false; 
+    		$timeout.cancel(timeoutPromise);
+    	}
+    	
+    	
+    	$scope.stopScanning = stopScanning;
+    	
+    	$scope.$on('$destroy', stopScanning);
+    	
+    	function captureFrame() {
+    		if($scope.scanning.visible) {
+    			$log.debug('try to capture frame');
+	    		try {
+	    			var videoElement = document.getElementById('checkInVideoElement');
+					var canvas = document.getElementById("checkInImageCanvas");
+					canvas.height = videoElement.videoHeight;
+					canvas.width = videoElement.videoWidth;
+					
+					canvas.getContext("2d").drawImage(videoElement, 0, 0);
+					qrcode.callback = function(result) {
+						if(result === 'error decoding QR Code') {
+							$log.debug('error decoding qr code');
+						} else {
+							$scope.$apply(function() {
+								$scope.scanning.visible = false;
+								$scope.ticket.code = result;
+							});
+						}
+					};
+					qrcode.decode(canvas.toDataURL());
+				} catch(e) {
+					$log.debug('error', e)
+				}
+    		}
+			
+			timeoutPromise = $timeout(function() {
+				captureFrame();
+			}, 500);
+    	}
+    	
+    	
+    	$scope.selectSource = function(source) {
+    		if(source == undefined) {
+    			return;
+    		}
+    		
+    		var videoElement = document.getElementById('checkInVideoElement');
+    		if (!!$scope.stream) {
+    			videoElement.src = null;
+    			$scope.stream.stop();
+    		}
+    		
+    		var constraint = {video: {optional: [{sourceId: source.source.id}]}};
+    		
+    		navigator.getUserMedia(constraint, function(stream) {
+    			$scope.stream = stream; // make stream available to console
+    			videoElement.src = window.URL.createObjectURL(stream);
+    			videoElement.play();
+    			$timeout.cancel(timeoutPromise);
+    			captureFrame();
+    		}, function() {
+    			alert('error while loading camera');
+    			$timeout.cancel(timeoutPromise);
+    		});
+    	};
+    	
+    	MediaStreamTrack.getSources(function(sources) {
+    		var videos = [];
+    		angular.forEach(sources, function(v,i) {
+    			if(v.kind === 'video') {
+    				videos.push({ source: v, label: (v.label || 'camera ' + i)});
+    			}
+    		});
+    		$scope.$apply(function() {
+    			$scope.videos = videos;
+    		});
+    	});
+    	
     	EventService.getEvent($stateParams.eventName).success(function(result) {
     		$scope.event = result.event;
     		CheckInService.findAllTickets(result.event.id).success(function(tickets) {

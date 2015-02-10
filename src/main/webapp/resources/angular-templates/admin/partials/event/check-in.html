@@ -7,19 +7,33 @@
 		<h2>Scan the ticket</h2>
 	</div>
 	<div>
-		<form data-ng-submit="checkIn(ticket)">
-			<div class="form-group">
+		<form data-ng-submit="scanning.visible = false; checkIn(ticket)" data-ng-init="scanning.visible = false;">
+			<div data-ng-hide="scanning.visible || ticket.code != null">
+				<p><button class="btn btn-primary" type="button" data-ng-click="scanning.visible = true;selectSource(selectedSource);">Scan</button></p>
+			</div>
+			<div class="form-group" data-ng-show="scanning.visible">
+				<p>Select video source: <select data-ng-options="video.label for video in videos" data-ng-change="selectSource(selectedSource)" data-ng-model="selectedSource"></select></p>
+				<p><button class="btn btn-primary" type="button" data-ng-click="stopScanning()">Stop scanning</button></p>
+				<video muted autoplay data-ng-show="selectedSource != null" id="checkInVideoElement"></video>
+				<canvas id="checkInImageCanvas" class="ng-hide"></canvas>
+				
+			</div>
+			<div data-ng-show="ticket.code != null">
+				<p>Scanned value:</p>
 				<textarea class="form-control" rows="3" data-ng-model="ticket.code"></textarea>
+				
+				<div class="form-group" data-ng-if="checkInResult">
+					{{checkInResult.status}} : {{checkInResult.message}}
+				</div>
+				<div data-ng-if="checkInResult.status === 'MUST_PAY'">
+					<p>{{confirmPaymentResult.message}}</p>
+					<button type="button" class="btn btn-primary" data-ng-click="confirmPayment(ticket)">Confirm payment</button>
+				</div>
+				
+				<button type="submit" class="btn btn-primary">Submit</button>
+				<button type="button" class="btn btn-primary" data-ng-click="ticket.code = null; scanning.visible = true">Redo scan</button>
+				<button type="reset" class="btn btn-default" data-ng-click="stopScanning();resetForm(ticket)">Stop scanning</button>
 			</div>
-			<div class="form-group" data-ng-if="checkInResult">
-				{{checkInResult.status}} : {{checkInResult.message}}
-			</div>
-			<div class="form-group" data-ng-if="checkInResult.status === 'MUST_PAY'">
-				<p>{{confirmPaymentResult.message}}</p>
-				<button type="button" class="btn btn-primary" data-ng-click="confirmPayment(ticket)">Confirm payment</button>
-			</div>
-			<button type="submit" class="btn btn-primary">Submit</button>
-			<button type="reset" class="btn btn-default" data-ng-click="resetForm(ticket)">Reset</button>
 		</form>
 	</div>
 

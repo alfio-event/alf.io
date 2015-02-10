@@ -121,8 +121,10 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     			response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
     					+ " script-src 'self' https://ajax.googleapis.com/ https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/;"//
     					+ " style-src 'self';"//
-    					+ " img-src 'self' https:;"//
+    					+ " img-src 'self' https: data:;"//
+    					+ " child-src 'self';"//webworker
     					+ " font-src 'self';"//
+    					+ " media-src 'self';"//for loading camera api
     					+ " connect-src 'self' https://api.stripe.com;"); //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
     		}
     	};
