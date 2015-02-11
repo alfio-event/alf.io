@@ -170,7 +170,7 @@ public class Event {
     }
 
     public PaymentProxy getFirstPaymentMethod() {
-        return allowedPaymentProxies.get(0);//it is guaranteed that this list is not empty.
+        return allowedPaymentProxies.isEmpty() ? null : allowedPaymentProxies.get(0);//it is guaranteed that this list is not null. 
     }
 
     public boolean supportsPaymentMethod(PaymentProxy paymentProxy) {
