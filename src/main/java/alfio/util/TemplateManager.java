@@ -18,9 +18,12 @@ package alfio.util;
 
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
+
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
+import com.samskivert.mustache.Mustache.Formatter;
 import com.samskivert.mustache.Template;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.env.Environment;
@@ -34,12 +37,14 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -54,10 +59,15 @@ public class TemplateManager {
 
 	private final MessageSource messageSource;
 	private final boolean cache;
-	private Map<String, Template> templateCache = new ConcurrentHashMap<>(5); // 1 pdf, 2 email confirmation, 2 email
+	private final Map<String, Template> templateCache = new ConcurrentHashMap<>(5); // 1 pdf, 2 email confirmation, 2 email
 																				// ticket
 
-	private final Compiler templateCompiler;
+	
+	public enum TemplateOutput {
+		TEXT, HTML
+	}
+	
+	private final Map<TemplateOutput, Compiler> compilers;
 
 	@Autowired
 	public TemplateManager(Environment environment,
@@ -65,47 +75,55 @@ public class TemplateManager {
 						   MessageSource messageSource) {
 		this.messageSource = messageSource;
 		this.cache = environment.acceptsProfiles(Initializer.PROFILE_LIVE);
-		this.templateCompiler = Mustache.compiler()
+		Formatter dateFormatter = (o) -> {
+			return (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME
+					.format((ZonedDateTime) o) : String.valueOf(o);
+		};
+		this.compilers = new EnumMap<>(TemplateOutput.class);
+		this.compilers.put(TemplateOutput.TEXT, Mustache.compiler()
 				.escapeHTML(false)
 				.standardsMode(false)
 				.defaultValue("")
 				.nullValue("")
-				.withFormatter(
-						(o) -> {
-							return (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME
-									.format((ZonedDateTime) o) : String.valueOf(o);
-						})
-				.withLoader(templateLoader);
+				.withFormatter(dateFormatter)
+				.withLoader(templateLoader));
+		this.compilers.put(TemplateOutput.HTML, Mustache.compiler()
+				.escapeHTML(true)
+				.standardsMode(false)
+				.defaultValue("")
+				.nullValue("")
+				.withFormatter(dateFormatter)
+				.withLoader(templateLoader));
 	}
 
-	public String renderClassPathResource(String classPathResource, Map<String, Object> model, Locale locale) {
-		return render(new ClassPathResource(classPathResource), classPathResource, model, locale);
+	public String renderClassPathResource(String classPathResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+		return render(new ClassPathResource(classPathResource), classPathResource, model, locale, templateOutput);
 	}
 
-	public String renderServletContextResource(String servletContextResource, Map<String, Object> model, HttpServletRequest request) {
+	public String renderServletContextResource(String servletContextResource, Map<String, Object> model, HttpServletRequest request, TemplateOutput templateOutput) {
 		model.put("request", request);
 		model.put(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
-		return render(new ServletContextResource(request.getServletContext(), servletContextResource), servletContextResource, model, RequestContextUtils.getLocale(request));
+		return render(new ServletContextResource(request.getServletContext(), servletContextResource), servletContextResource, model, RequestContextUtils.getLocale(request), templateOutput);
 	}
 
-	private String render(AbstractFileResolvingResource resource, String key, Map<String, Object> model, Locale locale) {
+	private String render(AbstractFileResolvingResource resource, String key, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
 		try {
 			ModelAndView mv = new ModelAndView((String) null, model);
 			mv.addObject("format-date", MustacheCustomTagInterceptor.FORMAT_DATE);
 			mv.addObject(MustacheLocalizationMessageInterceptor.DEFAULT_MODEL_KEY, new CustomLocalizationMessageInterceptor(locale, messageSource).createTranslator());
-			Template tmpl = cache ? templateCache.computeIfAbsent(key, k -> compile(resource))
-					: compile(resource);
+			Template tmpl = cache ? templateCache.computeIfAbsent(key + templateOutput.toString(), k -> compile(resource, templateOutput))
+					: compile(resource, templateOutput);
 			return tmpl.execute(mv.getModel());
 		} catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 	}
 
-	private Template compile(AbstractFileResolvingResource resource) {
+	private Template compile(AbstractFileResolvingResource resource, TemplateOutput templateOutput) {
 		try {
 			InputStreamReader tmpl = new InputStreamReader(resource.getInputStream(),
 					StandardCharsets.UTF_8);
-			return templateCompiler.compile(tmpl);
+			return compilers.get(templateOutput).compile(tmpl);
 		} catch (IOException ioe) {
 			throw new IllegalStateException(ioe);
 		}

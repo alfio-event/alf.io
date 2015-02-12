@@ -28,11 +28,15 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.TemplateManager;
+import alfio.util.TemplateManager.TemplateOutput;
+
 import com.google.zxing.WriterException;
+
 import org.springframework.web.servlet.support.RequestContextUtils;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.IOException;
 import java.util.Base64;
 import java.util.HashMap;
@@ -56,7 +60,7 @@ public final class TemplateProcessor {
             model.put("event", event);
             model.put("ticketReservation", ticketReservation);
             model.put("ticket", ticket);
-            return templateManager.renderClassPathResource("/alfio/templates/ticket-email-txt.ms", model, RequestContextUtils.getLocale(request));
+            return templateManager.renderClassPathResource("/alfio/templates/ticket-email-txt.ms", model, RequestContextUtils.getLocale(request), TemplateOutput.TEXT);
         };
     }
 
@@ -75,7 +79,7 @@ public final class TemplateProcessor {
             emailModel.put("previousEmail", oldTicket.getEmail());
             emailModel.put("newEmail", newTicket.getEmail());
             emailModel.put("reservationUrl", ticketReservationManager.reservationUrl(oldTicket.getTicketsReservationId()));
-            return templateManager.renderClassPathResource("/alfio/templates/ticket-has-changed-owner-txt.ms", emailModel, RequestContextUtils.getLocale(request));
+            return templateManager.renderClassPathResource("/alfio/templates/ticket-has-changed-owner-txt.ms", emailModel, RequestContextUtils.getLocale(request), TemplateOutput.TEXT);
         };
     }
 
@@ -98,7 +102,7 @@ public final class TemplateProcessor {
             model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
             model.put("deskPaymentRequired", Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired());
 
-            String page = templateManager.renderClassPathResource("/alfio/templates/ticket.ms", model, RequestContextUtils.getLocale(request));
+            String page = templateManager.renderClassPathResource("/alfio/templates/ticket.ms", model, RequestContextUtils.getLocale(request), TemplateOutput.HTML);
 
             ITextRenderer renderer = new ITextRenderer();
             renderer.setDocumentFromString(page);

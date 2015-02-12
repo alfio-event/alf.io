@@ -29,7 +29,6 @@ import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.system.Mailer;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
@@ -42,7 +41,10 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
+import alfio.util.TemplateManager.TemplateOutput;
+
 import com.google.zxing.WriterException;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +59,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -72,7 +75,6 @@ public class ReservationController {
 	private final OrganizationRepository organizationRepository;
 
 	private final StripeManager stripeManager;
-	private final Mailer mailer;
 	private final TemplateManager templateManager;
 	private final MessageSource messageSource;
 	private final TicketRepository ticketRepository;
@@ -86,7 +88,6 @@ public class ReservationController {
 								 TicketReservationManager ticketReservationManager,
 								 OrganizationRepository organizationRepository,
 								 StripeManager stripeManager,
-								 Mailer mailer,
 								 TemplateManager templateManager,
 								 MessageSource messageSource,
 								 TicketRepository ticketRepository,
@@ -98,7 +99,6 @@ public class ReservationController {
 		this.ticketReservationManager = ticketReservationManager;
 		this.organizationRepository = organizationRepository;
 		this.stripeManager = stripeManager;
-		this.mailer = mailer;
 		this.templateManager = templateManager;
 		this.messageSource = messageSource;
 		this.ticketRepository = ticketRepository;
@@ -382,7 +382,7 @@ public class ReservationController {
 
 		Optional<ValidationResult> validationResult = assignmentResult.map(Triple::getLeft);
 		if(validationResult.isPresent() && validationResult.get().isSuccess()) {
-			result.put("partial", templateManager.renderServletContextResource("/WEB-INF/templates/event/assign-ticket-result.ms", model.asMap(), request));
+			result.put("partial", templateManager.renderServletContextResource("/WEB-INF/templates/event/assign-ticket-result.ms", model.asMap(), request, TemplateOutput.HTML));
 		}
 		result.put("validationResult", validationResult.orElse(ValidationResult.failed(new ValidationResult.ValidationError("fullName", "error.fullname"))));
 		return result;
@@ -454,7 +454,7 @@ public class ReservationController {
 
 		Locale locale = RequestContextUtils.getLocale(request);
 		String reservationTxt = templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms",
-				ticketReservationManager.prepareModelForReservationEmail(event, reservation), locale);
+				ticketReservationManager.prepareModelForReservationEmail(event, reservation), locale, TemplateOutput.TEXT);
 		String shortReservationID = ticketReservationManager.getShortReservationID(reservation.getId());
 		notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation-email-subject",
 				new Object[] { shortReservationID, event.getShortName() }, locale), reservationTxt);
@@ -463,7 +463,7 @@ public class ReservationController {
 	private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
 		Organization organization = organizationRepository.getById(event.getOrganizationId());
 		String reservationInfo = templateManager.renderClassPathResource("/alfio/templates/confirmation-email-for-organizer-txt.ms",
-				ticketReservationManager.prepareModelForReservationEmail(event, reservation), RequestContextUtils.getLocale(request));
+				ticketReservationManager.prepareModelForReservationEmail(event, reservation), RequestContextUtils.getLocale(request), TemplateOutput.TEXT);
 		notificationManager.sendSimpleEmail(event, organization.getEmail(), "Reservation complete " + reservation.getId(), reservationInfo);
 	}
 

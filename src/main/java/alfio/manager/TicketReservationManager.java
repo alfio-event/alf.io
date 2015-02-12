@@ -32,9 +32,13 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
+import alfio.util.TemplateManager.TemplateOutput;
+
 import com.lowagie.text.DocumentException;
+
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -275,7 +279,7 @@ public class TicketReservationManager {
 		acquireTickets(TicketStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getBillingAddress());
 		Locale language = ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().map(t -> Locale.forLanguageTag(t.getUserLanguage())).orElse(Locale.ENGLISH);
 		notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-				new Object[]{ getShortReservationID(reservationId), event.getShortName()}, language), () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language));
+				new Object[]{ getShortReservationID(reservationId), event.getShortName()}, language), () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language, TemplateOutput.TEXT));
 	}
 
 	public void deleteOfflinePayment(Event singleEvent, String reservationId) {
@@ -683,7 +687,7 @@ public class TicketReservationManager {
 					model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
 					Locale locale = p.getRight();
 					ticketReservationRepository.flagAsReminderSent(reservation.getId());
-					notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{ getShortReservationID(reservation.getId()) }, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-email-txt.ms", model, locale));
+					notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{ getShortReservationID(reservation.getId()) }, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-email-txt.ms", model, locale, TemplateOutput.TEXT));
 				});
 	}
 
