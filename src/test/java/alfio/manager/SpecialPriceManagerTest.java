@@ -1,3 +1,19 @@
+/**
+ * This file is part of alf.io.
+ *
+ * alf.io is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * alf.io is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package alfio.manager;
 
 import alfio.manager.support.TextTemplateGenerator;
@@ -20,7 +36,7 @@ import java.util.*;
 
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -63,14 +79,14 @@ public class SpecialPriceManagerTest {{
             describe("validation error (category not restricted)", it -> {
                 it.initializesWith(setRestricted(ticketCategory, false));
                 it.should("throw an exception (category not restricted)", expect -> {
-                    expect.exception(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(Collections.<SendCodeModification>emptySet(), "test", 0, "username"));
+                    expect.exception(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(Collections.<SendCodeModification>emptyList(), "test", 0, "username"));
                 });
             });
 
             describe("validation error (too much codes requested)", it -> {
                 it.initializesWith(setRestricted(ticketCategory, true));
                 it.should("throw an exception (too much codes requested)", expect -> {
-                    Set<SendCodeModification> oneMore = new HashSet<>();
+                    List<SendCodeModification> oneMore = new ArrayList<>();
                     oneMore.addAll(CODES_REQUESTED);
                     oneMore.add(new SendCodeModification("123", "", "", ""));
                     expect.exception(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(oneMore, "test", 0, "username"));
@@ -80,7 +96,7 @@ public class SpecialPriceManagerTest {{
             describe("validation error (not available code requested)", it -> {
                 it.initializesWith(setRestricted(ticketCategory, true));
                 it.should("throw an exception (not available code requested)", expect -> {
-                    Set<SendCodeModification> notExistingCode = new HashSet<>(asList(new SendCodeModification("AAA", "A 123", "123@123", "it"), new SendCodeModification("456", "A 456", "456@456", "en")));
+                    List<SendCodeModification> notExistingCode = asList(new SendCodeModification("AAA", "A 123", "123@123", "it"), new SendCodeModification("456", "A 456", "456@456", "en"));
                     expect.exception(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(notExistingCode, "test", 0, "username"));
                 });
             });
@@ -88,7 +104,7 @@ public class SpecialPriceManagerTest {{
             describe("validation error (code requested twice)", it -> {
                 it.initializesWith(setRestricted(ticketCategory, true));
                 it.should("throw an exception (code requested twice)", expect -> {
-                    Set<SendCodeModification> duplicatedCodes = new HashSet<>(asList(new SendCodeModification("123", "A 123", "123@123", "it"), new SendCodeModification("123", "A 456", "456@456", "en")));
+                    List<SendCodeModification> duplicatedCodes = asList(new SendCodeModification("123", "A 123", "123@123", "it"), new SendCodeModification("123", "A 456", "456@456", "en"));
                     expect.exception(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(duplicatedCodes, "test", 0, "username"));
                 });
             });
@@ -107,12 +123,12 @@ public class SpecialPriceManagerTest {{
             describe("send successful - detailed test", it -> {
                 it.initializesWith(setRestricted(ticketCategory, true));
                 it.should("send the given code", expect -> {
-                    expect.that(specialPriceManager.sendCodeToAssignee(singleton(new SendCodeModification("123", "me", "me@domain.com", "it")), "", 0, "")).is(true);
+                    expect.that(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", "it")), "", 0, "")).is(true);
                     ArgumentCaptor<TextTemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TextTemplateGenerator.class);
                     verify(notificationManager).sendSimpleEmail(eq(event), eq("me@domain.com"), anyString(), templateCaptor.capture());
                     templateCaptor.getValue().generate();
                     ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-                    verify(templateManager).renderClassPathResource(endsWith("send-reserved-code-txt.ms"), captor.capture(), eq(Locale.ITALIAN));
+                    verify(templateManager).renderClassPathResource(endsWith("send-reserved-code-txt.ms"), captor.capture(), eq(Locale.ITALIAN), eq(TemplateManager.TemplateOutput.TEXT));
                     Map<String, Object> model = captor.getValue();
                     expect.that(model.get("code")).isEqualTo("123");
                     expect.that(model.get("event")).isEqualTo(event);
@@ -132,7 +148,7 @@ public class SpecialPriceManagerTest {{
         return () -> when(ticketCategory.isAccessRestricted()).thenReturn(restricted);
     }
 
-    private static Specification testAssigneeLink(SpecialPriceManager specialPriceManager, Set<SendCodeModification> modifications) {
+    private static Specification testAssigneeLink(SpecialPriceManager specialPriceManager, List<SendCodeModification> modifications) {
         return expect -> {
             List<SendCodeModification> sendCodeModifications = specialPriceManager.linkAssigneeToCode(modifications, "test", 0, "username");
             expect.that(sendCodeModifications.isEmpty()).isEqualTo(false);
@@ -141,7 +157,7 @@ public class SpecialPriceManagerTest {{
         };
     }
 
-    private static final Set<SendCodeModification> CODES_REQUESTED = new HashSet<>(asList(new SendCodeModification("123", "A 123", "123@123", "it"), new SendCodeModification("456", "A 456", "456@456", "en")));
-    private static final Set<SendCodeModification> CODES_NOT_REQUESTED = new HashSet<>(asList(new SendCodeModification(null, "A 123", "123@123", "it"), new SendCodeModification(null, "A 456", "456@456", "en")));
-    private static final Set<SendCodeModification> CODES_PARTIALLY_REQUESTED = new HashSet<>(asList(new SendCodeModification(null, "A 123", "123@123", "it"), new SendCodeModification("456", "A 456", "456@456", "en")));
+    private static final List<SendCodeModification> CODES_REQUESTED = asList(new SendCodeModification("123", "A 123", "123@123", "it"), new SendCodeModification("456", "A 456", "456@456", "en"));
+    private static final List<SendCodeModification> CODES_NOT_REQUESTED = asList(new SendCodeModification(null, "A 123", "123@123", "it"), new SendCodeModification(null, "A 456", "456@456", "en"));
+    private static final List<SendCodeModification> CODES_PARTIALLY_REQUESTED = asList(new SendCodeModification(null, "A 123", "123@123", "it"), new SendCodeModification("456", "A 456", "456@456", "en"));
 }

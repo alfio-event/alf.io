@@ -1,3 +1,19 @@
+/**
+ * This file is part of alf.io.
+ *
+ * alf.io is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * alf.io is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package alfio.manager;
 
 import alfio.model.Event;
@@ -55,21 +71,23 @@ public class SpecialPriceManager {
         return availableCodes;
     }
 
-    public List<SendCodeModification> linkAssigneeToCode(Set<SendCodeModification> input, String eventName, int categoryId, String username) {
+    public List<SendCodeModification> linkAssigneeToCode(List<SendCodeModification> input, String eventName, int categoryId, String username) {
         final Event event = eventManager.getSingleEvent(eventName, username);
-        List<String> availableCodes = checkCodeAssignment(input, categoryId, event, username);
+        Set<SendCodeModification> set = new LinkedHashSet<>(input);
+        List<String> availableCodes = checkCodeAssignment(set, categoryId, event, username);
         final Iterator<String> codes = availableCodes.iterator();
-        return Stream.concat(input.stream().filter(IS_CODE_PRESENT),
+        return Stream.concat(set.stream().filter(IS_CODE_PRESENT),
                 input.stream().filter(IS_CODE_PRESENT.negate())
                         .map(p -> new SendCodeModification(codes.next(), p.getAssignee(), p.getEmail(), p.getLanguage()))).collect(toList());
     }
 
-    public boolean sendCodeToAssignee(Set<SendCodeModification> input, String eventName, int categoryId, String username) {
+    public boolean sendCodeToAssignee(List<SendCodeModification> input, String eventName, int categoryId, String username) {
         final Event event = eventManager.getSingleEvent(eventName, username);
         final Organization organization = eventManager.loadOrganizer(event, username);
-        checkCodeAssignment(input, categoryId, event, username);
-        Validate.isTrue(input.stream().allMatch(IS_CODE_PRESENT), "There are missing codes. Please check input file.");
-        input.forEach(m -> {
+        Set<SendCodeModification> set = new LinkedHashSet<>(input);
+        checkCodeAssignment(set, categoryId, event, username);
+        Validate.isTrue(set.stream().allMatch(IS_CODE_PRESENT), "There are missing codes. Please check input file.");
+        set.forEach(m -> {
             Locale locale = Locale.forLanguageTag(StringUtils.defaultString(m.getLanguage(), "en"));
             Map<String, Object> model = new HashMap<>();
             model.put("code", m.getCode());
@@ -78,7 +96,7 @@ public class SpecialPriceManager {
             model.put("eventPage", eventManager.getEventUrl(event));
             model.put("assignee", m.getAssignee());
 
-            notificationManager.sendSimpleEmail(event, m.getEmail(), messageSource.getMessage("email-code.subject", new Object[] {event.getShortName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/send-reserved-code-txt.ms", model, locale));
+            notificationManager.sendSimpleEmail(event, m.getEmail(), messageSource.getMessage("email-code.subject", new Object[] {event.getShortName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/send-reserved-code-txt.ms", model, locale, TemplateManager.TemplateOutput.TEXT));
         });
         return true;
     }

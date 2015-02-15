@@ -1,3 +1,19 @@
+/**
+ * This file is part of alf.io.
+ *
+ * alf.io is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * alf.io is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package alfio.controller.api;
 
 import alfio.manager.SpecialPriceManager;
@@ -16,7 +32,6 @@ import java.io.InputStreamReader;
 import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -50,12 +65,12 @@ public class SpecialPriceApiController {
         Validate.isTrue(StringUtils.isNotEmpty(eventName));
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream())) {
             CSVReader reader = new CSVReader(isr);
-            Set<SendCodeModification> content = reader.readAll().stream()
+            List<SendCodeModification> content = reader.readAll().stream()
                     .map(line -> {
                         Validate.isTrue(line.length >= 4);
                         return new SendCodeModification(StringUtils.trimToNull(line[0]), line[1], line[2], line[3]);
                     })
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.toList());
             return specialPriceManager.linkAssigneeToCode(content, eventName, categoryId, principal.getName());
         }
     }
@@ -63,7 +78,7 @@ public class SpecialPriceApiController {
     @RequestMapping("/events/{eventName}/categories/{categoryId}/send-codes")
     public boolean sendCodes(@PathVariable("eventName") String eventName,
                              @PathVariable("categoryId") int categoryId,
-                             @RequestBody Set<SendCodeModification> codes,
+                             @RequestBody List<SendCodeModification> codes,
                              Principal principal) throws IOException {
 
         Validate.isTrue(StringUtils.isNotEmpty(eventName));
