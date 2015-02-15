@@ -1,107 +1,111 @@
-<div class="container">
-	<div class="page-header">
+<div class="container" data-ng-init="scanning.visible = false;scanning.ticket = {};checkInResult = {}">
+	<div class="page-header" data-ng-if="!scanning.visible && scanning.ticket.code == null">
 		<h1>Check-In: {{event.shortName}}</h1>
 	</div>
 
 	<div class="page-header">
-		<h2>Scan the ticket</h2>
+		<h2>Scan the ticket for event {{event.shortName}}</h2>
 	</div>
 	<div>
-		<form data-ng-submit="scanning.visible = false; checkIn(ticket)" data-ng-init="scanning.visible = false;">
-			<div data-ng-hide="scanning.visible || ticket.code != null">
+		<form data-ng-submit="scanning.visible = false; checkIn(scanning.ticket)">
+			<div data-ng-hide="scanning.visible">
 				<p><button class="btn btn-primary" type="button" data-ng-click="scanning.visible = true;selectSource(selectedSource);">Scan</button></p>
 			</div>
 			<div class="form-group" data-ng-show="scanning.visible">
 				<p>Select video source: <select data-ng-options="video.label for video in videos" data-ng-change="selectSource(selectedSource)" data-ng-model="selectedSource"></select></p>
 				<p><button class="btn btn-primary" type="button" data-ng-click="stopScanning()">Stop scanning</button></p>
-				<video muted autoplay data-ng-show="selectedSource != null" id="checkInVideoElement"></video>
+				<div class="video-container">
+					<video muted autoplay data-ng-show="selectedSource != null" id="checkInVideoElement"></video>
+				</div>
 				<canvas id="checkInImageCanvas" class="ng-hide"></canvas>
 				
 			</div>
-			<div data-ng-show="ticket.code != null">
+			<div data-ng-show="scanning.ticket.code != null">
 				<p>Scanned value:</p>
-				<textarea class="form-control" rows="3" data-ng-model="ticket.code"></textarea>
+				<textarea class="form-control" rows="3" data-ng-model="scanning.ticket.code"></textarea>
 				
-				<div class="form-group" data-ng-if="checkInResult">
+				<div class="form-group" data-ng-if="checkInResult.status">
 					{{checkInResult.status}} : {{checkInResult.message}}
 				</div>
 				<div data-ng-if="checkInResult.status === 'MUST_PAY'">
 					<p>{{confirmPaymentResult.message}}</p>
-					<button type="button" class="btn btn-primary" data-ng-click="confirmPayment(ticket)">Confirm payment</button>
+					<button type="button" class="btn btn-primary" data-ng-click="confirmPayment(scanning.ticket)">Confirm payment</button>
 				</div>
 				
 				<button type="submit" class="btn btn-primary">Submit</button>
-				<button type="button" class="btn btn-primary" data-ng-click="ticket.code = null; scanning.visible = true">Redo scan</button>
-				<button type="reset" class="btn btn-default" data-ng-click="stopScanning();resetForm(ticket)">Stop scanning</button>
+				<button type="button" class="btn btn-primary" data-ng-click="scanning.ticket.code = null; scanning.visible = true;checkInResult.status = null">Redo scan</button>
+				<button type="reset" class="btn btn-default" data-ng-click="stopScanning();resetForm(scanning.ticket)">Stop scanning</button>
 			</div>
 		</form>
 	</div>
 
-	<div class="page-header">
-		<h2>Tickets to be checked in <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button></h2>
-	</div>
-	<div>
-		<table class="table">
-			<thead>
-				<th>Status</th>
-				<th>Id</th>
-				<th>Timestamp</th>
-				<th>Owner's name</th>
-				<th>Owner's e-mail</th>
-				<th>Customer's name</th>
-				<th>Customer's e-mail</th>
-				<th>Payment Type</th>
-				<th>Transaction id</th>
-				<th>Transaction timestamp</th>
-			</thead>
-			<tbody>
-				<tr data-ng-repeat="ticket in tickets | filter: toBeCheckedIn | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
-					<td data-ng-class-even="'active'">{{::ticket.status | statusText}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.uuid}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.fullName}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.email}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.ticketReservation.fullName}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.ticketReservation.email}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.ticketReservation.paymentMethod}}</td>
-					<td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
-					<td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-
-	<div class="page-header">
-		<h2>Checked in tickets <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button></h2>
-	</div>
-	<div>
-		<table class="table">
-			<thead>
-				<th>Status</th>
-				<th>Id</th>
-				<th>Timestamp</th>
-				<th>Owner's name</th>
-				<th>Owner's e-mail</th>
-				<th>Customer's name</th>
-				<th>Customer's e-mail</th>
-				<th>Payment Type</th>
-				<th>Transaction id</th>
-				<th>Transaction timestamp</th>
-			</thead>
-			<tbody>
-				<tr data-ng-repeat="ticket in tickets | filter: {status: 'CHECKED_IN'} | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
-					<td data-ng-class-even="'active'">{{::ticket.status | statusText}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.uuid}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.fullName}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.email}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.ticketReservation.fullName}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.ticketReservation.email}}</td>
-					<td data-ng-class-even="'active'">{{::ticket.ticketReservation.paymentMethod}}</td>
-					<td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
-					<td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
-				</tr>
-			</tbody>
-		</table>
+	<div data-ng-if="!scanning.visible && scanning.ticket.code == null">
+		<div class="page-header" >
+			<h2>Tickets to be checked in <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button></h2>
+		</div>
+		<div>
+			<table class="table">
+				<thead>
+					<th>Status</th>
+					<th>Id</th>
+					<th>Timestamp</th>
+					<th>Owner's name</th>
+					<th>Owner's e-mail</th>
+					<th>Customer's name</th>
+					<th>Customer's e-mail</th>
+					<th>Payment Type</th>
+					<th>Transaction id</th>
+					<th>Transaction timestamp</th>
+				</thead>
+				<tbody>
+					<tr data-ng-repeat="ticket in tickets | filter: toBeCheckedIn | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
+						<td data-ng-class-even="'active'">{{::ticket.status | statusText}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.uuid}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.fullName}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.email}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.ticketReservation.fullName}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.ticketReservation.email}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.ticketReservation.paymentMethod}}</td>
+						<td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
+						<td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	
+		<div class="page-header">
+			<h2>Checked in tickets <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button></h2>
+		</div>
+		<div>
+			<table class="table">
+				<thead>
+					<th>Status</th>
+					<th>Id</th>
+					<th>Timestamp</th>
+					<th>Owner's name</th>
+					<th>Owner's e-mail</th>
+					<th>Customer's name</th>
+					<th>Customer's e-mail</th>
+					<th>Payment Type</th>
+					<th>Transaction id</th>
+					<th>Transaction timestamp</th>
+				</thead>
+				<tbody>
+					<tr data-ng-repeat="ticket in tickets | filter: {status: 'CHECKED_IN'} | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
+						<td data-ng-class-even="'active'">{{::ticket.status | statusText}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.uuid}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.fullName}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.email}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.ticketReservation.fullName}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.ticketReservation.email}}</td>
+						<td data-ng-class-even="'active'">{{::ticket.ticketReservation.paymentMethod}}</td>
+						<td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
+						<td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
 	</div>
 </div>

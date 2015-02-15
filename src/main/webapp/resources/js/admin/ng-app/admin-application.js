@@ -631,12 +631,27 @@
     	
     	navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
     	
-    	$scope.ticket = {};
     	$scope.videos = [];
     	$scope.stream = null;
     	
     	var timeoutPromise = null;
+    	var worker = new Worker("../resources/js/jsqrcode/decode-worker.js");
     	
+		worker.addEventListener('message', function(message) {
+			var result = message.data;
+			if(result === 'error decoding QR Code') {
+				$log.debug('error decoding qr code');
+			} else {
+				$scope.$apply(function() {
+					$scope.scanning.visible = false;
+					$scope.scanning.ticket.code = result;
+				});
+			}
+		}, false);
+		
+		$scope.$on('$destroy', function() {
+			worker.terminate();
+		});
     	
     	function stopScanning() {
     		if (!!$scope.stream) {
@@ -661,17 +676,8 @@
 					canvas.width = videoElement.videoWidth;
 					
 					canvas.getContext("2d").drawImage(videoElement, 0, 0);
-					qrcode.callback = function(result) {
-						if(result === 'error decoding QR Code') {
-							$log.debug('error decoding qr code');
-						} else {
-							$scope.$apply(function() {
-								$scope.scanning.visible = false;
-								$scope.ticket.code = result;
-							});
-						}
-					};
-					qrcode.decode(canvas.toDataURL());
+					var imageData = canvas.getContext("2d").getImageData(0,0,canvas.width, canvas.height);
+					worker.postMessage(imageData);
 				} catch(e) {
 					$log.debug('error', e)
 				}
