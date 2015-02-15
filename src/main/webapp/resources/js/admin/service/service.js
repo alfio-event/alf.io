@@ -90,6 +90,9 @@
             },
             cancelPayment: function(eventName, reservationId) {
                 return $http['delete']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId).error(HttpErrorHandler.handle);
+            },
+            sendCodesByEmail: function(eventName, categoryId, pairs) {
+                return $http['post']('/admin/api/events/'+eventName+'/categories/'+categoryId+'/send-codes', pairs).error(HttpErrorHandler.handle);
             }
         };
     });

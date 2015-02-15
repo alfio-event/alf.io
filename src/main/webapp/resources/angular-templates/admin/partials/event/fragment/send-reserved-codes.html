@@ -1,0 +1,50 @@
+<div class="page-header">
+    <h1><i class="fa fa-envelope-o"></i> Send invitations</h1>
+    <small class="text-muted">Upload CSV file(s) with attendees' data</small>
+</div>
+
+<div>
+    <h2>File Specifications:</h2>
+    <h3>General</h3>
+    <span>Please create a CSV file without header, using commas (<strong>,</strong>) as separator, double quotes (<strong>"</strong>)as quote character and backslash (<strong>\</strong>) as escaping character</span>
+    <h3>Row specification</h3>
+    <pre>
+        <span class="text-info">ABCD</span><strong>,</strong><span class="text-danger">Name Surname</span><strong>,</strong><span class="text-warning">email@host.tld</span><strong>,</strong><span class="text-success">lang</span>
+
+        where:
+
+        <span class="text-info">ABCD</span> is the code to assign, blank if automatic
+        <span class="text-danger">Name Surname</span> is the full name of the attendee
+        <span class="text-warning">email@host.tld</span> is the email of the attendee (the invitation will be sent to this address)
+        <span class="text-success">lang</span> is the ISO language (e.g. it, en, de) of the message
+    </pre>
+</div>
+
+<div class="drop-file-zone wMarginBottom well" data-accept="text/*" data-ng-file-change="uploadFile($files)" data-ng-file-drop data-drag-over-class="'drop-file-zone-hover'">
+    Drop file here
+</div>
+
+<div class="wMarginBottom table-responsive" data-ng-if="results">
+    <form name="invitationForm" data-ng-submit="sendCodes(invitationForm, results)" novalidate data-error-sensitive>
+    <table class="table">
+        <thead>
+            <th>Code</th>
+            <th>Assignee</th>
+            <th>e-mail</th>
+            <th>language</th>
+        </thead>
+        <tbody>
+            <tr data-ng-repeat="result in results" data-ng-class-even="'active'">
+                <td>{{result.code}}</td>
+                <td>{{result.assignee}}</td>
+                <td>{{result.email}}</td>
+                <td>{{result.language}}</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="pull-right">
+        <button type="button" class="btn btn-primary" data-ng-click="sendCodes(results)">Send</button>
+        <a class="btn btn-default" data-ui-sref="events.detail({eventName: eventName})">Back to event detail</a>
+    </div>
+    </form>
+</div>

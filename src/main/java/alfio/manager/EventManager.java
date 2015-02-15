@@ -18,10 +18,12 @@ package alfio.manager;
 
 import alfio.manager.location.LocationManager;
 import alfio.manager.support.OrderSummary;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.modification.*;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
@@ -29,6 +31,7 @@ import alfio.util.MonetaryUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -66,6 +69,7 @@ public class EventManager {
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final LocationManager locationManager;
     private final NamedParameterJdbcTemplate jdbc;
+    private final ConfigurationManager configurationManager;
 
     @Autowired
     public EventManager(UserManager userManager,
@@ -76,7 +80,8 @@ public class EventManager {
                         SpecialPriceRepository specialPriceRepository,
                         PromoCodeDiscountRepository promoCodeRepository,
                         LocationManager locationManager,
-                        NamedParameterJdbcTemplate jdbc) {
+                        NamedParameterJdbcTemplate jdbc,
+                        ConfigurationManager configurationManager) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -86,6 +91,7 @@ public class EventManager {
         this.promoCodeRepository = promoCodeRepository;
         this.locationManager = locationManager;
         this.jdbc = jdbc;
+        this.configurationManager = configurationManager;
     }
 
     public List<Event> getAllEvents(String username) {
@@ -108,7 +114,7 @@ public class EventManager {
         return event;
     }
 
-    private void checkOwnership(Event event, String username, int organizationId) {
+    void checkOwnership(Event event, String username, int organizationId) {
         Validate.isTrue(organizationId == event.getOrganizationId(), "invalid organizationId");
         userManager.findUserOrganizations(username)
                 .stream()
@@ -529,6 +535,10 @@ public class EventManager {
     public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInEvent(int eventId) {
     	ZoneId zoneId = eventRepository.findById(eventId).getZoneId();
     	return promoCodeRepository.findAllInEvent(eventId).stream().map((p) -> new PromoCodeDiscountWithFormattedTime(p, zoneId)).collect(toList());
+    }
+
+    public String getEventUrl(Event event) {
+        return StringUtils.removeEnd(configurationManager.getRequiredValue(ConfigurationKeys.BASE_URL), "/") + "/event/" + event.getShortName();
     }
 
     @Data

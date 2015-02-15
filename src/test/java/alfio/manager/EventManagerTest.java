@@ -49,7 +49,7 @@ public class EventManagerTest {{
         TicketCategory updated = Mockito.mock(TicketCategory.class);
         TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
         NamedParameterJdbcTemplate jdbc = it.usesMock(NamedParameterJdbcTemplate.class);
-        EventManager eventManager = new EventManager(null, null, null, ticketRepository, null, null, null, null, jdbc);
+        EventManager eventManager = new EventManager(null, null, null, ticketRepository, null, null, null, null, jdbc, null);
         when(original.getId()).thenReturn(20);
         when(updated.getId()).thenReturn(30);
         when(original.getPriceInCents()).thenReturn(1000);
@@ -84,7 +84,7 @@ public class EventManagerTest {{
 
     describe("handlePriceChange", it -> {
         TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
-        EventManager eventManager = new EventManager(null, null, null, ticketRepository, null, null, null, null, null);
+        EventManager eventManager = new EventManager(null, null, null, ticketRepository, null, null, null, null, null, null);
         TicketCategory original = Mockito.mock(TicketCategory.class);
         TicketCategory updated = Mockito.mock(TicketCategory.class);
 
@@ -120,7 +120,7 @@ public class EventManagerTest {{
     describe("handleTokenModification", it -> {
         SpecialPriceRepository specialPriceRepository = it.usesMock(SpecialPriceRepository.class);
         NamedParameterJdbcTemplate jdbc = it.usesMock(NamedParameterJdbcTemplate.class);
-        EventManager eventManager = new EventManager(null, null, null, null, null, specialPriceRepository, null, null, jdbc);
+        EventManager eventManager = new EventManager(null, null, null, null, null, specialPriceRepository, null, null, jdbc, null);
         TicketCategory original = Mockito.mock(TicketCategory.class);
         TicketCategory updated = Mockito.mock(TicketCategory.class);
 

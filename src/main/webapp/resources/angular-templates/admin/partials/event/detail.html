@@ -179,6 +179,7 @@
                 <button class="btn btn-default" data-ng-click="toggleTokenViewCollapse(ticketCategory)">
                     <span data-ng-if="isTokenViewCollapsed(ticketCategory)">show</span><span data-ng-if="!isTokenViewCollapsed(ticketCategory)">hide</span> tokens
                 </button>
+                <button data-ng-if="!ticketCategory.expired" class="btn btn-warning" data-ui-sref="events.sendInvitations({eventName: event.shortName, categoryId: ticketCategory.id})">send invitations</button>
             </div>
             <div class="wMarginBottom" data-collapse="isTokenViewCollapsed(ticketCategory)">
                 <div class="row">

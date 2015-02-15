@@ -55,6 +55,11 @@
             	templateUrl: BASE_STATIC_URL + '/event/check-in.html',
             	controller: 'EventCheckInController'
             })
+            .state('events.sendInvitations', {
+            	url: '/:eventName/c/:categoryId/send-invitation',
+            	templateUrl: BASE_STATIC_URL + '/event/fragment/send-reserved-codes.html',
+            	controller: 'SendInvitationsController'
+            })
             .state('configuration', {
                 url: '/configuration',
                 templateUrl: BASE_STATIC_URL + '/configuration/index.html',
@@ -112,8 +117,8 @@
 
         ];
     });
-    navigator.getUserMedia = navigator.getUserMedia ||
-    navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+
     var validationResultHandler = function(form, deferred) {
         return function(validationResult) {
             if(validationResult.errorCount > 0) {
@@ -587,6 +592,36 @@
                         }, errorHandler).then(loadData);
                     };
                 }
+            });
+        };
+
+    });
+
+    admin.controller('SendInvitationsController', function($scope, $stateParams, $state, EventService, $upload, $log) {
+        $scope.eventName = $stateParams.eventName;
+        $scope.categoryId = $stateParams.categoryId;
+
+        $scope.sendCodes = function(data) {
+            EventService.sendCodesByEmail($stateParams.eventName, $stateParams.categoryId, data).success(function() {
+                alert('Codes have been successfully sent');
+                $state.go('events.detail', {eventName: $stateParams.eventName});
+            }).error(function(e) {
+                alert(e.data);
+            });
+        };
+
+        $scope.uploadFile = function(files) {
+            $scope.results = [];
+            $scope.upload = $upload.upload({
+                url: '/admin/api/events/'+$stateParams.eventName+'/categories/'+$stateParams.categoryId+'/link-codes',
+                method: 'POST',
+                file: files[0]
+            }).progress(function(evt) {
+                $log.info('progress: ' + parseInt(100.0 * evt.loaded / evt.total) + '% file : '+ evt.config.file.name);
+            }).success(function(data/*, status, headers, config*/) {
+                $scope.results = data;
+            }).error(function(e) {
+                alert(e.data);
             });
         };
     });
