@@ -29,7 +29,9 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import javax.servlet.FilterRegistration.Dynamic;
-import javax.servlet.*;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.SessionCookieConfig;
 
 @Log4j2
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
@@ -77,11 +79,6 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 		}
 		this.environment = environment;
 		return ctx;
-	}
-
-	@Override
-	protected void customizeRegistration(ServletRegistration.Dynamic registration) {
-		registration.setMultipartConfig(new MultipartConfigElement(null, 1024000L, -1, 1024));
 	}
 
 	private void configureSessionCookie(ServletContext servletContext) {
