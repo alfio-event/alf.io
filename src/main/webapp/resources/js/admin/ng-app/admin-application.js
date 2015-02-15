@@ -645,6 +645,10 @@
 				$scope.$apply(function() {
 					$scope.scanning.visible = false;
 					$scope.scanning.ticket.code = result;
+					
+					CheckInService.getTicket($scope.event.id, result).success(function(result) {
+						$scope.scanning.scannedTicketInfo = result;
+					});
 				});
 			}
 		}, false);
@@ -768,6 +772,7 @@
     		ticket.code = null;
     		$scope.checkInResult = null;
     		$scope.confirmPaymentResult = null;
+    		$scope.scanning.scannedTicketInfo = null;
     	};
     });
 

@@ -73,6 +73,18 @@ public class CheckInApiController {
 		this.ticketRepository = ticketRepository;
 		this.checkInManager = checkInManager;
 	}
+	
+	@RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}", method = GET)
+	public Ticket findTicketWithUUID(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
+		Optional<Event> event = optionally(() -> eventRepository.findById(eventId));
+		Optional<Ticket> ticket = optionally(() -> ticketRepository.findByUUID(ticketIdentifier));
+		
+		if(event.isPresent() && ticket.isPresent()) {
+			return ticket.get();
+		} else {
+			return null;
+		}
+	}
 
 	@RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}", method = POST)
 	public CheckInResult checkIn(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestBody TicketCode ticketCode) {

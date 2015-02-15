@@ -1,4 +1,4 @@
-<div class="container" data-ng-init="scanning.visible = false;scanning.ticket = {};checkInResult = {}">
+<div class="container" data-ng-init="scanning.visible = false;scanning.ticket = {};checkInResult = {};">
 	<div class="page-header" data-ng-if="!scanning.visible && scanning.ticket.code == null">
 		<h1>Check-In: {{event.shortName}}</h1>
 	</div>
@@ -23,7 +23,19 @@
 			<div data-ng-show="scanning.ticket.code != null">
 				<p>Scanned value:</p>
 				<textarea class="form-control" rows="3" data-ng-model="scanning.ticket.code"></textarea>
-				
+				<table>
+					<tr><th>Ticket status</th><td>{{scanning.scannedTicketInfo.status}}</td></tr>
+					<tr><th>Full name</th><td>{{scanning.scannedTicketInfo.fullName}}</td></tr>
+					<tr><th>Email</th><td>{{scanning.scannedTicketInfo.email}}</td></tr>
+					<tr data-ng-if="scanning.scannedTicketInfo.jobTitle"><th></th><td>{{scanning.scannedTicketInfo.jobTitle}}</td></tr>
+					<tr data-ng-if="scanning.scannedTicketInfo.company"><th>Company</th><td>{{scanning.scannedTicketInfo.company}}</td></tr>
+					<tr data-ng-if="scanning.scannedTicketInfo.phoneNumber"><th>Phone number</th><td>{{scanning.scannedTicketInfo.phoneNumber}}</td></tr>
+					<tr data-ng-if="scanning.scannedTicketInfo.address"><th>Address</th><td>{{scanning.scannedTicketInfo.address}}</td></tr>
+					<tr data-ng-if="scanning.scannedTicketInfo.country"><th>Country</th><td>{{scanning.scannedTicketInfo.country}}</td></tr>
+					<tr data-ng-if="scanning.scannedTicketInfo.tshirtSize"><th>T-Shirt size</th><td>{{scanning.scannedTicketInfo.tshirtSize}}</td></tr>
+					<tr data-ng-if="scanning.scannedTicketInfo.notes"><th>Notes</th><td>{{scanning.scannedTicketInfo.notes}}</td></tr>
+					<tr data-ng-if="scanning.scannedTicketInfo.userLanguage"><th>Language</th><td>{{scanning.scannedTicketInfo.userLanguage}}</td></tr>
+				</table>
 				<div class="form-group" data-ng-if="checkInResult.status">
 					{{checkInResult.status}} : {{checkInResult.message}}
 				</div>
@@ -33,7 +45,7 @@
 				</div>
 				
 				<button type="submit" class="btn btn-primary">Submit</button>
-				<button type="button" class="btn btn-primary" data-ng-click="scanning.ticket.code = null; scanning.visible = true;checkInResult.status = null">Redo scan</button>
+				<button type="button" class="btn btn-primary" data-ng-click="scanning.ticket.code = null; scanning.visible = true;checkInResult.status = null; scanning.scannedTicketInfo = null">Redo scan</button>
 				<button type="reset" class="btn btn-default" data-ng-click="stopScanning();resetForm(scanning.ticket)">Stop scanning</button>
 			</div>
 		</form>

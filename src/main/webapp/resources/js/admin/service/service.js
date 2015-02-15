@@ -211,6 +211,11 @@
     			return $http.get('/admin/api/check-in/' + eventId + '/ticket');
     		},
     		
+    		getTicket: function(eventId, code) {
+    			var ticketIdentifier = code.split('/')[0];
+    			return $http.get('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier);
+    		},
+    		
     		checkIn: function(eventId, ticket) {
     			var ticketIdentifier = ticket.code.split('/')[0]
     			return $http['post']('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier, ticket);
