@@ -342,6 +342,7 @@
                             <scanIntervalSeconds>0</scanIntervalSeconds>
                             <daemon>true</daemon>
 							<stopPort>8887</stopPort>
+                            <stopKey>STOP</stopKey>
 							<httpConnector>
 								<port>8888</port>
 								<host>0.0.0.0</host>
@@ -354,6 +355,10 @@
                         <goals>
                             <goal>stop</goal>
                         </goals>
+                        <configuration>
+                            <stopPort>8887</stopPort>
+                            <stopKey>STOP</stopKey>
+                        </configuration>
                     </execution>
                 </executions>
                 <dependencies>
