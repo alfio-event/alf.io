@@ -31,6 +31,7 @@ import alfio.model.user.Organization;
 import alfio.model.user.User;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
+import com.opencsv.CSVReader;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -40,13 +41,11 @@ import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.*;
-import java.util.regex.MatchResult;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.MAPS_CLIENT_API_KEY;
@@ -197,17 +196,20 @@ public class AdminApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/bulk-confirmation", method = POST)
-    public List<Triple<Boolean, String, String>> bulkConfirmation(@PathVariable("eventName") String eventName, Principal principal, @RequestParam("file") MultipartFile file) throws IOException {
-        try(BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+    public List<Triple<Boolean, String, String>> bulkConfirmation(@PathVariable("eventName") String eventName,
+                                                                  Principal principal,
+                                                                  @RequestParam("file") MultipartFile file) throws IOException {
+
+        try(InputStreamReader isr = new InputStreamReader(file.getInputStream())) {
+            CSVReader reader = new CSVReader(isr);
             String username = principal.getName();
-            return reader.lines()
+            return reader.readAll().stream()
                     .map(line -> {
                         String reservationID = null;
-                        try (Scanner scanner = new Scanner(line)) {
-                            scanner.findInLine("([a-zA-Z0-9\\-]+);(\\d+(\\.\\d+)?)");
-                            MatchResult match = scanner.match();
-                            reservationID = match.group(1);
-                            eventManager.confirmPayment(eventName, reservationID, new BigDecimal(match.group(2)), username);
+                        try {
+                            Validate.isTrue(line.length >= 2);
+                            reservationID = line[0];
+                            eventManager.confirmPayment(eventName, reservationID, new BigDecimal(line[1]), username);
                             return Triple.of(Boolean.TRUE, reservationID, "");
                         } catch (Exception e) {
                             return Triple.of(Boolean.FALSE, Optional.ofNullable(reservationID).orElse(""), e.getMessage());

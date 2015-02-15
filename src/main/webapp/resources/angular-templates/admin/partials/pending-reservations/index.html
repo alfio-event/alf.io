@@ -41,7 +41,22 @@
             <small class="text-muted">Upload CSV file(s) with received payments</small>
         </div>
 
-        <div class="drop-file-zone wMarginBottom well" data-accept="text/*" data-ng-file-change="uploadFiles($files)" data-ng-file-drop data-drag-over-class="drop-file-zone-hover">
+        <div>
+            <h2>File Specifications:</h2>
+            <h3>General</h3>
+            <span>Please create a CSV file without header, using commas (<strong>,</strong>) as separator, double quotes (<strong>"</strong>)as quote character and backslash (<strong>\</strong>) as escaping character</span>
+            <h3>Row specification</h3>
+            <pre>
+                <span class="text-info">abcd-efghi-jklm</span><strong>,</strong><span class="text-danger">10.00</span>
+
+                where:
+
+                <span class="text-info">abcd-efghi-jklm</span> is the partial or full reservation code
+                <span class="text-danger">10.00</span> is the amount of the payment
+            </pre>
+        </div>
+
+        <div class="drop-file-zone wMarginBottom well" data-accept="text/*" data-ng-file-change="uploadFiles($files)" data-ng-file-drop data-drag-over-class="'drop-file-zone-hover'">
             Drop file(s) here
         </div>
 
