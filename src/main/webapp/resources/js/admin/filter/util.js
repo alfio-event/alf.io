@@ -33,6 +33,9 @@
 
     filters.filter('mailSettingsFilter', function() {
         return function(list, mailType) {
+            if(angular.isUndefined(mailType) || mailType === null) {
+                return [];
+            }
             var referenceKey = mailType.toUpperCase();
             return _.filter(list, function(e) {
                 return e.key.toUpperCase().indexOf(referenceKey) > -1;
