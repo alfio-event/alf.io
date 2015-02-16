@@ -65,9 +65,17 @@
 							});
 						}
 					},
-					complete: function() {
-						$('#loading-'+uuid).hide();
-						$('#buttons-bar-'+uuid).show();
+                    error: function(xhr, textStatus, errorThrown) {
+                        $('#error-'+uuid).addClass('show');
+                        $('#loading-'+uuid).hide();
+                        $('#buttons-bar-'+uuid).show();
+                    },
+					complete: function(xhr) {
+                        xhr.done(function() {
+                            $('#error-'+uuid).removeClass('show');
+                            $('#loading-'+uuid).hide();
+                            $('#buttons-bar-'+uuid).show();
+                        });
 					}
 				});
 				return false;

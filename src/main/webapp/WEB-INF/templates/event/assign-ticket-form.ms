@@ -92,6 +92,7 @@
             <textarea name="notes" id="notes-{{uuid}}" class="form-control" maxlength="1024" placeholder="{{#i18n}}reservation-page-complete.notes.placeholder{{/i18n}}">{{notes}}</textarea>
         </div>
     </div>
+    <div class="text-center hide alert alert-danger" id="error-{{uuid}}"><i class="fa fa-exclamation"></i> {{#i18n}}error.generic{{/i18n}}</div>
     <!-- -->
     <div class="form-group" id="buttons-bar-{{uuid}}">
         <div class="col-sm-offset-3 col-sm-9">
