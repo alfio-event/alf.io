@@ -86,3 +86,12 @@ div.wMarginBottom {
 .to-uppercase {
 	text-transform: uppercase;
 }
+
+.video-container {
+	width:100%;
+	overflow: hidden;
+}
+
+.video-container video {
+	width: 100%;
+}
