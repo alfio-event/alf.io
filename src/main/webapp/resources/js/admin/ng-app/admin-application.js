@@ -689,7 +689,7 @@
 			
 			timeoutPromise = $timeout(function() {
 				captureFrame();
-			}, 500);
+			}, 250);
     	}
     	
     	
