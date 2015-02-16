@@ -31,10 +31,10 @@
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
 <body>
-    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation" data-ng-controller="MenuController">
         <div class="container">
             <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <button type="button" class="navbar-toggle" data-ng-click="toggleCollapse(menuCollapsed)">
                     <span class="sr-only">Toggle navigation</span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
@@ -43,10 +43,10 @@
                 <a class="navbar-brand logo" data-ui-sref="index">{{#i18n}}admin.title{{/i18n}}</a>
             </div>
             <div class="navbar-left">
-                <div class="collapse navbar-collapse">
+                <div class="collapse navbar-collapse" data-collapse="menuCollapsed">
                     <ul class="nav navbar-nav">
-                        <li><a data-ui-sref="index">Dashboard</a></li>
-                        <li><a data-ui-sref="configuration">Configuration</a></li>
+                        <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
+                        <li data-ui-sref-active="active"><a data-ui-sref="configuration">Configuration</a></li>
                     </ul>
                 </div>
             </div>

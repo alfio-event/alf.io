@@ -157,6 +157,13 @@
         };
     });
 
+    admin.controller('MenuController', function($scope) {
+        $scope.menuCollapsed = true;
+        $scope.toggleCollapse = function(currentStatus) {
+            $scope.menuCollapsed = !currentStatus;
+        };
+    });
+
     admin.controller('CreateUserController', function($scope, $state, $rootScope, $q, OrganizationService, UserService) {
         $scope.user = {};
         $scope.organizations = {};
