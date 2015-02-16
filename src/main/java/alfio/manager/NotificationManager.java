@@ -27,6 +27,7 @@ import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EmailMessageRepository;
+import alfio.repository.EventRepository;
 import com.google.gson.*;
 import com.lowagie.text.DocumentException;
 import lombok.extern.log4j.Log4j2;
@@ -59,6 +60,7 @@ public class NotificationManager {
     private final TransactionTemplate tx;
     private final EmailQueue messages;
     private final ConfigurationManager configurationManager;
+    private final EventRepository eventRepository;
     private final Gson gson;
 
     @Autowired
@@ -66,11 +68,13 @@ public class NotificationManager {
                                MessageSource messageSource,
                                PlatformTransactionManager transactionManager,
                                EmailMessageRepository emailMessageRepository,
-                               ConfigurationManager configurationManager) {
+                               ConfigurationManager configurationManager,
+                               EventRepository eventRepository) {
         this.messageSource = messageSource;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
         this.configurationManager = configurationManager;
+        this.eventRepository = eventRepository;
         this.messages = new EmailQueue();
         this.tx = new TransactionTemplate(transactionManager);
         GsonBuilder builder = new GsonBuilder();
@@ -142,8 +146,9 @@ public class NotificationManager {
     }
 
     private void sendMessage(EmailMessage message) {
-        EmailMessage storedMessage = emailMessageRepository.findByEventIdAndChecksum(message.getEventId(), message.getChecksum(), IN_PROCESS.name());
-        mailer.send(message.getRecipient(), message.getSubject(), storedMessage.getMessage(), Optional.empty(), decodeAttachments(storedMessage.getAttachments()));
+        Event event = eventRepository.findById(message.getEventId());
+        EmailMessage storedMessage = emailMessageRepository.findByEventIdAndChecksum(event.getId(), message.getChecksum(), IN_PROCESS.name());
+        mailer.send(event.getShortName(), message.getRecipient(), message.getSubject(), storedMessage.getMessage(), Optional.empty(), decodeAttachments(storedMessage.getAttachments()));
         emailMessageRepository.updateStatusToSent(storedMessage.getEventId(), storedMessage.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
     }
 

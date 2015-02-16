@@ -44,6 +44,8 @@ public enum ConfigurationKeys {
 
     MAX_EMAIL_PER_CYCLE("How many e-mail should be managed within 5 sec.", false, Type.MAIL),
 
+    MAIL_REPLY_TO("Reply-to address", false, Type.MAIL),
+
     //smtp configuration related keys
     SMTP_HOST("SMTP hostname", false, Type.MAIL),
     SMTP_PORT("SMTP port", false, Type.MAIL),

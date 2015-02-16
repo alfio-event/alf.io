@@ -22,7 +22,7 @@ import java.util.Optional;
 
 public interface Mailer {
 
-	void send(String to, String subject, String text, Optional<String> html, Attachment... attachment);
+	void send(String eventName, String to, String subject, String text, Optional<String> html, Attachment... attachment);
 
 	@Data
 	public class Attachment {

@@ -21,6 +21,7 @@ import com.squareup.okhttp.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -34,17 +35,21 @@ class MailgunMailer implements Mailer {
 	private final ConfigurationManager configurationManager;
 
 	
-	private RequestBody prepareBody(String to, String subject, String text,
+	private RequestBody prepareBody(String eventName, String to, String subject, String text,
 			Optional<String> html, Attachment... attachments)
 			throws IOException {
 
-		String from = configurationManager
-				.getRequiredValue(ConfigurationKeys.MAILGUN_FROM);
+		String from = eventName + " <" + configurationManager.getRequiredValue(ConfigurationKeys.MAILGUN_FROM) +">";
 
 		if (ArrayUtils.isEmpty(attachments)) {
 			FormEncodingBuilder builder = new FormEncodingBuilder()
 					.add("from", from).add("to", to).add("subject", subject)
 					.add("text", text);
+
+            String replyTo = configurationManager.getStringConfigValue(ConfigurationKeys.MAIL_REPLY_TO, "");
+            if(StringUtils.isNotBlank(replyTo)) {
+                builder.add("h:Reply-To", replyTo);
+            }
 			html.ifPresent((htmlContent) -> builder.add("html", htmlContent));
 			return builder.build();
 
@@ -72,7 +77,7 @@ class MailgunMailer implements Mailer {
 	}
 
 	@Override
-	public void send(String to, String subject, String text,
+	public void send(String eventName, String to, String subject, String text,
 			Optional<String> html, Attachment... attachment) {
 
 		String apiKey = configurationManager
@@ -82,7 +87,7 @@ class MailgunMailer implements Mailer {
 
 		try {
 
-			RequestBody formBody = prepareBody(to, subject, text, html,
+			RequestBody formBody = prepareBody(eventName, to, subject, text, html,
 					attachment);
 
 			Request request = new Request.Builder()

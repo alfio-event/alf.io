@@ -803,7 +803,8 @@
             $scope.mail = {
                 settings: _.filter(result['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
                 type: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAILER_TYPE';}),
-                maxEmailPerCycle: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';})
+                maxEmailPerCycle: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';}),
+                mailReplyTo: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';})
             };
             $scope.payment = {
                 settings: result['PAYMENT']

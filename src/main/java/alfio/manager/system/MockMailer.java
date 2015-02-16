@@ -17,8 +17,10 @@
 package alfio.manager.system;
 
 import alfio.config.Initializer;
+import alfio.model.system.ConfigurationKeys;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -29,9 +31,16 @@ import java.util.Optional;
 @Profile(Initializer.PROFILE_DEV)
 public class MockMailer implements Mailer {
 
-	@Override
-	public void send(String to, String subject, String text, Optional<String> html, Attachment... attachments) {
-		log.info("Email: to: {}, subject: {}, text: {}, html: {}, attachments amount: {}", to, subject, text,
+    private final ConfigurationManager configurationManager;
+
+    @Autowired
+    public MockMailer(ConfigurationManager configurationManager) {
+        this.configurationManager = configurationManager;
+    }
+
+    @Override
+	public void send(String eventName, String to, String subject, String text, Optional<String> html, Attachment... attachments) {
+		log.info("Email: from: {}, replyTo: {}, to: {}, subject: {}, text: {}, html: {}, attachments amount: {}", eventName, configurationManager.getStringConfigValue(ConfigurationKeys.MAIL_REPLY_TO, ""), to, subject, text,
 				html.orElse("no html"), ArrayUtils.getLength(attachments));
 	}
 }

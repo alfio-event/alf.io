@@ -20,6 +20,7 @@ import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -46,13 +47,17 @@ class SmtpMailer implements Mailer {
 	private final ConfigurationManager configurationManager;
 
 	@Override
-	public void send(String to, String subject, String text,
+	public void send(String eventName, String to, String subject, String text,
 			Optional<String> html, Attachment... attachments) {
 		MimeMessagePreparator preparator = (mimeMessage) -> {
 			MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
 					: new MimeMessageHelper(mimeMessage, "UTF-8");
 			message.setSubject(subject);
-			message.setFrom(configurationManager.getRequiredValue(ConfigurationKeys.SMTP_FROM_EMAIL));
+			message.setFrom(configurationManager.getRequiredValue(ConfigurationKeys.SMTP_FROM_EMAIL), eventName);
+            String replyTo = configurationManager.getStringConfigValue(ConfigurationKeys.MAIL_REPLY_TO, "");
+            if(StringUtils.isNotBlank(replyTo)) {
+                message.setReplyTo(replyTo);
+            }
 			message.setTo(to);
 			if (html.isPresent()) {
 				message.setText(text, html.get());

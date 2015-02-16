@@ -45,15 +45,15 @@ public class DefaultMailer implements Mailer {
 	}
 
 	@Override
-	public void send(String to, String subject, String text,
+	public void send(String eventName, String to, String subject, String text,
 			Optional<String> html, Attachment... attachments) {
 
 		String mailerType = configurationManager.getStringConfigValue(
 				ConfigurationKeys.MAILER_TYPE, "smtp").toLowerCase(
 				Locale.ENGLISH);
 
-		mailers.getOrDefault(mailerType, defaultMailer).send(to, subject, text,
-				html, attachments);
+		mailers.getOrDefault(mailerType, defaultMailer)
+                .send(eventName, to, subject, text, html, attachments);
 	}
 
 }
