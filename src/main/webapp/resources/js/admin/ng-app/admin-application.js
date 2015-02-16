@@ -653,14 +653,19 @@
 			}
 		}, false);
 		
+		function endVideoStream() {
+			if (!!$scope.stream) {
+    			$scope.stream.stop();
+    		}
+		}
+		
 		$scope.$on('$destroy', function() {
 			worker.terminate();
+			endVideoStream();
 		});
     	
     	function stopScanning() {
-    		if (!!$scope.stream) {
-    			$scope.stream.stop();
-    		}
+    		endVideoStream();
     		$scope.scanning.visible = false; 
     		$timeout.cancel(timeoutPromise);
     	}
@@ -697,12 +702,11 @@
     		if(source == undefined) {
     			return;
     		}
-    		
+
+    		endVideoStream();
     		var videoElement = document.getElementById('checkInVideoElement');
-    		if (!!$scope.stream) {
-    			videoElement.src = null;
-    			$scope.stream.stop();
-    		}
+    		videoElement.src = null;
+    		
     		
     		var constraint = {video: {optional: [{sourceId: source.source.id}]}};
     		
