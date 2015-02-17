@@ -3,10 +3,10 @@
 		<h1>Check-In: {{event.shortName}}</h1>
 	</div>
 
-	<div class="page-header">
+	<div class="page-header" data-ng-if="canReadCamera">
 		<h2>Scan the ticket for event {{event.shortName}}</h2>
 	</div>
-	<div>
+	<div  data-ng-if="canReadCamera">
 		<form data-ng-submit="scanning.visible = false; checkIn(scanning.ticket)">
 			<div data-ng-hide="scanning.visible">
 				<p><button class="btn btn-primary" type="button" data-ng-click="scanning.visible = true;selectSource(selectedSource);">Scan</button></p>

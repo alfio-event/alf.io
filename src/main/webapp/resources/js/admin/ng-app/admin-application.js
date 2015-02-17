@@ -635,111 +635,113 @@
     
     admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log, EventService, CheckInService) {
     	
+    	var canReadCamera = MediaStreamTrack.getSources !== undefined;
     	
-    	navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-    	
-    	$scope.videos = [];
-    	$scope.stream = null;
-    	
-    	var timeoutPromise = null;
-    	var worker = new Worker("../resources/js/jsqrcode/decode-worker.js");
-    	
-		worker.addEventListener('message', function(message) {
-			var result = message.data;
-			if(result === 'error decoding QR Code') {
-				$log.debug('error decoding qr code');
-			} else {
-				$scope.$apply(function() {
-					$scope.scanning.visible = false;
-					$scope.scanning.ticket.code = result;
-					
-					CheckInService.getTicket($scope.event.id, result).success(function(result) {
-						$scope.scanning.scannedTicketInfo = result;
-					});
-				});
-			}
-		}, false);
-		
-		function endVideoStream() {
-			if (!!$scope.stream) {
-    			$scope.stream.stop();
-    		}
-		}
-		
-		$scope.$on('$destroy', function() {
-			worker.terminate();
-			endVideoStream();
-		});
-    	
-    	function stopScanning() {
-    		endVideoStream();
-    		$scope.scanning.visible = false; 
-    		$timeout.cancel(timeoutPromise);
-    	}
-    	
-    	
-    	$scope.stopScanning = stopScanning;
-    	
-    	$scope.$on('$destroy', stopScanning);
-    	
-    	function captureFrame() {
-    		if($scope.scanning.visible) {
-    			$log.debug('try to capture frame');
-	    		try {
-	    			var videoElement = document.getElementById('checkInVideoElement');
-					var canvas = document.getElementById("checkInImageCanvas");
-					canvas.height = videoElement.videoHeight;
-					canvas.width = videoElement.videoWidth;
-					
-					canvas.getContext("2d").drawImage(videoElement, 0, 0);
-					var imageData = canvas.getContext("2d").getImageData(0,0,canvas.width, canvas.height);
-					worker.postMessage(imageData);
-				} catch(e) {
-					$log.debug('error', e)
-				}
-    		}
-			
-			timeoutPromise = $timeout(function() {
-				captureFrame();
-			}, 250);
-    	}
-    	
-    	
-    	$scope.selectSource = function(source) {
-    		if(source == undefined) {
-    			return;
-    		}
-
-    		endVideoStream();
-    		var videoElement = document.getElementById('checkInVideoElement');
-    		videoElement.src = null;
+    	$scope.canReadCamera = canReadCamera; 
+    	if(canReadCamera) {
     		
-    		
-    		var constraint = {video: {optional: [{sourceId: source.source.id}]}};
-    		
-    		navigator.getUserMedia(constraint, function(stream) {
-    			$scope.stream = stream; // make stream available to console
-    			videoElement.src = window.URL.createObjectURL(stream);
-    			videoElement.play();
-    			$timeout.cancel(timeoutPromise);
-    			captureFrame();
-    		}, function() {
-    			alert('error while loading camera');
-    			$timeout.cancel(timeoutPromise);
-    		});
-    	};
-    	
-    	MediaStreamTrack.getSources(function(sources) {
-    		var videos = [];
-    		angular.forEach(sources, function(v,i) {
-    			if(v.kind === 'video') {
-    				videos.push({ source: v, label: (v.label || 'camera ' + i)});
+    		navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+    		$scope.videos = [];
+        	$scope.stream = null;
+        	
+        	var timeoutPromise = null;
+        	var worker = new Worker("../resources/js/jsqrcode/decode-worker.js");
+        	
+    		worker.addEventListener('message', function(message) {
+    			var result = message.data;
+    			if(result === 'error decoding QR Code') {
+    				$log.debug('error decoding qr code');
+    			} else {
+    				$scope.$apply(function() {
+    					$scope.scanning.visible = false;
+    					$scope.scanning.ticket.code = result;
+    					
+    					CheckInService.getTicket($scope.event.id, result).success(function(result) {
+    						$scope.scanning.scannedTicketInfo = result;
+    					});
+    				});
     			}
+    		}, false);
+    		
+    		var captureFrame = function() {
+        		if($scope.scanning.visible) {
+        			$log.debug('try to capture frame');
+    	    		try {
+    	    			var videoElement = document.getElementById('checkInVideoElement');
+    					var canvas = document.getElementById("checkInImageCanvas");
+    					canvas.height = videoElement.videoHeight;
+    					canvas.width = videoElement.videoWidth;
+    					
+    					canvas.getContext("2d").drawImage(videoElement, 0, 0);
+    					var imageData = canvas.getContext("2d").getImageData(0,0,canvas.width, canvas.height);
+    					worker.postMessage(imageData);
+    				} catch(e) {
+    					$log.debug('error', e)
+    				}
+        		}
+    			
+    			timeoutPromise = $timeout(function() {
+    				captureFrame();
+    			}, 250);
+        	}
+    		
+    		var endVideoStream = function () {
+    			if (!!$scope.stream) {
+        			$scope.stream.stop();
+        		}
+    		}
+    		
+    		var stopScanning = function () {
+        		endVideoStream();
+        		$scope.scanning.visible = false; 
+        		$timeout.cancel(timeoutPromise);
+        	}
+    		
+    		$scope.$on('$destroy', function() {
+    			worker.terminate();
+    			endVideoStream();
+    			stopScanning();
     		});
-    		$scope.$apply(function() {
-    			$scope.videos = videos;
-    		});
-    	});
+    		
+    		$scope.stopScanning = stopScanning;
+        	
+        	$scope.selectSource = function(source) {
+        		if(source == undefined) {
+        			return;
+        		}
+
+        		endVideoStream();
+        		var videoElement = document.getElementById('checkInVideoElement');
+        		videoElement.src = null;
+        		
+        		
+        		var constraint = {video: {optional: [{sourceId: source.source.id}]}};
+        		
+        		navigator.getUserMedia(constraint, function(stream) {
+        			$scope.stream = stream; // make stream available to console
+        			videoElement.src = window.URL.createObjectURL(stream);
+        			videoElement.play();
+        			$timeout.cancel(timeoutPromise);
+        			captureFrame();
+        		}, function() {
+        			alert('error while loading camera');
+        			$timeout.cancel(timeoutPromise);
+        		});
+        	};
+        	
+        	MediaStreamTrack.getSources(function(sources) {
+        		var videos = [];
+        		angular.forEach(sources, function(v,i) {
+        			if(v.kind === 'video') {
+        				videos.push({ source: v, label: (v.label || 'camera ' + i)});
+        			}
+        		});
+        		$scope.$apply(function() {
+        			$scope.videos = videos;
+        		});
+        	});
+    		
+    	}
     	
     	EventService.getEvent($stateParams.eventName).success(function(result) {
     		$scope.event = result.event;
