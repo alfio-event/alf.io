@@ -82,7 +82,9 @@ public class UsersApiController {
     }
 
     @RequestMapping(value = "/users/{id}", method = GET)
-    public User loadUser(@PathVariable("id") int userId) {
-        return userManager.findUser(userId);
+    public UserModification loadUser(@PathVariable("id") int userId) {
+        User user = userManager.findUser(userId);
+        List<Organization> userOrganizations = userManager.findUserOrganizations(user);
+        return new UserModification(user.getId(), userOrganizations.get(0).getId(), user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress());
     }
 }

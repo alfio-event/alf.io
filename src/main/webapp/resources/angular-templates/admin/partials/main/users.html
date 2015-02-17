@@ -13,7 +13,7 @@
         <tbody>
             <tr data-ng-repeat="user in users" data-ng-class-even="active">
                 <td>{{user.id}}</td>
-                <td>{{user.username}}</td>
+                <td><a data-ui-sref="index.edit-user({userId:user.id})">{{user.username}}</a></td>
                 <td>
                     <a class="btn btn-xs btn-default" data-ui-sref="index.edit-user({userId:user.id})"><i class="fa fa-edit"></i><span class="sr-only">Edit</span></a>
                     <button class="btn btn-xs btn-danger" data-ng-click="deleteUser(user)"><i class="fa fa-trash"></i><span class="sr-only">Delete</span></button>
