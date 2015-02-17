@@ -33,7 +33,7 @@
         return {
             scope: true,
             templateUrl: '/resources/angular-templates/admin/partials/main/users.html',
-            controller: function($scope, $rootScope, UserService) {
+            controller: function($scope, $rootScope, UserService, $window) {
                 $scope.users = [];
                 var loadUsers = function() {
                     UserService.getAllUsers().success(function(result) {
@@ -44,6 +44,13 @@
                     loadUsers();
                 });
                 loadUsers();
+                $scope.deleteUser = function(user) {
+                    if($window.confirm('are you sure?')) {
+                        UserService.deleteUser(user).success(function() {
+                            loadUsers();
+                        });
+                    }
+                };
             },
             link: angular.noop
         };

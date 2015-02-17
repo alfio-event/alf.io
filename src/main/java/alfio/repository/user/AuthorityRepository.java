@@ -26,8 +26,9 @@ import java.util.List;
 @QueryRepository
 public interface AuthorityRepository {
 
-    String ROLE_ADMIN  = "ROLE_ADMIN";
-    String ROLE_OWNER  = "ROLE_OWNER";
+    String ROLE_ADMIN     = "ROLE_ADMIN";
+    String ROLE_OWNER     = "ROLE_OWNER";
+    String ROLE_OPERATOR  = "ROLE_OWNER";
 
     @Query("SELECT * from authority where username = :username")
     List<Authority> findGrantedAuthorities(@Bind("username") String username);

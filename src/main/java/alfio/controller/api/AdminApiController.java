@@ -20,15 +20,12 @@ import alfio.manager.EventManager;
 import alfio.manager.location.LocationManager;
 import alfio.manager.support.OrderSummary;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.user.UserManager;
 import alfio.model.TicketReservation;
 import alfio.model.modification.*;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
-import alfio.model.user.Organization;
-import alfio.model.user.User;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.opencsv.CSVReader;
@@ -56,17 +53,14 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 public class AdminApiController {
 
     private static final String OK = "OK";
-    private final UserManager userManager;
     private final EventManager eventManager;
     private final LocationManager locationManager;
     private final ConfigurationManager configurationManager;
 
     @Autowired
-    public AdminApiController(UserManager userManager,
-                              EventManager eventManager,
+    public AdminApiController(EventManager eventManager,
                               LocationManager locationManager,
                               ConfigurationManager configurationManager) {
-        this.userManager = userManager;
         this.eventManager = eventManager;
         this.locationManager = locationManager;
         this.configurationManager = configurationManager;
@@ -79,51 +73,10 @@ public class AdminApiController {
     }
 
 
-    @RequestMapping(value = "/organizations", method = GET)
-    @ResponseStatus(HttpStatus.OK)
-    public List<Organization> getAllOrganizations(Principal principal) {
-        return userManager.findUserOrganizations(principal.getName());
-    }
-
-    @RequestMapping(value = "/organizations/{id}", method = GET)
-    public Organization getOrganization(@PathVariable("id") int id, Principal principal) {
-        return userManager.findOrganizationById(id, principal.getName());
-    }
-
     @RequestMapping(value = "/paymentProxies", method = GET)
     @ResponseStatus(HttpStatus.OK)
     public List<PaymentProxy> getPaymentProxies() {
         return Arrays.asList(PaymentProxy.values());
-    }
-
-    @RequestMapping(value = "/users", method = GET)
-    public List<User> getAllUsers(Principal principal) {
-        return userManager.findAllUsers(principal.getName());
-    }
-
-
-    @RequestMapping(value = "/organizations/new", method = POST)
-    public String insertOrganization(@RequestBody OrganizationModification om) {
-        userManager.createOrganization(om.getName(), om.getDescription(), om.getEmail());
-        return OK;
-    }
-
-    @RequestMapping(value = "/organizations/check", method = POST)
-    public ValidationResult validateOrganization(@RequestBody OrganizationModification om) {
-        return userManager.validateOrganization(om.getId(), om.getName(), om.getEmail(), om.getDescription());
-    }
-
-    @RequestMapping(value = "/users/check", method = POST)
-    public ValidationResult validateUser(@RequestBody UserModification userModification) {
-        return userManager.validateUser(userModification.getId(), userModification.getUsername(),
-                userModification.getOrganizationId(), userModification.getFirstName(),
-                userModification.getLastName(), userModification.getEmailAddress());
-    }
-
-    @RequestMapping(value = "/users/new", method = POST)
-    public String insertUser(@RequestBody UserModification userModification) {
-        userManager.createUser(userModification.getOrganizationId(), userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress());
-        return OK;
     }
 
     @RequestMapping(value = "/events", method = GET)

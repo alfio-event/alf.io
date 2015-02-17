@@ -35,4 +35,7 @@ public interface UserOrganizationRepository {
     @Query("insert into j_user_organization (user_id, org_id) values(:userId, :organizationId)")
     int create(@Bind("userId") int userId, @Bind("organizationId") int organizationId);
 
+    @Query("update j_user_organization set org_id = :organizationId where user_id = :userId")
+    int updateUserOrganization(@Bind("userId") int userId, @Bind("organizationId") int organizationId);
+
 }

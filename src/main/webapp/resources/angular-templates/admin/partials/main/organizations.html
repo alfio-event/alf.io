@@ -1,27 +1,29 @@
 <div>
     <a data-ui-sref="index.new-organization">add new organization</a>
 </div>
-<table class="table">
-    <thead>
-        <tr>
-            <th>id</th>
-            <th>name</th>
-            <th>description</th>
-            <th>e-mail</th>
-            <th>actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr data-ng-if="!organizations || organizations.length == 0">
-            <td colspan="4">no organizations have been found. <a data-ui-sref="index.new-organization">Insert a new one</a></td>
-        </tr>
-        <tr data-ng-repeat="organization in organizations">
-            <td data-ng-class-even="'active'">{{organization.id}}</td>
-            <td data-ng-class-even="'active'">{{organization.name}}</td>
-            <td data-ng-class-even="'active'">{{organization.description}}</td>
-            <td data-ng-class-even="'active'">{{organization.email}}</td>
-            <td data-ng-class-even="'active'">actions</td>
-        </tr>
-    </tbody>
-</table>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>id</th>
+                <th>name</th>
+                <th>description</th>
+                <th>e-mail</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr data-ng-if="!organizations || organizations.length == 0">
+                <td colspan="4">no organizations have been found. <a data-ui-sref="index.new-organization">Insert a new one</a></td>
+            </tr>
+            <tr data-ng-repeat="organization in organizations">
+                <td data-ng-class-even="'active'">{{organization.id}}</td>
+                <td data-ng-class-even="'active'">{{organization.name}}</td>
+                <td data-ng-class-even="'active'">{{organization.description}}</td>
+                <td data-ng-class-even="'active'">{{organization.email}}</td>
+                <td data-ng-class-even="'active'">actions</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
 <div data-ui-view="newOrganization"></div>

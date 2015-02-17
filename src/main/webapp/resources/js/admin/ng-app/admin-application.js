@@ -27,11 +27,20 @@
                 }
             })
             .state('index.new-user', {
-                url: "new-user",
+                url: "users/new",
                 views: {
-                    "newUser": {
+                    "editUser": {
                         templateUrl: BASE_STATIC_URL + "/main/edit-user.html",
-                        controller: 'CreateUserController'
+                        controller: 'EditUserController'
+                    }
+                }
+            })
+            .state('index.edit-user', {
+                url: "users/:userId/edit",
+                views: {
+                    "editUser": {
+                        templateUrl: BASE_STATIC_URL + "/main/edit-user.html",
+                        controller: 'EditUserController'
                     }
                 }
             })
@@ -164,7 +173,12 @@
         };
     });
 
-    admin.controller('CreateUserController', function($scope, $state, $rootScope, $q, OrganizationService, UserService) {
+    admin.controller('EditUserController', function($scope, $state, $stateParams, $rootScope, $q, OrganizationService, UserService) {
+        if(angular.isDefined($stateParams.userId)) {
+            UserService.loadUser($stateParams.userId).success(function(result) {
+                $scope.user = result;
+            });
+        }
         $scope.user = {};
         $scope.organizations = {};
         OrganizationService.getAllOrganizations().success(function(result) {
@@ -176,7 +190,7 @@
                 return;
             }
             validationPerformer($q, UserService.checkUser, user, form).then(function() {
-                UserService.createUser(user).success(function() {
+                UserService.editUser(user).success(function() {
                     $rootScope.$emit('ReloadUsers', {});
                     $state.go('index');
                 });

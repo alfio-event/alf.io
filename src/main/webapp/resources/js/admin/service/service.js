@@ -39,11 +39,17 @@
             getAllUsers : function() {
                 return $http.get('/admin/api/users.json').error(HttpErrorHandler.handle);
             },
-            createUser : function(user) {
-                return $http['post']('/admin/api/users/new', user).error(HttpErrorHandler.handle);
+            editUser : function(user) {
+                return $http['post']('/admin/api/users/edit', user).error(HttpErrorHandler.handle);
             },
             checkUser : function(user) {
                 return $http['post']('/admin/api/users/check', user).error(HttpErrorHandler.handle);
+            },
+            loadUser: function(userId) {
+                return $http.get('/admin/api/users/'+userId+'.json').error(HttpErrorHandler.handle);
+            },
+            deleteUser: function(user) {
+                return $http['delete']('/admin/api/users/'+user.id).error(HttpErrorHandler.handle);
             }
         };
     });

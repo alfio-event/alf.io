@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import java.util.List;
 import java.util.Optional;
@@ -70,7 +71,12 @@ public class UserManager {
                 .stream()
                 .flatMap(o -> userOrganizationRepository.findByOrganizationId(o.getId()).stream())
                 .map(uo -> userRepository.findById(uo.getUserId()))
+                .filter(User::isEnabled)
                 .collect(toList());
+    }
+
+    public User findUser(int id) {
+        return userRepository.findById(id);
     }
 
     public List<Organization> findUserOrganizations(String username) {
@@ -126,12 +132,25 @@ public class UserManager {
     }
 
     @Transactional
-    public void createUser(int organizationId, String username, String firstName, String lastName, String emailAddress) {
-        Organization organization = organizationRepository.getById(organizationId);
-        String userPassword = PasswordGenerator.generateRandomPassword();
-        Pair<Integer, Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
-        userOrganizationRepository.create(result.getValue(), organization.getId());
-        authorityRepository.create(username, AuthorityRepository.ROLE_OWNER);
+    public void editUser(Optional<Integer> optionalId, int organizationId, String username, String firstName, String lastName, String emailAddress) {
+        if(optionalId.isPresent()) {
+            int id = optionalId.get();
+            Assert.isTrue(userOrganizationRepository.updateUserOrganization(id, organizationId) == 1, "unexpected error during organization update");
+            Assert.isTrue(userRepository.update(id, username, firstName, lastName, emailAddress) == 1, "unexpected error during user update");
+        } else {
+            Organization organization = organizationRepository.getById(organizationId);
+            String userPassword = PasswordGenerator.generateRandomPassword();
+            Pair<Integer, Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
+            userOrganizationRepository.create(result.getValue(), organization.getId());
+            authorityRepository.create(username, AuthorityRepository.ROLE_OWNER);
+        }
+    }
+
+    @Transactional
+    public void deleteUser(int userId, String currentUsername) {
+        User currentUser = userRepository.findEnabledByUsername(currentUsername);
+        Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot commit suicide");
+        Assert.isTrue(userRepository.toggleEnabled(userId, false) == 1, "unexpected update result");
     }
 
     public ValidationResult validateUser(Integer id, String username, int organizationId, String firstName, String lastName, String emailAddress) {

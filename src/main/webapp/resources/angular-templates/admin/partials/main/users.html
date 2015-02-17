@@ -1,20 +1,25 @@
 <div>
     <a data-ui-sref="index.new-user">add new user</a>
 </div>
-<table class="table">
-    <thead>
-        <tr>
-            <th>id</th>
-            <th>username</th>
-            <th>actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr data-ng-repeat="user in users" data-ng-class-even="active">
-            <td>{{user.id}}</td>
-            <td>{{user.username}}</td>
-            <td>actions</td>
-        </tr>
-    </tbody>
-</table>
-<div data-ui-view="newUser"></div>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>id</th>
+                <th>username</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr data-ng-repeat="user in users" data-ng-class-even="active">
+                <td>{{user.id}}</td>
+                <td>{{user.username}}</td>
+                <td>
+                    <a class="btn btn-xs btn-default" data-ui-sref="index.edit-user({userId:user.id})"><i class="fa fa-edit"></i><span class="sr-only">Edit</span></a>
+                    <button class="btn btn-xs btn-danger" data-ng-click="deleteUser(user)"><i class="fa fa-trash"></i><span class="sr-only">Delete</span></button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<div data-ui-view="editUser"></div>
