@@ -123,6 +123,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     					+ " style-src 'self';"//
     					+ " img-src 'self' https: data:;"//
     					+ " child-src 'self';"//webworker
+    					+ " frame-src 'self' https://js.stripe.com;"
     					+ " font-src 'self';"//
     					+ " media-src 'self';"//for loading camera api
     					+ " connect-src 'self' https://api.stripe.com;"); //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
