@@ -30,6 +30,9 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
 import com.google.zxing.WriterException;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.pdf.BaseFont;
+
 import org.springframework.web.servlet.support.RequestContextUtils;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
@@ -40,8 +43,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import lombok.extern.log4j.Log4j2;
 import static alfio.util.ImageUtil.createQRCode;
 
+@Log4j2
 public final class TemplateProcessor {
 
     private TemplateProcessor() {}
@@ -87,6 +92,7 @@ public final class TemplateProcessor {
                                                     TicketCategory ticketCategory,
                                                     Organization organization,
                                                     TemplateManager templateManager) {
+    	
         return () -> {
             String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
             //
@@ -103,6 +109,11 @@ public final class TemplateProcessor {
 
             ITextRenderer renderer = new ITextRenderer();
             renderer.setDocumentFromString(page);
+            try {
+            	renderer.getFontResolver().addFont("/alfio/font/DejaVuSansMono.ttf", BaseFont.IDENTITY_H, true);
+            } catch(IOException | DocumentException e) {
+            	log.warn("error while loading DejaVuSansMono.ttf font", e);
+            }
             renderer.layout();
             return renderer;
         };

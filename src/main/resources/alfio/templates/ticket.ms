@@ -1,8 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <html>
 	<head>
 		<style>
 			body {
-				font-family:monospace;
+				font-family:"DejaVu Sans Mono";
 			}
 			h1,h2,p {margin:0;}
 			h1 {
@@ -29,7 +30,7 @@
 		<h2>{{#i18n}}ticket.event-info{{/i18n}}</h2>
 		<table>
 			<tr>
-				<td style="width:150px">{{#i18n}}ticket.date-time{{/i18n}}</td>
+				<td style="width:180px">{{#i18n}}ticket.date-time{{/i18n}}</td>
 				<td>			{{#event.sameDay}}
 				{{#i18n}}event-days.same-day 
 					[{{#format-date}}{{event.begin}} EEE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
@@ -62,7 +63,7 @@
 		<h2>{{#i18n}}ticket.ticket{{/i18n}}</h2>
 		<table>
 			<tr>
-				<td style="width:150px">{{#i18n}}ticket.holder{{/i18n}}</td>
+				<td style="width:180px">{{#i18n}}ticket.holder{{/i18n}}</td>
 				<td>{{ticket.fullName}} &lt;{{ticket.email}}&gt;</td>
 			</tr>
 			<tr>
