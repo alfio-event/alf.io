@@ -28,8 +28,8 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.ImageUtil;
 import alfio.util.TemplateManager;
-import alfio.util.TicketUtil;
 import com.google.zxing.WriterException;
 import com.lowagie.text.DocumentException;
 import org.apache.commons.lang3.tuple.Triple;
@@ -163,7 +163,7 @@ public class TicketController {
 		String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
 		
 		response.setContentType("image/png");
-		response.getOutputStream().write(TicketUtil.createQRCode(qrCodeText));
+		response.getOutputStream().write(ImageUtil.createQRCode(qrCodeText));
 		
 	}
 

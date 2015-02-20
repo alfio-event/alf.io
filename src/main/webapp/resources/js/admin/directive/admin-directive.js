@@ -45,10 +45,17 @@
                 });
                 loadUsers();
                 $scope.deleteUser = function(user) {
-                    if($window.confirm('are you sure?')) {
+                    if($window.confirm('The user '+user.username+' will be deleted. Are you sure?')) {
                         UserService.deleteUser(user).success(function() {
                             loadUsers();
                         });
+                    }
+                };
+                $scope.resetPassword = function(user) {
+                    if($window.confirm('The password for the user '+ user.username+' will be reset. Are you sure?')) {
+                        UserService.resetPassword(user).success(function(reset) {
+                            UserService.showUserData(reset);
+                        })
                     }
                 };
             },

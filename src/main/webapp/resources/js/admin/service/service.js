@@ -34,13 +34,14 @@
         };
     });
 
-    baseServices.service('UserService', function($http, HttpErrorHandler) {
+    baseServices.service('UserService', function($http, $modal, HttpErrorHandler) {
         return {
             getAllUsers : function() {
                 return $http.get('/admin/api/users.json').error(HttpErrorHandler.handle);
             },
             editUser : function(user) {
-                return $http['post']('/admin/api/users/edit', user).error(HttpErrorHandler.handle);
+                var url = angular.isDefined(user.id) ? '/admin/api/users/edit' : '/admin/api/users/new';
+                return $http['post'](url, user).error(HttpErrorHandler.handle);
             },
             checkUser : function(user) {
                 return $http['post']('/admin/api/users/check', user).error(HttpErrorHandler.handle);
@@ -50,6 +51,23 @@
             },
             deleteUser: function(user) {
                 return $http['delete']('/admin/api/users/'+user.id).error(HttpErrorHandler.handle);
+            },
+            resetPassword: function(user) {
+                return $http['put']('/admin/api/users/'+user.id+'/reset-password').error(HttpErrorHandler.handle);
+            },
+
+            showUserData: function(user) {
+                return $modal.open({
+                    size:'sm',
+                    templateUrl:'/resources/angular-templates/admin/partials/event/fragment/show-user-data-modal.html',
+                    backdrop: 'static',
+                    controller: function($scope) {
+                        $scope.user = user;
+                        $scope.ok = function() {
+                            $scope.$close(true);
+                        };
+                    }
+                }).result;
             }
         };
     });

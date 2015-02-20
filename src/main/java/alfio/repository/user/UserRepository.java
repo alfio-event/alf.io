@@ -56,4 +56,7 @@ public interface UserRepository {
     @Query("update ba_user set enabled = :enabled where id = :id")
     int toggleEnabled(@Bind("id") int id, @Bind("enabled") boolean enabled);
 
+    @Query("update ba_user set password = :password where id = :id")
+    int resetPassword(@Bind("id") int id, @Bind("password") String newPassword);
+
 }

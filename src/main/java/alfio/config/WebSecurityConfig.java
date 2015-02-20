@@ -19,6 +19,7 @@ package alfio.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -28,6 +29,8 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 
 import javax.sql.DataSource;
+
+import static alfio.repository.user.AuthorityRepository.ROLE_OPERATOR;
 
 @Configuration
 @EnableWebMvcSecurity
@@ -69,7 +72,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .csrfTokenRepository(getCsrfTokenRepository())
             .and()
             .authorizeRequests()
-            .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/users/**", ADMIN_API + "/configuration/**", ADMIN_API + "/check-in/**").hasRole(ROLE_ADMIN)
+            .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/users/**", ADMIN_API + "/configuration/**").hasRole(ROLE_ADMIN)
+            .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ROLE_ADMIN, ROLE_OWNER, ROLE_OPERATOR)
+            .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ROLE_ADMIN, ROLE_OWNER, ROLE_OPERATOR)
             .antMatchers("/admin/**").hasAnyRole(ROLE_ADMIN, ROLE_OWNER)
             .antMatchers("/**").permitAll()
             .and()

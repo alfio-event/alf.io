@@ -29,8 +29,8 @@ import java.io.IOException;
 import java.util.EnumMap;
 import java.util.Map;
 
-public final class TicketUtil {
-    private TicketUtil() {
+public final class ImageUtil {
+    private ImageUtil() {
     }
 
     public static byte[] createQRCode(String text) {

@@ -29,21 +29,18 @@ import alfio.model.user.Organization;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
-
 import com.google.zxing.WriterException;
-
 import org.springframework.web.servlet.support.RequestContextUtils;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.IOException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static alfio.util.TicketUtil.createQRCode;
+import static alfio.util.ImageUtil.createQRCode;
 
 public final class TemplateProcessor {
 

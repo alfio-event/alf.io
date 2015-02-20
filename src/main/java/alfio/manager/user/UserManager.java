@@ -19,6 +19,7 @@ package alfio.manager.user;
 import alfio.model.user.Authority;
 import alfio.model.user.Organization;
 import alfio.model.user.User;
+import alfio.model.user.UserWithPassword;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
@@ -35,6 +36,7 @@ import org.springframework.util.Assert;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
@@ -132,18 +134,29 @@ public class UserManager {
     }
 
     @Transactional
-    public void editUser(Optional<Integer> optionalId, int organizationId, String username, String firstName, String lastName, String emailAddress) {
-        if(optionalId.isPresent()) {
-            int id = optionalId.get();
-            Assert.isTrue(userOrganizationRepository.updateUserOrganization(id, organizationId) == 1, "unexpected error during organization update");
-            Assert.isTrue(userRepository.update(id, username, firstName, lastName, emailAddress) == 1, "unexpected error during user update");
-        } else {
-            Organization organization = organizationRepository.getById(organizationId);
-            String userPassword = PasswordGenerator.generateRandomPassword();
-            Pair<Integer, Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
-            userOrganizationRepository.create(result.getValue(), organization.getId());
-            authorityRepository.create(username, AuthorityRepository.ROLE_OWNER);
-        }
+    public void editUser(int id, int organizationId, String username, String firstName, String lastName, String emailAddress) {
+        int userOrganizationResult = userOrganizationRepository.updateUserOrganization(id, organizationId);
+        Assert.isTrue(userOrganizationResult == 1, "unexpected error during organization update");
+        int userResult = userRepository.update(id, username, firstName, lastName, emailAddress);
+        Assert.isTrue(userResult == 1, "unexpected error during user update");
+    }
+
+    @Transactional
+    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress) {
+        Organization organization = organizationRepository.getById(organizationId);
+        String userPassword = PasswordGenerator.generateRandomPassword();
+        Pair<Integer, Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
+        userOrganizationRepository.create(result.getValue(), organization.getId());
+        authorityRepository.create(username, AuthorityRepository.ROLE_OPERATOR);
+        return new UserWithPassword(userRepository.findById(result.getValue()), userPassword, UUID.randomUUID().toString());
+    }
+
+    @Transactional
+    public UserWithPassword resetPassword(int userId) {
+        User user = findUser(userId);
+        String password = PasswordGenerator.generateRandomPassword();
+        Validate.isTrue(userRepository.resetPassword(userId, password) == 1, "error during password reset");
+        return new UserWithPassword(user, password, UUID.randomUUID().toString());
     }
 
     @Transactional

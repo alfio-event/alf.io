@@ -1,0 +1,14 @@
+<div class="modal-header">
+    <h1>User credentials</h1>
+</div>
+<div class="modal-body">
+    <pre>
+        <span class="user-detail">Username: {{user.username}}</span>
+        <span class="user-detail">Password: {{user.password}}</span>
+
+        <img class="img-thumbnail center-block" alt="qr code" data-ng-src="/admin/api/users/{{user.uniqueId}}.png">
+    </pre>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-default" data-ng-click="ok()">close</button>
+</div>

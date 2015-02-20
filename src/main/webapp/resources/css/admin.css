@@ -95,3 +95,7 @@ div.wMarginBottom {
 .video-container video {
 	width: 100%;
 }
+
+span.user-detail {
+    font-size: 20px;
+}

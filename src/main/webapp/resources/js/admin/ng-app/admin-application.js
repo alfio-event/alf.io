@@ -179,9 +179,11 @@
                 $scope.user = result;
             });
         }
+        var organizations = [];
         $scope.user = {};
-        $scope.organizations = {};
+        $scope.organizations = [];
         OrganizationService.getAllOrganizations().success(function(result) {
+            organizations = result;
             $scope.organizations = result;
         });
 
@@ -189,10 +191,22 @@
             if(!form.$valid) {
                 return;
             }
+
+            var successFn = function() {
+                $rootScope.$emit('ReloadUsers', {});
+                $state.go('index');
+            };
+
             validationPerformer($q, UserService.checkUser, user, form).then(function() {
-                UserService.editUser(user).success(function() {
-                    $rootScope.$emit('ReloadUsers', {});
-                    $state.go('index');
+                UserService.editUser(user).success(function(user) {
+                    if(angular.isDefined(user.password)) {
+                        UserService.showUserData(user).then(function() {
+                            successFn();
+                        });
+                    } else {
+                        successFn();
+                    }
+
                 });
             }, angular.noop);
         };

@@ -5,11 +5,18 @@ import alfio.model.modification.OrganizationModification;
 import alfio.model.modification.UserModification;
 import alfio.model.user.Organization;
 import alfio.model.user.User;
+import alfio.model.user.UserWithPassword;
+import alfio.util.ImageUtil;
 import alfio.util.ValidationResult;
+import lombok.Data;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
@@ -18,9 +25,11 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
 @RequestMapping("/admin/api")
+@Log4j2
 public class UsersApiController {
 
     private static final String OK = "OK";
+    private static final String USER_QR_CODE_KEY = "USER_QR_CODE";
     private final UserManager userManager;
 
     @Autowired
@@ -30,7 +39,9 @@ public class UsersApiController {
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseBody
     public String unhandledException(Exception e) {
+        log.error("unhandled exception", e);
         return e.getMessage();
     }
 
@@ -70,10 +81,31 @@ public class UsersApiController {
     }
 
     @RequestMapping(value = "/users/edit", method = POST)
-    public String insertUser(@RequestBody UserModification userModification) {
-        userManager.editUser(Optional.ofNullable(userModification.getId()), userModification.getOrganizationId(), userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress());
+    public String editUser(@RequestBody UserModification userModification) {
+        userManager.editUser(userModification.getId(), userModification.getOrganizationId(), userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress());
         return OK;
     }
+
+    @RequestMapping(value = "/users/new", method = POST)
+    public UserWithPassword insertUser(@RequestBody UserModification userModification, HttpSession session) {
+        UserWithPassword userWithPassword = userManager.insertUser(userModification.getOrganizationId(), userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress());
+        storePasswordImage(session, userWithPassword);
+        return userWithPassword;
+    }
+
+    @RequestMapping(value = "/users/{identifier}.png", method = GET)
+    public void loadUserImage(@PathVariable("identifier") String identifier, HttpSession session, HttpServletResponse response) throws IOException {
+        Optional<ImageDescriptor> optional = Optional.ofNullable((ImageDescriptor) session.getAttribute(USER_QR_CODE_KEY))
+                                                       .filter(a -> identifier.equals(a.getUserIdentifier()));
+        if(!optional.isPresent()) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        ImageDescriptor imageDescriptor = optional.get();
+        response.setContentType("image/png");
+        response.getOutputStream().write(imageDescriptor.getImage());
+    }
+
 
     @RequestMapping(value = "/users/{id}", method = DELETE)
     public String deleteUser(@PathVariable("id") int userId, Principal principal) {
@@ -86,5 +118,22 @@ public class UsersApiController {
         User user = userManager.findUser(userId);
         List<Organization> userOrganizations = userManager.findUserOrganizations(user);
         return new UserModification(user.getId(), userOrganizations.get(0).getId(), user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress());
+    }
+
+    @RequestMapping(value = "/users/{id}/reset-password", method = PUT)
+    public UserWithPassword resetPassword(@PathVariable("id") int userId, HttpSession session) {
+        UserWithPassword userWithPassword = userManager.resetPassword(userId);
+        storePasswordImage(session, userWithPassword);
+        return userWithPassword;
+    }
+
+    private void storePasswordImage(HttpSession session, UserWithPassword userWithPassword) {
+        session.setAttribute(USER_QR_CODE_KEY, new ImageDescriptor(userWithPassword.getUniqueId(), ImageUtil.createQRCode(userWithPassword.getPassword())));
+    }
+
+    @Data
+    private final class ImageDescriptor {
+        private final String userIdentifier;
+        private final byte[] image;
     }
 }
