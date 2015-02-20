@@ -126,7 +126,27 @@
 
         ];
     });
+
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+
+    admin.run(function($rootScope, $modal, $location, $state) {
+        $rootScope.$on('ErrorNotAuthorized', function() {
+            $modal.open({
+                size:'sm',
+                templateUrl:'/resources/angular-templates/admin/partials/error/not-authorized.html'
+            }).result.then(angular.noop, function() {
+                $state.go('index');
+            });
+        });
+        $rootScope.$on('ErrorNotLoggedIn', function() {
+            $modal.open({
+                size:'sm',
+                templateUrl:'/resources/angular-templates/admin/partials/error/not-logged-in.html'
+            }).result.then(angular.noop, function() {
+                $location.reload();
+            });
+        });
+    });
 
     var validationResultHandler = function(form, deferred) {
         return function(validationResult) {

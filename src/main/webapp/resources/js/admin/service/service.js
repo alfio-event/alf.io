@@ -14,7 +14,7 @@
                     if(status === 401) {
                         $location.reload();
                     } else if(status === 403) {
-                        alert('not authorized');
+                        $rootScope.$emit('ErrorNotAuthorized');
                         return false;
                     }
                     return $q.reject(rejection);
@@ -255,12 +255,12 @@
     		},
     		
     		checkIn: function(eventId, ticket) {
-    			var ticketIdentifier = ticket.code.split('/')[0]
+    			var ticketIdentifier = ticket.code.split('/')[0];
     			return $http['post']('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier, ticket);
     		},
     		
     		confirmPayment: function(eventId, ticket) {
-    			var ticketIdentifier = ticket.code.split('/')[0]
+    			var ticketIdentifier = ticket.code.split('/')[0];
     			return $http['post']('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier + '/confirm-on-site-payment');
     		}
     	};
