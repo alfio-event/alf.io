@@ -7,6 +7,20 @@
         var header = $("meta[name='_csrf_header']").attr("content");
         $httpProvider.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
         $httpProvider.defaults.headers.common[header] = token;
+        $httpProvider.interceptors.push(['$rootScope', '$location', function($rootScope, $location) {
+            return {
+                responseError: function(rejection) {//thanks to https://github.com/witoldsz/angular-http-auth/blob/master/src/http-auth-interceptor.js
+                    var status = rejection.status;
+                    if(status === 401) {
+                        $location.reload();
+                    } else if(status === 403) {
+                        alert('not authorized');
+                        return false;
+                    }
+                    return $q.reject(rejection);
+                }
+            };
+        }]);
     }]);
 
     baseServices.service("OrganizationService", function($http, HttpErrorHandler) {

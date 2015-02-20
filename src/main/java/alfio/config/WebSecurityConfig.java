@@ -30,8 +30,6 @@ import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 
 import javax.sql.DataSource;
 
-import static alfio.repository.user.AuthorityRepository.ROLE_OPERATOR;
-
 @Configuration
 @EnableWebMvcSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
@@ -39,8 +37,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public static final String ADMIN_API = "/admin/api";
     public static final String CSRF_SESSION_ATTRIBUTE = "CSRF_SESSION_ATTRIBUTE";
     public static final String CSRF_PARAM_NAME = "_csrf";
-    private static final String ROLE_ADMIN = "ADMIN";
-    private static final String ROLE_OWNER = "OWNER";
+    private static final String ADMIN = "ADMIN";
+    private static final String OWNER = "OWNER";
+    private static final String OPERATOR = "OPERATOR";
 
     @Autowired
     private DataSource dataSource;
@@ -72,10 +71,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .csrfTokenRepository(getCsrfTokenRepository())
             .and()
             .authorizeRequests()
-            .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/users/**", ADMIN_API + "/configuration/**").hasRole(ROLE_ADMIN)
-            .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ROLE_ADMIN, ROLE_OWNER, ROLE_OPERATOR)
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ROLE_ADMIN, ROLE_OWNER, ROLE_OPERATOR)
-            .antMatchers("/admin/**").hasAnyRole(ROLE_ADMIN, ROLE_OWNER)
+            .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/users/**", ADMIN_API + "/configuration/**").hasRole(ADMIN)
+            .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
+            .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
+            .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
+            .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
             .antMatchers("/**").permitAll()
             .and()
             .formLogin();
