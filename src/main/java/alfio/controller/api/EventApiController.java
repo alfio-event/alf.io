@@ -17,14 +17,12 @@
 package alfio.controller.api;
 
 import alfio.manager.EventManager;
-import alfio.manager.location.LocationManager;
 import alfio.manager.support.OrderSummary;
-import alfio.manager.system.ConfigurationManager;
 import alfio.model.TicketReservation;
-import alfio.model.modification.*;
-import alfio.model.modification.support.LocationDescriptor;
-import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
+import alfio.model.modification.EventModification;
+import alfio.model.modification.EventWithStatistics;
+import alfio.model.modification.TicketAllocationModification;
+import alfio.model.modification.TicketCategoryModification;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
@@ -45,25 +43,18 @@ import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationKeys.MAPS_CLIENT_API_KEY;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
 @RequestMapping("/admin/api")
-public class AdminApiController {
+public class EventApiController {
 
     private static final String OK = "OK";
     private final EventManager eventManager;
-    private final LocationManager locationManager;
-    private final ConfigurationManager configurationManager;
 
     @Autowired
-    public AdminApiController(EventManager eventManager,
-                              LocationManager locationManager,
-                              ConfigurationManager configurationManager) {
+    public EventApiController(EventManager eventManager) {
         this.eventManager = eventManager;
-        this.locationManager = locationManager;
-        this.configurationManager = configurationManager;
     }
 
     @ExceptionHandler(Exception.class)
@@ -170,50 +161,6 @@ public class AdminApiController {
                     })
                     .collect(Collectors.toList());
         }
-    }
-
-    @RequestMapping(value = "/location/geo", method = GET)
-    public LocationDescriptor geocodeAddress(@RequestParam("location") String address) {
-        Pair<String, String> coordinates = locationManager.geocode(address);
-        TimeZone timezone = locationManager.getTimezone(coordinates);
-        return LocationDescriptor.fromGeoData(coordinates, timezone, getMapsClientApiKey());
-    }
-
-    private Optional<String> getMapsClientApiKey() {
-        return configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY);
-    }
-
-    @RequestMapping(value = "/location/map", method = GET)
-    public String getMapUrl(@RequestParam("lat") String latitude, @RequestParam("long") String longitude) {
-        Validate.notBlank(latitude);
-        Validate.notBlank(longitude);
-        LocationDescriptor descriptor = LocationDescriptor.fromGeoData(Pair.of(latitude, longitude), TimeZone.getDefault(), getMapsClientApiKey());
-        return descriptor.getMapUrl();
-    }
-
-    @RequestMapping(value = "/configuration/load", method = GET)
-    public Map<ConfigurationKeys.Type, List<Configuration>> loadConfiguration() {
-        return configurationManager.loadAllIncludingMissing();
-    }
-
-    @RequestMapping(value = "/configuration/update", method = POST)
-    public Map<ConfigurationKeys.Type, List<Configuration>> updateConfiguration(@RequestBody ConfigurationModification configuration) {
-        configurationManager.save(ConfigurationKeys.fromValue(configuration.getKey()), configuration.getValue());
-        return loadConfiguration();
-    }
-
-    @RequestMapping(value = "/configuration/update-bulk", method = POST)
-    public Map<ConfigurationKeys.Type, List<Configuration>> updateConfiguration(@RequestBody Map<ConfigurationKeys.Type, List<ConfigurationModification>> input) {
-        Objects.requireNonNull(input);
-        List<ConfigurationModification> list = input.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-        configurationManager.saveAll(list);
-        return loadConfiguration();
-    }
-    
-    @RequestMapping(value = "/configuration/key/{key}", method = DELETE)
-    public boolean deleteKey(@PathVariable("key") String key) {
-        configurationManager.deleteKey(key);
-        return true;
     }
 
     @RequestMapping(value = "/categories/{categoryId}/tickets/{ticketId}/toggle-locking", method = PUT)
