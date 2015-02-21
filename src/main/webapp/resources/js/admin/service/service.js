@@ -111,8 +111,8 @@
                 var url = angular.isDefined(ticketCategory.id) ? ('/admin/api/events/' + event.id + '/categories/' + ticketCategory.id + '/update') : ('/admin/api/events/' + event.id + '/categories/new');
                 return $http['post'](url, ticketCategory).error(HttpErrorHandler.handle);
             },
-            toggleTicketLocking: function(ticket, category) {
-                return $http['put']('/admin/api/categories/' + category.id + '/tickets/' + ticket.id +'/toggle-locking');
+            toggleTicketLocking: function(event, ticket, category) {
+                return $http['put']('/admin/api/events/' + event.shortName + '/categories/' + category.id + '/tickets/' + ticket.id +'/toggle-locking');
             },
             reallocateOrphans : function(srcCategory, targetCategoryId, eventId) {
                 return $http['put']('/admin/api/events/reallocate', {

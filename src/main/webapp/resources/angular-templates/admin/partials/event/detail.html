@@ -168,7 +168,7 @@
                             <td data-ng-class-even="'active'">{{::ticket.ticketReservation.paymentMethod}}</td>
                             <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
                             <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
-                            <td data-ng-class-even="'active'"><button class="btn btn-warning" data-ng-click="toggleLocking(ticket, ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button></td>
+                            <td data-ng-class-even="'active'"><button class="btn btn-warning" data-ng-click="toggleLocking(event, ticket, ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button></td>
                         </tr>
                     </tbody>
                 </table>

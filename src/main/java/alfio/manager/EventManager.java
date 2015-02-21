@@ -486,7 +486,10 @@ public class EventManager {
 		return ticketCategoryRepository.getById(id, eventId);
 	}
 
-    public boolean toggleTicketLocking(int categoryId, int ticketId) {
+    public boolean toggleTicketLocking(String eventName, int categoryId, int ticketId, String username) {
+        Event event = getSingleEvent(eventName, username);
+        checkOwnership(event, username, event.getOrganizationId());
+        ticketCategoryRepository.findByEventId(event.getId()).stream().filter(tc -> tc.getId() == categoryId).findFirst().orElseThrow(IllegalArgumentException::new);
         Ticket ticket = ticketRepository.findById(ticketId, categoryId);
         Validate.isTrue(ticketRepository.toggleTicketLocking(ticketId, categoryId, !ticket.getLockedAssignment()) == 1, "unwanted result from ticket locking");
         return true;
@@ -540,6 +543,12 @@ public class EventManager {
     public String getEventUrl(Event event) {
         return StringUtils.removeEnd(configurationManager.getRequiredValue(ConfigurationKeys.BASE_URL), "/") + "/event/" + event.getShortName();
     }
+
+//    public List<Ticket> findAllConfirmedTickets(int eventId, String username) {
+//        Event event = eventRepository.findById(eventId);
+//        checkOwnership(event, username, event.getOrganizationId());
+//        return ticketRepository.findAllConfirmed(eventId);
+//    }
 
     @Data
     private static final class GeolocationResult {

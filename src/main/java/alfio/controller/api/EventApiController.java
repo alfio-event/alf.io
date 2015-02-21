@@ -163,9 +163,12 @@ public class EventApiController {
         }
     }
 
-    @RequestMapping(value = "/categories/{categoryId}/tickets/{ticketId}/toggle-locking", method = PUT)
-    public boolean toggleTicketLocking(@PathVariable("categoryId") int categoryId, @PathVariable("ticketId") int ticketId) {
-        return eventManager.toggleTicketLocking(categoryId, ticketId);
+    @RequestMapping(value = "/events/{eventName}/categories/{categoryId}/tickets/{ticketId}/toggle-locking", method = PUT)
+    public boolean toggleTicketLocking(@PathVariable("eventName") String eventName,
+                                       @PathVariable("categoryId") int categoryId,
+                                       @PathVariable("ticketId") int ticketId,
+                                       Principal principal) {
+        return eventManager.toggleTicketLocking(eventName, categoryId, ticketId, principal.getName());
     }
 
 }

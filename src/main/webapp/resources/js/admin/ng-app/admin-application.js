@@ -539,8 +539,8 @@
             });
         };
 
-        $scope.toggleLocking = function(ticket, category) {
-            EventService.toggleTicketLocking(ticket, category).then(function() {
+        $scope.toggleLocking = function(event, ticket, category) {
+            EventService.toggleTicketLocking(event, ticket, category).then(function() {
                 loadData();
             });
         };
