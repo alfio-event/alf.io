@@ -26,7 +26,7 @@
 
 	<properties>
 		<java.version>1.8</java.version>
-		<spring.version>4.1.4.RELEASE</spring.version>
+		<spring.version>4.1.5.RELEASE</spring.version>
 		<org.eclipse.jetty.version>9.2.2.v20140723</org.eclipse.jetty.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-security-config.version>3.2.5.RELEASE</spring-security-config.version>
