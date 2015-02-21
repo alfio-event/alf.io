@@ -12,7 +12,8 @@
                 responseError: function(rejection) {//thanks to https://github.com/witoldsz/angular-http-auth/blob/master/src/http-auth-interceptor.js
                     var status = rejection.status;
                     if(status === 401) {
-                        $location.reload();
+                        $rootScope.$emit('ErrorNotLoggedIn');
+                        return false;
                     } else if(status === 403) {
                         $rootScope.$emit('ErrorNotAuthorized');
                         return false;

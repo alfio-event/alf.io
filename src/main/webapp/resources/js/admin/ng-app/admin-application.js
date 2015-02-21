@@ -129,7 +129,7 @@
 
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-    admin.run(function($rootScope, $modal, $location, $state) {
+    admin.run(function($rootScope, $modal, $window, $state) {
         $rootScope.$on('ErrorNotAuthorized', function() {
             $modal.open({
                 size:'sm',
@@ -143,7 +143,7 @@
                 size:'sm',
                 templateUrl:'/resources/angular-templates/admin/partials/error/not-logged-in.html'
             }).result.then(angular.noop, function() {
-                $location.reload();
+                $window.location.reload();
             });
         });
     });
