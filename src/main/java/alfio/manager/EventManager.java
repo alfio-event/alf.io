@@ -544,11 +544,11 @@ public class EventManager {
         return StringUtils.removeEnd(configurationManager.getRequiredValue(ConfigurationKeys.BASE_URL), "/") + "/event/" + event.getShortName();
     }
 
-//    public List<Ticket> findAllConfirmedTickets(int eventId, String username) {
-//        Event event = eventRepository.findById(eventId);
-//        checkOwnership(event, username, event.getOrganizationId());
-//        return ticketRepository.findAllConfirmed(eventId);
-//    }
+    public List<Ticket> findAllConfirmedTickets(String eventName, String username) {
+        Event event = getSingleEvent(eventName, username);
+        checkOwnership(event, username, event.getOrganizationId());
+        return ticketRepository.findAllConfirmed(event.getId());
+    }
 
     @Data
     private static final class GeolocationResult {

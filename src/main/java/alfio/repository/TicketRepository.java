@@ -112,4 +112,8 @@ public interface TicketRepository {
 	
 	@Query("select * from ticket where event_id = :eventId")
 	List<Ticket> findAllByEventId(@Bind("eventId") int eventId);
+
+    @Query("select * from ticket where event_id = :eventId and status in('ACQUIRED', 'CHECKED_IN', 'TO_BE_PAID')")
+    List<Ticket> findAllConfirmed(@Bind("eventId") int eventId);
+
 }
