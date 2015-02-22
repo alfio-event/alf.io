@@ -10,9 +10,7 @@
 					{{#imageIsPresent}}
                         <img src="{{imageUrl}}" alt="{{shortName}}" class="img-responsive">
 					{{/imageIsPresent}}
-					{{^imageIsPresent}}
 					<h2>{{shortName}}</h2>
-					{{/imageIsPresent}}
                 </div>
 				<div>
 	            {{#sameDay}}
