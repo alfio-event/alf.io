@@ -29,16 +29,11 @@ import alfio.model.PromoCodeDiscount;
 import alfio.model.SpecialPrice;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
-import alfio.repository.EventRepository;
-import alfio.repository.PromoCodeDiscountRepository;
-import alfio.repository.SpecialPriceRepository;
-import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketRepository;
+import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
 import alfio.util.ValidationResult;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +46,6 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -185,7 +179,7 @@ public class EventController {
 		//hide access restricted ticket categories
 		List<SaleableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(ev.getId()).stream()
                 .filter((c) -> !c.isAccessRestricted() || (specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId()))
-                .map((m) -> new SaleableTicketCategory(m, now, ev, ticketRepository.countNotSoldTickets(ev.getId(), m.getId()), maxTickets))
+                .map((m) -> new SaleableTicketCategory(m, now, ev, ticketRepository.countNotSoldTickets(ev.getId(), m.getId()), maxTickets, promoCodeDiscount))
                 .collect(Collectors.toList());
 		//
 
@@ -195,7 +189,7 @@ public class EventController {
 		
 		final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(ev.getId()).intValue() > 0 || 
 				promoCodeRepository.countByEventId(ev.getId()).intValue() > 0;
-		
+
         final EventDescriptor eventDescriptor = new EventDescriptor(ev);
 		model.addAttribute("event", eventDescriptor)//
 			.addAttribute("organizer", organizationRepository.getById(ev.getOrganizationId()))

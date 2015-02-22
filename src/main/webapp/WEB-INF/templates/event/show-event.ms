@@ -93,9 +93,19 @@
 							{{#i18n}}common.free{{/i18n}}	
 						{{/free}}
 						{{^free}}
-							{{finalPrice}} {{event.currency}}
+							{{#expired}}
+                                {{finalPrice}} {{event.currency}}
+                            {{/expired}}
 							{{^expired}}
-                            <i class="fa fa-info-circle text-info tooltip-handler" title="{{#event.vatIncluded}}{{#i18n}}show-event.incVat [{{event.vat}}]{{/i18n}}{{/event.vatIncluded}}{{^event.vatIncluded}}{{#i18n}}show-event.excVat [{{event.vat}}]{{/i18n}}{{/event.vatIncluded}}"></i>
+                                {{#hasPromoCodeDiscount}}
+                                    <del>{{finalPrice}}</del>
+                                    <mark>{{discountedPrice}}</mark>
+                                    {{event.currency}}
+                                {{/hasPromoCodeDiscount}}
+                                {{^hasPromoCodeDiscount}}
+                                    {{finalPrice}} {{event.currency}}
+                                {{/hasPromoCodeDiscount}}
+                                <i class="fa fa-info-circle text-info tooltip-handler" title="{{#event.vatIncluded}}{{#i18n}}show-event.incVat [{{event.vat}}]{{/i18n}}{{/event.vatIncluded}}{{^event.vatIncluded}}{{#i18n}}show-event.excVat [{{event.vat}}]{{/i18n}}{{/event.vatIncluded}}"></i>
 							{{/expired}}
 						{{/free}}
 					</label>
@@ -132,7 +142,7 @@
 {{#hasPromoCodeDiscount}}
 
 	<hr/>
-	
+
 	<div>
 		<input type="hidden" name="promoCodeDiscount" value="{{promoCodeDiscount.promoCode}}">
 		<ul class="list-group">

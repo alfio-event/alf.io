@@ -17,12 +17,16 @@
 package alfio.controller.decorator;
 
 import alfio.model.Event;
+import alfio.model.PromoCodeDiscount;
 import alfio.model.TicketCategory;
+import alfio.util.MonetaryUtil;
 import lombok.experimental.Delegate;
 
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static alfio.util.MonetaryUtil.addVAT;
@@ -41,12 +45,14 @@ public class SaleableTicketCategory {
     private final boolean inSale;
     private final int availableTickets;
     private final int maxTickets;
+    private final Optional<PromoCodeDiscount> promoCodeDiscount;
 
     public SaleableTicketCategory(TicketCategory ticketCategory,
                                   ZonedDateTime now,
                                   Event event,
                                   int availableTickets,
-                                  int maxTickets) {
+                                  int maxTickets,
+                                  Optional<PromoCodeDiscount> promoCodeDiscount) {
         this.ticketCategory = ticketCategory;
         this.now = now;
         this.zoneId = event.getZoneId();
@@ -55,6 +61,7 @@ public class SaleableTicketCategory {
         this.soldOut = inSale && availableTickets == 0;
         this.availableTickets = availableTickets;
         this.maxTickets = maxTickets;
+        this.promoCodeDiscount = promoCodeDiscount;
     }
 
     private static boolean isCurrentlyInSale(ZonedDateTime now, TicketCategory tc, ZoneId zoneId) {
@@ -91,14 +98,22 @@ public class SaleableTicketCategory {
     }
 
     public String getFinalPrice() {
+        return formatCents(getFinalPriceInCents());
+    }
+
+    private int getFinalPriceInCents() {
         if(event.isVatIncluded()) {
-            return formatCents(addVAT(ticketCategory.getPriceInCents(), event.getVat()));
+            return addVAT(ticketCategory.getPriceInCents(), event.getVat());
         }
-        return formatCents(ticketCategory.getPriceInCents());
+        return ticketCategory.getPriceInCents();
     }
 
     public int[] getAmountOfTickets() {
         return generateRangeOfTicketQuantity(maxTickets, availableTickets);
+    }
+
+    public String getDiscountedPrice() {
+        return promoCodeDiscount.map(d -> formatCents(calcDiscount(d))).orElseGet(this::getFinalPrice);
     }
 
     static int[] generateRangeOfTicketQuantity(int maxTickets, int availableTickets) {
@@ -106,6 +121,19 @@ public class SaleableTicketCategory {
         return IntStream.rangeClosed(0, maximumSaleableTickets).toArray();
     }
 
+    private int calcDiscount(PromoCodeDiscount d) {
+        int discount;
+        if(d.getFixedAmount()) {
+            discount = d.getDiscountAmount();
+        } else {
+            discount = MonetaryUtil.calcPercentage(getFinalPriceInCents(), new BigDecimal(d.getDiscountAmount()));
+        }
+        return getFinalPriceInCents() - discount;
+    }
+
+    public PromoCodeDiscount getPromoCodeDiscount() {
+        return promoCodeDiscount.orElseThrow(IllegalStateException::new);
+    }
 
 
 }

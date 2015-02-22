@@ -97,7 +97,7 @@ public class ReservationForm {
 	private static void validateCategory(BindingResult bindingResult, TicketReservationManager tickReservationManager, EventManager eventManager, Event event, int maxAmountOfTicket, List<TicketReservationWithOptionalCodeModification> res, Optional<SpecialPrice> specialCode, ZonedDateTime now, TicketReservationModification r, HttpServletRequest request) {
 		TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
 		SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, tickReservationManager
-                .countUnsoldTicket(event.getId(), tc.getId()), maxAmountOfTicket);
+                .countUnsoldTicket(event.getId(), tc.getId()), maxAmountOfTicket, Optional.empty());
 
 		if (!ticketCategory.getSaleable()) {
             bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE);
