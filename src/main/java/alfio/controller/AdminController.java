@@ -26,9 +26,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.OutputStreamWriter;
 import java.security.Principal;
 import java.util.List;
 
@@ -37,6 +38,7 @@ import java.util.List;
 public class AdminController {
 
     private static final String[] CSV_HEADER = new String[]{"ID", "Name", "E-Mail", "Phone Number", "T-Shirt size", "Notes", "Language"};
+    private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
     private final EventManager eventManager;
 
     @Autowired
@@ -48,14 +50,19 @@ public class AdminController {
     public void downloadAttendeesCSV(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) throws IOException {
         Validate.isTrue(StringUtils.isNotBlank(eventName), "Event name is not valid");
         List<Ticket> tickets = eventManager.findAllConfirmedTickets(eventName, principal.getName());
-        response.setContentType("text/csv");
-        response.setHeader("Content-Disposition", "attachment; filename="+ eventName + "-attendees.csv");
-        PrintWriter pw = response.getWriter();
-        CSVWriter writer = new CSVWriter(pw);
-        writer.writeNext(CSV_HEADER);
-        tickets.stream()
-                .map(t -> new String[]{t.getUuid(), t.getFullName(), t.getEmail(), t.getPhoneNumber(), t.getTshirtSize(), t.getNotes(), t.getUserLanguage()})
-                .forEach(writer::writeNext);
-        pw.flush();
+        response.setContentType("text/csv;charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-attendees.csv");
+        try(ServletOutputStream out = response.getOutputStream()) {
+            for (int marker : BOM_MARKERS) {//UGLY-MODE_ON: specify that the file is written in UTF-8 with BOM, thanks to alexr http://stackoverflow.com/a/4192897
+                out.write(marker);
+            }
+            CSVWriter writer = new CSVWriter(new OutputStreamWriter(out));
+            writer.writeNext(CSV_HEADER);
+            tickets.stream()
+                    .map(t -> new String[]{t.getUuid(), t.getFullName(), t.getEmail(), t.getPhoneNumber(), t.getTshirtSize(), t.getNotes(), t.getUserLanguage()})
+                    .forEach(writer::writeNext);
+            writer.flush();
+            out.flush();
+        }
     }
 }
