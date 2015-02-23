@@ -17,14 +17,14 @@
 package alfio.controller.api;
 
 import alfio.manager.location.LocationManager;
+import alfio.manager.location.LocationNotFound;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.modification.support.LocationDescriptor;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 import java.util.TimeZone;
@@ -45,6 +45,17 @@ public class LocationApiController {
         this.configurationManager = configurationManager;
     }
 
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public String unhandledException(Exception e) {
+        return e.getMessage();
+    }
+
+    @ExceptionHandler(LocationNotFound.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String locationException(Exception e) {
+        return e.getMessage();
+    }
 
     @RequestMapping(value = "/location/geo", method = GET)
     public LocationDescriptor geocodeAddress(@RequestParam("location") String address) {

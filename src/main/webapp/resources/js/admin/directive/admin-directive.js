@@ -242,11 +242,18 @@
                 }
 
                 $scope.updateLocation = function (location) {
+                    if(!angular.isDefined(location) || location.trim() === '') {
+                        delete $scope.obj['geolocation'];
+                        return;
+                    }
                     $scope.loadingMap = true;
                     LocationService.geolocate(location).success(function(result) {
+                        delete $scope['mapError'];
                         $scope.obj['geolocation'] = result;
                         $scope.loadingMap = false;
-                    }).error(function() {
+                    }).error(function(e) {
+                        $scope.mapError = e;
+                        delete $scope.obj['geolocation'];
                         $scope.loadingMap = false;
                     });
                 };

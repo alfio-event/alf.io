@@ -41,6 +41,7 @@
     </div>
     <div class="col-sm-12 col-md-6">
         <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loadingMap"></i>
+        <span class="text-danger" data-ng-if="mapError && !loadingMap">{{mapError}}</span>
         <img data-ng-if="obj.geolocation && !loadingMap" data-ng-src="{{obj.geolocation.mapUrl}}" alt="{{obj.location}}" />
     </div>
 </div>
