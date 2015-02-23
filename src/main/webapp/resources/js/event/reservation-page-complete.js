@@ -3,8 +3,16 @@
 	'use strict';
 	
 	$(function() {
+		
+		$("form").each(function(i, v) {
+			H5F.setup(v);
+		});
+		
+		
+		
 
 		var initListeners = function() {
+			
 			$(".update-ticket-owner").click(function() {
 				$($(this).attr('href')).show().find("input:first").focus();
 				return false;
@@ -41,6 +49,17 @@
 				frm.find('.has-error').removeClass('has-error');
 				$('#generic-'+uuid+'-error').removeClass('show');
 				if (!frm[0].checkValidity()) {
+
+					// Find all invalid fields within the form.
+					frm.find("input,select,textarea").filter(function(i,v) {return !v.validity.valid;}).each( function( index, node ) {
+						$(node).parent().addClass('has-error');
+						if($(node).parent().parent().hasClass('form-group')) {
+							$(node).parent().parent().addClass('has-error');
+						}
+					});
+					
+					frm.find("input,select,textarea").filter(function(i,v) {return !v.validity.valid;}).first().focus();
+					
 					return true;//trigger the HTML5 error messages. Thanks to Abraham http://stackoverflow.com/a/11867013
 				}
 				$('#loading-'+uuid).show();
