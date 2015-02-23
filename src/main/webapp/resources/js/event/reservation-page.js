@@ -72,6 +72,9 @@
 	 
 	jQuery(function($) {
 		
+		H5F.setup(document.getElementById("payment-form"));
+		
+		
 		//validity
 		//ready for ECMAScript6?
 		var parser = Number && Number.parseInt ? Number : window;
@@ -102,6 +105,10 @@
 		
 		function submitForm(e) {
 			var $form = $(this);
+			
+			if(!this.checkValidity()) {
+				return false;
+			}
 			 
 			// Disable the submit button to prevent repeated clicks
 			$form.find('button').prop('disabled', true);
@@ -147,7 +154,7 @@
 			var showAllErrorMessages = function() {
 				$(form).find('.has-error').removeClass('has-error');
 				// Find all invalid fields within the form.
-				var invalidFields = form.find( ":invalid" ).each( function( index, node ) {
+				var invalidFields = form.find("input,select,textarea").filter(function(i,v) {return !v.validity.valid;}).each( function( index, node ) {
 					$(node).parent().addClass('has-error');
 					if($(node).parent().parent().parent().hasClass('form-group')) {
 						$(node).parent().parent().parent().addClass('has-error');
@@ -158,7 +165,7 @@
 			// Support Safari
 			form.on("submit", function( event ) {
 				if (this.checkValidity && !this.checkValidity() ) {
-					$(this).find( ":invalid" ).first().focus();
+					$(this).find("input,select,textarea").filter(function(i,v) {return !v.validity.valid;}).first().focus();
 					event.preventDefault();
 				}
 			});
@@ -175,7 +182,7 @@
 		
 		$("form").each(createAllErrors);
 		$("input,select,textarea").change(function() {
-			if($(this).is(":invalid")) {
+			if( !this.validity.valid) {
 				$(this).parent().addClass('has-error');
 				if($(this).parent().parent().parent().hasClass('form-group')) {
 					$(this).parent().parent().parent().addClass('has-error');
