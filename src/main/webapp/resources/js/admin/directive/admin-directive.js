@@ -384,11 +384,14 @@
             scope: {
                 statisticsContainer: '='
             },
-            template:'<canvas id="pie" class="chart chart-pie" data-data="ticketStatistics" data-labels="ticketStatisticLabels"></canvas>',
-            link:function(scope, element, attrs) {
-                var statisticsContainer = scope.statisticsContainer;
-                scope.ticketStatistics = [statisticsContainer.soldTickets, statisticsContainer.checkedInTickets, statisticsContainer.notSoldTickets, statisticsContainer.notAllocatedTickets];
-                scope.ticketStatisticLabels = ['Sold', 'Checked in', 'Still available', 'Not yet allocated'];
+            template:'<canvas id="pie" class="chart chart-pie" data-data="statistics" data-labels="labels"></canvas>',
+            controller: function($scope) {
+                $scope.$watch('statisticsContainer', function(newVal) {
+                    if(angular.isDefined(newVal)) {
+                        $scope.statistics = [newVal.soldTickets, newVal.checkedInTickets, newVal.notSoldTickets, newVal.notAllocatedTickets];
+                    }
+                });
+                $scope.labels = ['Sold', 'Checked in', 'Still available', 'Not yet allocated'];
             }
         }
     });
