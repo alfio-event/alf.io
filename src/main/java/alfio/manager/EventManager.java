@@ -189,7 +189,7 @@ public class EventManager {
                     .mapToInt(TicketCategoryWithStatistic::getMaxTickets)
                     .sum();
             if(em.getAvailableSeats() < allocatedSeats) {
-                throw new IllegalArgumentException(format("cannot reduce available seats to %d. There are already %d seats allocated. Try updating categories first.", em.getAvailableSeats(), allocatedSeats));
+                throw new IllegalArgumentException(format("cannot reduce max tickets to %d. There are already %d tickets allocated. Try updating categories first.", em.getAvailableSeats(), allocatedSeats));
             }
         }
         String paymentProxies = collectPaymentProxies(em);
