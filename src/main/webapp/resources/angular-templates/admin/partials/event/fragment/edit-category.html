@@ -1,8 +1,8 @@
 <div class="col-sm-12">
     <div class="row">
         <div class="col-sm-12 col-md-4">
-            <label for="{{$index}}-name">Name</label>
-            <input type="text" data-ng-model="ticketCategory.name" name="{{$index}}-name" id="{{$index}}-name" class="form-control" required />
+            <label for="{{buildPrefix($index, 'name')}}">Name</label>
+            <input type="text" data-ng-model="ticketCategory.name" name="{{buildPrefix($index, 'name')}}" id="{{buildPrefix($index, 'name')}}" class="form-control" required />
             <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.name" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
 
@@ -11,13 +11,13 @@
             <div class="form-group">
                 <div class="radio-inline">
                     <label>
-                        <input type="radio" name="{{$index}}-tokenGenerationRequested" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="false" required="">
+                        <input type="radio" name="{{buildPrefix($index, 'tokenGenerationRequested')}}" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="false" required="">
                         Public
                     </label>
                 </div>
                 <div class="radio-inline">
                     <label>
-                        <input type="radio" name="{{$index}}-tokenGenerationRequested" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="true" required="">
+                        <input type="radio" name="{{buildPrefix($index, 'tokenGenerationRequested')}}" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="true" required="">
                         Restricted
                     </label>
                 </div>
@@ -25,8 +25,8 @@
         </div>
 
         <div class="col-sm-12 col-md-5">
-            <label for="{{$index}}-maxTickets">Max Tickets</label>
-            <input type="number" data-ng-model="ticketCategory.maxTickets" name="{{$index}}-maxTickets" id="{{$index}}-maxTickets" class="form-control" required />
+            <label for="{{buildPrefix($index, 'maxTickets')}}">Max Tickets</label>
+            <input type="number" data-ng-model="ticketCategory.maxTickets" name="{{buildPrefix($index, 'maxTickets')}}" id="{{buildPrefix($index, 'maxTickets')}}" class="form-control" required />
             <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.maxTickets" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
 
@@ -34,20 +34,20 @@
     <div class="row">
 
         <div class="col-sm-12 col-md-4">
-            <label for="{{$index}}-date">Validity range</label>
-            <input type="text" data-date-range data-start-model="ticketCategory.inception" data-end-model="ticketCategory.expiration" data-start-date="ticketCategory.notBefore" data-ng-model="ticketCategory.dateString" name="{{$index}}-date" id="{{$index}}-date" class="form-control" required />
+            <label for="{{buildPrefix($index, 'dateString')}}">Validity range</label>
+            <input type="text" data-date-range data-start-model="ticketCategory.inception" data-end-model="ticketCategory.expiration" data-start-date="ticketCategory.notBefore" data-ng-model="ticketCategory.dateString" name="{{buildPrefix($index, 'dateString')}}" id="{{buildPrefix($index, 'dateString')}}" class="form-control" required />
             <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.dateString" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
 
         <div class="col-sm-12 col-md-3" data-ng-if="!event.freeOfCharge">
-            <label for="{{$index}}-price">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event, editMode)}}%)</span></label>
-            <input type="number" data-ng-model="ticketCategory.price" name="{{$index}}-price" id="{{$index}}-price" class="form-control" required />
+            <label for="{{buildPrefix($index, 'price')}}">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event, editMode)}}%)</span></label>
+            <input type="number" data-ng-model="ticketCategory.price" name="{{buildPrefix($index, 'price')}}" id="{{buildPrefix($index, 'price')}}" class="form-control" required />
             <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.price" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
 
         <div class="col-sm-12 col-md-5">
-            <label for="{{$index}}-description">Description</label>
-            <textarea data-ng-model="ticketCategory.description" name="{{$index}}-description" id="{{$index}}-description" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
+            <label for="{{buildPrefix($index, 'description')}}">Description</label>
+            <textarea data-ng-model="ticketCategory.description" name="{{buildPrefix($index, 'description')}}" id="{{buildPrefix($index, 'description')}}" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
         </div>
 
     </div>

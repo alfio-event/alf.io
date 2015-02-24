@@ -27,6 +27,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.opencsv.CSVReader;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -47,6 +48,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
 @RequestMapping("/admin/api")
+@Log4j2
 public class EventApiController {
 
     private static final String OK = "OK";
@@ -60,6 +62,9 @@ public class EventApiController {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String unhandledException(Exception e) {
+        if(!IllegalArgumentException.class.isInstance(e)) {
+            log.warn("unhandled exception", e);
+        }
         return e.getMessage();
     }
 

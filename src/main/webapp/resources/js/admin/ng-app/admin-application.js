@@ -462,7 +462,6 @@
                 if(result.data['errorCount'] == 0) {
                     resolve(result);
                 } else {
-                    form.$setValidity(false);
                     _.forEach(result.data.validationErrors, function(error) {
                         var field = fieldsContainer[error.fieldName];
                         if(angular.isDefined(field)) {
@@ -523,7 +522,7 @@
                             return;
                         }
                         EventService.saveTicketCategory(event, category).then(function(result) {
-                            validationErrorHandler(result, form, form.ticketCategory).then(function() {
+                            validationErrorHandler(result, form, form).then(function() {
                                 $scope.$close(true);
                             });
                         }, errorHandler);

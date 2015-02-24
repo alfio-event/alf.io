@@ -306,7 +306,12 @@
     directives.directive('editCategory', function() {
         return {
             restrict: 'E',
-            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-category.html'
+            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-category.html',
+            controller: function($scope) {
+                $scope.buildPrefix = function(index, name) {
+                    return angular.isDefined(index) ? index + "-" + name : name;
+                }
+            }
         };
     });
 
@@ -364,7 +369,7 @@
                     _.chain(element.find(':input'))
                         .filter(function(e) {
                             return prefixes.length > 0 && _.filter(prefixes, function(p) {
-                                    return angular.isDefined(formController[p][e.name]);
+                                    return angular.isDefined(formController[p]) && angular.isDefined(formController[p][e.name]);
                                 }).length > 0;
                         }).forEach(function(el) {
                             _.forEach(prefixes, function(prefix) {
