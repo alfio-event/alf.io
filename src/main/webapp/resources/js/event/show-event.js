@@ -14,13 +14,17 @@
 			});
 
 			$("#apply-promo-codes").click(function() {
+                var contextPath = window.location.pathname;
+                if(!/\/$/.test(contextPath)) {
+                    contextPath = contextPath + '/';
+                }
 				var button = $(this);
 				var frm = $(this.form);
 				var promoCodeVal = $("#promo-code").val();
 				$('#error-code-not-found').addClass('hidden');
 				if(promoCodeVal != null && promoCodeVal.trim() != "") {
 					jQuery.ajax({
-						url: 'promoCode/'+encodeURIComponent(promoCodeVal),
+						url: contextPath + 'promoCode/'+encodeURIComponent(promoCodeVal),
 						type: 'POST',
 						data: frm.serialize(),
 						success: function(result) {
