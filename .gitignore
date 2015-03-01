@@ -6,4 +6,8 @@
 .gradle/
 build/
 *.iml
+*.ipr
+*.iws
+/build/
+.gradle/
 deploy*.sh
