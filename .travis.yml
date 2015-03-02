@@ -3,9 +3,10 @@ language: java
 jdk:
   - oraclejdk8
   
+after_success:
+  - mvn clean test jacoco:report coveralls:report -DrepoTokenCoveralls=$COVERALLS_TOKEN
+
 notifications:
   email:
     recipients:
-      - sylvain.jermini@syjer.com
-      - celestino.bellone@gmail.com
-      - yankedev@exteso.com
+      - stephane.jeandeaux@gmail.com

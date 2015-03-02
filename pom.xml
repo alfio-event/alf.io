@@ -34,6 +34,9 @@
         <jackson.version>2.4.4</jackson.version>
         <stripe.version>1.19.1</stripe.version>
         <hsqldb.version>2.3.2</hsqldb.version>
+
+        <coveralls-maven-plugin.version>3.0.1</coveralls-maven-plugin.version>
+        <repoTokenCoveralls>your token</repoTokenCoveralls>
     </properties>
 
 	<dependencies>
@@ -387,6 +390,15 @@
 					</execution>
 				</executions>
 			</plugin>
+
+            <plugin>
+                <groupId>org.eluder.coveralls</groupId>
+                <artifactId>coveralls-maven-plugin</artifactId>
+                <version>${coveralls-maven-plugin.version}</version>
+           	    <configuration>
+                    <repoToken>${repoTokenCoveralls}</repoToken>
+                </configuration>
+           </plugin>
 		</plugins>
 	</build>
 	
