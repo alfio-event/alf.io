@@ -35,6 +35,7 @@
         <stripe.version>1.19.1</stripe.version>
         <hsqldb.version>2.3.2</hsqldb.version>
 
+      	<jacoco-maven-plugin.version>0.7.3.201502191951</jacoco-maven-plugin.version>
         <coveralls-maven-plugin.version>3.0.1</coveralls-maven-plugin.version>
         <repoTokenCoveralls>your token</repoTokenCoveralls>
     </properties>
@@ -390,6 +391,13 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-maven-plugin.version}</version>
+            </plugin>
 
             <plugin>
                 <groupId>org.eluder.coveralls</groupId>
