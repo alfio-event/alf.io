@@ -4,7 +4,7 @@
 
 	<groupId>alfio</groupId>
 	<artifactId>alfio</artifactId>
-	<version>1.3.2</version>
+	<version>1.4-SNAPSHOT</version>
 	<packaging>war</packaging>
 
 	<name>alf.io</name>
@@ -14,7 +14,7 @@
 		<connection>scm:git:git@github.com:exteso/alf.io.git</connection>
 		<developerConnection>scm:git:git@github.com:exteso/alf.io.git</developerConnection>
 		<url>https://github.com/exteso/alf.io.git</url>
-  	  <tag>alfio-1.3.2</tag>
+  	  <tag>HEAD</tag>
   </scm>
 
 	<distributionManagement>
