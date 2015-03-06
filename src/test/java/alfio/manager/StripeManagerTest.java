@@ -43,8 +43,6 @@ public class StripeManagerTest {{
                     .is("error.STEP2_STRIPE_abort");
             expect.that(stripeManager.handleException(new APIConnectionException("abcd")))
                     .is("error.STEP2_STRIPE_abort");
-            expect.that(stripeManager.handleException(new RateLimitException("abcd", "ww", null)))
-                    .is("error.STEP2_STRIPE_abort");
         });
 
         it.should("return the 'unexpected' error in the other cases", expect ->

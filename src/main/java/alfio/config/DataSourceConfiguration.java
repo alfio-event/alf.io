@@ -26,6 +26,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
@@ -191,6 +192,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 	}
 
 	@Bean
+    @Profile("!spring-boot")
 	public PlatformTransactionManager platformTransactionManager(DataSource dataSource) {
 		return new DataSourceTransactionManager(dataSource);
 	}

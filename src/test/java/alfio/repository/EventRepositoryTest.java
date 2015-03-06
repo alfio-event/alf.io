@@ -27,6 +27,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -42,6 +43,7 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, WebSecurityConfig.class})
 @ActiveProfiles(Initializer.PROFILE_DEV)
+@WebIntegrationTest("server.port:9000")
 public class EventRepositoryTest {
 
     private static final String NEW_YORK_TZ = "America/New_York";

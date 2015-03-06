@@ -11,3 +11,4 @@ build/
 /build/
 .gradle/
 deploy*.sh
+custom.jvmargs

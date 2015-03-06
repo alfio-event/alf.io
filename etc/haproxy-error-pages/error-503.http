@@ -1,0 +1,48 @@
+HTTP/1.0 503 Service Unavailable
+Cache-Control: no-cache
+Connection: close
+Content-Type: text/html
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>The System is currently in maintenance mode</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+        <style>
+            .margin-20 {
+                margin-top:20px;
+            }
+            .vertical-align {/* credits: http://stackoverflow.com/a/25517025 */
+                display: flex;
+                align-items: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="margin-20">
+                YOUR LOGO HERE
+            </div>
+            <div class="well margin-20">
+                <div class="row vertical-align">
+                    <div class="col-xs-6">
+                        <img class="img-responsive center-block" src="https://openclipart.org/image/400px/svg_to_png/192479/plumbing-comic.png">
+                    </div>
+                    <div class="col-xs-6">
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <h1>Maintenance mode</h1>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <h4>The reservation system is currently in maintenance mode. We'll be back soon. Thank you for your understanding</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </body>
+</html>

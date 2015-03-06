@@ -22,6 +22,7 @@ import alfio.model.Event;
 import alfio.repository.TicketRepository;
 import com.stripe.exception.*;
 import com.stripe.model.Charge;
+import com.stripe.net.RequestOptions;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +55,6 @@ public class StripeManager {
         handlers.put(InvalidRequestException.class, this::handleInvalidRequestException);
         handlers.put(AuthenticationException.class, this::handleAuthenticationException);
         handlers.put(APIConnectionException.class, this::handleApiConnectionException);
-        handlers.put(RateLimitException.class, this::handleRateLimitException);
         handlers.put(StripeException.class, this::handleGenericException);
     }
 
@@ -95,7 +95,7 @@ public class StripeManager {
             initialMetadata.put("billingAddress", billingAddress);
         }
         chargeParams.put("metadata", initialMetadata);
-        return Charge.create(chargeParams, getSecretKey());
+        return Charge.create(chargeParams, RequestOptions.builder().setApiKey(getSecretKey()).build());
     }
 
     public String handleException(StripeException exc) {
@@ -150,16 +150,6 @@ public class StripeManager {
      */
     private String handleApiConnectionException(StripeException e) {
         log.error("unable to connect to the Stripe API", e);
-        return "error.STEP2_STRIPE_abort";
-    }
-
-    /**
-     * Logs the failure and report the failure to the admin (to be done)
-     * @param e
-     * @return
-     */
-    private String handleRateLimitException(StripeException e) {
-        log.error("rate limit exceeded", e);
         return "error.STEP2_STRIPE_abort";
     }
 

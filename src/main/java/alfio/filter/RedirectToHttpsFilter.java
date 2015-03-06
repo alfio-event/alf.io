@@ -30,13 +30,12 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
 
 public class RedirectToHttpsFilter implements Filter {
 
-	private boolean isHttpsNeeded;
+	private Environment environment;
 
 	@Override
 	public void init(FilterConfig filterConfig) throws ServletException {
 		WebApplicationContext ctx = getRequiredWebApplicationContext(filterConfig.getServletContext());
-		Environment env = ctx.getBean(Environment.class);
-		isHttpsNeeded = env.acceptsProfiles("!" + Initializer.PROFILE_HTTP);
+		environment = ctx.getBean(Environment.class);
 	}
 
 	@Override
@@ -46,7 +45,7 @@ public class RedirectToHttpsFilter implements Filter {
 		HttpServletRequest req = (HttpServletRequest) request;
 
 		// redirecting if the request is not over https: note: this will work _only_ with the default port for https
-		if (isHttpsNeeded && !isOverHttps(req)) {
+		if (environment.acceptsProfiles("!" + Initializer.PROFILE_HTTP) && !isOverHttps(req)) {
 			HttpServletResponse resp = (HttpServletResponse) response;
 			resp.sendRedirect(req.getRequestURL()
 					.append(ofNullable(req.getQueryString()).map((x) -> "?" + x).orElse("")).toString()
