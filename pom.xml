@@ -378,7 +378,7 @@
 			<plugin>
 				<groupId>org.simplericity.jettyconsole</groupId>
 				<artifactId>jetty-console-maven-plugin</artifactId>
-				<version>1.55</version>
+				<version>1.57</version>
 				<executions>
 					<execution>
 						<goals>

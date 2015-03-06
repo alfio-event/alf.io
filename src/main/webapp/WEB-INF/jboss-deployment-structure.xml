@@ -2,6 +2,7 @@
   <deployment>
      <exclude-subsystems>
         <subsystem name="logging" />
+        <subsystem name="weld" />
     </exclude-subsystems>
   </deployment>
 </jboss-deployment-structure>
