@@ -379,7 +379,7 @@ public class TicketReservationManager {
 		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
 	}
 
-	public void cleanupExpiredReservations(Date expirationDate) {
+	void cleanupExpiredReservations(Date expirationDate) {
 		List<String> expiredReservationIds = ticketReservationRepository.findExpiredReservation(expirationDate);
 		if(expiredReservationIds.isEmpty()) {
 			return;
@@ -389,6 +389,21 @@ public class TicketReservationManager {
 		ticketRepository.freeFromReservation(expiredReservationIds);
 		ticketReservationRepository.remove(expiredReservationIds);
 	}
+
+    void cleanupExpiredOfflineReservations(Date expirationDate) {
+        ticketReservationRepository.findExpiredOfflineReservations(expirationDate).forEach(this::cleanupOfflinePayment);
+    }
+
+    private void cleanupOfflinePayment(String reservationId) {
+        try {
+            requiresNewTransactionTemplate.execute((tc) -> {
+                deleteOfflinePayment(eventRepository.findByReservationId(reservationId), reservationId);
+                return null;
+            });
+        } catch (Exception e) {
+            log.error("error during reservation cleanup (id "+reservationId+")", e);
+        }
+    }
 
     /**
      * Finds all the reservations that are "stuck" in payment status.

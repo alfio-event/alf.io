@@ -47,6 +47,7 @@ public class Jobs {
 		//cleanup reservation that have a expiration older than "now minus 10 minutes": this give some additional slack.
         final Date expirationDate = DateUtils.addMinutes(new Date(), -10);
         ticketReservationManager.cleanupExpiredReservations(expirationDate);
+        ticketReservationManager.cleanupExpiredOfflineReservations(expirationDate);
         ticketReservationManager.markExpiredInPaymentReservationAsStuck(expirationDate);
 	}
 
