@@ -33,12 +33,9 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
-
 import com.lowagie.text.DocumentException;
-
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -277,15 +274,25 @@ public class TicketReservationManager {
 		Validate.isTrue(ticketReservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT, "invalid status");
 		ticketReservationRepository.updateTicketReservationStatus(reservationId, TicketReservationStatus.COMPLETE.name());
 		acquireTickets(TicketStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getBillingAddress());
-		Locale language = ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().map(t -> Locale.forLanguageTag(t.getUserLanguage())).orElse(Locale.ENGLISH);
+		Locale language = findReservationLanguage(reservationId);
 		notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
 				new Object[]{ getShortReservationID(reservationId), event.getShortName()}, language), () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language, TemplateOutput.TEXT));
 	}
 
-	public void deleteOfflinePayment(Event singleEvent, String reservationId) {
+    private Locale findReservationLanguage(String reservationId) {
+        return ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().map(t -> Locale.forLanguageTag(t.getUserLanguage())).orElse(Locale.ENGLISH);
+    }
+
+    public void deleteOfflinePayment(Event event, String reservationId) {
 		TicketReservation reservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
 		Validate.isTrue(reservation.getStatus() == OFFLINE_PAYMENT, "Invalid reservation status");
+        Map<String, Object> emailModel = prepareModelForReservationEmail(event, reservation);
+        Locale reservationLanguage = findReservationLanguage(reservationId);
+        String subject = messageSource.getMessage("reservation-email-expired-subject", new Object[]{getShortReservationID(reservationId), event.getShortName()}, reservationLanguage);
 		cancelReservation(reservationId);
+        notificationManager.sendSimpleEmail(event, reservation.getEmail(), subject, () -> {
+            return templateManager.renderClassPathResource("/alfio/templates/offline-reservation-expired-email-txt.ms", emailModel, reservationLanguage, TemplateOutput.TEXT);
+        });
 	}
 
 	@Transactional(readOnly = true)
