@@ -33,15 +33,11 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
-
 import com.lowagie.text.DocumentException;
-
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +52,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -235,7 +232,7 @@ public class TicketReservationManager {
 						}
 						break;
 					case OFFLINE:
-						transitionToOfflinePayment(reservationId, email, fullName, billingAddress);
+						transitionToOfflinePayment(event, reservationId, email, fullName, billingAddress);
 						return PaymentResult.successful("not-paid");
 					case ON_SITE:
 						paymentResult = PaymentResult.successful("not-paid");
@@ -277,15 +274,25 @@ public class TicketReservationManager {
 		Validate.isTrue(ticketReservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT, "invalid status");
 		ticketReservationRepository.updateTicketReservationStatus(reservationId, TicketReservationStatus.COMPLETE.name());
 		acquireTickets(TicketStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getBillingAddress());
-		Locale language = ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().map(t -> Locale.forLanguageTag(t.getUserLanguage())).orElse(Locale.ENGLISH);
+		Locale language = findReservationLanguage(reservationId);
 		notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
 				new Object[]{ getShortReservationID(reservationId), event.getShortName()}, language), () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language, TemplateOutput.TEXT));
 	}
 
-	public void deleteOfflinePayment(Event singleEvent, String reservationId) {
+    private Locale findReservationLanguage(String reservationId) {
+        return ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().map(t -> Locale.forLanguageTag(t.getUserLanguage())).orElse(Locale.ENGLISH);
+    }
+
+    public void deleteOfflinePayment(Event event, String reservationId) {
 		TicketReservation reservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
 		Validate.isTrue(reservation.getStatus() == OFFLINE_PAYMENT, "Invalid reservation status");
+        Map<String, Object> emailModel = prepareModelForReservationEmail(event, reservation);
+        Locale reservationLanguage = findReservationLanguage(reservationId);
+        String subject = messageSource.getMessage("reservation-email-expired-subject", new Object[]{getShortReservationID(reservationId), event.getShortName()}, reservationLanguage);
 		cancelReservation(reservationId);
+        notificationManager.sendSimpleEmail(event, reservation.getEmail(), subject, () -> {
+            return templateManager.renderClassPathResource("/alfio/templates/offline-reservation-expired-email-txt.ms", emailModel, reservationLanguage, TemplateOutput.TEXT);
+        });
 	}
 
 	@Transactional(readOnly = true)
@@ -315,8 +322,9 @@ public class TicketReservationManager {
         });
     }
 
-	private void transitionToOfflinePayment(String reservationId, String email, String fullName, String billingAddress) {
-		Date newExpiration = DateUtils.addDays(truncate(new Date(), Calendar.DATE), configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5));
+	private void transitionToOfflinePayment(Event event, String reservationId, String email, String fullName, String billingAddress) {
+        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        Date newExpiration = Date.from(now.plusDays(configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5)).truncatedTo(ChronoUnit.HALF_DAYS).toInstant());
     	int updatedReservation = ticketReservationRepository.postponePayment(reservationId, newExpiration, email, fullName, billingAddress);
 		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
     }
@@ -371,7 +379,7 @@ public class TicketReservationManager {
 		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
 	}
 
-	public void cleanupExpiredReservations(Date expirationDate) {
+	void cleanupExpiredReservations(Date expirationDate) {
 		List<String> expiredReservationIds = ticketReservationRepository.findExpiredReservation(expirationDate);
 		if(expiredReservationIds.isEmpty()) {
 			return;
@@ -381,6 +389,21 @@ public class TicketReservationManager {
 		ticketRepository.freeFromReservation(expiredReservationIds);
 		ticketReservationRepository.remove(expiredReservationIds);
 	}
+
+    void cleanupExpiredOfflineReservations(Date expirationDate) {
+        ticketReservationRepository.findExpiredOfflineReservations(expirationDate).forEach(this::cleanupOfflinePayment);
+    }
+
+    private void cleanupOfflinePayment(String reservationId) {
+        try {
+            requiresNewTransactionTemplate.execute((tc) -> {
+                deleteOfflinePayment(eventRepository.findByReservationId(reservationId), reservationId);
+                return null;
+            });
+        } catch (Exception e) {
+            log.error("error during reservation cleanup (id "+reservationId+")", e);
+        }
+    }
 
     /**
      * Finds all the reservations that are "stuck" in payment status.

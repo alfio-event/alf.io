@@ -42,9 +42,7 @@ import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import alfio.util.TemplateManager.TemplateOutput;
-
 import com.google.zxing.WriterException;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +57,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -263,7 +260,7 @@ public class ReservationController {
 			model.addAttribute("totalPrice", orderSummary.getTotalPrice());
 			model.addAttribute("emailAddress", organizationRepository.getById(ev.getOrganizationId()).getEmail());
 			model.addAttribute("reservation", ticketReservation);
-			model.addAttribute("paymentReason", ticketReservationManager.getShortReservationID(reservationId));
+			model.addAttribute("paymentReason", ev.getShortName() + " " + ticketReservationManager.getShortReservationID(reservationId));
 			model.addAttribute("pageTitle", "reservation-page-waiting.header.title");
 			model.addAttribute("bankAccount", configurationManager.getStringConfigValue(ConfigurationKeys.BANK_ACCOUNT_NR).orElse(""));
 			model.addAttribute("expires", ZonedDateTime.ofInstant(ticketReservation.getValidity().toInstant(), ev.getZoneId()));

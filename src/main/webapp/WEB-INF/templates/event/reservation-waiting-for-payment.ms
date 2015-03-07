@@ -10,14 +10,17 @@
     <h2><i class="fa fa-warning"></i> {{#i18n}}reservation-page-waiting.title [{{#format-date}}{{expires}} dd/MM/yyyy HH:mm locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}</h2>
 </div>
 
+<div class="wMarginBottom wMarginTop">&nbsp;</div>
+
 <div class="wMarginBottom wMarginTop center-block">
     <h4>{{#i18n}}reservation-page-waiting.required-steps{{/i18n}}</h4>
     <ol>
-        <li>{{#i18n}}reservation-page-waiting.required-steps.1 [{{event.currency}} {{totalPrice}}] [{{bankAccount}}] [{{paymentReason}}]{{/i18n}}</li>
+        <li>{{#i18n}}reservation-page-waiting.required-steps.1 [{{event.currency}} {{totalPrice}}] [{{bankAccount}}] [<mark>{{paymentReason}}</mark>]{{/i18n}}</li>
         <li>{{#i18n}}reservation-page-waiting.required-steps.2 [{{emailAddress}}] [{{reservation.id}}]{{/i18n}}</li>
         <li>{{#i18n}}reservation-page-waiting.required-steps.3{{/i18n}}</li>
     </ol>
 </div>
+<div class="wMarginBottom">&nbsp;</div>
 <div class="container-fluid" id="back-to-event-site">
     <div class="pull-left"><a href="{{event.websiteUrl}}" class="btn btn-default">{{#i18n}}to-event-site{{/i18n}}</a></div>
 </div>
