@@ -38,7 +38,6 @@ import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +52,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -232,7 +232,7 @@ public class TicketReservationManager {
 						}
 						break;
 					case OFFLINE:
-						transitionToOfflinePayment(reservationId, email, fullName, billingAddress);
+						transitionToOfflinePayment(event, reservationId, email, fullName, billingAddress);
 						return PaymentResult.successful("not-paid");
 					case ON_SITE:
 						paymentResult = PaymentResult.successful("not-paid");
@@ -322,8 +322,9 @@ public class TicketReservationManager {
         });
     }
 
-	private void transitionToOfflinePayment(String reservationId, String email, String fullName, String billingAddress) {
-		Date newExpiration = DateUtils.addDays(truncate(new Date(), Calendar.DATE), configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5));
+	private void transitionToOfflinePayment(Event event, String reservationId, String email, String fullName, String billingAddress) {
+        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        Date newExpiration = Date.from(now.plusDays(configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5)).truncatedTo(ChronoUnit.HALF_DAYS).toInstant());
     	int updatedReservation = ticketReservationRepository.postponePayment(reservationId, newExpiration, email, fullName, billingAddress);
 		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
     }
