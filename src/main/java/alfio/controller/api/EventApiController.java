@@ -29,7 +29,6 @@ import alfio.util.Validator;
 import com.opencsv.CSVReader;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -128,8 +127,8 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments")
-    public List<Pair<TicketReservation, OrderSummary>> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {
-        return eventManager.getPendingPayments(eventName, principal.getName());
+    public List<SerializablePair<TicketReservation, OrderSummary>> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {
+        return eventManager.getPendingPayments(eventName, principal.getName()).stream().map(SerializablePair::fromPair).collect(Collectors.toList());
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)

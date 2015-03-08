@@ -33,7 +33,8 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
 
 @Log4j2
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class})
+        org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class})
 @Configuration
 public class SpringBootInitializer {
 
