@@ -21,9 +21,9 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.reflect.MethodUtils;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
+import org.springframework.security.config.annotation.web.servlet.configuration.EnableWebMvcSecurity;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
@@ -35,8 +35,7 @@ import javax.servlet.ServletException;
 import javax.servlet.SessionCookieConfig;
 
 @Log4j2
-@EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class})
+@EnableWebMvcSecurity
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
 	public static final String PROFILE_DEV = "dev";

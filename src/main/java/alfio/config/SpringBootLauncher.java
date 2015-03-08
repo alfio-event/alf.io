@@ -27,10 +27,6 @@ import org.springframework.core.env.ConfigurableEnvironment;
 @Log4j2
 public class SpringBootLauncher {
 
-    public static final String PROFILE_DEV = "dev";
-    public static final String PROFILE_LIVE = "!dev";
-    public static final String PROFILE_HTTP = "http";
-
     /**
      * Entry point for spring boot
      * @param args original arguments
@@ -38,7 +34,7 @@ public class SpringBootLauncher {
     public static void main(String[] args) {
 
         String profiles = System.getProperty("spring.profiles.active", "");
-        log.info("active profiles {}", profiles);
+        log.info("requested profiles {}", profiles);
 
         if(StringUtils.equals(profiles, "dev")) {
             System.setProperty("datasource.dialect", "HSQLDB");
@@ -53,9 +49,7 @@ public class SpringBootLauncher {
         application.setAdditionalProfiles("spring-boot");
         ConfigurableApplicationContext applicationContext = application.run(args);
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
-        if(environment.acceptsProfiles(PROFILE_DEV)) {
-            environment.addActiveProfile(PROFILE_HTTP);
-        }
+        log.info("active profiles: {}", String.join(", ", environment.getActiveProfiles()));
 
         if (System.getProperty("startDBManager") != null) {
             Class<?> cls;

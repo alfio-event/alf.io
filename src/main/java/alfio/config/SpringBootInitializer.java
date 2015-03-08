@@ -18,7 +18,6 @@ package alfio.config;
 
 import alfio.filter.RedirectToHttpsFilter;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.Validate;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.embedded.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
@@ -34,13 +33,9 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
 
 @Log4j2
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.security.SpringBootWebSecurityConfiguration.class})
+        org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class})
 @Configuration
 public class SpringBootInitializer {
-
-    private static final String PROFILE_HTTP = "http";
-
 
     @Bean
     public Filter characterEncodingFilter() {
@@ -61,11 +56,12 @@ public class SpringBootInitializer {
             WebApplicationContext ctx = getRequiredWebApplicationContext(servletContext);
             ConfigurableEnvironment environment = ctx.getBean(ConfigurableEnvironment.class);
             environment.addActiveProfile("spring-boot");
+            if(environment.acceptsProfiles(Initializer.PROFILE_DEV)) {
+                environment.addActiveProfile(Initializer.PROFILE_HTTP);
+            }
             SessionCookieConfig config = servletContext.getSessionCookieConfig();
             config.setHttpOnly(true);
-            Validate.notNull(environment, "environment cannot be null!");
-            // set secure cookie only if current environment doesn't strictly need HTTP
-            config.setSecure(!environment.acceptsProfiles(PROFILE_HTTP));
+            config.setSecure(!environment.acceptsProfiles(Initializer.PROFILE_HTTP));
         };
     }
 }

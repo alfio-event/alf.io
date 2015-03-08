@@ -17,13 +17,14 @@
 package alfio.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.annotation.web.servlet.configuration.EnableWebMvcSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
@@ -33,7 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
 @Configuration
-@EnableWebMvcSecurity
+@Order(SecurityProperties.ACCESS_OVERRIDE_ORDER)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     public static final String ADMIN_API = "/admin/api";
@@ -45,16 +46,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private DataSource dataSource;
-
     @Autowired
-    public void initConfiguration(AuthenticationManagerBuilder auth, PasswordEncoder passwordEncoder) throws Exception {
-        auth.jdbcAuthentication().dataSource(dataSource)
-                .usersByUsernameQuery("select username, password, enabled from ba_user where username = ?")
-                .authoritiesByUsernameQuery("select username, role from authority where username = ?")
-                .passwordEncoder(passwordEncoder);
-    }
-
-   
+    private PasswordEncoder passwordEncoder;
 
     @Bean
     public CsrfTokenRepository getCsrfTokenRepository() {
@@ -62,6 +55,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         repository.setSessionAttributeName(CSRF_SESSION_ATTRIBUTE);
         repository.setParameterName(CSRF_PARAM_NAME);
         return repository;
+    }
+
+    @Override
+    public void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.jdbcAuthentication().dataSource(dataSource)
+                .usersByUsernameQuery("select username, password, enabled from ba_user where username = ?")
+                .authoritiesByUsernameQuery("select username, role from authority where username = ?")
+                .passwordEncoder(passwordEncoder);
     }
 
     @Override
