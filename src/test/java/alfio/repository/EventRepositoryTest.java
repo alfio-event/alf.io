@@ -20,6 +20,7 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
 import alfio.model.Event;
+import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.Before;
@@ -47,6 +48,7 @@ import static org.junit.Assert.assertNotNull;
 public class EventRepositoryTest {
 
     private static final String NEW_YORK_TZ = "America/New_York";
+    private static final String ORG_NAME = "name";
 
     @BeforeClass
     public static void initEnv() {
@@ -56,15 +58,18 @@ public class EventRepositoryTest {
         System.setProperty("datasource.username", "sa");
         System.setProperty("datasource.password", "");
         System.setProperty("datasource.validationQuery", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
-        System.setProperty("spring.profiles.active", Initializer.PROFILE_DEV);
+        //System.setProperty("spring.profiles.active", Initializer.PROFILE_DEV);
     }
 
     @Autowired
     private EventRepository eventRepository;
+    @Autowired
+    private OrganizationRepository organizationRepository;
 
     @Before
     public void setUp() throws Exception {
         //setup hsqldb and make it usable from eventRepository
+        organizationRepository.create(ORG_NAME, "description", "email@pippobaudo.com");
     }
 
     @After
@@ -79,7 +84,9 @@ public class EventRepositoryTest {
         ZonedDateTime beginEventDate = ZonedDateTime.of(2015, 4, 18, 0, 0, 0, 0, ZoneId.of("America/New_York"));
         ZonedDateTime endEventDate = ZonedDateTime.of(2015, 4, 19, 23, 59, 59, 0, ZoneId.of("America/New_York"));
 
-        Pair<Integer, Integer> pair = eventRepository.insert("test from unit test", "unittest","http://localhost:8080/", "http://localhost:8080", "http://localhost:8080","Lugano", "9", "8", beginEventDate, endEventDate, NEW_YORK_TZ, 0, "CHF", 4, true, new BigDecimal(1), "", "", 0);
+        int orgId = organizationRepository.findByName(ORG_NAME).stream().findFirst().orElseThrow(IllegalStateException::new).getId();
+
+        Pair<Integer, Integer> pair = eventRepository.insert("test from unit test", "unittest","http://localhost:8080/", "http://localhost:8080", "http://localhost:8080","Lugano", "9", "8", beginEventDate, endEventDate, NEW_YORK_TZ, 0, "CHF", 4, true, new BigDecimal(1), "", "", orgId);
         Event e = eventRepository.findById(pair.getValue());
         assertNotNull("Event not found in DB", e);
 
