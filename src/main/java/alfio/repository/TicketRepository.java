@@ -31,9 +31,11 @@ public interface TicketRepository {
 			+ "values(:uuid, :creation, :categoryId, :eventId, :status, :originalPrice, :paidPrice)")
 	String bulkTicketInitialization();
 
-	@Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null limit :amount for update")
-	List<Integer> selectTicketInCategoryForUpdate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId,
-			@Bind("amount") int amount);
+	@Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null order by id limit :amount for update")
+	List<Integer> selectTicketInCategoryForUpdate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId,	@Bind("amount") int amount);
+
+    @Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null order by id desc limit :amount for update")
+    List<Integer> lockTicketsToInvalidate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId,	@Bind("amount") int amount);
 
     @Query("select count(*) from ticket where status in ('ACQUIRED', 'CHECKED_IN') and category_id = :categoryId and event_id = :eventId")
     Integer countConfirmedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
@@ -58,9 +60,6 @@ public interface TicketRepository {
 	
 	@Query("update ticket set status = :status where uuid = :uuid")
 	int updateTicketStatusWithUUID(@Bind("uuid") String uuid, @Bind("status") String status);
-
-    @Query("update ticket set status = 'INVALIDATED' where event_id = :eventId and status in ('FREE', 'CANCELLED')")
-    int invalidateAllTickets(@Bind("eventId") int eventId);
 
 	@Query("update ticket set status = 'INVALIDATED' where id in (:ids)")
 	int invalidateTickets(@Bind("ids") List<Integer> ids);

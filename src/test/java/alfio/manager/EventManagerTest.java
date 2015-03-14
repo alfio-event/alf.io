@@ -57,13 +57,13 @@ public class EventManagerTest {{
         when(original.getMaxTickets()).thenReturn(10);
         when(updated.getMaxTickets()).thenReturn(11);
         it.should("throw exception if there are tickets already sold", expect -> {
-            when(ticketRepository.selectTicketInCategoryForUpdate(10, 30, 2)).thenReturn(Arrays.asList(1));
+            when(ticketRepository.lockTicketsToInvalidate(10, 30, 2)).thenReturn(Arrays.asList(1));
             expect.exception(IllegalStateException.class, () -> eventManager.handleTicketNumberModification(10, original, updated, -2));
             verify(ticketRepository, never()).invalidateTickets(anyListOf(Integer.class));
         });
         it.should("invalidate exceeding tickets", expect -> {
             final List<Integer> ids = Arrays.asList(1, 2);
-            when(ticketRepository.selectTicketInCategoryForUpdate(10, 30, 2)).thenReturn(ids);
+            when(ticketRepository.lockTicketsToInvalidate(10, 30, 2)).thenReturn(ids);
             eventManager.handleTicketNumberModification(10, original, updated, -2);
             verify(ticketRepository, times(1)).invalidateTickets(ids);
         });

@@ -357,7 +357,6 @@ public class EventManager {
                 tc.getDescription());
         TicketCategory updated = ticketCategoryRepository.getById(tc.getId(), eventId);
         int addedTickets = updated.getMaxTickets() - original.getMaxTickets();
-        Validate.isTrue(addedTickets >= 0 || ticketRepository.countConfirmedAndPendingTickets(eventId, updated.getId()).equals(0), "cannot shrink a category that already contains reservations");
         handleTicketNumberModification(eventId, original, updated, addedTickets);
         handlePriceChange(eventId, original, updated);
         handleTokenModification(original, updated, addedTickets);
@@ -409,9 +408,10 @@ public class EventManager {
             jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), args.toArray(MapSqlParameterSource[]::new));
         } else {
             int absDifference = Math.abs(addedTickets);
-            final List<Integer> ids = ticketRepository.selectTicketInCategoryForUpdate(eventId, updated.getId(), absDifference);
-            if(ids.size() < absDifference) {
-                throw new IllegalStateException("cannot update the category. There are tickets already sold.");
+            final List<Integer> ids = ticketRepository.lockTicketsToInvalidate(eventId, updated.getId(), absDifference);
+            int actualDifference = ids.size();
+            if(actualDifference < absDifference) {
+                throw new IllegalStateException("Cannot invalidate "+absDifference+" tickets. There are only "+actualDifference+" free tickets");
             }
             ticketRepository.invalidateTickets(ids);
         }
