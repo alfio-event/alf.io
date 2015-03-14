@@ -46,7 +46,7 @@ public class SpringBootLauncher {
         }
 
         SpringApplication application = new SpringApplication(SpringBootInitializer.class, DataSourceConfiguration.class, WebSecurityConfig.class, MvcConfiguration.class);
-        application.setAdditionalProfiles("spring-boot");
+        application.setAdditionalProfiles(Initializer.PROFILE_SPRING_BOOT);
         ConfigurableApplicationContext applicationContext = application.run(args);
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
         log.info("active profiles: {}", String.join(", ", environment.getActiveProfiles()));

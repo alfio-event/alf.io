@@ -39,6 +39,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 	public static final String PROFILE_DEV = "dev";
 	public static final String PROFILE_LIVE = "!dev";
 	public static final String PROFILE_HTTP = "http";
+	public static final String PROFILE_SPRING_BOOT = "spring-boot";
 	private Environment environment;
 
 	@Override
