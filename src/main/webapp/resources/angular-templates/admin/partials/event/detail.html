@@ -159,7 +159,7 @@
                     <tbody>
                         <tr data-ng-repeat="ticket in ::ticketCategory.tickets | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
                             <td data-ng-class-even="'active'"><i data-ng-class="evaluateTicketStatus(ticket.status)"></i><br/><small>{{ticket.status | statusText}}</small></td>
-                            <td data-ng-class-even="'active'">{{::ticket.uuid}}</td>
+                            <td data-ng-class-even="'active'"><a href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketReservation.id}}/" target="_blank">{{::ticket.uuid}}</a></td>
                             <td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
                             <td data-ng-class-even="'active'">{{::ticket.fullName}}</td>
                             <td data-ng-class-even="'active'">{{::ticket.email}}</td>

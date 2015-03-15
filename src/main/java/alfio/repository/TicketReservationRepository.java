@@ -41,6 +41,9 @@ public interface TicketReservationRepository {
 	@Query("update tickets_reservation set status = :status where id = :reservationId")
 	int updateTicketReservationStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
 
+    @Query("update tickets_reservation set full_name = :fullName where id = :reservationId")
+    int updateAssignee(@Bind("reservationId") String reservationId, @Bind("fullName") String fullName);
+
 	@Query("select id from tickets_reservation where status = 'OFFLINE_PAYMENT'")
 	List<String> findAllReservationsWaitingForPayment();
 

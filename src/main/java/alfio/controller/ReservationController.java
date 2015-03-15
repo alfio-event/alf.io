@@ -52,7 +52,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
@@ -60,7 +63,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Controller
 public class ReservationController {
@@ -169,7 +171,7 @@ public class ReservationController {
 							.map((e) -> Pair.of(eventManager.getTicketCategoryById(e.getKey(), event.get().getId()), e.getValue()))
 							.collect(Collectors.toList()));
 			model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
-			model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
+			model.addAttribute("countries", ticketHelper.getLocalizedCountries(RequestContextUtils.getLocale(request)));
 			model.addAttribute("pageTitle", "reservation-page-complete.header.title");
 			model.addAttribute("event", event.get());
 			model.asMap().putIfAbsent("validationResult", ValidationResult.success());
@@ -365,33 +367,6 @@ public class ReservationController {
 	}
 
 
-	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/assign", method = RequestMethod.POST, headers = "X-Requested-With=XMLHttpRequest")
-	@ResponseBody
-	public Map<String, Object> ajaxAssignTicketToPerson(@PathVariable("eventName") String eventName,
-														@PathVariable("reservationId") String reservationId,
-														@PathVariable("ticketIdentifier") String ticketIdentifier,
-														UpdateTicketOwnerForm updateTicketOwner,
-														BindingResult bindingResult,
-														HttpServletRequest request,
-														Model model) throws Exception {
-
-		Optional<Triple<ValidationResult, Event, Ticket>> assignmentResult = ticketHelper.assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, t -> {
-            model.addAttribute("value", t.getRight());
-            model.addAttribute("validationResult", t.getLeft());
-            model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
-            model.addAttribute("event", t.getMiddle());
-        }, Optional.<UserDetails>empty());
-		Map<String, Object> result = new HashMap<>();
-		model.addAttribute("reservationId", reservationId);
-
-		Optional<ValidationResult> validationResult = assignmentResult.map(Triple::getLeft);
-		if(validationResult.isPresent() && validationResult.get().isSuccess()) {
-			result.put("partial", templateManager.renderServletContextResource("/WEB-INF/templates/event/assign-ticket-result.ms", model.asMap(), request, TemplateOutput.HTML));
-		}
-		result.put("validationResult", validationResult.orElse(ValidationResult.failed(new ValidationResult.ValidationError("fullName", "error.fullname"))));
-		return result;
-	}
-
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/assign", method = RequestMethod.POST)
 	public String assignTicketToPerson(@PathVariable("eventName") String eventName,
 									   @PathVariable("reservationId") String reservationId,
@@ -404,7 +379,7 @@ public class ReservationController {
 		Optional<Triple<ValidationResult, Event, Ticket>> result = ticketHelper.assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, t -> {
             model.addAttribute("value", t.getRight());
             model.addAttribute("validationResult", t.getLeft());
-            model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
+            model.addAttribute("countries", ticketHelper.getLocalizedCountries(RequestContextUtils.getLocale(request)));
             model.addAttribute("event", t.getMiddle());
         }, Optional.<UserDetails>empty());
 		return result.map(t -> "redirect:/event/"+t.getMiddle().getShortName()+"/reservation/"+t.getRight().getTicketsReservationId()+"/success").orElse("redirect:/");
@@ -425,13 +400,6 @@ public class ReservationController {
 		String reservationInfo = templateManager.renderClassPathResource("/alfio/templates/confirmation-email-for-organizer-txt.ms",
 				ticketReservationManager.prepareModelForReservationEmail(event, reservation), RequestContextUtils.getLocale(request), TemplateOutput.TEXT);
 		notificationManager.sendSimpleEmail(event, organization.getEmail(), "Reservation complete " + reservation.getId(), reservationInfo);
-	}
-
-	private static List<Pair<String, String>> getLocalizedCountries(Locale locale) {
-		return Stream.of(Locale.getISOCountries())
-				.map(isoCode -> Pair.of(isoCode, new Locale("", isoCode).getDisplayCountry(locale)))
-				.sorted(Comparator.comparing(Pair::getRight))
-				.collect(Collectors.toList());
 	}
 
 }

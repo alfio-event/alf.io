@@ -20,7 +20,9 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.Event;
 import alfio.model.Ticket;
+import alfio.model.TicketReservation;
 import alfio.repository.TicketRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.user.AuthorityRepository;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
@@ -41,6 +43,7 @@ import static org.mockito.Mockito.*;
 public class TicketReservationManagerTest {{
     describe("update Ticket owner", it -> {
         final String ticketId = "abcde";
+        final String ticketReservationId = "abcdef";
         final String originalEmail = "me@myaddress.com";
         final String originalName = "First Last";
         Ticket original = mock(Ticket.class);
@@ -51,7 +54,8 @@ public class TicketReservationManagerTest {{
         when(event.getShortName()).thenReturn("short-name");
         NotificationManager notificationManager = it.usesMock(NotificationManager.class);
         MessageSource messageSource = mock(MessageSource.class);
-        TicketReservationManager trm = new TicketReservationManager(null, null, ticketRepository, null, null, null, null, null, null, null, notificationManager, messageSource, null, null);
+        TicketReservationRepository ticketReservationRepository = mock(TicketReservationRepository.class);
+        TicketReservationManager trm = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, null, null, notificationManager, messageSource, null, null);
 
         it.initializesWith(() -> {
             when(original.getUuid()).thenReturn(ticketId);
@@ -63,6 +67,9 @@ public class TicketReservationManagerTest {{
         });
 
         it.should("not send the warning e-mail if the current user is admin", expect -> {
+            TicketReservation reservation = mock(TicketReservation.class);
+            when(original.getTicketsReservationId()).thenReturn(ticketReservationId);
+            when(ticketReservationRepository.findReservationById(eq(ticketReservationId))).thenReturn(reservation);
             UserDetails userDetails = new User("user", "password", Arrays.asList(new SimpleGrantedAuthority(AuthorityRepository.ROLE_ADMIN)));
             trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null,(b) -> null, (c) -> null, Optional.of(userDetails));
             verify(messageSource, never()).getMessage(eq("ticket-has-changed-owner-subject"), eq(new Object[] {"short-name"}), eq(Locale.ENGLISH));

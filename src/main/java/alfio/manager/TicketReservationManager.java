@@ -646,10 +646,20 @@ public class TicketReservationManager {
 			sendTicketByEmail(newTicket, locale, event, confirmationTextBuilder, pdfTemplateGenerator);
 		}
 
-		if (!isAdmin(userDetails) && StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail())) {
+        boolean admin = isAdmin(userDetails);
+
+		if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail())) {
 			String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getShortName()}, locale);
 			notificationManager.sendSimpleEmail(event, ticket.getEmail(), subject, ownerChangeTextBuilder.generate(newTicket));
 		}
+
+        if(admin) {
+            TicketReservation reservation = findById(ticket.getTicketsReservationId()).orElseThrow(IllegalStateException::new);
+            //if the current user is admin, then it would be good to update also the name of the Reservation Owner (not the e-mail, since
+            String username = userDetails.get().getUsername();
+            log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
+            ticketReservationRepository.updateAssignee(reservation.getId(), username);
+        }
 	}
 
     private boolean isAdmin(Optional<UserDetails> userDetails) {

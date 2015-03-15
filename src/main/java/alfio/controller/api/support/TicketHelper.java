@@ -33,6 +33,7 @@ import alfio.util.TemplateManager;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.google.zxing.WriterException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -42,8 +43,13 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class TicketHelper {
@@ -91,6 +97,13 @@ public class TicketHelper {
                 });
         triple.ifPresent(reservationConsumer);
         return triple;
+    }
+
+    public List<Pair<String, String>> getLocalizedCountries(Locale locale) {
+        return Stream.of(Locale.getISOCountries())
+                .map(isoCode -> Pair.of(isoCode, new Locale("", isoCode).getDisplayCountry(locale)))
+                .sorted(Comparator.comparing(Pair::getRight))
+                .collect(Collectors.toList());
     }
 
     private void updateTicketOwner(UpdateTicketOwnerForm updateTicketOwner, HttpServletRequest request, Ticket t, Event event, TicketReservation ticketReservation, Optional<UserDetails> userDetails) {
