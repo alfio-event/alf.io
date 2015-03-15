@@ -389,7 +389,7 @@
             scope: {
                 statisticsContainer: '='
             },
-            template:'<canvas id="pie" class="chart chart-pie" data-data="statistics" data-labels="labels"></canvas>',
+            template:'<canvas class="chart chart-pie" data-data="statistics" data-labels="labels" data-options="{animation:false}"></canvas>',
             controller: function($scope) {
                 $scope.$watch('statisticsContainer', function(newVal) {
                     if(angular.isDefined(newVal)) {
