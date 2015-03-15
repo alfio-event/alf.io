@@ -29,6 +29,7 @@ import alfio.model.modification.TicketWithStatistic;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
+import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
@@ -42,6 +43,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -618,12 +620,13 @@ public class TicketReservationManager {
 	}
 
 	public void updateTicketOwner(Ticket ticket,
-								  Locale locale,
-								  Event event,
-								  UpdateTicketOwnerForm updateTicketOwner,
-								  PartialTicketTextGenerator confirmationTextBuilder,
-								  PartialTicketTextGenerator ownerChangeTextBuilder,
-								  PartialTicketPDFGenerator pdfTemplateGenerator) {
+                                  Locale locale,
+                                  Event event,
+                                  UpdateTicketOwnerForm updateTicketOwner,
+                                  PartialTicketTextGenerator confirmationTextBuilder,
+                                  PartialTicketTextGenerator ownerChangeTextBuilder,
+                                  PartialTicketPDFGenerator pdfTemplateGenerator,
+                                  Optional<UserDetails> userDetails) {
 
 		String newEmail = updateTicketOwner.getEmail().trim();
 		String newFullName = updateTicketOwner.getFullName().trim();
@@ -643,11 +646,15 @@ public class TicketReservationManager {
 			sendTicketByEmail(newTicket, locale, event, confirmationTextBuilder, pdfTemplateGenerator);
 		}
 
-		if (StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail())) {
+		if (!isAdmin(userDetails) && StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail())) {
 			String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getShortName()}, locale);
 			notificationManager.sendSimpleEmail(event, ticket.getEmail(), subject, ownerChangeTextBuilder.generate(newTicket));
 		}
 	}
+
+    private boolean isAdmin(Optional<UserDetails> userDetails) {
+        return userDetails.flatMap(u -> u.getAuthorities().stream().filter(a -> AuthorityRepository.ROLE_ADMIN.equals(a.getAuthority())).findFirst()).isPresent();
+    }
 
 	private void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder, PartialTicketPDFGenerator pdfTemplateGenerator) {
 		try {
