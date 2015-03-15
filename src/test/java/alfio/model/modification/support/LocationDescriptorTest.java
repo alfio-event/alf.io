@@ -14,9 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.api.support;
+package alfio.model.modification.support;
 
-import alfio.model.modification.support.LocationDescriptor;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.runner.RunWith;
