@@ -8,7 +8,7 @@
     } else if (typeof exports === 'object') {
         module.exports = factory(require('../moment')); // Node
     } else {
-        factory(window.moment); // Browser global
+        factory((typeof global !== 'undefined' ? global : this).moment); // node or other global
     }
 }(function (moment) {
     var symbolMap = {
@@ -44,6 +44,7 @@
         weekdaysMin : 'र_सो_मं_बु_गु_शु_श'.split('_'),
         longDateFormat : {
             LT : 'A h:mm वाजता',
+            LTS : 'A h:mm:ss वाजता',
             L : 'DD/MM/YYYY',
             LL : 'D MMMM YYYY',
             LLL : 'D MMMM YYYY, LT',
@@ -81,6 +82,21 @@
             return string.replace(/\d/g, function (match) {
                 return symbolMap[match];
             });
+        },
+        meridiemParse: /रात्री|सकाळी|दुपारी|सायंकाळी/,
+        meridiemHour : function (hour, meridiem) {
+            if (hour === 12) {
+                hour = 0;
+            }
+            if (meridiem === 'रात्री') {
+                return hour < 4 ? hour : hour + 12;
+            } else if (meridiem === 'सकाळी') {
+                return hour;
+            } else if (meridiem === 'दुपारी') {
+                return hour >= 10 ? hour : hour + 12;
+            } else if (meridiem === 'सायंकाळी') {
+                return hour + 12;
+            }
         },
         meridiem: function (hour, minute, isLower)
         {

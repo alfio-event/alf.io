@@ -10,7 +10,7 @@
     } else if (typeof exports === 'object') {
         module.exports = factory(require('../moment')); // Node
     } else {
-        factory(window.moment); // Browser global
+        factory((typeof global !== 'undefined' ? global : this).moment); // node or other global
     }
 }(function (moment) {
     return moment.defineLocale('sq', {
@@ -19,11 +19,16 @@
         weekdays : 'E Diel_E Hënë_E Martë_E Mërkurë_E Enjte_E Premte_E Shtunë'.split('_'),
         weekdaysShort : 'Die_Hën_Mar_Mër_Enj_Pre_Sht'.split('_'),
         weekdaysMin : 'D_H_Ma_Më_E_P_Sh'.split('_'),
+        meridiemParse: /PD|MD/,
+        isPM: function (input) {
+            return input.charAt(0) === 'M';
+        },
         meridiem : function (hours, minutes, isLower) {
             return hours < 12 ? 'PD' : 'MD';
         },
         longDateFormat : {
             LT : 'HH:mm',
+            LTS : 'LT:ss',
             L : 'DD/MM/YYYY',
             LL : 'D MMMM YYYY',
             LLL : 'D MMMM YYYY LT',
@@ -52,6 +57,7 @@
             y : 'një vit',
             yy : '%d vite'
         },
+        ordinalParse: /\d{1,2}\./,
         ordinal : '%d.',
         week : {
             dow : 1, // Monday is the first day of the week.

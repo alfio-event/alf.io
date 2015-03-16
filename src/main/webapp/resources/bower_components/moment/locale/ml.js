@@ -8,7 +8,7 @@
     } else if (typeof exports === 'object') {
         module.exports = factory(require('../moment')); // Node
     } else {
-        factory(window.moment); // Browser global
+        factory((typeof global !== 'undefined' ? global : this).moment); // node or other global
     }
 }(function (moment) {
     return moment.defineLocale('ml', {
@@ -19,6 +19,7 @@
         weekdaysMin : 'ഞാ_തി_ചൊ_ബു_വ്യാ_വെ_ശ'.split('_'),
         longDateFormat : {
             LT : 'A h:mm -നു',
+            LTS : 'A h:mm:ss -നു',
             L : 'DD/MM/YYYY',
             LL : 'D MMMM YYYY',
             LLL : 'D MMMM YYYY, LT',
@@ -46,6 +47,10 @@
             MM : '%d മാസം',
             y : 'ഒരു വർഷം',
             yy : '%d വർഷം'
+        },
+        meridiemParse: /രാത്രി|രാവിലെ|ഉച്ച കഴിഞ്ഞ്|വൈകുന്നേരം|രാത്രി/i,
+        isPM : function (input) {
+            return /^(ഉച്ച കഴിഞ്ഞ്|വൈകുന്നേരം|രാത്രി)$/.test(input);
         },
         meridiem : function (hour, minute, isLower) {
             if (hour < 4) {

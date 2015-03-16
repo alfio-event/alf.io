@@ -112,6 +112,7 @@
 
         scope.$watch('series', resetChart, true);
         scope.$watch('labels', resetChart, true);
+        scope.$watch('options', resetChart, true);
 
         scope.$watch('chartType', function (newVal, oldVal) {
           if (! newVal) return;
@@ -119,8 +120,12 @@
           chart = createChart(newVal, scope, elem);
         });
 
+        scope.$on('$destroy', function () {
+          if (chart) chart.destroy();
+        });
+
         function resetChart (newVal, oldVal) {
-          if (! newVal || ! newVal.length) return;
+          if (isEmpty(newVal)) return;
           var chartType = type || scope.chartType;
           if (! chartType) return;
 
@@ -148,7 +153,7 @@
   }
 
   function createChart (type, scope, elem) {
-    if (! scope.data) return;
+    if (! scope.data || ! scope.data.length) return;
     var cvs = elem[0], ctx = cvs.getContext("2d");
     var data = Array.isArray(scope.data[0]) ?
       getDataSets(scope.labels, scope.data, scope.series || [], scope.colours) :
@@ -218,7 +223,8 @@
   function clone (obj) {
     var newObj = {};
     for (var key in obj) {
-      if (obj.hasOwnProperty(key)) newObj[key] = obj[key];
+      if (obj.hasOwnProperty(key))
+        newObj[key] = obj[key];
     }
     return newObj;
   }
@@ -233,6 +239,12 @@
         highlight: colours[i].pointHighlightStroke
       };
     });
+  }
+
+  function isEmpty (value) {
+    return ! value ||
+      (Array.isArray(value) && ! value.length) ||
+      (typeof value === 'object' && ! Object.keys(value).length);
   }
 
 })();

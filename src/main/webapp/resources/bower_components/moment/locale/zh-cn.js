@@ -9,7 +9,7 @@
     } else if (typeof exports === 'object') {
         module.exports = factory(require('../moment')); // Node
     } else {
-        factory(window.moment); // Browser global
+        factory((typeof global !== 'undefined' ? global : this).moment); // node or other global
     }
 }(function (moment) {
     return moment.defineLocale('zh-cn', {
@@ -20,6 +20,7 @@
         weekdaysMin : '日_一_二_三_四_五_六'.split('_'),
         longDateFormat : {
             LT : 'Ah点mm',
+            LTS : 'Ah点m分s秒',
             L : 'YYYY-MM-DD',
             LL : 'YYYY年MMMD日',
             LLL : 'YYYY年MMMD日LT',
@@ -28,6 +29,21 @@
             ll : 'YYYY年MMMD日',
             lll : 'YYYY年MMMD日LT',
             llll : 'YYYY年MMMD日ddddLT'
+        },
+        meridiemParse: /凌晨|早上|上午|中午|下午|晚上/,
+        meridiemHour: function (hour, meridiem) {
+            if (hour === 12) {
+                hour = 0;
+            }
+            if (meridiem === '凌晨' || meridiem === '早上' ||
+                    meridiem === '上午') {
+                return hour;
+            } else if (meridiem === '下午' || meridiem === '晚上') {
+                return hour + 12;
+            } else {
+                // '中午'
+                return hour >= 11 ? hour : hour + 12;
+            }
         },
         meridiem : function (hour, minute, isLower) {
             var hm = hour * 100 + minute;
@@ -69,6 +85,7 @@
             },
             sameElse : 'LL'
         },
+        ordinalParse: /\d{1,2}(日|月|周)/,
         ordinal : function (number, period) {
             switch (period) {
             case 'd':

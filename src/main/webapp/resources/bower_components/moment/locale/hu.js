@@ -8,7 +8,7 @@
     } else if (typeof exports === 'object') {
         module.exports = factory(require('../moment')); // Node
     } else {
-        factory(window.moment); // Browser global
+        factory((typeof global !== 'undefined' ? global : this).moment); // node or other global
     }
 }(function (moment) {
     var weekEndings = 'vasárnap hétfőn kedden szerdán csütörtökön pénteken szombaton'.split(' ');
@@ -57,10 +57,15 @@
         weekdaysMin : 'v_h_k_sze_cs_p_szo'.split('_'),
         longDateFormat : {
             LT : 'H:mm',
+            LTS : 'LT:ss',
             L : 'YYYY.MM.DD.',
             LL : 'YYYY. MMMM D.',
             LLL : 'YYYY. MMMM D., LT',
             LLLL : 'YYYY. MMMM D., dddd LT'
+        },
+        meridiemParse: /de|du/i,
+        isPM: function (input) {
+            return input.charAt(1).toLowerCase() === 'u';
         },
         meridiem : function (hours, minutes, isLower) {
             if (hours < 12) {
@@ -96,6 +101,7 @@
             y : translate,
             yy : translate
         },
+        ordinalParse: /\d{1,2}\./,
         ordinal : '%d.',
         week : {
             dow : 1, // Monday is the first day of the week.

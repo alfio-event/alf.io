@@ -10,7 +10,7 @@
     } else if (typeof exports === 'object') {
         module.exports = factory(require('../moment')); // Node
     } else {
-        factory(window.moment); // Browser global
+        factory((typeof global !== 'undefined' ? global : this).moment); // node or other global
     }
 }(function (moment) {
     function plural(word, num) {
@@ -71,6 +71,7 @@
         weekdaysMin : 'нд_пн_ат_ср_чц_пт_сб'.split('_'),
         longDateFormat : {
             LT : 'HH:mm',
+            LTS : 'LT:ss',
             L : 'DD.MM.YYYY',
             LL : 'D MMMM YYYY г.',
             LLL : 'D MMMM YYYY г., LT',
@@ -113,8 +114,10 @@
             y : 'год',
             yy : relativeTimeWithPlural
         },
-
-
+        meridiemParse: /ночы|раніцы|дня|вечара/,
+        isPM : function (input) {
+            return /^(дня|вечара)$/.test(input);
+        },
         meridiem : function (hour, minute, isLower) {
             if (hour < 4) {
                 return 'ночы';
@@ -127,6 +130,7 @@
             }
         },
 
+        ordinalParse: /\d{1,2}-(і|ы|га)/,
         ordinal: function (number, period) {
             switch (period) {
             case 'M':

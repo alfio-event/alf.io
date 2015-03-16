@@ -8,7 +8,7 @@
     } else if (typeof exports === 'object') {
         module.exports = factory(require('../moment')); // Node
     } else {
-        factory(window.moment); // Browser global
+        factory((typeof global !== 'undefined' ? global : this).moment); // node or other global
     }
 }(function (moment) {
     return moment.defineLocale('ja', {
@@ -19,10 +19,15 @@
         weekdaysMin : '日_月_火_水_木_金_土'.split('_'),
         longDateFormat : {
             LT : 'Ah時m分',
+            LTS : 'LTs秒',
             L : 'YYYY/MM/DD',
             LL : 'YYYY年M月D日',
             LLL : 'YYYY年M月D日LT',
             LLLL : 'YYYY年M月D日LT dddd'
+        },
+        meridiemParse: /午前|午後/i,
+        isPM : function (input) {
+            return input === '午後';
         },
         meridiem : function (hour, minute, isLower) {
             if (hour < 12) {

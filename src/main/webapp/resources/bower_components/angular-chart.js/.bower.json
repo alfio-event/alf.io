@@ -1,6 +1,6 @@
 {
   "name": "angular-chart.js",
-  "version": "0.3.18",
+  "version": "0.3.20",
   "main": [
     "./dist/angular-chart.js",
     "./dist/angular-chart.css"
@@ -34,7 +34,7 @@
     "tests"
   ],
   "dependencies": {
-    "angular": "~1.2.0",
+    "angular": "1.x",
     "Chart.js": "~1.0.1"
   },
   "devDependencies": {
@@ -43,14 +43,13 @@
     "rainbow": "~1.1.9"
   },
   "homepage": "https://github.com/jtblin/angular-chart.js",
-  "_release": "0.3.18",
+  "_release": "0.3.20",
   "_resolution": {
     "type": "version",
-    "tag": "0.3.18",
-    "commit": "b2535d89ec7c693151abf514f15982db6acfc50b"
+    "tag": "0.3.20",
+    "commit": "5072748f8940851a1da1a86d1f2c79fc1341db57"
   },
   "_source": "git://github.com/jtblin/angular-chart.js.git",
   "_target": "~0.3.18",
-  "_originalSource": "angular-chart.js",
-  "_direct": true
+  "_originalSource": "angular-chart.js"
 }

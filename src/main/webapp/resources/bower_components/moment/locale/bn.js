@@ -8,7 +8,7 @@
     } else if (typeof exports === 'object') {
         module.exports = factory(require('../moment')); // Node
     } else {
-        factory(window.moment); // Browser global
+        factory((typeof global !== 'undefined' ? global : this).moment); // node or other global
     }
 }(function (moment) {
     var symbolMap = {
@@ -44,6 +44,7 @@
         weekdaysMin : 'রব_সম_মঙ্গ_বু_ব্রিহ_শু_শনি'.split('_'),
         longDateFormat : {
             LT : 'A h:mm সময়',
+            LTS : 'A h:mm:ss সময়',
             L : 'DD/MM/YYYY',
             LL : 'D MMMM YYYY',
             LLL : 'D MMMM YYYY, LT',
@@ -81,6 +82,10 @@
             return string.replace(/\d/g, function (match) {
                 return symbolMap[match];
             });
+        },
+        meridiemParse: /রাত|শকাল|দুপুর|বিকেল|রাত/,
+        isPM: function (input) {
+            return /^(দুপুর|বিকেল|রাত)$/.test(input);
         },
         //Bengali is a vast language its spoken
         //in different forms in various parts of the world.

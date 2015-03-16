@@ -9,7 +9,7 @@
     } else if (typeof exports === 'object') {
         module.exports = factory(require('../moment')); // Node
     } else {
-        factory(window.moment); // Browser global
+        factory((typeof global !== 'undefined' ? global : this).moment); // node or other global
     }
 }(function (moment) {
     function plural(word, num) {
@@ -79,6 +79,7 @@
         weekdaysMin : 'нд_пн_вт_ср_чт_пт_сб'.split('_'),
         longDateFormat : {
             LT : 'HH:mm',
+            LTS : 'LT:ss',
             L : 'DD.MM.YYYY',
             LL : 'D MMMM YYYY р.',
             LLL : 'D MMMM YYYY р., LT',
@@ -122,6 +123,10 @@
 
         // M. E.: those two are virtually unused but a user might want to implement them for his/her website for some reason
 
+        meridiemParse: /ночі|ранку|дня|вечора/,
+        isPM: function (input) {
+            return /^(дня|вечора)$/.test(input);
+        },
         meridiem : function (hour, minute, isLower) {
             if (hour < 4) {
                 return 'ночі';
@@ -134,6 +139,7 @@
             }
         },
 
+        ordinalParse: /\d{1,2}-(й|го)/,
         ordinal: function (number, period) {
             switch (period) {
             case 'M':

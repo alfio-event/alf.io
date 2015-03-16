@@ -8,7 +8,7 @@
     } else if (typeof exports === 'object') {
         module.exports = factory(require('../moment')); // Node
     } else {
-        factory(window.moment); // Browser global
+        factory((typeof global !== 'undefined' ? global : this).moment); // node or other global
     }
 }(function (moment) {
     return moment.defineLocale('af', {
@@ -17,6 +17,10 @@
         weekdays : 'Sondag_Maandag_Dinsdag_Woensdag_Donderdag_Vrydag_Saterdag'.split('_'),
         weekdaysShort : 'Son_Maa_Din_Woe_Don_Vry_Sat'.split('_'),
         weekdaysMin : 'So_Ma_Di_Wo_Do_Vr_Sa'.split('_'),
+        meridiemParse: /vm|nm/i,
+        isPM : function (input) {
+            return /^nm$/i.test(input);
+        },
         meridiem : function (hours, minutes, isLower) {
             if (hours < 12) {
                 return isLower ? 'vm' : 'VM';
@@ -26,6 +30,7 @@
         },
         longDateFormat : {
             LT : 'HH:mm',
+            LTS : 'LT:ss',
             L : 'DD/MM/YYYY',
             LL : 'D MMMM YYYY',
             LLL : 'D MMMM YYYY LT',
@@ -54,6 +59,7 @@
             y : '\'n jaar',
             yy : '%d jaar'
         },
+        ordinalParse: /\d{1,2}(ste|de)/,
         ordinal : function (number) {
             return number + ((number === 1 || number === 8 || number >= 20) ? 'ste' : 'de'); // Thanks to Joris Röling : https://github.com/jjupiter
         },

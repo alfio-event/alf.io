@@ -1,10 +1,9 @@
 /**
-* @version: 1.3.17
+* @version: 1.3.19
 * @author: Dan Grossman http://www.dangrossman.info/
-* @date: 2014-11-25
-* @copyright: Copyright (c) 2012-2014 Dan Grossman. All rights reserved.
+* @copyright: Copyright (c) 2012-2015 Dan Grossman. All rights reserved.
 * @license: Licensed under the MIT license. See http://www.opensource.org/licenses/mit-license.php
-* @website: http://www.improvely.com/
+* @website: https://www.improvely.com/
 */
 
 (function(root, factory) {
@@ -129,7 +128,7 @@
 
             this.startDate = moment().startOf('day');
             this.endDate = moment().endOf('day');
-            this.timeZone = moment().zone();
+            this.timeZone = moment().utcOffset();
             this.minDate = false;
             this.maxDate = false;
             this.dateLimit = false;
@@ -304,11 +303,11 @@
             //if no start/end dates set, check if an input element contains initial values
             if (typeof options.startDate === 'undefined' && typeof options.endDate === 'undefined') {
                 if ($(this.element).is('input[type=text]')) {
-                    var val = $(this.element).val(), 
+                    var val = $(this.element).val(),
                         split = val.split(this.separator);
-                    
+
                     start = end = null;
-                    
+
                     if (split.length == 2) {
                         start = moment(split[0], this.format);
                         end = moment(split[1], this.format);
@@ -326,10 +325,10 @@
             // bind the time zone used to build the calendar to either the timeZone passed in through the options or the zone of the startDate (which will be the local time zone by default)
             if (typeof options.timeZone === 'string' || typeof options.timeZone === 'number') {
                 this.timeZone = options.timeZone;
-                this.startDate.zone(this.timeZone);
-                this.endDate.zone(this.timeZone);
+                this.startDate.utcOffset(this.timeZone);
+                this.endDate.utcOffset(this.timeZone);
             } else {
-                this.timeZone = moment(this.startDate).zone();
+                this.timeZone = moment(this.startDate).utcOffset();
             }
 
             if (typeof options.ranges === 'object') {
@@ -447,7 +446,7 @@
 
         setStartDate: function(startDate) {
             if (typeof startDate === 'string')
-                this.startDate = moment(startDate, this.format).zone(this.timeZone);
+                this.startDate = moment(startDate, this.format).utcOffset(this.timeZone);
 
             if (typeof startDate === 'object')
                 this.startDate = moment(startDate);
@@ -464,7 +463,7 @@
 
         setEndDate: function(endDate) {
             if (typeof endDate === 'string')
-                this.endDate = moment(endDate, this.format).zone(this.timeZone);
+                this.endDate = moment(endDate, this.format).utcOffset(this.timeZone);
 
             if (typeof endDate === 'object')
                 this.endDate = moment(endDate);
@@ -505,12 +504,12 @@
                 end = null;
 
             if(dateString.length === 2) {
-                start = moment(dateString[0], this.format).zone(this.timeZone);
-                end = moment(dateString[1], this.format).zone(this.timeZone);
+                start = moment(dateString[0], this.format).utcOffset(this.timeZone);
+                end = moment(dateString[1], this.format).utcOffset(this.timeZone);
             }
 
             if (this.singleDatePicker || start === null || end === null) {
-                start = moment(this.element.val(), this.format).zone(this.timeZone);
+                start = moment(this.element.val(), this.format).utcOffset(this.timeZone);
                 end = start;
             }
 
@@ -679,11 +678,11 @@
 
             var startDate, endDate;
             if (el.attr('name') === 'daterangepicker_start') {
-                startDate = date;
+                startDate = (false !== this.minDate && date.isBefore(this.minDate)) ? this.minDate : date;
                 endDate = this.endDate;
             } else {
                 startDate = this.startDate;
-                endDate = date;
+                endDate = (false !== this.maxDate && date.isAfter(this.maxDate)) ? this.maxDate : date;
             }
             this.setCustomDates(startDate, endDate);
         },
@@ -698,8 +697,10 @@
         updateInputText: function() {
             if (this.element.is('input') && !this.singleDatePicker) {
                 this.element.val(this.startDate.format(this.format) + this.separator + this.endDate.format(this.format));
+                this.element.trigger('change');
             } else if (this.element.is('input')) {
                 this.element.val(this.endDate.format(this.format));
+                this.element.trigger('change');
             }
         },
 
@@ -769,6 +770,9 @@
             if (startDate.isAfter(endDate)) {
                 var difference = this.endDate.diff(this.startDate);
                 endDate = moment(startDate).add(difference, 'ms');
+                if (this.maxDate && endDate.isAfter(this.maxDate)) {
+                  endDate = this.maxDate;
+                }
             }
             this.startDate = startDate;
             this.endDate = endDate;
@@ -847,6 +851,28 @@
             // Month must be Number for new moment versions
             var month = parseInt(cal.find('.monthselect').val(), 10);
             var year = cal.find('.yearselect').val();
+
+            if (!isLeft && !this.singleDatePicker) {
+                if (year < this.startDate.year() || (year == this.startDate.year() && month < this.startDate.month())) {
+                    month = this.startDate.month();
+                    year = this.startDate.year();
+                }
+            }
+
+            if (this.minDate) {
+                if (year < this.minDate.year() || (year == this.minDate.year() && month < this.minDate.month())) {
+                    month = this.minDate.month();
+                    year = this.minDate.year();
+                }
+            }
+
+            if (this.maxDate) {
+                if (year > this.maxDate.year() || (year == this.maxDate.year() && month > this.maxDate.month())) {
+                    month = this.maxDate.month();
+                    year = this.maxDate.year();
+                }
+            }
+
 
             this[leftOrRight+'Calendar'].month.month(month).year(year);
             this.updateCalendars();
@@ -959,7 +985,7 @@
             if (dayOfWeek == this.locale.firstDay)
                 startDay = daysInLastMonth - 6;
 
-            var curDate = moment([lastYear, lastMonth, startDay, 12, minute, second]).zone(this.timeZone);
+            var curDate = moment([lastYear, lastMonth, startDay, 12, minute, second]).utcOffset(this.timeZone);
 
             var col, row;
             for (i = 0, col = 0, row = 0; i < 42; i++, col++, curDate = moment(curDate).add(24, 'hour')) {
@@ -1027,7 +1053,7 @@
                 html += '<th></th>';
 
             if (!minDate || minDate.isBefore(calendar.firstDay)) {
-                html += '<th class="prev available"><i class="fa fa-arrow-left icon-arrow-left glyphicon glyphicon-arrow-left"></i></th>';
+                html += '<th class="prev available"><i class="fa fa-arrow-left icon icon-arrow-left glyphicon glyphicon-arrow-left"></i></th>';
             } else {
                 html += '<th></th>';
             }
@@ -1040,7 +1066,7 @@
 
             html += '<th colspan="5" class="month">' + dateHtml + '</th>';
             if (!maxDate || maxDate.isAfter(calendar.lastDay)) {
-                html += '<th class="next available"><i class="fa fa-arrow-right icon-arrow-right glyphicon glyphicon-arrow-right"></i></th>';
+                html += '<th class="next available"><i class="fa fa-arrow-right icon icon-arrow-right glyphicon glyphicon-arrow-right"></i></th>';
             } else {
                 html += '<th></th>';
             }
