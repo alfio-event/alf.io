@@ -42,4 +42,15 @@
             });
         };
     });
+
+    filters.filter('showSelectedCategories', function() {
+        return function(categories, criteria) {
+            if(criteria.active && criteria.expired) {
+                return categories;
+            }
+            return _.filter(categories, function(category) {
+                return (criteria.freeText !== '' && _.startsWith(category.name) && ((criteria.active && !category.expired) || (criteria.expired && category.expired));
+            });
+        };
+    });
 })();

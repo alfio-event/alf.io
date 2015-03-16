@@ -396,6 +396,12 @@
             }
         };
 
+        $scope.selection = {
+            active: true,
+            expired: false,
+            freeText: ''
+        };
+
         $scope.isTokenViewCollapsed = function(category) {
             return !category.isTokenViewExpanded;
         };
@@ -419,8 +425,9 @@
                 case 'PENDING':
                     return cls + 'fa-warning text-warning';
                 case 'ACQUIRED':
-                case 'TO_BE_PAID':
                     return cls + 'fa-bookmark text-success';
+                case 'TO_BE_PAID':
+                    return cls + 'fa-bookmark-o text-success';
                 case 'CHECKED_IN':
                     return cls + 'fa-check-circle text-success';
                 case 'CANCELLED':
