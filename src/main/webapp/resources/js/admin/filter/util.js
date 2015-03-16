@@ -49,7 +49,11 @@
                 return categories;
             }
             return _.filter(categories, function(category) {
-                return (criteria.freeText !== '' && _.startsWith(category.name) && ((criteria.active && !category.expired) || (criteria.expired && category.expired));
+                var result = ((criteria.active && !category.expired) || (criteria.expired && category.expired));
+                if(result && criteria.freeText !== '') {
+                    return category.name.toLowerCase().indexOf(criteria.freeText.toLowerCase()) > -1;
+                }
+                return result;
             });
         };
     });

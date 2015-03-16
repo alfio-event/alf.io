@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
     <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.js"></script>
-    <script src="{{request.contextPath}}/resources/bower_components/lodash/dist/lodash.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/lodash/lodash.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/moment/min/moment-with-locales.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/numeral/min/numeral.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular/angular.min.js"></script>
