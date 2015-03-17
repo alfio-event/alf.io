@@ -46,6 +46,12 @@ public class AdminController {
         this.eventManager = eventManager;
     }
 
+    //catch both "/admin" and "/admin/"
+    @RequestMapping("")
+    public String adminHome() {
+        return "/admin/index";
+    }
+
     @RequestMapping("/events/{eventName}/export-attendees.csv")
     public void downloadAttendeesCSV(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) throws IOException {
         Validate.isTrue(StringUtils.isNotBlank(eventName), "Event name is not valid");
