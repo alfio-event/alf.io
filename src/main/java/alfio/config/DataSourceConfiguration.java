@@ -192,7 +192,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 	}
 
 	@Bean
-    @Profile("!spring-boot")
+    @Profile("!"+Initializer.PROFILE_SPRING_BOOT)
 	public PlatformTransactionManager platformTransactionManager(DataSource dataSource) {
 		return new DataSourceTransactionManager(dataSource);
 	}

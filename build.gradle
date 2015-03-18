@@ -153,6 +153,18 @@ license {
     include '**/*.sql'
 }
 
+import org.apache.tools.ant.filters.ReplaceTokens
+
+processResources {
+    from(sourceSets.main.resources.srcDirs) {
+        include '**/application.properties'
+        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: [
+                'projectVersion': project.version,
+                'buildDate': java.time.LocalDateTime.now().toString()
+        ])
+    }
+}
+
 bootRun {
     def externalConfig = new File("./custom.jvmargs")
     def opts = []
@@ -166,7 +178,9 @@ bootRun {
             "-Ddatasource.url=${project.datasourceUrl}",
             "-Ddatasource.username=${project.datasourceUsername}",
             "-Ddatasource.password=${project.datasourcePassword}",
-            "-Ddatasource.validationQuery=${project.datasourceValidationQuery}"
+            "-Ddatasource.validationQuery=${project.datasourceValidationQuery}",
+            "-Dalfio.version=${project.version}",
+            "-Dalfio.build-ts=${java.time.LocalDateTime.now().toString()}"
     ]
     jvmArgs = opts
 }

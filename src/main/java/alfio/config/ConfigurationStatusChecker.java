@@ -22,6 +22,7 @@ import alfio.repository.user.UserRepository;
 import alfio.util.PasswordGenerator;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,16 +39,19 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
     private final UserRepository userRepository;
     private final AuthorityRepository authorityRepository;
     private final PasswordEncoder passwordEncoder;
+    private final String version;
 
     @Autowired
     public ConfigurationStatusChecker(ConfigurationManager configurationManager,
                                       UserRepository userRepository,
                                       AuthorityRepository authorityRepository,
-                                      PasswordEncoder passwordEncoder) {
+                                      PasswordEncoder passwordEncoder,
+                                      @Value("${alfio.version}") String version) {
         this.configurationManager = configurationManager;
         this.authorityRepository = authorityRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.version = version;
     }
 
     @Override
@@ -68,5 +72,6 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
             ofNullable(System.getProperty("maps.serverApiKey")).ifPresent((serverApiKey) -> configurationManager.save(MAPS_SERVER_API_KEY, serverApiKey));
             ofNullable(System.getProperty("maps.clientApiKey")).ifPresent((clientApiKey) -> configurationManager.save(MAPS_CLIENT_API_KEY, clientApiKey));
         }
+        log.info("initialized alf.io version {} ", version);
     }
 }
