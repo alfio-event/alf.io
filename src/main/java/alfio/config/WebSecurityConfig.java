@@ -84,7 +84,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
             .antMatchers("/**").permitAll()
             .and()
-            .formLogin();
+            .formLogin()
+            .loginPage("/authentication")
+            .loginProcessingUrl("/authentication")
+            .failureUrl("/authentication?failed");
 
     }
 }
