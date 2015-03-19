@@ -53,5 +53,8 @@
         </div>
     </div>
     <div data-ui-view></div>
+    <footer>
+        <div class="text-center"><span class="text-muted">Powered by <a href="http://alf.io">Alf.io</a> v.{{alfioVersion}}</span></div>
+    </footer>
 </body>
 </html>

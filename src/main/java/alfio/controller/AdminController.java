@@ -22,7 +22,9 @@ import com.opencsv.CSVWriter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -48,7 +50,8 @@ public class AdminController {
 
     //catch both "/admin" and "/admin/"
     @RequestMapping("")
-    public String adminHome() {
+    public String adminHome(Model model, @Value("${alfio.version}") String version) {
+        model.addAttribute("alfioVersion", version);
         return "/admin/index";
     }
 
