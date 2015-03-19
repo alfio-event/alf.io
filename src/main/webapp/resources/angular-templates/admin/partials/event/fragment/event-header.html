@@ -8,10 +8,10 @@
     <div class="col-sm-12 col-md-6">
         <div class="form-group">
             <label>Owner Organization</label>
-            <p class="form-control-static">{{organization.name}}</p>
+            <p class="form-control-static">{{organization.name}} &lt;{{organization.email}}&gt;</p>
 
             <label>Website URL</label>
-            <p class="form-control-static">{{event.websiteUrl}}</p>
+            <p class="form-control-static"><a href="{{event.websiteUrl}}" target="_blank">{{event.websiteUrl}}</a></p>
 
             <label>Terms and conditions URL</label>
             <p class="form-control-static"><a href="{{event.termsAndConditionsUrl}}" target="_blank">{{event.termsAndConditionsUrl}}</a></p>

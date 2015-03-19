@@ -29,9 +29,7 @@
 	    <div class="page-header">
 	    	<h3>Promo codes</h3>
 	    	<h5 class="text-muted">Manage/Handle the promo codes.</h5>
-	    </div>
-	    <div class="wMarginBottom">
-	        <button type="button" class="btn btn-success" data-ng-click="addPromoCode(event)"><i class="fa fa-plus"></i> add promo code</button>
+            <button type="button" class="btn btn-success" data-ng-click="addPromoCode(event)"><i class="fa fa-plus"></i> add promo code</button>
 	    </div>
 	    <div data-ng-repeat="promocode in promocodes" class="container wMarginBottom" data-ng-class="{'category-success': !promocode.expired, 'category-expired': promocode.expired}">
 	    	<div class="page-header">
@@ -80,9 +78,6 @@
     <div class="page-header">
         <h3>Categories</h3>
         <h5 class="text-muted">Here the categories that have been defined for this event.</h5>
-    </div>
-
-    <div class="wMarginBottom">
         <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory(event)"><i class="fa fa-plus"></i> add category</button>
     </div>
 
@@ -91,12 +86,6 @@
         <label class="btn btn-sm btn-default" data-ng-model="selection.expired" data-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.expired, 'fa-square-o': !selection.expired}"></i> Expired</label>
         <label><div class="input-group"><div class="input-group-addon"><i class="fa fa-search"></i></div><input type="text" class="form-control input-sm" data-ng-model="selection.freeText"></div></label>
     </div>
-    <div class="btn-group pull-right">
-
-
-    </div>
-
-    <div class="clearfix"></div>
 
     <div data-ng-if="(event.ticketCategories | showSelectedCategories : selection).length === 0" class="alert alert-warning">
         No categories matching the selected criteria have been found.
