@@ -98,6 +98,10 @@
 
     <div class="clearfix"></div>
 
+    <div data-ng-if="(event.ticketCategories | showSelectedCategories : selection).length === 0" class="alert alert-warning">
+        No categories matching the selected criteria have been found.
+    </div>
+
     <div data-ng-repeat="ticketCategory in event.ticketCategories | showSelectedCategories : selection" class="container wMarginBottom" data-ng-class="evaluateCategoryStatusClass($index, ticketCategory)">
         <div class="page-header">
             <div class="alert alert-danger" data-ng-if="ticketCategory.containingOrphans" data-ng-form="moveTickets">

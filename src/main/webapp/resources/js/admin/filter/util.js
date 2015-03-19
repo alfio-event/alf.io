@@ -45,7 +45,7 @@
 
     filters.filter('showSelectedCategories', function() {
         return function(categories, criteria) {
-            if(criteria.active && criteria.expired) {
+            if(criteria.active && criteria.expired && criteria.freeText === '') {
                 return categories;
             }
             return _.filter(categories, function(category) {
