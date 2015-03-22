@@ -37,7 +37,9 @@ public enum ConfigurationKeys {
     
     SPECIAL_PRICE_CODE_LENGTH("Length of special price code", false, Type.GENERAL),
     MAX_AMOUNT_OF_TICKETS_BY_RESERVATION("Max amount of tickets", false, Type.GENERAL),
-    
+    ASSIGNMENT_REMINDER_START("How many days before the event should be sent a reminder to the users about Tickets assignment? (default: 10 days)", false, Type.GENERAL),
+    ASSIGNMENT_REMINDER_INTERVAL("How long should be the 'quiet period' (in days) between the reminders? (default: 3 days)", false, Type.GENERAL),
+
     //
     MAILER_TYPE("Mailer type (if not set, default will be smtp)", false, Type.MAIL),//valid values: smtp | mailgun
     //

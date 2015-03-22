@@ -56,6 +56,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
@@ -90,8 +91,9 @@ public class TicketReservationManager {
 	private final TemplateManager templateManager;
 	private final TransactionTemplate requiresNewTransactionTemplate;
 
-	public static class NotEnoughTicketsException extends RuntimeException {
-		
+
+    public static class NotEnoughTicketsException extends RuntimeException {
+
 	}
 
 	public static class MissingSpecialPriceTokenException extends RuntimeException {
@@ -100,7 +102,7 @@ public class TicketReservationManager {
 	public static class InvalidSpecialPriceTokenException extends RuntimeException {
 
 	}
-	
+
 	@Data
 	public static class TotalPrice {
 		private final int priceWithVAT;
@@ -108,7 +110,7 @@ public class TicketReservationManager {
 		private final int discount;
 		private final int discountAppliedCount;
 	}
-	
+
 	@Autowired
 	public TicketReservationManager(EventRepository eventRepository,
 									OrganizationRepository organizationRepository,
@@ -558,7 +560,15 @@ public class TicketReservationManager {
 		return optionally(() -> ticketReservationRepository.findReservationById(reservationId));
 	}
 
+    private Optional<TicketReservation> findByIdForNotification(String reservationId, ZoneId eventZoneId, int quietPeriod) {
+        return findById(reservationId).filter(notificationNotSent(eventZoneId, quietPeriod));
+    }
 
+    private static Predicate<TicketReservation> notificationNotSent(ZoneId eventZoneId, int quietPeriod) {
+        return r -> r.latestNotificationTimestamp(eventZoneId)
+                .map(t -> t.truncatedTo(ChronoUnit.DAYS).plusDays(quietPeriod).isBefore(ZonedDateTime.now(eventZoneId).truncatedTo(ChronoUnit.DAYS)))
+                .orElse(true);
+    }
 
 	public void cancelPendingReservation(String reservationId) {
 		Validate.isTrue(ticketReservationRepository.findReservationById(reservationId).getStatus() == TicketReservationStatus.PENDING, "status is not PENDING");
@@ -726,12 +736,45 @@ public class TicketReservationManager {
 					Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
 					model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
 					Locale locale = p.getRight();
-					ticketReservationRepository.flagAsReminderSent(reservation.getId());
+					ticketReservationRepository.flagAsOfflinePaymentReminderSent(reservation.getId());
 					notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{ getShortReservationID(reservation.getId()) }, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-email-txt.ms", model, locale, TemplateOutput.TEXT));
 				});
 	}
 
-	public TicketReservation findByPartialID(String reservationId) {
+    void sendReminderForTicketAssignment() {
+        int daysBeforeStart = configurationManager.getIntConfigValue(ASSIGNMENT_REMINDER_START, 10);
+        eventRepository.findAll().stream()
+                .filter(e -> ZonedDateTime.now(e.getZoneId()).truncatedTo(ChronoUnit.DAYS).plusDays(daysBeforeStart).isAfter(e.getBegin().truncatedTo(ChronoUnit.DAYS)))
+                .map(e -> Pair.of(e, ticketRepository.findAllReservationsConfirmedButNotAssigned(e.getId())))
+                .filter(p -> !p.getRight().isEmpty())
+                .forEach(this::sendAssignmentReminder);
+    }
+
+    private void sendAssignmentReminder(Pair<Event, List<String>> p) {
+        try {
+            requiresNewTransactionTemplate.execute(status -> {
+                Event event = p.getLeft();
+                ZoneId eventZoneId = event.getZoneId();
+                int quietPeriod = configurationManager.getIntConfigValue(ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL, 3);
+                p.getRight().stream()
+                        .map(id -> findByIdForNotification(id, eventZoneId, quietPeriod))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .forEach(reservation -> {
+                            Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
+                            model.put("reservationShortID", getShortReservationID(reservation.getId()));
+                            ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(eventZoneId));
+                            Locale locale = findReservationLanguage(reservation.getId());
+                            notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", new Object[]{event.getShortName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-tickets-assignment-email-txt.ms", model, locale, TemplateOutput.TEXT));
+                        });
+                return null;
+            });
+        } catch (Exception ex) {
+            log.warn("cannot send reminder message", ex);
+        }
+    }
+
+    public TicketReservation findByPartialID(String reservationId) {
 		Validate.notBlank(reservationId, "invalid reservationId");
 		Validate.matchesPattern(reservationId, "^[^%]*$", "invalid character found");
 		List<TicketReservation> results = ticketReservationRepository.findByPartialID(StringUtils.trimToEmpty(reservationId).toLowerCase() + "%");

@@ -20,6 +20,7 @@ import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import alfio.model.transaction.PaymentProxy;
 import lombok.Getter;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Optional;
@@ -38,20 +39,22 @@ public class TicketReservation {
 	private final String email;
 	private final String billingAddress;
     private final ZonedDateTime confirmationTimestamp;
+    private final ZonedDateTime latestReminder;
 	private final PaymentProxy paymentMethod;
 	private final Boolean reminderSent;
 	private final Integer promoCodeDiscountId;
 
 	public TicketReservation(@Column("id") String id,
-							 @Column("validity") Date validity,
-							 @Column("status") TicketReservationStatus status,
-							 @Column("full_name") String fullName,
-							 @Column("email_address") String email,
-							 @Column("billing_address") String billingAddress,
-							 @Column("confirmation_ts") ZonedDateTime confirmationTimestamp,
-							 @Column("payment_method") PaymentProxy paymentMethod,
-							 @Column("reminder_sent") Boolean reminderSent,
-							 @Column("promo_code_id_fk") Integer promoCodeDiscountId) {
+                             @Column("validity") Date validity,
+                             @Column("status") TicketReservationStatus status,
+                             @Column("full_name") String fullName,
+                             @Column("email_address") String email,
+                             @Column("billing_address") String billingAddress,
+                             @Column("confirmation_ts") ZonedDateTime confirmationTimestamp,
+                             @Column("latest_reminder_ts") ZonedDateTime latestReminder,
+                             @Column("payment_method") PaymentProxy paymentMethod,
+                             @Column("offline_payment_reminder_sent") Boolean reminderSent,
+                             @Column("promo_code_id_fk") Integer promoCodeDiscountId) {
 		this.id = id;
 		this.validity = validity;
 		this.status = status;
@@ -59,7 +62,8 @@ public class TicketReservation {
 		this.email = email;
 		this.billingAddress = billingAddress;
         this.confirmationTimestamp = confirmationTimestamp;
-		this.paymentMethod = paymentMethod;
+        this.latestReminder = latestReminder;
+        this.paymentMethod = paymentMethod;
 		this.reminderSent = reminderSent;
 		this.promoCodeDiscountId = promoCodeDiscountId;
 	}
@@ -71,4 +75,8 @@ public class TicketReservation {
 	public boolean isReminderSent() {
 		return Optional.ofNullable(reminderSent).orElse(false);
 	}
+
+    public Optional<ZonedDateTime> latestNotificationTimestamp(ZoneId zoneId) {
+        return Optional.ofNullable(latestReminder).map(d -> d.withZoneSameInstant(zoneId));
+    }
 }

@@ -27,7 +27,7 @@ import org.springframework.core.io.ClassPathResource;
 public class ApplicationPropertiesConfiguration {
     @Bean
     @Profile("!"+Initializer.PROFILE_SPRING_BOOT)
-    public PropertySourcesPlaceholderConfigurer propertyPlaceholder() {
+    public static PropertySourcesPlaceholderConfigurer propertyPlaceholder() {
         PropertySourcesPlaceholderConfigurer configurer = new PropertySourcesPlaceholderConfigurer();
         configurer.setLocation(new ClassPathResource("application.properties"));
         return configurer;

@@ -47,12 +47,15 @@ public interface TicketReservationRepository {
 	@Query("select id from tickets_reservation where status = 'OFFLINE_PAYMENT'")
 	List<String> findAllReservationsWaitingForPayment();
 
-	@Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and reminder_sent = false")
-	@QueriesOverride(@QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and reminder_sent = false", db = "PGSQL"))
+	@Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and offline_payment_reminder_sent = false")
+	@QueriesOverride(@QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false", db = "PGSQL"))
 	List<TicketReservation> findAllOfflinePaymentReservationForNotification(@Bind("expiration") Date expiration);
 
-	@Query("update tickets_reservation set reminder_sent = true where id = :reservationId")
-	int flagAsReminderSent(@Bind("reservationId") String reservationId);
+	@Query("update tickets_reservation set offline_payment_reminder_sent = true where id = :reservationId")
+	int flagAsOfflinePaymentReminderSent(@Bind("reservationId") String reservationId);
+
+    @Query("update tickets_reservation set latest_reminder_ts = :latestReminderTimestamp where id = :reservationId")
+	int updateLatestReminderTimestamp(@Bind("reservationId") String reservationId, @Bind("latestReminderTimestamp") ZonedDateTime latestReminderTimestamp);
 
 	@Query("select id from tickets_reservation where id = :reservationId for update")
 	String lockReservationForUpdate(@Bind("reservationId") String reservationId);
