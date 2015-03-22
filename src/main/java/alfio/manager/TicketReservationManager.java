@@ -284,7 +284,7 @@ public class TicketReservationManager {
 	}
 
     private Locale findReservationLanguage(String reservationId) {
-        return ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().map(t -> Locale.forLanguageTag(t.getUserLanguage())).orElse(Locale.ENGLISH);
+        return ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().flatMap(t -> Optional.ofNullable(t.getUserLanguage()).map(Locale::forLanguageTag)).orElse(Locale.ENGLISH);
     }
 
     public void deleteOfflinePayment(Event event, String reservationId) {
