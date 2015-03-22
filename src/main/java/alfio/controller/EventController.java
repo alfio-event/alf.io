@@ -92,7 +92,7 @@ public class EventController {
 
 	@RequestMapping(value = {"/"}, method = RequestMethod.GET)
 	public String listEvents(Model model) {
-		List<Event> events = eventRepository.findAll();
+		List<Event> events = eventManager.getActiveEvents();
 		if(events.size() == 1) {
 			return REDIRECT + "/event/" + events.get(0).getShortName() + "/";
 		} else {

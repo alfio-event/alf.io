@@ -76,7 +76,8 @@ public class EventApiController {
 
     @RequestMapping(value = "/events", method = GET)
     public List<EventWithStatistics> getAllEvents(Principal principal) {
-        return eventManager.getAllEventsWithStatistics(principal.getName());
+        return eventManager.getAllEventsWithStatistics(principal.getName()).stream()
+                .sorted().collect(Collectors.toList());
     }
 
     @RequestMapping(value = "/events/{name}", method = GET)

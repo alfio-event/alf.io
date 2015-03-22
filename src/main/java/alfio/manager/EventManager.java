@@ -45,6 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -548,6 +549,12 @@ public class EventManager {
         Event event = getSingleEvent(eventName, username);
         checkOwnership(event, username, event.getOrganizationId());
         return ticketRepository.findAllConfirmed(event.getId());
+    }
+
+    public List<Event> getActiveEvents() {
+        return eventRepository.findAll().stream()
+                .filter(e -> e.getEnd().truncatedTo(ChronoUnit.DAYS).plusDays(1).isAfter(ZonedDateTime.now(e.getZoneId()).truncatedTo(ChronoUnit.DAYS)))
+                .collect(toList());
     }
 
     @Data

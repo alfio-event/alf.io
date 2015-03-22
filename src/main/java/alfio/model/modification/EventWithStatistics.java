@@ -20,12 +20,16 @@ import alfio.model.Event;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Getter
-public class EventWithStatistics implements StatisticsContainer {
+public class EventWithStatistics implements StatisticsContainer, Comparable<EventWithStatistics> {
 
     public static final DateTimeFormatter JSON_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm");
 
@@ -82,4 +86,13 @@ public class EventWithStatistics implements StatisticsContainer {
         return allocatedTickets - soldTickets - checkedInTickets;
     }
 
+    public boolean isExpired() {
+        return ZonedDateTime.now(event.getZoneId()).truncatedTo(ChronoUnit.DAYS).isAfter(event.getEnd().truncatedTo(ChronoUnit.DAYS));
+    }
+
+    @Override
+    public int compareTo(EventWithStatistics o) {
+        CompareToBuilder builder = new CompareToBuilder();
+        return builder.append(isExpired(), o.isExpired()).append(getBegin().withZoneSameInstant(ZoneId.systemDefault()), o.getBegin().withZoneSameInstant(ZoneId.systemDefault())).build();
+    }
 }
