@@ -19,6 +19,9 @@ package alfio.config;
 import alfio.filter.RedirectToHttpsFilter;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
+import org.springframework.boot.context.embedded.ErrorPage;
+import org.springframework.boot.context.embedded.MimeMappings;
 import org.springframework.boot.context.embedded.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +32,9 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 
 import javax.servlet.Filter;
 import javax.servlet.SessionCookieConfig;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext;
 
@@ -39,6 +45,18 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
 @Configuration
 @Profile(Initializer.PROFILE_SPRING_BOOT)
 public class SpringBootInitializer {
+
+    private static final ServletContextInitializer SERVLET_CONTEXT_INITIALIZER = servletContext -> {
+        WebApplicationContext ctx = getRequiredWebApplicationContext(servletContext);
+        ConfigurableEnvironment environment = ctx.getBean(ConfigurableEnvironment.class);
+        environment.addActiveProfile("spring-boot");
+        if(environment.acceptsProfiles(Initializer.PROFILE_DEV)) {
+            environment.addActiveProfile(Initializer.PROFILE_HTTP);
+        }
+        SessionCookieConfig config = servletContext.getSessionCookieConfig();
+        config.setHttpOnly(true);
+        config.setSecure(!environment.acceptsProfiles(Initializer.PROFILE_HTTP));
+    };
 
     @Bean
     public Filter characterEncodingFilter() {
@@ -54,17 +72,20 @@ public class SpringBootInitializer {
     }
 
     @Bean
-    public ServletContextInitializer servletContextInitializer() {
-        return servletContext -> {
-            WebApplicationContext ctx = getRequiredWebApplicationContext(servletContext);
-            ConfigurableEnvironment environment = ctx.getBean(ConfigurableEnvironment.class);
-            environment.addActiveProfile("spring-boot");
-            if(environment.acceptsProfiles(Initializer.PROFILE_DEV)) {
-                environment.addActiveProfile(Initializer.PROFILE_HTTP);
-            }
-            SessionCookieConfig config = servletContext.getSessionCookieConfig();
-            config.setHttpOnly(true);
-            config.setSecure(!environment.acceptsProfiles(Initializer.PROFILE_HTTP));
+    public EmbeddedServletContainerCustomizer embeddedServletContainerCustomizer() {
+        return (container) -> {
+            container.addInitializers(SERVLET_CONTEXT_INITIALIZER);
+            container.setRegisterJspServlet(false);
+            Map<String, String> mimeMappings = new HashMap<>();
+            mimeMappings.put("eot", "application/vnd.ms-fontobject");
+            mimeMappings.put("otf", "font/opentype");
+            mimeMappings.put("ttf", "application/x-font-ttf");
+            mimeMappings.put("woff", "application/x-font-woff");
+            mimeMappings.put("svg", "image/svg+xml");
+            container.setSessionTimeout(2, TimeUnit.HOURS);
+            container.setMimeMappings(new MimeMappings(mimeMappings));
+            //TODO: is it worth to implement an error page for each error type (404, 400, 500) since the haproxy will rewrite them?
+            container.addErrorPages(new ErrorPage("/session-expired"));
         };
     }
 }
