@@ -16,6 +16,7 @@
  */
 package alfio.config;
 
+import alfio.manager.i18n.I18nManager;
 import alfio.util.MustacheCustomTagInterceptor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,6 +56,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -68,6 +70,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     private MessageSource messageSource;
     @Autowired
     private JMustacheTemplateLoader templateLoader;
+    @Autowired
+    private I18nManager i18nManager;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -76,7 +80,6 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/admin/").setViewName("/admin/index");
         registry.addViewController("/admin/partials/index.html").setViewName("/admin/partials/main");
         registry.addViewController("/admin/partials/main/organizations.html").setViewName("/admin/partials/organizations");
     }
@@ -88,12 +91,17 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
         registry.addInterceptor(getCsrfInterceptor());
         registry.addInterceptor(getCSPInterceptor());
         registry.addInterceptor(getLocaleChangeInterceptor());
-        registry.addInterceptor(new HandlerInterceptorAdapter() {
+        registry.addInterceptor(getDefaultTemplateObjectsFiller());
+    }
+
+    @Bean
+    public HandlerInterceptorAdapter getDefaultTemplateObjectsFiller() {
+        return new HandlerInterceptorAdapter() {
     		@Override
-    		public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
-    				ModelAndView modelAndView) throws Exception {
+    		public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
     			Optional.ofNullable(modelAndView).ifPresent(mv -> {
                     mv.addObject("request", request);
+                    mv.addObject("availableLanguages", i18nManager.getAvailableLocales());
                    	final ModelMap modelMap = mv.getModelMap();
                    	modelMap.putIfAbsent("event", null);
                    	if(!StringUtils.startsWith(mv.getViewName(), "redirect:")) {
@@ -101,7 +109,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                     }
                 });
     		}
-		});
+		};
     }
 
     @Bean
@@ -171,7 +179,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         converters.add(jacksonMessageConverter());
         StringHttpMessageConverter converter = new StringHttpMessageConverter();
-        converter.setSupportedMediaTypes(Arrays.asList(MediaType.ALL));
+        converter.setSupportedMediaTypes(Collections.singletonList(MediaType.ALL));
         converters.add(converter);
     }
 

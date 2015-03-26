@@ -18,5 +18,13 @@
 			<div>
 
 				<!-- lang bar -->
-				<div class="alfio-lang"><a href="?lang=it">it</a> / <a href="?lang=en">en</a></div>
+				<div class="row">
+                    <div class="col-xs-4 col-xs-push-8 col-sm-2 col-sm-push-10 text-center">
+                        <ol class="breadcrumb wMarginBottom wMarginTop">
+                            {{#availableLanguages}}
+                                <li><a href="?lang={{language}}">{{language}}</a></li>
+                            {{/availableLanguages}}
+                        </ol>
+                    </div>
+                </div>
 				<!-- -->
