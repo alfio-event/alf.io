@@ -1,0 +1,40 @@
+<div class="fa fa-refresh fa-spin fa-2x text-muted" data-ng-if="!messages">
+</div>
+<div class="container" data-ng-if="messages">
+    <div class="page-header">
+        <h2>Send custom message to all attendees</h2>
+        <span>Write a custom message and broadcast it to all attendees</span>
+    </div>
+    <div class="row">
+        <div class="col-xs-12 col-md-3 col-md-push-9 well">
+            <h4>Available variables:</h4>
+            <h6>the syntax is defined by <a href="http://mustache.github.io/mustache.5.html" target="_blank">Mustache</a>, with some <a href="https://github.com/samskivert/jmustache#limitations" target="_blank">limitations</a></h6>
+            <dl class="wMarginTop">
+
+                <dt>eventName</dt>
+                <dd>the name of the event</dd>
+
+                <dt>fullName</dt>
+                <dd>Either the attendee's name of the name of the reservation owner</dd>
+
+                <dt>organizationName</dt>
+                <dd>The name of the organization</dd>
+
+                <dt>organizationEmail</dt>
+                <dd>The organization e-mail address</dd>
+
+                <dt>reservationID</dt>
+                <dd>The reservation identifier</dd>
+
+                <dt>reservationURL</dt>
+                <dd>The URL of the reservation page</dd>
+            </dl>
+        </div>
+        <div class="col-xs-12 col-md-9 col-md-pull-3">
+            <form name="sendMessage" role="form" data-ng-submit="showPreview(sendMessage, eventName, messages)">
+                <edit-messages data-edit-mode="true" data-messages="messages"></edit-messages>
+                <control-buttons data-form-obj="sendMessage" data-success-text="Preview"></control-buttons>
+            </form>
+        </div>
+    </div>
+</div>

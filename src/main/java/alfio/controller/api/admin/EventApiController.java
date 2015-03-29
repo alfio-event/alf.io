@@ -17,6 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.EventManager;
+import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
 import alfio.model.TicketReservation;
 import alfio.model.modification.EventModification;
@@ -52,10 +53,12 @@ public class EventApiController {
 
     private static final String OK = "OK";
     private final EventManager eventManager;
+    private final I18nManager i18nManager;
 
     @Autowired
-    public EventApiController(EventManager eventManager) {
+    public EventApiController(EventManager eventManager, I18nManager i18nManager) {
         this.eventManager = eventManager;
+        this.i18nManager = i18nManager;
     }
 
     @ExceptionHandler(Exception.class)
@@ -174,6 +177,11 @@ public class EventApiController {
                                        @PathVariable("ticketId") int ticketId,
                                        Principal principal) {
         return eventManager.toggleTicketLocking(eventName, categoryId, ticketId, principal.getName());
+    }
+
+    @RequestMapping(value = "/events/{eventName}/languages", method = GET)
+    public List<Locale> getAvailableLocales(@PathVariable("eventName") String eventName) {
+        return i18nManager.getEventLocales(eventName);
     }
 
 }

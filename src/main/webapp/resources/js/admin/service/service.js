@@ -132,6 +132,15 @@
             },
             sendCodesByEmail: function(eventName, categoryId, pairs) {
                 return $http['post']('/admin/api/events/'+eventName+'/categories/'+categoryId+'/send-codes', pairs).error(HttpErrorHandler.handle);
+            },
+            getAvailableLanguages: function(eventName) {
+                return $http['get']('/admin/api/events/'+eventName+'/languages').error(HttpErrorHandler.handle);
+            },
+            getMessagesPreview: function(eventName, messages) {
+                return $http['post']('/admin/api/events/'+eventName+'/messages/preview', messages).error(HttpErrorHandler.handle);
+            },
+            sendMessages: function(eventName, messages) {
+                return $http['post']('/admin/api/events/'+eventName+'/messages/send', messages).error(HttpErrorHandler.handle);
             }
         };
     });
@@ -243,7 +252,7 @@
     			}
     	};
     });
-    
+
     baseServices.service("CheckInService", function($http) {
     	return {
     		findAllTickets : function(eventId) {

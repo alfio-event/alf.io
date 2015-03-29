@@ -20,7 +20,7 @@
 				<!-- lang bar -->
 				<div class="row">
                     <div class="col-xs-4 col-xs-push-8 col-sm-2 col-sm-push-10 text-center">
-                        <ol class="breadcrumb wMarginBottom wMarginTop">
+                        <ol class="alfio-lang breadcrumb wMarginBottom wMarginTop">
                             {{#availableLanguages}}
                                 <li><a href="?lang={{language}}">{{language}}</a></li>
                             {{/availableLanguages}}

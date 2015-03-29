@@ -18,16 +18,15 @@ package alfio.util;
 
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
-
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
 import com.samskivert.mustache.Mustache.Formatter;
 import com.samskivert.mustache.Template;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.AbstractFileResolvingResource;
+import org.springframework.core.io.AbstractResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.context.support.ServletContextResource;
@@ -37,17 +36,12 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -97,21 +91,25 @@ public class TemplateManager {
 	}
 
 	public String renderClassPathResource(String classPathResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-		return render(new ClassPathResource(classPathResource), classPathResource, model, locale, templateOutput);
+		return render(new ClassPathResource(classPathResource), classPathResource, model, locale, templateOutput, true);
+	}
+
+	public String renderString(String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+		return render(new ByteArrayResource(template.getBytes()), "", model, locale, templateOutput, false);
 	}
 
 	public String renderServletContextResource(String servletContextResource, Map<String, Object> model, HttpServletRequest request, TemplateOutput templateOutput) {
 		model.put("request", request);
 		model.put(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
-		return render(new ServletContextResource(request.getServletContext(), servletContextResource), servletContextResource, model, RequestContextUtils.getLocale(request), templateOutput);
+		return render(new ServletContextResource(request.getServletContext(), servletContextResource), servletContextResource, model, RequestContextUtils.getLocale(request), templateOutput, true);
 	}
 
-	private String render(AbstractFileResolvingResource resource, String key, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+	private String render(AbstractResource resource, String key, Map<String, Object> model, Locale locale, TemplateOutput templateOutput, boolean cachingRequested) {
 		try {
 			ModelAndView mv = new ModelAndView((String) null, model);
 			mv.addObject("format-date", MustacheCustomTagInterceptor.FORMAT_DATE);
 			mv.addObject(MustacheLocalizationMessageInterceptor.DEFAULT_MODEL_KEY, new CustomLocalizationMessageInterceptor(locale, messageSource).createTranslator());
-			Template tmpl = cache ? templateCache.computeIfAbsent(key + templateOutput.toString(), k -> compile(resource, templateOutput))
+			Template tmpl = (cachingRequested && cache) ? templateCache.computeIfAbsent(key + templateOutput.toString(), k -> compile(resource, templateOutput))
 					: compile(resource, templateOutput);
 			return tmpl.execute(mv.getModel());
 		} catch (Exception e) {
@@ -119,7 +117,7 @@ public class TemplateManager {
 		}
 	}
 
-	private Template compile(AbstractFileResolvingResource resource, TemplateOutput templateOutput) {
+	private Template compile(AbstractResource resource, TemplateOutput templateOutput) {
 		try {
 			InputStreamReader tmpl = new InputStreamReader(resource.getInputStream(),
 					StandardCharsets.UTF_8);

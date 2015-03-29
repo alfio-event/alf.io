@@ -78,6 +78,11 @@
                 url: '/pending-reservations/:eventName/',
                 templateUrl: BASE_STATIC_URL + '/pending-reservations/index.html',
                 controller: 'PendingReservationsController'
+            })
+            .state('compose-custom-message', {
+                url: '/compose-custom-message/:eventName',
+                templateUrl: BASE_STATIC_URL + '/custom-message/index.html',
+                controller: 'ComposeCustomMessage'
             });
 
         var printLabel = function(val) {
@@ -947,6 +952,50 @@
                 $scope.loading = false;
             });
         };
+    });
+
+    admin.controller('ComposeCustomMessage', function($scope, $stateParams, EventService, $modal) {
+
+        EventService.getAvailableLanguages($stateParams.eventName).success(function(result) {
+            $scope.messages = _.map(result, function(r) {
+                return {
+                    textExample: '{{organizationName}} <{{organizationEmail}}>',
+                    subjectExample: 'An important message from {{eventName}}',
+                    locale: r,
+                    text: '',
+                    subject: ''
+                };
+            });
+            $scope.eventName = $stateParams.eventName;
+        });
+        $scope.showPreview = function(frm, eventName, messages) {
+            if(!frm.$valid) {
+                return;
+            }
+            var error = _.find(messages, function(m) {
+                return _.trim(m.text) === '' || _.trim(m.subject) === '';
+            });
+            if(angular.isDefined(error)) {
+                alert('please fill all the messages');
+                return;
+            }
+            EventService.getMessagesPreview(eventName, messages).success(function(result) {
+                var preview = $modal.open({
+                    size:'lg',
+                    templateUrl:BASE_STATIC_URL + '/custom-message/preview.html',
+                    backdrop: 'static',
+                    controller: function($scope) {
+                        $scope.messages = result;
+                        $scope.eventName = eventName;
+                        $scope.cancel = function() {
+                            $scope.$dismiss('canceled');
+                        };
+                    }
+                });
+            }).error(function(resp) {
+                alert(resp);
+            });
+        }
     });
 
     admin.run(function($rootScope, PriceCalculator) {

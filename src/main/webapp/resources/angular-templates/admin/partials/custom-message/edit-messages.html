@@ -1,0 +1,13 @@
+<tabset>
+    <tab data-ng-repeat="m in messages">
+        <tab-heading>{{m.locale}}</tab-heading>
+        <div class="form-group">
+            <label for="subject-{{m.locale}}">Subject</label>
+            <input data-ng-if="editMode" class="form-control" type="text" name="subject-{{m.locale}}" id="subject-{{m.locale}}" placeholder="{{m.subjectExample}}" data-ng-model="m.subject" />
+            <pre id="subject-{{m.locale}}" data-ng-if="!editMode">{{m.subjectExample}}</pre>
+            <label for="message-{{m.locale}}">Message</label>
+            <textarea data-ng-if="editMode" id="message-{{m.locale}}" rows="20" class="form-control" name="message-{{m.locale}}" placeholder="{{m.textExample}}" data-ng-model="m.text"></textarea>
+            <pre data-ng-if="!editMode" id="message-{{m.locale}}" class="form-control-static">{{m.textExample}}</pre>
+        </div>
+    </tab>
+</tabset>

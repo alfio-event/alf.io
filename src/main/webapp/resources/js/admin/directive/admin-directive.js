@@ -168,6 +168,12 @@
                 formObj: '=',
                 cancelHandler: '='
             },
+            link: function(scope, element, attrs) {
+                scope.successText = angular.isDefined(attrs.successText) ? attrs.successText : "Save";
+                if(angular.isDefined(attrs.successText)) {
+                    scope.successText = attrs.successText;
+                }
+            },
             controller: function($scope, $rootScope) {
                 $scope.cancel = function() {
                     if(angular.isFunction($scope.cancelHandler)) {
@@ -416,6 +422,17 @@
                 };
             }
         }
+    });
+
+    directives.directive('editMessages', function() {
+       return {
+           restrict: 'E',
+           scope: {
+               editMode: '=',
+               messages: '='
+           },
+           templateUrl: '/resources/angular-templates/admin/partials/custom-message/edit-messages.html'
+       };
     });
 
 })();

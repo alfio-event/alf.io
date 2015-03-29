@@ -103,8 +103,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                     mv.addObject("request", request);
                     mv.addObject("availableLanguages", i18nManager.getAvailableLocales());
                    	final ModelMap modelMap = mv.getModelMap();
-                   	modelMap.putIfAbsent("event", null);
-                   	if(!StringUtils.startsWith(mv.getViewName(), "redirect:")) {
+                    modelMap.putIfAbsent("event", null);
+                    if(!StringUtils.startsWith(mv.getViewName(), "redirect:")) {
                     	modelMap.putIfAbsent("pageTitle", "empty");
                     }
                 });
