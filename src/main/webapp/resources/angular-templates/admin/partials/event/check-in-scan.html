@@ -22,7 +22,7 @@
                 <div data-ng-switch="scanning.scannedResult.status">
                     <div class="alert alert-success" role="alert" ng-switch-when="SUCCESS">Check in has been completed!</div>
                     <div class="alert alert-success" role="alert" ng-switch-when="OK_READY_TO_BE_CHECKED_IN">Ticket is ok, ready to be checked in.</div>
-                    <div class="alert alert-warning" role="alert" ng-switch-when="MUST_PAY">Ticket is ok, but user must pay before check in.</div>
+                    <div class="alert alert-warning" role="alert" ng-switch-when="MUST_PAY">Ticket is ok, but customer must still pay the ticket.</div>
                     <div class="alert alert-danger" role="alert"  ng-switch-default>{{scanning.scannedResult.message}}</div>
                 </div>
 
@@ -43,6 +43,7 @@
 
 
                 <button type="submit" class="btn btn-success btn-block" data-ng-disabled="scanning.checkInInAction" data-ng-if="scanning.scannedResult.status === 'OK_READY_TO_BE_CHECKED_IN' && scanning.checkInResultStatus !== 'SUCCESS' ">Confirm check in</button>
+                <button type="button" class="btn btn-success btn-block" data-ng-click="confirmPayment()" data-ng-disabled="scanning.confirmPaymentInAction" data-ng-if="scanning.scannedResult.status === 'MUST_PAY' && scanning.checkInResultStatus !== 'SUCCESS' ">Confirm payment</button>
                 <button type="button" class="btn btn-primary btn-block" data-ng-click="resetScanning();">Next Scan</button>
                 <button type="reset" class="btn btn-default btn-block" data-ng-click="stopScanning();resetForm(scanning.ticket)">Stop scanning</button>
             </div>

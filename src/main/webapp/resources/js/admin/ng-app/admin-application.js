@@ -854,11 +854,22 @@
 
     	$scope.resetScanning = function() {
     	    $scope.scanning = {visible: $scope.scanning, ticket: {}};
-    	}
+    	};
 
     	$scope.resetForm = function(ticket) {
     		ticket.code = null;
             $scope.resetScanning();
+    	};
+
+    	$scope.confirmPayment = function() {
+    	    $scope.scanning.confirmPaymentInAction = true;
+    	    CheckInService.confirmPayment($scope.event.id, $scope.scanning.ticket).then(function() {
+    	        CheckInService.getTicket($scope.event.id, $scope.scanning.ticket.code).success(function(result) {
+    	            $scope.scanning.scannedTicketInfo = result.ticket;
+                    $scope.scanning.scannedResult = result.result;
+                    $scope.scanning.confirmPaymentInAction = false;
+                });
+    	    });
     	};
 
     });
