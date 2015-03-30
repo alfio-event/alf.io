@@ -330,7 +330,7 @@ public class TicketReservationManager {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         Date newExpiration = Date.from(now.plusDays(configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5)).truncatedTo(ChronoUnit.HALF_DAYS).toInstant());
     	int updatedReservation = ticketReservationRepository.postponePayment(reservationId, newExpiration, email, fullName, billingAddress);
-		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
+		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
     }
 
 	private void reTransitionToPending(String reservationId) {
@@ -546,10 +546,13 @@ public class TicketReservationManager {
     } 
     
     public String reservationUrl(String reservationId) {
-    	Event event = eventRepository.findByReservationId(reservationId);
+		return reservationUrl(reservationId, eventRepository.findByReservationId(reservationId));
+    }
+
+	public String reservationUrl(String reservationId, Event event) {
 		return StringUtils.removeEnd(configurationManager.getRequiredValue(ConfigurationKeys.BASE_URL), "/")
 				+ "/event/" + event.getShortName() + "/reservation/" + reservationId;
-    }
+	}
 
 
 	public int maxAmountOfTickets() {

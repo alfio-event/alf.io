@@ -16,27 +16,26 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.support.CustomMessageManager;
 import alfio.model.modification.MessageModification;
-import alfio.util.TemplateManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin/api/events/{eventName}/messages")
 public class MessagesApiController {
 
-    private final TemplateManager templateManager;
+    private final CustomMessageManager customMessageManager;
 
     @Autowired
-    public MessagesApiController(TemplateManager templateManager) {
-        this.templateManager = templateManager;
+    public MessagesApiController(CustomMessageManager customMessageManager) {
+        this.customMessageManager = customMessageManager;
     }
 
     @ExceptionHandler(IllegalStateException.class)
@@ -47,23 +46,13 @@ public class MessagesApiController {
     }
 
     @RequestMapping(value= "/preview", method = RequestMethod.POST)
-    public List<MessageModification> preview(@PathVariable("eventName") String eventName, @RequestBody List<MessageModification> messageModifications, Model model) {
-        model.addAttribute("eventName", eventName);
-        model.addAttribute("fullName", "First Last");
-        model.addAttribute("organizationName", "My organization");
-        model.addAttribute("organizationEmail", "test@test.tld");
-        model.addAttribute("reservationURL", "https://my-instance/reservations/abcd");
-        model.addAttribute("reservationID", "ABCD");
-        return messageModifications.stream()
-                .map(m -> MessageModification.preview(m, renderResource(m.getSubject(), model, m.getLocale(), templateManager), renderResource(m.getText(), model, m.getLocale(), templateManager)))
-                .collect(Collectors.toList());
+    public Map<String, Object> preview(@PathVariable("eventName") String eventName, @RequestBody List<MessageModification> messageModifications, Principal principal) {
+        return customMessageManager.generatePreview(eventName, messageModifications, principal.getName());
     }
 
-    private static String renderResource(String template, Model model, Locale locale, TemplateManager templateManager) {
-        return templateManager.renderString(template, model.asMap(), locale, TemplateManager.TemplateOutput.TEXT);
+    @RequestMapping(value= "/send", method = RequestMethod.POST)
+    public int send(@PathVariable("eventName") String eventName, @RequestBody List<MessageModification> messageModifications, Principal principal) {
+        return customMessageManager.sendMessages(eventName, messageModifications, principal.getName());
     }
-
-
-
 
 }

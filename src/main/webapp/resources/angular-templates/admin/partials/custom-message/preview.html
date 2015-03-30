@@ -3,10 +3,11 @@
 </div>
 <form name="previewForm" data-ng-submit="sendMessage(previewForm, eventName, messages)" novalidate data-error-sensitive>
     <div class="modal-body">
+        <h3>Affected users: {{affectedUsers}}</h3>
         <edit-messages data-edit-mode="false" data-messages="messages"></edit-messages>
     </div>
 
     <div class="modal-footer">
-        <control-buttons data-form-obj="categoryForm" data-success-text="Send"></control-buttons>
+        <control-buttons data-form-obj="previewForm" data-success-text="Send"></control-buttons>
     </div>
 </form>

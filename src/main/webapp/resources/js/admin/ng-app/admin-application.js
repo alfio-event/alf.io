@@ -985,17 +985,29 @@
                     templateUrl:BASE_STATIC_URL + '/custom-message/preview.html',
                     backdrop: 'static',
                     controller: function($scope) {
-                        $scope.messages = result;
+                        $scope.messages = result.preview;
+                        $scope.affectedUsers = result.affectedUsers;
                         $scope.eventName = eventName;
                         $scope.cancel = function() {
                             $scope.$dismiss('canceled');
+                        };
+                        $scope.sendMessage = function(frm, eventName, messages) {
+                            if(!frm.$valid) {
+                                return;
+                            }
+                            EventService.sendMessages(eventName, messages).success(function(result) {
+                                alert(result + ' messages have been enqueued');
+                                $scope.$close(true);
+                            }).error(function(error) {
+                                alert(error);
+                            });
                         };
                     }
                 });
             }).error(function(resp) {
                 alert(resp);
             });
-        }
+        };
     });
 
     admin.run(function($rootScope, PriceCalculator) {

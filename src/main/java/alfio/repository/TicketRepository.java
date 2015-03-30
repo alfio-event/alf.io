@@ -27,6 +27,8 @@ import java.util.List;
 @QueryRepository
 public interface TicketRepository {
 
+	String CONFIRMED = "'ACQUIRED', 'CHECKED_IN', 'TO_BE_PAID'";
+
 	@Query(type = QueryType.TEMPLATE, value = "insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts)"
 			+ "values(:uuid, :creation, :categoryId, :eventId, :status, :originalPrice, :paidPrice)")
 	String bulkTicketInitialization();
@@ -37,7 +39,7 @@ public interface TicketRepository {
     @Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null order by id desc limit :amount for update")
     List<Integer> lockTicketsToInvalidate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId,	@Bind("amount") int amount);
 
-    @Query("select count(*) from ticket where status in ('ACQUIRED', 'CHECKED_IN') and category_id = :categoryId and event_id = :eventId")
+    @Query("select count(*) from ticket where status in ("+CONFIRMED+") and category_id = :categoryId and event_id = :eventId")
     Integer countConfirmedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
     @Query("select * from ticket where status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and category_id = :categoryId and event_id = :eventId")
@@ -46,7 +48,7 @@ public interface TicketRepository {
 	@Query("select count(*) from ticket where status in ('ACQUIRED', 'CHECKED_IN', 'PENDING') and category_id = :categoryId and event_id = :eventId")
 	Integer countConfirmedAndPendingTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
     
-    @Query("select count(*) from ticket where status not in ('ACQUIRED', 'CHECKED_IN', 'TO_BE_PAID', 'INVALIDATED', 'CANCELLED')  and category_id = :categoryId and event_id = :eventId")
+    @Query("select count(*) from ticket where status not in (" + CONFIRMED + ", 'INVALIDATED', 'CANCELLED')  and category_id = :categoryId and event_id = :eventId")
     Integer countNotSoldTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
 	@Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', user_language = :userLanguage where id in (:reservedForUpdate)")
@@ -112,8 +114,11 @@ public interface TicketRepository {
 	@Query("select * from ticket where event_id = :eventId")
 	List<Ticket> findAllByEventId(@Bind("eventId") int eventId);
 
-    @Query("select * from ticket where event_id = :eventId and status in('ACQUIRED', 'CHECKED_IN', 'TO_BE_PAID')")
+    @Query("select * from ticket where event_id = :eventId and status in(" + CONFIRMED + ")")
     List<Ticket> findAllConfirmed(@Bind("eventId") int eventId);
+
+    @Query("select count(*) from ticket where event_id = :eventId and status in(" + CONFIRMED + ")")
+	Integer countAllConfirmed(@Bind("eventId") int eventId);
 
     @Query("select distinct tickets_reservation_id from ticket where event_id = :eventId and status in('ACQUIRED', 'TO_BE_PAID') and (full_name is null or email_address is null)")
     List<String> findAllReservationsConfirmedButNotAssigned(@Bind("eventId") int eventId);
