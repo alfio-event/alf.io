@@ -1,57 +1,17 @@
-<div class="container" data-ng-init="scanning.visible = false;scanning.ticket = {};checkInResult = {};">
-	<div class="page-header" data-ng-if="!scanning.visible && scanning.ticket.code == null">
+<div class="container">
+	<div class="page-header">
 		<h1>Check-In: {{event.shortName}}</h1>
 	</div>
 
-	<div class="page-header" data-ng-if="canReadCamera">
+	<div class="page-header">
 		<h2>Scan the ticket for event {{event.shortName}}</h2>
 	</div>
-	<div  data-ng-if="canReadCamera">
-		<form data-ng-submit="scanning.visible = false; checkIn(scanning.ticket)">
-			<div data-ng-hide="scanning.visible">
-				<p><button class="btn btn-primary" type="button" data-ng-click="scanning.visible = true;selectSource(selectedSource);">Scan</button></p>
-			</div>
-			<div class="form-group" data-ng-show="scanning.visible">
-				<p>Select video source: <select data-ng-options="video.label for video in videos" data-ng-change="selectSource(selectedSource)" data-ng-model="selectedSource"></select></p>
-				<p><button class="btn btn-primary" type="button" data-ng-click="stopScanning()">Stop scanning</button></p>
-				<div class="video-container">
-					<video muted autoplay data-ng-show="selectedSource != null" id="checkInVideoElement"></video>
-				</div>
-				<canvas id="checkInImageCanvas" class="ng-hide"></canvas>
-				
-			</div>
-			<div data-ng-show="scanning.ticket.code != null">
-				<p>Scanned value:</p>
-				<textarea class="form-control" rows="3" data-ng-model="scanning.ticket.code"></textarea>
-				<table>
-					<tr><th>Ticket status</th><td>{{scanning.scannedTicketInfo.status}}</td></tr>
-					<tr><th>Full name</th><td>{{scanning.scannedTicketInfo.fullName}}</td></tr>
-					<tr><th>Email</th><td>{{scanning.scannedTicketInfo.email}}</td></tr>
-					<tr data-ng-if="scanning.scannedTicketInfo.jobTitle"><th></th><td>{{scanning.scannedTicketInfo.jobTitle}}</td></tr>
-					<tr data-ng-if="scanning.scannedTicketInfo.company"><th>Company</th><td>{{scanning.scannedTicketInfo.company}}</td></tr>
-					<tr data-ng-if="scanning.scannedTicketInfo.phoneNumber"><th>Phone number</th><td>{{scanning.scannedTicketInfo.phoneNumber}}</td></tr>
-					<tr data-ng-if="scanning.scannedTicketInfo.address"><th>Address</th><td>{{scanning.scannedTicketInfo.address}}</td></tr>
-					<tr data-ng-if="scanning.scannedTicketInfo.country"><th>Country</th><td>{{scanning.scannedTicketInfo.country}}</td></tr>
-					<tr data-ng-if="scanning.scannedTicketInfo.tshirtSize"><th>T-Shirt size</th><td>{{scanning.scannedTicketInfo.tshirtSize}}</td></tr>
-					<tr data-ng-if="scanning.scannedTicketInfo.notes"><th>Notes</th><td>{{scanning.scannedTicketInfo.notes}}</td></tr>
-					<tr data-ng-if="scanning.scannedTicketInfo.userLanguage"><th>Language</th><td>{{scanning.scannedTicketInfo.userLanguage}}</td></tr>
-				</table>
-				<div class="form-group" data-ng-if="checkInResult.status">
-					{{checkInResult.status}} : {{checkInResult.message}}
-				</div>
-				<div data-ng-if="checkInResult.status === 'MUST_PAY'">
-					<p>{{confirmPaymentResult.message}}</p>
-					<button type="button" class="btn btn-primary" data-ng-click="confirmPayment(scanning.ticket)">Confirm payment</button>
-				</div>
-				
-				<button type="submit" class="btn btn-primary">Submit</button>
-				<button type="button" class="btn btn-primary" data-ng-click="scanning.ticket.code = null; scanning.visible = true;checkInResult.status = null; scanning.scannedTicketInfo = null">Redo scan</button>
-				<button type="reset" class="btn btn-default" data-ng-click="stopScanning();resetForm(scanning.ticket)">Stop scanning</button>
-			</div>
-		</form>
-	</div>
+    <div>
+        <p><button class="btn btn-primary" type="button" data-ng-click="goToScanPage()">Scan Page</button></p>
+    </div>
 
-	<div data-ng-if="!scanning.visible && scanning.ticket.code == null">
+
+	<div>
 		<div class="page-header" >
 			<h2>Tickets to be checked in <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button></h2>
 		</div>
@@ -70,9 +30,9 @@
 					<th>Transaction timestamp</th>
 				</thead>
 				<tbody>
-					<tr data-ng-repeat="ticket in tickets | filter: toBeCheckedIn | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
+					<tr data-ng-repeat="ticket in tickets | filter: toBeCheckedIn | orderBy: ['timestamp', 'ticketReservationId' , 'uuid']">
 						<td data-ng-class-even="'active'">{{::ticket.status | statusText}}</td>
-						<td data-ng-class-even="'active'">{{::ticket.uuid}}</td>
+						<td data-ng-class-even="'active'"><a data-ng-href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketsReservationId}}/{{::ticket.uuid}}">{{::ticket.uuid}}</a></td>
 						<td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
 						<td data-ng-class-even="'active'">{{::ticket.fullName}}</td>
 						<td data-ng-class-even="'active'">{{::ticket.email}}</td>
@@ -104,9 +64,9 @@
 					<th>Transaction timestamp</th>
 				</thead>
 				<tbody>
-					<tr data-ng-repeat="ticket in tickets | filter: {status: 'CHECKED_IN'} | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
+					<tr data-ng-repeat="ticket in tickets | filter: {status: 'CHECKED_IN'} | orderBy: ['timestamp', 'ticketReservationId' , 'uuid']">
 						<td data-ng-class-even="'active'">{{::ticket.status | statusText}}</td>
-						<td data-ng-class-even="'active'">{{::ticket.uuid}}</td>
+						<td data-ng-class-even="'active'"><a data-ng-href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketsReservationId}}/{{::ticket.uuid}}">{{::ticket.uuid}}</a></td>
 						<td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
 						<td data-ng-class-even="'active'">{{::ticket.fullName}}</td>
 						<td data-ng-class-even="'active'">{{::ticket.email}}</td>

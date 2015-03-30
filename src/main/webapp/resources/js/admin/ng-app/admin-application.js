@@ -64,6 +64,11 @@
             	templateUrl: BASE_STATIC_URL + '/event/check-in.html',
             	controller: 'EventCheckInController'
             })
+            .state('events.checkInScan', {
+                url: '/:eventName/check-in/scan',
+                templateUrl: BASE_STATIC_URL + '/event/check-in-scan.html',
+                controller: 'EventCheckInScanController'
+            })
             .state('events.sendInvitations', {
             	url: '/:eventName/c/:categoryId/send-invitation',
             	templateUrl: BASE_STATIC_URL + '/event/fragment/send-reserved-codes.html',
@@ -692,45 +697,81 @@
         };
     });
     
-    admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log, EventService, CheckInService) {
+    admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService) {
+
+    	$scope.goToScanPage = function() {
+    	    $state.go('events.checkInScan', $stateParams);
+    	};
+
+    	EventService.getEvent($stateParams.eventName).success(function(result) {
+    		$scope.event = result.event;
+    		CheckInService.findAllTickets(result.event.id).success(function(tickets) {
+    			$scope.tickets = tickets;
+    		});
+    	});
+
+    	$scope.toBeCheckedIn = function(ticket, idx) {
+            return  ['TO_BE_PAID', 'ACQUIRED'].indexOf(ticket.status) >= 0;
+        }
+
     	
-    	var canReadCamera = MediaStreamTrack.getSources !== undefined;
-    	
-    	$scope.canReadCamera = canReadCamera; 
+    	$scope.reloadTickets = function() {
+    		CheckInService.findAllTickets($scope.event.id).success(function(tickets) {
+    			$scope.tickets = tickets;
+    		});
+    	};
+
+    });
+
+    admin.controller('EventCheckInScanController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService) {
+
+        $scope.scanning = {visible : false, ticket : {}};
+
+
+        var canReadCamera = MediaStreamTrack.getSources !== undefined;
+
+    	$scope.goToScanPage = function() {
+    	    $state.go('events.checkInScan', $stateParams);
+    	};
+
+    	$scope.canReadCamera = canReadCamera;
     	if(canReadCamera) {
-    		
+
     		navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
     		$scope.videos = [];
         	$scope.stream = null;
-        	
+
         	var timeoutPromise = null;
         	var worker = new Worker("../resources/js/jsqrcode/decode-worker.js");
-        	
+
     		worker.addEventListener('message', function(message) {
     			var result = message.data;
     			if(result === 'error decoding QR Code') {
     				$log.debug('error decoding qr code');
-    			} else {
+    			} else if ($scope.scanning.scannedResult == null) {
     				$scope.$apply(function() {
-    					$scope.scanning.visible = false;
+    				    $scope.scanning.visible = false;
     					$scope.scanning.ticket.code = result;
-    					
+
     					CheckInService.getTicket($scope.event.id, result).success(function(result) {
-    						$scope.scanning.scannedTicketInfo = result;
+    						$scope.scanning.scannedTicketInfo = result.ticket;
+    						$scope.scanning.scannedResult = result.result;
     					});
     				});
+    			} else {
+    			    $log.debug('scanned result already present, skipping');
     			}
     		}, false);
-    		
+
     		var captureFrame = function() {
-        		if($scope.scanning.visible) {
+        		if($scope.scanning.visible && $scope.scanning.scannedResult == null) {
         			$log.debug('try to capture frame');
     	    		try {
     	    			var videoElement = document.getElementById('checkInVideoElement');
     					var canvas = document.getElementById("checkInImageCanvas");
     					canvas.height = videoElement.videoHeight;
     					canvas.width = videoElement.videoWidth;
-    					
+
     					canvas.getContext("2d").drawImage(videoElement, 0, 0);
     					var imageData = canvas.getContext("2d").getImageData(0,0,canvas.width, canvas.height);
     					worker.postMessage(imageData);
@@ -738,32 +779,33 @@
     					$log.debug('error', e)
     				}
         		}
-    			
+
     			timeoutPromise = $timeout(function() {
     				captureFrame();
     			}, 250);
         	}
-    		
+
     		var endVideoStream = function () {
     			if (!!$scope.stream) {
         			$scope.stream.stop();
         		}
     		}
-    		
+
     		var stopScanning = function () {
         		endVideoStream();
-        		$scope.scanning.visible = false; 
+        		$scope.resetScanning();
+        		$scope.scanning.visible = false;
         		$timeout.cancel(timeoutPromise);
         	}
-    		
+
     		$scope.$on('$destroy', function() {
     			worker.terminate();
     			endVideoStream();
     			stopScanning();
     		});
-    		
+
     		$scope.stopScanning = stopScanning;
-        	
+
         	$scope.selectSource = function(source) {
         		if(source == undefined) {
         			return;
@@ -772,10 +814,10 @@
         		endVideoStream();
         		var videoElement = document.getElementById('checkInVideoElement');
         		videoElement.src = null;
-        		
-        		
+
+
         		var constraint = {video: {optional: [{sourceId: source.source.id}]}};
-        		
+
         		navigator.getUserMedia(constraint, function(stream) {
         			$scope.stream = stream; // make stream available to console
         			videoElement.src = window.URL.createObjectURL(stream);
@@ -787,7 +829,7 @@
         			$timeout.cancel(timeoutPromise);
         		});
         	};
-        	
+
         	MediaStreamTrack.getSources(function(sources) {
         		var videos = [];
         		angular.forEach(sources, function(v,i) {
@@ -799,53 +841,42 @@
         			$scope.videos = videos;
         		});
         	});
-    		
     	}
-    	
+
     	EventService.getEvent($stateParams.eventName).success(function(result) {
     		$scope.event = result.event;
-    		CheckInService.findAllTickets(result.event.id).success(function(tickets) {
-    			$scope.tickets = tickets;
-    		});
     	});
-    	
-    	$scope.toBeCheckedIn = function(ticket, idx) {
-    		return  ['TO_BE_PAID', 'ACQUIRED'].indexOf(ticket.status) >= 0;
-    	};
-    	
-    	$scope.reloadTickets = function() {
-    		CheckInService.findAllTickets($scope.event.id).success(function(tickets) {
-    			$scope.tickets = tickets;
-    		});
-    	};
-    	
+
+
     	$scope.checkIn = function(ticket) {
+    	    $scope.scanning.checkInInAction = true;
     		CheckInService.checkIn($scope.event.id, ticket).success(function(result) {
-    			if(result.status === 'SUCCESS') {
-    				ticket.code = null;
-    				$scope.reloadTickets();
-    			}
-    			$scope.checkInResult = result;
+    		    $scope.scanning.checkInInAction = false;
+    		    $scope.scanning.scannedTicketInfo = result.ticket;
+    		    $scope.scanning.scannedResult = result.result;
     		});
     	};
-    	
-    	$scope.confirmPayment = function(ticket) {
-    		CheckInService.confirmPayment($scope.event.id, ticket).success(function(result) {
-    			if(result.status) {
-    				$scope.confirmPaymentResult= null;
-    				$scope.checkIn(ticket);
-    			} else {
-    				$scope.confirmPaymentResult= result;
-    			}
-    		});
+
+    	$scope.resetScanning = function() {
+    	    $scope.scanning = {visible: $scope.scanning, ticket: {}};
     	};
-    	
+
     	$scope.resetForm = function(ticket) {
     		ticket.code = null;
-    		$scope.checkInResult = null;
-    		$scope.confirmPaymentResult = null;
-    		$scope.scanning.scannedTicketInfo = null;
+            $scope.resetScanning();
     	};
+
+    	$scope.confirmPayment = function() {
+    	    $scope.scanning.confirmPaymentInAction = true;
+    	    CheckInService.confirmPayment($scope.event.id, $scope.scanning.ticket).then(function() {
+    	        CheckInService.getTicket($scope.event.id, $scope.scanning.ticket.code).success(function(result) {
+    	            $scope.scanning.scannedTicketInfo = result.ticket;
+                    $scope.scanning.scannedResult = result.result;
+                    $scope.scanning.confirmPaymentInAction = false;
+                });
+    	    });
+    	};
+
     });
 
     admin.controller('MessageBarController', function($scope, $rootScope) {
