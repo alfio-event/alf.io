@@ -1,5 +1,7 @@
 <div class="container">
-
+    <div data-ng-if="!canReadCamera">
+        <div class="alert alert-danger" role="alert">Your browser does not support MediaStreamTrack.getSources API.</div>
+    </div>
     <div data-ng-if="canReadCamera">
         <form data-ng-submit="scanning.visible = false; checkIn(scanning.ticket)">
             <div data-ng-hide="scanning.visible || scanning.ticket.code != null" class="form-group">
