@@ -252,7 +252,7 @@
     		
     		getTicket: function(eventId, code) {
     			var ticketIdentifier = code.split('/')[0];
-    			return $http.get('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier);
+    			return $http.get('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier + "?qrCode=" + encodeURIComponent(code));
     		},
     		
     		checkIn: function(eventId, ticket) {
