@@ -140,8 +140,9 @@
                 var queryString = angular.isDefined(categoryId) ? '?categoryId='+categoryId : '';
                 return $http['post']('/admin/api/events/'+eventName+'/messages/preview'+queryString, messages).error(HttpErrorHandler.handle);
             },
-            sendMessages: function(eventName, messages) {
-                return $http['post']('/admin/api/events/'+eventName+'/messages/send', messages).error(HttpErrorHandler.handle);
+            sendMessages: function(eventName, categoryId, messages) {
+                var queryString = angular.isDefined(categoryId) ? '?categoryId='+categoryId : '';
+                return $http['post']('/admin/api/events/'+eventName+'/messages/send'+queryString, messages).error(HttpErrorHandler.handle);
             },
             getCategoriesContainingTickets: function(eventName) {
                 return $http['get']('/admin/api/events/'+eventName+'/categories-containing-tickets')
