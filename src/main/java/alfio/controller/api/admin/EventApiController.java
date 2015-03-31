@@ -19,6 +19,7 @@ package alfio.controller.api.admin;
 import alfio.manager.EventManager;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
+import alfio.model.Event;
 import alfio.model.TicketReservation;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.EventWithStatistics;
@@ -182,6 +183,15 @@ public class EventApiController {
     @RequestMapping(value = "/events/{eventName}/languages", method = GET)
     public List<Locale> getAvailableLocales(@PathVariable("eventName") String eventName) {
         return i18nManager.getEventLocales(eventName);
+    }
+
+    @RequestMapping(value = "/events/{eventName}/categories-containing-tickets", method = GET)
+    public List<TicketCategoryModification> getCategoriesWithTickets(@PathVariable("eventName") String eventName, Principal principal) {
+        Event event = eventManager.getSingleEvent(eventName, principal.getName());
+        return eventManager.loadTicketCategoriesWithStats(event).stream()
+                .filter(tc -> !tc.getTickets().isEmpty())
+                .map(tc -> TicketCategoryModification.fromTicketCategory(tc.getTicketCategory(), event.getZoneId()))
+                .collect(Collectors.toList());
     }
 
 }

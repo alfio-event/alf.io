@@ -58,20 +58,23 @@ public class CustomMessageManager {
         this.notificationManager = notificationManager;
     }
 
-    public Map<String, Object> generatePreview(String eventName, List<MessageModification> input, String username) {
+    public Map<String, Object> generatePreview(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
         Map<String, Object> result = new HashMap<>();
-        result.put("affectedUsers", ticketRepository.countAllConfirmed(eventManager.getSingleEvent(eventName, username).getId()));
+        Event event = eventManager.getSingleEvent(eventName, username);
+        result.put("affectedUsers", categoryId.map(id -> ticketRepository.countConfirmedTickets(event.getId(), id)).orElseGet(() -> ticketRepository.countAllConfirmed(event.getId())));
         result.put("preview", preview(eventName, input));
         return result;
     }
 
-    public int sendMessages(String eventName, List<MessageModification> input, String username) {
+    public int sendMessages(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
         preview(eventName, input);//dry run for checking the syntax
         Event event = eventManager.getSingleEvent(eventName, username);
         Organization organization = eventManager.loadOrganizer(event, username);
         AtomicInteger counter = new AtomicInteger();
         Map<String, List<MessageModification>> byLanguage = input.stream().collect(Collectors.groupingBy(m -> m.getLocale().getLanguage()));
-        ticketRepository.findAllConfirmed(eventManager.getSingleEvent(eventName, username).getId()).stream()
+        categoryId.map(id -> ticketRepository.findConfirmedByCategoryId(event.getId(), id))
+                .orElseGet(() -> ticketRepository.findAllConfirmed(event.getId()))
+                .stream()
                 .filter(t -> isNotBlank(t.getFullName()) && isNotBlank(t.getEmail()))
                 .parallel()
                 .map(t -> {

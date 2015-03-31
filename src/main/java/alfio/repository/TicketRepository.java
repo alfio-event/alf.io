@@ -117,6 +117,9 @@ public interface TicketRepository {
     @Query("select * from ticket where event_id = :eventId and status in(" + CONFIRMED + ")")
     List<Ticket> findAllConfirmed(@Bind("eventId") int eventId);
 
+    @Query("select * from ticket where event_id = :eventId and status in(" + CONFIRMED + ") and category_id = :categoryId")
+    List<Ticket> findConfirmedByCategoryId(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
+
     @Query("select count(*) from ticket where event_id = :eventId and status in(" + CONFIRMED + ")")
 	Integer countAllConfirmed(@Bind("eventId") int eventId);
 

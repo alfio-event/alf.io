@@ -999,7 +999,11 @@
             });
             $scope.eventName = $stateParams.eventName;
         });
-        $scope.showPreview = function(frm, eventName, messages) {
+        EventService.getCategoriesContainingTickets($stateParams.eventName).success(function(result) {
+            $scope.categories = result;
+            $scope.categoryId = undefined;
+        });
+        $scope.showPreview = function(frm, eventName, categoryId, messages, categories) {
             if(!frm.$valid) {
                 return;
             }
@@ -1010,23 +1014,31 @@
                 alert('please fill all the messages');
                 return;
             }
-            EventService.getMessagesPreview(eventName, messages).success(function(result) {
+            EventService.getMessagesPreview(eventName, categoryId, messages).success(function(result) {
                 var preview = $modal.open({
                     size:'lg',
                     templateUrl:BASE_STATIC_URL + '/custom-message/preview.html',
                     backdrop: 'static',
                     controller: function($scope) {
+                        if(angular.isDefined(categoryId)) {
+                            var category = _.find(categories, function(c) {return c.id === categoryId});
+                            $scope.categoryName = angular.isDefined(category) ? category.name : "";
+                        }
                         $scope.messages = result.preview;
                         $scope.affectedUsers = result.affectedUsers;
                         $scope.eventName = eventName;
+                        $scope.categoryId = categoryId;
                         $scope.cancel = function() {
                             $scope.$dismiss('canceled');
                         };
-                        $scope.sendMessage = function(frm, eventName, messages) {
+                        $scope.sendMessage = function(frm, eventName, categoryId, messages, affectedUsers) {
                             if(!frm.$valid) {
                                 return;
                             }
-                            EventService.sendMessages(eventName, messages).success(function(result) {
+                            if(affectedUsers === 0 && !confirm('No one will receive this message. Do you really want to continue?')) {
+                                return;
+                            }
+                            EventService.sendMessages(eventName, categoryId, messages).success(function(result) {
                                 alert(result + ' messages have been enqueued');
                                 $scope.$close(true);
                             }).error(function(error) {

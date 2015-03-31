@@ -46,13 +46,18 @@ public class MessagesApiController {
     }
 
     @RequestMapping(value= "/preview", method = RequestMethod.POST)
-    public Map<String, Object> preview(@PathVariable("eventName") String eventName, @RequestBody List<MessageModification> messageModifications, Principal principal) {
-        return customMessageManager.generatePreview(eventName, messageModifications, principal.getName());
+    public Map<String, Object> preview(@PathVariable("eventName") String eventName,
+                                       @RequestParam(required = false, value = "categoryId") Integer categoryId,
+                                       @RequestBody List<MessageModification> messageModifications, Principal principal) {
+        return customMessageManager.generatePreview(eventName, Optional.ofNullable(categoryId), messageModifications, principal.getName());
     }
 
     @RequestMapping(value= "/send", method = RequestMethod.POST)
-    public int send(@PathVariable("eventName") String eventName, @RequestBody List<MessageModification> messageModifications, Principal principal) {
-        return customMessageManager.sendMessages(eventName, messageModifications, principal.getName());
+    public int send(@PathVariable("eventName") String eventName,
+                    @RequestParam(required = false, value = "categoryId") Integer categoryId,
+                    @RequestBody List<MessageModification> messageModifications,
+                    Principal principal) {
+        return customMessageManager.sendMessages(eventName, Optional.ofNullable(categoryId), messageModifications, principal.getName());
     }
 
 }
