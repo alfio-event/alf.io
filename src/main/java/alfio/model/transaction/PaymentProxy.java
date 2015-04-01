@@ -19,19 +19,24 @@ package alfio.model.transaction;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public enum PaymentProxy {
-    STRIPE("stripe.com", false),
-    ON_SITE("on-site payment", true),
-    OFFLINE("offline payment", false);
+    STRIPE("stripe.com", false, true),
+    ON_SITE("on-site payment", true, true),
+    OFFLINE("offline payment", false, true),
+    NONE("no payment required", false, false);
 
     private final String description;
     private final boolean deskPayment;
+    private final boolean visible;
 
-    private PaymentProxy(String description, boolean deskPayment) {
+    PaymentProxy(String description, boolean deskPayment, boolean visible) {
         this.description = description;
         this.deskPayment = deskPayment;
+        this.visible = visible;
     }
 
     public String getDescription() {
@@ -46,8 +51,16 @@ public enum PaymentProxy {
         return deskPayment;
     }
 
+    private boolean isVisible() {
+        return visible;
+    }
+
     public static Optional<PaymentProxy> safeValueOf(String name) {
         return Arrays.stream(values()).filter(p -> StringUtils.equals(p.name(), name)).findFirst();
+    }
+
+    public static List<PaymentProxy> availableProxies() {
+        return Arrays.stream(values()).filter(PaymentProxy::isVisible).collect(Collectors.toList());
     }
 
 }

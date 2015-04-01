@@ -219,7 +219,7 @@ public class TicketReservationManager {
     public PaymentResult confirm(String gatewayToken, Event event, String reservationId,
 								 String email, String fullName, String billingAddress,
 								 TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method) {
-		PaymentProxy paymentProxy = method.orElse(PaymentProxy.STRIPE);
+		PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
 		if(!reservationReadyForPayment(reservationCost, paymentProxy, reservationId, email, fullName, billingAddress)) {
 			return PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION");
 		}
@@ -257,6 +257,16 @@ public class TicketReservationManager {
         }
 
     }
+
+	private PaymentProxy evaluatePaymentProxy(Optional<PaymentProxy> method, TotalPrice reservationCost) {
+		if(method.isPresent()) {
+			return method.get();
+		}
+		if(reservationCost.getPriceWithVAT() == 0) {
+			return PaymentProxy.NONE;
+		}
+		return PaymentProxy.STRIPE;
+	}
 
 	private boolean reservationReadyForPayment(TotalPrice reservationCost, PaymentProxy paymentProxy, String reservationId, String email, String fullName, String billingAddress) {
 		if(reservationCost.getPriceWithVAT() > 0 && paymentProxy == PaymentProxy.STRIPE) {
@@ -367,7 +377,7 @@ public class TicketReservationManager {
 	 */
 	private void completeReservation(String reservationId, String email, String fullName, String billingAddress, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
 		if(paymentProxy != PaymentProxy.OFFLINE) {
-			TicketStatus ticketStatus = paymentProxy == PaymentProxy.STRIPE ? TicketStatus.ACQUIRED : TicketStatus.TO_BE_PAID;
+			TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
 			acquireTickets(ticketStatus, paymentProxy, reservationId, email, fullName, billingAddress);
 		}
 		//cleanup unused special price codes...
