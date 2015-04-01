@@ -155,7 +155,7 @@ public class UserManager {
     public UserWithPassword resetPassword(int userId) {
         User user = findUser(userId);
         String password = PasswordGenerator.generateRandomPassword();
-        Validate.isTrue(userRepository.resetPassword(userId, password) == 1, "error during password reset");
+        Validate.isTrue(userRepository.resetPassword(userId, passwordEncoder.encode(password)) == 1, "error during password reset");
         return new UserWithPassword(user, password, UUID.randomUUID().toString());
     }
 
