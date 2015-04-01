@@ -34,7 +34,9 @@
             <form name="sendMessage" role="form" data-ng-submit="showPreview(sendMessage, eventName, categoryId, messages, categories)">
                 <div class="form-group wMarginBottom">
                     <label for="availableCategories">Send it to a specific category:</label>
-                    <select id="availableCategories" data-ng-options="category.id as category.name for category in categories" data-ng-model="categoryId" class="form-control"></select>
+                    <select id="availableCategories" data-ng-options="category.id as category.name for category in categories" data-ng-model="categoryId" class="form-control">
+                        <option value="">All</option>
+                    </select>
                 </div>
                 <edit-messages data-edit-mode="true" data-messages="messages"></edit-messages>
                 <control-buttons data-form-obj="sendMessage" data-success-text="Preview"></control-buttons>

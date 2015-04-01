@@ -137,11 +137,11 @@
                 return $http['get']('/admin/api/events/'+eventName+'/languages').error(HttpErrorHandler.handle);
             },
             getMessagesPreview: function(eventName, categoryId, messages) {
-                var queryString = angular.isDefined(categoryId) ? '?categoryId='+categoryId : '';
+                var queryString = angular.isDefined(categoryId) && categoryId !== "" ? '?categoryId='+categoryId : '';
                 return $http['post']('/admin/api/events/'+eventName+'/messages/preview'+queryString, messages).error(HttpErrorHandler.handle);
             },
             sendMessages: function(eventName, categoryId, messages) {
-                var queryString = angular.isDefined(categoryId) ? '?categoryId='+categoryId : '';
+                var queryString = angular.isDefined(categoryId) && categoryId !== "" ? '?categoryId='+categoryId : '';
                 return $http['post']('/admin/api/events/'+eventName+'/messages/send'+queryString, messages).error(HttpErrorHandler.handle);
             },
             getCategoriesContainingTickets: function(eventName) {
