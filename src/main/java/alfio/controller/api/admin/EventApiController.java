@@ -75,7 +75,7 @@ public class EventApiController {
     @RequestMapping(value = "/paymentProxies", method = GET)
     @ResponseStatus(HttpStatus.OK)
     public List<PaymentProxy> getPaymentProxies() {
-        return Arrays.asList(PaymentProxy.values());
+        return PaymentProxy.availableProxies();
     }
 
     @RequestMapping(value = "/events", method = GET)
