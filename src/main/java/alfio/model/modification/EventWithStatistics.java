@@ -51,7 +51,7 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
     }
 
     public boolean isWarningNeeded() {
-        return containsOrphanTickets() || containsStuckReservations();
+        return !isExpired() && (containsOrphanTickets() || containsStuckReservations());
     }
 
     public String getFormattedBegin() {
