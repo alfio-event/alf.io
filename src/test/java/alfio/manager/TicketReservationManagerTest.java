@@ -18,23 +18,32 @@ package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.support.PartialTicketTextGenerator;
+import alfio.manager.support.TextTemplateGenerator;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketReservation;
+import alfio.repository.EventRepository;
+import alfio.repository.PromoCodeDiscountRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.user.AuthorityRepository;
+import alfio.repository.user.OrganizationRepository;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
 import org.springframework.context.MessageSource;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.PlatformTransactionManager;
 
-import java.util.Arrays;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Optional;
 
+import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_START;
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
@@ -70,7 +79,7 @@ public class TicketReservationManagerTest {{
             TicketReservation reservation = mock(TicketReservation.class);
             when(original.getTicketsReservationId()).thenReturn(ticketReservationId);
             when(ticketReservationRepository.findReservationById(eq(ticketReservationId))).thenReturn(reservation);
-            UserDetails userDetails = new User("user", "password", Arrays.asList(new SimpleGrantedAuthority(AuthorityRepository.ROLE_ADMIN)));
+            UserDetails userDetails = new User("user", "password", Collections.singletonList(new SimpleGrantedAuthority(AuthorityRepository.ROLE_ADMIN)));
             trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null,(b) -> null, (c) -> null, Optional.of(userDetails));
             verify(messageSource, never()).getMessage(eq("ticket-has-changed-owner-subject"), eq(new Object[] {"short-name"}), eq(Locale.ENGLISH));
         });
@@ -81,6 +90,84 @@ public class TicketReservationManagerTest {{
             trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, (c) -> null, Optional.empty());
             verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ENGLISH));
             verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(originalEmail), anyString(), eq("Hello, world"));
+        });
+    });
+
+    describe("sendReminderForTicketAssignment", it -> {
+        ConfigurationManager configurationManager = it.usesMock(ConfigurationManager.class);
+        TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
+        EventRepository eventRepository = it.usesMock(EventRepository.class);
+        TicketReservationRepository ticketReservationRepository = it.usesMock(TicketReservationRepository.class);
+        TicketReservation reservation = it.usesMock(TicketReservation.class);
+        PlatformTransactionManager transactionManager = it.usesMock(PlatformTransactionManager.class);
+        OrganizationRepository organizationRepository = it.usesMock(OrganizationRepository.class);
+        PromoCodeDiscountRepository promoCodeDiscountRepository = it.usesMock(PromoCodeDiscountRepository.class);
+        NotificationManager notificationManager = mock(NotificationManager.class);
+        MessageSource messageSource = it.usesMock(MessageSource.class);
+        TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager);
+        it.initializesWith(() -> reset(notificationManager, eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, configurationManager, promoCodeDiscountRepository, messageSource, transactionManager));
+        it.should("send the reminder before event end", expect -> {
+            when(configurationManager.getIntConfigValue(eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+            when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
+            when(reservation.getId()).thenReturn("abcd");
+            when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
+            Event event = it.usesMock(Event.class);
+            when(eventRepository.findByReservationId("abcd")).thenReturn(event);
+            when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+            when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
+            when(eventRepository.findAll()).thenReturn(Collections.singletonList(event));
+            when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(Collections.singletonList("abcd"));
+            trm.sendReminderForTicketAssignment();
+            verify(notificationManager, times(1)).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
+        });
+
+        it.should("not send the reminder after event end", expect -> {
+            when(configurationManager.getIntConfigValue(eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+            when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
+            when(reservation.getId()).thenReturn("abcd");
+            when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
+            Event event = it.usesMock(Event.class);
+            when(eventRepository.findByReservationId("abcd")).thenReturn(event);
+            when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+            when(event.getBegin()).thenReturn(ZonedDateTime.now().minusDays(1));
+            when(eventRepository.findAll()).thenReturn(Collections.singletonList(event));
+            when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(Collections.singletonList("abcd"));
+            trm.sendReminderForTicketAssignment();
+            verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
+        });
+
+        it.should("consider ZoneId while checking (valid)", expect -> {
+            when(configurationManager.getIntConfigValue(eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+            when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
+            when(reservation.getId()).thenReturn("abcd");
+            when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
+            Event event = it.usesMock(Event.class);
+            when(eventRepository.findByReservationId("abcd")).thenReturn(event);
+            when(event.getZoneId()).thenReturn(ZoneId.of("GMT-4"));
+            when(event.getBegin()).thenReturn(ZonedDateTime.now(ZoneId.of("GMT-4")).plusDays(1));
+            when(eventRepository.findAll()).thenReturn(Collections.singletonList(event));
+            when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(Collections.singletonList("abcd"));
+            trm.sendReminderForTicketAssignment();
+            verify(notificationManager, times(1)).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
+        });
+
+        it.should("consider ZoneId while checking (expired)", expect -> {
+            when(configurationManager.getIntConfigValue(eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+            when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
+            when(reservation.getId()).thenReturn("abcd");
+            when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
+            Event event = it.usesMock(Event.class);
+            when(eventRepository.findByReservationId("abcd")).thenReturn(event);
+            when(event.getZoneId()).thenReturn(ZoneId.of("UTC-8"));
+            when(event.getBegin()).thenReturn(ZonedDateTime.now(ZoneId.of("UTC-8")));//same day
+            when(eventRepository.findAll()).thenReturn(Collections.singletonList(event));
+            when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(Collections.singletonList("abcd"));
+            trm.sendReminderForTicketAssignment();
+            verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
         });
     });
 }}

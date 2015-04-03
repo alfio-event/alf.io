@@ -52,6 +52,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
+import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -305,8 +306,8 @@ public class TicketReservationManager {
         String subject = messageSource.getMessage("reservation-email-expired-subject", new Object[]{getShortReservationID(reservationId), event.getShortName()}, reservationLanguage);
 		cancelReservation(reservationId);
         notificationManager.sendSimpleEmail(event, reservation.getEmail(), subject, () -> {
-            return templateManager.renderClassPathResource("/alfio/templates/offline-reservation-expired-email-txt.ms", emailModel, reservationLanguage, TemplateOutput.TEXT);
-        });
+			return templateManager.renderClassPathResource("/alfio/templates/offline-reservation-expired-email-txt.ms", emailModel, reservationLanguage, TemplateOutput.TEXT);
+		});
 	}
 
 	@Transactional(readOnly = true)
@@ -330,10 +331,10 @@ public class TicketReservationManager {
 
     private void transitionToInPayment(String reservationId, String email, String fullName, String billingAddress) {
 		requiresNewTransactionTemplate.execute(status -> {
-            int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, IN_PAYMENT.toString(), email, fullName, billingAddress, null, PaymentProxy.STRIPE.toString());
-            Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
-            return null;
-        });
+			int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, IN_PAYMENT.toString(), email, fullName, billingAddress, null, PaymentProxy.STRIPE.toString());
+			Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
+			return null;
+		});
     }
 
 	private void transitionToOfflinePayment(Event event, String reservationId, String email, String fullName, String billingAddress) {
@@ -717,7 +718,7 @@ public class TicketReservationManager {
 	 */
 	public Optional<Triple<Event, TicketReservation, Ticket>> fetchCompleteAndAssigned(String eventName, String reservationId, String ticketIdentifier) {
 		return fetchComplete(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
-			if(t.getRight().getAssigned()) {
+			if (t.getRight().getAssigned()) {
 				return Optional.of(t);
 			} else {
 				return Optional.empty();
@@ -750,14 +751,17 @@ public class TicketReservationManager {
 					model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
 					Locale locale = p.getRight();
 					ticketReservationRepository.flagAsOfflinePaymentReminderSent(reservation.getId());
-					notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{ getShortReservationID(reservation.getId()) }, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-email-txt.ms", model, locale, TemplateOutput.TEXT));
+					notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{getShortReservationID(reservation.getId())}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-email-txt.ms", model, locale, TemplateOutput.TEXT));
 				});
 	}
 
     void sendReminderForTicketAssignment() {
         int daysBeforeStart = configurationManager.getIntConfigValue(ASSIGNMENT_REMINDER_START, 10);
-        eventRepository.findAll().stream()
-                .filter(e -> ZonedDateTime.now(e.getZoneId()).truncatedTo(ChronoUnit.DAYS).plusDays(daysBeforeStart).isAfter(e.getBegin().truncatedTo(ChronoUnit.DAYS)))
+		eventRepository.findAll().stream()
+				.filter(e -> {
+					int days = Period.between(ZonedDateTime.now(e.getZoneId()).toLocalDate(), e.getBegin().toLocalDate()).getDays();
+					return days > 0 && days <= daysBeforeStart;
+				})
                 .map(e -> Pair.of(e, ticketRepository.findAllReservationsConfirmedButNotAssigned(e.getId())))
                 .filter(p -> !p.getRight().isEmpty())
                 .forEach(this::sendAssignmentReminder);
