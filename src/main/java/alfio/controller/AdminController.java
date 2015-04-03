@@ -34,12 +34,15 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.security.Principal;
 import java.util.List;
+import java.util.function.Function;
 
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
 
-    private static final String[] CSV_HEADER = new String[]{"ID", "Name", "E-Mail", "Phone Number", "T-Shirt size", "Notes", "Language"};
+    private static final String[] CSV_FULL_HEADER = new String[]{"ID", "Name", "E-Mail", "Phone Number", "T-Shirt size", "Notes", "Language"};
+    private static final String[] CSV_TICKETS_HEADER = new String[]{"ID", "Name", "Company"};
+
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
     private final EventManager eventManager;
 
@@ -56,22 +59,34 @@ public class AdminController {
     }
 
     @RequestMapping("/events/{eventName}/export/all-tickets.csv")
-    public void downloadAttendeesCSV(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) throws IOException {
+    public void downloadAllTicketsCSV(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) throws IOException {
+        downloadTicketsCSV(eventName, "all-tickets", CSV_FULL_HEADER, principal, response, eventManager, t -> new String[]{t.getUuid(), t.getFullName(), t.getEmail(), t.getPhoneNumber(), t.getTshirtSize(), t.getNotes(), t.getUserLanguage()});
+    }
+
+    @RequestMapping("/events/{eventName}/export/badges.csv")
+    public void downloadBadgesCSV(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) throws IOException {
+        downloadTicketsCSV(eventName, "badges", CSV_TICKETS_HEADER, principal, response, eventManager, t -> new String[]{t.getUuid(), t.getFullName(), StringUtils.defaultString(t.getCompany())});
+    }
+
+    private static void downloadTicketsCSV(String eventName, String fileName, String[] header,
+                                           Principal principal, HttpServletResponse response,
+                                           EventManager eventManager, Function<Ticket, String[]> ticketMapper) throws IOException {
         Validate.isTrue(StringUtils.isNotBlank(eventName), "Event name is not valid");
         List<Ticket> tickets = eventManager.findAllConfirmedTickets(eventName, principal.getName());
         response.setContentType("text/csv;charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-attendees.csv");
+        response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-"+fileName+".csv");
         try(ServletOutputStream out = response.getOutputStream()) {
             for (int marker : BOM_MARKERS) {//UGLY-MODE_ON: specify that the file is written in UTF-8 with BOM, thanks to alexr http://stackoverflow.com/a/4192897
                 out.write(marker);
             }
             CSVWriter writer = new CSVWriter(new OutputStreamWriter(out));
-            writer.writeNext(CSV_HEADER);
+            writer.writeNext(header);
             tickets.stream()
-                    .map(t -> new String[]{t.getUuid(), t.getFullName(), t.getEmail(), t.getPhoneNumber(), t.getTshirtSize(), t.getNotes(), t.getUserLanguage()})
+                    .map(ticketMapper)
                     .forEach(writer::writeNext);
             writer.flush();
             out.flush();
         }
     }
+
 }
