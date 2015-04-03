@@ -81,6 +81,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
             .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
             .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
+            .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
             .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
             .antMatchers("/**").permitAll()
             .and()

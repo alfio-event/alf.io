@@ -55,7 +55,7 @@ public class AdminController {
         return "/admin/index";
     }
 
-    @RequestMapping("/events/{eventName}/export-attendees.csv")
+    @RequestMapping("/events/{eventName}/export/all-tickets.csv")
     public void downloadAttendeesCSV(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) throws IOException {
         Validate.isTrue(StringUtils.isNotBlank(eventName), "Event name is not valid");
         List<Ticket> tickets = eventManager.findAllConfirmedTickets(eventName, principal.getName());
