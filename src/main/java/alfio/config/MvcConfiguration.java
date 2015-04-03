@@ -101,10 +101,10 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     		public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
     			Optional.ofNullable(modelAndView).ifPresent(mv -> {
                     mv.addObject("request", request);
-                    mv.addObject("availableLanguages", i18nManager.getAvailableLocales());
                    	final ModelMap modelMap = mv.getModelMap();
                     modelMap.putIfAbsent("event", null);
                     if(!StringUtils.startsWith(mv.getViewName(), "redirect:")) {
+                        mv.addObject("availableLanguages", i18nManager.getAvailableLocales());
                     	modelMap.putIfAbsent("pageTitle", "empty");
                     }
                 });
