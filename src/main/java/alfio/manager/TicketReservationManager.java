@@ -338,11 +338,19 @@ public class TicketReservationManager {
     }
 
 	private void transitionToOfflinePayment(Event event, String reservationId, String email, String fullName, String billingAddress) {
-        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        Date newExpiration = Date.from(now.plusDays(configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5)).truncatedTo(ChronoUnit.HALF_DAYS).toInstant());
-    	int updatedReservation = ticketReservationRepository.postponePayment(reservationId, newExpiration, email, fullName, billingAddress);
+		ZonedDateTime deadline = getOfflinePaymentDeadline(event, configurationManager);
+		int updatedReservation = ticketReservationRepository.postponePayment(reservationId, Date.from(deadline.toInstant()), email, fullName, billingAddress);
 		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
     }
+
+	static ZonedDateTime getOfflinePaymentDeadline(Event event, ConfigurationManager configurationManager) {
+		ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+		ZonedDateTime eventBegin = event.getBegin();
+		int daysToBegin = Period.between(now.toLocalDate(), eventBegin.toLocalDate()).getDays();
+		Validate.isTrue(daysToBegin >= 0, "Cannot confirm an offline reservation after the event begin");
+		int waitingPeriod = configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5);
+		return now.plusDays(Math.min(daysToBegin, waitingPeriod)).truncatedTo(ChronoUnit.HALF_DAYS);
+	}
 
 	private void reTransitionToPending(String reservationId) {
 		int updatedReservation = ticketReservationRepository.updateTicketStatus(reservationId, TicketReservationStatus.PENDING.toString());

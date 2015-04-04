@@ -37,6 +37,8 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
@@ -44,6 +46,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_START;
+import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
@@ -168,6 +171,29 @@ public class TicketReservationManagerTest {{
             when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(Collections.singletonList("abcd"));
             trm.sendReminderForTicketAssignment();
             verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
+        });
+    });
+
+    describe("offlinePaymentDeadline", it -> {
+        ConfigurationManager configurationManager = mock(ConfigurationManager.class);
+        when(configurationManager.getIntConfigValue(eq(OFFLINE_PAYMENT_DAYS), anyInt())).thenReturn(2);
+        Event event = mock(Event.class);
+        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+        it.should("return the expire date as configured", expect -> {
+            when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
+            ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
+            expect.that(Period.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()).getDays()).is(2);
+        });
+
+        it.should("consider the event begin date when calculating the expiration date", expect -> {
+            when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
+            ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
+            expect.that(Period.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()).getDays()).is(1);
+        });
+
+        it.should("throw an exception after event start", expect -> {
+            when(event.getBegin()).thenReturn(ZonedDateTime.now().minusDays(1));
+            expect.exception(IllegalArgumentException.class, () -> TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager));
         });
     });
 }}
