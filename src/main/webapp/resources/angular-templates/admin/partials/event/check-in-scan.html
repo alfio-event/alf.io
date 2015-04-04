@@ -21,33 +21,43 @@
             </div>
             <div data-ng-show="scanning.ticket.code != null">
 
-                <div data-ng-switch="scanning.scannedResult.status">
+                <div data-ng-if="scanning.loadingTicket" class="wMarginBottom">Loading ticket <i class="fa fa-cog fa-spin"></i></div>
+
+                <div data-ng-switch="scanning.scannedResult.status" data-ng-if="!scanning.loadingTicket">
                     <div class="alert alert-success" role="alert" ng-switch-when="SUCCESS">Check in has been completed!</div>
                     <div class="alert alert-success" role="alert" ng-switch-when="OK_READY_TO_BE_CHECKED_IN">Ticket is ok, ready to be checked in.</div>
                     <div class="alert alert-warning" role="alert" ng-switch-when="MUST_PAY">Ticket is ok, but customer must still pay the ticket.</div>
                     <div class="alert alert-danger" role="alert"  ng-switch-default>{{scanning.scannedResult.message}}</div>
                 </div>
 
+                <div class="wMarginBottom" data-ng-if="!scanning.loadingTicket">
+                    <table>
+                        <tr><th>Ticket status: </th><td>{{scanning.scannedTicketInfo.status}}</td></tr>
+                        <tr><th>Full name: </th><td>{{scanning.scannedTicketInfo.fullName}}</td></tr>
+                        <tr><th>Email: </th><td>{{scanning.scannedTicketInfo.email}}</td></tr>
+                        <tr data-ng-if="scanning.scannedTicketInfo.jobTitle"><th>Job title: </th><td>{{scanning.scannedTicketInfo.jobTitle}}</td></tr>
+                        <tr data-ng-if="scanning.scannedTicketInfo.company"><th>Company: </th><td>{{scanning.scannedTicketInfo.company}}</td></tr>
+                        <tr data-ng-if="scanning.scannedTicketInfo.phoneNumber"><th>Phone number: </th><td>{{scanning.scannedTicketInfo.phoneNumber}}</td></tr>
+                        <tr data-ng-if="scanning.scannedTicketInfo.address"><th>Address: </th><td>{{scanning.scannedTicketInfo.address}}</td></tr>
+                        <tr data-ng-if="scanning.scannedTicketInfo.country"><th>Country: </th><td>{{scanning.scannedTicketInfo.country}}</td></tr>
+                        <tr data-ng-if="scanning.scannedTicketInfo.tshirtSize"><th>T-Shirt size: </th><td>{{scanning.scannedTicketInfo.tshirtSize}}</td></tr>
+                        <tr data-ng-if="scanning.scannedTicketInfo.notes"><th>Notes: </th><td>{{scanning.scannedTicketInfo.notes}}</td></tr>
+                        <tr data-ng-if="scanning.scannedTicketInfo.userLanguage"><th>Language: </th><td>{{scanning.scannedTicketInfo.userLanguage}}</td></tr>
+                    </table>
+                </div>
 
-                <table>
-                    <tr><th>Ticket status: </th><td>{{scanning.scannedTicketInfo.status}}</td></tr>
-                    <tr><th>Full name: </th><td>{{scanning.scannedTicketInfo.fullName}}</td></tr>
-                    <tr><th>Email: </th><td>{{scanning.scannedTicketInfo.email}}</td></tr>
-                    <tr data-ng-if="scanning.scannedTicketInfo.jobTitle"><th>Job title: </th><td>{{scanning.scannedTicketInfo.jobTitle}}</td></tr>
-                    <tr data-ng-if="scanning.scannedTicketInfo.company"><th>Company: </th><td>{{scanning.scannedTicketInfo.company}}</td></tr>
-                    <tr data-ng-if="scanning.scannedTicketInfo.phoneNumber"><th>Phone number: </th><td>{{scanning.scannedTicketInfo.phoneNumber}}</td></tr>
-                    <tr data-ng-if="scanning.scannedTicketInfo.address"><th>Address: </th><td>{{scanning.scannedTicketInfo.address}}</td></tr>
-                    <tr data-ng-if="scanning.scannedTicketInfo.country"><th>Country: </th><td>{{scanning.scannedTicketInfo.country}}</td></tr>
-                    <tr data-ng-if="scanning.scannedTicketInfo.tshirtSize"><th>T-Shirt size: </th><td>{{scanning.scannedTicketInfo.tshirtSize}}</td></tr>
-                    <tr data-ng-if="scanning.scannedTicketInfo.notes"><th>Notes: </th><td>{{scanning.scannedTicketInfo.notes}}</td></tr>
-                    <tr data-ng-if="scanning.scannedTicketInfo.userLanguage"><th>Language: </th><td>{{scanning.scannedTicketInfo.userLanguage}}</td></tr>
-                </table>
-
-
-                <button type="submit" class="btn btn-success btn-block" data-ng-disabled="scanning.checkInInAction" data-ng-if="scanning.scannedResult.status === 'OK_READY_TO_BE_CHECKED_IN' && scanning.checkInResultStatus !== 'SUCCESS' ">Confirm check in</button>
-                <button type="button" class="btn btn-success btn-block" data-ng-click="confirmPayment()" data-ng-disabled="scanning.confirmPaymentInAction" data-ng-if="scanning.scannedResult.status === 'MUST_PAY' && scanning.checkInResultStatus !== 'SUCCESS' ">Confirm payment</button>
-                <button type="button" class="btn btn-primary btn-block" data-ng-click="resetScanning();">Next Scan</button>
-                <button type="reset" class="btn btn-default btn-block" data-ng-click="stopScanning();resetForm(scanning.ticket)">Stop scanning</button>
+                <div class="wMarginBottom" data-ng-if="scanning.scannedResult.status === 'OK_READY_TO_BE_CHECKED_IN' && scanning.checkInResultStatus !== 'SUCCESS' ">
+                    <button type="submit" class="btn btn-success btn-block" data-ng-disabled="scanning.checkInInAction">Confirm check in <span data-ng-show="scanning.checkInInAction"><i class="fa fa-cog fa-spin"></i></span></button>
+                </div>
+                <div class="wMarginBottom">
+                    <button type="button" class="btn btn-success btn-block" data-ng-click="confirmPayment()" data-ng-disabled="scanning.confirmPaymentInAction" data-ng-if="scanning.scannedResult.status === 'MUST_PAY' && scanning.checkInResultStatus !== 'SUCCESS' ">Confirm payment</button>
+                </div>
+                <div class="wMarginBottom">
+                    <button type="button" class="btn btn-primary btn-block" data-ng-click="resetScanning();">Next Scan</button>
+                </div>
+                <div class="wMarginBottom">
+                    <button type="reset" class="btn btn-default btn-block" data-ng-click="stopScanning();resetForm(scanning.ticket);scanning.visible=false">Stop scanning</button>
+                </div>
             </div>
         </form>
     </div>

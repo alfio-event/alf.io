@@ -737,6 +737,8 @@
     	$scope.canReadCamera = canReadCamera;
     	if(canReadCamera) {
 
+    	    var processingScannedImage = false;
+
     		navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
     		$scope.videos = [];
         	$scope.stream = null;
@@ -745,17 +747,21 @@
         	var worker = new Worker("../resources/js/jsqrcode/decode-worker.js");
 
     		worker.addEventListener('message', function(message) {
+    		    processingScannedImage = false;
     			var result = message.data;
+    			$scope.scanning.loadingTicket = false;
     			if(result === 'error decoding QR Code') {
     				$log.debug('error decoding qr code');
     			} else if ($scope.scanning.scannedResult == null) {
     				$scope.$apply(function() {
     				    $scope.scanning.visible = false;
     					$scope.scanning.ticket.code = result;
+                        $scope.scanning.loadingTicket = true;
 
     					CheckInService.getTicket($scope.event.id, result).success(function(result) {
     						$scope.scanning.scannedTicketInfo = result.ticket;
     						$scope.scanning.scannedResult = result.result;
+    						$scope.scanning.loadingTicket = false;
     					});
     				});
     			} else {
@@ -764,7 +770,7 @@
     		}, false);
 
     		var captureFrame = function() {
-        		if($scope.scanning.visible && $scope.scanning.scannedResult == null) {
+        		if($scope.scanning.visible && $scope.scanning.scannedResult == null && !processingScannedImage) {
         			$log.debug('try to capture frame');
     	    		try {
     	    			var videoElement = document.getElementById('checkInVideoElement');
@@ -775,9 +781,13 @@
     					canvas.getContext("2d").drawImage(videoElement, 0, 0);
     					var imageData = canvas.getContext("2d").getImageData(0,0,canvas.width, canvas.height);
     					worker.postMessage(imageData);
+    					processingScannedImage = true;
     				} catch(e) {
+    				    processingScannedImage = false;
     					$log.debug('error', e)
     				}
+        		} else {
+        		    $log.debug('skipping');
         		}
 
     			timeoutPromise = $timeout(function() {
@@ -786,6 +796,7 @@
         	}
 
     		var endVideoStream = function () {
+    		    processingScannedImage = false;
     			if (!!$scope.stream) {
         			$scope.stream.stop();
         		}
@@ -854,6 +865,11 @@
     		    $scope.scanning.checkInInAction = false;
     		    $scope.scanning.scannedTicketInfo = result.ticket;
     		    $scope.scanning.scannedResult = result.result;
+
+
+    		    if(result.ticket.status === 'CHECKED_IN') {
+    		        $scope.resetScanning();
+    		    }
     		});
     	};
 
