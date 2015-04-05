@@ -61,7 +61,7 @@ public class CustomMessageManager {
     public Map<String, Object> generatePreview(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
         Map<String, Object> result = new HashMap<>();
         Event event = eventManager.getSingleEvent(eventName, username);
-        result.put("affectedUsers", categoryId.map(id -> ticketRepository.countConfirmedTickets(event.getId(), id)).orElseGet(() -> ticketRepository.countAllConfirmed(event.getId())));
+        result.put("affectedUsers", categoryId.map(id -> ticketRepository.countAssignedTickets(event.getId(), id)).orElseGet(() -> ticketRepository.countAllAssigned(event.getId())));
         result.put("preview", preview(event, input, username));
         return result;
     }

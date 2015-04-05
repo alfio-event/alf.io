@@ -39,8 +39,8 @@ public interface TicketRepository {
     @Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null order by id desc limit :amount for update")
     List<Integer> lockTicketsToInvalidate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId,	@Bind("amount") int amount);
 
-    @Query("select count(*) from ticket where status in ("+CONFIRMED+") and category_id = :categoryId and event_id = :eventId")
-    Integer countConfirmedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
+    @Query("select count(*) from ticket where status in ("+CONFIRMED+") and category_id = :categoryId and event_id = :eventId and full_name is not null and email_address is not null")
+    Integer countAssignedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
     @Query("select * from ticket where status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and category_id = :categoryId and event_id = :eventId")
     List<Ticket> findAllModifiedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
@@ -120,8 +120,8 @@ public interface TicketRepository {
     @Query("select * from ticket where event_id = :eventId and status in(" + CONFIRMED + ") and category_id = :categoryId")
     List<Ticket> findConfirmedByCategoryId(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
-    @Query("select count(*) from ticket where event_id = :eventId and status in(" + CONFIRMED + ")")
-	Integer countAllConfirmed(@Bind("eventId") int eventId);
+    @Query("select count(*) from ticket where event_id = :eventId and status in(" + CONFIRMED + ") and full_name is not null and email_address is not null")
+	Integer countAllAssigned(@Bind("eventId") int eventId);
 
     @Query("select distinct tickets_reservation_id from ticket where event_id = :eventId and status in('ACQUIRED', 'TO_BE_PAID') and (full_name is null or email_address is null)")
     List<String> findAllReservationsConfirmedButNotAssigned(@Bind("eventId") int eventId);
