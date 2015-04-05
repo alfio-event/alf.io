@@ -11,22 +11,22 @@
             <h6>the syntax is defined by <a href="http://mustache.github.io/mustache.5.html" target="_blank">Mustache</a>, with some <a href="https://github.com/samskivert/jmustache#limitations" target="_blank">limitations</a></h6>
             <dl class="wMarginTop">
 
-                <dt>eventName</dt>
-                <dd>the name of the event</dd>
+                <dt data-tooltip="the name of the event"><span data-ng-non-bindable>{{eventName}}</span></dt>
+                <dd>{{eventName}}</dd>
 
-                <dt>fullName</dt>
-                <dd>Either the attendee's name or the name of the reservation owner</dd>
+                <dt data-tooltip="Either the name of the attendee or the name of the reservation owner"><span data-ng-non-bindable>{{fullName}}</span></dt>
+                <dd>{{fullName}}</dd>
 
-                <dt>organizationName</dt>
-                <dd>The name of the organization</dd>
+                <dt data-tooltip="The name of the organization"><span data-ng-non-bindable>{{organizationName}}</span></dt>
+                <dd>{{organization.name}}</dd>
 
-                <dt>organizationEmail</dt>
-                <dd>The organization e-mail address</dd>
+                <dt data-tooltip="The organization e-mail address"><span data-ng-non-bindable>{{organizationEmail}}</span></dt>
+                <dd>{{organization.email}}</dd>
 
-                <dt>reservationID</dt>
+                <dt><span data-ng-non-bindable>{{reservationID}}</span></dt>
                 <dd>The reservation identifier</dd>
 
-                <dt>reservationURL</dt>
+                <dt><span data-ng-non-bindable>{{reservationURL}}</span></dt>
                 <dd>The URL of the reservation page</dd>
             </dl>
         </div>

@@ -1001,29 +1001,36 @@
         };
     });
 
-    admin.controller('ComposeCustomMessage', function($scope, $stateParams, EventService, $modal, $state) {
+    admin.controller('ComposeCustomMessage', function($scope, $stateParams, EventService, $modal, $state, $q) {
 
-        EventService.getAvailableLanguages($stateParams.eventName).success(function(result) {
-            $scope.messages = _.map(result, function(r) {
-                return {
-                    textExample: '{{organizationName}} <{{organizationEmail}}>',
-                    subjectExample: 'An important message from {{eventName}}',
-                    locale: r,
-                    text: '',
-                    subject: ''
-                };
-            });
-            $scope.eventName = $stateParams.eventName;
+
+        $q.all([EventService.getAvailableLanguages($stateParams.eventName),
+            EventService.getCategoriesContainingTickets($stateParams.eventName), EventService.getEvent($stateParams.eventName)])
+        .then(function(results) {
+                $scope.messages = _.map(results[0].data, function(r) {
+                    return {
+                        textExample: '{{organizationName}} <{{organizationEmail}}>',
+                        subjectExample: 'An important message from {{eventName}}',
+                        locale: r,
+                        text: '',
+                        subject: ''
+                    };
+                });
+                $scope.fullName = 'John Doe';
+
+                $scope.categories = results[1].data;
+                $scope.categoryId = undefined;
+
+                var eventDescriptor = results[2].data;
+                $scope.organization = eventDescriptor.organization;
+                $scope.eventName = eventDescriptor.event.shortName;
         });
 
         $scope.cancel = function() {
             $state.go('events.detail', {eventName: $stateParams.eventName});
         };
 
-        EventService.getCategoriesContainingTickets($stateParams.eventName).success(function(result) {
-            $scope.categories = result;
-            $scope.categoryId = undefined;
-        });
+
         $scope.showPreview = function(frm, eventName, categoryId, messages, categories) {
             if(!frm.$valid) {
                 return;
