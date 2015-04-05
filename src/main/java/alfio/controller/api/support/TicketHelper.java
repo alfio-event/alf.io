@@ -29,10 +29,12 @@ import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.google.zxing.WriterException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,7 +109,11 @@ public class TicketHelper {
     }
 
     private void updateTicketOwner(UpdateTicketOwnerForm updateTicketOwner, HttpServletRequest request, Ticket t, Event event, TicketReservation ticketReservation, Optional<UserDetails> userDetails) {
-        ticketReservationManager.updateTicketOwner(t, RequestContextUtils.getLocale(request), event, updateTicketOwner,
+        Locale language = Optional.ofNullable(updateTicketOwner.getUserLanguage())
+                .filter(StringUtils::isNotBlank)
+                .map(Locale::forLanguageTag)
+                .orElseGet(() -> RequestContextUtils.getLocale(request));
+        ticketReservationManager.updateTicketOwner(t, language, event, updateTicketOwner,
                 getConfirmationTextBuilder(request, event, ticketReservation),
                 getOwnerChangeTextBuilder(request, t, event),
                 preparePdfTicket(request, event, ticketReservation, t),
@@ -115,7 +121,7 @@ public class TicketHelper {
     }
 
     private PartialTicketTextGenerator getOwnerChangeTextBuilder(HttpServletRequest request, Ticket t, Event event) {
-        return TemplateProcessor.buildEmailForOwnerChange(event, t, organizationRepository, ticketReservationManager, templateManager, request);
+        return TemplateProcessor.buildEmailForOwnerChange(event, t, organizationRepository, ticketReservationManager, templateManager, LocaleUtil.getTicketLanguage(t, request));
     }
 
     private PartialTicketTextGenerator getConfirmationTextBuilder(HttpServletRequest request, Event event, TicketReservation ticketReservation) {
@@ -126,7 +132,7 @@ public class TicketHelper {
         TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         try {
-            return TemplateProcessor.buildPartialPDFTicket(request, event, ticketReservation, ticketCategory, organization, templateManager);
+            return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation, ticketCategory, organization, templateManager);
         } catch (WriterException | IOException e) {
             throw new IllegalStateException(e);
         }

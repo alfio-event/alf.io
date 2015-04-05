@@ -18,6 +18,8 @@ package alfio.controller.api;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.manager.i18n.ContentLanguage;
+import alfio.manager.i18n.I18nManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.util.TemplateManager;
@@ -33,19 +35,23 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 public class ReservationApiController {
 
     private final TicketHelper ticketHelper;
     private final TemplateManager templateManager;
+    private final I18nManager i18nManager;
 
     @Autowired
-    public ReservationApiController(TicketHelper ticketHelper, TemplateManager templateManager) {
+    public ReservationApiController(TicketHelper ticketHelper, TemplateManager templateManager, I18nManager i18nManager) {
         this.ticketHelper = ticketHelper;
         this.templateManager = templateManager;
+        this.i18nManager = i18nManager;
     }
 
 
@@ -66,10 +72,13 @@ public class ReservationApiController {
                 .map(UserDetails.class::cast);
 
         Optional<Triple<ValidationResult, Event, Ticket>> assignmentResult = ticketHelper.assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, t -> {
+            Locale requestLocale = RequestContextUtils.getLocale(request);
             model.addAttribute("value", t.getRight());
             model.addAttribute("validationResult", t.getLeft());
-            model.addAttribute("countries", ticketHelper.getLocalizedCountries(RequestContextUtils.getLocale(request)));
+            model.addAttribute("countries", ticketHelper.getLocalizedCountries(requestLocale));
             model.addAttribute("event", t.getMiddle());
+            model.addAttribute("availableLanguages", i18nManager.getEventLocales(eventName).stream()
+                    .map(ContentLanguage.toLanguage(requestLocale)).collect(Collectors.toList()));
         }, userDetails);
         Map<String, Object> result = new HashMap<>();
         model.addAttribute("reservationId", reservationId);

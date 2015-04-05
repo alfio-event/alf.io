@@ -17,6 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.EventManager;
+import alfio.manager.i18n.ContentLanguage;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
 import alfio.model.Event;
@@ -42,7 +43,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.security.Principal;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.springframework.web.bind.annotation.RequestMethod.*;
@@ -181,7 +185,7 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/languages", method = GET)
-    public List<Locale> getAvailableLocales(@PathVariable("eventName") String eventName) {
+    public List<ContentLanguage> getAvailableLocales(@PathVariable("eventName") String eventName) {
         return i18nManager.getEventLocales(eventName);
     }
 

@@ -16,6 +16,7 @@
  */
 package alfio.config;
 
+import alfio.manager.i18n.ContentLanguage;
 import alfio.manager.i18n.I18nManager;
 import alfio.util.MustacheCustomTagInterceptor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -46,6 +47,7 @@ import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
+import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.servlet.view.mustache.MustacheViewResolver;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateFactory;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
@@ -104,7 +106,9 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                    	final ModelMap modelMap = mv.getModelMap();
                     modelMap.putIfAbsent("event", null);
                     if(!StringUtils.startsWith(mv.getViewName(), "redirect:")) {
-                        mv.addObject("availableLanguages", i18nManager.getAvailableLocales());
+                        mv.addObject("availableLanguages", i18nManager.getAvailableLocales().stream()
+                                .map(ContentLanguage.toLanguage(RequestContextUtils.getLocale(request)))
+                                .collect(Collectors.toList()));
                     	modelMap.putIfAbsent("pageTitle", "empty");
                     }
                 });

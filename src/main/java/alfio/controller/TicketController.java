@@ -29,6 +29,7 @@ import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ImageUtil;
+import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import com.google.zxing.WriterException;
 import com.lowagie.text.DocumentException;
@@ -103,8 +104,7 @@ public class TicketController {
 	public String sendTicketByEmail(@PathVariable("eventName") String eventName,
 									@PathVariable("reservationId") String reservationId,
 									@PathVariable("ticketIdentifier") String ticketIdentifier,
-									HttpServletRequest request,
-									Locale locale) throws Exception {
+									HttpServletRequest request) throws Exception {
 		
 		Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
 		if(!oData.isPresent()) {
@@ -114,6 +114,7 @@ public class TicketController {
 		
 		Ticket ticket = data.getRight();
 		Event event = data.getLeft();
+		Locale locale = LocaleUtil.getTicketLanguage(ticket, request);
 
 		notificationManager.sendTicketByEmail(ticket,
 				event, locale, TemplateProcessor.buildPartialEmail(event, organizationRepository, data.getMiddle(), templateManager, request),
@@ -170,6 +171,6 @@ public class TicketController {
 	private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
 		Organization organization = organizationRepository.getById(event.getOrganizationId());
-		return TemplateProcessor.buildPartialPDFTicket(request, event, ticketReservation, ticketCategory, organization, templateManager);
+		return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation, ticketCategory, organization, templateManager);
 	}
 }

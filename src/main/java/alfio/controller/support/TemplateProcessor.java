@@ -27,23 +27,19 @@ import alfio.model.TicketReservation;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
 import com.google.zxing.WriterException;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.pdf.BaseFont;
-
-import org.springframework.web.servlet.support.RequestContextUtils;
+import lombok.extern.log4j.Log4j2;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
-import lombok.extern.log4j.Log4j2;
 import static alfio.util.ImageUtil.createQRCode;
 
 @Log4j2
@@ -62,7 +58,8 @@ public final class TemplateProcessor {
             model.put("event", event);
             model.put("ticketReservation", ticketReservation);
             model.put("ticket", ticket);
-            return templateManager.renderClassPathResource("/alfio/templates/ticket-email-txt.ms", model, RequestContextUtils.getLocale(request), TemplateOutput.TEXT);
+            Locale language = LocaleUtil.getTicketLanguage(ticket, request);
+            return templateManager.renderClassPathResource("/alfio/templates/ticket-email-txt.ms", model, language, TemplateOutput.TEXT);
         };
     }
 
@@ -71,7 +68,7 @@ public final class TemplateProcessor {
                                                                  OrganizationRepository organizationRepository,
                                                                  TicketReservationManager ticketReservationManager,
                                                                  TemplateManager templateManager,
-                                                                 HttpServletRequest request) {
+                                                                 Locale language) {
         return (newTicket) -> {
             String eventName = e.getShortName();
             Map<String, Object> emailModel = new HashMap<>();
@@ -81,11 +78,11 @@ public final class TemplateProcessor {
             emailModel.put("previousEmail", oldTicket.getEmail());
             emailModel.put("newEmail", newTicket.getEmail());
             emailModel.put("reservationUrl", ticketReservationManager.reservationUrl(oldTicket.getTicketsReservationId()));
-            return templateManager.renderClassPathResource("/alfio/templates/ticket-has-changed-owner-txt.ms", emailModel, RequestContextUtils.getLocale(request), TemplateOutput.TEXT);
+            return templateManager.renderClassPathResource("/alfio/templates/ticket-has-changed-owner-txt.ms", emailModel, language, TemplateOutput.TEXT);
         };
     }
 
-    public static PDFTemplateGenerator buildPDFTicket(HttpServletRequest request,
+    public static PDFTemplateGenerator buildPDFTicket(Locale language,
                                                     Event event,
                                                     TicketReservation ticketReservation,
                                                     Ticket ticket,
@@ -105,7 +102,7 @@ public final class TemplateProcessor {
             model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
             model.put("deskPaymentRequired", Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired());
 
-            String page = templateManager.renderClassPathResource("/alfio/templates/ticket.ms", model, RequestContextUtils.getLocale(request), TemplateOutput.HTML);
+            String page = templateManager.renderClassPathResource("/alfio/templates/ticket.ms", model, language, TemplateOutput.HTML);
 
             ITextRenderer renderer = new ITextRenderer();
             renderer.setDocumentFromString(page);
@@ -119,12 +116,12 @@ public final class TemplateProcessor {
         };
     }
 
-    public static PartialTicketPDFGenerator buildPartialPDFTicket(HttpServletRequest request,
+    public static PartialTicketPDFGenerator buildPartialPDFTicket(Locale language,
                                                                   Event event,
                                                                   TicketReservation ticketReservation,
                                                                   TicketCategory ticketCategory,
                                                                   Organization organization,
                                                                   TemplateManager templateManager) throws WriterException, IOException {
-        return (ticket) -> buildPDFTicket(request, event, ticketReservation, ticket, ticketCategory, organization, templateManager).generate();
+        return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager).generate();
     }
 }

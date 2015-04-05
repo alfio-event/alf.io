@@ -92,6 +92,17 @@
             <textarea name="notes" id="notes-{{uuid}}" class="form-control" maxlength="1024" placeholder="{{#i18n}}reservation-page-complete.notes.placeholder{{/i18n}}">{{notes}}</textarea>
         </div>
     </div>
+    <div class="form-group">
+        <label class="col-sm-3 control-label" for="language-{{uuid}}">{{#i18n}}reservation-page-complete.language{{/i18n}}</label>
+        <div class="col-sm-9">
+            <select name="userLanguage" value="{{userLanguage}}" id="language-{{uuid}}" class="form-control">
+                <option value=""></option>
+                {{#availableLanguages}}
+                    <option value="{{language}}">{{displayLanguage}}</option>
+                {{/availableLanguages}}
+            </select>
+        </div>
+    </div>
     <div class="text-center hide alert alert-danger" id="error-{{uuid}}"><i class="fa fa-exclamation"></i> {{#i18n}}error.generic{{/i18n}}</div>
     <!-- -->
     <div class="form-group" id="buttons-bar-{{uuid}}">

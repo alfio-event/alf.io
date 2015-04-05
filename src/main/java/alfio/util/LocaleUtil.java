@@ -14,21 +14,23 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager.i18n;
+package alfio.util;
 
-import org.springframework.stereotype.Component;
+import alfio.model.Ticket;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
-import java.util.Arrays;
-import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Locale;
+import java.util.Optional;
 
-@Component
-public class I18nManager {
+public final class LocaleUtil {
+    private LocaleUtil() {}
 
-    public List<ContentLanguage> getAvailableLocales() {
-        return Arrays.asList(ContentLanguage.ITALIAN, ContentLanguage.ENGLISH);
-    }
-
-    public List<ContentLanguage> getEventLocales(String eventName) {
-        return getAvailableLocales();
+    public static Locale getTicketLanguage(Ticket t, HttpServletRequest request) {
+        return Optional.ofNullable(t.getUserLanguage())
+                .filter(StringUtils::isNotBlank)
+                .map(Locale::forLanguageTag)
+                .orElseGet(() -> RequestContextUtils.getLocale(request));
     }
 }
