@@ -1001,7 +1001,7 @@
         };
     });
 
-    admin.controller('ComposeCustomMessage', function($scope, $stateParams, EventService, $modal) {
+    admin.controller('ComposeCustomMessage', function($scope, $stateParams, EventService, $modal, $state) {
 
         EventService.getAvailableLanguages($stateParams.eventName).success(function(result) {
             $scope.messages = _.map(result, function(r) {
@@ -1015,6 +1015,11 @@
             });
             $scope.eventName = $stateParams.eventName;
         });
+
+        $scope.cancel = function() {
+            $state.go('events.detail', {eventName: $stateParams.eventName});
+        };
+
         EventService.getCategoriesContainingTickets($stateParams.eventName).success(function(result) {
             $scope.categories = result;
             $scope.categoryId = undefined;
