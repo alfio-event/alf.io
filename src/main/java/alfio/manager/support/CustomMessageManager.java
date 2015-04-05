@@ -62,13 +62,13 @@ public class CustomMessageManager {
         Map<String, Object> result = new HashMap<>();
         Event event = eventManager.getSingleEvent(eventName, username);
         result.put("affectedUsers", categoryId.map(id -> ticketRepository.countConfirmedTickets(event.getId(), id)).orElseGet(() -> ticketRepository.countAllConfirmed(event.getId())));
-        result.put("preview", preview(eventName, input));
+        result.put("preview", preview(event, input, username));
         return result;
     }
 
     public int sendMessages(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
-        preview(eventName, input);//dry run for checking the syntax
         Event event = eventManager.getSingleEvent(eventName, username);
+        preview(event, input, username);//dry run for checking the syntax
         Organization organization = eventManager.loadOrganizer(event, username);
         AtomicInteger counter = new AtomicInteger();
         Map<String, List<MessageModification>> byLanguage = input.stream().collect(Collectors.groupingBy(m -> m.getLocale().getLanguage()));
@@ -99,13 +99,14 @@ public class CustomMessageManager {
 
     }
 
-    private List<MessageModification> preview(String eventName, List<MessageModification> input) {
+    private List<MessageModification> preview(Event event, List<MessageModification> input, String username) {
         Model model = new ExtendedModelMap();
-        model.addAttribute("eventName", eventName);
-        model.addAttribute("fullName", "First Last");
-        model.addAttribute("organizationName", "My organization");
-        model.addAttribute("organizationEmail", "test@test.tld");
-        model.addAttribute("reservationURL", "https://my-instance/reservations/abcd");
+        Organization organization = eventManager.loadOrganizer(event, username);
+        model.addAttribute("eventName", event.getShortName());
+        model.addAttribute("fullName", "John Doe");
+        model.addAttribute("organizationName", organization.getName());
+        model.addAttribute("organizationEmail", organization.getEmail());
+        model.addAttribute("reservationURL", ticketReservationManager.reservationUrl("abcd", event));
         model.addAttribute("reservationID", "ABCD");
         return input.stream()
                 .map(m -> MessageModification.preview(m, renderResource(m.getSubject(), model, m.getLocale(), templateManager), renderResource(m.getText(), model, m.getLocale(), templateManager)))
