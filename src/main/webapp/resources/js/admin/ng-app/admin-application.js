@@ -666,6 +666,14 @@
             });
         };
 
+        $scope.countActive = function(categories) {
+            return _.countBy(categories, 'expired')['false'] || '0';
+        };
+
+        $scope.countExpired = function(categories) {
+            return _.countBy(categories, 'expired')['true'] || '0';
+        };
+
     });
 
     admin.controller('SendInvitationsController', function($scope, $stateParams, $state, EventService, $upload, $log) {
