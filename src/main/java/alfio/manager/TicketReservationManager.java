@@ -347,7 +347,7 @@ public class TicketReservationManager {
 		ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
 		ZonedDateTime eventBegin = event.getBegin();
 		int daysToBegin = Period.between(now.toLocalDate(), eventBegin.toLocalDate()).getDays();
-		Validate.isTrue(daysToBegin >= 0, "Cannot confirm an offline reservation after the event begin");
+		Validate.isTrue(daysToBegin >= 0, "Cannot confirm an offline reservation after event start");
 		int waitingPeriod = configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5);
 		return now.plusDays(Math.min(daysToBegin, waitingPeriod)).truncatedTo(ChronoUnit.HALF_DAYS);
 	}
