@@ -179,16 +179,33 @@ public class TicketReservationManagerTest {{
         when(configurationManager.getIntConfigValue(eq(OFFLINE_PAYMENT_DAYS), anyInt())).thenReturn(2);
         Event event = mock(Event.class);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+
         it.should("return the expire date as configured", expect -> {
             when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
             ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
             expect.that(Period.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()).getDays()).is(2);
         });
 
+        it.should("return the configured waiting time", expect -> {
+            when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
+            expect.that(TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)).is(2);
+        });
+
         it.should("consider the event begin date when calculating the expiration date", expect -> {
             when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
             ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
             expect.that(Period.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()).getDays()).is(1);
+        });
+
+        it.should("return the configured waiting time considering event start date", expect -> {
+            when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
+            expect.that(TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)).is(1);
+        });
+
+        it.should("never return a date in the past", expect -> {
+            when(event.getBegin()).thenReturn(ZonedDateTime.now());
+            ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
+            expect.that(offlinePaymentDeadline.isAfter(ZonedDateTime.now())).is(true);
         });
 
         it.should("throw an exception after event start", expect -> {

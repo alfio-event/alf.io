@@ -343,13 +343,25 @@ public class TicketReservationManager {
 		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
     }
 
-	static ZonedDateTime getOfflinePaymentDeadline(Event event, ConfigurationManager configurationManager) {
+	public static ZonedDateTime getOfflinePaymentDeadline(Event event, ConfigurationManager configurationManager) {
+		ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+		int waitingPeriod = getOfflinePaymentWaitingPeriod(event, configurationManager);
+		if(waitingPeriod == 0) {
+			log.warn("accepting offline payments the same day is a very bad practice and should be avoided. Please set cash payment as payment method next time");
+			//if today is the event start date, then we add a couple of hours.
+			//TODO Maybe should we avoid this wrong behavior upfront, in the admin area?
+			return now.plusHours(2);
+		}
+		return now.plusDays(waitingPeriod).truncatedTo(ChronoUnit.HALF_DAYS);
+	}
+
+	public static int getOfflinePaymentWaitingPeriod(Event event, ConfigurationManager configurationManager) {
 		ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
 		ZonedDateTime eventBegin = event.getBegin();
 		int daysToBegin = Period.between(now.toLocalDate(), eventBegin.toLocalDate()).getDays();
 		Validate.isTrue(daysToBegin >= 0, "Cannot confirm an offline reservation after event start");
 		int waitingPeriod = configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5);
-		return now.plusDays(Math.min(daysToBegin, waitingPeriod)).truncatedTo(ChronoUnit.HALF_DAYS);
+		return Math.min(daysToBegin, waitingPeriod);
 	}
 
 	private void reTransitionToPending(String reservationId) {

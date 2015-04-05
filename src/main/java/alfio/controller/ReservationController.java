@@ -126,7 +126,7 @@ public class ReservationController {
 			model.addAttribute("reservationId", reservationId);
 			model.addAttribute("reservation", reservation.get());
 			model.addAttribute("pageTitle", "reservation-page.header.title");
-			model.addAttribute("delayForOfflinePayment", configurationManager.getIntConfigValue(ConfigurationKeys.OFFLINE_PAYMENT_DAYS, 5));
+			model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event.get(), configurationManager)));
 			model.addAttribute("event", event.get());
 			if (orderSummary.getOriginalTotalPrice().getPriceWithVAT() > 0) {
 				model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
