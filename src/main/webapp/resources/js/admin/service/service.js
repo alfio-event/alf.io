@@ -273,6 +273,10 @@
     			var ticketIdentifier = ticket.code.split('/')[0];
     			return $http['post']('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier, ticket);
     		},
+
+    		manualCheckIn: function(ticket) {
+    		    return $http['post']('/admin/api/check-in/' + ticket.eventId + '/ticket/' + ticket.uuid + '/manual-check-in', ticket);
+    		},
     		
     		confirmPayment: function(eventId, ticket) {
     			var ticketIdentifier = ticket.code.split('/')[0];

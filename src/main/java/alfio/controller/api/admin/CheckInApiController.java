@@ -147,6 +147,22 @@ public class CheckInApiController {
         }
         return new TicketAndCheckInResult(optionally(() -> ticketRepository.findByUUID(ticketIdentifier)).orElse(null), status);
     }
+
+    @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/manual-check-in", method = POST)
+    public boolean manualCheckIn(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
+        log.warn("for event id : {} and ticket : {}, a manual check in has been done", eventId, ticketIdentifier);
+
+        Optional<Ticket> ticket = optionally(() -> ticketRepository.findByUUID(ticketIdentifier));
+        return ticket.map((t) -> {
+
+            if(t.getStatus() == TicketStatus.TO_BE_PAID) {
+                checkInManager.acquire(ticketIdentifier);
+            }
+
+            checkInManager.checkIn(ticketIdentifier);
+            return true;
+        }).orElse(false);
+    }
 	
 	@RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment", method = POST)
 	public OnSitePaymentConfirmation confirmOnSitePayment(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {

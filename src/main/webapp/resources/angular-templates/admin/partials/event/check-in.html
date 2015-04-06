@@ -16,6 +16,10 @@
 			<h2>Tickets to be checked in <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button></h2>
 		</div>
 		<div>
+            <div class="input-group wMarginBottom">
+                <div class="input-group-addon"><i class="fa fa-search"></i></div>
+                <input type="text" class="form-control input-sm" data-ng-model="selection.freeText">
+            </div>
 			<table class="table check-in-data">
 				<thead>
 					<th>Status</th>
@@ -29,9 +33,10 @@
 					<th>Payment Type</th>
 					<th>Transaction id</th>
 					<th>Transaction timestamp</th>
+                    <th data-ng-if="filterResult.length == 1">Manual Check-In</th>
 				</thead>
 				<tbody>
-					<tr data-ng-repeat="ticket in tickets | filter: toBeCheckedIn | orderBy: ['timestamp', 'ticketReservationId' , 'uuid']">
+					<tr data-ng-repeat="ticket in tickets | filter: toBeCheckedIn | filter: selection.freeText |orderBy: ['timestamp', 'ticketReservationId' , 'uuid'] as filterResult">
 						<td data-ng-class-even="'active'" data-label="Status">{{::ticket.status | statusText}}</td>
                         <td data-ng-class-even="'active'" data-label="Holder's name">{{::ticket.fullName}}</td>
                         <td data-ng-class-even="'active'" data-label="Holder's e-mail">{{::ticket.email}}</td>
@@ -43,6 +48,7 @@
 						<td data-ng-class-even="'active'" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
 						<td data-ng-class-even="'active'" data-label="Transaction id"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
 						<td data-ng-class-even="'active'" data-label="Transaction timestamp"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
+                        <td data-ng-class-even="'active'" data-label="Manual Check-In" data-ng-if="filterResult.length == 1"><button type="button" class="btn btn-primary btn-xs" data-ng-click="manualCheckIn(ticket)">Check-In</button></td>
 					</tr>
 				</tbody>
 			</table>
