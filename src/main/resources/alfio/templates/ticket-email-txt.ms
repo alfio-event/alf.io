@@ -2,11 +2,13 @@
 
 {{#i18n}}email-ticket.attached [{{event.shortName}}]{{/i18n}}
 
+{{#i18n}}email-confirmation.reservationURL [{{reservationUrl}}]{{/i18n}}
+
 #### {{#i18n}}email.event-info{{/i18n}} ####
 
 {{#i18n}}email.event-reminder-location{{/i18n}}
 
- {{event.location}} 
+ {{event.location}}
 
 {{#i18n}}email.event-reminder-date{{/i18n}}
 

@@ -51,12 +51,14 @@ public final class TemplateProcessor {
                                                    OrganizationRepository organizationRepository,
                                                    TicketReservation ticketReservation,
                                                    TemplateManager templateManager,
+                                                   String reservationURL,
                                                    HttpServletRequest request) {
         return (ticket) -> {
             Map<String, Object> model = new HashMap<>();
             model.put("organization", organizationRepository.getById(event.getOrganizationId()));
             model.put("event", event);
             model.put("ticketReservation", ticketReservation);
+            model.put("reservationUrl", reservationURL);
             model.put("ticket", ticket);
             Locale language = LocaleUtil.getTicketLanguage(ticket, request);
             return templateManager.renderClassPathResource("/alfio/templates/ticket-email-txt.ms", model, language, TemplateOutput.TEXT);

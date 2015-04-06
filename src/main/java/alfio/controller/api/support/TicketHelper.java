@@ -125,7 +125,7 @@ public class TicketHelper {
     }
 
     private PartialTicketTextGenerator getConfirmationTextBuilder(HttpServletRequest request, Event event, TicketReservation ticketReservation) {
-        return TemplateProcessor.buildPartialEmail(event, organizationRepository, ticketReservation, templateManager, request);
+        return TemplateProcessor.buildPartialEmail(event, organizationRepository, ticketReservation, templateManager, ticketReservationManager.reservationUrl(ticketReservation.getId(), event), request);
     }
 
     private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {
