@@ -111,8 +111,8 @@ public interface TicketRepository {
 	@Query("select * from ticket where category_id in (:categories) and status = 'PENDING'")
 	List<Ticket> findPendingTicketsInCategories(@Bind("categories") List<Integer> categories);
 	
-	@Query("select * from ticket where event_id = :eventId")
-	List<Ticket> findAllByEventId(@Bind("eventId") int eventId);
+	@Query("select * from ticket where event_id = :eventId and full_name is not null and email_address is not null")
+	List<Ticket> findAllAssignedByEventId(@Bind("eventId") int eventId);
 
     @Query("select a.*, b.id from ticket a, tickets_reservation b where a.event_id = :eventId and a.status in(" + CONFIRMED + ") and a.tickets_reservation_id = b.id order by b.id")
     List<Ticket> findAllConfirmed(@Bind("eventId") int eventId);

@@ -30,7 +30,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import static alfio.util.OptionalWrapper.optionally;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
@@ -169,6 +168,6 @@ public class CheckInApiController {
 	
 	@RequestMapping(value = "/check-in/{eventId}/ticket", method = GET)
 	public List<Ticket> listAllTickets(@PathVariable("eventId") int eventId) {
-		return ticketRepository.findAllByEventId(eventId);
+		return ticketRepository.findAllAssignedByEventId(eventId);
 	}
 }
