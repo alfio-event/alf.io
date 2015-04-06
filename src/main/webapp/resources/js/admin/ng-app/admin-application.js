@@ -1019,7 +1019,7 @@
                     return {
                         textExample: '{{organizationName}} <{{organizationEmail}}>',
                         subjectExample: 'An important message from {{eventName}}',
-                        locale: r,
+                        locale: r.language,
                         text: '',
                         subject: ''
                     };
