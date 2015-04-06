@@ -53,8 +53,9 @@ public class AdminController {
 
     //catch both "/admin" and "/admin/"
     @RequestMapping("")
-    public String adminHome(Model model, @Value("${alfio.version}") String version) {
+    public String adminHome(Model model, @Value("${alfio.version}") String version, Principal principal) {
         model.addAttribute("alfioVersion", version);
+        model.addAttribute("username", principal.getName());
         return "/admin/index";
     }
 

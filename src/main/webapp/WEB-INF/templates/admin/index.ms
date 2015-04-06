@@ -47,8 +47,13 @@
                     <ul class="nav navbar-nav">
                         <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
                         <li data-ui-sref-active="active"><a data-ui-sref="configuration">Configuration</a></li>
+                        <li class="nav-divider"></li>
+                        <li class="visible-xs"><span class="navbar-brand"><i class="fa fa-user"></i> {{username}}</span></li>
                     </ul>
                 </div>
+            </div>
+            <div class="navbar-right hidden-xs">
+                <span class="navbar-brand"><i class="fa fa-user"></i> {{username}}</span>
             </div>
         </div>
     </div>
