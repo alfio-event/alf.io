@@ -20,6 +20,7 @@ import alfio.datamapper.Bind;
 import alfio.datamapper.Query;
 import alfio.datamapper.QueryRepository;
 import alfio.datamapper.QueryType;
+import alfio.model.FullTicketInfo;
 import alfio.model.Ticket;
 
 import java.util.List;
@@ -111,8 +112,11 @@ public interface TicketRepository {
 	@Query("select * from ticket where category_id in (:categories) and status = 'PENDING'")
 	List<Ticket> findPendingTicketsInCategories(@Bind("categories") List<Integer> categories);
 	
-	@Query("select * from ticket where event_id = :eventId and full_name is not null and email_address is not null")
-	List<Ticket> findAllAssignedByEventId(@Bind("eventId") int eventId);
+	@Query("select * from ticket t " +
+            " inner join tickets_reservation tr on t.tickets_reservation_id = tr.id " +
+            " inner join ticket_category tc on t.category_id = tc.id " +
+            " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null")
+	List<FullTicketInfo> findAllFullTicketInfoAssignedByEventId(@Bind("eventId") int eventId);
 
     @Query("select a.*, b.confirmation_ts from ticket a, tickets_reservation b where a.event_id = :eventId and a.status in(" + CONFIRMED + ") and a.tickets_reservation_id = b.id order by b.confirmation_ts")
     List<Ticket> findAllConfirmed(@Bind("eventId") int eventId);

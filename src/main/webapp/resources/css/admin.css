@@ -99,3 +99,39 @@ div.wMarginBottom {
 span.user-detail {
     font-size: 20px;
 }
+
+/* for phone :D */
+@media screen and (max-width: 767px) {
+
+    table.check-in-data thead {
+      display: none;
+    }
+
+    table.check-in-data tr {
+      margin-bottom: 10px;
+      display: block;
+      border-top: 1px solid #ddd;
+    }
+
+    table.check-in-data tr:first-child {
+      border-top:none;
+    }
+
+    table.check-in-data td {
+      display: block;
+      text-align: right;
+      font-size: 13px;
+      min-height:2.5em;
+    }
+
+    table.check-in-data td:last-child {
+      border-bottom: 0;
+    }
+
+    table.check-in-data td:before {
+      content: attr(data-label);
+      float: left;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+}

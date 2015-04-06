@@ -16,7 +16,7 @@
  */
 package alfio.model;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper;
+import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import alfio.util.MonetaryUtil;
 import lombok.Getter;
 
@@ -42,16 +42,16 @@ public class TicketCategory {
     private final Status status;
     private final int eventId;
 
-    public TicketCategory(@ConstructorAnnotationRowMapper.Column("id") int id,
-                          @ConstructorAnnotationRowMapper.Column("inception") ZonedDateTime utcInception,
-                          @ConstructorAnnotationRowMapper.Column("expiration") ZonedDateTime utcExpiration,
-                          @ConstructorAnnotationRowMapper.Column("max_tickets") int maxTickets,
-                          @ConstructorAnnotationRowMapper.Column("name") String name,
-                          @ConstructorAnnotationRowMapper.Column("description") String description,
-                          @ConstructorAnnotationRowMapper.Column("price_cts") int priceInCents,
-                          @ConstructorAnnotationRowMapper.Column("access_restricted") boolean accessRestricted,
-                          @ConstructorAnnotationRowMapper.Column("tc_status") Status status,
-                          @ConstructorAnnotationRowMapper.Column("event_id") int eventId) {
+    public TicketCategory(@Column("id") int id,
+                          @Column("inception") ZonedDateTime utcInception,
+                          @Column("expiration") ZonedDateTime utcExpiration,
+                          @Column("max_tickets") int maxTickets,
+                          @Column("name") String name,
+                          @Column("description") String description,
+                          @Column("price_cts") int priceInCents,
+                          @Column("access_restricted") boolean accessRestricted,
+                          @Column("tc_status") Status status,
+                          @Column("event_id") int eventId) {
         this.id = id;
         this.utcInception = utcInception;
         this.utcExpiration = utcExpiration;

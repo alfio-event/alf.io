@@ -18,6 +18,7 @@ package alfio.controller.api.admin;
 
 import alfio.manager.CheckInManager;
 import alfio.model.Event;
+import alfio.model.FullTicketInfo;
 import alfio.model.Ticket;
 import alfio.model.Ticket.TicketStatus;
 import alfio.repository.EventRepository;
@@ -167,7 +168,7 @@ public class CheckInApiController {
 	}
 	
 	@RequestMapping(value = "/check-in/{eventId}/ticket", method = GET)
-	public List<Ticket> listAllTickets(@PathVariable("eventId") int eventId) {
-		return ticketRepository.findAllAssignedByEventId(eventId);
+	public List<FullTicketInfo> listAllTickets(@PathVariable("eventId") int eventId) {
+		return ticketRepository.findAllFullTicketInfoAssignedByEventId(eventId);
 	}
 }
