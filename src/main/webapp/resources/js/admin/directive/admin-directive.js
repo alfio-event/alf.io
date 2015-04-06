@@ -16,8 +16,10 @@
             templateUrl: '/resources/angular-templates/admin/partials/main/organizations.html',
             controller: function($scope, $rootScope, OrganizationService) {
                 var loadOrganizations = function() {
+                    $scope.loading = true;
                     OrganizationService.getAllOrganizations().success(function(result) {
                         $scope.organizations = result;
+                        $scope.loading = false;
                     });
                 };
                 $rootScope.$on('ReloadOrganizations', function(e) {
@@ -36,8 +38,10 @@
             controller: function($scope, $rootScope, UserService, $window) {
                 $scope.users = [];
                 var loadUsers = function() {
+                    $scope.loading = true;
                     UserService.getAllUsers().success(function(result) {
                         $scope.users = result;
+                        $scope.loading=false;
                     });
                 };
                 $rootScope.$on('ReloadUsers', function() {
@@ -68,8 +72,12 @@
             scope: true,
             templateUrl: '/resources/angular-templates/admin/partials/main/events.html',
             controller: function($scope, EventService) {
+
+                $scope.loading = true;
+
                 EventService.getAllEvents().success(function(data) {
                     $scope.events = data;
+                    $scope.loading = false;
                 });
 
                 $scope.supportsOfflinePayments = function(event) {

@@ -1,15 +1,20 @@
 <div>
     <a data-ui-sref="index.new-organization">add new organization</a>
 </div>
-<div class="table-responsive">
-    <table class="table">
+<div class="text-center text-muted" data-ng-if="loading">
+    <div class="wMarginTop">
+        <i class="fa fa-cog fa-spin fa-3x"></i>
+    </div>
+</div>
+<div class="table-responsive" data-ng-if="!loading">
+    <table class="table table-striped">
         <thead>
             <tr>
                 <th>id</th>
                 <th>name</th>
-                <th>description</th>
+                <th class="hidden-xs">description</th>
                 <th>e-mail</th>
-                <th>actions</th>
+                <th class="hidden-xs">actions</th>
             </tr>
         </thead>
         <tbody>
@@ -17,11 +22,11 @@
                 <td colspan="4">no organizations have been found. <a data-ui-sref="index.new-organization">Insert a new one</a></td>
             </tr>
             <tr data-ng-repeat="organization in organizations">
-                <td data-ng-class-even="'active'">{{organization.id}}</td>
-                <td data-ng-class-even="'active'">{{organization.name}}</td>
-                <td data-ng-class-even="'active'">{{organization.description}}</td>
-                <td data-ng-class-even="'active'">{{organization.email}}</td>
-                <td data-ng-class-even="'active'">actions</td>
+                <td>{{organization.id}}</td>
+                <td>{{organization.name}}</td>
+                <td class="hidden-xs">{{organization.description}}</td>
+                <td>{{organization.email}}</td>
+                <td class="hidden-xs">actions</td>
             </tr>
         </tbody>
     </table>
