@@ -18,7 +18,6 @@ package alfio.config;
 
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ClassUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -35,15 +34,6 @@ public class SpringBootLauncher {
 
         String profiles = System.getProperty("spring.profiles.active", "");
         log.info("requested profiles {}", profiles);
-
-        if(StringUtils.equals(profiles, "dev")) {
-            System.setProperty("datasource.dialect", "HSQLDB");
-            System.setProperty("datasource.driver", "org.hsqldb.jdbcDriver");
-            System.setProperty("datasource.url", "jdbc:hsqldb:mem:alfio");
-            System.setProperty("datasource.username", "sa");
-            System.setProperty("datasource.password", "");
-            System.setProperty("datasource.validationQuery", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
-        }
 
         SpringApplication application = new SpringApplication(SpringBootInitializer.class, DataSourceConfiguration.class, WebSecurityConfig.class, MvcConfiguration.class);
         application.setAdditionalProfiles(Initializer.PROFILE_SPRING_BOOT);
