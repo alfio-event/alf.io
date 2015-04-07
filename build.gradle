@@ -154,17 +154,20 @@ license {
     include '**/*.sql'
 }
 
-import org.apache.tools.ant.filters.ReplaceTokens
 
-processResources {
-    from(sourceSets.main.resources.srcDirs) {
-        include '**/application.properties'
-        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: [
-                'projectVersion': project.version,
-                'buildDate': java.time.LocalDateTime.now().toString()
-        ])
-    }
+processResources << {
+
+    final gradleProperties = new File(( File ) it.destinationDir, 'application.properties' )
+    final properties       = new Properties()
+
+    assert gradleProperties.file
+
+    gradleProperties.withReader { properties.load( it ) }
+    properties[ 'alfio.version' ] = project.version
+    properties[ 'alfio.build-ts' ] = java.time.LocalDateTime.now().toString()
+    gradleProperties.withWriter { properties.store( it, null )}
 }
+
 
 bootRun {
     def externalConfig = new File("./custom.jvmargs")
