@@ -78,11 +78,19 @@
         <div class="col-sm-9">
             <select name="tShirtSize" value="{{tshirtSize}}" id="t-shirt-size-{{uuid}}" class="form-control">
                 <option value=""></option>
-                <option value="SMALL">Small</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="LARGE">Large</option>
-                <option value="X-LARGE">X-Large</option>
-                <option value="2X-LARGE">2X-Large</option>
+                <optgroup label="{{#i18n}}reservation-page-complete.women{{/i18n}}">
+                    <option value="SMALL-F">Small</option>
+                    <option value="MEDIUM-F">Medium</option>
+                    <option value="LARGE-F">Large</option>
+                    <option value="X-LARGE-F">X-Large</option>
+                </optgroup>
+                <optgroup label="{{#i18n}}reservation-page-complete.men{{/i18n}}">
+                    <option value="SMALL">Small</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LARGE">Large</option>
+                    <option value="X-LARGE">X-Large</option>
+                    <option value="2X-LARGE">2X-Large</option>
+                </optgroup>
             </select>
         </div>
     </div>
