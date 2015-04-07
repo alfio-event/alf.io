@@ -585,6 +585,11 @@ public class TicketReservationManager {
 				+ "/event/" + event.getShortName() + "/reservation/" + reservationId;
 	}
 
+	public String ticketUrl(String reservationId, Event event, String ticketId) {
+		return StringUtils.removeEnd(configurationManager.getRequiredValue(ConfigurationKeys.BASE_URL), "/")
+				+ "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/" + ticketId;
+	}
+
 
 	public int maxAmountOfTickets() {
         return configurationManager.getIntConfigValue(ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
