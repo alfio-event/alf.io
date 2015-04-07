@@ -49,6 +49,7 @@ ext {
             datasourceUsername = 'postgres'
             datasourcePassword = 'password'
             datasourceValidationQuery = 'SELECT 1'
+            springProfilesActive = 'dev-pgsql'
             break
         case 'docker-test':
             datasourceDialect = 'PGSQL'
@@ -57,6 +58,7 @@ ext {
             datasourceUsername = 'postgres'
             datasourcePassword = 'postgres'
             datasourceValidationQuery = 'SELECT 1'
+            springProfilesActive = 'docker-test'
     }
 }
 
