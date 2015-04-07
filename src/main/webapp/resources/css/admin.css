@@ -100,6 +100,10 @@ span.user-detail {
     font-size: 20px;
 }
 
+.cursor-pointer {
+    cursor: pointer;
+}
+
 /* for phone :D */
 @media screen and (max-width: 767px) {
 

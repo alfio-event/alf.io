@@ -709,6 +709,20 @@
 
         $scope.selection = {};
 
+        $scope.advancedSearch = {};
+
+        $scope.resetAdvancedSearch = function() {
+            $scope.advancedSearch = {};
+        }
+
+        $scope.toggledAdvancedSearch = function(toggled) {
+            if(toggled) {
+                $scope.selection.freeText = undefined;
+            } else {
+                $scope.resetAdvancedSearch();
+            }
+        }
+
     	$scope.goToScanPage = function() {
     	    $state.go('events.checkInScan', $stateParams);
     	};
