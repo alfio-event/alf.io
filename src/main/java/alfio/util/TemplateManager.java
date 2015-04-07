@@ -95,7 +95,7 @@ public class TemplateManager {
 	}
 
 	public String renderString(String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-		return render(new ByteArrayResource(template.getBytes()), "", model, locale, templateOutput, false);
+		return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), "", model, locale, templateOutput, false);
 	}
 
 	public String renderServletContextResource(String servletContextResource, Map<String, Object> model, HttpServletRequest request, TemplateOutput templateOutput) {
