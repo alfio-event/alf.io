@@ -10,9 +10,9 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/css/admin.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
-    <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/lodash/lodash.min.js"></script>
-    <script src="{{request.contextPath}}/resources/bower_components/moment/min/moment-with-locales.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/numeral/min/numeral.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular/angular.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-messages/angular-messages.min.js"></script>
@@ -20,7 +20,7 @@
     <script src="{{request.contextPath}}/resources/bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/ng-file-upload/angular-file-upload-shim.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/ng-file-upload/angular-file-upload.min.js"></script>
-    <script src="{{request.contextPath}}/resources/bower_components/Chart.js/Chart.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/Chart.js/Chart.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-chart.js/angular-chart.js"></script>
     <script src="{{request.contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/ng-app/admin-application.js"></script>
