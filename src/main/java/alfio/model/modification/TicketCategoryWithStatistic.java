@@ -54,8 +54,8 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
                                        UnaryOperator<Integer> vatAdder) {
         this.ticketCategory = ticketCategory;
         this.tickets = tickets.stream().filter(tc -> tc.hasBeenSold() || tc.isStuck()).collect(toList());
-        this.soldTickets = (int) this.tickets.stream().filter(TicketWithStatistic::hasBeenSold).count();
         this.checkedInTickets = (int) this.tickets.stream().filter(TicketWithStatistic::isCheckedIn).count();
+        this.soldTickets = ((int) this.tickets.stream().filter(TicketWithStatistic::hasBeenSold).count()) - checkedInTickets;
         this.tokenStatus = tokenStatus;
         this.eventZoneId = eventZoneId;
         this.soldTicketsPercent = calcSoldTicketsPercent(ticketCategory, soldTickets);
