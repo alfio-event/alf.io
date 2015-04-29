@@ -21,7 +21,6 @@ apply plugin: 'war'
 apply plugin: 'spring-boot'
 
 war {
-    //cleanup the imported bower components, TODO: I didn't find a simpler way to do it, any suggestions ? :D
     //generic excludes
 
     def bowerDir = "resources/bower_components"
