@@ -25,66 +25,10 @@ war {
     //generic excludes
 
     def bowerDir = "resources/bower_components"
-
-    exclude([bowerDir + "/**/*.json",
-             bowerDir + "/**/*.md",
-             bowerDir + "/**/*.gz",
-             bowerDir + "/**/*.gzip",
-             bowerDir + "/**/*.txt",
-             bowerDir + "/**/*.scss",
-             bowerDir + "/**/*.less",
-             bowerDir + "/**/*.html",
-             bowerDir + "/**/.*"
-    ])
-
-    //specific excludes for each dependency
-
-    //angular
-    exclude([bowerDir + "/angular/angular.js",
-             bowerDir + "/angular/angular-csp.css",
-             bowerDir + "/angular/index.js"])
-
-    //angular-ui-router
-    exclude([bowerDir + "/angular-ui-router/api/**",
-             bowerDir + "/angular-ui-router/src/**",
-             bowerDir + "/angular-ui-router/release/angular-ui-router.js"])
-
-    //bootstrap
-    exclude([bowerDir + "/bootstrap/fonts/**",
-             bowerDir + "/bootstrap/grunt/**",
-             bowerDir + "/bootstrap/js/**",
-             bowerDir + "/bootstrap/less/**",
-             bowerDir + "/bootstrap/dist/fonts/**",
-             bowerDir + "/bootstrap/dist/js/**"])
-
-    //Chart.js
-    exclude([bowerDir + "/Chart.js/docs/**",
-             bowerDir + "/Chart.js/samples/**",
-             bowerDir + "/Chart.js/src/**",
-             bowerDir + "/Chart.js/Chart.js"])
-
-    //jquery
-    exclude([bowerDir + "/jquery/src/**",
-             bowerDir + "/jquery/dist/jquery.js"])
-
-    //lodash
-    exclude(bowerDir + "/lodash/lodash.js")
-
-    //moment
-    exclude([bowerDir + "/moment/benchmarks/**",
-             bowerDir + "/moment/locale/**",
-             bowerDir + "/moment/meteor/**",
-             bowerDir + "/moment/scripts/**",
-             bowerDir + "/moment/min/locales.js",
-             bowerDir + "/moment/min/locales.min.js",
-             bowerDir + "/moment/min/moment.min.js",
-             bowerDir + "/moment/min/moment-with-locales.js"])
-
-    //numeral
-    exclude([bowerDir + "/numeral/languages/**",
-             bowerDir + "/numeral/tests/**",
-             bowerDir + "/numeral/*.js",
-             bowerDir + "/numeral/min/languages/**"])
+    def excludesFile = new File("./lib_exclude")
+    if(excludesFile.exists()) {
+        exclude(excludesFile.readLines().collect({ bowerDir + it }));
+    }
 }
 
 idea {
