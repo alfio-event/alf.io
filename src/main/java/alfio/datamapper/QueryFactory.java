@@ -17,11 +17,10 @@
 package alfio.datamapper;
 
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.util.Assert;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Optional;
 
 public class QueryFactory {
 
@@ -49,23 +48,16 @@ public class QueryFactory {
 
 	@SuppressWarnings("unchecked")
 	private static <T> T from(final Class<T> clazz, final String activeDb, final NamedParameterJdbcTemplate jdbc) {
-		return (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[] { clazz }, new InvocationHandler() {
-			@Override
-			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-				QueryTypeAndQuery qs = extractQueryAnnotation(clazz, activeDb, method);
-				return qs.type.apply(qs.query, jdbc, method, args);
-			}
-		});
+		return (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[] { clazz }, (proxy, method, args) -> {
+            QueryTypeAndQuery qs = extractQueryAnnotation(clazz, activeDb, method);
+            return qs.type.apply(qs.query, jdbc, method, args);
+        });
 	}
 
 	private static QueryTypeAndQuery extractQueryAnnotation(Class<?> clazz, String activeDb, Method method) {
-		Query q = method.getAnnotation(Query.class);
+		Query q = Optional.ofNullable(method.getAnnotation(Query.class)).orElseThrow(() -> new IllegalArgumentException(String.format("missing @Query annotation for method %s in interface %s", method.getName(),	clazz.getSimpleName())));
 		QueriesOverride qs = method.getAnnotation(QueriesOverride.class);
 
-		Assert.isTrue(
-				q != null,
-				String.format("missing @Query annotation for method %s in interface %s", method.getName(),
-						clazz.getSimpleName()));
 		// only one @Query annotation, thus we return the value without checking the database
 		if (qs == null) {
 			return new QueryTypeAndQuery(q.type(), q.value());

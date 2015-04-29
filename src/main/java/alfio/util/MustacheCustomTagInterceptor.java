@@ -87,7 +87,7 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 
 	private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*?)\\]");
 
-	private static Function<ModelAndView, Mustache.Lambda> HAS_ERROR = (mv) -> {
+	private static final Function<ModelAndView, Mustache.Lambda> HAS_ERROR = (mv) -> {
 		return (frag, out) -> {
 			Errors err = (Errors) mv.getModelMap().get("error");
 			String execution = frag.execute().trim();
@@ -114,7 +114,7 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 		}
 	};
 
-	private static Function<ModelAndView, Mustache.Lambda> FIELD_ERROR = (mv) -> {
+	private static final Function<ModelAndView, Mustache.Lambda> FIELD_ERROR = (mv) -> {
 		return (frag, out) -> {
 			Errors err = (Errors) mv.getModelMap().get("error");
 			String field = frag.execute().trim();

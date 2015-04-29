@@ -68,7 +68,7 @@ public enum QueryType {
 		 * in the pair. If the class has not the correct form, the boolean will be false and the class will be used as
 		 * it is in the jdbc template.
 		 */
-		private final Map<Class<Object>, HasRowmapper> cachedClassToMapper = new ConcurrentHashMap<Class<Object>, HasRowmapper>();
+		private final Map<Class<Object>, HasRowmapper> cachedClassToMapper = new ConcurrentHashMap<>();
 
 		@Override
 		Object apply(String template, NamedParameterJdbcTemplate jdbc, Method method, Object[] args) {

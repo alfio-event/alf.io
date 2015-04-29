@@ -58,7 +58,7 @@ public class StripeManager {
         handlers.put(StripeException.class, this::handleGenericException);
     }
 
-    public String getSecretKey() {
+    private String getSecretKey() {
         return configurationManager.getRequiredValue(STRIPE_SECRET_KEY);
     }
 
@@ -165,7 +165,7 @@ public class StripeManager {
 
 
     @FunctionalInterface
-    private static interface StripeExceptionHandler {
+    private interface StripeExceptionHandler {
         String handle(StripeException exc);
     }
 

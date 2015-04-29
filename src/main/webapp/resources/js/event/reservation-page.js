@@ -59,7 +59,7 @@
 			// and re-submit
 			$form.get(0).submit();
 		}
-	};
+	}
 	
 	var hasStripe = document.getElementById("stripe-key") != null;
 	
@@ -86,15 +86,15 @@
 			var totalSec = Math.max(validity.getTime() - new Date().getTime(), 0) / 1000;
 			var sec = totalSec % 60;
 			var min = (totalSec - sec) / 60;
-			
+			var validity = $("#validity");
 			if(totalSec <= 0) {
-				$("#validity strong").html($("#validity").attr('data-message-time-elapsed'));
+				validity.find("strong").html(validity.attr('data-message-time-elapsed'));
 				$("#continue-button").addClass('hide');
 				clearInterval(interval);
 			} else {
-				$("#validity strong").html($("#validity").attr('data-message').replace('#minutes#', min).replace('#seconds#',  Math.floor(sec)));
+				validity.find("strong").html(validity.attr('data-message').replace('#minutes#', min).replace('#seconds#',  Math.floor(sec)));
 			}
-		}
+		};
 		
 		displayMessage();
 		

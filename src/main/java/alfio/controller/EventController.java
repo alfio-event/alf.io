@@ -187,8 +187,8 @@ public class EventController {
 		LocationDescriptor ld = LocationDescriptor.fromGeoData(ev.getLatLong(), TimeZone.getTimeZone(ev.getTimeZone()),
 				configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY));
 		
-		final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(ev.getId()).intValue() > 0 || 
-				promoCodeRepository.countByEventId(ev.getId()).intValue() > 0;
+		final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(ev.getId()) > 0 ||
+				promoCodeRepository.countByEventId(ev.getId()) > 0;
 
         final EventDescriptor eventDescriptor = new EventDescriptor(ev);
 		model.addAttribute("event", eventDescriptor)//

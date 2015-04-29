@@ -22,7 +22,6 @@ import alfio.config.WebSecurityConfig;
 import alfio.model.Event;
 import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -70,11 +69,6 @@ public class EventRepositoryTest {
     public void setUp() throws Exception {
         //setup hsqldb and make it usable from eventRepository
         organizationRepository.create(ORG_NAME, "description", "email@pippobaudo.com");
-    }
-
-    @After
-    public void tearDown() throws Exception {
-
     }
 
 

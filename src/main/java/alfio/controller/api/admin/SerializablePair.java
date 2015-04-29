@@ -23,7 +23,7 @@ final class SerializablePair<L,R> {
     @Delegate
     private final Pair<L, R> pair;
 
-    public SerializablePair(Pair<L, R> pair) {
+    private SerializablePair(Pair<L, R> pair) {
         this.pair = pair;
     }
 

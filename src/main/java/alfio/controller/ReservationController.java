@@ -75,8 +75,6 @@ public class ReservationController {
 	private final StripeManager stripeManager;
 	private final TemplateManager templateManager;
 	private final MessageSource messageSource;
-	private final TicketRepository ticketRepository;
-	private final TicketCategoryRepository ticketCategoryRepository;
 	private final ConfigurationManager configurationManager;
 	private final NotificationManager notificationManager;
     private final TicketHelper ticketHelper;
@@ -101,8 +99,6 @@ public class ReservationController {
 		this.stripeManager = stripeManager;
 		this.templateManager = templateManager;
 		this.messageSource = messageSource;
-		this.ticketRepository = ticketRepository;
-		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.configurationManager = configurationManager;
 		this.notificationManager = notificationManager;
         this.ticketHelper = ticketHelper;

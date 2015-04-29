@@ -27,7 +27,7 @@ public class ContentLanguage {
     private final Locale locale;
     private final Locale displayLocale;
 
-    public ContentLanguage(Locale locale, Locale displayLocale) {
+    private ContentLanguage(Locale locale, Locale displayLocale) {
         this.locale = locale;
         this.displayLocale = displayLocale;
     }
@@ -40,7 +40,7 @@ public class ContentLanguage {
         return locale.getDisplayLanguage(displayLocale);
     }
 
-    public ContentLanguage switchDisplayLocaleTo(Locale displayLocale) {
+    private ContentLanguage switchDisplayLocaleTo(Locale displayLocale) {
         return new ContentLanguage(this.locale, displayLocale);
     }
 

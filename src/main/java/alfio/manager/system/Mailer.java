@@ -25,7 +25,7 @@ public interface Mailer {
 	void send(String eventName, String to, String subject, String text, Optional<String> html, Attachment... attachment);
 
 	@Data
-	public class Attachment {
+	class Attachment {
 		private final String filename;
 		private final byte[] source;
 		private final String contentType;

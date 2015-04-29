@@ -48,7 +48,6 @@ import java.util.Optional;
 import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_START;
 import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
 import static com.insightfullogic.lambdabehave.Suite.describe;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 @RunWith(JunitSuiteRunner.class)

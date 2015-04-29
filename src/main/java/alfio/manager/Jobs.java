@@ -27,9 +27,9 @@ import java.util.Date;
 public class Jobs {
 
     private static final int ONE_MINUTE = 1000 * 60;
-    public static final int THIRTY_MINUTES = 30 * ONE_MINUTE;
-    public static final int THIRTY_SECONDS = 1000 * 30;
-    public static final int FIVE_SECONDS = 1000 * 5;
+    private static final int THIRTY_MINUTES = 30 * ONE_MINUTE;
+    private static final int THIRTY_SECONDS = 1000 * 30;
+    private static final int FIVE_SECONDS = 1000 * 5;
     private final TicketReservationManager ticketReservationManager;
     private final NotificationManager notificationManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;

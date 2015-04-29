@@ -74,8 +74,8 @@ import static org.apache.commons.lang3.time.DateUtils.truncate;
 public class TicketReservationManager {
 	
 	public static final int RESERVATION_MINUTE = 25;
-    public static final String STUCK_TICKETS_MSG = "there are stuck tickets for the event %s. Please check admin area.";
-    public static final String STUCK_TICKETS_SUBJECT = "warning: stuck tickets found";
+    private static final String STUCK_TICKETS_MSG = "there are stuck tickets for the event %s. Please check admin area.";
+    private static final String STUCK_TICKETS_SUBJECT = "warning: stuck tickets found";
 
     private final EventRepository eventRepository;
 	private final OrganizationRepository organizationRepository;

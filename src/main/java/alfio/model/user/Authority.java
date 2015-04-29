@@ -16,7 +16,7 @@
  */
 package alfio.model.user;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper;
+import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 @Getter
@@ -24,7 +24,7 @@ public class Authority {
     private final String username;
     private final String role;
 
-    public Authority(@ConstructorAnnotationRowMapper.Column("username") String username, @ConstructorAnnotationRowMapper.Column("role") String role) {
+    public Authority(@Column("username") String username, @Column("role") String role) {
         this.username = username;
         this.role = role;
     }

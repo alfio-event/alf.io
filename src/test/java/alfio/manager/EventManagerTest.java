@@ -28,10 +28,10 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.insightfullogic.lambdabehave.Suite.describe;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.*;
 
 @RunWith(JunitSuiteRunner.class)
@@ -57,7 +57,7 @@ public class EventManagerTest {{
         when(original.getMaxTickets()).thenReturn(10);
         when(updated.getMaxTickets()).thenReturn(11);
         it.should("throw exception if there are tickets already sold", expect -> {
-            when(ticketRepository.lockTicketsToInvalidate(10, 30, 2)).thenReturn(Arrays.asList(1));
+            when(ticketRepository.lockTicketsToInvalidate(10, 30, 2)).thenReturn(Collections.singletonList(1));
             expect.exception(IllegalStateException.class, () -> eventManager.handleTicketNumberModification(10, original, updated, -2));
             verify(ticketRepository, never()).invalidateTickets(anyListOf(Integer.class));
         });
@@ -101,7 +101,7 @@ public class EventManagerTest {{
             when(updated.getPriceInCents()).thenReturn(11);
             when(updated.getMaxTickets()).thenReturn(2);
             when(updated.getId()).thenReturn(20);
-            when(ticketRepository.selectTicketInCategoryForUpdate(eq(10), eq(20), eq(2))).thenReturn(Arrays.asList(1));
+            when(ticketRepository.selectTicketInCategoryForUpdate(eq(10), eq(20), eq(2))).thenReturn(Collections.singletonList(1));
             expect.exception(IllegalStateException.class, () -> eventManager.handlePriceChange(10, original, updated));
             verify(ticketRepository, never()).updateTicketPrice(anyInt(), anyInt(), anyInt());
         });
@@ -172,7 +172,7 @@ public class EventManagerTest {{
             when(original.isAccessRestricted()).thenReturn(true);
             when(updated.isAccessRestricted()).thenReturn(true);
             when(updated.getId()).thenReturn(20);
-            final List<Integer> ids = Arrays.asList(1);
+            final List<Integer> ids = Collections.singletonList(1);
             when(specialPriceRepository.lockTokens(eq(20), eq(2))).thenReturn(ids);
             expect.exception(IllegalArgumentException.class, () -> eventManager.handleTokenModification(original, updated, -2));
             verify(specialPriceRepository, never()).cancelTokens(anyListOf(Integer.class));

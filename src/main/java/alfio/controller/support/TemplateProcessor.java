@@ -30,7 +30,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
-import com.google.zxing.WriterException;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.pdf.BaseFont;
 import lombok.extern.log4j.Log4j2;
@@ -123,7 +122,7 @@ public final class TemplateProcessor {
                                                                   TicketReservation ticketReservation,
                                                                   TicketCategory ticketCategory,
                                                                   Organization organization,
-                                                                  TemplateManager templateManager) throws WriterException, IOException {
+                                                                  TemplateManager templateManager) {
         return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager).generate();
     }
 }
