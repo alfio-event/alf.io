@@ -255,7 +255,11 @@
                     };
                 }
 
-                var previousFileBlobId = $scope.eventObj.fileBlobId;
+                var previousFileBlobId;
+
+                if($scope && $scope.eventObj && $scope.eventObj.fileBlobId) {
+                    previousFileBlobId = $scope.eventObj.fileBlobId;
+                }
 
                 $scope.previousFileBlobId = previousFileBlobId;
 
