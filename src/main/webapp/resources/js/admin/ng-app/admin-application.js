@@ -266,7 +266,8 @@
             tokenGenerationRequested: false,
             expiration: {},
             sticky: sticky,
-            notBefore: notBefore
+            notBefore: notBefore,
+            bounded: true
         };
 
     };

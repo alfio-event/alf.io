@@ -80,7 +80,8 @@ public class FullTicketInfo {
                           @Column("tc_price_cts") int tcPriceInCents,
                           @Column("tc_access_restricted") boolean tcAccessRestricted,
                           @Column("tc_tc_status") TicketCategory.Status tcStatus,
-                          @Column("tc_event_id") int tcEventId) {
+                          @Column("tc_event_id") int tcEventId,
+                          @Column("tc_bounded") boolean bounded) {
 
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, originalPriceInCents, paidPriceInCents,
                 ticketsReservationId, fullName, email, lockedAssignment, jobTitle, company, phoneNumber, address, country,
@@ -88,7 +89,7 @@ public class FullTicketInfo {
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trEmail, trBillingAddress,
                 trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName, tcDescription,
-                tcPriceInCents, tcAccessRestricted, tcStatus, tcEventId);
+                tcPriceInCents, tcAccessRestricted, tcStatus, tcEventId, bounded);
 
     }
 }

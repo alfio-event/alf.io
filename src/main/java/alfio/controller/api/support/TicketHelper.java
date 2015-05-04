@@ -33,7 +33,6 @@ import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
-import com.google.zxing.WriterException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -44,7 +43,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -131,10 +129,6 @@ public class TicketHelper {
     private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {
         TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        try {
-            return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation, ticketCategory, organization, templateManager);
-        } catch (WriterException | IOException e) {
-            throw new IllegalStateException(e);
-        }
+        return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation, ticketCategory, organization, templateManager);
     }
 }

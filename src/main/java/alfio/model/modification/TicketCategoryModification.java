@@ -38,6 +38,7 @@ public class TicketCategoryModification {
     private final BigDecimal price;
     private final boolean tokenGenerationRequested;
     private final String dateString;
+    private final boolean bounded;
 
     @JsonCreator
     public TicketCategoryModification(@JsonProperty("id") Integer id,
@@ -48,7 +49,8 @@ public class TicketCategoryModification {
                                       @JsonProperty("description") String description,
                                       @JsonProperty("price") BigDecimal price,
                                       @JsonProperty("tokenGenerationRequested") boolean tokenGenerationRequested,
-                                      @JsonProperty("dateString") String dateString) {
+                                      @JsonProperty("dateString") String dateString,
+                                      @JsonProperty("bounded") boolean bounded) {
         this.id = id;
         this.name = name;
         this.maxTickets = maxTickets;
@@ -58,6 +60,7 @@ public class TicketCategoryModification {
         this.price = price;
         this.tokenGenerationRequested = tokenGenerationRequested;
         this.dateString = dateString;
+        this.bounded = bounded;
     }
 
     public int getPriceInCents() {
@@ -72,6 +75,6 @@ public class TicketCategoryModification {
                 DateTimeModification.fromZonedDateTime(tc.getExpiration(zoneId)),
                 tc.getDescription(),
                 tc.getPrice(),
-                tc.isAccessRestricted(), "");
+                tc.isAccessRestricted(), "", tc.isBounded());
     }
 }

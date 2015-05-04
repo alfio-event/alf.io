@@ -41,6 +41,7 @@ public class TicketCategory {
     private final boolean accessRestricted;
     private final Status status;
     private final int eventId;
+    private final boolean bounded;
 
     public TicketCategory(@Column("id") int id,
                           @Column("inception") ZonedDateTime utcInception,
@@ -51,7 +52,8 @@ public class TicketCategory {
                           @Column("price_cts") int priceInCents,
                           @Column("access_restricted") boolean accessRestricted,
                           @Column("tc_status") Status status,
-                          @Column("event_id") int eventId) {
+                          @Column("event_id") int eventId,
+                          @Column("bounded") boolean bounded) {
         this.id = id;
         this.utcInception = utcInception;
         this.utcExpiration = utcExpiration;
@@ -62,6 +64,7 @@ public class TicketCategory {
         this.accessRestricted = accessRestricted;
         this.status = status;
         this.eventId = eventId;
+        this.bounded = bounded;
     }
 
     public BigDecimal getPrice() {

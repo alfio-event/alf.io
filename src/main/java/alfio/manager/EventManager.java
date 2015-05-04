@@ -312,7 +312,7 @@ public class EventManager {
         em.getTicketCategories().stream().forEach(tc -> {
             final int price = evaluatePrice(tc.getPriceInCents(), em.getVat(), vatIncluded, freeOfCharge);
             final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
-                    tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested(), eventId);
+                    tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested(), eventId, tc.isBounded());
             if(tc.isTokenGenerationRequested()) {
                 final TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getValue(), event.getId());
                 final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategory, ticketCategory.getMaxTickets());
@@ -333,7 +333,7 @@ public class EventManager {
     private void insertCategory(TicketCategoryModification tc, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge, ZoneId zoneId, int eventId) {
         final int price = evaluatePrice(tc.getPriceInCents(), vat, vatIncluded, freeOfCharge);
         final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
-                tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested(), eventId);
+                tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested(), eventId, tc.isBounded());
         TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getValue(), eventId);
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), generateTicketsForCategory(ticketCategory, eventId, new Date(), price, 0).toArray(MapSqlParameterSource[]::new));
         if(tc.isTokenGenerationRequested()) {
