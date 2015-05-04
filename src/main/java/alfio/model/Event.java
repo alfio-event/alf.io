@@ -40,6 +40,7 @@ public class Event {
     private final String websiteUrl;
     private final String termsAndConditionsUrl;
     private final String imageUrl;
+    private final String fileBlobId;
     private final String description;
     private final String location;
     private final String latitude;
@@ -67,6 +68,7 @@ public class Event {
                  @Column("end_ts") ZonedDateTime end,
                  @Column("time_zone") String timeZone,
                  @Column("website_url") String websiteUrl,
+                 @Column("file_blob_id") String fileBlobId,
                  @Column("website_t_c_url") String termsAndConditionsUrl,
                  @Column("image_url") String imageUrl,
                  @Column("regular_price_cts") int regularPriceInCents,
@@ -80,6 +82,7 @@ public class Event {
         this.websiteUrl = websiteUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
         this.imageUrl = imageUrl;
+        this.fileBlobId = fileBlobId;
 
         final ZoneId zoneId = TimeZone.getTimeZone(timeZone).toZoneId();
         this.id = id;
@@ -162,7 +165,11 @@ public class Event {
     }
     
     public boolean getImageIsPresent() {
-    	return StringUtils.isNotBlank(imageUrl);
+    	return StringUtils.isNotBlank(imageUrl) || StringUtils.isNotBlank(fileBlobId);
+    }
+
+    public boolean getFileBlobIdIsPresent() {
+        return StringUtils.isNotBlank(fileBlobId);
     }
 
     public boolean getMultiplePaymentMethods() {

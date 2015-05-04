@@ -43,6 +43,7 @@ public class EventModification {
     private final String websiteUrl;
     private final String termsAndConditionsUrl;
     private final String imageUrl;
+    private final String fileBlobId;
     private final String shortName;
     private final int organizationId;
     private final String location;
@@ -64,6 +65,7 @@ public class EventModification {
                              @JsonProperty("websiteUrl") String websiteUrl,
                              @JsonProperty("termsAndConditionsUrl") String termsAndConditionsUrl,
                              @JsonProperty("imageUrl") String imageUrl,
+                             @JsonProperty("fileBlobId") String fileBlobId,
                              @JsonProperty("shortName") String shortName,
                              @JsonProperty("organizationId") int organizationId,
                              @JsonProperty("location") String location,
@@ -83,6 +85,7 @@ public class EventModification {
         this.websiteUrl = websiteUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
         this.imageUrl = imageUrl;
+        this.fileBlobId = fileBlobId;
         this.shortName = shortName;
         this.organizationId = organizationId;
         this.location = location;
@@ -114,6 +117,7 @@ public class EventModification {
                 event.getWebsiteUrl(),
                 event.getTermsAndConditionsUrl(),
                 event.getImageUrl(),
+                event.getFileBlobId(),
                 event.getShortName(),
                 event.getOrganizationId(),
                 event.getLocation(),

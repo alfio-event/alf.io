@@ -16,12 +16,13 @@
 --
 
 create table file_blob (
-    id integer identity not null,
+    id CHAR(64) primary key not null,
     name varchar(255) not null,
     content_size integer not null,
     content blob not null,
-    content_type varchar(255) not null
+    content_type varchar(255) not null,
+    creation_time timestamp default now() not null
 );
 
-alter table event add column file_blob_id integer;
+alter table event add column file_blob_id char(64);
 alter table event add foreign key(file_blob_id) references file_blob(id);

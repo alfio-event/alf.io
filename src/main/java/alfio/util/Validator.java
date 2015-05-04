@@ -45,9 +45,12 @@ public final class Validator {
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "description", "error.description");
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "websiteUrl", "error.websiteurl");
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "termsAndConditionsUrl", "error.termsandconditionsurl");
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "imageUrl", "error.imageurl");
-        if (!StringUtils.startsWith(ev.getImageUrl(),"https://")) {
-            errors.rejectValue("imageUrl", "error.imageurl");
+
+        if(ev.getFileBlobId() == null) {
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "imageUrl", "error.imageurl");
+            if (!StringUtils.startsWith(ev.getImageUrl(), "https://")) {
+                errors.rejectValue("imageUrl", "error.imageurl");
+            }
         }
         return evaluateValidationResult(errors);
     }

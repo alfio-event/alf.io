@@ -7,9 +7,7 @@
 		<a href="{{request.contextPath}}/event/{{shortName}}/">
 			<div>
                 <div>
-					{{#imageIsPresent}}
-                        <img src="{{imageUrl}}" alt="{{shortName}}" class="img-responsive">
-					{{/imageIsPresent}}
+					{{>/event/output-event-image-tag}}
 					<h2>{{shortName}}</h2>
                 </div>
 				<div>

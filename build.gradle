@@ -112,6 +112,7 @@ dependencies {
     compile "org.apache.commons:commons-lang3:3.4"
     compile "com.squareup.okhttp:okhttp:2.3.0"
     compile "com.opencsv:opencsv:3.3"
+    compile 'commons-codec:commons-codec:1.10'
 
     testCompile "org.springframework:spring-test:$springVersion"
     testCompile "com.insightfullogic:lambda-behave:0.3"

@@ -284,4 +284,12 @@
     		}
     	};
     });
+
+    baseServices.service("FileUploadService", function($http) {
+        return {
+            upload : function(file) {
+                return $http['post']('/admin/api/file/upload', file);
+            }
+        };
+    });
 })();
