@@ -237,10 +237,10 @@
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
-            controller: function EditEventHeaderController($scope, LocationService) {
+            controller: function EditEventHeaderController($scope, LocationService, FileUploadService) {
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'organizationId', 'location',
-                        'description', 'websiteUrl', 'termsAndConditionsUrl', 'imageUrl', 'formattedBegin',
+                        'description', 'websiteUrl', 'termsAndConditionsUrl', 'imageUrl', 'fileBlobId', 'formattedBegin',
                         'formattedEnd', 'geolocation']);
                     angular.extend($scope.obj, source);
                     var beginDateTime = moment(source['formattedBegin']);
@@ -254,6 +254,10 @@
                         time: endDateTime.format('HH:mm')
                     };
                 }
+
+                var previousFileBlobId = $scope.eventObj.fileBlobId;
+
+                $scope.previousFileBlobId = previousFileBlobId;
 
                 $scope.updateLocation = function (location) {
                     if(!angular.isDefined(location) || location.trim() === '') {
@@ -270,6 +274,36 @@
                         delete $scope.obj['geolocation'];
                         $scope.loadingMap = false;
                     });
+                };
+
+                $scope.uploadedImage = {};
+
+                $scope.removeImage = function(obj) {
+                    //delete id, set base64 as undefined
+                    $scope.imageBase64 = undefined;
+                    obj.fileBlobId = undefined;
+                };
+
+                $scope.resetImage = function(obj) {
+                    obj.fileBlobId = previousFileBlobId;
+                    $scope.imageBase64 = undefined;
+                }
+
+                $scope.imageDropped = function(files) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $scope.$applyAsync(function() {
+                            var imageBase64 = e.target.result;
+                            $scope.imageBase64 = imageBase64;
+                            FileUploadService.upload({file : imageBase64.substring(imageBase64.indexOf('base64,') + 7), type : files[0].type, name : files[0].name}).success(function(imageId) {
+                                $scope.obj.fileBlobId = imageId;
+                            })
+                        })
+
+                    };
+                    if(files.length > 0 && (files[0].type == 'image/png') || files[0].type == 'image/jpeg') {
+                        reader.readAsDataURL(files[0]);
+                    }
                 };
             }
         }

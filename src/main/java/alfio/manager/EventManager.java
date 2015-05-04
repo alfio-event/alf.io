@@ -174,7 +174,7 @@ public class EventManager {
         final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);
         final ZonedDateTime end = em.getEnd().toZonedDateTime(zoneId);
         eventRepository.updateHeader(eventId, em.getDescription(), em.getShortName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(),
-                em.getImageUrl(), em.getLocation(), geolocation.getLatitude(), geolocation.getLongitude(),
+                em.getImageUrl(), em.getFileBlobId(), em.getLocation(), geolocation.getLatitude(), geolocation.getLongitude(),
                 begin, end, geolocation.getTimeZone(), em.getOrganizationId());
         if(!original.getBegin().equals(begin) || !original.getEnd().equals(end)) {
             fixOutOfRangeCategories(em, username, zoneId, end);
@@ -470,7 +470,7 @@ public class EventManager {
         BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
         String privateKey = UUID.randomUUID().toString();
         final GeolocationResult result = geolocate(em.getLocation());
-        return eventRepository.insert(em.getDescription(), em.getShortName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(), em.getImageUrl(), em.getLocation(),
+        return eventRepository.insert(em.getDescription(), em.getShortName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(),
                 result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()), em.getEnd().toZonedDateTime(result.getZoneId()),
                 result.getTimeZone(), actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
                 privateKey, em.getOrganizationId()).getValue();

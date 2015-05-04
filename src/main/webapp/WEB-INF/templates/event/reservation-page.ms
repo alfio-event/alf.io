@@ -31,9 +31,7 @@
  ></script>
 {{/orderSummary.free}}
 <div class="center">
-		{{#event.imageIsPresent}}
-            <img src="{{event.imageUrl}}" alt="{{event.shortName}}">
-		{{/event.imageIsPresent}}
+		{{>/event/output-event-image-tag}}
 </div>
 <ol class="breadcrumb wMarginBottom wMarginTop">
     <li class="active">{{#i18n}}breadcrumb.step1{{/i18n}}</li>

@@ -3,9 +3,7 @@
 
 <div class="page-header">
 <h1 class="center">
-    	{{#event.imageIsPresent}}
-    		<img src="{{event.imageUrl}}" alt="{{event.shortName}}">
-    	{{/event.imageIsPresent}}
+    	{{>/event/output-event-image-tag}}
     	{{^event.imageIsPresent}}
     		{{event.shortName}}
     	{{/event.imageIsPresent}}

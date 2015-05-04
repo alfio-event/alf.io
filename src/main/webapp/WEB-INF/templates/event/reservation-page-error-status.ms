@@ -1,9 +1,7 @@
 {{>/event/page-top}}
 
 <div>
-    {{#event.imageIsPresent}}
-        <img src="{{event.imageUrl}}" alt="{{event.shortName}}" class="img-responsive img-center">
-    {{/event.imageIsPresent}}
+    {{>/event/output-event-image-tag}}
 </div>
 
 <h1>{{#i18n}}reservation-page-error-status.title{{/i18n}}</h1>
