@@ -86,7 +86,7 @@ public class EventRepositoryTest {
 
         int orgId = organizationRepository.findByName(ORG_NAME).stream().findFirst().orElseThrow(IllegalStateException::new).getId();
 
-        Pair<Integer, Integer> pair = eventRepository.insert("test from unit test", "unittest","http://localhost:8080/", "http://localhost:8080", "http://localhost:8080","Lugano", "9", "8", beginEventDate, endEventDate, NEW_YORK_TZ, 0, "CHF", 4, true, new BigDecimal(1), "", "", orgId);
+        Pair<Integer, Integer> pair = eventRepository.insert("test from unit test", "unittest","http://localhost:8080/", "http://localhost:8080", "http://localhost:8080", null, "Lugano", "9", "8", beginEventDate, endEventDate, NEW_YORK_TZ, 0, "CHF", 4, true, new BigDecimal(1), "", "", orgId);
         Event e = eventRepository.findById(pair.getValue());
         assertNotNull("Event not found in DB", e);
 
