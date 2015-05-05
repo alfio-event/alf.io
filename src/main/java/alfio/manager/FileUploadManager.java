@@ -22,7 +22,6 @@ import alfio.repository.FileUploadRepository;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -38,7 +37,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 
@@ -67,14 +65,11 @@ public class FileUploadManager {
     public void outputFile(String id, OutputStream out) {
         SqlParameterSource param = new MapSqlParameterSource("id", id);
 
-        jdbc.query(repository.fileContent(id), param, new RowCallbackHandler() {
-            @Override
-            public void processRow(ResultSet rs) throws SQLException {
-                try (InputStream is = rs.getBinaryStream("content")) {
-                    StreamUtils.copy(is, out);
-                } catch (IOException e) {
-                    throw new IllegalStateException("Error while copying data", e);
-                }
+        jdbc.query(repository.fileContent(id), param, rs -> {
+            try (InputStream is = rs.getBinaryStream("content")) {
+                StreamUtils.copy(is, out);
+            } catch (IOException e) {
+                throw new IllegalStateException("Error while copying data", e);
             }
         });
     }
