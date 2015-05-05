@@ -16,21 +16,27 @@
  */
 package alfio.manager;
 
+import alfio.model.Event;
 import alfio.model.TicketCategory;
 import alfio.repository.SpecialPriceRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import static alfio.manager.testSupport.TicketCategoryGenerator.generateCategoryStream;
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static org.mockito.Mockito.*;
 
@@ -177,6 +183,39 @@ public class EventManagerTest {{
             expect.exception(IllegalArgumentException.class, () -> eventManager.handleTokenModification(original, updated, -2));
             verify(specialPriceRepository, never()).cancelTokens(anyListOf(Integer.class));
         });
+    });
+
+    describe("unbounded categories handling", it -> {
+        int eventId = 0;
+        TicketCategoryRepository ticketCategoryRepository = it.usesMock(TicketCategoryRepository.class);
+        EventManager eventManager = new EventManager(null, null, ticketCategoryRepository, null, null, null, null, null, null, null);
+        Event event = Mockito.mock(Event.class);
+        int availableSeats = 20;
+        when(event.getAvailableSeats()).thenReturn(availableSeats);
+        it.should("create tickets for the unbounded category", expect -> {
+            List<TicketCategory> categories = generateCategoryStream().limit(3).collect(Collectors.toList());
+            when(ticketCategoryRepository.findByEventId(eq(eventId))).thenReturn(categories);
+            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(eventId, ZonedDateTime.now(), event, 1000);
+            expect.that(parameterSources).isNotNull();
+            expect.that(parameterSources.length).is(availableSeats);
+        });
+
+        it.should("create tickets for the unbounded categories", expect -> {
+            List<TicketCategory> categories = generateCategoryStream().limit(6).collect(Collectors.toList());
+            when(ticketCategoryRepository.findByEventId(eq(eventId))).thenReturn(categories);
+            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(eventId, ZonedDateTime.now(), event, 1000);
+            expect.that(parameterSources).isNotNull();
+            expect.that(parameterSources.length).is(availableSeats);
+        });
+
+        it.should("create tickets only for the bounded categories", expect -> {
+            List<TicketCategory> categories = generateCategoryStream().limit(2).collect(Collectors.toList());
+            when(ticketCategoryRepository.findByEventId(eq(eventId))).thenReturn(categories);
+            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(eventId, ZonedDateTime.now(), event, 1000);
+            expect.that(parameterSources).isNotNull();
+            expect.that(parameterSources.length).is(4);
+        });
+
     });
 
 

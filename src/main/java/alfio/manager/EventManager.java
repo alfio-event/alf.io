@@ -47,6 +47,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,6 +62,7 @@ import static java.util.stream.Collectors.toList;
 @Log4j2
 public class EventManager {
 
+    private static final Predicate<TicketCategory> IS_CATEGORY_BOUNDED = TicketCategory::isBounded;
     private final UserManager userManager;
     private final EventRepository eventRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
@@ -207,7 +209,7 @@ public class EventManager {
                 .sum();
         Validate.isTrue(sum + tcm.getMaxTickets() <= event.getAvailableSeats(), "Not enough seats");
         Validate.isTrue(tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), "expiration must be before the end of the event");
-        insertCategory(tcm, event.getVat(), event.isVatIncluded(), event.isFreeOfCharge(), event.getZoneId(), eventId);
+        insertCategory(tcm, event);
     }
 
     public void updateCategory(int categoryId, int eventId, TicketCategoryModification tcm, String username) {
@@ -265,17 +267,30 @@ public class EventManager {
         }
     }
 
-    private MapSqlParameterSource[] prepareTicketsBulkInsertParameters(int eventId,
-                                                                       ZonedDateTime creation,
-                                                                       Event event,
-                                                                       int regularPrice) {
+    MapSqlParameterSource[] prepareTicketsBulkInsertParameters(int eventId,
+                                                               ZonedDateTime creation,
+                                                               Event event,
+                                                               int regularPrice) {
 
         //FIXME: the date should be inserted as ZonedDateTime !
         Date creationDate = Date.from(creation.toInstant());
 
-        return ticketCategoryRepository.findByEventId(event.getId()).stream()
-                    .flatMap(tc -> generateTicketsForCategory(tc, eventId, creationDate, regularPrice, 0))
-                    .toArray(MapSqlParameterSource[]::new);
+        List<TicketCategory> categories = ticketCategoryRepository.findByEventId(event.getId());
+        boolean containsUnbounded = categories.stream().anyMatch(IS_CATEGORY_BOUNDED.negate());
+        Stream<MapSqlParameterSource> boundedTickets = categories.stream()
+                .filter(IS_CATEGORY_BOUNDED)
+                .flatMap(tc -> generateTicketsForCategory(tc, eventId, creationDate, regularPrice, 0));
+        int existingTickets = categories.stream()
+                .filter(IS_CATEGORY_BOUNDED)
+                .mapToInt(TicketCategory::getMaxTickets)
+                .sum();
+        if(!containsUnbounded || existingTickets >= event.getAvailableSeats()) {
+            return boundedTickets.toArray(MapSqlParameterSource[]::new);
+        }
+
+        Stream<MapSqlParameterSource> unboundedTickets = generateStreamForTicketCreation(event.getAvailableSeats() - existingTickets)
+                .map(ps -> buildParams(eventId, creationDate, Optional.<TicketCategory>empty(), regularPrice, regularPrice, ps));
+        return Stream.concat(boundedTickets, unboundedTickets).toArray(MapSqlParameterSource[]::new);
     }
 
     private Stream<MapSqlParameterSource> generateTicketsForCategory(TicketCategory tc,
@@ -283,20 +298,24 @@ public class EventManager {
                                                                      Date creationDate,
                                                                      int regularPrice,
                                                                      int existing) {
+        return generateStreamForTicketCreation(Math.abs(tc.getMaxTickets() - existing))
+                    .map(ps -> buildParams(eventId, creationDate, Optional.of(tc), regularPrice, tc.getPriceInCents(), ps));
+    }
+
+    private Stream<MapSqlParameterSource> generateStreamForTicketCreation(int limit) {
         return Stream.generate(MapSqlParameterSource::new)
-                    .limit(Math.abs(tc.getMaxTickets() - existing))
-                    .map(ps -> buildParams(eventId, creationDate, tc, regularPrice, tc.getPriceInCents(), ps));
+                .limit(limit);
     }
 
     private MapSqlParameterSource buildParams(int eventId,
                                               Date creation,
-                                              TicketCategory tc,
+                                              Optional<TicketCategory> tc,
                                               int originalPrice,
                                               int paidPrice,
                                               MapSqlParameterSource ps) {
         return ps.addValue("uuid", UUID.randomUUID().toString())
                 .addValue("creation", creation)
-                .addValue("categoryId", tc.getId())
+                .addValue("categoryId", tc.map(TicketCategory::getId).orElse(null))
                 .addValue("eventId", eventId)
                 .addValue("status", Ticket.TicketStatus.FREE.name())
                 .addValue("originalPrice", originalPrice)
@@ -330,8 +349,10 @@ public class EventManager {
         }
     }
 
-    private void insertCategory(TicketCategoryModification tc, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge, ZoneId zoneId, int eventId) {
-        final int price = evaluatePrice(tc.getPriceInCents(), vat, vatIncluded, freeOfCharge);
+    private void insertCategory(TicketCategoryModification tc, Event event) {
+        ZoneId zoneId = event.getZoneId();
+        int eventId = event.getId();
+        final int price = evaluatePrice(tc.getPriceInCents(), event.getVat(), event.isVatIncluded(), event.isFreeOfCharge());
         final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), tc.getMaxTickets(), price, tc.isTokenGenerationRequested(), eventId, tc.isBounded());
         TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getValue(), eventId);
