@@ -20,13 +20,8 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketReservation;
-import alfio.repository.EventRepository;
-import alfio.repository.PromoCodeDiscountRepository;
-import alfio.repository.TicketRepository;
-import alfio.repository.TicketReservationRepository;
+import alfio.model.*;
+import alfio.repository.*;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
@@ -211,5 +206,73 @@ public class TicketReservationManagerTest {{
             when(event.getBegin()).thenReturn(ZonedDateTime.now().minusDays(1));
             expect.exception(IllegalArgumentException.class, () -> TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager));
         });
+    });
+
+    describe("fixToken", it -> {
+        int ticketCategoryId = 0;
+        int eventId = 0;
+        TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
+        SpecialPriceRepository specialPriceRepository = it.usesMock(SpecialPriceRepository.class);
+        TicketReservationRepository ticketReservationRepository = it.usesMock(TicketReservationRepository.class);
+        TicketCategoryRepository ticketCategoryRepository = mock(TicketCategoryRepository.class);
+        TicketCategory tc = it.usesMock(TicketCategory.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, ticketCategoryRepository, null, null, null, specialPriceRepository, null, null, null, null, null);
+        String specialPriceCode = "SPECIAL-PRICE";
+        String specialPriceSessionId = "session-id";
+        int specialPriceId = -42;
+        SpecialPrice specialPrice = mock(SpecialPrice.class);
+        when(specialPrice.getCode()).thenReturn(specialPriceCode);
+        when(specialPrice.getId()).thenReturn(specialPriceId);
+        when(ticketCategoryRepository.getById(eq(ticketCategoryId), eq(eventId))).thenReturn(tc);
+        it.should("do nothing if the category is not restricted", expect -> {
+            when(tc.isAccessRestricted()).thenReturn(false);
+            Optional<SpecialPrice> result = ticketReservationManager.fixToken(Optional.<SpecialPrice>empty(), ticketCategoryId, eventId, Optional.<String>empty(), null);
+            expect.that(result.isPresent()).is(false);
+        });
+
+        it.should("do nothing if sessionId is not present", expect -> {
+            Optional<SpecialPrice> renewed = ticketReservationManager.renewSpecialPrice(Optional.of(specialPrice), Optional.empty());
+            expect.that(renewed.isPresent()).is(false);
+        });
+
+        it.should("do nothing if special price status is pending and sessionId don't match", expect -> {
+            when(specialPrice.getStatus()).thenReturn(SpecialPrice.Status.PENDING);
+            when(specialPrice.getSessionIdentifier()).thenReturn("another-id");
+            Optional<SpecialPrice> renewed = ticketReservationManager.renewSpecialPrice(Optional.of(specialPrice), Optional.of(specialPriceSessionId));
+            expect.that(renewed.isPresent()).is(false);
+        });
+
+        it.should("renew special price", expect -> {
+            when(tc.isAccessRestricted()).thenReturn(true);
+            when(specialPrice.getStatus()).thenReturn(SpecialPrice.Status.FREE);
+            when(specialPriceRepository.getByCode(eq(specialPriceCode))).thenReturn(specialPrice);
+            Optional<SpecialPrice> renewed = ticketReservationManager.renewSpecialPrice(Optional.of(specialPrice), Optional.of(specialPriceSessionId));
+            verify(specialPriceRepository).bindToSession(eq(specialPriceId), eq(specialPriceSessionId));
+            expect.that(renewed.isPresent()).is(true);
+            expect.that(renewed.get()).is(specialPrice);
+        });
+
+        it.should("cancel the pending reservation and renew the code", expect -> {
+            Ticket ticket = mock(Ticket.class);
+            String reservationId = "rid";
+            when(ticket.getTicketsReservationId()).thenReturn(reservationId);
+            when(ticketRepository.findBySpecialPriceId(eq(specialPriceId))).thenReturn(ticket);
+            TicketReservation reservation = mock(TicketReservation.class);
+            when(ticketReservationRepository.findReservationById(eq(reservationId))).thenReturn(reservation);
+            when(reservation.getStatus()).thenReturn(TicketReservation.TicketReservationStatus.PENDING);
+            when(reservation.getId()).thenReturn(reservationId);
+            when(ticketRepository.freeFromReservation(eq(Collections.singletonList(reservationId)))).thenReturn(1);
+            when(ticketReservationRepository.remove(eq(Collections.singletonList(reservationId)))).thenReturn(1);
+            when(specialPriceRepository.getByCode(eq(specialPriceCode))).thenReturn(specialPrice);
+            when(specialPrice.getStatus()).thenReturn(SpecialPrice.Status.PENDING);
+            when(specialPrice.getSessionIdentifier()).thenReturn(specialPriceSessionId);
+            Optional<SpecialPrice> renewed = ticketReservationManager.renewSpecialPrice(Optional.of(specialPrice), Optional.of(specialPriceSessionId));
+            verify(specialPriceRepository).updateStatusForReservation(eq(Collections.singletonList(reservationId)), eq(SpecialPrice.Status.FREE.toString()));
+            verify(ticketRepository).freeFromReservation(eq(Collections.singletonList(reservationId)));
+            verify(ticketReservationRepository).remove(eq(Collections.singletonList(reservationId)));
+            expect.that(renewed.isPresent()).is(true);
+            expect.that(renewed.get()).is(specialPrice);
+        });
+
     });
 }}

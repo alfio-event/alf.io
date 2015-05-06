@@ -165,7 +165,7 @@ public class TicketReservationManager {
     	return transactionId;
     }
 
-	private void reserveTicketsForCategory(int eventId, Optional<String> specialPriceSessionId, String transactionId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale) {
+	void reserveTicketsForCategory(int eventId, Optional<String> specialPriceSessionId, String transactionId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale) {
 		//first check if there is another pending special price token bound to the current sessionId
 		Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), eventId, specialPriceSessionId, ticketReservation);
 
@@ -187,7 +187,7 @@ public class TicketReservationManager {
         }
 	}
 
-	private Optional<SpecialPrice> fixToken(Optional<SpecialPrice> token, int ticketCategoryId, int eventId, Optional<String> specialPriceSessionId, TicketReservationWithOptionalCodeModification ticketReservation) {
+	Optional<SpecialPrice> fixToken(Optional<SpecialPrice> token, int ticketCategoryId, int eventId, Optional<String> specialPriceSessionId, TicketReservationWithOptionalCodeModification ticketReservation) {
 
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticketCategoryId, eventId);
 		if(!ticketCategory.isAccessRestricted()) {
