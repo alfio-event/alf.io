@@ -37,6 +37,9 @@ public interface TicketRepository {
 	@Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null order by id limit :amount for update")
 	List<Integer> selectTicketInCategoryForUpdate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId,	@Bind("amount") int amount);
 
+	@Query("select id from ticket where status = 'FREE' and category_id is null and event_id = :eventId and tickets_reservation_id is null order by id limit :amount for update")
+	List<Integer> selectNotAllocatedTicketsForUpdate(@Bind("eventId") int eventId, @Bind("amount") int amount);
+
     @Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null order by id desc limit :amount for update")
     List<Integer> lockTicketsToInvalidate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId,	@Bind("amount") int amount);
 
@@ -52,8 +55,8 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status not in (" + CONFIRMED + ", 'INVALIDATED', 'CANCELLED')  and category_id = :categoryId and event_id = :eventId")
     Integer countNotSoldTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
-	@Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', user_language = :userLanguage where id in (:reservedForUpdate)")
-	int reserveTickets(@Bind("reservationId") String reservationId,	@Bind("reservedForUpdate") List<Integer> reservedForUpdate, @Bind("userLanguage") String userLanguage);
+	@Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', categoryId = :categoryId, user_language = :userLanguage where id in (:reservedForUpdate)")
+	int reserveTickets(@Bind("reservationId") String reservationId,	@Bind("reservedForUpdate") List<Integer> reservedForUpdate, @Bind("categoryId") int categoryId, @Bind("userLanguage") String userLanguage);
 	
 	@Query("update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId, user_language = :userLanguage, status = 'PENDING' where id = :ticketId")
 	void reserveTicket(@Bind("reservationId")String transactionId, @Bind("ticketId") int ticketId, @Bind("specialCodeId") int specialCodeId, @Bind("userLanguage") String userLanguage);

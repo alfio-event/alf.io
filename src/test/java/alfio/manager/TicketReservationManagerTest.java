@@ -21,6 +21,7 @@ import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.repository.*;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -37,6 +38,7 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -272,6 +274,39 @@ public class TicketReservationManagerTest {{
             verify(ticketReservationRepository).remove(eq(Collections.singletonList(reservationId)));
             expect.that(renewed.isPresent()).is(true);
             expect.that(renewed.get()).is(specialPrice);
+        });
+
+    });
+
+    describe("reserveTicketsForCategory", it -> {
+        int ticketCategoryId = 0;
+        int eventId = 0;
+        TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
+        TicketReservationRepository ticketReservationRepository = it.usesMock(TicketReservationRepository.class);
+        TicketCategoryRepository ticketCategoryRepository = mock(TicketCategoryRepository.class);
+        TicketCategory tc = it.usesMock(TicketCategory.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, ticketCategoryRepository, null, null, null, null, null, null, null, null, null);
+        when(ticketCategoryRepository.getById(eq(ticketCategoryId), eq(eventId))).thenReturn(tc);
+        TicketReservationWithOptionalCodeModification trm = it.usesMock(TicketReservationWithOptionalCodeModification.class);
+
+        it.should("reserve tickets for bounded categories", expect -> {
+            when(tc.isBounded()).thenReturn(true);
+            List<Integer> ids = Collections.singletonList(1);
+            when(ticketRepository.selectTicketInCategoryForUpdate(eq(eventId), eq(ticketCategoryId), eq(1))).thenReturn(ids);
+            when(trm.getAmount()).thenReturn(1);
+            when(trm.getTicketCategoryId()).thenReturn(ticketCategoryId);
+            ticketReservationManager.reserveTicketsForCategory(eventId, Optional.<String>empty(), "trid", trm, Locale.ENGLISH);
+            verify(ticketRepository).reserveTickets("trid", ids, ticketCategoryId, Locale.ENGLISH.getLanguage());
+        });
+
+        it.should("reserve tickets for unbounded categories", expect -> {
+            when(tc.isBounded()).thenReturn(false);
+            List<Integer> ids = Collections.singletonList(1);
+            when(ticketRepository.selectNotAllocatedTicketsForUpdate(eq(eventId), eq(1))).thenReturn(ids);
+            when(trm.getAmount()).thenReturn(1);
+            when(trm.getTicketCategoryId()).thenReturn(ticketCategoryId);
+            ticketReservationManager.reserveTicketsForCategory(eventId, Optional.<String>empty(), "trid", trm, Locale.ENGLISH);
+            verify(ticketRepository).reserveTickets("trid", ids, ticketCategoryId, Locale.ENGLISH.getLanguage());
         });
 
     });

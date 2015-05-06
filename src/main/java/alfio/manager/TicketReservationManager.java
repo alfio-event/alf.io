@@ -169,7 +169,7 @@ public class TicketReservationManager {
 		//first check if there is another pending special price token bound to the current sessionId
 		Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), eventId, specialPriceSessionId, ticketReservation);
 
-		List<Integer> reservedForUpdate = ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount());
+		List<Integer> reservedForUpdate = reserveTickets(eventId, ticketReservation);
 		int requested = ticketReservation.getAmount();
 		if (reservedForUpdate.size() != requested) {
             throw new NotEnoughTicketsException();
@@ -183,8 +183,16 @@ public class TicketReservationManager {
             ticketRepository.reserveTicket(transactionId, reservedForUpdate.stream().findFirst().orElseThrow(IllegalStateException::new),sp.getId(), locale.getLanguage());
             specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), sp.getSessionIdentifier());
         } else {
-            ticketRepository.reserveTickets(transactionId, reservedForUpdate, locale.getLanguage());
+            ticketRepository.reserveTickets(transactionId, reservedForUpdate, ticketReservation.getTicketCategoryId(), locale.getLanguage());
         }
+	}
+
+	List<Integer> reserveTickets(int eventId, TicketReservationWithOptionalCodeModification ticketReservation) {
+		TicketCategory category = ticketCategoryRepository.getById(ticketReservation.getTicketCategoryId(), eventId);
+		if(category.isBounded()) {
+			return ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount());
+		}
+		return ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketReservation.getAmount());
 	}
 
 	Optional<SpecialPrice> fixToken(Optional<SpecialPrice> token, int ticketCategoryId, int eventId, Optional<String> specialPriceSessionId, TicketReservationWithOptionalCodeModification ticketReservation) {
