@@ -160,7 +160,7 @@ license {
         java = 'JAVADOC_STYLE'
         sql = 'DOUBLEDASHES_STYLE'
     }
-    ext.year = '2014-2015'
+    ext.year = '2014-'+java.time.Year.now().toString()
     include '**/*.java'
     include '**/*.sql'
 }

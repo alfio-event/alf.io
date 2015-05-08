@@ -429,6 +429,7 @@ public class TicketReservationManager {
 		}
 		
 		specialPriceRepository.updateStatusForReservation(expiredReservationIds, Status.FREE.toString());
+		ticketRepository.resetCategoryIdForUnboundedCategories(expiredReservationIds);
 		ticketRepository.freeFromReservation(expiredReservationIds);
 		ticketReservationRepository.remove(expiredReservationIds);
 	}
@@ -712,7 +713,7 @@ public class TicketReservationManager {
 
         if(admin) {
             TicketReservation reservation = findById(ticket.getTicketsReservationId()).orElseThrow(IllegalStateException::new);
-            //if the current user is admin, then it would be good to update also the name of the Reservation Owner (not the e-mail, since
+            //if the current user is admin, then it would be good to update also the name of the Reservation Owner
             String username = userDetails.get().getUsername();
             log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
             ticketReservationRepository.updateAssignee(reservation.getId(), username);

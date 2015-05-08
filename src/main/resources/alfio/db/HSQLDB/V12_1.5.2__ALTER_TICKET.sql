@@ -15,4 +15,4 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-alter table ticket ALTER COLUMN "category_id" set null;
+alter table ticket ALTER COLUMN category_id set null;

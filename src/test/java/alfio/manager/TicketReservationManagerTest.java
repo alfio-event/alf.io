@@ -37,10 +37,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
 import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_START;
 import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
@@ -309,5 +306,30 @@ public class TicketReservationManagerTest {{
             verify(ticketRepository).reserveTickets("trid", ids, ticketCategoryId, Locale.ENGLISH.getLanguage());
         });
 
+    });
+
+    describe("cleanupExpiredReservations", it -> {
+        Date now = new Date();
+        List<String> reservationIds = Collections.singletonList("reservation-id");
+        TicketReservationRepository ticketReservationRepository = it.usesMock(TicketReservationRepository.class);
+        SpecialPriceRepository specialPriceRepository = it.usesMock(SpecialPriceRepository.class);
+        TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, specialPriceRepository, null, null, null, null, null);
+        it.should("do nothing if there are no reservations", expect -> {
+            when(ticketReservationRepository.findExpiredReservation(eq(now))).thenReturn(Collections.emptyList());
+            ticketReservationManager.cleanupExpiredReservations(now);
+            verify(ticketReservationRepository).findExpiredReservation(eq(now));
+            verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository);
+        });
+        it.should("cancel the expired reservations", expect -> {
+            when(ticketReservationRepository.findExpiredReservation(eq(now))).thenReturn(reservationIds);
+            ticketReservationManager.cleanupExpiredReservations(now);
+            verify(ticketReservationRepository).findExpiredReservation(eq(now));
+            verify(specialPriceRepository).updateStatusForReservation(eq(reservationIds), eq(SpecialPrice.Status.FREE.toString()));
+            verify(ticketRepository).resetCategoryIdForUnboundedCategories(eq(reservationIds));
+            verify(ticketRepository).freeFromReservation(eq(reservationIds));
+            verify(ticketReservationRepository).remove(eq(reservationIds));
+            verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository);
+        });
     });
 }}
