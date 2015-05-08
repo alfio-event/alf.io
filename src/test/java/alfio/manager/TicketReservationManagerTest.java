@@ -332,4 +332,24 @@ public class TicketReservationManagerTest {{
             verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository);
         });
     });
+
+    describe("countAvailableTickets", it -> {
+        TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
+        Event event = mock(Event.class);
+        when(event.getId()).thenReturn(42);
+        TicketCategory category = it.usesMock(TicketCategory.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null);
+        it.should("count how many tickets are yet available for a category", expect -> {
+            when(category.isBounded()).thenReturn(true);
+            when(category.getId()).thenReturn(24);
+            ticketReservationManager.countAvailableTickets(event, category);
+            verify(ticketRepository).countNotSoldTickets(eq(42), eq(24));
+        });
+        it.should("count how many tickets are available for unbounded categories", expect -> {
+            when(category.isBounded()).thenReturn(false);
+            ticketReservationManager.countAvailableTickets(event, category);
+            verify(ticketRepository).countNotSoldTicketsForUnbounded(eq(42));
+        });
+
+    });
 }}

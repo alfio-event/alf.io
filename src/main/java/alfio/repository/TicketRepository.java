@@ -55,6 +55,9 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status not in (" + CONFIRMED + ", 'INVALIDATED', 'CANCELLED')  and category_id = :categoryId and event_id = :eventId")
     Integer countNotSoldTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
+	@Query("select count(*) from ticket where status not in (" + CONFIRMED + ", 'INVALIDATED', 'CANCELLED')  and category_id is null and event_id = :eventId")
+    Integer countNotSoldTicketsForUnbounded(@Bind("eventId") int eventId);
+
 	@Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', categoryId = :categoryId, user_language = :userLanguage where id in (:reservedForUpdate)")
 	int reserveTickets(@Bind("reservationId") String reservationId,	@Bind("reservedForUpdate") List<Integer> reservedForUpdate, @Bind("categoryId") int categoryId, @Bind("userLanguage") String userLanguage);
 	

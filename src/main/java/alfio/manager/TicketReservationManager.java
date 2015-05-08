@@ -629,7 +629,7 @@ public class TicketReservationManager {
 		int updatedTickets = ticketRepository.freeFromReservation(reservationIdsToRemove);
 		Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
 		int removedReservation = ticketReservationRepository.remove(reservationIdsToRemove);
-		Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got "+removedReservation);
+		Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);
 	}
 
 	public SpecialPrice getSpecialPriceByCode(String code) {
@@ -836,5 +836,12 @@ public class TicketReservationManager {
 
 	public String getShortReservationID(String reservationId) {
 		return StringUtils.substring(reservationId, 0, configurationManager.getIntConfigValue(PARTIAL_RESERVATION_ID_LENGTH, 8)).toUpperCase();
+	}
+
+	public int countAvailableTickets(Event event, TicketCategory category) {
+		if(category.isBounded()) {
+			return ticketRepository.countNotSoldTickets(event.getId(), category.getId());
+		}
+		return ticketRepository.countNotSoldTicketsForUnbounded(event.getId());
 	}
 }
