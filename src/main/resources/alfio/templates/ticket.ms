@@ -24,9 +24,12 @@
 		</style>
 	</head>
 	<body>
-		<h1>{{event.shortName}}</h1>
-		
-		
+		<table style="width:100%">
+			<tr>
+				<td><h1>{{event.shortName}}</h1></td>
+				<td style="width:200px;"><div style="text-align:right"><img src="{{qrCodeDataUri}}"/></div></td>
+			</tr>
+		</table>
 		<h2>{{#i18n}}ticket.event-info{{/i18n}}</h2>
 		<table>
 			<tr>
@@ -79,7 +82,6 @@
 				<td>{{reservation.id}} by {{reservation.fullName}}</td>
 			</tr>
 		</table>
-		<p style="text-align:center"><img src="{{qrCodeDataUri}}"/></p>
 		{{#deskPaymentRequired}}
 			<h3 style="text-align:center"><strong>{{#i18n}}ticket.payment-required{{/i18n}}</strong></h3>
 		{{/deskPaymentRequired}}

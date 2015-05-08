@@ -27,6 +27,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
@@ -84,7 +85,9 @@ public class SpringBootInitializer {
             mimeMappings.put("svg", "image/svg+xml");
             container.setSessionTimeout(2, TimeUnit.HOURS);
             container.setMimeMappings(new MimeMappings(mimeMappings));
-            //TODO: is it worth to implement an error page for each error type (404, 400, 500) since the haproxy will rewrite them?
+
+            container.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/404-not-found"));
+            container.addErrorPages(new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/500-internal-server-error"));
             container.addErrorPages(new ErrorPage("/session-expired"));
         };
     }
