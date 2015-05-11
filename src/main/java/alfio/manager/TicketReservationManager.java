@@ -669,10 +669,6 @@ public class TicketReservationManager {
 		return ticketRepository.findTicketsInReservation(reservationId);
 	}
 
-	public int countUnsoldTicket(int eventId, int categoryId) {
-		return ticketRepository.countNotSoldTickets(eventId, categoryId);
-	}
-	
 	public Optional<String> getVAT() {
 		return configurationManager.getStringConfigValue(ConfigurationKeys.VAT_NR);
 	}
