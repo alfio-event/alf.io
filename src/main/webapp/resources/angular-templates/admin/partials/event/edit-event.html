@@ -22,7 +22,7 @@
                 <progressbar value="100">{{event.availableSeats}}</progressbar>
                 assigned:
                 <progress>
-                    <bar data-ng-repeat="category in event.ticketCategories" value="calcBarValue(category.maxTickets, event.availableSeats)" type="{{evaluateBarType($index)}}">{{category.name}} ({{category.maxTickets}})</bar>
+                    <bar data-ng-repeat="category in event.ticketCategories | orderBy: ['inception', 'expiration', 'bounded']" value="calcBarValue(category, event.availableSeats)" type="{{evaluateBarType($index)}}">{{category.name}} ({{category.maxTickets}})</bar>
                 </progress>
             </div>
         </div>

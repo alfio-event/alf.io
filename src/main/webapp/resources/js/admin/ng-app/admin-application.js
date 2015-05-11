@@ -298,13 +298,17 @@
 
         $scope.canAddCategory = function(categories) {
             var remaining = _.foldl(categories, function(difference, category) {
-                return difference - category.maxTickets;
+                var categoryTickets = category.bounded ? category.maxTickets : 0;
+                return difference - categoryTickets;
             }, $scope.event.availableSeats);
+
+            var isDefinedMaxTickets = function(category) {
+                return !category.bounded || (angular.isDefined(category.maxTickets) && category.maxTickets > 0);
+            };
 
             return remaining > 0 && _.every(categories, function(category) {
                 return angular.isDefined(category.name) &&
-                    angular.isDefined(category.maxTickets) &&
-                    category.maxTickets > 0 &&
+                    isDefinedMaxTickets(category)  &&
                     angular.isDefined(category.expiration.date);
             });
         };

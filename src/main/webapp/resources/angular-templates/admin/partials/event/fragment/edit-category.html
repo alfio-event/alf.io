@@ -7,6 +7,24 @@
         </div>
 
         <div class="col-sm-12 col-md-3">
+            <label class="control-label">Ticket policy</label>
+            <div class="form-group">
+                <div class="radio-inline">
+                    <label>
+                        <input type="radio" name="{{buildPrefix($index, 'bounded')}}" data-ng-model="ticketCategory.bounded" data-ng-value="true" required="">
+                        Fixed
+                    </label>
+                </div>
+                <div class="radio-inline">
+                    <label>
+                        <input type="radio" name="{{buildPrefix($index, 'bounded')}}" data-ng-model="ticketCategory.bounded" data-ng-value="false" required="">
+                        Dynamic
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-12 col-md-3">
             <label class="control-label">Category type</label>
             <div class="form-group">
                 <div class="radio-inline">
@@ -15,7 +33,7 @@
                         Public
                     </label>
                 </div>
-                <div class="radio-inline">
+                <div class="radio-inline" data-ng-if="ticketCategory.bounded">
                     <label>
                         <input type="radio" name="{{buildPrefix($index, 'tokenGenerationRequested')}}" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="true" required="">
                         Restricted
@@ -24,7 +42,7 @@
             </div>
         </div>
 
-        <div class="col-sm-12 col-md-5">
+        <div class="col-sm-12 col-md-2" data-ng-if="ticketCategory.bounded">
             <label for="{{buildPrefix($index, 'maxTickets')}}">Max Tickets</label>
             <input type="number" data-ng-model="ticketCategory.maxTickets" name="{{buildPrefix($index, 'maxTickets')}}" id="{{buildPrefix($index, 'maxTickets')}}" class="form-control" required />
             <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.maxTickets" data-show-existing-errors="showExistingErrors"></field-error>
