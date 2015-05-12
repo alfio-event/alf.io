@@ -43,6 +43,7 @@ public class TicketCategoryWithStatisticTest {{
             when(category.getMaxTickets()).thenReturn(10);
             when(category.getPriceInCents()).thenReturn(100);
             when(category.getExpiration(any(ZoneId.class))).thenReturn(ZonedDateTime.now().plusSeconds(1));
+            when(category.isBounded()).thenReturn(true);
 
             when(first.hasBeenSold()).thenReturn(true);
             when(first.isCheckedIn()).thenReturn(true);
@@ -59,6 +60,30 @@ public class TicketCategoryWithStatisticTest {{
             _it.should("report no stuck tickets", expect -> expect.that(ticketCategoryWithStatistic.isContainingStuckTickets()).is(false));
         });
 
+        describe("category is unbounded", _it -> {
+            TicketCategory category = it.usesMock(TicketCategory.class);
+            TicketWithStatistic first = it.usesMock(TicketWithStatistic.class);
+            TicketWithStatistic second = it.usesMock(TicketWithStatistic.class);
+
+            when(category.getMaxTickets()).thenReturn(-1);
+            when(category.getPriceInCents()).thenReturn(100);
+            when(category.getExpiration(any(ZoneId.class))).thenReturn(ZonedDateTime.now().plusSeconds(1));
+            when(category.isBounded()).thenReturn(false);
+
+            when(first.hasBeenSold()).thenReturn(true);
+            when(first.isCheckedIn()).thenReturn(true);
+
+            when(second.hasBeenSold()).thenReturn(true);
+            when(second.isCheckedIn()).thenReturn(false);
+
+            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity());
+
+            _it.should("report 0 tickets remaining", expect -> expect.that(ticketCategoryWithStatistic.getNotSoldTickets()).is(0));
+            _it.should("report only one sold ticket", expect -> expect.that(ticketCategoryWithStatistic.getSoldTickets()).is(1));
+            _it.should("report no orphans", expect -> expect.that(ticketCategoryWithStatistic.isContainingOrphans()).is(false));
+            _it.should("report no stuck tickets", expect -> expect.that(ticketCategoryWithStatistic.isContainingStuckTickets()).is(false));
+        });
+
         describe("all ticket sold, no checked-in", _it -> {
 
             TicketCategory category = it.usesMock(TicketCategory.class);
@@ -68,6 +93,7 @@ public class TicketCategoryWithStatisticTest {{
             when(category.getMaxTickets()).thenReturn(2);
             when(category.getPriceInCents()).thenReturn(100);
             when(category.getExpiration(any(ZoneId.class))).thenReturn(ZonedDateTime.now().plusSeconds(1));
+            when(category.isBounded()).thenReturn(true);
 
             when(first.hasBeenSold()).thenReturn(true);
             when(first.isCheckedIn()).thenReturn(false);
@@ -91,6 +117,7 @@ public class TicketCategoryWithStatisticTest {{
             when(category.getMaxTickets()).thenReturn(2);
             when(category.getPriceInCents()).thenReturn(100);
             when(category.getExpiration(any(ZoneId.class))).thenReturn(ZonedDateTime.now().plusSeconds(1));
+            when(category.isBounded()).thenReturn(true);
 
             when(first.hasBeenSold()).thenReturn(false);
             when(first.isCheckedIn()).thenReturn(false);
@@ -114,6 +141,7 @@ public class TicketCategoryWithStatisticTest {{
             when(category.getMaxTickets()).thenReturn(2);
             when(category.getPriceInCents()).thenReturn(100);
             when(category.getExpiration(any(ZoneId.class))).thenReturn(ZonedDateTime.now().plusSeconds(1));
+            when(category.isBounded()).thenReturn(true);
 
             when(first.hasBeenSold()).thenReturn(true);
             when(first.isCheckedIn()).thenReturn(false);
@@ -137,6 +165,7 @@ public class TicketCategoryWithStatisticTest {{
             when(category.getMaxTickets()).thenReturn(2);
             when(category.getPriceInCents()).thenReturn(100);
             when(category.getExpiration(any(ZoneId.class))).thenReturn(ZonedDateTime.now().minusSeconds(10));
+            when(category.isBounded()).thenReturn(true);
 
             when(first.hasBeenSold()).thenReturn(true);
             when(first.isCheckedIn()).thenReturn(false);

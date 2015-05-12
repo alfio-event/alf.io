@@ -68,6 +68,9 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
 
     @Override
     public int getNotSoldTickets() {
+        if(!ticketCategory.isBounded()) {
+            return 0;
+        }
         return ticketCategory.getMaxTickets() - soldTickets - checkedInTickets;
     }
 
