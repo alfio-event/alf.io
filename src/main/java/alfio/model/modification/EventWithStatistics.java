@@ -47,7 +47,7 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
         this.ticketCategories = ticketCategories;
         this.soldTickets = ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getSoldTickets).sum();
         this.checkedInTickets = ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getCheckedInTickets).sum();
-        this.allocatedTickets = ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getMaxTickets).sum();
+        this.allocatedTickets = ticketCategories.stream().filter(TicketCategoryWithStatistic::isBounded).mapToInt(TicketCategoryWithStatistic::getMaxTickets).sum();
     }
 
     public boolean isWarningNeeded() {

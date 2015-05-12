@@ -18,7 +18,7 @@
 INSERT INTO organization(name, description, email) VALUES ('demo', 'demo organization', 'info@pippobaudo.com');
 
 insert into event(description, short_name, website_url, website_t_c_url, location, latitude, longitude, start_ts, end_ts, regular_price_cts, currency, available_seats, vat_included, vat, allowed_payment_proxies, private_key, org_id, time_zone, image_url)
-values('event desc', 'eventname', 'http://localhost:8080', 'http://localhost:8080', 'demo location', '0', '0', '2015-10-10 04:00:00' , '2015-10-11 03:59:00' , 1000, 'CHF', 440, 'true', 8, 'STRIPE,ON_SITE,OFFLINE', 'alfio-uberall', 0, 'America/New_York', 'http://localhost:8080/resources/images/sample-logo.png');
+values('event desc', 'eventname', 'http://localhost:8080', 'http://localhost:8080', 'demo location', '0', '0', '2015-10-10 04:00:00' , '2015-10-11 03:59:00' , 1000, 'CHF', 20, 'true', 8, 'STRIPE,ON_SITE,OFFLINE', 'alfio-uberall', 0, 'America/New_York', 'http://localhost:8080/resources/images/sample-logo.png');
 
 insert into ticket_category(inception, expiration, name, description, max_tickets, price_cts, access_restricted, tc_status, event_id, bounded) values
   ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Normal', 'Very good category', 2, 0, false, 'ACTIVE', 0, true),
@@ -26,7 +26,7 @@ insert into ticket_category(inception, expiration, name, description, max_ticket
   ('2015-09-10 00:00:00', '2015-10-10 00:00:00', 'Still not in sale', 'Last day category', 1, 556, false, 'ACTIVE', 0, TRUE ),
   ('2014-01-01 00:00:00', '2014-09-01 00:00:00', 'Expired', 'Expired', 1, 400, false, 'ACTIVE', 0, TRUE ),
   ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Restricted', 'Very very good category', 4, 463, true, 'ACTIVE', 0, TRUE ),
-  ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Restricted', 'Unbounded', 4, 463, true, 'ACTIVE', 0, FALSE );
+  ('2014-01-10 00:00:00', '2015-10-10 00:00:00', 'Unbounded', 'Unbounded', -1, 463, false, 'ACTIVE', 0, FALSE );
 
 insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address) values('abcdefghi', '2014-01-10 00:00:00', 'IN_PAYMENT', 'ciccio', 'cc@cc.uu', null);
 insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address) values('abcdefghiz', '2014-01-10 00:00:00', 'PENDING', 'ciccio', 'cc@cc.uu', null);
@@ -44,8 +44,16 @@ values
   ('abcdefghilmo44', '2014-01-10 00:00:00', 1, 0, 'FREE', 463, 463, null),
 -- stuck reservation
   ('abcdefghilmo55', '2014-01-10 00:00:00', 1, 0, 'PENDING', 463, 463, 'abcdefghi'),
--- expired not bounded
+-- expired unbounded
   ('abcdefghilmo56', '2014-01-10 00:00:00', 5, 0, 'PENDING', 463, 463, 'abcdefghiz'),
+
+--free unbounded
+  ('abcdefghilmo57', '2014-01-10 00:00:00', NULL, 0, 'FREE', 463, 463, NULL),
+  ('abcdefghilmo58', '2014-01-10 00:00:00', NULL, 0, 'FREE', 463, 463, NULL),
+  ('abcdefghilmo59', '2014-01-10 00:00:00', NULL, 0, 'FREE', 463, 463, NULL),
+  ('abcdefghilmo60', '2014-01-10 00:00:00', NULL, 0, 'FREE', 463, 463, NULL),
+  ('abcdefghilmo61', '2014-01-10 00:00:00', NULL, 0, 'FREE', 463, 463, NULL),
+  ('abcdefghilmo62', '2014-01-10 00:00:00', NULL, 0, 'FREE', 463, 463, NULL),
 
 -- still not in sale
   ('abcdefghilmo45', '2014-01-10 00:00:00', 2, 0, 'FREE', 463, 463, null),
