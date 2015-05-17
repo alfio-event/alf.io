@@ -364,7 +364,7 @@
                 $scope.event = result.event;
                 $scope.organization = result.organization;
                 $scope.validCategories = _.filter(result.event.ticketCategories, function(tc) {
-                    return !tc.expired;
+                    return !tc.expired && tc.bounded;
                 });
                 $scope.loading = false;
                 $scope.loadingMap = true;
@@ -387,6 +387,12 @@
                 		})(v);
                 	});
                 });
+
+                $scope.unbindTickets = function(event , category) {
+                    EventService.unbindTickets(event, category).success(function() {
+                        loadData();
+                    });
+                };
             });
         };
         loadData();

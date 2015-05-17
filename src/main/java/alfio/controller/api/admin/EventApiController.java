@@ -135,6 +135,12 @@ public class EventApiController {
         return OK;
     }
 
+    @RequestMapping(value = "/events/{eventName}/category/{categoryId}/unbind-tickets", method = PUT)
+    public String unbindTickets(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId, Principal principal) {
+        eventManager.unbindTickets(eventName, categoryId, principal.getName());
+        return OK;
+    }
+
     @RequestMapping(value = "/events/{eventName}/pending-payments")
     public List<SerializablePair<TicketReservation, OrderSummary>> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {
         return eventManager.getPendingPayments(eventName, principal.getName()).stream().map(SerializablePair::fromPair).collect(Collectors.toList());

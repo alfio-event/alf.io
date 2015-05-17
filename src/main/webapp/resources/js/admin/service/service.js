@@ -121,6 +121,9 @@
                     eventId: eventId
                 }).error(HttpErrorHandler.handle);
             },
+            unbindTickets: function(event, category) {
+                return $http['put']('/admin/api/events/'+event.shortName+'/category/'+category.id+'/unbind-tickets').error(HttpErrorHandler.handle);
+            },
             getPendingPayments: function(eventName) {
                 return $http.get('/admin/api/events/'+eventName+'/pending-payments').error(HttpErrorHandler.handle);
             },

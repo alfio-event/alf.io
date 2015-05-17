@@ -246,25 +246,39 @@ public class EventManager {
 
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
         Event event = eventRepository.findById(eventId);
-        TicketCategoryWithStatistic src = loadTicketCategoryWithStats(srcCategoryId, event);
-        TicketCategory target = ticketCategoryRepository.getById(targetCategoryId, eventId);
+        reallocateTickets(loadTicketCategoryWithStats(srcCategoryId, event), Optional.of(ticketCategoryRepository.getById(targetCategoryId, event.getId())), event);
+    }
+
+    void reallocateTickets(TicketCategoryWithStatistic src, Optional<TicketCategory> target, Event event) {
         int notSoldTickets = src.getNotSoldTickets();
         if(notSoldTickets == 0) {
             log.info("since all the ticket have been sold, ticket moving is not needed anymore.");
             return;
         }
-        List<Integer> lockedTickets = ticketRepository.selectTicketInCategoryForUpdate(eventId, srcCategoryId, notSoldTickets);
+        List<Integer> lockedTickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), src.getId(), notSoldTickets);
         int locked = lockedTickets.size();
         if(locked != notSoldTickets) {
             throw new IllegalStateException(String.format("Expected %d free tickets, got %d.", notSoldTickets, locked));
         }
-        ticketCategoryRepository.updateSeatsAvailability(srcCategoryId, src.getSoldTickets());
-        ticketCategoryRepository.updateSeatsAvailability(targetCategoryId, target.getMaxTickets() + locked);
-        ticketRepository.moveToAnotherCategory(lockedTickets, targetCategoryId, target.getPriceInCents(), target.getPriceInCents());
-        specialPriceRepository.cancelExpiredTokens(srcCategoryId);
-        if(target.isAccessRestricted()) {
-            insertTokens(target, locked);
+        ticketCategoryRepository.updateSeatsAvailability(src.getId(), src.getSoldTickets());
+        if(target.isPresent()) {
+            TicketCategory targetCategory = target.get();
+            ticketCategoryRepository.updateSeatsAvailability(targetCategory.getId(), targetCategory.getMaxTickets() + locked);
+            ticketRepository.moveToAnotherCategory(lockedTickets, targetCategory.getId(), targetCategory.getPriceInCents(), targetCategory.getPriceInCents());
+            insertTokens(targetCategory, locked);
+        } else {
+            int result = ticketRepository.unbindTicketsFromCategory(event.getId(), src.getId(), lockedTickets);
+            Validate.isTrue(result == locked, String.format("Expected %d modified tickets, got %d.", locked, result));
         }
+        specialPriceRepository.cancelExpiredTokens(src.getId());
+    }
+
+    public void unbindTickets(String eventName, int categoryId, String username) {
+        Event event = getSingleEvent(eventName, username);
+        Validate.isTrue(ticketCategoryRepository.countUnboundedCategoriesByEventId(event.getId()) > 0, "cannot unbind tickets: there aren't any unbounded categories");
+        TicketCategoryWithStatistic ticketCategory = loadTicketCategoryWithStats(categoryId, event);
+        Validate.isTrue(ticketCategory.isBounded(), "cannot unbind tickets from an unbounded category!");
+        reallocateTickets(ticketCategory, Optional.<TicketCategory>empty(), event);
     }
 
     MapSqlParameterSource[] prepareTicketsBulkInsertParameters(int eventId,

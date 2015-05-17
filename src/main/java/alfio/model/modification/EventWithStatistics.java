@@ -27,11 +27,13 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.function.Predicate;
 
 @Getter
 public class EventWithStatistics implements StatisticsContainer, Comparable<EventWithStatistics> {
 
     public static final DateTimeFormatter JSON_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm");
+    public static final Predicate<TicketCategoryWithStatistic> IS_BOUNDED = TicketCategoryWithStatistic::isBounded;
 
     @Delegate
     @JsonIgnore
@@ -40,6 +42,7 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
     private final int soldTickets;
     private final int checkedInTickets;
     private final int allocatedTickets;
+    private final boolean containsUnboundedCategories;
 
     public EventWithStatistics(Event event,
                                List<TicketCategoryWithStatistic> ticketCategories) {
@@ -47,7 +50,8 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
         this.ticketCategories = ticketCategories;
         this.soldTickets = ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getSoldTickets).sum();
         this.checkedInTickets = ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getCheckedInTickets).sum();
-        this.allocatedTickets = ticketCategories.stream().filter(TicketCategoryWithStatistic::isBounded).mapToInt(TicketCategoryWithStatistic::getMaxTickets).sum();
+        this.allocatedTickets = ticketCategories.stream().filter(IS_BOUNDED).mapToInt(TicketCategoryWithStatistic::getMaxTickets).sum();
+        this.containsUnboundedCategories = ticketCategories.stream().anyMatch(IS_BOUNDED.negate());
     }
 
     public boolean isWarningNeeded() {

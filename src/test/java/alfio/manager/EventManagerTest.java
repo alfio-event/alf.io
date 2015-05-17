@@ -16,8 +16,11 @@
  */
 package alfio.manager;
 
+import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
+import alfio.model.user.Organization;
+import alfio.repository.EventRepository;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
@@ -214,6 +217,80 @@ public class EventManagerTest {{
             MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(eventId, ZonedDateTime.now(), event, 1000);
             expect.that(parameterSources).isNotNull();
             expect.that(parameterSources.length).is(4);
+        });
+
+    });
+
+    describe("unbind tickets from category", it -> {
+        int eventId = 0;
+        String eventName = "myEvent";
+        String username = "username";
+        int categoryId = 1;
+        int organizationId = 2;
+        TicketCategoryRepository ticketCategoryRepository = it.usesMock(TicketCategoryRepository.class);
+        TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
+        EventRepository eventRepository = it.usesMock(EventRepository.class);
+        UserManager userManager = it.usesMock(UserManager.class);
+        TicketReservationManager ticketReservationManager = mock(TicketReservationManager.class);
+        when(ticketReservationManager.loadModifiedTickets(eq(eventId), eq(categoryId))).thenReturn(Collections.emptyList());
+        SpecialPriceRepository specialPriceRepository = mock(SpecialPriceRepository.class);
+        when(specialPriceRepository.findAllByCategoryId(eq(categoryId))).thenReturn(Collections.emptyList());
+        EventManager eventManager = new EventManager(userManager, eventRepository, ticketCategoryRepository, ticketRepository, ticketReservationManager, specialPriceRepository, null, null, null, null);
+        Event event = mock(Event.class);
+        when(event.getId()).thenReturn(eventId);
+        when(event.getOrganizationId()).thenReturn(organizationId);
+        Organization organization = mock(Organization.class);
+        when(organization.getId()).thenReturn(organizationId);
+        TicketCategory ticketCategory = it.usesMock(TicketCategory.class);
+
+        it.isSetupWith(() -> {
+            when(eventRepository.findByShortName(eq(eventName))).thenReturn(event);
+            when(ticketCategory.getId()).thenReturn(categoryId);
+            when(ticketCategoryRepository.getById(eq(categoryId), eq(eventId))).thenReturn(ticketCategory);
+        });
+
+        it.should("not unbind from an event which doesn't contain unbounded categories", expect -> {
+            when(ticketCategoryRepository.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(0);
+            when(userManager.findUserOrganizations(eq(username))).thenReturn(Collections.singletonList(organization));
+            expect.exception(IllegalArgumentException.class, () -> eventManager.unbindTickets(eventName, categoryId, username));
+            verify(ticketCategoryRepository).countUnboundedCategoriesByEventId(eq(eventId));
+            verify(userManager).findUserOrganizations(eq(username));
+            verify(eventRepository).findByShortName(eq(eventName));
+            verifyNoMoreInteractions(ticketCategoryRepository, userManager, eventRepository, ticketRepository);
+        });
+
+        it.should("not unbind from a category which is not bounded", expect -> {
+            when(ticketCategoryRepository.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(1);
+            when(userManager.findUserOrganizations(eq(username))).thenReturn(Collections.singletonList(organization));
+            when(ticketCategory.isBounded()).thenReturn(false);
+            expect.exception(IllegalArgumentException.class, () -> eventManager.unbindTickets(eventName, categoryId, username));
+            verify(ticketCategoryRepository).countUnboundedCategoriesByEventId(eq(eventId));
+            verify(ticketCategoryRepository).getById(eq(categoryId), eq(eventId));
+            verify(userManager).findUserOrganizations(eq(username));
+            verify(eventRepository).findByShortName(eq(eventName));
+            verifyNoMoreInteractions(ticketCategoryRepository, userManager, eventRepository, ticketRepository);
+        });
+
+        it.should("unbind tickets from a bounded category", expect -> {
+            when(ticketCategoryRepository.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(1);
+            when(userManager.findUserOrganizations(eq(username))).thenReturn(Collections.singletonList(organization));
+            when(ticketCategory.isBounded()).thenReturn(true);
+            int notSold = 2;
+            when(ticketCategory.getMaxTickets()).thenReturn(notSold);
+            List<Integer> lockedTickets = Arrays.asList(1, 2);
+            when(ticketRepository.selectTicketInCategoryForUpdate(eq(eventId), eq(categoryId), eq(notSold))).thenReturn(lockedTickets);
+            when(ticketRepository.unbindTicketsFromCategory(eq(eventId), eq(categoryId), eq(lockedTickets))).thenReturn(notSold);
+
+            eventManager.unbindTickets(eventName, categoryId, username);
+
+            verify(ticketCategoryRepository).countUnboundedCategoriesByEventId(eq(eventId));
+            verify(ticketCategoryRepository).getById(eq(categoryId), eq(eventId));
+            verify(userManager).findUserOrganizations(eq(username));
+            verify(eventRepository).findByShortName(eq(eventName));
+            verify(ticketRepository).selectTicketInCategoryForUpdate(eq(eventId), eq(categoryId), eq(notSold));
+            verify(ticketRepository).unbindTicketsFromCategory(eq(eventId), eq(categoryId), eq(lockedTickets));
+            verify(ticketCategoryRepository).updateSeatsAvailability(eq(categoryId), eq(0));
+            verifyNoMoreInteractions(ticketCategoryRepository, userManager, eventRepository, ticketRepository);
         });
 
     });

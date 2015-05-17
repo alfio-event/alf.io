@@ -97,7 +97,8 @@
                 <div class="form-inline">
                     <i class="fa fa-warning"></i> This category contains orphan (not sold) tickets. Move them to another category:
                     <select class="form-control" data-ng-model="targetCategoryId" required data-ng-options="category.id as category.name for category in validCategories"></select>
-                    <button class="btn btn-danger" data-ng-click="moveOrphans(ticketCategory, targetCategoryId, event.id)">apply</button>
+                    <button class="btn btn-warning" data-ng-click="moveOrphans(ticketCategory, targetCategoryId, event.id)">apply</button>
+                    <button data-ng-if="event.containsUnboundedCategories" class="btn btn-danger" data-ng-click="unbindTickets(event, ticketCategory)">Assign to dynamic categories</button>
                 </div>
             </div>
             <div class="alert alert-warning" data-ng-if="ticketCategory.containingStuckTickets">
