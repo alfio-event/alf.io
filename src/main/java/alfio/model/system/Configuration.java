@@ -39,4 +39,8 @@ public class Configuration {
         this.description = description;
         this.configurationKey = ConfigurationKeys.valueOf(key);
     }
+
+    public ConfigurationKeys.ComponentType getComponentType() {
+        return configurationKey.getComponentType();
+    }
 }

@@ -89,7 +89,7 @@ public class ConfigurationManager {
                 .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + key + " not present"));
     }
 
-    public Map<ConfigurationKeys.Type, List<Configuration>> loadAllIncludingMissing() {
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadAllIncludingMissing() {
         final List<Configuration> existing = configurationRepository.findAll()
                 .stream()
                 .filter(c -> !ConfigurationKeys.fromValue(c.getKey()).isInternal())
@@ -100,7 +100,7 @@ public class ConfigurationManager {
                 .collect(Collectors.toList());
         List<Configuration> result = new LinkedList<>(existing);
         result.addAll(missing);
-        return result.stream().collect(Collectors.groupingBy(c -> c.getConfigurationKey().getType()));
+        return result.stream().collect(Collectors.groupingBy(c -> c.getConfigurationKey().getCategory()));
     }
 
 	public void deleteKey(String key) {

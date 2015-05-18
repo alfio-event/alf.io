@@ -24,75 +24,85 @@ import java.util.function.Predicate;
 @Getter
 public enum ConfigurationKeys {
 
-    INIT_COMPLETED("init succeeded", true, Type.GENERAL),
+    INIT_COMPLETED("init succeeded", true, SettingCategory.GENERAL, ComponentType.TEXT),
     
-    BASE_URL("Base application url", false, Type.GENERAL),
-    VAT_NR("VAT number", false, Type.GENERAL),
+    BASE_URL("Base application url", false, SettingCategory.GENERAL, ComponentType.TEXT),
+    VAT_NR("VAT number", false, SettingCategory.GENERAL, ComponentType.TEXT),
     
-    MAPS_SERVER_API_KEY("Google maps' server api key", false, Type.GENERAL),
-    MAPS_CLIENT_API_KEY("Google maps' client api key", false, Type.GENERAL),
+    MAPS_SERVER_API_KEY("Google maps' server api key", false, SettingCategory.GENERAL, ComponentType.TEXT),
+    MAPS_CLIENT_API_KEY("Google maps' client api key", false, SettingCategory.GENERAL, ComponentType.TEXT),
     
-    STRIPE_SECRET_KEY("Stripe's secret key", false, Type.PAYMENT),
-    STRIPE_PUBLIC_KEY("Stripe's public key", false, Type.PAYMENT),
+    STRIPE_SECRET_KEY("Stripe's secret key", false, SettingCategory.PAYMENT, ComponentType.TEXT),
+    STRIPE_PUBLIC_KEY("Stripe's public key", false, SettingCategory.PAYMENT, ComponentType.TEXT),
     
-    SPECIAL_PRICE_CODE_LENGTH("Length of special price code", false, Type.GENERAL),
-    MAX_AMOUNT_OF_TICKETS_BY_RESERVATION("Max amount of tickets", false, Type.GENERAL),
-    ASSIGNMENT_REMINDER_START("How many days before the event should be sent a reminder to the users about Tickets assignment? (default: 10 days)", false, Type.GENERAL),
-    ASSIGNMENT_REMINDER_INTERVAL("How long should be the 'quiet period' (in days) between the reminders? (default: 3 days)", false, Type.GENERAL),
+    SPECIAL_PRICE_CODE_LENGTH("Length of special price code", false, SettingCategory.GENERAL, ComponentType.TEXT),
+    MAX_AMOUNT_OF_TICKETS_BY_RESERVATION("Max amount of tickets", false, SettingCategory.GENERAL, ComponentType.TEXT),
+    ASSIGNMENT_REMINDER_START("How many days before the event should be sent a reminder to the users about Tickets assignment? (default: 10 days)", false, SettingCategory.GENERAL, ComponentType.TEXT),
+    ASSIGNMENT_REMINDER_INTERVAL("How long should be the 'quiet period' (in days) between the reminders? (default: 3 days)", false, SettingCategory.GENERAL, ComponentType.TEXT),
 
     //
-    MAILER_TYPE("Mailer type (if not set, default will be smtp)", false, Type.MAIL),//valid values: smtp | mailgun
+    MAILER_TYPE("Mailer type (if not set, default will be smtp)", false, SettingCategory.MAIL, ComponentType.TEXT),//valid values: smtp | mailgun
     //
 
-    MAX_EMAIL_PER_CYCLE("How many e-mail should be managed within 5 sec.", false, Type.MAIL),
+    MAX_EMAIL_PER_CYCLE("How many e-mail should be managed within 5 sec.", false, SettingCategory.MAIL, ComponentType.TEXT),
 
-    MAIL_REPLY_TO("Reply-to address", false, Type.MAIL),
+    MAIL_REPLY_TO("Reply-to address", false, SettingCategory.MAIL, ComponentType.TEXT),
 
     //smtp configuration related keys
-    SMTP_HOST("SMTP hostname", false, Type.MAIL),
-    SMTP_PORT("SMTP port", false, Type.MAIL),
-    SMTP_PROTOCOL("SMTP Protocol (smtp or smtps)", false, Type.MAIL), //smtp or smtps
-    SMTP_USERNAME("SMTP Username", false, Type.MAIL),
-    SMTP_PASSWORD("SMTP Password", false, Type.MAIL),
-    SMTP_FROM_EMAIL("E-Mail sender", false, Type.MAIL),
-    SMTP_PROPERTIES("SMTP Properties", false, Type.MAIL),
+    SMTP_HOST("SMTP hostname", false, SettingCategory.MAIL, ComponentType.TEXT),
+    SMTP_PORT("SMTP port", false, SettingCategory.MAIL, ComponentType.TEXT),
+    SMTP_PROTOCOL("SMTP Protocol (smtp or smtps)", false, SettingCategory.MAIL, ComponentType.TEXT), //smtp or smtps
+    SMTP_USERNAME("SMTP Username", false, SettingCategory.MAIL, ComponentType.TEXT),
+    SMTP_PASSWORD("SMTP Password", false, SettingCategory.MAIL, ComponentType.TEXT),
+    SMTP_FROM_EMAIL("E-Mail sender", false, SettingCategory.MAIL, ComponentType.TEXT),
+    SMTP_PROPERTIES("SMTP Properties", false, SettingCategory.MAIL, ComponentType.TEXT),
 
-    OFFLINE_PAYMENT_DAYS("Maximum number of days allowed to pay an offline ticket", false, Type.PAYMENT),
-    OFFLINE_REMINDER_HOURS("How many hours before expiration should be sent a reminder e-mail for offline payments?", false, Type.PAYMENT),
-    BANK_ACCOUNT_NR("Bank Account number", false, Type.PAYMENT),
-    PARTIAL_RESERVATION_ID_LENGTH("Partial reservationID length", false, Type.PAYMENT),
+    OFFLINE_PAYMENT_DAYS("Maximum number of days allowed to pay an offline ticket", false, SettingCategory.PAYMENT, ComponentType.TEXT),
+    OFFLINE_REMINDER_HOURS("How many hours before expiration should be sent a reminder e-mail for offline payments?", false, SettingCategory.PAYMENT, ComponentType.TEXT),
+    BANK_ACCOUNT_NR("Bank Account number", false, SettingCategory.PAYMENT, ComponentType.TEXT),
+    PARTIAL_RESERVATION_ID_LENGTH("Partial reservationID length", false, SettingCategory.PAYMENT, ComponentType.TEXT),
     //
     
     //mailgun configuration related info
-    MAILGUN_KEY("Mailgun key", false, Type.MAIL),
-    MAILGUN_DOMAIN("Mailgun domain", false, Type.MAIL),
-    MAILGUN_FROM("Mailgun E-Mail sender", false, Type.MAIL),
+    MAILGUN_KEY("Mailgun key", false, SettingCategory.MAIL, ComponentType.TEXT),
+    MAILGUN_DOMAIN("Mailgun domain", false, SettingCategory.MAIL, ComponentType.TEXT),
+    MAILGUN_FROM("Mailgun E-Mail sender", false, SettingCategory.MAIL, ComponentType.TEXT),
     //
     
-    GOOGLE_ANALYTICS_KEY("Google Analytics tracking ID", false, Type.GENERAL);
+    GOOGLE_ANALYTICS_KEY("Google Analytics tracking ID", false, SettingCategory.GENERAL, ComponentType.TEXT),
+
+    ALLOW_FREE_TICKETS_CANCELLATION("Allow cancellation for free tickets", false, SettingCategory.GENERAL, ComponentType.BOOLEAN),
+    ALLOW_PAID_TICKETS_CANCELLATION("Allow cancellation for paid tickets", false, SettingCategory.GENERAL, ComponentType.BOOLEAN)
+    ;
 
     @Getter
-    public enum Type {
+    public enum SettingCategory {
         GENERAL("General settings"),
         PAYMENT("Payment provider settings"),
         MAIL("E-Mail settings");
 
         private final String description;
-        Type(String description) {
+        SettingCategory(String description) {
             this.description = description;
         }
 
     }
 
+    public enum ComponentType {
+        TEXT, BOOLEAN
+    }
+
     private static final Predicate<ConfigurationKeys> INTERNAL = ConfigurationKeys::isInternal;
     private final String description;
     private final boolean internal;
-    private final Type type;
+    private final SettingCategory category;
+    private final ComponentType componentType;
 
-    private ConfigurationKeys(String description, boolean internal, Type type) {
+    ConfigurationKeys(String description, boolean internal, SettingCategory category, ComponentType componentType) {
         this.description = description;
         this.internal = internal;
-        this.type = type;
+        this.category = category;
+        this.componentType = componentType;
     }
 
     public String getValue() {

@@ -46,18 +46,18 @@ public class SettingsApiController {
     }
 
     @RequestMapping(value = "/configuration/load", method = GET)
-    public Map<ConfigurationKeys.Type, List<Configuration>> loadConfiguration() {
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration() {
         return configurationManager.loadAllIncludingMissing();
     }
 
     @RequestMapping(value = "/configuration/update", method = POST)
-    public Map<ConfigurationKeys.Type, List<Configuration>> updateConfiguration(@RequestBody ConfigurationModification configuration) {
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> updateConfiguration(@RequestBody ConfigurationModification configuration) {
         configurationManager.save(ConfigurationKeys.fromValue(configuration.getKey()), configuration.getValue());
         return loadConfiguration();
     }
 
     @RequestMapping(value = "/configuration/update-bulk", method = POST)
-    public Map<ConfigurationKeys.Type, List<Configuration>> updateConfiguration(@RequestBody Map<ConfigurationKeys.Type, List<ConfigurationModification>> input) {
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> updateConfiguration(@RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input) {
         Objects.requireNonNull(input);
         List<ConfigurationModification> list = input.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         configurationManager.saveAll(list);
