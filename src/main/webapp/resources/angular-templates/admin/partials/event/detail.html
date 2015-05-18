@@ -115,7 +115,8 @@
                     <div class="col-sm-7">
                         <div class="row">
                             <div class="col-sm-4"><strong>Max tickets</strong></div>
-                            <div class="col-sm-8">{{::ticketCategory.maxTickets}}</div>
+                            <div class="col-sm-8" data-ng-if="ticketCategory.bounded">{{::ticketCategory.maxTickets}}</div>
+                            <div class="col-sm-8" data-ng-if="!ticketCategory.bounded">dynamic</div>
                         </div>
                         <div class="row">
                             <div class="col-sm-4"><strong>Initial sale date</strong></div>
@@ -127,7 +128,7 @@
                         </div>
                         <div class="row" data-ng-if="!event.freeOfCharge">
                             <div class="col-sm-4"><strong>Final price</strong></div>
-                            <div class="col-sm-8">{{ticketCategory.actualPrice | currency : (event.currency || "")}}</div>
+                            <div class="col-sm-8">{{::ticketCategory.actualPrice | currency : (event.currency || "")}}</div>
                         </div>
                     </div>
                 </div>
