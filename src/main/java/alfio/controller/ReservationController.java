@@ -20,6 +20,7 @@ import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
+import alfio.controller.support.TicketDecorator;
 import alfio.manager.EventManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.StripeManager;
@@ -161,15 +162,17 @@ public class ReservationController {
 
 			List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
 
+            boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION.getValue(), false);
 			model.addAttribute(
-					"ticketsByCategory",
-					tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
-							.map((e) -> Pair.of(eventManager.getTicketCategoryById(e.getKey(), event.get().getId()), e.getValue()))
-							.collect(Collectors.toList()));
+                    "ticketsByCategory",
+                    tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
+                            .map((e) -> Pair.of(eventManager.getTicketCategoryById(e.getKey(), event.get().getId()), TicketDecorator.decorate(e.getValue(), enableFreeCancellation)))
+                            .collect(Collectors.toList()));
 			model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
 			model.addAttribute("countries", ticketHelper.getLocalizedCountries(RequestContextUtils.getLocale(request)));
 			model.addAttribute("pageTitle", "reservation-page-complete.header.title");
 			model.addAttribute("event", event.get());
+            model.addAttribute("showTicketCancelButton", enableFreeCancellation);
 			model.asMap().putIfAbsent("validationResult", ValidationResult.success());
 			return "/event/reservation-page-complete";
 		} else {

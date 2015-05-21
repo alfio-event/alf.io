@@ -13,7 +13,7 @@
 
 		var initListeners = function() {
 			
-			$(".update-ticket-owner").click(function() {
+			$(".update-ticket-owner,.unbind-btn").click(function() {
 				$($(this).attr('href')).show().find("input:first").focus();
 				return false;
 			});

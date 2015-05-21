@@ -2,7 +2,7 @@
     <label for="{{setting.key}}">{{setting.description}}</label>
     <div class="input-group" data-ng-switch="setting.componentType">
         <input data-ng-switch-when="TEXT" class="form-control" data-ng-model="setting.value" name="{{setting.key}}" id="{{setting.key}}">
-        <input type="checkbox" data-ng-switch-when="BOOLEAN" data-ng-model="setting.value" name="{{setting.key}}" id="{{setting.key}}">
+        <input type="checkbox" data-ng-switch-when="BOOLEAN" data-ng-model="setting.value" data-ng-true-value="'true'" data-ng-false-value="'false'" name="{{setting.key}}" id="{{setting.key}}">
         <div class="input-group-btn" data-ng-if="setting.componentType === 'TEXT'">
             <button class="btn btn-danger" data-ng-click="removeConfigurationKey(setting.key)" type="button"><i class="fa fa-trash" data-tooltip="Delete"></i></button>
         </div>
