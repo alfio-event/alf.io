@@ -1,15 +1,15 @@
 {{#assigned}}
     <div class="wMarginBottom">
-        <p>{{#i18n}}reservation-page-complete.assigned-to [{{fullName}}] [{{email}}]{{/i18n}} {{#showTicketCancelButton}}<a href="#unbind-form-{{uuid}}" id="unbind-{{uuid}}" class="btn btn-xs btn-danger unbind-btn" data-ticket-uid="{{uuid}}"><i class="fa fa-eraser"></i> release</a>{{/showTicketCancelButton}}</p>
+        <p>{{#i18n}}reservation-page-complete.assigned-to [{{fullName}}] [{{email}}]{{/i18n}} {{#showTicketCancelButton}}<a href="#unbind-form-{{uuid}}" id="unbind-{{uuid}}" class="btn btn-xs btn-danger unbind-btn" data-ticket-uid="{{uuid}}"><i class="fa fa-eraser"></i> {{#i18n}}reservation-page-complete.release-button.text{{/i18n}}</a>{{/showTicketCancelButton}}</p>
         {{#showTicketCancelButton}}
         <div class="hide-by-default" id="unbind-form-{{uuid}}" tabindex="-1" role="dialog" aria-labelledby="modalTitle" aria-hidden="true" data-cancel-ticket="">
-            <form name="cancel-ticket" method="POST" action="{{request.contextPath}}/event/{{event.shortName}}/cancel-ticket">
-                <input type="hidden" name="ticketUid" value="{{uuid}}" />
+            <form name="cancel-ticket" method="POST" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/cancel-ticket">
+                <input type="hidden" name="ticketId" value="{{uuid}}" />
                 <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}" />
                 <div class="alert alert-danger">
                     <h4>{{#i18n}}reservation-page-complete.confirm-cancellation.text{{/i18n}}
-                    <button type="button" class="btn btn-default cancel-update" data-for-form="unbind-form-{{uuid}}">{{#i18n}}reservation-page.cancel{{/i18n}}</button>
-                    <button type="submit" class="btn btn-danger">{{#i18n}}reservation-page-complete.confirm-cancellation.button{{/i18n}}</button>
+                    <button type="button" class="btn btn-default cancel-update" data-for-form="unbind-form-{{uuid}}">{{#i18n}}reservation-page-complete.confirm-cancellation.button.no{{/i18n}}</button>
+                    <button type="submit" class="btn btn-danger">{{#i18n}}reservation-page-complete.confirm-cancellation.button.yes{{/i18n}}</button>
                     </h4>
                 </div>
             </form>

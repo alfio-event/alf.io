@@ -32,6 +32,7 @@ import javax.servlet.FilterRegistration.Dynamic;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.SessionCookieConfig;
+import java.util.Objects;
 
 @Log4j2
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
@@ -74,7 +75,8 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 	@Override
 	protected WebApplicationContext createRootApplicationContext() {
 		ConfigurableWebApplicationContext ctx = ((ConfigurableWebApplicationContext) super.createRootApplicationContext());
-		ConfigurableEnvironment environment = ctx.getEnvironment();
+        Objects.requireNonNull(ctx, "Something really bad is happening...");
+        ConfigurableEnvironment environment = ctx.getEnvironment();
 		if(environment.acceptsProfiles(PROFILE_DEV)) {
 			environment.addActiveProfile(PROFILE_HTTP);
 		}

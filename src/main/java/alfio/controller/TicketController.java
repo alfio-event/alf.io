@@ -169,6 +169,15 @@ public class TicketController {
 		
 	}
 
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/cancel-ticket")
+    public String cancelTicket(@PathVariable("eventName") String eventName,
+                             @PathVariable("reservationId") String reservationId,
+                             @RequestParam("ticketId") String ticketIdentifier) {
+        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+		oData.ifPresent(triple -> ticketReservationManager.releaseTicket(triple.getLeft(), triple.getMiddle(), triple.getRight()));
+        return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+    }
+
 	private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
 		TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
 		Organization organization = organizationRepository.getById(event.getOrganizationId());

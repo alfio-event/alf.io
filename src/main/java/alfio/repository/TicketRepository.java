@@ -151,4 +151,7 @@ public interface TicketRepository {
     @Query("select distinct tickets_reservation_id from ticket where event_id = :eventId and status in('ACQUIRED', 'TO_BE_PAID') and (full_name is null or email_address is null)")
     List<String> findAllReservationsConfirmedButNotAssigned(@Bind("eventId") int eventId);
 
+	@Query("update ticket set status = 'FREE', tickets_reservation_id = null where id = :ticketId and status = 'ACQUIRED' and tickets_reservation_id = :reservationId and event_id = :eventId")
+	int releaseTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
+
 }

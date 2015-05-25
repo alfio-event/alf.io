@@ -352,4 +352,82 @@ public class TicketReservationManagerTest {{
         });
 
     });
+
+    describe("releaseTicket", it -> {
+        TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
+        NotificationManager notificationManager = it.usesMock(NotificationManager.class);
+        MessageSource messageSource = it.usesMock(MessageSource.class);
+        TicketCategoryRepository ticketCategoryRepository = mock(TicketCategoryRepository.class);
+        OrganizationRepository organizationRepository = it.usesMock(OrganizationRepository.class);
+        TicketReservationRepository ticketReservationRepository = it.usesMock(TicketReservationRepository.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, organizationRepository, ticketRepository, ticketReservationRepository, ticketCategoryRepository, null, null, null, null, null, notificationManager, messageSource, null, null);
+        TicketReservation ticketReservation = mock(TicketReservation.class);
+        Ticket ticket = mock(Ticket.class);
+        Event event = mock(Event.class);
+        int eventId = 42;
+        int ticketId = 2048756;
+        int categoryId = 657;
+        int organizationId = 938249873;
+        String reservationId = "what-a-reservation!!";
+        when(ticket.getId()).thenReturn(ticketId);
+        String reservationEmail = "me@mydomain.com";
+        when(ticket.getEmail()).thenReturn(reservationEmail);
+        when(ticket.getUserLanguage()).thenReturn("it");
+        when(ticket.getEventId()).thenReturn(eventId);
+        when(event.getId()).thenReturn(eventId);
+        when(event.getOrganizationId()).thenReturn(organizationId);
+        when(ticket.getCategoryId()).thenReturn(categoryId);
+        when(ticketReservation.getId()).thenReturn(reservationId);
+        String eventName = "VoxxedDaysTicino";
+        TicketCategory ticketCategory = it.usesMock(TicketCategory.class);
+        it.isSetupWith(() -> {
+            when(ticketCategoryRepository.getById(eq(categoryId), eq(eventId))).thenReturn(ticketCategory);
+        });
+
+        when(event.getShortName()).thenReturn(eventName);
+        it.should("send an e-mail to the assignee on success", expect -> {
+            when(ticketCategory.isAccessRestricted()).thenReturn(false);
+            when(ticketRepository.releaseTicket(eq(reservationId), eq(eventId), eq(ticketId))).thenReturn(1);
+            when(ticketCategory.isAccessRestricted()).thenReturn(false);
+            List<String> expectedReservations = Collections.singletonList(reservationId);
+            when(ticketReservationRepository.remove(eq(expectedReservations))).thenReturn(1);
+            ticketReservationManager.releaseTicket(event, ticketReservation, ticket);
+            verify(ticketRepository).releaseTicket(eq(reservationId), eq(eventId), eq(ticketId));
+            verify(notificationManager).sendSimpleEmail(eq(event), eq(reservationEmail), any(), any(TextTemplateGenerator.class));
+            verify(organizationRepository).getById(eq(organizationId));
+            verify(ticketReservationRepository).remove(eq(expectedReservations));
+        });
+
+        it.should("not allow to release a ticket which belongs to a restricted category if there isn't any unbounded category", expect -> {
+            when(ticketCategoryRepository.getById(eq(categoryId), eq(eventId))).thenReturn(ticketCategory);
+            when(ticketCategoryRepository.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(0);
+            when(ticketCategory.isAccessRestricted()).thenReturn(true);
+            expect.exception(IllegalStateException.class, () -> ticketReservationManager.releaseTicket(event, ticketReservation, ticket));
+            verify(ticketCategoryRepository).countUnboundedCategoriesByEventId(eq(eventId));
+        });
+
+        it.should("allow to release a ticket which belongs to a restricted category if there is at least one unbounded category", expect -> {
+            when(ticketCategory.getId()).thenReturn(categoryId);
+            when(ticketRepository.releaseTicket(eq(reservationId), eq(eventId), eq(ticketId))).thenReturn(1);
+            when(ticketCategoryRepository.getById(eq(categoryId), eq(eventId))).thenReturn(ticketCategory);
+            when(ticketCategory.isAccessRestricted()).thenReturn(true);
+            when(ticketCategoryRepository.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(1);
+            List<String> expectedReservations = Collections.singletonList(reservationId);
+            when(ticketReservationRepository.remove(eq(expectedReservations))).thenReturn(1);
+            ticketReservationManager.releaseTicket(event, ticketReservation, ticket);
+            verify(ticketRepository).releaseTicket(eq(reservationId), eq(eventId), eq(ticketId));
+            verify(ticketRepository).unbindTicketsFromCategory(eq(eventId), eq(categoryId), eq(Collections.singletonList(ticketId)));
+            verify(notificationManager).sendSimpleEmail(eq(event), eq(reservationEmail), any(), any(TextTemplateGenerator.class));
+            verify(organizationRepository).getById(eq(organizationId));
+            verify(ticketReservationRepository).remove(eq(expectedReservations));
+        });
+
+        it.should("throw an exception in case of multiple tickets", expect -> {
+            when(ticketRepository.releaseTicket(eq(reservationId), eq(eventId), eq(ticketId))).thenReturn(2);
+            expect.exception(IllegalArgumentException.class, () -> ticketReservationManager.releaseTicket(event, ticketReservation, ticket));
+            verify(ticketRepository).releaseTicket(eq(reservationId), eq(eventId), eq(ticketId));
+            verify(notificationManager, never()).sendSimpleEmail(any(), any(), any(), any(TextTemplateGenerator.class));
+        });
+
+    });
 }}

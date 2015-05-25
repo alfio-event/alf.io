@@ -628,11 +628,15 @@ public class TicketReservationManager {
 		specialPriceRepository.updateStatusForReservation(reservationIdsToRemove, Status.FREE.toString());
 		int updatedTickets = ticketRepository.freeFromReservation(reservationIdsToRemove);
 		Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
-		int removedReservation = ticketReservationRepository.remove(reservationIdsToRemove);
-		Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);
+        deleteReservations(reservationIdsToRemove);
 	}
 
-	public SpecialPrice getSpecialPriceByCode(String code) {
+    private void deleteReservations(List<String> reservationIdsToRemove) {
+        int removedReservation = ticketReservationRepository.remove(reservationIdsToRemove);
+        Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);
+    }
+
+    public SpecialPrice getSpecialPriceByCode(String code) {
 		return specialPriceRepository.getByCode(code);
 	}
 
@@ -839,5 +843,26 @@ public class TicketReservationManager {
 			return ticketRepository.countNotSoldTickets(event.getId(), category.getId());
 		}
 		return ticketRepository.countNotSoldTicketsForUnbounded(event.getId());
+	}
+
+	public void releaseTicket(Event event, TicketReservation ticketReservation, Ticket ticket) {
+        TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
+		if(!CategoryEvaluator.isTicketCancellable(ticketCategoryRepository, ticket)) {
+            throw new IllegalStateException("Cannot release reserved tickets");
+        }
+		int result = ticketRepository.releaseTicket(ticketReservation.getId(), event.getId(), ticket.getId());
+		Validate.isTrue(result == 1, String.format("Expected 1 row to be updated, got %d", result));
+		if(category.isAccessRestricted()) {
+			ticketRepository.unbindTicketsFromCategory(event.getId(), category.getId(), Collections.singletonList(ticket.getId()));
+		}
+        Map<String, Object> model = new HashMap<>();
+		model.put("eventName", event.getShortName());
+		model.put("ticket", ticket);
+        model.put("organization", organizationRepository.getById(event.getOrganizationId()));
+        Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
+		notificationManager.sendSimpleEmail(event, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject", new Object[]{event.getShortName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/ticket-has-been-cancelled-txt.ms", model, locale, TemplateOutput.TEXT));
+        if(ticketRepository.countTicketsInReservation(ticketReservation.getId()) == 0) {
+            deleteReservations(Collections.singletonList(ticketReservation.getId()));
+        }
 	}
 }

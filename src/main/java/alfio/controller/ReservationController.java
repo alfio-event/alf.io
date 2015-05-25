@@ -164,10 +164,10 @@ public class ReservationController {
 
             boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION.getValue(), false);
 			model.addAttribute(
-                    "ticketsByCategory",
-                    tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
-                            .map((e) -> Pair.of(eventManager.getTicketCategoryById(e.getKey(), event.get().getId()), TicketDecorator.decorate(e.getValue(), enableFreeCancellation)))
-                            .collect(Collectors.toList()));
+					"ticketsByCategory",
+					tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
+							.map((e) -> Pair.of(eventManager.getTicketCategoryById(e.getKey(), event.get().getId()), TicketDecorator.decorate(e.getValue(), enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites())))
+							.collect(Collectors.toList()));
 			model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
 			model.addAttribute("countries", ticketHelper.getLocalizedCountries(RequestContextUtils.getLocale(request)));
 			model.addAttribute("pageTitle", "reservation-page-complete.header.title");

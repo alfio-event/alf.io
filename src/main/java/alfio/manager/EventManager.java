@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.location.LocationManager;
+import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.support.OrderSummary;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -47,6 +48,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -590,6 +592,10 @@ public class EventManager {
         return eventRepository.findAll().stream()
                 .filter(e -> e.getEnd().truncatedTo(ChronoUnit.DAYS).plusDays(1).isAfter(ZonedDateTime.now(e.getZoneId()).truncatedTo(ChronoUnit.DAYS)))
                 .collect(toList());
+    }
+
+    public Function<Ticket, Boolean> checkTicketCancellationPrerequisites() {
+        return CategoryEvaluator.isTicketCancellable(ticketCategoryRepository);
     }
 
     @Data
