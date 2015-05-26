@@ -28,6 +28,7 @@ import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.TicketWithStatistic;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -855,12 +856,15 @@ public class TicketReservationManager {
 		if(category.isAccessRestricted()) {
 			ticketRepository.unbindTicketsFromCategory(event.getId(), category.getId(), Collections.singletonList(ticket.getId()));
 		}
+		Organization organization = organizationRepository.getById(event.getOrganizationId());
         Map<String, Object> model = new HashMap<>();
 		model.put("eventName", event.getShortName());
 		model.put("ticket", ticket);
-        model.put("organization", organizationRepository.getById(event.getOrganizationId()));
-        Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
+		model.put("organization", organization);
+        Locale locale = Locale.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
 		notificationManager.sendSimpleEmail(event, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject", new Object[]{event.getShortName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/ticket-has-been-cancelled-txt.ms", model, locale, TemplateOutput.TEXT));
+		String adminTemplate = messageSource.getMessage("email-ticket-released.admin.text", new Object[] {ticket.getId(), ticket.getUuid(), ticket.getFullName(), ticket.getEmail(), category.getDescription(), category.getId()}, Locale.ENGLISH);
+		notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject", new Object[]{ticket.getId(), event.getShortName()}, locale), () -> templateManager.renderString(adminTemplate, model, Locale.ENGLISH, TemplateOutput.TEXT));
         if(ticketRepository.countTicketsInReservation(ticketReservation.getId()) == 0) {
             deleteReservations(Collections.singletonList(ticketReservation.getId()));
         }

@@ -22,6 +22,7 @@ import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -380,12 +381,16 @@ public class TicketReservationManagerTest {{
         when(ticketReservation.getId()).thenReturn(reservationId);
         String eventName = "VoxxedDaysTicino";
         TicketCategory ticketCategory = it.usesMock(TicketCategory.class);
+        Organization organization = it.usesMock(Organization.class);
         it.isSetupWith(() -> {
             when(ticketCategoryRepository.getById(eq(categoryId), eq(eventId))).thenReturn(ticketCategory);
+            when(organizationRepository.getById(eq(organizationId))).thenReturn(organization);
         });
 
         when(event.getShortName()).thenReturn(eventName);
         it.should("send an e-mail to the assignee on success", expect -> {
+            String organizationEmail = "ciccio@test";
+            when(organization.getEmail()).thenReturn(organizationEmail);
             when(ticketCategory.isAccessRestricted()).thenReturn(false);
             when(ticketRepository.releaseTicket(eq(reservationId), eq(eventId), eq(ticketId))).thenReturn(1);
             when(ticketCategory.isAccessRestricted()).thenReturn(false);
@@ -394,6 +399,7 @@ public class TicketReservationManagerTest {{
             ticketReservationManager.releaseTicket(event, ticketReservation, ticket);
             verify(ticketRepository).releaseTicket(eq(reservationId), eq(eventId), eq(ticketId));
             verify(notificationManager).sendSimpleEmail(eq(event), eq(reservationEmail), any(), any(TextTemplateGenerator.class));
+            verify(notificationManager).sendSimpleEmail(eq(event), eq(organizationEmail), any(), any(TextTemplateGenerator.class));
             verify(organizationRepository).getById(eq(organizationId));
             verify(ticketReservationRepository).remove(eq(expectedReservations));
         });

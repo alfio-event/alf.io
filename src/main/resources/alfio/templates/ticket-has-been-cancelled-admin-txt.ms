@@ -1,0 +1,1 @@
+{{#i18n}}email-ticket-released.admin.text [{{eventName}}]{{/i18n}}
