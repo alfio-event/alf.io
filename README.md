@@ -6,6 +6,10 @@ alf.io
 [![Build Status](http://img.shields.io/travis/exteso/alf.io/master.svg)](https://travis-ci.org/exteso/alf.io) [![Coverage Status](https://img.shields.io/coveralls/exteso/alf.io.svg)](https://coveralls.io/r/exteso/alf.io)
 [![Coverity Scan Build Status](https://img.shields.io/coverity/scan/5232.svg)](https://scan.coverity.com/projects/5232)
 
+## Prerequisites
+
+You should have installed Java version 8 (either [![Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html)] or [![OpenJDK](http://openjdk.java.net/install/)]) in order to build and run alf.io. Please note that for the build process the JDK is required.
+
 ## Run on your machine
 
 ## Gradle Build
