@@ -8,7 +8,7 @@ alf.io
 
 ## Prerequisites
 
-You should have installed Java version 8 (either [![Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html)] or [![OpenJDK](http://openjdk.java.net/install/)]) in order to build and run alf.io. Please note that for the build process the JDK is required.
+You should have installed Java version 8 (either [Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html) or [OpenJDK](http://openjdk.java.net/install/)) in order to build and run alf.io. Please note that for the build process the JDK is required.
 
 ## Run on your machine
 
