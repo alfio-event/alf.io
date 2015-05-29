@@ -22,6 +22,8 @@ import alfio.datamapper.QueryRepository;
 import alfio.datamapper.QueryType;
 import alfio.model.FileBlobMetadata;
 
+import java.util.Date;
+
 @QueryRepository
 public interface FileUploadRepository {
 
@@ -31,10 +33,14 @@ public interface FileUploadRepository {
     @Query("select id, name, content_size, content_type from file_blob where id = :id")
     public FileBlobMetadata findById(@Bind("id") String id);
 
+    @Query("delete from file_blob where creation_time <= :date and id not in (select file_blob_id from event where file_blob_id is not null)")
+    int cleanupUnreferencedBlobFiles(@Bind("date") Date date);
+
     @Query(type = QueryType.TEMPLATE, value = "insert into file_blob (id, name, content_size, content, content_type) " +
             "values(?, ?, ?, ?, ?)")
     public String uploadTemplate();
 
     @Query(type = QueryType.TEMPLATE, value = "select content from file_blob where id = :id")
     String fileContent(@Bind("id") String id);
+
 }

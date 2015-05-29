@@ -21,6 +21,7 @@ import alfio.model.modification.UploadBase64FileModification;
 import alfio.repository.FileUploadRepository;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -38,6 +39,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.Optional;
 
 @Component
@@ -97,5 +99,10 @@ public class FileUploadManager {
                     }
                 });
         return digest;
+    }
+
+    public void cleanupUnreferencedBlobFiles() {
+        int deleted = repository.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), -1));
+        log.info("removed {} unused file_blob", deleted);
     }
 }

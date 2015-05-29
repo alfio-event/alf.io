@@ -333,9 +333,9 @@
         createAndPushCategory(true, $scope);
 
         $scope.save = function(form, event) {
-            if(!form.$valid) {
+            /*if(!form.$valid) {
                 return;
-            }
+            }*/
             validationPerformer($q, EventService.checkEvent, event, form).then(function() {
                 EventService.createEvent(event).success(function() {
                     $state.go('index');
@@ -508,9 +508,9 @@
         };
 
         $scope.saveEventHeader = function(form, header) {
-            if(!form.$valid) {
+            /*if(!form.$valid) {
                 return;
-            }
+            }*/
             EventService.updateEventHeader(header).then(function(result) {
                 validationErrorHandler(result, form, form.editEventHeader).then(function(result) {
                     $scope.editEventHeader = false;
