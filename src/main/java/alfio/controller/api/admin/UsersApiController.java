@@ -24,7 +24,8 @@ import alfio.model.user.User;
 import alfio.model.user.UserWithPassword;
 import alfio.util.ImageUtil;
 import alfio.util.ValidationResult;
-import lombok.Data;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -34,7 +35,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.springframework.web.bind.annotation.RequestMethod.*;
@@ -45,8 +48,9 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 public class UsersApiController {
 
     private static final String OK = "OK";
-    private static final String USER_QR_CODE_KEY = "USER_QR_CODE";
+    private static final String USER_WITH_PASSWORD_KEY = "USER_WITH_PASSWORD";
     private final UserManager userManager;
+    private final Gson gson = new GsonBuilder().create();
 
     @Autowired
     public UsersApiController(UserManager userManager) {
@@ -110,8 +114,8 @@ public class UsersApiController {
     }
 
     @RequestMapping(value = "/users/{identifier}.png", method = GET)
-    public void loadUserImage(@PathVariable("identifier") String identifier, HttpSession session, HttpServletResponse response) throws IOException {
-        Optional<UserWithPassword> optional = Optional.ofNullable((UserWithPassword) session.getAttribute(USER_QR_CODE_KEY))
+    public void loadUserImage(@PathVariable("identifier") String identifier, @RequestParam("baseUrl") String baseUrl, HttpSession session, HttpServletResponse response) throws IOException {
+        Optional<UserWithPassword> optional = Optional.ofNullable((UserWithPassword) session.getAttribute(USER_WITH_PASSWORD_KEY))
                                                        .filter(a -> identifier.equals(a.getUniqueId()));
         if(!optional.isPresent()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -119,7 +123,13 @@ public class UsersApiController {
         }
         UserWithPassword userWithPassword = optional.get();
         response.setContentType("image/png");
-        response.getOutputStream().write(ImageUtil.createQRCode(userWithPassword.getPassword()));
+
+        Map<String, Object> info = new HashMap<>();
+        info.put("username", userWithPassword.getUsername());
+        info.put("password", userWithPassword.getPassword());
+        info.put("baseUrl", baseUrl);
+        //
+        response.getOutputStream().write(ImageUtil.createQRCode(gson.toJson(info)));
     }
 
 
@@ -144,6 +154,6 @@ public class UsersApiController {
     }
 
     private void storePasswordImage(HttpSession session, UserWithPassword userWithPassword) {
-        session.setAttribute(USER_QR_CODE_KEY, userWithPassword);
+        session.setAttribute(USER_WITH_PASSWORD_KEY, userWithPassword);
     }
 }

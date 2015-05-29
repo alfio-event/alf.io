@@ -49,7 +49,7 @@
         };
     });
 
-    baseServices.service('UserService', function($http, $modal, HttpErrorHandler) {
+    baseServices.service('UserService', function($http, $modal, $window, HttpErrorHandler) {
         return {
             getAllUsers : function() {
                 return $http.get('/admin/api/users.json').error(HttpErrorHandler.handle);
@@ -77,6 +77,7 @@
                     templateUrl:'/resources/angular-templates/admin/partials/event/fragment/show-user-data-modal.html',
                     backdrop: 'static',
                     controller: function($scope) {
+                        $scope.baseUrl = $window.location.origin;
                         $scope.user = user;
                         $scope.ok = function() {
                             $scope.$close(true);
