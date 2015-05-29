@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Optional;
@@ -33,22 +34,28 @@ public class FileController {
 
     private final FileUploadManager manager;
 
+    private static final String MAX_AGE_6_MONTH = "max-age=15778463";
+
     @Autowired
     public FileController(FileUploadManager manager) {
         this.manager = manager;
     }
 
     @RequestMapping(value = "/file/{digest}", method = RequestMethod.GET)
-    public void showFile(@PathVariable("digest") String digest, HttpServletResponse response) throws IOException {
+    public void showFile(@PathVariable("digest") String digest, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         Optional<FileBlobMetadata> res = manager.findMetadata(digest);
         if (res.isPresent()) {
             FileBlobMetadata metadata = res.get();
-
-            response.setContentType(metadata.getContentType());
-            response.setContentLength(metadata.getContentSize());
-            manager.outputFile(digest, response.getOutputStream());
-
+            if (digest.equals(request.getHeader("If-None-Match"))) {
+                response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+            } else {
+                response.setContentType(metadata.getContentType());
+                response.setContentLength(metadata.getContentSize());
+                response.setHeader("ETag", digest);
+                response.setHeader("Cache-Control", MAX_AGE_6_MONTH);
+                manager.outputFile(digest, response.getOutputStream());
+            }
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }

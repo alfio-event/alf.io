@@ -198,7 +198,7 @@
 
 	<div class="clearfix"></div>
 </form>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
 {{#hasAccessPromotions}}
 <script src="{{request.contextPath}}/resources/js/event/show-event.js"></script>
 {{/hasAccessPromotions}}

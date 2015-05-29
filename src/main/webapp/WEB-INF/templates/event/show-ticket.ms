@@ -89,7 +89,7 @@
 	</form>
 </div>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
 <script src="{{request.contextPath}}/resources/js/event/show-ticket.js"></script>
 
 {{>/event/page-bottom}}

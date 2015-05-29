@@ -1,13 +1,13 @@
 {{>/event/page-top}}
 
 {{#orderSummary.free}}
- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+ <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
  <script src="{{request.contextPath}}/resources/js/h5f/h5f.min.js"></script>
  <script src="{{request.contextPath}}/resources/js/event/reservation-page.js"></script>
 {{/orderSummary.free}}
 {{^orderSummary.free}}
  <script src="https://js.stripe.com/v2/"></script>
- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+ <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
  <script src="{{request.contextPath}}/resources/js/h5f/h5f.min.js"></script>
  <script src="{{request.contextPath}}/resources/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
  <script src="{{request.contextPath}}/resources/js/event/bootstrap-handler.js"></script>
