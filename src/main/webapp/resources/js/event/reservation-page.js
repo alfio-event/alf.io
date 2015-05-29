@@ -70,7 +70,7 @@
 	
 	
 	 
-	jQuery(function($) {
+	jQuery(function() {
 		
 		H5F.setup(document.getElementById("payment-form"));
 		
@@ -83,16 +83,17 @@
 		var interval = null;
 		
 		var displayMessage = function() {
+
 			var totalSec = Math.max(validity.getTime() - new Date().getTime(), 0) / 1000;
 			var sec = totalSec % 60;
 			var min = (totalSec - sec) / 60;
-			var validity = $("#validity");
+			var validityElem = $("#validity");
 			if(totalSec <= 0) {
-				validity.find("strong").html(validity.attr('data-message-time-elapsed'));
+				validityElem.find("strong").html(validityElem.attr('data-message-time-elapsed'));
 				$("#continue-button").addClass('hide');
 				clearInterval(interval);
 			} else {
-				validity.find("strong").html(validity.attr('data-message').replace('#minutes#', min).replace('#seconds#',  Math.floor(sec)));
+				validityElem.find("strong").html(validityElem.attr('data-message').replace('#minutes#', min).replace('#seconds#',  Math.floor(sec)));
 			}
 		};
 		
