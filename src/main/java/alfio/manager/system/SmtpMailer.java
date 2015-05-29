@@ -37,6 +37,7 @@ import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -91,7 +92,7 @@ class SmtpMailer implements Mailer {
 		if (properties != null) {
 			try {
 				Properties prop = PropertiesLoaderUtils.loadProperties(new EncodedResource(new ByteArrayResource(
-						properties.getBytes("UTF-8")), "UTF-8"));
+						properties.getBytes(StandardCharsets.UTF_8)), "UTF-8"));
 				r.setJavaMailProperties(prop);
 			} catch (IOException e) {
 				log.warn("error while setting the mail sender properties", e);

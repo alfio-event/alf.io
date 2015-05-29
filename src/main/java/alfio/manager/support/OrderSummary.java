@@ -47,4 +47,12 @@ public class OrderSummary {
     public boolean getNotYetPaid() {
         return waitingForPayment || cashPayment;
     }
+
+    public int getTicketAmount() {
+        return summary.stream().mapToInt(SummaryRow::getAmount).sum();
+    }
+
+    public boolean getSingleTicketOrder() {
+        return getTicketAmount() == 1;
+    }
 }

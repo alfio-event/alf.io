@@ -23,8 +23,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
@@ -148,9 +148,9 @@ public class Ticket {
     private static String hmacSHA256Base64(String key, String code) {
     	try {
     		Mac hmac = Mac.getInstance("HmacSHA256");
-    		hmac.init(new SecretKeySpec(key.getBytes("UTF-8"), "HmacSHA256"));
-    		return Base64.getEncoder().encodeToString(hmac.doFinal(code.getBytes("UTF-8")));
-    	} catch(UnsupportedEncodingException | InvalidKeyException | NoSuchAlgorithmException e) {
+    		hmac.init(new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+    		return Base64.getEncoder().encodeToString(hmac.doFinal(code.getBytes(StandardCharsets.UTF_8)));
+    	} catch(InvalidKeyException | NoSuchAlgorithmException e) {
     		throw new IllegalStateException(e);
     	}
     }

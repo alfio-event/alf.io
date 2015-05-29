@@ -41,6 +41,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
@@ -166,10 +167,10 @@ public class NotificationManager {
     private static String calculateChecksum(String recipient, String attachments, String subject, String text)  {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            digest.update(recipient.getBytes());
-            digest.update(subject.getBytes());
-            Optional.ofNullable(attachments).ifPresent(v -> digest.update(v.getBytes()));
-            digest.update(text.getBytes());
+            digest.update(recipient.getBytes(StandardCharsets.UTF_8));
+            digest.update(subject.getBytes(StandardCharsets.UTF_8));
+            Optional.ofNullable(attachments).ifPresent(v -> digest.update(v.getBytes(StandardCharsets.UTF_8)));
+            digest.update(text.getBytes(StandardCharsets.UTF_8));
             return new String(Hex.encode(digest.digest()));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
