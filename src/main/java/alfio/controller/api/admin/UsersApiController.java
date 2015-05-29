@@ -111,15 +111,15 @@ public class UsersApiController {
 
     @RequestMapping(value = "/users/{identifier}.png", method = GET)
     public void loadUserImage(@PathVariable("identifier") String identifier, HttpSession session, HttpServletResponse response) throws IOException {
-        Optional<ImageDescriptor> optional = Optional.ofNullable((ImageDescriptor) session.getAttribute(USER_QR_CODE_KEY))
-                                                       .filter(a -> identifier.equals(a.getUserIdentifier()));
+        Optional<UserWithPassword> optional = Optional.ofNullable((UserWithPassword) session.getAttribute(USER_QR_CODE_KEY))
+                                                       .filter(a -> identifier.equals(a.getUniqueId()));
         if(!optional.isPresent()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        ImageDescriptor imageDescriptor = optional.get();
+        UserWithPassword userWithPassword = optional.get();
         response.setContentType("image/png");
-        response.getOutputStream().write(imageDescriptor.getImage());
+        response.getOutputStream().write(ImageUtil.createQRCode(userWithPassword.getPassword()));
     }
 
 
@@ -144,12 +144,6 @@ public class UsersApiController {
     }
 
     private void storePasswordImage(HttpSession session, UserWithPassword userWithPassword) {
-        session.setAttribute(USER_QR_CODE_KEY, new ImageDescriptor(userWithPassword.getUniqueId(), ImageUtil.createQRCode(userWithPassword.getPassword())));
-    }
-
-    @Data
-    private final class ImageDescriptor {
-        private final String userIdentifier;
-        private final byte[] image;
+        session.setAttribute(USER_QR_CODE_KEY, userWithPassword);
     }
 }
