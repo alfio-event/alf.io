@@ -127,7 +127,7 @@ public class ReservationController {
 			model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event.get(), configurationManager)));
 			model.addAttribute("event", event.get());
 			if (orderSummary.getOriginalTotalPrice().getPriceWithVAT() > 0) {
-				model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
+				model.addAttribute("stripe_p_key", stripeManager.getPublicKey(event.get()));
 			}
 			Map<String, Object> modelMap = model.asMap();
 			modelMap.putIfAbsent("paymentForm", new PaymentForm());
