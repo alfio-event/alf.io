@@ -104,8 +104,8 @@ public class TicketReservationManagerTest {{
         TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager);
         it.initializesWith(() -> reset(notificationManager, eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, configurationManager, promoCodeDiscountRepository, messageSource, transactionManager));
         it.should("send the reminder before event end", expect -> {
-            when(configurationManager.getIntConfigValue(eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
-            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+            when(configurationManager.getIntConfigValue(any(), eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any(), any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
             when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
@@ -120,8 +120,8 @@ public class TicketReservationManagerTest {{
         });
 
         it.should("not send the reminder after event end", expect -> {
-            when(configurationManager.getIntConfigValue(eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
-            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+            when(configurationManager.getIntConfigValue(any(), eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any(), any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
             when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
@@ -136,8 +136,8 @@ public class TicketReservationManagerTest {{
         });
 
         it.should("consider ZoneId while checking (valid)", expect -> {
-            when(configurationManager.getIntConfigValue(eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
-            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+            when(configurationManager.getIntConfigValue(any(), eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any(), any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
             when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
@@ -152,8 +152,8 @@ public class TicketReservationManagerTest {{
         });
 
         it.should("consider ZoneId while checking (expired)", expect -> {
-            when(configurationManager.getIntConfigValue(eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
-            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+            when(configurationManager.getIntConfigValue(any(), eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any(), any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
             when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
@@ -170,7 +170,7 @@ public class TicketReservationManagerTest {{
 
     describe("offlinePaymentDeadline", it -> {
         ConfigurationManager configurationManager = mock(ConfigurationManager.class);
-        when(configurationManager.getIntConfigValue(eq(OFFLINE_PAYMENT_DAYS), anyInt())).thenReturn(2);
+        when(configurationManager.getIntConfigValue(any(), eq(OFFLINE_PAYMENT_DAYS), anyInt())).thenReturn(2);
         Event event = mock(Event.class);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
 

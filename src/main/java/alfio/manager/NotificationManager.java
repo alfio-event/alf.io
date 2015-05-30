@@ -25,6 +25,7 @@ import alfio.manager.system.Mailer;
 import alfio.model.EmailMessage;
 import alfio.model.Event;
 import alfio.model.Ticket;
+import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EmailMessageRepository;
 import alfio.repository.EventRepository;
@@ -111,7 +112,7 @@ public class NotificationManager {
     }
 
     void sendWaitingMessages() {
-        Set<EmailMessage> toBeSent = messages.poll(configurationManager.getIntConfigValue(ConfigurationKeys.MAX_EMAIL_PER_CYCLE, 10));
+        Set<EmailMessage> toBeSent = messages.poll(configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.MAX_EMAIL_PER_CYCLE, 10));
         toBeSent.forEach(m -> {
             try {
                 processMessage(m);
@@ -149,7 +150,7 @@ public class NotificationManager {
     private void sendMessage(EmailMessage message) {
         Event event = eventRepository.findById(message.getEventId());
         EmailMessage storedMessage = emailMessageRepository.findByEventIdAndChecksum(event.getId(), message.getChecksum(), IN_PROCESS.name());
-        mailer.send(event.getShortName(), message.getRecipient(), message.getSubject(), storedMessage.getMessage(), Optional.empty(), decodeAttachments(storedMessage.getAttachments()));
+        mailer.send(event, message.getRecipient(), message.getSubject(), storedMessage.getMessage(), Optional.empty(), decodeAttachments(storedMessage.getAttachments()));
         emailMessageRepository.updateStatusToSent(storedMessage.getEventId(), storedMessage.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
     }
 

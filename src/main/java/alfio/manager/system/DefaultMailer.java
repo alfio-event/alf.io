@@ -17,6 +17,8 @@
 package alfio.manager.system;
 
 import alfio.config.Initializer;
+import alfio.model.Event;
+import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
@@ -45,15 +47,15 @@ public class DefaultMailer implements Mailer {
 	}
 
 	@Override
-	public void send(String eventName, String to, String subject, String text,
+	public void send(Event event, String to, String subject, String text,
 			Optional<String> html, Attachment... attachments) {
 
-		String mailerType = configurationManager.getStringConfigValue(
+		String mailerType = configurationManager.getStringConfigValue(Configuration.event(event),
 				ConfigurationKeys.MAILER_TYPE, "smtp").toLowerCase(
 				Locale.ENGLISH);
 
 		mailers.getOrDefault(mailerType, defaultMailer)
-                .send(eventName, to, subject, text, html, attachments);
+                .send(event, to, subject, text, html, attachments);
 	}
 
 }

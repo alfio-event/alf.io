@@ -18,6 +18,7 @@ package alfio.manager.system;
 
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
+import alfio.model.system.Configuration.ConfigurationPath;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.system.ConfigurationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +42,7 @@ public class ConfigurationManager {
         this.configurationRepository = configurationRepository;
     }
 
-    public int getIntConfigValue(ConfigurationKeys key, int defaultValue) {
+    public int getIntConfigValue(ConfigurationPath path, ConfigurationKeys key, int defaultValue) {
         try {
             Optional<String> value = Optional.ofNullable(configurationRepository.findByKey(key.getValue()))
                     .map(Configuration::getValue);
@@ -54,7 +55,7 @@ public class ConfigurationManager {
         }
     }
 
-    public boolean getBooleanConfigValue(String key, boolean defaultValue) {
+    public boolean getBooleanConfigValue(ConfigurationPath path, String key, boolean defaultValue) {
         return optionally(() -> Boolean.parseBoolean(configurationRepository.findByKey(key).getValue()))
                 .orElse(defaultValue);
     }
@@ -73,17 +74,17 @@ public class ConfigurationManager {
         }
     }
 
-    public String getStringConfigValue(ConfigurationKeys key, String defaultValue) {
+    public String getStringConfigValue(ConfigurationPath path, ConfigurationKeys key, String defaultValue) {
         return optionally(() -> configurationRepository.findByKey(key.getValue()))
                 .map(Configuration::getValue)
                 .orElse(defaultValue);
     }
     
-    public Optional<String> getStringConfigValue(ConfigurationKeys key) {
+    public Optional<String> getStringConfigValue(ConfigurationPath path, ConfigurationKeys key) {
     	return optionally(() -> configurationRepository.findByKey(key.getValue())).map(Configuration::getValue);
     }
 
-    public String getRequiredValue(ConfigurationKeys key) {
+    public String getRequiredValue(ConfigurationPath path, ConfigurationKeys key) {
         return optionally(() -> configurationRepository.findByKey(key.getValue()))
                 .map(Configuration::getValue)
                 .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + key + " not present"));

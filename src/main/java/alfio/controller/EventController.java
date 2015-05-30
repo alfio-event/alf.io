@@ -29,6 +29,7 @@ import alfio.model.PromoCodeDiscount;
 import alfio.model.SpecialPrice;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
+import alfio.model.system.Configuration;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
@@ -60,7 +61,6 @@ public class EventController {
 
     private static final String REDIRECT = "redirect:";
     private final EventRepository eventRepository;
-    private final TicketRepository ticketRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
@@ -71,7 +71,6 @@ public class EventController {
 
 	@Autowired
 	public EventController(ConfigurationManager configurationManager,
-						   TicketRepository ticketRepository,
 						   EventRepository eventRepository,
 						   OrganizationRepository organizationRepository,
 						   TicketCategoryRepository ticketCategoryRepository,
@@ -80,7 +79,6 @@ public class EventController {
 						   EventManager eventManager,
 						   TicketReservationManager ticketReservationManager) {
 		this.configurationManager = configurationManager;
-		this.ticketRepository = ticketRepository;
 		this.eventRepository = eventRepository;
 		this.organizationRepository = organizationRepository;
 		this.ticketCategoryRepository = ticketCategoryRepository;
@@ -175,7 +173,7 @@ public class EventController {
 
 		Event ev = event.get();
 		final ZonedDateTime now = ZonedDateTime.now(ev.getZoneId());
-		final int maxTickets = configurationManager.getIntConfigValue(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
+		final int maxTickets = configurationManager.getIntConfigValue(Configuration.event(ev), MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
 		//hide access restricted ticket categories
 		List<SaleableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(ev.getId()).stream()
                 .filter((c) -> !c.isAccessRestricted() || (specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId()))
@@ -185,7 +183,7 @@ public class EventController {
 
 
 		LocationDescriptor ld = LocationDescriptor.fromGeoData(ev.getLatLong(), TimeZone.getTimeZone(ev.getTimeZone()),
-				configurationManager.getStringConfigValue(MAPS_CLIENT_API_KEY));
+				configurationManager.getStringConfigValue(Configuration.event(ev), MAPS_CLIENT_API_KEY));
 		
 		final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(ev.getId()) > 0 ||
 				promoCodeRepository.countByEventId(ev.getId()) > 0;

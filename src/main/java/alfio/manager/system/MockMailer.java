@@ -17,6 +17,8 @@
 package alfio.manager.system;
 
 import alfio.config.Initializer;
+import alfio.model.Event;
+import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
@@ -39,8 +41,8 @@ public class MockMailer implements Mailer {
     }
 
     @Override
-	public void send(String eventName, String to, String subject, String text, Optional<String> html, Attachment... attachments) {
-		log.info("Email: from: {}, replyTo: {}, to: {}, subject: {}, text: {}, html: {}, attachments amount: {}", eventName, configurationManager.getStringConfigValue(ConfigurationKeys.MAIL_REPLY_TO, ""), to, subject, text,
+	public void send(Event event, String to, String subject, String text, Optional<String> html, Attachment... attachments) {
+		log.info("Email: from: {}, replyTo: {}, to: {}, subject: {}, text: {}, html: {}, attachments amount: {}", event.getShortName(), configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.MAIL_REPLY_TO, ""), to, subject, text,
 				html.orElse("no html"), ArrayUtils.getLength(attachments));
 	}
 }

@@ -16,6 +16,9 @@
  */
 package alfio.manager.system;
 
+import alfio.model.Event;
+import alfio.model.system.Configuration;
+import alfio.model.system.Configuration.ConfigurationPath;
 import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -48,14 +51,14 @@ class SmtpMailer implements Mailer {
 	private final ConfigurationManager configurationManager;
 
 	@Override
-	public void send(String eventName, String to, String subject, String text,
+	public void send(Event event, String to, String subject, String text,
 			Optional<String> html, Attachment... attachments) {
 		MimeMessagePreparator preparator = (mimeMessage) -> {
 			MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
 					: new MimeMessageHelper(mimeMessage, "UTF-8");
 			message.setSubject(subject);
-			message.setFrom(configurationManager.getRequiredValue(ConfigurationKeys.SMTP_FROM_EMAIL), eventName);
-            String replyTo = configurationManager.getStringConfigValue(ConfigurationKeys.MAIL_REPLY_TO, "");
+			message.setFrom(configurationManager.getRequiredValue(Configuration.system(), ConfigurationKeys.SMTP_FROM_EMAIL), event.getShortName());
+            String replyTo = configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.MAIL_REPLY_TO, "");
             if(StringUtils.isNotBlank(replyTo)) {
                 message.setReplyTo(replyTo);
             }
@@ -75,19 +78,20 @@ class SmtpMailer implements Mailer {
 			message.getMimeMessage().saveChanges();
 			message.getMimeMessage().removeHeader("Message-ID");
 		};
-		toMailSender().send(preparator);
+		toMailSender(event).send(preparator);
 	}
 	
-	private JavaMailSender toMailSender() {
+	private JavaMailSender toMailSender(Event event) {
 		JavaMailSenderImpl r = new CustomJavaMailSenderImpl();
 		r.setDefaultEncoding("UTF-8");
-		r.setHost(configurationManager.getRequiredValue(ConfigurationKeys.SMTP_HOST));
-		r.setPort(Integer.valueOf(configurationManager.getRequiredValue(ConfigurationKeys.SMTP_PORT)));
-		r.setProtocol(configurationManager.getRequiredValue(ConfigurationKeys.SMTP_PROTOCOL));
-		r.setUsername(configurationManager.getStringConfigValue(ConfigurationKeys.SMTP_USERNAME, null));
-		r.setPassword(configurationManager.getStringConfigValue(ConfigurationKeys.SMTP_PASSWORD, null));
+		ConfigurationPath configurationPath = Configuration.event(event);
+		r.setHost(configurationManager.getRequiredValue(configurationPath, ConfigurationKeys.SMTP_HOST));
+		r.setPort(Integer.valueOf(configurationManager.getRequiredValue(configurationPath, ConfigurationKeys.SMTP_PORT)));
+		r.setProtocol(configurationManager.getRequiredValue(configurationPath, ConfigurationKeys.SMTP_PROTOCOL));
+		r.setUsername(configurationManager.getStringConfigValue(configurationPath, ConfigurationKeys.SMTP_USERNAME, null));
+		r.setPassword(configurationManager.getStringConfigValue(configurationPath, ConfigurationKeys.SMTP_PASSWORD, null));
 
-		String properties = configurationManager.getStringConfigValue(ConfigurationKeys.SMTP_PROPERTIES, null);
+		String properties = configurationManager.getStringConfigValue(configurationPath, ConfigurationKeys.SMTP_PROPERTIES, null);
 
 		if (properties != null) {
 			try {

@@ -17,7 +17,11 @@
 package alfio.model.system;
 
 import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
+import alfio.model.Event;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+
+import java.util.Optional;
 
 @Getter
 public class Configuration {
@@ -42,5 +46,108 @@ public class Configuration {
 
     public ConfigurationKeys.ComponentType getComponentType() {
         return configurationKey.getComponentType();
+    }
+
+
+
+    public enum ConfigurationPathLevel {
+        SYSTEM, ORGANIZATION, EVENT, CATEGORY
+    }
+
+    public interface ConfigurationPath {
+        ConfigurationPathLevel pathLevel();
+        Optional<ConfigurationPath> parent();
+    }
+
+    private static class SystemConfigurationPath implements  ConfigurationPath {
+        @Override
+        public ConfigurationPathLevel pathLevel() {
+            return ConfigurationPathLevel.SYSTEM;
+        }
+
+        @Override
+        public Optional<ConfigurationPath> parent() {
+            return Optional.empty();
+        }
+    }
+
+    private static class OrganizationConfigurationPath implements ConfigurationPath {
+
+        private final int id;
+
+        private OrganizationConfigurationPath(int id) {
+            this.id = id;
+        }
+
+        @Override
+        public ConfigurationPathLevel pathLevel() {
+            return ConfigurationPathLevel.ORGANIZATION;
+        }
+
+        @Override
+        public Optional<ConfigurationPath> parent() {
+            return Optional.of(system());
+        }
+    }
+
+    private static class EventConfigurationPath implements ConfigurationPath {
+
+        private final int organizationId;
+        private final int id;
+
+        private EventConfigurationPath(int organizationId, int id) {
+            this.organizationId = organizationId;
+            this.id = id;
+        }
+
+
+        @Override
+        public ConfigurationPathLevel pathLevel() {
+            return ConfigurationPathLevel.EVENT;
+        }
+
+        @Override
+        public Optional<ConfigurationPath> parent() {
+            return Optional.of(organization(organizationId));
+        }
+    }
+
+    private static class CategoryConfigurationPath implements ConfigurationPath {
+
+        private final int organizationId;
+        private final int eventId;
+        private final int id;
+
+        private CategoryConfigurationPath(int organizationId, int eventId, int id) {
+            this.organizationId = organizationId;
+            this.eventId = eventId;
+            this.id = id;
+        }
+
+        @Override
+        public ConfigurationPathLevel pathLevel() {
+            return ConfigurationPathLevel.CATEGORY;
+        }
+
+        @Override
+        public Optional<ConfigurationPath> parent() {
+            return Optional.of(new EventConfigurationPath(organizationId, eventId));
+        }
+    }
+
+    public static ConfigurationPath system() {
+        return new SystemConfigurationPath();
+    }
+
+    public static ConfigurationPath organization(int id) {
+        return new OrganizationConfigurationPath(id);
+    }
+
+    public static ConfigurationPath event(Event event) {
+        return new EventConfigurationPath(event.getOrganizationId(), event.getId());
+    }
+
+    public static ConfigurationPath category(int organizationId, int eventId, int id) {
+        return new CategoryConfigurationPath(organizationId, eventId, id);
     }
 }

@@ -32,6 +32,7 @@ import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketReservation;
 import alfio.model.TicketReservation.TicketReservationStatus;
+import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
@@ -162,7 +163,9 @@ public class ReservationController {
 
 			List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
 
-            boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION.getValue(), false);
+			Event ev = event.get();
+
+            boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.event(ev), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION.getValue(), false);
 			model.addAttribute(
 					"ticketsByCategory",
 					tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
@@ -265,7 +268,7 @@ public class ReservationController {
 			model.addAttribute("reservation", ticketReservation);
 			model.addAttribute("paymentReason", ev.getShortName() + " " + ticketReservationManager.getShortReservationID(reservationId));
 			model.addAttribute("pageTitle", "reservation-page-waiting.header.title");
-			model.addAttribute("bankAccount", configurationManager.getStringConfigValue(ConfigurationKeys.BANK_ACCOUNT_NR).orElse(""));
+			model.addAttribute("bankAccount", configurationManager.getStringConfigValue(Configuration.event(ev), ConfigurationKeys.BANK_ACCOUNT_NR).orElse(""));
 			model.addAttribute("expires", ZonedDateTime.ofInstant(ticketReservation.getValidity().toInstant(), ev.getZoneId()));
 			model.addAttribute("event", ev);
 			return "/event/reservation-waiting-for-payment";

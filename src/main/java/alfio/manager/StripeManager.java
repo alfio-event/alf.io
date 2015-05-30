@@ -19,6 +19,7 @@ package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.system.Configuration;
 import alfio.repository.TicketRepository;
 import com.stripe.exception.*;
 import com.stripe.model.Charge;
@@ -59,11 +60,11 @@ public class StripeManager {
     }
 
     private String getSecretKey() {
-        return configurationManager.getRequiredValue(STRIPE_SECRET_KEY);
+        return configurationManager.getRequiredValue(Configuration.system(), STRIPE_SECRET_KEY);
     }
 
     public String getPublicKey() {
-        return configurationManager.getRequiredValue(STRIPE_PUBLIC_KEY);
+        return configurationManager.getRequiredValue(Configuration.system(), STRIPE_PUBLIC_KEY);
     }
 
     /**

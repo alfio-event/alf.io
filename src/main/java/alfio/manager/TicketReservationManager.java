@@ -26,6 +26,7 @@ import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.TicketWithStatistic;
+import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
@@ -369,7 +370,7 @@ public class TicketReservationManager {
 		ZonedDateTime eventBegin = event.getBegin();
 		int daysToBegin = Period.between(now.toLocalDate(), eventBegin.toLocalDate()).getDays();
 		Validate.isTrue(daysToBegin >= 0, "Cannot confirm an offline reservation after event start");
-		int waitingPeriod = configurationManager.getIntConfigValue(OFFLINE_PAYMENT_DAYS, 5);
+		int waitingPeriod = configurationManager.getIntConfigValue(Configuration.event(event), OFFLINE_PAYMENT_DAYS, 5);
 		return Math.min(daysToBegin, waitingPeriod);
 	}
 
@@ -591,18 +592,18 @@ public class TicketReservationManager {
     }
 
 	public String reservationUrl(String reservationId, Event event) {
-		return StringUtils.removeEnd(configurationManager.getRequiredValue(ConfigurationKeys.BASE_URL), "/")
+		return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.event(event), ConfigurationKeys.BASE_URL), "/")
 				+ "/event/" + event.getShortName() + "/reservation/" + reservationId;
 	}
 
 	public String ticketUrl(String reservationId, Event event, String ticketId) {
-		return StringUtils.removeEnd(configurationManager.getRequiredValue(ConfigurationKeys.BASE_URL), "/")
+		return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.event(event), ConfigurationKeys.BASE_URL), "/")
 				+ "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/" + ticketId;
 	}
 
 
 	public int maxAmountOfTickets() {
-        return configurationManager.getIntConfigValue(ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
+        return configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
 	}
 	
 	public Optional<TicketReservation> findById(String reservationId) {
@@ -675,7 +676,7 @@ public class TicketReservationManager {
 	}
 
 	public Optional<String> getVAT() {
-		return configurationManager.getStringConfigValue(ConfigurationKeys.VAT_NR);
+		return configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.VAT_NR);
 	}
 
 	public void updateTicketOwner(Ticket ticket,
@@ -769,7 +770,7 @@ public class TicketReservationManager {
 	}
 
 	void sendReminderForOfflinePayments() {
-		Date expiration = truncate(addHours(new Date(), configurationManager.getIntConfigValue(OFFLINE_REMINDER_HOURS, 24)), Calendar.DATE);
+		Date expiration = truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.system(), OFFLINE_REMINDER_HOURS, 24)), Calendar.DATE);
 		ticketReservationRepository.findAllOfflinePaymentReservationForNotification(expiration).stream()
 				.map(reservation -> {
 					Optional<Ticket> ticket = ticketRepository.findTicketsInReservation(reservation.getId()).stream().findFirst();
@@ -791,7 +792,7 @@ public class TicketReservationManager {
 	}
 
     void sendReminderForTicketAssignment() {
-        int daysBeforeStart = configurationManager.getIntConfigValue(ASSIGNMENT_REMINDER_START, 10);
+        int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.system(), ASSIGNMENT_REMINDER_START, 10);
 		eventRepository.findAll().stream()
 				.filter(e -> {
 					int days = Period.between(ZonedDateTime.now(e.getZoneId()).toLocalDate(), e.getBegin().toLocalDate()).getDays();
@@ -807,7 +808,7 @@ public class TicketReservationManager {
             requiresNewTransactionTemplate.execute(status -> {
                 Event event = p.getLeft();
                 ZoneId eventZoneId = event.getZoneId();
-                int quietPeriod = configurationManager.getIntConfigValue(ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL, 3);
+                int quietPeriod = configurationManager.getIntConfigValue(Configuration.event(event), ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL, 3);
                 p.getRight().stream()
                         .map(id -> findByIdForNotification(id, eventZoneId, quietPeriod))
                         .filter(Optional::isPresent)
@@ -836,7 +837,7 @@ public class TicketReservationManager {
 	}
 
 	public String getShortReservationID(String reservationId) {
-		return StringUtils.substring(reservationId, 0, configurationManager.getIntConfigValue(PARTIAL_RESERVATION_ID_LENGTH, 8)).toUpperCase();
+		return StringUtils.substring(reservationId, 0, configurationManager.getIntConfigValue(Configuration.system(), PARTIAL_RESERVATION_ID_LENGTH, 8)).toUpperCase();
 	}
 
 	public int countAvailableTickets(Event event, TicketCategory category) {

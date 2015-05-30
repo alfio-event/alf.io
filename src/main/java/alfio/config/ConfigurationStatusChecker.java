@@ -17,6 +17,7 @@
 package alfio.config;
 
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.system.Configuration;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.PasswordGenerator;
@@ -56,7 +57,7 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
-        boolean initCompleted = configurationManager.getBooleanConfigValue(INIT_COMPLETED.getValue(), false);
+        boolean initCompleted = configurationManager.getBooleanConfigValue(Configuration.system(), INIT_COMPLETED.getValue(), false);
         if (!initCompleted) {
             String adminPassword = PasswordGenerator.generateRandomPassword();
             userRepository.create("admin", passwordEncoder.encode(adminPassword), "The", "Administrator", "admin@localhost", true);

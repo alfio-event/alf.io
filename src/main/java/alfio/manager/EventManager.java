@@ -24,6 +24,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.modification.*;
+import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
@@ -579,7 +580,7 @@ public class EventManager {
     }
 
     public String getEventUrl(Event event) {
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(ConfigurationKeys.BASE_URL), "/") + "/event/" + event.getShortName() + "/";
+        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.event(event), ConfigurationKeys.BASE_URL), "/") + "/event/" + event.getShortName() + "/";
     }
 
     public List<Ticket> findAllConfirmedTickets(String eventName, String username) {

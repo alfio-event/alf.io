@@ -17,6 +17,7 @@
 package alfio.controller;
 
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -41,7 +42,7 @@ public class DynamicResourcesController {
     @RequestMapping("/resources/js/google-analytics")
     public void getGoogleAnalyticsScript(HttpServletResponse response) throws IOException {
         response.setContentType("application/javascript");
-        final Optional<String> id = configurationManager.getStringConfigValue(ConfigurationKeys.GOOGLE_ANALYTICS_KEY);
+        final Optional<String> id = configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.GOOGLE_ANALYTICS_KEY);
         response.getWriter().write(id.map(x -> String.format(GOOGLE_ANALYTICS_SCRIPT, x)).orElse(EMPTY));
     }
 }

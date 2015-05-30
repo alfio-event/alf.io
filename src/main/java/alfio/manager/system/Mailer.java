@@ -16,13 +16,14 @@
  */
 package alfio.manager.system;
 
+import alfio.model.Event;
 import lombok.Data;
 
 import java.util.Optional;
 
 public interface Mailer {
 
-	void send(String eventName, String to, String subject, String text, Optional<String> html, Attachment... attachment);
+	void send(Event event, String to, String subject, String text, Optional<String> html, Attachment... attachment);
 
 	@Data
 	class Attachment {

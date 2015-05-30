@@ -18,6 +18,7 @@ package alfio.manager.location;
 
 import alfio.config.Initializer;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import com.google.maps.GeoApiContext;
 import com.google.maps.GeocodingApi;
@@ -58,7 +59,7 @@ public class DefaultLocationManager implements LocationManager {
     private GeoApiContext getApiContext() {
         GeoApiContext ctx = CTX.get();
         if(ctx == null) {
-            ctx = new GeoApiContext().setApiKey(configurationManager.getRequiredValue(ConfigurationKeys.MAPS_SERVER_API_KEY));
+            ctx = new GeoApiContext().setApiKey(configurationManager.getRequiredValue(Configuration.system(), ConfigurationKeys.MAPS_SERVER_API_KEY));
             CTX.compareAndSet(null, ctx);
         }
         return CTX.get();

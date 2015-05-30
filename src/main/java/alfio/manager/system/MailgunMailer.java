@@ -16,6 +16,9 @@
  */
 package alfio.manager.system;
 
+import alfio.model.Event;
+import alfio.model.system.Configuration;
+import alfio.model.system.Configuration.ConfigurationPath;
 import alfio.model.system.ConfigurationKeys;
 import com.squareup.okhttp.*;
 import lombok.AllArgsConstructor;
@@ -35,18 +38,20 @@ class MailgunMailer implements Mailer {
 	private final ConfigurationManager configurationManager;
 
 	
-	private RequestBody prepareBody(String eventName, String to, String subject, String text,
+	private RequestBody prepareBody(Event event, String to, String subject, String text,
 			Optional<String> html, Attachment... attachments)
 			throws IOException {
 
-		String from = eventName + " <" + configurationManager.getRequiredValue(ConfigurationKeys.MAILGUN_FROM) +">";
+		ConfigurationPath configurationPath = Configuration.event(event);
+
+		String from = event.getShortName() + " <" + configurationManager.getRequiredValue(configurationPath, ConfigurationKeys.MAILGUN_FROM) +">";
 
 		if (ArrayUtils.isEmpty(attachments)) {
 			FormEncodingBuilder builder = new FormEncodingBuilder()
 					.add("from", from).add("to", to).add("subject", subject)
 					.add("text", text);
 
-            String replyTo = configurationManager.getStringConfigValue(ConfigurationKeys.MAIL_REPLY_TO, "");
+            String replyTo = configurationManager.getStringConfigValue(configurationPath, ConfigurationKeys.MAIL_REPLY_TO, "");
             if(StringUtils.isNotBlank(replyTo)) {
                 builder.add("h:Reply-To", replyTo);
             }
@@ -77,17 +82,17 @@ class MailgunMailer implements Mailer {
 	}
 
 	@Override
-	public void send(String eventName, String to, String subject, String text,
+	public void send(Event event, String to, String subject, String text,
 			Optional<String> html, Attachment... attachment) {
 
 		String apiKey = configurationManager
-				.getRequiredValue(ConfigurationKeys.MAILGUN_KEY);
+				.getRequiredValue(Configuration.event(event), ConfigurationKeys.MAILGUN_KEY);
 		String domain = configurationManager
-				.getRequiredValue(ConfigurationKeys.MAILGUN_DOMAIN);
+				.getRequiredValue(Configuration.event(event), ConfigurationKeys.MAILGUN_DOMAIN);
 
 		try {
 
-			RequestBody formBody = prepareBody(eventName, to, subject, text, html,
+			RequestBody formBody = prepareBody(event, to, subject, text, html,
 					attachment);
 
 			Request request = new Request.Builder()

@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.SpecialPrice;
+import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.SpecialPriceRepository;
 import lombok.extern.log4j.Log4j2;
@@ -26,9 +27,6 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Class SpecialPriceTokenGenerator.
@@ -47,7 +45,6 @@ public class SpecialPriceTokenGenerator {
             '5', '6', '7', '8', '9'
     };
 
-    private final AtomicReference<Integer> codeLength = new AtomicReference<>();
     private final SpecialPriceRepository specialPriceRepository;
     private final ConfigurationManager configurationManager;
 
@@ -69,10 +66,14 @@ public class SpecialPriceTokenGenerator {
     }
 
     private void generateCode(SpecialPrice specialPrice) {
+
+        //TODO: get Event from categoryId present in specialPrice
+        int maxLength = configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.SPECIAL_PRICE_CODE_LENGTH, 6);
+
         while (true) {
             try {
                 log.debug("generate code for special price with id {}", specialPrice.getId());
-                specialPriceRepository.updateCode(nextValidCode(), specialPrice.getId());
+                specialPriceRepository.updateCode(nextValidCode(maxLength), specialPrice.getId());
                 log.debug("done.");
                 return;
             } catch (DataAccessException e) {
@@ -81,25 +82,18 @@ public class SpecialPriceTokenGenerator {
         }
     }
 
-    private String nextValidCode() {
+    private String nextValidCode(int maxLength) {
         while (true) {
-            String code = generateRandomCode();
+            String code = generateRandomCode(maxLength);
             if (specialPriceRepository.countByCode(code) == 0) {
                 return code;
             }
         }
     }
 
-    private String generateRandomCode() {
-        return RandomStringUtils.random(getCodeLength(), ADMITTED_CHARACTERS);
+    private String generateRandomCode(int maxLength) {
+        return RandomStringUtils.random(maxLength, ADMITTED_CHARACTERS);
     }
 
-    private int getCodeLength() {
-        Integer length = codeLength.get();
-        if (!Optional.ofNullable(length).isPresent()) {
-            codeLength.compareAndSet(length, configurationManager.getIntConfigValue(ConfigurationKeys.SPECIAL_PRICE_CODE_LENGTH, 6));
-            length = codeLength.get();
-        }
-        return length;
-    }
+
 }
