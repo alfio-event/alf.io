@@ -79,7 +79,7 @@ public class WebSecurityConfig {
             }).sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and().authorizeRequests()
             .antMatchers(ADMIN_API + "/check-in/**").hasRole(OPERATOR)
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasRole(OPERATOR)
+            .antMatchers(HttpMethod.GET, ADMIN_API + "/events/**").hasRole(OPERATOR)
             .antMatchers("/**").denyAll()
             .and().httpBasic();
         }
