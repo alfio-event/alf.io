@@ -77,7 +77,8 @@ public class WebSecurityConfig {
             http.requestMatcher((request) -> {
                 return request.getHeader("Authorization") != null;
             }).sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and().authorizeRequests()
+            .and().csrf().disable()
+            .authorizeRequests()
             .antMatchers(ADMIN_API + "/check-in/**").hasRole(OPERATOR)
             .antMatchers(HttpMethod.GET, ADMIN_API + "/events/**").hasRole(OPERATOR)
             .antMatchers("/**").denyAll()
