@@ -20,6 +20,27 @@ plugins {
 apply plugin: 'war'
 apply plugin: 'spring-boot'
 
+//as pointed out by @facundofarias, we should check minimum javac version in order to avoid problems with type inference mechanism during compilation
+task validate {
+    //check JDK version
+    def javaVersion = JavaVersion.current();
+    if (!javaVersion.isJava8Compatible()) {
+        throw new GradleException("A Java JDK 8+ is required to build the project.")
+    }
+    //check build number, but only if current java version is 8
+    if (javaVersion == JavaVersion.VERSION_1_8) {
+        def currentVersion = System.getProperty("java.version")
+        def matcher = java.util.regex.Pattern.compile("1(\\.\\d+){2}_(\\d+)").matcher(currentVersion)
+        if (!matcher.matches()) {
+            throw new GradleException(currentVersion + " is not a recognized java version. Please report this issue.")
+        }
+        def buildNumber = Integer.parseInt(matcher.group(2))
+        if(buildNumber < 25) {
+            throw new GradleException(currentVersion + " is not a supported JDK version. Minimum version is 1.8.0b25. Please update your local JDK.")
+        }
+    }
+}
+
 war {
     //generic excludes
 
