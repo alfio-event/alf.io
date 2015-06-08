@@ -43,6 +43,7 @@ public class TicketReservation {
 	private final PaymentProxy paymentMethod;
 	private final Boolean reminderSent;
 	private final Integer promoCodeDiscountId;
+	private final boolean automatic;
 
 	public TicketReservation(@Column("id") String id,
                              @Column("validity") Date validity,
@@ -54,7 +55,8 @@ public class TicketReservation {
                              @Column("latest_reminder_ts") ZonedDateTime latestReminder,
                              @Column("payment_method") PaymentProxy paymentMethod,
                              @Column("offline_payment_reminder_sent") Boolean reminderSent,
-                             @Column("promo_code_id_fk") Integer promoCodeDiscountId) {
+                             @Column("promo_code_id_fk") Integer promoCodeDiscountId,
+							 @Column("automatic") boolean automatic) {
 		this.id = id;
 		this.validity = validity;
 		this.status = status;
@@ -66,6 +68,7 @@ public class TicketReservation {
         this.paymentMethod = paymentMethod;
 		this.reminderSent = reminderSent;
 		this.promoCodeDiscountId = promoCodeDiscountId;
+		this.automatic = automatic;
 	}
 
     public boolean isStuck() {
