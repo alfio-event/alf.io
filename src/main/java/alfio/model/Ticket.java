@@ -37,10 +37,10 @@ import java.util.Set;
 public class Ticket {
 
     public enum TicketStatus {
-        FREE, PENDING, TO_BE_PAID, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED, INVALIDATED
+        FREE, PENDING, TO_BE_PAID, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED, INVALIDATED, WAITING_QUEUE
     }
 
-    private static final Set<TicketStatus> SOLD_STATUSES = EnumSet.of(TicketStatus.TO_BE_PAID, TicketStatus.ACQUIRED, TicketStatus.CANCELLED, TicketStatus.CHECKED_IN);
+    private static final Set<TicketStatus> SOLD_STATUSES = EnumSet.of(TicketStatus.TO_BE_PAID, TicketStatus.ACQUIRED, TicketStatus.CANCELLED, TicketStatus.CHECKED_IN, TicketStatus.WAITING_QUEUE);
 
     private final int id;
     private final String uuid;
@@ -144,7 +144,7 @@ public class Ticket {
     public boolean isCheckedIn() {
         return status == TicketStatus.CHECKED_IN;
     }
-    
+
     private static String hmacSHA256Base64(String key, String code) {
     	try {
     		Mac hmac = Mac.getInstance("HmacSHA256");

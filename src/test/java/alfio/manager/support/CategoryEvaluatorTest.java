@@ -41,19 +41,19 @@ public class CategoryEvaluatorTest {{
         when(tcr.getById(eq(categoryId), eq(eventId))).thenReturn(category);
         it.should("allow a cancellation of a ticket if it belongs to a public category", expect -> {
             when(category.isAccessRestricted()).thenReturn(false);
-            expect.that(CategoryEvaluator.isTicketCancellable(tcr, ticket)).is(true);
+            expect.that(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket)).is(true);
         });
 
         it.should("not allow a cancellation of a ticket if it belongs to a restricted category and there aren't any unbounded categories", expect -> {
             when(category.isAccessRestricted()).thenReturn(true);
             when(tcr.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(0);
-            expect.that(CategoryEvaluator.isTicketCancellable(tcr, ticket)).is(false);
+            expect.that(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket)).is(false);
         });
 
         it.should("allow a cancellation of a ticket if it belongs to a restricted category and there is at least one unbounded category", expect -> {
             when(category.isAccessRestricted()).thenReturn(true);
             when(tcr.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(1);
-            expect.that(CategoryEvaluator.isTicketCancellable(tcr, ticket)).is(true);
+            expect.that(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket)).is(true);
         });
     });
 

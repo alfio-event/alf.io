@@ -78,6 +78,7 @@ public class TicketReservationManager {
 	public static final int RESERVATION_MINUTE = 25;
     private static final String STUCK_TICKETS_MSG = "there are stuck tickets for the event %s. Please check admin area.";
     private static final String STUCK_TICKETS_SUBJECT = "warning: stuck tickets found";
+    public static final String NOT_YET_PAID_TRANSACTION_ID = "not-paid";
 
     private final EventRepository eventRepository;
 	private final OrganizationRepository organizationRepository;
@@ -93,6 +94,7 @@ public class TicketReservationManager {
 	private final MessageSource messageSource;
 	private final TemplateManager templateManager;
 	private final TransactionTemplate requiresNewTransactionTemplate;
+	private final WaitingQueueManager waitingQueueManager;
 
 
     public static class NotEnoughTicketsException extends RuntimeException {
@@ -128,7 +130,8 @@ public class TicketReservationManager {
 									NotificationManager notificationManager,
 									MessageSource messageSource,
 									TemplateManager templateManager,
-									PlatformTransactionManager transactionManager) {
+									PlatformTransactionManager transactionManager,
+									WaitingQueueManager waitingQueueManager) {
 		this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -142,6 +145,7 @@ public class TicketReservationManager {
 		this.notificationManager = notificationManager;
 		this.messageSource = messageSource;
 		this.templateManager = templateManager;
+		this.waitingQueueManager = waitingQueueManager;
 		this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
 	}
 	
@@ -248,15 +252,15 @@ public class TicketReservationManager {
 						break;
 					case OFFLINE:
 						transitionToOfflinePayment(event, reservationId, email, fullName, billingAddress);
-						return PaymentResult.successful("not-paid");
+						return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
 					case ON_SITE:
-						paymentResult = PaymentResult.successful("not-paid");
+						paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
 						break;
 					default:
 						throw new IllegalArgumentException("Payment proxy "+paymentProxy+ " not recognized");
 				}
 			} else {
-                paymentResult = PaymentResult.successful("not-paid");
+                paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
             }
             completeReservation(reservationId, email, fullName, billingAddress, specialPriceSessionId, paymentProxy);
             return paymentResult;
@@ -422,6 +426,7 @@ public class TicketReservationManager {
 		ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
 		int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, billingAddress, timestamp, paymentProxy.toString());
 		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
+        waitingQueueManager.fireReservationConfirmed(reservationId);
 	}
 
 	void cleanupExpiredReservations(Date expirationDate) {
@@ -434,6 +439,7 @@ public class TicketReservationManager {
 		ticketRepository.resetCategoryIdForUnboundedCategories(expiredReservationIds);
 		ticketRepository.freeFromReservation(expiredReservationIds);
 		ticketReservationRepository.remove(expiredReservationIds);
+        waitingQueueManager.cleanExpiredReservations(expiredReservationIds);
 	}
 
     void cleanupExpiredOfflineReservations(Date expirationDate) {
@@ -631,6 +637,7 @@ public class TicketReservationManager {
 		int updatedTickets = ticketRepository.freeFromReservation(reservationIdsToRemove);
 		Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
         deleteReservations(reservationIdsToRemove);
+        waitingQueueManager.fireReservationExpired(reservationId);
 	}
 
     private void deleteReservations(List<String> reservationIdsToRemove) {
@@ -849,7 +856,7 @@ public class TicketReservationManager {
 
 	public void releaseTicket(Event event, TicketReservation ticketReservation, Ticket ticket) {
         TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
-		if(!CategoryEvaluator.isTicketCancellable(ticketCategoryRepository, ticket)) {
+		if(!CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket)) {
             throw new IllegalStateException("Cannot release reserved tickets");
         }
 		int result = ticketRepository.releaseTicket(ticketReservation.getId(), event.getId(), ticket.getId());

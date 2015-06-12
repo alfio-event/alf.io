@@ -596,7 +596,7 @@ public class EventManager {
     }
 
     public Function<Ticket, Boolean> checkTicketCancellationPrerequisites() {
-        return CategoryEvaluator.isTicketCancellable(ticketCategoryRepository);
+        return CategoryEvaluator.ticketCancellationAvailabilityChecker(ticketCategoryRepository);
     }
 
     @Data

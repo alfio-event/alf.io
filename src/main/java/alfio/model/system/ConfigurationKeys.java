@@ -71,7 +71,9 @@ public enum ConfigurationKeys {
     
     GOOGLE_ANALYTICS_KEY("Google Analytics tracking ID", false, SettingCategory.GENERAL, ComponentType.TEXT),
 
-    ALLOW_FREE_TICKETS_CANCELLATION("Allow cancellation for free tickets", false, SettingCategory.GENERAL, ComponentType.BOOLEAN);
+    ALLOW_FREE_TICKETS_CANCELLATION("Allow cancellation for free tickets", false, SettingCategory.GENERAL, ComponentType.BOOLEAN),
+
+    ENABLE_WAITING_QUEUE("Enable waiting queue", false, SettingCategory.GENERAL, ComponentType.BOOLEAN);
 
     @Getter
     public enum SettingCategory {

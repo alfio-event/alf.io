@@ -25,13 +25,12 @@ public final class CategoryEvaluator {
     private CategoryEvaluator() {
     }
 
-    public static Function<Ticket, Boolean> isTicketCancellable(TicketCategoryRepository ticketCategoryRepository) {
-        return ticket -> {
-            return !ticketCategoryRepository.getById(ticket.getCategoryId(), ticket.getEventId()).isAccessRestricted() || ticketCategoryRepository.countUnboundedCategoriesByEventId(ticket.getEventId()) > 0;
-        };
+    public static Function<Ticket, Boolean> ticketCancellationAvailabilityChecker(TicketCategoryRepository ticketCategoryRepository) {
+        return ticket -> !ticketCategoryRepository.getById(ticket.getCategoryId(), ticket.getEventId()).isAccessRestricted()
+                         || ticketCategoryRepository.countUnboundedCategoriesByEventId(ticket.getEventId()) > 0;
     }
 
-    public static boolean isTicketCancellable(TicketCategoryRepository ticketCategoryRepository, Ticket ticket) {
-        return isTicketCancellable(ticketCategoryRepository).apply(ticket);
+    public static boolean isTicketCancellationAvailable(TicketCategoryRepository ticketCategoryRepository, Ticket ticket) {
+        return ticketCancellationAvailabilityChecker(ticketCategoryRepository).apply(ticket);
     }
 }
