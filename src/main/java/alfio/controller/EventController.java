@@ -38,6 +38,10 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
 import alfio.util.ValidationResult;
+import biweekly.ICalVersion;
+import biweekly.ICalendar;
+import biweekly.component.VEvent;
+import biweekly.io.text.ICalWriter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,9 +52,13 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -204,6 +212,50 @@ public class EventController {
 			.addAttribute("forwardButtonDisabled", t.stream().noneMatch(SaleableTicketCategory::getSaleable));
 		model.asMap().putIfAbsent("hasErrors", false);//
 		return "/event/show-event";
+	}
+
+	@RequestMapping(value = "/event/{eventName}/calendar", method = RequestMethod.GET)
+	public void calendar(@PathVariable("eventName") String eventName, @RequestParam(value = "type", required = false) String calendarType, HttpServletResponse response) throws IOException {
+		Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+		if (!event.isPresent()) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+
+		//meh
+		Event ev = event.get();
+
+		if("google".equals(calendarType)) {
+			//format described at http://stackoverflow.com/a/19867654
+			// sprop does not seems to have any effect http://useroffline.blogspot.ch/2009/06/making-google-calendar-link.html
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyMMdd'T'HHmmss");
+			String urlToRedirect = UriComponentsBuilder.fromUriString("https://www.google.com/calendar/event")
+					.queryParam("action", "TEMPLATE")
+					.queryParam("dates", ev.getBegin().format(formatter) + "/" + ev.getEnd().format(formatter))
+					.queryParam("ctz", ev.getTimeZone())
+					.queryParam("text", ev.getShortName())
+					.queryParam("details", ev.getDescription())
+					.queryParam("location", ev.getLocation())
+					.toUriString();
+			response.sendRedirect(urlToRedirect);
+		} else {
+			//the dates will be UTC in the ical file, no TZ is specified (google calendar ignored my first try)
+			ICalendar ical = new ICalendar();
+			VEvent vEvent = new VEvent();
+			vEvent.setSummary(ev.getShortName());
+			vEvent.setDescription(ev.getDescription());
+			vEvent.setLocation(ev.getLocation());
+			vEvent.setDateStart(Date.from(ev.getBegin().toInstant()));
+			vEvent.setDateEnd(Date.from(ev.getEnd().toInstant()));
+			vEvent.setUrl(ev.getWebsiteUrl());
+			ical.addEvent(vEvent);
+			ICalWriter writer = new ICalWriter(response.getWriter(), ICalVersion.V1_0);
+
+			response.setContentType("text/calendar");
+			response.setHeader("Content-Disposition", "inline; filename=\"calendar.ics\"");
+
+			writer.write(ical);
+		}
 	}
 	
 	
