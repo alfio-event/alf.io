@@ -44,6 +44,7 @@ import static java.util.stream.Collectors.toList;
 @Component
 public class UserManager {
 
+    public static final String ADMIN_USERNAME = "admin";
     private static final Function<Integer, Integer> ID_EVALUATOR = id -> Optional.ofNullable(id).orElse(Integer.MIN_VALUE);
     private final AuthorityRepository authorityRepository;
     private final OrganizationRepository organizationRepository;

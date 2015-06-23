@@ -39,6 +39,7 @@ public enum ConfigurationKeys {
     MAX_AMOUNT_OF_TICKETS_BY_RESERVATION("Max amount of tickets", false, SettingCategory.GENERAL, ComponentType.TEXT),
     ASSIGNMENT_REMINDER_START("How many days before the event should be sent a reminder to the users about Tickets assignment? (default: 10 days)", false, SettingCategory.GENERAL, ComponentType.TEXT),
     ASSIGNMENT_REMINDER_INTERVAL("How long should be the 'quiet period' (in days) between the reminders? (default: 3 days)", false, SettingCategory.GENERAL, ComponentType.TEXT),
+    RESERVATION_TIMEOUT("The amount of time, in MINUTES, that the user have to complete the reservation process (default: 25 min)", false, SettingCategory.GENERAL, ComponentType.TEXT),
 
     //
     MAILER_TYPE("Mailer type (if not set, default will be smtp)", false, SettingCategory.MAIL, ComponentType.TEXT),//valid values: smtp | mailgun
@@ -73,7 +74,8 @@ public enum ConfigurationKeys {
 
     ALLOW_FREE_TICKETS_CANCELLATION("Allow cancellation for free tickets", false, SettingCategory.GENERAL, ComponentType.BOOLEAN),
 
-    ENABLE_WAITING_QUEUE("Enable waiting queue", false, SettingCategory.GENERAL, ComponentType.BOOLEAN);
+    ENABLE_WAITING_QUEUE("Enable waiting queue", false, SettingCategory.GENERAL, ComponentType.BOOLEAN),
+    WAITING_QUEUE_RESERVATION_TIMEOUT("The maximum time, in hours, before the \"waiting queue\" reservation would expire (default: 4)", false, SettingCategory.GENERAL, ComponentType.TEXT);
 
     @Getter
     public enum SettingCategory {

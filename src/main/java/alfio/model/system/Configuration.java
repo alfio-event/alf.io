@@ -18,12 +18,13 @@ package alfio.model.system;
 
 import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import alfio.model.Event;
-import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.util.Optional;
 
 @Getter
+@EqualsAndHashCode
 public class Configuration {
 
     private final int id;
@@ -59,6 +60,7 @@ public class Configuration {
         Optional<ConfigurationPath> parent();
     }
 
+    @EqualsAndHashCode
     private static class SystemConfigurationPath implements  ConfigurationPath {
         @Override
         public ConfigurationPathLevel pathLevel() {
@@ -71,6 +73,7 @@ public class Configuration {
         }
     }
 
+    @EqualsAndHashCode
     private static class OrganizationConfigurationPath implements ConfigurationPath {
 
         private final int id;
@@ -90,6 +93,7 @@ public class Configuration {
         }
     }
 
+    @EqualsAndHashCode
     private static class EventConfigurationPath implements ConfigurationPath {
 
         private final int organizationId;
@@ -112,6 +116,7 @@ public class Configuration {
         }
     }
 
+    @EqualsAndHashCode
     private static class CategoryConfigurationPath implements ConfigurationPath {
 
         private final int organizationId;

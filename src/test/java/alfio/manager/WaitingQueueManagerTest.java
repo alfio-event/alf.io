@@ -16,23 +16,36 @@
  */
 package alfio.manager;
 
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
+import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
+import alfio.util.TemplateManager;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
+import org.springframework.context.MessageSource;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @RunWith(JunitSuiteRunner.class)
 public class WaitingQueueManagerTest {{
     describe("basicOperations", it -> {
         WaitingQueueRepository waitingQueueRepository = it.usesMock(WaitingQueueRepository.class);
-        WaitingQueueManager manager = new WaitingQueueManager(waitingQueueRepository);
+        EventManager eventManager = it.usesMock(EventManager.class);
+        TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
+        TicketCategoryRepository ticketCategoryRepository = it.usesMock(TicketCategoryRepository.class);
+        ConfigurationManager configurationManager = it.usesMock(ConfigurationManager.class);
+
+        WaitingQueueManager manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager);
         String reservationId = "reservation-id";
         it.should("handle a reservation confirmation", expect -> {
             manager.fireReservationConfirmed(reservationId);
@@ -47,5 +60,28 @@ public class WaitingQueueManagerTest {{
             manager.cleanExpiredReservations(reservationIds);
             verify(waitingQueueRepository).bulkUpdateExpiredReservations(eq(reservationIds));
         });
+        it.should("revert tickets to free if there isn't any subscriber", expect -> {
+            Event event = it.usesMock(Event.class);
+            int eventId = 1;
+            when(event.getId()).thenReturn(eventId);
+            when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(0);
+            when(ticketRepository.countWaiting(eq(eventId))).thenReturn(1);
+            manager.distributeSeats(event);
+            verify(waitingQueueRepository).countWaitingPeople(eq(eventId));
+            verify(ticketRepository).countWaiting(eq(eventId));
+            verify(ticketRepository).revertToFree(eq(eventId));
+        });
+        it.should("doesn't do anything if there are 0 subscribers and 0 waiting tickets", expect -> {
+            Event event = it.usesMock(Event.class);
+            int eventId = 1;
+            when(event.getId()).thenReturn(eventId);
+            when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(0);
+            when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
+            manager.distributeSeats(event);
+            verify(waitingQueueRepository).countWaitingPeople(eq(eventId));
+            verify(ticketRepository).countWaiting(eq(eventId));
+            verify(ticketRepository, never()).revertToFree(eq(eventId));
+        });
+        it.completesWith(() -> verifyNoMoreInteractions(waitingQueueRepository, eventManager, ticketRepository));
     });
 }}

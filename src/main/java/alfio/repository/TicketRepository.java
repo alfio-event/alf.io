@@ -29,16 +29,18 @@ import java.util.List;
 public interface TicketRepository {
 
 	String CONFIRMED = "'ACQUIRED', 'CHECKED_IN', 'TO_BE_PAID'";
+    String FREE = "FREE";
+    String RELEASED = "RELEASED";
 
 	@Query(type = QueryType.TEMPLATE, value = "insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts)"
 			+ "values(:uuid, :creation, :categoryId, :eventId, :status, :originalPrice, :paidPrice)")
 	String bulkTicketInitialization();
 
-	@Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null order by id limit :amount for update")
-	List<Integer> selectTicketInCategoryForUpdate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId,	@Bind("amount") int amount);
+	@Query("select id from ticket where status = :requiredStatus and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null order by id limit :amount for update")
+	List<Integer> selectTicketInCategoryForUpdate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId,	@Bind("amount") int amount, @Bind("requiredStatus") String requiredStatus);
 
-	@Query("select id from ticket where status = 'FREE' and category_id is null and event_id = :eventId and tickets_reservation_id is null order by id limit :amount for update")
-	List<Integer> selectNotAllocatedTicketsForUpdate(@Bind("eventId") int eventId, @Bind("amount") int amount);
+	@Query("select id from ticket where status = :requiredStatus and category_id is null and event_id = :eventId and tickets_reservation_id is null order by id limit :amount for update")
+	List<Integer> selectNotAllocatedTicketsForUpdate(@Bind("eventId") int eventId, @Bind("amount") int amount, @Bind("requiredStatus") String requiredStatus);
 
     @Query("select id from ticket where status = 'FREE' and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null order by id desc limit :amount for update")
     List<Integer> lockTicketsToInvalidate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId,	@Bind("amount") int amount);
@@ -151,7 +153,16 @@ public interface TicketRepository {
     @Query("select distinct tickets_reservation_id from ticket where event_id = :eventId and status in('ACQUIRED', 'TO_BE_PAID') and (full_name is null or email_address is null)")
     List<String> findAllReservationsConfirmedButNotAssigned(@Bind("eventId") int eventId);
 
-	@Query("update ticket set status = 'FREE', tickets_reservation_id = null where id = :ticketId and status = 'ACQUIRED' and tickets_reservation_id = :reservationId and event_id = :eventId")
-	int releaseTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
+    @Query("update ticket set status = 'FREE', tickets_reservation_id = null where id = :ticketId and status = 'ACQUIRED' and tickets_reservation_id = :reservationId and event_id = :eventId")
+    int releaseTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
+
+    @Query("select count(*) from ticket where status = 'RELEASED' and event_id = :eventId")
+	Integer countWaiting(@Bind("eventId") int eventId);
+
+    @Query("update ticket set status = 'FREE' where status = 'RELEASED' and event_id = :eventId")
+    int revertToFree(@Bind("eventId") int eventId);
+
+    @Query("select * from ticket where status = 'RELEASED' and event_id = :eventId and tickets_reservation_id is null order by id limit :amount for update")
+    List<Ticket> selectWaitingTicketsForUpdate(@Bind("eventId") int eventId, @Bind("amount") int amount);
 
 }

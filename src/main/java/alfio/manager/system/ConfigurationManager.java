@@ -55,6 +55,10 @@ public class ConfigurationManager {
         }
     }
 
+    public boolean getBooleanConfigValue(ConfigurationPath path, ConfigurationKeys key, boolean defaultValue) {
+        return getBooleanConfigValue(path, key.getValue(), defaultValue);
+    }
+
     public boolean getBooleanConfigValue(ConfigurationPath path, String key, boolean defaultValue) {
         return optionally(() -> Boolean.parseBoolean(configurationRepository.findByKey(key).getValue()))
                 .orElse(defaultValue);

@@ -48,6 +48,9 @@ public interface TicketCategoryRepository {
     @Query("select count(*) from ticket_category where event_id = :eventId and tc_status = 'ACTIVE' and bounded = false")
     Integer countUnboundedCategoriesByEventId(@Bind("eventId") int eventId);
 
+    @Query("select * from ticket_category where event_id = :eventId and tc_status = 'ACTIVE' and bounded = false order by expiration desc")
+    List<TicketCategory> findUnboundedOrderByExpirationDesc(@Bind("eventId") int eventId);
+
     @Query("select * from ticket_category where event_id = :eventId  and tc_status = 'ACTIVE' order by inception asc, expiration asc, id asc")
     List<TicketCategory> findAllTicketCategories(@Bind("eventId") int eventId);
     

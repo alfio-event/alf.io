@@ -101,7 +101,7 @@ public class EventManagerTest {{
             when(original.getPriceInCents()).thenReturn(10);
             when(updated.getPriceInCents()).thenReturn(10);
             eventManager.handlePriceChange(10, original, updated);
-            verify(ticketRepository, never()).selectTicketInCategoryForUpdate(anyInt(), anyInt(), anyInt());
+            verify(ticketRepository, never()).selectTicketInCategoryForUpdate(anyInt(), anyInt(), anyInt(), anyString());
             verify(ticketRepository, never()).updateTicketPrice(anyInt(), anyInt(), anyInt());
         });
 
@@ -110,7 +110,7 @@ public class EventManagerTest {{
             when(updated.getPriceInCents()).thenReturn(11);
             when(updated.getMaxTickets()).thenReturn(2);
             when(updated.getId()).thenReturn(20);
-            when(ticketRepository.selectTicketInCategoryForUpdate(eq(10), eq(20), eq(2))).thenReturn(Collections.singletonList(1));
+            when(ticketRepository.selectTicketInCategoryForUpdate(eq(10), eq(20), eq(2), eq(TicketRepository.FREE))).thenReturn(Collections.singletonList(1));
             expect.exception(IllegalStateException.class, () -> eventManager.handlePriceChange(10, original, updated));
             verify(ticketRepository, never()).updateTicketPrice(anyInt(), anyInt(), anyInt());
         });
@@ -120,7 +120,7 @@ public class EventManagerTest {{
             when(updated.getPriceInCents()).thenReturn(11);
             when(updated.getMaxTickets()).thenReturn(2);
             when(updated.getId()).thenReturn(20);
-            when(ticketRepository.selectTicketInCategoryForUpdate(eq(10), eq(20), eq(2))).thenReturn(Arrays.asList(1, 2));
+            when(ticketRepository.selectTicketInCategoryForUpdate(eq(10), eq(20), eq(2), eq(TicketRepository.FREE))).thenReturn(Arrays.asList(1, 2));
             eventManager.handlePriceChange(10, original, updated);
             verify(ticketRepository, times(1)).updateTicketPrice(20, 10, 11);
         });
@@ -278,7 +278,7 @@ public class EventManagerTest {{
             int notSold = 2;
             when(ticketCategory.getMaxTickets()).thenReturn(notSold);
             List<Integer> lockedTickets = Arrays.asList(1, 2);
-            when(ticketRepository.selectTicketInCategoryForUpdate(eq(eventId), eq(categoryId), eq(notSold))).thenReturn(lockedTickets);
+            when(ticketRepository.selectTicketInCategoryForUpdate(eq(eventId), eq(categoryId), eq(notSold), eq(TicketRepository.FREE))).thenReturn(lockedTickets);
             when(ticketRepository.unbindTicketsFromCategory(eq(eventId), eq(categoryId), eq(lockedTickets))).thenReturn(notSold);
 
             eventManager.unbindTickets(eventName, categoryId, username);
@@ -287,7 +287,7 @@ public class EventManagerTest {{
             verify(ticketCategoryRepository).getById(eq(categoryId), eq(eventId));
             verify(userManager).findUserOrganizations(eq(username));
             verify(eventRepository).findByShortName(eq(eventName));
-            verify(ticketRepository).selectTicketInCategoryForUpdate(eq(eventId), eq(categoryId), eq(notSold));
+            verify(ticketRepository).selectTicketInCategoryForUpdate(eq(eventId), eq(categoryId), eq(notSold), eq(TicketRepository.FREE));
             verify(ticketRepository).unbindTicketsFromCategory(eq(eventId), eq(categoryId), eq(lockedTickets));
             verify(ticketCategoryRepository).updateSeatsAvailability(eq(categoryId), eq(0));
             verifyNoMoreInteractions(ticketCategoryRepository, userManager, eventRepository, ticketRepository);

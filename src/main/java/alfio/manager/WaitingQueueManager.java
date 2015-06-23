@@ -16,30 +16,78 @@
  */
 package alfio.manager;
 
-import alfio.model.WaitingQueueSubscription;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.*;
+import alfio.model.modification.TicketReservationModification;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
+import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
+import alfio.util.WorkingDaysAdjusters;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.ZonedDateTime;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-
-import static alfio.util.OptionalWrapper.optionally;
+import java.util.stream.Stream;
 
 @Component
 @Log4j2
 public class WaitingQueueManager {
 
     private final WaitingQueueRepository waitingQueueRepository;
+    private final TicketRepository ticketRepository;
+    private final TicketCategoryRepository ticketCategoryRepository;
+    private final ConfigurationManager configurationManager;
 
     @Autowired
-    public WaitingQueueManager(WaitingQueueRepository waitingQueueRepository) {
+    public WaitingQueueManager(WaitingQueueRepository waitingQueueRepository,
+                               TicketRepository ticketRepository,
+                               TicketCategoryRepository ticketCategoryRepository,
+                               ConfigurationManager configurationManager) {
         this.waitingQueueRepository = waitingQueueRepository;
+        this.ticketRepository = ticketRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.configurationManager = configurationManager;
     }
 
-    public Optional<WaitingQueueSubscription> getFirstWaitingSubscriber(int eventId) {
-        return optionally(() -> waitingQueueRepository.loadFirstWaiting(eventId));
+    Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeSeats(Event event) {
+        int eventId = event.getId();
+        int waitingPeople = waitingQueueRepository.countWaitingPeople(eventId);
+        int waitingTickets = ticketRepository.countWaiting(eventId);
+        if (waitingPeople == 0 && waitingTickets > 0) {
+            ticketRepository.revertToFree(eventId);
+        } else if (waitingPeople > 0 && waitingTickets > 0) {
+            return distributeAvailableSeats(event, eventId, waitingPeople, waitingTickets);
+        }
+        return Stream.empty();
+    }
+
+    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeAvailableSeats(Event event, int eventId, int waitingPeople, int waitingTickets) {
+        int availableSeats = Math.min(waitingPeople, waitingTickets);
+        log.debug("processing {} subscribers from waiting queue", availableSeats);
+        Iterator<Ticket> tickets = ticketRepository.selectWaitingTicketsForUpdate(eventId, availableSeats).iterator();
+        Optional<TicketCategory> unboundedCategory = ticketCategoryRepository.findUnboundedOrderByExpirationDesc(eventId).stream().findFirst();
+        int expirationTimeout = configurationManager.getIntConfigValue(Configuration.event(event), ConfigurationKeys.WAITING_QUEUE_RESERVATION_TIMEOUT, 4);
+        ZonedDateTime expiration = ZonedDateTime.now(event.getZoneId()).plusHours(expirationTimeout).with(WorkingDaysAdjusters.defaultWorkingDays());
+
+        return waitingQueueRepository.loadWaiting(eventId, availableSeats).stream()
+            .map(wq -> Pair.of(wq, tickets.next()))
+            .map(pair -> {
+                TicketReservationModification ticketReservation = new TicketReservationModification();
+                ticketReservation.setAmount(1);
+                Integer categoryId = Optional.ofNullable(pair.getValue().getCategoryId()).orElseGet(() -> unboundedCategory.orElseThrow(RuntimeException::new).getId());
+                ticketReservation.setTicketCategoryId(categoryId);
+                return Pair.of(pair.getLeft(), new TicketReservationWithOptionalCodeModification(ticketReservation, Optional.<SpecialPrice>empty()));
+            })
+            .map(pair -> Triple.of(pair.getKey(), pair.getValue(), expiration));
     }
 
     public void fireReservationConfirmed(String reservationId) {

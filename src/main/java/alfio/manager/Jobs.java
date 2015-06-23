@@ -34,16 +34,19 @@ public class Jobs {
     private final NotificationManager notificationManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
     private final FileUploadManager fileUploadManager;
+    private final WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
 
 	@Autowired
 	public Jobs(TicketReservationManager ticketReservationManager,
                 NotificationManager notificationManager,
                 SpecialPriceTokenGenerator specialPriceTokenGenerator,
-                FileUploadManager fileUploadManager) {
+                FileUploadManager fileUploadManager,
+                WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor) {
 		this.ticketReservationManager = ticketReservationManager;
         this.notificationManager = notificationManager;
         this.specialPriceTokenGenerator = specialPriceTokenGenerator;
         this.fileUploadManager = fileUploadManager;
+        this.waitingQueueSubscriptionProcessor = waitingQueueSubscriptionProcessor;
     }
 
 	@Scheduled(initialDelay = ONE_MINUTE, fixedDelay = THIRTY_SECONDS)
@@ -78,6 +81,11 @@ public class Jobs {
     @Scheduled(fixedRate = ONE_MINUTE)
     public void enqueueNotSentEmail() {
         notificationManager.processNotSentEmail();
+    }
+
+    @Scheduled(fixedRate = THIRTY_SECONDS)
+    public void processReleasedTickets() {
+        waitingQueueSubscriptionProcessor.handleWaitingTickets();
     }
 
     @Scheduled(fixedRate = ONE_MINUTE * 60)

@@ -20,6 +20,7 @@ import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 import java.time.ZonedDateTime;
+import java.util.Locale;
 
 @Getter
 public class WaitingQueueSubscription {
@@ -34,18 +35,25 @@ public class WaitingQueueSubscription {
     private final Status status;
     private final String fullName;
     private final String emailAddress;
+    private final String userLanguage;
 
     public WaitingQueueSubscription(@Column("id") int id,
                                     @Column("creation") ZonedDateTime creation,
                                     @Column("event_id") int eventId,
                                     @Column("status") String status,
                                     @Column("full_name") String fullName,
-                                    @Column("email_address") String emailAddress) {
+                                    @Column("email_address") String emailAddress,
+                                    @Column("user_language") String userLanguage) {
         this.id = id;
         this.creation = creation;
         this.eventId = eventId;
+        this.userLanguage = userLanguage;
         this.status = Status.valueOf(status);
         this.fullName = fullName;
         this.emailAddress = emailAddress;
+    }
+
+    public Locale getLocale() {
+        return Locale.forLanguageTag(userLanguage);
     }
 }

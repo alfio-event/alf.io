@@ -22,7 +22,8 @@ create table waiting_queue (
 	status varchar(255) not null, 
 	full_name varchar(255),
 	email_address varchar(255),
-	ticket_reservation_id varchar(255)
+	ticket_reservation_id varchar(255),
+  user_language varchar(20) not null
 );
 -- constraints
 alter table waiting_queue add constraint "wq_unique_email" unique(event_id, email_address);

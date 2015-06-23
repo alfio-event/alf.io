@@ -160,6 +160,14 @@ public class EventManager {
         return userManager.findOrganizationById(event.getOrganizationId(), username);
     }
 
+    /**
+     * Internal method used by automated jobs
+     * @return
+     */
+    Organization loadOrganizerUsingSystemPrincipal(Event event) {
+        return loadOrganizer(event, UserManager.ADMIN_USERNAME);
+    }
+
     public Event findEventByTicketCategory(TicketCategory ticketCategory) {
         return eventRepository.findById(ticketCategory.getEventId());
     }
@@ -258,7 +266,7 @@ public class EventManager {
             log.info("since all the ticket have been sold, ticket moving is not needed anymore.");
             return;
         }
-        List<Integer> lockedTickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), src.getId(), notSoldTickets);
+        List<Integer> lockedTickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), src.getId(), notSoldTickets, TicketRepository.FREE);
         int locked = lockedTickets.size();
         if(locked != notSoldTickets) {
             throw new IllegalStateException(String.format("Expected %d free tickets, got %d.", notSoldTickets, locked));
@@ -405,7 +413,7 @@ public class EventManager {
         if(original.getPriceInCents() == updated.getPriceInCents()) {
             return;
         }
-        final List<Integer> ids = ticketRepository.selectTicketInCategoryForUpdate(eventId, updated.getId(), updated.getMaxTickets());
+        final List<Integer> ids = ticketRepository.selectTicketInCategoryForUpdate(eventId, updated.getId(), updated.getMaxTickets(), TicketRepository.FREE);
         if(ids.size() < updated.getMaxTickets()) {
             throw new IllegalStateException("not enough tickets");
         }

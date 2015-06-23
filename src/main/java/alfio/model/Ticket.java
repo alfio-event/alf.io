@@ -37,10 +37,10 @@ import java.util.Set;
 public class Ticket {
 
     public enum TicketStatus {
-        FREE, PENDING, TO_BE_PAID, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED, INVALIDATED, WAITING_QUEUE
+        FREE, PENDING, TO_BE_PAID, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED, INVALIDATED, RELEASED
     }
 
-    private static final Set<TicketStatus> SOLD_STATUSES = EnumSet.of(TicketStatus.TO_BE_PAID, TicketStatus.ACQUIRED, TicketStatus.CANCELLED, TicketStatus.CHECKED_IN, TicketStatus.WAITING_QUEUE);
+    private static final Set<TicketStatus> SOLD_STATUSES = EnumSet.of(TicketStatus.TO_BE_PAID, TicketStatus.ACQUIRED, TicketStatus.CANCELLED, TicketStatus.CHECKED_IN, TicketStatus.RELEASED);
 
     private final int id;
     private final String uuid;

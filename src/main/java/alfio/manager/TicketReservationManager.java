@@ -75,7 +75,6 @@ import static org.apache.commons.lang3.time.DateUtils.truncate;
 @Log4j2
 public class TicketReservationManager {
 	
-	public static final int RESERVATION_MINUTE = 25;
     private static final String STUCK_TICKETS_MSG = "there are stuck tickets for the event %s. Please check admin area.";
     private static final String STUCK_TICKETS_SUBJECT = "warning: stuck tickets found";
     public static final String NOT_YET_PAID_TRANSACTION_ID = "not-paid";
@@ -156,26 +155,28 @@ public class TicketReservationManager {
      * @param eventId
      * @param list
      * @param reservationExpiration
+     * @param forWaitingQueue
      * @return
      */
-    public String createTicketReservation(int eventId, List<TicketReservationWithOptionalCodeModification> list, Date reservationExpiration, 
-    		Optional<String> specialPriceSessionId, 
-    		Optional<String> promotionCodeDiscount, 
-    		Locale locale) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
+    public String createTicketReservation(int eventId, List<TicketReservationWithOptionalCodeModification> list, Date reservationExpiration,
+                                          Optional<String> specialPriceSessionId,
+                                          Optional<String> promotionCodeDiscount,
+                                          Locale locale,
+                                          boolean forWaitingQueue) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
         String transactionId = UUID.randomUUID().toString();
         
         Optional<PromoCodeDiscount> discount = promotionCodeDiscount.flatMap((promoCodeDiscount) -> optionally(() -> promoCodeDiscountRepository.findPromoCodeInEvent(eventId, promoCodeDiscount)));
         
         ticketReservationRepository.createNewReservation(transactionId, reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null));
-		list.forEach(t -> reserveTicketsForCategory(eventId, specialPriceSessionId, transactionId, t, locale));
+		list.forEach(t -> reserveTicketsForCategory(eventId, specialPriceSessionId, transactionId, t, locale, forWaitingQueue));
     	return transactionId;
     }
 
-	void reserveTicketsForCategory(int eventId, Optional<String> specialPriceSessionId, String transactionId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale) {
+	void reserveTicketsForCategory(int eventId, Optional<String> specialPriceSessionId, String transactionId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale, boolean forWaitingQueue) {
 		//first check if there is another pending special price token bound to the current sessionId
 		Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), eventId, specialPriceSessionId, ticketReservation);
 
-		List<Integer> reservedForUpdate = reserveTickets(eventId, ticketReservation);
+		List<Integer> reservedForUpdate = reserveTickets(eventId, ticketReservation, forWaitingQueue);
 		int requested = ticketReservation.getAmount();
 		if (reservedForUpdate.size() != requested) {
             throw new NotEnoughTicketsException();
@@ -193,12 +194,13 @@ public class TicketReservationManager {
         }
 	}
 
-	List<Integer> reserveTickets(int eventId, TicketReservationWithOptionalCodeModification ticketReservation) {
+	List<Integer> reserveTickets(int eventId, TicketReservationWithOptionalCodeModification ticketReservation, boolean forWaitingQueue) {
 		TicketCategory category = ticketCategoryRepository.getById(ticketReservation.getTicketCategoryId(), eventId);
+        String requiredStatus = forWaitingQueue ? TicketRepository.RELEASED : TicketRepository.FREE;
 		if(category.isBounded()) {
-			return ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount());
+			return ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount(), requiredStatus);
 		}
-		return ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketReservation.getAmount());
+		return ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketReservation.getAmount(), requiredStatus);
 	}
 
 	Optional<SpecialPrice> fixToken(Optional<SpecialPrice> token, int ticketCategoryId, int eventId, Optional<String> specialPriceSessionId, TicketReservationWithOptionalCodeModification ticketReservation) {
@@ -877,4 +879,8 @@ public class TicketReservationManager {
             deleteReservations(Collections.singletonList(ticketReservation.getId()));
         }
 	}
+
+    public int getReservationTimeout(Event event) {
+        return configurationManager.getIntConfigValue(Configuration.event(event), RESERVATION_TIMEOUT, 25);
+    }
 }

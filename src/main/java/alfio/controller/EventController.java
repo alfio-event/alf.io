@@ -30,7 +30,10 @@ import alfio.model.SpecialPrice;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
-import alfio.repository.*;
+import alfio.repository.EventRepository;
+import alfio.repository.PromoCodeDiscountRepository;
+import alfio.repository.SpecialPriceRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
@@ -227,14 +230,14 @@ public class EventController {
 			return redirectToEvent;
 		}
 
-		Date expiration = DateUtils.addMinutes(new Date(), TicketReservationManager.RESERVATION_MINUTE);
+		Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event.get()));
 
 		try {
 			String reservationId = ticketReservationManager.createTicketReservation(event.get().getId(),
 					selected.get(), expiration, 
 					SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()),
 					SessionUtil.retrievePromotionCodeDiscount(request.getRequest()),
-					locale);
+					locale, false);
 			return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/book";
 		} catch (TicketReservationManager.NotEnoughTicketsException nete) {
 			bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);

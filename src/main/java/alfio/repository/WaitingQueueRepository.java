@@ -30,6 +30,9 @@ public interface WaitingQueueRepository {
     @Query("select * from waiting_queue where event_id = :eventId and status = 'WAITING' order by creation")
     List<WaitingQueueSubscription> loadAllWaiting(@Bind("eventId") int eventId);
 
+    @Query("select * from waiting_queue where event_id = :eventId and status = 'WAITING' order by creation limit :max for update")
+    List<WaitingQueueSubscription> loadWaiting(@Bind("eventId") int eventId, @Bind("max") int maxNumber);
+
     @Query("select * from waiting_queue where event_id = :eventId and status = 'WAITING' limit 1")
     WaitingQueueSubscription loadFirstWaiting(@Bind("eventId") int eventId);
 
@@ -40,5 +43,8 @@ public interface WaitingQueueRepository {
     int updateStatusByReservationId(@Bind("reservationId") String reservationId, @Bind("status") String status);
 
     @Query("update waiting_queue set status = 'EXPIRED' where ticket_reservation_id in (:ticketReservationIds)")
-    int bulkUpdateExpiredReservations(List<String> ticketReservationIds);
+    int bulkUpdateExpiredReservations(@Bind("ticketReservationIds") List<String> ticketReservationIds);
+
+    @Query("select count(*) from waiting_queue where event_id = :eventId and status = 'WAITING'")
+    Integer countWaitingPeople(@Bind("eventId") int eventId);
 }
