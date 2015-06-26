@@ -19,23 +19,30 @@ package alfio.model;
 import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
+import biweekly.ICalVersion;
+import biweekly.ICalendar;
+import biweekly.component.VEvent;
+import biweekly.io.text.ICalWriter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Getter
+@Log4j2
 public class Event {
     private final int id;
     private final String shortName;
@@ -199,6 +206,28 @@ public class Event {
                 .queryParam("details", getDescription())
                 .queryParam("location", getLocation())
                 .toUriString();
+    }
+
+    @JsonIgnore
+    public Optional<byte[]> getIcal() {
+        ICalendar ical = new ICalendar();
+        VEvent vEvent = new VEvent();
+        vEvent.setSummary(getShortName());
+        vEvent.setDescription(getDescription());
+        vEvent.setLocation(getLocation());
+        vEvent.setDateStart(Date.from(getBegin().toInstant()));
+        vEvent.setDateEnd(Date.from(getEnd().toInstant()));
+        vEvent.setUrl(getWebsiteUrl());
+        ical.addEvent(vEvent);
+        StringWriter strWriter = new StringWriter();
+        ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V1_0);
+        try {
+            writer.write(ical);
+            return Optional.of(strWriter.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            log.warn("was not able to generate iCal for event " + getShortName(), e);
+            return Optional.empty();
+        }
     }
 
 }

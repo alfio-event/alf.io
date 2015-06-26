@@ -87,14 +87,19 @@ public class NotificationManager {
     public void sendTicketByEmail(Ticket ticket, Event event, Locale locale, PartialTicketTextGenerator textBuilder, PartialTicketPDFGenerator ticketBuilder) throws DocumentException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ticketBuilder.generate(ticket).createPDF(baos);
-        Mailer.Attachment attachment = new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", baos.toByteArray(), "application/pdf");
-        String attachments = encodeAttachments(attachment);
+
+        List<Mailer.Attachment> attachments = new ArrayList<>();
+        attachments.add(new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", baos.toByteArray(), "application/pdf"));
+        event.getIcal().map(ics -> new Mailer.Attachment("calendar.ics", ics, "text/calendar")).ifPresent(attachments::add);
+
+
+        String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[] {}));
         String subject = messageSource.getMessage("ticket-email-subject", new Object[]{event.getShortName()}, locale);
         String text = textBuilder.generate(ticket);
-        String checksum = calculateChecksum(ticket.getEmail(), attachments, subject, text);
+        String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text);
         String recipient = ticket.getEmail();
         //TODO handle HTML
-        tx.execute(status -> emailMessageRepository.insert(event.getId(), recipient, subject, text, attachments, checksum, ZonedDateTime.now(UTC)));
+        tx.execute(status -> emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
         messages.offer(new EmailMessage(-1, event.getId(), WAITING.name(), recipient, subject, text, null, checksum));
     }
 

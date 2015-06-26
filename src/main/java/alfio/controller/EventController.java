@@ -56,6 +56,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -226,22 +227,15 @@ public class EventController {
 		if("google".equals(calendarType)) {
 			response.sendRedirect(ev.getGoogleCalendarUrl());
 		} else {
-			//the dates will be UTC in the ical file, no TZ is specified (google calendar ignored my first try)
-			ICalendar ical = new ICalendar();
-			VEvent vEvent = new VEvent();
-			vEvent.setSummary(ev.getShortName());
-			vEvent.setDescription(ev.getDescription());
-			vEvent.setLocation(ev.getLocation());
-			vEvent.setDateStart(Date.from(ev.getBegin().toInstant()));
-			vEvent.setDateEnd(Date.from(ev.getEnd().toInstant()));
-			vEvent.setUrl(ev.getWebsiteUrl());
-			ical.addEvent(vEvent);
-			ICalWriter writer = new ICalWriter(response.getWriter(), ICalVersion.V1_0);
-
-			response.setContentType("text/calendar");
-			response.setHeader("Content-Disposition", "inline; filename=\"calendar.ics\"");
-
-			writer.write(ical);
+			Optional<byte[]> ical = ev.getIcal();
+			//meh, checked exceptions don't work well with Function & co :(
+			if(ical.isPresent()) {
+				response.setContentType("text/calendar");
+				response.setHeader("Content-Disposition", "inline; filename=\"calendar.ics\"");
+				response.getOutputStream().write(ical.get());
+			} else {
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			}
 		}
 	}
 	
