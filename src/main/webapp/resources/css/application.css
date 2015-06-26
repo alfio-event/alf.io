@@ -89,7 +89,8 @@ body {
 }
 
 .ticket-header-col {
-	width:150px
+	width:150px;
+	vertical-align: top;
 }
 
 .payment-method-container {
