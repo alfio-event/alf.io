@@ -96,6 +96,14 @@ body {
 	width:80%;
 }
 
+.alfio-event-add-to-calendar {
+	padding-left: 13px;
+}
+
+.alfio-event-add-to-calendar > span:before {
+	content: "\00a0 "
+}
+
 @media screen and (max-width: 768px) {
 	.xs-payment-method {
 		width:100%;

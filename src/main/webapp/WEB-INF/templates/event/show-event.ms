@@ -32,6 +32,7 @@
                 {{/i18n}}
             {{/event.sameDay}}
 			<i class="fa fa-info-circle text-info tooltip-handler" title="{{#i18n}}show-event.timezone.warn [{{event.timeZone}}]{{/i18n}}"></i>
+			<div class="alfio-event-add-to-calendar"><span>{{#i18n}}show-event.add-to-calendar{{/i18n}}</span> <a href="{{request.contextPath}}/event/{{event.shortName}}/calendar/?type=google">google</a> {{#i18n}}common.or{{/i18n}} <a href="{{request.contextPath}}/event/{{event.shortName}}/calendar/">iCalendar</a></div>
         </div>
         <div><i class="fa fa-compass"></i> {{event.location}}</div>
         <div class="event-description">{{event.description}}</div>
