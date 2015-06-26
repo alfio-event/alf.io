@@ -34,6 +34,7 @@ import alfio.model.TicketReservation;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
@@ -112,22 +113,25 @@ public class ReservationController {
 								  Model model,
 								  HttpServletRequest request) {
 
-		Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
-		if (!event.isPresent()) {
+		Optional<Event> optionalEvent = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+		if (!optionalEvent.isPresent()) {
 			return "redirect:/";
 		}
 
 		Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
 		if(reservation.isPresent() && reservation.get().getStatus() == TicketReservationStatus.PENDING) {
-			OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event.get());
+            Event event = optionalEvent.get();
+            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
 			model.addAttribute("orderSummary", orderSummary);
 			model.addAttribute("reservationId", reservationId);
 			model.addAttribute("reservation", reservation.get());
 			model.addAttribute("pageTitle", "reservation-page.header.title");
-			model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event.get(), configurationManager)));
-			model.addAttribute("event", event.get());
-			if (orderSummary.getOriginalTotalPrice().getPriceWithVAT() > 0) {
-				model.addAttribute("stripe_p_key", stripeManager.getPublicKey(event.get()));
+			model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
+			model.addAttribute("event", event);
+            boolean includeStripe = !orderSummary.getFree() && event.getAllowedPaymentProxies().contains(PaymentProxy.STRIPE);
+            model.addAttribute("includeStripe", includeStripe);
+			if (includeStripe) {
+				model.addAttribute("stripe_p_key", stripeManager.getPublicKey(event));
 			}
 			Map<String, Object> modelMap = model.asMap();
 			modelMap.putIfAbsent("paymentForm", new PaymentForm());

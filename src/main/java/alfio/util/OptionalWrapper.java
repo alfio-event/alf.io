@@ -26,7 +26,7 @@ public class OptionalWrapper {
 	public static <T> Optional<T> optionally(Supplier<T> s) {
 		try {
 			return Optional.of(s.get());
-		} catch (EmptyResultDataAccessException e) {
+		} catch (EmptyResultDataAccessException | IllegalArgumentException e) {
 			return Optional.empty();
 		}
 	}

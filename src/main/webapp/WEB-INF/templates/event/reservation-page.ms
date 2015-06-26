@@ -1,19 +1,16 @@
 {{>/event/page-top}}
 
-{{#orderSummary.free}}
- <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
- <script src="{{request.contextPath}}/resources/js/h5f/h5f.min.js"></script>
- <script src="{{request.contextPath}}/resources/js/event/reservation-page.js"></script>
-{{/orderSummary.free}}
-{{^orderSummary.free}}
+{{#includeStripe}}
  <script src="https://js.stripe.com/v2/"></script>
+{{/includeStripe}}
  <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
  <script src="{{request.contextPath}}/resources/js/h5f/h5f.min.js"></script>
  <script src="{{request.contextPath}}/resources/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
  <script src="{{request.contextPath}}/resources/js/event/bootstrap-handler.js"></script>
  <script src="{{request.contextPath}}/resources/js/event/reservation-page.js"
- 	id="stripe-key" 
- 	data-stripe-key="{{stripe_p_key}}" 
+{{#includeStripe}}
+ 	id="stripe-key"
+ 	data-stripe-key="{{stripe_p_key}}"
  	
  	data-stripe-message-incorrect_number="{{#i18n}}error.STEP2_STRIPE_incorrect_number{{/i18n}}"
  	data-stripe-message-invalid_number="{{#i18n}}error.STEP2_STRIPE_invalid_number{{/i18n}}"
@@ -28,8 +25,8 @@
  	data-stripe-message-processing_error="{{#i18n}}error.STEP2_STRIPE_processing_error{{/i18n}}"
     data-stripe-message-abort="{{#i18n}}error.STEP2_STRIPE_abort{{/i18n}}"
  	data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
+{{/includeStripe}}
  ></script>
-{{/orderSummary.free}}
 <div class="center">
 		{{>/event/output-event-image-tag}}
 </div>

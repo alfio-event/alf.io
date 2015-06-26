@@ -36,6 +36,7 @@ import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
+import alfio.util.EventUtil;
 import alfio.util.OptionalWrapper;
 import alfio.util.ValidationResult;
 import biweekly.ICalVersion;
@@ -167,49 +168,51 @@ public class EventController {
 
 	@RequestMapping(value = "/event/{eventName}", method = RequestMethod.GET)
 	public String showEvent(@PathVariable("eventName") String eventName,
-							Model model, HttpServletRequest request) {
+							Model model, HttpServletRequest request, Locale locale) {
 
 		
-		Optional<Event> event = optionally(() -> eventRepository.findByShortName(eventName));
+		Optional<Event> maybeEvent = optionally(() -> eventRepository.findByShortName(eventName));
 		
-		if(!event.isPresent()) {
+		if(!maybeEvent.isPresent()) {
 			return REDIRECT + "/";
 		}
 		
+		Event event = maybeEvent.get();
 		Optional<String> maybeSpecialCode = SessionUtil.retrieveSpecialPriceCode(request);
 		Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
-		
-		Optional<PromoCodeDiscount> promoCodeDiscount = SessionUtil.retrievePromotionCodeDiscount(request)
-				.flatMap((code) -> optionally(() -> promoCodeRepository.findPromoCodeInEvent(event.get().getId(), code)));
 
-		Event ev = event.get();
-		final ZonedDateTime now = ZonedDateTime.now(ev.getZoneId());
-		final int maxTickets = configurationManager.getIntConfigValue(Configuration.event(ev), MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
+		Optional<PromoCodeDiscount> promoCodeDiscount = SessionUtil.retrievePromotionCodeDiscount(request)
+				.flatMap((code) -> optionally(() -> promoCodeRepository.findPromoCodeInEvent(event.getId(), code)));
+
+		final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+		final int maxTickets = configurationManager.getIntConfigValue(Configuration.event(event), MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
 		//hide access restricted ticket categories
-		List<SaleableTicketCategory> t = ticketCategoryRepository.findAllTicketCategories(ev.getId()).stream()
+		List<SaleableTicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
                 .filter((c) -> !c.isAccessRestricted() || (specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId()))
-                .map((m) -> new SaleableTicketCategory(m, now, ev, ticketReservationManager.countAvailableTickets(ev, m), maxTickets, promoCodeDiscount))
+                .map((m) -> new SaleableTicketCategory(m, now, event, ticketReservationManager.countAvailableTickets(event, m), maxTickets, promoCodeDiscount))
                 .collect(Collectors.toList());
 		//
 
 
-		LocationDescriptor ld = LocationDescriptor.fromGeoData(ev.getLatLong(), TimeZone.getTimeZone(ev.getTimeZone()),
-				configurationManager.getStringConfigValue(Configuration.event(ev), MAPS_CLIENT_API_KEY));
+		LocationDescriptor ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()),
+				configurationManager.getStringConfigValue(Configuration.event(event), MAPS_CLIENT_API_KEY));
 		
-		final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(ev.getId()) > 0 ||
-				promoCodeRepository.countByEventId(ev.getId()) > 0;
+		final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
+				promoCodeRepository.countByEventId(event.getId()) > 0;
 
-        final EventDescriptor eventDescriptor = new EventDescriptor(ev);
+        final EventDescriptor eventDescriptor = new EventDescriptor(event);
 		model.addAttribute("event", eventDescriptor)//
-			.addAttribute("organizer", organizationRepository.getById(ev.getOrganizationId()))
-			.addAttribute("ticketCategories", t)//
+			.addAttribute("organizer", organizationRepository.getById(event.getOrganizationId()))
+			.addAttribute("ticketCategories", ticketCategories)//
 			.addAttribute("hasAccessPromotions", hasAccessPromotions)
 			.addAttribute("promoCode", specialCode.map(SpecialPrice::getCode).orElse(null))
 			.addAttribute("locationDescriptor", ld)
 			.addAttribute("pageTitle", "show-event.header.title")
 			.addAttribute("hasPromoCodeDiscount", promoCodeDiscount.isPresent())
 			.addAttribute("promoCodeDiscount", promoCodeDiscount.orElse(null))
-			.addAttribute("forwardButtonDisabled", t.stream().noneMatch(SaleableTicketCategory::getSaleable));
+            .addAttribute("displaySoldOutWarning", EventUtil.displaySoldOutWarning(event, ticketCategories, configurationManager))
+            .addAttribute("userLanguage", locale)
+			.addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable));
 		model.asMap().putIfAbsent("hasErrors", false);//
 		return "/event/show-event";
 	}

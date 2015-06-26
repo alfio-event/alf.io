@@ -59,6 +59,32 @@
 </div>
 {{/hasErrors}}
 
+{{#displaySoldOutWarning}}
+	{{^subscriptionComplete}}
+		<div class="alert alert-warning" role="alert">
+			<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/waiting-list" class="form-horizontal">
+				<h3>{{#i18n}}reservation-page-complete.sold-out.message{{/i18n}}</h3>
+				<label>{{#i18n}}common.full-name{{/i18n}} <input type="text" class="form-control" name="fullName"></label>
+				<label>{{#i18n}}common.email{{/i18n}} <input type="email" class="form-control" name="email"></label>
+				<label>{{#i18n}}reservation-page-complete.language{{/i18n}}
+					<select name="userLanguage" value="{{userLanguage}}" id="waiting-queue-language" class="form-control">
+		                <option value=""></option>
+						{{#availableLanguages}}
+		                    <option value="{{language}}">{{displayLanguage}}</option>
+						{{/availableLanguages}}
+	                </select>
+				</label>
+				<button type="submit" class="btn btn-success">{{#i18n}}reservation-page-complete.sold-out.subscribe{{/i18n}}</button>
+			</form>
+		</div>
+	{{/subscriptionComplete}}
+	{{#subscriptionComplete}}
+		<div class="alert alert-success" role="alert">
+			<h3>{{#i18n}}reservation-page-complete.sold-out.subscription-complete{{/i18n}}</h3>
+		</div>
+	{{/subscriptionComplete}}
+{{/displaySoldOutWarning}}
+
 <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reserve-tickets" class="form-horizontal">
 	<ul class="list-group">
 	{{#ticketCategories}}

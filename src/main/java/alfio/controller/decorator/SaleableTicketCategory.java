@@ -112,6 +112,10 @@ public class SaleableTicketCategory {
         return generateRangeOfTicketQuantity(maxTickets, availableTickets);
     }
 
+    public int getAvailableTickets() {
+        return availableTickets;
+    }
+
     public String getDiscountedPrice() {
         return promoCodeDiscount.map(d -> formatCents(calcDiscount(d))).orElseGet(this::getFinalPrice);
     }
