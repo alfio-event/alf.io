@@ -52,13 +52,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -226,18 +224,7 @@ public class EventController {
 		Event ev = event.get();
 
 		if("google".equals(calendarType)) {
-			//format described at http://stackoverflow.com/a/19867654
-			// sprop does not seems to have any effect http://useroffline.blogspot.ch/2009/06/making-google-calendar-link.html
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyMMdd'T'HHmmss");
-			String urlToRedirect = UriComponentsBuilder.fromUriString("https://www.google.com/calendar/event")
-					.queryParam("action", "TEMPLATE")
-					.queryParam("dates", ev.getBegin().format(formatter) + "/" + ev.getEnd().format(formatter))
-					.queryParam("ctz", ev.getTimeZone())
-					.queryParam("text", ev.getShortName())
-					.queryParam("details", ev.getDescription())
-					.queryParam("location", ev.getLocation())
-					.toUriString();
-			response.sendRedirect(urlToRedirect);
+			response.sendRedirect(ev.getGoogleCalendarUrl());
 		} else {
 			//the dates will be UTC in the ical file, no TZ is specified (google calendar ignored my first try)
 			ICalendar ical = new ICalendar();

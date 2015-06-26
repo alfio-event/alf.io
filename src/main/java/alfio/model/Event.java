@@ -23,10 +23,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
@@ -182,6 +184,21 @@ public class Event {
 
     public boolean supportsPaymentMethod(PaymentProxy paymentProxy) {
         return allowedPaymentProxies.contains(paymentProxy);
+    }
+
+    @JsonIgnore
+    public String getGoogleCalendarUrl() {
+        //format described at http://stackoverflow.com/a/19867654
+        // sprop does not seems to have any effect http://useroffline.blogspot.ch/2009/06/making-google-calendar-link.html
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyMMdd'T'HHmmss");
+        return UriComponentsBuilder.fromUriString("https://www.google.com/calendar/event")
+                .queryParam("action", "TEMPLATE")
+                .queryParam("dates", getBegin().format(formatter) + "/" + getEnd().format(formatter))
+                .queryParam("ctz", getTimeZone())
+                .queryParam("text", getShortName())
+                .queryParam("details", getDescription())
+                .queryParam("location", getLocation())
+                .toUriString();
     }
 
 }
