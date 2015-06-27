@@ -77,6 +77,7 @@ public class ConfigurationManager {
     }
 
     //meh
+    @SuppressWarnings("unchecked")
     private static <T> T from(ConfigurationPath c) {
         return (T) c;
     }
