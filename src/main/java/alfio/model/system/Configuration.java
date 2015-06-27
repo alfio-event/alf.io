@@ -21,8 +21,6 @@ import alfio.model.Event;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
-import java.util.Optional;
-
 @Getter
 @EqualsAndHashCode
 public class Configuration {
@@ -60,7 +58,6 @@ public class Configuration {
 
     public interface ConfigurationPath {
         ConfigurationPathLevel pathLevel();
-        Optional<ConfigurationPath> parent();
     }
 
     @EqualsAndHashCode
@@ -70,10 +67,6 @@ public class Configuration {
             return ConfigurationPathLevel.SYSTEM;
         }
 
-        @Override
-        public Optional<ConfigurationPath> parent() {
-            return Optional.empty();
-        }
     }
 
     @EqualsAndHashCode
@@ -90,10 +83,6 @@ public class Configuration {
             return ConfigurationPathLevel.ORGANIZATION;
         }
 
-        @Override
-        public Optional<ConfigurationPath> parent() {
-            return Optional.of(system());
-        }
     }
 
     @EqualsAndHashCode
@@ -113,10 +102,6 @@ public class Configuration {
             return ConfigurationPathLevel.EVENT;
         }
 
-        @Override
-        public Optional<ConfigurationPath> parent() {
-            return Optional.of(organization(organizationId));
-        }
     }
 
     @EqualsAndHashCode
@@ -137,10 +122,6 @@ public class Configuration {
             return ConfigurationPathLevel.TICKET_CATEGORY;
         }
 
-        @Override
-        public Optional<ConfigurationPath> parent() {
-            return Optional.of(new EventConfigurationPath(organizationId, eventId));
-        }
     }
 
     public static ConfigurationPath system() {

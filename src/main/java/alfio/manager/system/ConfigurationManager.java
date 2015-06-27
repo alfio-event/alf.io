@@ -48,12 +48,9 @@ public class ConfigurationManager {
 
     public int getIntConfigValue(ConfigurationPath path, ConfigurationKeys key, int defaultValue) {
         try {
-            Optional<String> value = Optional.ofNullable(findByConfigurationPathAndKey(path, key))
-                    .map(Configuration::getValue);
-            if(value.isPresent()) {
-                return Integer.parseInt(value.get());
-            }
-            return defaultValue;
+            return Optional.ofNullable(findByConfigurationPathAndKey(path, key))
+                    .map(Configuration::getValue)
+                    .map(Integer::parseInt).orElse(defaultValue);
         } catch (NumberFormatException | EmptyResultDataAccessException e) {
             return defaultValue;
         }
