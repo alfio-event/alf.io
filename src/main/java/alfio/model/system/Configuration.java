@@ -32,17 +32,20 @@ public class Configuration {
     private final String value;
     private final String description;
     private final ConfigurationKeys configurationKey;
+    private final ConfigurationPathLevel configurationPathLevel;
 
 
     public Configuration(@Column("id") int id,
                          @Column("c_key") String key,
                          @Column("c_value") String value,
-                         @Column("description") String description) {
+                         @Column("description") String description,
+                         @Column("configuration_path_level") ConfigurationPathLevel configurationPathLevel) {
         this.id = id;
         this.key = key;
         this.value = value;
         this.description = description;
         this.configurationKey = ConfigurationKeys.valueOf(key);
+        this.configurationPathLevel = configurationPathLevel;
     }
 
     public ConfigurationKeys.ComponentType getComponentType() {
@@ -52,7 +55,7 @@ public class Configuration {
 
 
     public enum ConfigurationPathLevel {
-        SYSTEM, ORGANIZATION, EVENT, CATEGORY
+        SYSTEM, ORGANIZATION, EVENT, TICKET_CATEGORY
     }
 
     public interface ConfigurationPath {
@@ -117,13 +120,13 @@ public class Configuration {
     }
 
     @EqualsAndHashCode
-    private static class CategoryConfigurationPath implements ConfigurationPath {
+    private static class TicketCategoryConfigurationPath implements ConfigurationPath {
 
         private final int organizationId;
         private final int eventId;
         private final int id;
 
-        private CategoryConfigurationPath(int organizationId, int eventId, int id) {
+        private TicketCategoryConfigurationPath(int organizationId, int eventId, int id) {
             this.organizationId = organizationId;
             this.eventId = eventId;
             this.id = id;
@@ -131,7 +134,7 @@ public class Configuration {
 
         @Override
         public ConfigurationPathLevel pathLevel() {
-            return ConfigurationPathLevel.CATEGORY;
+            return ConfigurationPathLevel.TICKET_CATEGORY;
         }
 
         @Override
@@ -152,7 +155,7 @@ public class Configuration {
         return new EventConfigurationPath(event.getOrganizationId(), event.getId());
     }
 
-    public static ConfigurationPath category(int organizationId, int eventId, int id) {
-        return new CategoryConfigurationPath(organizationId, eventId, id);
+    public static ConfigurationPath ticketCategory(int organizationId, int eventId, int id) {
+        return new TicketCategoryConfigurationPath(organizationId, eventId, id);
     }
 }

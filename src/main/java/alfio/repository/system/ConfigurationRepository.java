@@ -26,10 +26,10 @@ import java.util.List;
 @QueryRepository
 public interface ConfigurationRepository {
 
-    @Query("SELECT * FROM configuration")
+    @Query("SELECT id, c_key, c_value, description, 'SYSTEM' as configuration_path_level  FROM configuration")
     List<Configuration> findAll();
 
-    @Query("SELECT * FROM configuration where c_key = :key")
+    @Query("SELECT id, c_key, c_value, description, 'SYSTEM' as configuration_path_level FROM configuration where c_key = :key")
     Configuration findByKey(@Bind("key") String key);
     
     @Query("DELETE FROM configuration where c_key = :key")

@@ -101,7 +101,7 @@ public class ConfigurationManager {
                 .collect(Collectors.toList());
         final List<Configuration> missing = Arrays.stream(ConfigurationKeys.visible())
                 .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
-                .map(k -> new Configuration(-1, k.getValue(), null, k.getDescription()))
+                .map(k -> new Configuration(-1, k.getValue(), null, k.getDescription(), Configuration.ConfigurationPathLevel.SYSTEM))
                 .collect(Collectors.toList());
         List<Configuration> result = new LinkedList<>(existing);
         result.addAll(missing);
