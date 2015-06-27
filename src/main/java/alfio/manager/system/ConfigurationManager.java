@@ -42,9 +42,13 @@ public class ConfigurationManager {
         this.configurationRepository = configurationRepository;
     }
 
+    private Configuration findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
+        return configurationRepository.findByKey(key.getValue());
+    }
+
     public int getIntConfigValue(ConfigurationPath path, ConfigurationKeys key, int defaultValue) {
         try {
-            Optional<String> value = Optional.ofNullable(configurationRepository.findByKey(key.getValue()))
+            Optional<String> value = Optional.ofNullable(findByConfigurationPathAndKey(path, key))
                     .map(Configuration::getValue);
             if(value.isPresent()) {
                 return Integer.parseInt(value.get());
@@ -56,20 +60,35 @@ public class ConfigurationManager {
     }
 
     public boolean getBooleanConfigValue(ConfigurationPath path, ConfigurationKeys key, boolean defaultValue) {
-        return getBooleanConfigValue(path, key.getValue(), defaultValue);
-    }
-
-    public boolean getBooleanConfigValue(ConfigurationPath path, String key, boolean defaultValue) {
-        return optionally(() -> Boolean.parseBoolean(configurationRepository.findByKey(key).getValue()))
+        return optionally(() -> Boolean.parseBoolean(findByConfigurationPathAndKey(path, key).getValue()))
                 .orElse(defaultValue);
     }
 
-    public void saveAll(List<ConfigurationModification> list) {
-        list.forEach(c -> save(ConfigurationKeys.fromValue(c.getKey()), c.getValue()));
+
+    public String getStringConfigValue(ConfigurationPath path, ConfigurationKeys key, String defaultValue) {
+        return optionally(() -> findByConfigurationPathAndKey(path, key))
+                .map(Configuration::getValue)
+                .orElse(defaultValue);
+    }
+    
+    public Optional<String> getStringConfigValue(ConfigurationPath path, ConfigurationKeys key) {
+    	return optionally(() -> findByConfigurationPathAndKey(path, key)).map(Configuration::getValue);
     }
 
-    public void save(ConfigurationKeys key, String value) {
-        Optional<Configuration> conf = optionally(() -> configurationRepository.findByKey(key.getValue()));
+    public String getRequiredValue(ConfigurationPath path, ConfigurationKeys key) {
+        return optionally(() -> findByConfigurationPathAndKey(path, key))
+                .map(Configuration::getValue)
+                .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + key + " not present"));
+    }
+
+    // begin SYSTEM related configuration methods
+
+    public void saveAllSystemConfiguration(List<ConfigurationModification> list) {
+        list.forEach(c -> saveSystemConfiguration(ConfigurationKeys.fromValue(c.getKey()), c.getValue()));
+    }
+
+    public void saveSystemConfiguration(ConfigurationKeys key, String value) {
+        Optional<Configuration> conf = optionally(() -> findByConfigurationPathAndKey(Configuration.system(), key));
         Optional<String> valueOpt = Optional.ofNullable(value);
         if(!conf.isPresent()) {
             valueOpt.ifPresent(v -> configurationRepository.insert(key.getValue(), v, key.getDescription()));
@@ -78,23 +97,8 @@ public class ConfigurationManager {
         }
     }
 
-    public String getStringConfigValue(ConfigurationPath path, ConfigurationKeys key, String defaultValue) {
-        return optionally(() -> configurationRepository.findByKey(key.getValue()))
-                .map(Configuration::getValue)
-                .orElse(defaultValue);
-    }
-    
-    public Optional<String> getStringConfigValue(ConfigurationPath path, ConfigurationKeys key) {
-    	return optionally(() -> configurationRepository.findByKey(key.getValue())).map(Configuration::getValue);
-    }
 
-    public String getRequiredValue(ConfigurationPath path, ConfigurationKeys key) {
-        return optionally(() -> configurationRepository.findByKey(key.getValue()))
-                .map(Configuration::getValue)
-                .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + key + " not present"));
-    }
-
-    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadAllIncludingMissing() {
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadAllSystemConfigurationIncludingMissing() {
         final List<Configuration> existing = configurationRepository.findAll()
                 .stream()
                 .filter(c -> !ConfigurationKeys.fromValue(c.getKey()).isInternal())

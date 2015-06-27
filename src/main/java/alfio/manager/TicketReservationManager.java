@@ -405,7 +405,7 @@ public class TicketReservationManager {
     }
 
     /**
-     * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress.
+     * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will saveSystemConfiguration email/fullName/billingaddress.
      *  @param reservationId
      * @param email
 	 * @param fullName
