@@ -18,7 +18,7 @@ package alfio.manager.system;
 
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
-import alfio.model.system.Configuration.ConfigurationPath;
+import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.system.ConfigurationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,8 +42,43 @@ public class ConfigurationManager {
         this.configurationRepository = configurationRepository;
     }
 
+    //TODO: refactor, not the most beautiful code, find a better solution...
     private Configuration findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
-        return configurationRepository.findByKey(key.getValue());
+        switch (path.pathLevel()) {
+            case SYSTEM: return configurationRepository.findByKey(key.getValue());
+            case ORGANIZATION: {
+                OrganizationConfigurationPath o = from(path);
+                return selectPath(configurationRepository.findByOrganizationAndKey(o.getId(), key.getValue()));
+            }
+            case EVENT: {
+                EventConfigurationPath o = from(path);
+                return selectPath(configurationRepository.findByEventAndKey(o.getOrganizationId(),
+                        o.getId(), key.getValue()));
+            }
+            case TICKET_CATEGORY: {
+                TicketCategoryConfigurationPath o = from(path);
+                return selectPath(configurationRepository.findByTicketCategoryAndKey(o.getOrganizationId(),
+                        o.getEventId(), o.getId(), key.getValue()));
+            }
+        }
+        throw new IllegalStateException("Can't reach here");
+    }
+
+    /**
+     * Select the most "precise" configuration in the given list.
+     *
+     * @param conf
+     * @return
+     */
+    private Configuration selectPath(List<Configuration> conf) {
+        return conf.size() == 1 ? conf.get(0) : conf.stream()
+                .sorted(Comparator.comparing(Configuration::getConfigurationPathLevel).reversed())
+                .findFirst().orElse(null);
+    }
+
+    //meh
+    private static <T> T from(ConfigurationPath c) {
+        return (T) c;
     }
 
     public int getIntConfigValue(ConfigurationPath path, ConfigurationKeys key, int defaultValue) {
@@ -57,15 +92,14 @@ public class ConfigurationManager {
     }
 
     public boolean getBooleanConfigValue(ConfigurationPath path, ConfigurationKeys key, boolean defaultValue) {
-        return optionally(() -> Boolean.parseBoolean(findByConfigurationPathAndKey(path, key).getValue()))
+        return getStringConfigValue(path, key)
+                .map(Boolean::parseBoolean)
                 .orElse(defaultValue);
     }
 
 
     public String getStringConfigValue(ConfigurationPath path, ConfigurationKeys key, String defaultValue) {
-        return optionally(() -> findByConfigurationPathAndKey(path, key))
-                .map(Configuration::getValue)
-                .orElse(defaultValue);
+        return getStringConfigValue(path, key).orElse(defaultValue);
     }
     
     public Optional<String> getStringConfigValue(ConfigurationPath path, ConfigurationKeys key) {
@@ -73,8 +107,7 @@ public class ConfigurationManager {
     }
 
     public String getRequiredValue(ConfigurationPath path, ConfigurationKeys key) {
-        return optionally(() -> findByConfigurationPathAndKey(path, key))
-                .map(Configuration::getValue)
+        return getStringConfigValue(path, key)
                 .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + key + " not present"));
     }
 

@@ -61,7 +61,7 @@ public class Configuration {
     }
 
     @EqualsAndHashCode
-    private static class SystemConfigurationPath implements  ConfigurationPath {
+    public static class SystemConfigurationPath implements  ConfigurationPath {
         @Override
         public ConfigurationPathLevel pathLevel() {
             return ConfigurationPathLevel.SYSTEM;
@@ -70,7 +70,8 @@ public class Configuration {
     }
 
     @EqualsAndHashCode
-    private static class OrganizationConfigurationPath implements ConfigurationPath {
+    @Getter
+    public static class OrganizationConfigurationPath implements ConfigurationPath {
 
         private final int id;
 
@@ -86,7 +87,8 @@ public class Configuration {
     }
 
     @EqualsAndHashCode
-    private static class EventConfigurationPath implements ConfigurationPath {
+    @Getter
+    public static class EventConfigurationPath implements ConfigurationPath {
 
         private final int organizationId;
         private final int id;
@@ -105,7 +107,8 @@ public class Configuration {
     }
 
     @EqualsAndHashCode
-    private static class TicketCategoryConfigurationPath implements ConfigurationPath {
+    @Getter
+    public static class TicketCategoryConfigurationPath implements ConfigurationPath {
 
         private final int organizationId;
         private final int eventId;

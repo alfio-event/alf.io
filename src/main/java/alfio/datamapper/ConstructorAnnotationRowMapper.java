@@ -228,7 +228,7 @@ public class ConstructorAnnotationRowMapper<T> implements RowMapper<T> {
 		@Override
 		public Object getObject(ResultSet rs) throws SQLException {
 			String res = rs.getString(name);
-			return res == null ? null : Enum.valueOf(enumType, res);
+			return res == null ? null : Enum.valueOf(enumType, res.trim());
 		}
 	}
 
