@@ -34,7 +34,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class})
@@ -72,6 +74,39 @@ public class ConfigurationManagerTest {
     @Test(expected = IllegalArgumentException.class)
     public void testMissingConfigValue() {
         configurationManager.getRequiredValue(Configuration.system(), ConfigurationKeys.SMTP_PASSWORD);
+    }
+
+    @Test
+    public void testRequiredValue() {
+        assertEquals("5", configurationManager.getRequiredValue(Configuration.system(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION));
+    }
+
+    @Test
+    public void testIntValue() {
+        assertEquals(5, configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, -1));
+
+        //missing value
+        assertEquals(-1, configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL, -1));
+
+
+        configurationManager.saveSystemConfiguration(ConfigurationKeys.BASE_URL, "blabla");
+        assertEquals("blabla", configurationManager.getRequiredValue(Configuration.system(), ConfigurationKeys.BASE_URL));
+        //not a number
+        assertEquals(-1, configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.BASE_URL, -1));
+    }
+
+    @Test
+    public void testBooleanValue() {
+        //missing value
+        assertFalse(configurationManager.getBooleanConfigValue(Configuration.system(), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, false));
+
+        //false value
+        configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "false");
+        assertFalse(configurationManager.getBooleanConfigValue(Configuration.system(), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, true));
+
+        //true value
+        configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "true");
+        assertTrue(configurationManager.getBooleanConfigValue(Configuration.system(), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, false));
     }
 
 }
