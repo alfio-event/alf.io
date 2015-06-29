@@ -19,9 +19,20 @@ package alfio.manager;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.user.UserManager;
+import alfio.model.Event;
+import alfio.model.TicketCategory;
+import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.EventModification;
+import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 
+import alfio.model.user.Organization;
+import alfio.repository.EventRepository;
+import alfio.repository.system.ConfigurationRepository;
+import alfio.repository.user.OrganizationRepository;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,7 +43,14 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -59,7 +77,16 @@ public class ConfigurationManagerTest {
     private ConfigurationManager configurationManager;
 
     @Autowired
-    private NamedParameterJdbcTemplate jdbcTemplate;
+    private ConfigurationRepository configurationRepository;
+
+    @Autowired
+    private EventManager eventManager;
+
+    @Autowired
+    private OrganizationRepository organizationRepository;
+
+    @Autowired
+    private UserManager userManager;
 
     @Test
     public void testPresentStringConfigValue() {
@@ -69,6 +96,12 @@ public class ConfigurationManagerTest {
     @Test
     public void testEmptyStringConfigValue() {
         assertEquals(Optional.empty(), configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.SMTP_PASSWORD));
+    }
+
+    @Test
+    public void testStringValueWithDefault() {
+        assertEquals("5", configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, "-1"));
+        assertEquals("-1", configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.SMTP_PASSWORD, "-1"));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -108,5 +141,47 @@ public class ConfigurationManagerTest {
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "true");
         assertTrue(configurationManager.getBooleanConfigValue(Configuration.system(), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, false));
     }
+
+    @Test
+    public void testOverrideMechanism() {
+
+
+        //setup...
+        organizationRepository.create("org", "org", "email@example.com");
+        Organization organization = organizationRepository.findByName("org").get(0);
+
+        userManager.insertUser(organization.getId(), "test", "test", "test", "test@example.com");
+
+        List<TicketCategoryModification> ticketsCategory = Collections.singletonList(
+                new TicketCategoryModification(null, "default", 20,
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        "desc", BigDecimal.TEN, false, "", false));
+        EventModification em = new EventModification(null, "url", "url", "url", null,
+                "eventShortName", organization.getId(),
+                "muh location", "muh description",
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""));
+        eventManager.createEvent(em);
+
+        Event event = eventManager.getSingleEvent("eventShortName", "test");
+
+        TicketCategory tc = eventManager.loadTicketCategories(event).get(0);
+        //
+
+        //insert override value at each level
+
+        configurationRepository.insertOrganizationLevel(organization.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "6", "desc");
+        configurationRepository.insertEventLevel(organization.getId(), event.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "7", "desc");
+        configurationRepository.insertTicketCategoryLevel(organization.getId(), event.getId(), tc.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "8", "desc");
+
+        assertEquals(5, configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, -1));
+        assertEquals(6, configurationManager.getIntConfigValue(Configuration.organization(organization.getId()), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, -1));
+        assertEquals(7, configurationManager.getIntConfigValue(Configuration.event(event), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, -1));
+        assertEquals(8, configurationManager.getIntConfigValue(Configuration.ticketCategory(organization.getId(), event.getId(), tc.getId()), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, -1));
+
+    }
+
 
 }

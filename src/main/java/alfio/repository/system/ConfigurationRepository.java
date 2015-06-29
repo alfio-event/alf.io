@@ -63,6 +63,15 @@ public interface ConfigurationRepository {
     @Query("INSERT into configuration(c_key, c_value, description) values(:key, :value, :description)")
     int insert(@Bind("key") String key, @Bind("value") String value, @Bind("description") String description);
 
+    @Query("INSERT into configuration_organization(organization_id_fk, c_key, c_value, description) values(:orgId, :key, :value, :description)")
+    int insertOrganizationLevel(@Bind("orgId") int orgId, @Bind("key") String key, @Bind("value") String value, @Bind("description") String description);
+
+    @Query("INSERT into configuration_event(organization_id_fk, event_id_fk, c_key, c_value, description) values(:orgId, :eventId, :key, :value, :description)")
+    int insertEventLevel(@Bind("orgId") int orgId, @Bind("eventId") int eventId, @Bind("key") String key, @Bind("value") String value, @Bind("description") String description);
+
+    @Query("INSERT into configuration_ticket_category(organization_id_fk, event_id_fk, ticket_category_id_fk, c_key, c_value, description) values(:orgId, :eventId, :ticketCategoryId, :key, :value, :description)")
+    int insertTicketCategoryLevel(@Bind("orgId") int orgId, @Bind("eventId") int eventId, @Bind("ticketCategoryId") int ticketCategoryId, @Bind("key") String key, @Bind("value") String value, @Bind("description") String description);
+
     @Query("UPDATE configuration set c_value = :value where c_key = :key")
     int update(@Bind("key") String existingKey, @Bind("value") String newValue);
 }
