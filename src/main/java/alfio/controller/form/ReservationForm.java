@@ -71,7 +71,7 @@ public class ReservationForm {
 			return Optional.empty();
 		}
 
-		final int maxAmountOfTicket = tickReservationManager.maxAmountOfTickets();
+		final int maxAmountOfTicket = tickReservationManager.maxAmountOfTickets(event);
 
 		if (selectionCount > maxAmountOfTicket) {
 			bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM, new Object[] { maxAmountOfTicket }, null);

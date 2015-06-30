@@ -16,13 +16,12 @@
  */
 package alfio.manager;
 
+import alfio.model.Ticket.TicketStatus;
+import alfio.repository.TicketRepository;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import alfio.model.Ticket.TicketStatus;
-import alfio.repository.TicketRepository;
 
 @Component
 @Transactional

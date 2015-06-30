@@ -405,7 +405,7 @@ public class TicketReservationManager {
     }
 
     /**
-     * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress.
+     * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will saveSystemConfiguration email/fullName/billingaddress.
      *  @param reservationId
      * @param email
 	 * @param fullName
@@ -610,8 +610,8 @@ public class TicketReservationManager {
 	}
 
 
-	public int maxAmountOfTickets() {
-        return configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
+	public int maxAmountOfTickets(Event event) {
+        return configurationManager.getIntConfigValue(Configuration.event(event), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
 	}
 	
 	public Optional<TicketReservation> findById(String reservationId) {

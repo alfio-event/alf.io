@@ -47,12 +47,12 @@ public class SettingsApiController {
 
     @RequestMapping(value = "/configuration/load", method = GET)
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration() {
-        return configurationManager.loadAllIncludingMissing();
+        return configurationManager.loadAllSystemConfigurationIncludingMissing();
     }
 
     @RequestMapping(value = "/configuration/update", method = POST)
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> updateConfiguration(@RequestBody ConfigurationModification configuration) {
-        configurationManager.save(ConfigurationKeys.fromValue(configuration.getKey()), configuration.getValue());
+        configurationManager.saveSystemConfiguration(ConfigurationKeys.fromValue(configuration.getKey()), configuration.getValue());
         return loadConfiguration();
     }
 
@@ -60,7 +60,7 @@ public class SettingsApiController {
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> updateConfiguration(@RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input) {
         Objects.requireNonNull(input);
         List<ConfigurationModification> list = input.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-        configurationManager.saveAll(list);
+        configurationManager.saveAllSystemConfiguration(list);
         return loadConfiguration();
     }
 

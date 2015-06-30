@@ -89,11 +89,20 @@ body {
 }
 
 .ticket-header-col {
-	width:150px
+	width:150px;
+	vertical-align: top;
 }
 
 .payment-method-container {
 	width:80%;
+}
+
+.alfio-event-add-to-calendar {
+	padding-left: 13px;
+}
+
+.alfio-event-add-to-calendar > span:before {
+	content: "\00a0 "
 }
 
 @media screen and (max-width: 768px) {

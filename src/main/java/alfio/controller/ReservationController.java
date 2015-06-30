@@ -169,7 +169,7 @@ public class ReservationController {
 
 			Event ev = event.get();
 
-            boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.event(ev), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION.getValue(), false);
+            boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.event(ev), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, false);
 			model.addAttribute(
 					"ticketsByCategory",
 					tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()

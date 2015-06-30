@@ -58,7 +58,7 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
-        boolean initCompleted = configurationManager.getBooleanConfigValue(Configuration.system(), INIT_COMPLETED.getValue(), false);
+        boolean initCompleted = configurationManager.getBooleanConfigValue(Configuration.system(), INIT_COMPLETED, false);
         if (!initCompleted) {
             String adminPassword = PasswordGenerator.generateRandomPassword();
             userRepository.create(UserManager.ADMIN_USERNAME, passwordEncoder.encode(adminPassword), "The", "Administrator", "admin@localhost", true);
@@ -69,10 +69,10 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
             log.info("   {} ", adminPassword);
             log.info("*******************************************************");
 
-            configurationManager.save(INIT_COMPLETED, "true");
+            configurationManager.saveSystemConfiguration(INIT_COMPLETED, "true");
             
-            ofNullable(System.getProperty("maps.serverApiKey")).ifPresent((serverApiKey) -> configurationManager.save(MAPS_SERVER_API_KEY, serverApiKey));
-            ofNullable(System.getProperty("maps.clientApiKey")).ifPresent((clientApiKey) -> configurationManager.save(MAPS_CLIENT_API_KEY, clientApiKey));
+            ofNullable(System.getProperty("maps.serverApiKey")).ifPresent((serverApiKey) -> configurationManager.saveSystemConfiguration(MAPS_SERVER_API_KEY, serverApiKey));
+            ofNullable(System.getProperty("maps.clientApiKey")).ifPresent((clientApiKey) -> configurationManager.saveSystemConfiguration(MAPS_CLIENT_API_KEY, clientApiKey));
         }
         log.info("initialized alf.io version {} ", version);
     }
