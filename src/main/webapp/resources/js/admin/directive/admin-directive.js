@@ -445,10 +445,10 @@
             controller: function($scope) {
                 $scope.$watch('statisticsContainer', function(newVal) {
                     if(angular.isDefined(newVal)) {
-                        $scope.statistics = [newVal.soldTickets, newVal.checkedInTickets, newVal.notSoldTickets, newVal.notAllocatedTickets];
+                        $scope.statistics = [newVal.soldTickets, newVal.checkedInTickets, newVal.notSoldTickets, newVal.notAllocatedTickets, newVal.dynamicAllocation];
                     }
                 });
-                $scope.labels = ['Sold', 'Checked in', 'Still available', 'Not yet allocated'];
+                $scope.labels = ['Sold', 'Checked in', 'Still available', 'Not yet allocated', 'Dynamically allocated'];
             }
         }
     });

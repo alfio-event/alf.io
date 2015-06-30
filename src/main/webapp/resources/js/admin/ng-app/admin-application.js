@@ -132,6 +132,14 @@
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
                 pointHighlightStroke: "rgba(220,220,220,0.8)"
+            },
+            { // purple
+                fillColor: "rgba(158,31,255,0.2)",
+                strokeColor: "rgba(158,31,255,1)",
+                pointColor: "rgba(158,31,255,0.2)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(158,31,255,0.8)"
             }
 
         ];

@@ -79,6 +79,11 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
         return 0;
     }
 
+    @Override
+    public int getDynamicAllocation() {
+        return 0;
+    }
+
     public boolean isExpired() {
         return ZonedDateTime.now(eventZoneId).isAfter(ticketCategory.getExpiration(eventZoneId));
     }

@@ -28,6 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Getter
 public class EventWithStatistics implements StatisticsContainer, Comparable<EventWithStatistics> {
@@ -48,11 +49,12 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
                                List<TicketCategoryWithStatistic> ticketCategories) {
         this.event = event;
         this.ticketCategories = ticketCategories;
-        this.soldTickets = ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getSoldTickets).sum();
-        this.checkedInTickets = ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getCheckedInTickets).sum();
+        this.soldTickets = countSoldTickets(ticketCategories);
+        this.checkedInTickets = countCheckedInTickets(ticketCategories);
         this.allocatedTickets = ticketCategories.stream().filter(IS_BOUNDED).mapToInt(TicketCategoryWithStatistic::getMaxTickets).sum();
         this.containsUnboundedCategories = ticketCategories.stream().anyMatch(IS_BOUNDED.negate());
     }
+
 
     public boolean isWarningNeeded() {
         return !isExpired() && (containsOrphanTickets() || containsStuckReservations());
@@ -82,11 +84,28 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
 
     @Override
     public int getNotAllocatedTickets() {
+        return containsUnboundedCategories ? 0 : countNotAllocatedTickets();
+    }
+
+    @Override
+    public int getDynamicAllocation() {
+        if(containsUnboundedCategories) {
+            List<TicketCategoryWithStatistic> unboundedCategories = ticketCategories.stream().filter(IS_BOUNDED.negate()).collect(Collectors.toList());
+            return countNotAllocatedTickets() - countSoldTickets(unboundedCategories) - countCheckedInTickets(unboundedCategories);
+        }
+        return 0;
+    }
+
+    private int countNotAllocatedTickets() {
         return event.getAvailableSeats() - allocatedTickets;
     }
 
     @Override
     public int getNotSoldTickets() {
+        if(containsUnboundedCategories) {
+            List<TicketCategoryWithStatistic> boundedCategories = ticketCategories.stream().filter(IS_BOUNDED).collect(Collectors.toList());
+            return allocatedTickets - countSoldTickets(boundedCategories) - countCheckedInTickets(boundedCategories);
+        }
         return allocatedTickets - soldTickets - checkedInTickets;
     }
 
@@ -98,5 +117,13 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
     public int compareTo(EventWithStatistics o) {
         CompareToBuilder builder = new CompareToBuilder();
         return builder.append(isExpired(), o.isExpired()).append(getBegin().withZoneSameInstant(ZoneId.systemDefault()), o.getBegin().withZoneSameInstant(ZoneId.systemDefault())).build();
+    }
+
+    private int countCheckedInTickets(List<TicketCategoryWithStatistic> ticketCategories) {
+        return ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getCheckedInTickets).sum();
+    }
+
+    private static int countSoldTickets(List<TicketCategoryWithStatistic> ticketCategories) {
+        return ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getSoldTickets).sum();
     }
 }

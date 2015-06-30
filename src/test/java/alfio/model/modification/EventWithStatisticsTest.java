@@ -20,17 +20,20 @@ import alfio.model.Event;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 import static com.insightfullogic.lambdabehave.Suite.describe;
+import static java.util.Arrays.asList;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(JunitSuiteRunner.class)
 public class EventWithStatisticsTest {{
 
     describe("EventWithStatistics", it -> {
-        Event event = it.usesMock(Event.class);
-        it.should("Ignore unbounded categories while counting allocated tickets", expect -> {
+        Event event = mock(Event.class);
+        when(event.getAvailableSeats()).thenReturn(10);
+        it.should("Ignore unbounded categories while counting allocated tickets and report dynamic allocation", expect -> {
             TicketCategoryWithStatistic bounded = it.usesMock(TicketCategoryWithStatistic.class);
             when(bounded.isBounded()).thenReturn(true);
             when(bounded.getMaxTickets()).thenReturn(1);
@@ -40,8 +43,73 @@ public class EventWithStatisticsTest {{
             TicketCategoryWithStatistic bounded2 = it.usesMock(TicketCategoryWithStatistic.class);
             when(bounded2.isBounded()).thenReturn(true);
             when(bounded2.getMaxTickets()).thenReturn(5);
-            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, Arrays.asList(bounded, unbounded, bounded2));
+            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(bounded, unbounded, bounded2));
             expect.that(eventWithStatistics.getAllocatedTickets()).is(6);
+            expect.that(eventWithStatistics.getNotAllocatedTickets()).is(0);
+            expect.that(eventWithStatistics.getDynamicAllocation()).is(4);
+        });
+        it.should("not report dynamic allocation if there are only bounded categories", expect -> {
+            TicketCategoryWithStatistic bounded = it.usesMock(TicketCategoryWithStatistic.class);
+            when(bounded.isBounded()).thenReturn(true);
+            when(bounded.getMaxTickets()).thenReturn(1);
+            TicketCategoryWithStatistic bounded2 = it.usesMock(TicketCategoryWithStatistic.class);
+            when(bounded2.isBounded()).thenReturn(true);
+            when(bounded2.getMaxTickets()).thenReturn(5);
+            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(bounded, bounded2));
+            expect.that(eventWithStatistics.getAllocatedTickets()).is(6);
+            expect.that(eventWithStatistics.getNotAllocatedTickets()).is(4);
+            expect.that(eventWithStatistics.getDynamicAllocation()).is(0);
+        });
+        it.should("consider unbounded tickets in the statistic", expect -> {
+            TicketCategoryWithStatistic first = it.usesMock(TicketCategoryWithStatistic.class);
+            when(first.isBounded()).thenReturn(true);
+            when(first.getMaxTickets()).thenReturn(2);
+            when(first.getSoldTickets()).thenReturn(1);
+            when(first.getCheckedInTickets()).thenReturn(1);
+            TicketCategoryWithStatistic second = it.usesMock(TicketCategoryWithStatistic.class);
+            when(second.isBounded()).thenReturn(false);
+            when(second.getNotSoldTickets()).thenReturn(1);
+            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(first, second));
+            expect.that(eventWithStatistics.getAllocatedTickets()).is(2);
+            expect.that(eventWithStatistics.getCheckedInTickets()).is(1);
+            expect.that(eventWithStatistics.getNotSoldTickets()).is(0);
+            expect.that(eventWithStatistics.getSoldTickets()).is(1);
+            expect.that(eventWithStatistics.getNotAllocatedTickets()).is(0);
+            expect.that(eventWithStatistics.getDynamicAllocation()).is(8);
+        });
+
+        it.should("consider unbounded tickets in the statistic (corner case)", expect -> {
+            TicketCategoryWithStatistic first = it.usesMock(TicketCategoryWithStatistic.class);
+            when(first.isBounded()).thenReturn(true);
+            when(first.getMaxTickets()).thenReturn(2);
+            when(first.getSoldTickets()).thenReturn(1);
+            when(first.getCheckedInTickets()).thenReturn(1);
+            TicketCategoryWithStatistic second = it.usesMock(TicketCategoryWithStatistic.class);
+            when(second.isBounded()).thenReturn(false);
+            when(second.getSoldTickets()).thenReturn(8);
+            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(first, second));
+            expect.that(eventWithStatistics.getAllocatedTickets()).is(2);
+            expect.that(eventWithStatistics.getCheckedInTickets()).is(1);
+            expect.that(eventWithStatistics.getNotSoldTickets()).is(0);
+            expect.that(eventWithStatistics.getSoldTickets()).is(9);
+            expect.that(eventWithStatistics.getCheckedInTickets()).is(1);
+            expect.that(eventWithStatistics.getNotAllocatedTickets()).is(0);
+            expect.that(eventWithStatistics.getDynamicAllocation()).is(0);
+        });
+
+        it.should("do the proper calculation even if there is only one category", expect -> {
+            TicketCategoryWithStatistic first = it.usesMock(TicketCategoryWithStatistic.class);
+            when(first.isBounded()).thenReturn(false);
+            when(first.getSoldTickets()).thenReturn(8);
+            when(first.getCheckedInTickets()).thenReturn(1);
+            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, Collections.singletonList(first));
+            expect.that(eventWithStatistics.getAllocatedTickets()).is(0);
+            expect.that(eventWithStatistics.getCheckedInTickets()).is(1);
+            expect.that(eventWithStatistics.getNotSoldTickets()).is(0);
+            expect.that(eventWithStatistics.getSoldTickets()).is(8);
+            expect.that(eventWithStatistics.getCheckedInTickets()).is(1);
+            expect.that(eventWithStatistics.getNotAllocatedTickets()).is(0);
+            expect.that(eventWithStatistics.getDynamicAllocation()).is(1);
         });
     });
 }}

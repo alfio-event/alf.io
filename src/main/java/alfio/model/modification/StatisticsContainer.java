@@ -24,4 +24,6 @@ public interface StatisticsContainer {
     int getCheckedInTickets();
 
     int getNotAllocatedTickets();
+
+    int getDynamicAllocation();
 }
