@@ -16,6 +16,7 @@
  */
 package alfio.repository;
 
+import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
@@ -41,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {DataSourceConfiguration.class, WebSecurityConfig.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
 @ActiveProfiles(Initializer.PROFILE_DEV)
 @WebIntegrationTest("server.port:9000")
 public class EventRepositoryTest {

@@ -27,7 +27,6 @@ import alfio.repository.TicketRepository;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -54,8 +53,10 @@ public class EventManagerTest {{
     });
 
     describe("handleTicketNumberModification", it -> {
-        TicketCategory original = Mockito.mock(TicketCategory.class);
-        TicketCategory updated = Mockito.mock(TicketCategory.class);
+        Event event = mock(Event.class);
+        when(event.getId()).thenReturn(10);
+        TicketCategory original = mock(TicketCategory.class);
+        TicketCategory updated = mock(TicketCategory.class);
         TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
         NamedParameterJdbcTemplate jdbc = it.usesMock(NamedParameterJdbcTemplate.class);
         EventManager eventManager = new EventManager(null, null, null, ticketRepository, null, null, null, null, jdbc, null);
@@ -67,23 +68,23 @@ public class EventManagerTest {{
         when(updated.getMaxTickets()).thenReturn(11);
         it.should("throw exception if there are tickets already sold", expect -> {
             when(ticketRepository.lockTicketsToInvalidate(10, 30, 2)).thenReturn(Collections.singletonList(1));
-            expect.exception(IllegalStateException.class, () -> eventManager.handleTicketNumberModification(10, original, updated, -2));
+            expect.exception(IllegalStateException.class, () -> eventManager.handleTicketNumberModification(event, original, updated, -2));
             verify(ticketRepository, never()).invalidateTickets(anyListOf(Integer.class));
         });
         it.should("invalidate exceeding tickets", expect -> {
             final List<Integer> ids = Arrays.asList(1, 2);
             when(ticketRepository.lockTicketsToInvalidate(10, 30, 2)).thenReturn(ids);
-            eventManager.handleTicketNumberModification(10, original, updated, -2);
+            eventManager.handleTicketNumberModification(event, original, updated, -2);
             verify(ticketRepository, times(1)).invalidateTickets(ids);
         });
         it.should("do nothing if the difference is zero", expect -> {
-            eventManager.handleTicketNumberModification(10, original, updated, 0);
+            eventManager.handleTicketNumberModification(event, original, updated, 0);
             verify(ticketRepository, never()).invalidateTickets(anyListOf(Integer.class));
             verify(jdbc, never()).batchUpdate(anyString(), any(SqlParameterSource[].class));
         });
 
         it.should("insert a new Ticket if the difference is 1", expect -> {
-            eventManager.handleTicketNumberModification(10, original, updated, 1);
+            eventManager.handleTicketNumberModification(event, original, updated, 1);
             verify(ticketRepository, never()).invalidateTickets(anyListOf(Integer.class));
             ArgumentCaptor<SqlParameterSource[]> captor = ArgumentCaptor.forClass(SqlParameterSource[].class);
             verify(jdbc, times(1)).batchUpdate(anyString(), captor.capture());
@@ -94,8 +95,8 @@ public class EventManagerTest {{
     describe("handlePriceChange", it -> {
         TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
         EventManager eventManager = new EventManager(null, null, null, ticketRepository, null, null, null, null, null, null);
-        TicketCategory original = Mockito.mock(TicketCategory.class);
-        TicketCategory updated = Mockito.mock(TicketCategory.class);
+        TicketCategory original = mock(TicketCategory.class);
+        TicketCategory updated = mock(TicketCategory.class);
 
         it.should("do nothing if the price is not changed", expect -> {
             when(original.getPriceInCents()).thenReturn(10);
@@ -130,8 +131,8 @@ public class EventManagerTest {{
         SpecialPriceRepository specialPriceRepository = it.usesMock(SpecialPriceRepository.class);
         NamedParameterJdbcTemplate jdbc = it.usesMock(NamedParameterJdbcTemplate.class);
         EventManager eventManager = new EventManager(null, null, null, null, null, specialPriceRepository, null, null, jdbc, null);
-        TicketCategory original = Mockito.mock(TicketCategory.class);
-        TicketCategory updated = Mockito.mock(TicketCategory.class);
+        TicketCategory original = mock(TicketCategory.class);
+        TicketCategory updated = mock(TicketCategory.class);
 
         it.should("do nothing if both categories are not 'access restricted'", expect -> {
             when(original.isAccessRestricted()).thenReturn(false);
@@ -192,7 +193,7 @@ public class EventManagerTest {{
         int eventId = 0;
         TicketCategoryRepository ticketCategoryRepository = it.usesMock(TicketCategoryRepository.class);
         EventManager eventManager = new EventManager(null, null, ticketCategoryRepository, null, null, null, null, null, null, null);
-        Event event = Mockito.mock(Event.class);
+        Event event = mock(Event.class);
         int availableSeats = 20;
         when(event.getAvailableSeats()).thenReturn(availableSeats);
         it.should("create tickets for the unbounded category", expect -> {

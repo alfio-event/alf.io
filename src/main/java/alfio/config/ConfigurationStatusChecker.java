@@ -17,6 +17,7 @@
 package alfio.config;
 
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.DataMigrator;
 import alfio.manager.user.UserManager;
 import alfio.model.system.Configuration;
 import alfio.repository.user.AuthorityRepository;
@@ -42,18 +43,21 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
     private final AuthorityRepository authorityRepository;
     private final PasswordEncoder passwordEncoder;
     private final String version;
+    private final DataMigrator dataMigrator;
 
     @Autowired
     public ConfigurationStatusChecker(ConfigurationManager configurationManager,
                                       UserRepository userRepository,
                                       AuthorityRepository authorityRepository,
                                       PasswordEncoder passwordEncoder,
-                                      @Value("${alfio.version}") String version) {
+                                      @Value("${alfio.version}") String version,
+                                      DataMigrator dataMigrator) {
         this.configurationManager = configurationManager;
         this.authorityRepository = authorityRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.version = version;
+        this.dataMigrator = dataMigrator;
     }
 
     @Override
@@ -73,7 +77,15 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
             
             ofNullable(System.getProperty("maps.serverApiKey")).ifPresent((serverApiKey) -> configurationManager.saveSystemConfiguration(MAPS_SERVER_API_KEY, serverApiKey));
             ofNullable(System.getProperty("maps.clientApiKey")).ifPresent((clientApiKey) -> configurationManager.saveSystemConfiguration(MAPS_CLIENT_API_KEY, clientApiKey));
+
         }
-        log.info("initialized alf.io version {} ", version);
+        log.info("performing migration from previous version, if any");
+        try {
+            dataMigrator.migrateEventsToCurrentVersion();
+            log.info("done.");
+            log.info("initialized alf.io version {} ", version);
+        } catch (Exception e) {
+            log.error("unable to perform data migration. Please report this issue.", e);
+        }
     }
 }

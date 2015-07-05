@@ -45,7 +45,7 @@ public class Ticket {
     private final int id;
     private final String uuid;
     private final ZonedDateTime creation;
-    private final int categoryId;
+    private final Integer categoryId;
     private final int eventId;
     private final TicketStatus status;
     private final int originalPriceInCents;
@@ -67,7 +67,7 @@ public class Ticket {
     public Ticket(@Column("id") int id,
                   @Column("uuid") String uuid,
                   @Column("creation") ZonedDateTime creation,
-                  @Column("category_id") int categoryId,
+                  @Column("category_id") Integer categoryId,
                   @Column("status") String status,
                   @Column("event_id") int eventId,
                   @Column("original_price_cts") int originalPriceInCents,
