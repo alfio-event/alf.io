@@ -41,6 +41,7 @@ import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
@@ -81,5 +82,43 @@ public class TicketReservationManagerIntegrationTest {
         List<Ticket> pendingTickets = ticketRepository.findPendingTicketsInCategories(Collections.singletonList(category.getId()));
         assertEquals(2, pendingTickets.size());
         pendingTickets.forEach(t -> assertEquals(new BigDecimal("9.90"), t.getOriginalPrice()));
+        List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
+        assertEquals(18, tickets.size());
+        assertTrue(tickets.stream().allMatch(t -> t.getCategoryId() == null));
+    }
+
+    @Test
+    public void testTicketSelection() {
+        List<TicketCategoryModification> categories = Arrays.asList(
+                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        "desc", BigDecimal.TEN, false, "", false),
+                new TicketCategoryModification(null, "default", 10,
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        "desc", BigDecimal.TEN, false, "", true));
+        EventWithStatistics event = eventManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
+
+        TicketCategoryWithStatistic bounded = event.getTicketCategories().stream().filter(TicketCategoryWithStatistic::isBounded).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategoryWithStatistic unbounded = event.getTicketCategories().stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
+
+        TicketReservationModification tr = new TicketReservationModification();
+        tr.setAmount(10);
+        tr.setTicketCategoryId(bounded.getId());
+
+        TicketReservationModification tr2 = new TicketReservationModification();
+        tr2.setAmount(9);
+        tr2.setTicketCategoryId(unbounded.getId());
+
+        TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.<SpecialPrice>empty());
+        TicketReservationWithOptionalCodeModification mod2 = new TicketReservationWithOptionalCodeModification(tr2, Optional.<SpecialPrice>empty());
+        ticketReservationManager.createTicketReservation(event.getId(), Arrays.asList(mod, mod2), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
+        List<Ticket> pendingTickets = ticketRepository.findPendingTicketsInCategories(Arrays.asList(bounded.getId(), unbounded.getId()));
+        assertEquals(19, pendingTickets.size());
+        pendingTickets.forEach(t -> assertEquals(new BigDecimal("9.90"), t.getOriginalPrice()));
+        List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
+        assertEquals(1, tickets.size());
+        assertTrue(tickets.stream().allMatch(t -> t.getCategoryId() == null));
     }
 }
