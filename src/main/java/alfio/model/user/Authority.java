@@ -16,7 +16,7 @@
  */
 package alfio.model.user;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 @Getter

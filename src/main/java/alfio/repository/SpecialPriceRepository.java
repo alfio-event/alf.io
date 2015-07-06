@@ -16,11 +16,11 @@
  */
 package alfio.repository;
 
-import alfio.datamapper.Bind;
-import alfio.datamapper.Query;
-import alfio.datamapper.QueryRepository;
-import alfio.datamapper.QueryType;
 import alfio.model.SpecialPrice;
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
+import ch.digitalfondue.npjt.QueryRepository;
+import ch.digitalfondue.npjt.QueryType;
 
 import java.util.List;
 

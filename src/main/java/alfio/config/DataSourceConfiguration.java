@@ -16,9 +16,9 @@
  */
 package alfio.config;
 
-import alfio.datamapper.QueryFactory;
-import alfio.datamapper.QueryRepositoryScanner;
 import alfio.util.TemplateManager;
+import ch.digitalfondue.npjt.QueryFactory;
+import ch.digitalfondue.npjt.QueryRepositoryScanner;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -16,10 +16,10 @@
  */
 package alfio.repository.user;
 
-import alfio.datamapper.Bind;
-import alfio.datamapper.Query;
-import alfio.datamapper.QueryRepository;
 import alfio.model.user.Organization;
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
+import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.List;
 
