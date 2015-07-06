@@ -16,7 +16,7 @@
  */
 package alfio.model.system;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import alfio.model.Event;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

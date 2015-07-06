@@ -16,7 +16,7 @@
  */
 package alfio.model.user;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 @Getter
@@ -26,10 +26,10 @@ public class Organization {
 	private final String description;
 	private final String email;
 
-	public Organization(@ConstructorAnnotationRowMapper.Column("id") int id,
-                        @ConstructorAnnotationRowMapper.Column("name") String name,
-                        @ConstructorAnnotationRowMapper.Column("description") String description,
-                        @ConstructorAnnotationRowMapper.Column("email") String email) {
+	public Organization(@Column("id") int id,
+                        @Column("name") String name,
+                        @Column("description") String description,
+                        @Column("email") String email) {
 		this.id = id;
         this.name = name;
         this.description = description;

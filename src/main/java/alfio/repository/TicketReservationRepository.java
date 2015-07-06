@@ -16,8 +16,8 @@
  */
 package alfio.repository;
 
-import alfio.datamapper.*;
 import alfio.model.TicketReservation;
+import ch.digitalfondue.npjt.*;
 
 import java.time.ZonedDateTime;
 import java.util.Date;

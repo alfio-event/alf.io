@@ -30,6 +30,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.util.MonetaryUtil;
+import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
@@ -360,10 +361,10 @@ public class EventManager {
         em.getTicketCategories().stream().forEach(tc -> {
             final int price = evaluatePrice(tc.getPriceInCents(), em.getVat(), vatIncluded, freeOfCharge);
             final int maxTickets = tc.isBounded() ? tc.getMaxTickets() : 0;
-            final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
+            final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                     tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), maxTickets, price, tc.isTokenGenerationRequested(), eventId, tc.isBounded());
             if (tc.isTokenGenerationRequested()) {
-                final TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getValue(), event.getId());
+                final TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getKey(), event.getId());
                 final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategory, ticketCategory.getMaxTickets());
                 jdbc.batchUpdate(specialPriceRepository.bulkInsert(), args);
             }
@@ -374,9 +375,9 @@ public class EventManager {
         ZoneId zoneId = event.getZoneId();
         int eventId = event.getId();
         final int price = evaluatePrice(tc.getPriceInCents(), event.getVat(), event.isVatIncluded(), event.isFreeOfCharge());
-        final Pair<Integer, Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
+        final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), tc.isBounded() ? tc.getMaxTickets() : 0, price, tc.isTokenGenerationRequested(), eventId, tc.isBounded());
-        TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getValue(), eventId);
+        TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), TicketRepository.FREE);
             jdbc.batchUpdate(ticketRepository.bulkTicketUpdate(), lockedTickets.stream().map(id -> new MapSqlParameterSource("id", id).addValue("categoryId", ticketCategory.getId()).addValue("originalPrice", ticketCategory.getPriceInCents()).addValue("paidPrice", ticketCategory.getPriceInCents())).toArray(MapSqlParameterSource[]::new));
@@ -523,7 +524,7 @@ public class EventManager {
         return eventRepository.insert(em.getDescription(), em.getShortName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(),
                 result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()), em.getEnd().toZonedDateTime(result.getZoneId()),
                 result.getTimeZone(), actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
-                privateKey, em.getOrganizationId()).getValue();
+                privateKey, em.getOrganizationId()).getKey();
     }
 
     private String collectPaymentProxies(EventModification em) {

@@ -20,7 +20,7 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-import alfio.datamapper.ConstructorAnnotationRowMapper.Column;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import alfio.util.MonetaryUtil;
 import lombok.Getter;
 

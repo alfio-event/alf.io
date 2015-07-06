@@ -16,10 +16,10 @@
  */
 package alfio.repository;
 
-import alfio.datamapper.Bind;
-import alfio.datamapper.Query;
-import alfio.datamapper.QueryRepository;
 import alfio.model.EmailMessage;
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
+import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
 import java.util.List;

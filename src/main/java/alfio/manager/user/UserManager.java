@@ -26,8 +26,8 @@ import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.PasswordGenerator;
 import alfio.util.ValidationResult;
+import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -146,10 +146,10 @@ public class UserManager {
     public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress) {
         Organization organization = organizationRepository.getById(organizationId);
         String userPassword = PasswordGenerator.generateRandomPassword();
-        Pair<Integer, Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
-        userOrganizationRepository.create(result.getValue(), organization.getId());
+        AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
+        userOrganizationRepository.create(result.getKey(), organization.getId());
         authorityRepository.create(username, AuthorityRepository.ROLE_OPERATOR);
-        return new UserWithPassword(userRepository.findById(result.getValue()), userPassword, UUID.randomUUID().toString());
+        return new UserWithPassword(userRepository.findById(result.getKey()), userPassword, UUID.randomUUID().toString());
     }
 
     @Transactional
