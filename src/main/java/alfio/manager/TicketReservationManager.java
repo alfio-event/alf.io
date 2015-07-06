@@ -192,6 +192,8 @@ public class TicketReservationManager {
         } else {
             ticketRepository.reserveTickets(transactionId, reservedForUpdate, ticketReservation.getTicketCategoryId(), locale.getLanguage());
         }
+        TicketCategory category = ticketCategoryRepository.getById(ticketReservation.getTicketCategoryId(), eventId);
+        ticketRepository.updateTicketPrice(reservedForUpdate, category.getId(), eventId, category.getPriceInCents());
 	}
 
 	List<Integer> reserveTickets(int eventId, TicketReservationWithOptionalCodeModification ticketReservation, boolean forWaitingQueue) {
