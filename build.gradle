@@ -112,7 +112,7 @@ dependencies {
     compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     compile "org.springframework.security:spring-security-web:$springSecurityConfigVersion"
     compile "org.springframework.security:spring-security-config:$springSecurityConfigVersion"
-    compile "ch.digitalfondue.npjt-extra:npjt-extra:1.0.1"
+    compile "ch.digitalfondue.npjt-extra:npjt-extra:1.0.2"
     compile "com.samskivert:jmustache:1.10"
     compile "com.github.sps.mustache:mustache-spring-view:1.3"
     compile "javax.mail:mail:1.5.0-b01"
