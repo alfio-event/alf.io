@@ -99,6 +99,7 @@ configurations {
 }
 
 repositories {
+    mavenCentral()
     jcenter()
 }
 
