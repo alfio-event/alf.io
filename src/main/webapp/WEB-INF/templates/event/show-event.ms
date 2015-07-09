@@ -62,9 +62,12 @@
 
 {{#displaySoldOutWarning}}
 	{{^subscriptionComplete}}
-		<div class="alert alert-warning" role="alert">
-			<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/waiting-list" class="form-horizontal">
-				<h3>{{#i18n}}reservation-page-complete.sold-out.message{{/i18n}}</h3>
+		<div class="alert alert-warning" role="alert" id="waiting-queue-subscription">
+				<h3 class="wMarginBottom">{{#i18n}}show-event.sold-out.header{{/i18n}}</h3>
+				<h4>{{#i18n}}show-event.sold-out.message{{/i18n}}</h4>
+			<hr/>
+			<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/waiting-queue/subscribe" class="form-horizontal">
+                <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 				<label>{{#i18n}}common.full-name{{/i18n}} <input type="text" class="form-control" name="fullName"></label>
 				<label>{{#i18n}}common.email{{/i18n}} <input type="email" class="form-control" name="email"></label>
 				<label>{{#i18n}}reservation-page-complete.language{{/i18n}}
@@ -75,14 +78,14 @@
 						{{/availableLanguages}}
 	                </select>
 				</label>
-				<button type="submit" class="btn btn-success">{{#i18n}}reservation-page-complete.sold-out.subscribe{{/i18n}}</button>
+				<button type="submit" id="waiting-queue-subscribe" class="btn btn-success">{{#i18n}}show-event.sold-out.subscribe{{/i18n}}</button>
+                <div class="alert alert-danger wMarginTop wMarginBottom hide" id="generic-error">{{#i18n}}reservation-page-complete.please-check-input-fields{{/i18n}}</div>
 			</form>
+            <div class="text-center loading hide" id="loading"><i class="fa fa-cog fa-2x fa-spin"></i></div>
 		</div>
 	{{/subscriptionComplete}}
 	{{#subscriptionComplete}}
-		<div class="alert alert-success" role="alert">
-			<h3>{{#i18n}}reservation-page-complete.sold-out.subscription-complete{{/i18n}}</h3>
-		</div>
+		{{>/event/waiting-queue-subscription-result.ms}}
 	{{/subscriptionComplete}}
 {{/displaySoldOutWarning}}
 
@@ -229,6 +232,9 @@
 {{#hasAccessPromotions}}
 <script src="{{request.contextPath}}/resources/js/event/show-event.js"></script>
 {{/hasAccessPromotions}}
+{{#displaySoldOutWarning}}
+<script src="{{request.contextPath}}/resources/js/event/waiting-queue.js"></script>
+{{/displaySoldOutWarning}}
 <script src="{{request.contextPath}}/resources/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="{{request.contextPath}}/resources/js/event/bootstrap-handler.js"></script>
 {{>/event/page-bottom}}

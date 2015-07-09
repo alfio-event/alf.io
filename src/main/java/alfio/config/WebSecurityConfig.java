@@ -74,9 +74,7 @@ public class WebSecurityConfig {
 
         @Override
         protected void configure(HttpSecurity http) throws Exception {
-            http.requestMatcher((request) -> {
-                return request.getHeader("Authorization") != null;
-            }).sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            http.requestMatcher((request) -> request.getHeader("Authorization") != null).sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and().csrf().disable()
             .authorizeRequests()
             .antMatchers(ADMIN_API + "/check-in/**").hasRole(OPERATOR)

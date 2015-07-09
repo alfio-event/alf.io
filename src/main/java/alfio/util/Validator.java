@@ -17,6 +17,7 @@
 package alfio.util;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import org.apache.commons.lang3.StringUtils;
@@ -101,7 +102,7 @@ public final class Validator {
     public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, Errors errors) {
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "email", "error.email");
         String email = form.getEmail();
-        if(StringUtils.isNotEmpty(email) && !SIMPLE_E_MAIL_PATTERN.matcher(email).matches()) {
+        if(!isEmailValid(email)) {
             errors.rejectValue("email", "error.email");
         }
 
@@ -116,9 +117,24 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
+    private static boolean isEmailValid(String email) {
+        return StringUtils.isNotEmpty(email) && SIMPLE_E_MAIL_PATTERN.matcher(email).matches();
+    }
+
     public static void validateMaxLength(String value, String fieldName, String errorCode, int maxLength, Errors errors) {
         if(StringUtils.isNotBlank(value) && StringUtils.length(value) > maxLength) {
             errors.rejectValue(fieldName, errorCode);
         }
+    }
+
+    public static ValidationResult validateWaitingQueueSubscription(WaitingQueueSubscriptionForm form, Errors errors) {
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fullName", "error.fullName");
+        if(!isEmailValid(form.getEmail())) {
+            errors.rejectValue("email", "error.email");
+        }
+        if(form.getUserLanguage() == null) {
+            errors.rejectValue("userLanguage", "error.userLanguage");
+        }
+        return evaluateValidationResult(errors);
     }
 }

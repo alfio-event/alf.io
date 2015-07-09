@@ -18,11 +18,11 @@ package alfio.repository;
 
 import alfio.model.Event;
 import ch.digitalfondue.npjt.*;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface EventRepository {
@@ -32,6 +32,9 @@ public interface EventRepository {
 
     @Query("select * from event where short_name = :eventName")
     Event findByShortName(@Bind("eventName") String eventName);
+
+    @Query("select * from event where short_name = :eventName")
+    Optional<Event> findOptionalByShortName(@Bind("eventName") String eventName);
 
     @Query("select * from event order by start_ts asc")
     List<Event> findAll();

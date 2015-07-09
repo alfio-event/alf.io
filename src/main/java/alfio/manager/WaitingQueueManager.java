@@ -29,12 +29,15 @@ import alfio.util.WorkingDaysAdjusters;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.logging.log4j.Level;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -56,6 +59,18 @@ public class WaitingQueueManager {
         this.ticketRepository = ticketRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.configurationManager = configurationManager;
+    }
+
+    public boolean subscribe(Event event, String fullName, String email, Locale userLanguage) {
+        try {
+            waitingQueueRepository.insert(event.getId(), fullName, email, ZonedDateTime.now(event.getZoneId()), userLanguage.getLanguage());
+            return true;
+        } catch(DuplicateKeyException e) {
+            return true;//why are you subscribing twice?
+        } catch (Exception e) {
+            log.catching(Level.ERROR, e);
+            return false;
+        }
     }
 
     Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeSeats(Event event) {

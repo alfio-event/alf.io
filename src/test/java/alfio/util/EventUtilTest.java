@@ -84,7 +84,7 @@ public class EventUtilTest {{
             when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false))).thenReturn(true);
             expect.that(EventUtil.displaySoldOutWarning(event, categories, configurationManager)).is(false);
         });
-        it.should("not display the sold-out warning if the waiting list is disabled", expect -> {
+        it.should("not display the sold-out warning if the waiting queue is disabled", expect -> {
             List<SaleableTicketCategory> categories = Collections.singletonList(last);
             when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false))).thenReturn(false);
             expect.that(EventUtil.displaySoldOutWarning(event, categories, configurationManager)).is(false);

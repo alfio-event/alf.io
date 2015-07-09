@@ -53,7 +53,7 @@ public class WaitingQueueSubscriptionProcessorTest {{
         final String reservationId = "reservation-id";
         when(event.getId()).thenReturn(eventId);
         List<Event> activeEvents = Collections.singletonList(event);
-        it.should("filter events whose 'waiting list' flag is not active", expect -> {
+        it.should("filter events whose 'waiting queue' flag is not active", expect -> {
             when(eventManager.getActiveEvents()).thenReturn(activeEvents);
             when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false))).thenReturn(false);
             processor.handleWaitingTickets();
