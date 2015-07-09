@@ -19,6 +19,7 @@ package alfio.config;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.npjt.QueryFactory;
 import ch.digitalfondue.npjt.QueryRepositoryScanner;
+import ch.digitalfondue.npjt.mapper.ZonedDateTimeMapper;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -204,7 +205,10 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 
 	@Bean
 	public QueryFactory queryFactory(Environment env, PlatformProvider platform, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
-		return new QueryFactory(platform.getDialect(env), namedParameterJdbcTemplate);
+		QueryFactory qf = new QueryFactory(platform.getDialect(env), namedParameterJdbcTemplate);
+		qf.addColumnMapperFactory(new ZonedDateTimeMapper.Factory());
+		qf.addParameterConverters(new ZonedDateTimeMapper.Converter());
+		return qf;
 	}
 
 	@Bean
