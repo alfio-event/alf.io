@@ -35,59 +35,160 @@ import static org.mockito.Mockito.*;
 
 @RunWith(JunitSuiteRunner.class)
 public class EventUtilTest {{
-    describe("displaySoldOutWarning", it -> {
+    describe("EventUtil", it -> {
         Event event = mock(Event.class);
         ZoneId zone = ZoneId.systemDefault();
         when(event.getZoneId()).thenReturn(zone);
         SaleableTicketCategory first = it.usesMock(SaleableTicketCategory.class);
         SaleableTicketCategory last = it.usesMock(SaleableTicketCategory.class);
         ConfigurationManager configurationManager = it.usesMock(ConfigurationManager.class);
-        it.should("display the sold-out warning if the last category is not expired and sold-out", expect -> {
+
+        //sold-out
+
+        it.should("display the waiting queue form if the last category is not expired and sold-out", expect -> {
             List<SaleableTicketCategory> categories = asList(first, last);
             when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(1));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));
             when(last.getAvailableTickets()).thenReturn(0);
+            when(first.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false))).thenReturn(true);
-            expect.that(EventUtil.displaySoldOutWarning(event, categories, configurationManager)).is(true);
+            expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager)).is(true);
         });
-        it.should("display the sold-out warning if the only category is not expired and sold-out", expect -> {
+        it.should("display the waiting queue form if the only category is not expired and sold-out", expect -> {
             List<SaleableTicketCategory> categories = Collections.singletonList(last);
             when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(1));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));
             when(last.getAvailableTickets()).thenReturn(0);
             when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false))).thenReturn(true);
-            expect.that(EventUtil.displaySoldOutWarning(event, categories, configurationManager)).is(true);
+            expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager)).is(true);
         });
-        it.should("not display the sold-out warning if there are yet available seats", expect -> {
+        it.should("not display the waiting queue form if there are yet available seats", expect -> {
             List<SaleableTicketCategory> categories = Collections.singletonList(last);
             when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(1));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));
             when(last.getAvailableTickets()).thenReturn(1);
             when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false))).thenReturn(true);
-            expect.that(EventUtil.displaySoldOutWarning(event, categories, configurationManager)).is(false);
+            expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager)).is(false);
         });
-        it.should("not display the sold-out warning if the last category is expired", expect -> {
+        it.should("not display the waiting queue form if the last category is expired", expect -> {
             List<SaleableTicketCategory> categories = asList(first, last);
             when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().minusDays(1));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(last.getAvailableTickets()).thenReturn(0);
+            when(first.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false))).thenReturn(true);
-            expect.that(EventUtil.displaySoldOutWarning(event, categories, configurationManager)).is(false);
+            expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager)).is(false);
         });
-        it.should("not display the sold-out warning if the only category is not expired", expect -> {
+        it.should("not display the waiting queue form if the only category is not expired", expect -> {
             List<SaleableTicketCategory> categories = Collections.singletonList(last);
             when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().minusDays(1));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(last.getAvailableTickets()).thenReturn(0);
             when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false))).thenReturn(true);
-            expect.that(EventUtil.displaySoldOutWarning(event, categories, configurationManager)).is(false);
+            expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager)).is(false);
         });
-        it.should("not display the sold-out warning if the category list is empty", expect -> {
+        it.should("not display the waiting queue form if the category list is empty", expect -> {
             List<SaleableTicketCategory> categories = Collections.emptyList();
             when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().minusDays(1));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(last.getAvailableTickets()).thenReturn(0);
             when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false))).thenReturn(true);
-            expect.that(EventUtil.displaySoldOutWarning(event, categories, configurationManager)).is(false);
+            expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager)).is(false);
         });
-        it.should("not display the sold-out warning if the waiting queue is disabled", expect -> {
+        it.should("not display the waiting queue form if the waiting queue is disabled", expect -> {
             List<SaleableTicketCategory> categories = Collections.singletonList(last);
+            when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().minusDays(1));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false))).thenReturn(false);
-            expect.that(EventUtil.displaySoldOutWarning(event, categories, configurationManager)).is(false);
+            expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager)).is(false);
+        });
+
+        //pre-sales registration
+
+        it.should("display the waiting queue form before sales start", expect -> {
+            List<SaleableTicketCategory> categories = Collections.singletonList(last);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_PRE_REGISTRATION), eq(false))).thenReturn(true);
+            when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(1));
+            when(last.getAvailableTickets()).thenReturn(1);
+            expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager)).is(true);
+        });
+
+        it.should("display the waiting queue form before sales start (2 categories)", expect -> {
+            List<SaleableTicketCategory> categories = asList(first, last);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_PRE_REGISTRATION), eq(false))).thenReturn(true);
+            when(first.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
+            when(first.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(1));
+            when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(3));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(2));
+            when(last.getAvailableTickets()).thenReturn(1);
+            when(first.getAvailableTickets()).thenReturn(1);
+            expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager)).is(true);
+        });
+
+        it.should("not display the waiting queue form before sales start if pre-registration is not enabled", expect -> {
+            List<SaleableTicketCategory> categories = Collections.singletonList(last);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_PRE_REGISTRATION), eq(false))).thenReturn(false);
+            when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(1));
+            when(last.getAvailableTickets()).thenReturn(1);
+            expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager)).is(false);
+        });
+
+        it.should("not display the waiting queue form after sales start", expect -> {
+            List<SaleableTicketCategory> categories = Collections.singletonList(last);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_PRE_REGISTRATION), eq(false))).thenReturn(true);
+            when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));
+            when(last.getAvailableTickets()).thenReturn(1);
+            expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager)).is(false);
+        });
+
+        it.should("not display the waiting queue form after sales start (two categories)", expect -> {
+            List<SaleableTicketCategory> categories = asList(first, last);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_PRE_REGISTRATION), eq(false))).thenReturn(true);
+            when(first.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
+            when(first.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));
+            when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(3));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(2));
+            when(last.getAvailableTickets()).thenReturn(1);
+            when(first.getAvailableTickets()).thenReturn(1);
+            expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager)).is(false);
+        });
+
+        //pre-sales message
+
+        it.should("recognize pre-sales period", expect -> {
+            List<SaleableTicketCategory> categories = Collections.singletonList(last);
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(1));
+            when(last.getAvailableTickets()).thenReturn(0);
+            expect.that(EventUtil.isPreSales(event, categories)).is(true);
+        });
+
+        it.should("recognize pre-sales from first category", expect -> {
+            List<SaleableTicketCategory> categories = asList(first, last);
+            when(first.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(1));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(2));
+            when(last.getAvailableTickets()).thenReturn(5);
+            when(first.getAvailableTickets()).thenReturn(5);
+            expect.that(EventUtil.isPreSales(event, categories)).is(true);
+        });
+
+
+        it.should("recognize post-sales period", expect -> {
+            List<SaleableTicketCategory> categories = Collections.singletonList(last);
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));
+            when(last.getAvailableTickets()).thenReturn(5);
+            expect.that(EventUtil.isPreSales(event, categories)).is(false);
+        });
+
+        it.should("recognize post-sales from first category", expect -> {
+            List<SaleableTicketCategory> categories = asList(first, last);
+            when(first.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));
+            when(last.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(2));
+            when(last.getAvailableTickets()).thenReturn(5);
+            when(first.getAvailableTickets()).thenReturn(5);
+            expect.that(EventUtil.isPreSales(event, categories)).is(false);
         });
 
         it.completesWith(() -> verifyNoMoreInteractions(first));

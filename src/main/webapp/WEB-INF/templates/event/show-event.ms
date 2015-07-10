@@ -60,24 +60,34 @@
 </div>
 {{/hasErrors}}
 
-{{#displaySoldOutWarning}}
+{{#displayWaitingQueueForm}}
 	{{^subscriptionComplete}}
 		<div class="alert alert-warning" role="alert" id="waiting-queue-subscription">
+			{{#preSales}}
+				<h3 class="wMarginBottom">{{#i18n}}show-event.pre-sales.header{{/i18n}}</h3>
+				<h4>{{#i18n}}show-event.pre-sales.message{{/i18n}}</h4>
+			{{/preSales}}
+			{{^preSales}}
 				<h3 class="wMarginBottom">{{#i18n}}show-event.sold-out.header{{/i18n}}</h3>
 				<h4>{{#i18n}}show-event.sold-out.message{{/i18n}}</h4>
+			{{/preSales}}
 			<hr/>
 			<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/waiting-queue/subscribe" class="form-horizontal">
                 <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
-				<label>{{#i18n}}common.full-name{{/i18n}} <input type="text" class="form-control" name="fullName"></label>
-				<label>{{#i18n}}common.email{{/i18n}} <input type="email" class="form-control" name="email"></label>
+				<label>{{#i18n}}common.full-name{{/i18n}} <input type="text" class="form-control" name="fullName" required="required" aria-required="true"></label>
+				<label>{{#i18n}}common.email{{/i18n}} <input type="email" class="form-control" name="email"  required="required" aria-required="true"></label>
 				<label>{{#i18n}}reservation-page-complete.language{{/i18n}}
-					<select name="userLanguage" value="{{userLanguage}}" id="waiting-queue-language" class="form-control">
+					<select name="userLanguage" value="{{userLanguage}}" id="waiting-queue-language" class="form-control" required="required" aria-required="true">
 		                <option value=""></option>
 						{{#availableLanguages}}
 		                    <option value="{{language}}">{{displayLanguage}}</option>
 						{{/availableLanguages}}
 	                </select>
 				</label>
+                <label>
+                    <input type="checkbox" name="termAndConditionsAccepted" required="required" aria-required="true">
+					{{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termsAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
+                </label>
 				<button type="submit" id="waiting-queue-subscribe" class="btn btn-success">{{#i18n}}show-event.sold-out.subscribe{{/i18n}}</button>
                 <div class="alert alert-danger wMarginTop wMarginBottom hide" id="generic-error">{{#i18n}}reservation-page-complete.please-check-input-fields{{/i18n}}</div>
 			</form>
@@ -87,7 +97,7 @@
 	{{#subscriptionComplete}}
 		{{>/event/waiting-queue-subscription-result.ms}}
 	{{/subscriptionComplete}}
-{{/displaySoldOutWarning}}
+{{/displayWaitingQueueForm}}
 
 <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reserve-tickets" class="form-horizontal">
 	<ul class="list-group">
@@ -232,9 +242,9 @@
 {{#hasAccessPromotions}}
 <script src="{{request.contextPath}}/resources/js/event/show-event.js"></script>
 {{/hasAccessPromotions}}
-{{#displaySoldOutWarning}}
+{{#displayWaitingQueueForm}}
 <script src="{{request.contextPath}}/resources/js/event/waiting-queue.js"></script>
-{{/displaySoldOutWarning}}
+{{/displayWaitingQueueForm}}
 <script src="{{request.contextPath}}/resources/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="{{request.contextPath}}/resources/js/event/bootstrap-handler.js"></script>
 {{>/event/page-bottom}}

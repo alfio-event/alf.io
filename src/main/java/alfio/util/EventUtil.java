@@ -37,14 +37,38 @@ import java.util.stream.Stream;
 @UtilityClass
 public class EventUtil {
 
-    public static boolean displaySoldOutWarning(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager) {
-        if(!configurationManager.getBooleanConfigValue(Configuration.event(event), ConfigurationKeys.ENABLE_WAITING_QUEUE, false)) {
+    private static final Predicate<List<SaleableTicketCategory>> IS_EMPTY = List::isEmpty;
+
+    public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager) {
+        Optional<SaleableTicketCategory> lastCategoryOptional = findLastCategory(categories);
+        if(!lastCategoryOptional.isPresent()) {
             return false;
         }
-        Predicate<List<SaleableTicketCategory>> isEmpty = List::isEmpty;
-        Optional<SaleableTicketCategory> lastCategory = Optional.ofNullable(categories).filter(isEmpty.negate()).map(l -> l.get(l.size() - 1));
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        return lastCategory.map(category -> now.isBefore(category.getZonedExpiration()) && categories.stream().noneMatch(c -> c.getAvailableTickets() > 0)).orElse(false);
+        SaleableTicketCategory lastCategory = lastCategoryOptional.get();
+        if(isPreSales(event, categories)) {
+            return configurationManager.getBooleanConfigValue(Configuration.event(event), ConfigurationKeys.ENABLE_PRE_REGISTRATION, false);
+        } else if(configurationManager.getBooleanConfigValue(Configuration.event(event), ConfigurationKeys.ENABLE_WAITING_QUEUE, false)) {
+            return now.isBefore(lastCategory.getZonedExpiration()) && noTicketAvailable(categories);
+        }
+        return false;
+    }
+
+    private static Optional<SaleableTicketCategory> findLastCategory(List<SaleableTicketCategory> categories) {
+        return Optional.ofNullable(categories).filter(IS_EMPTY.negate()).map(l -> l.get(l.size() - 1));
+    }
+
+    private static Optional<SaleableTicketCategory> findFirstCategory(List<SaleableTicketCategory> categories) {
+        return Optional.ofNullable(categories).filter(IS_EMPTY.negate()).flatMap(l -> l.stream().findFirst());
+    }
+
+    private static boolean noTicketAvailable(List<SaleableTicketCategory> categories) {
+        return categories.stream().noneMatch(c -> c.getAvailableTickets() > 0);
+    }
+
+    public static boolean isPreSales(Event event, List<SaleableTicketCategory> categories) {
+        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        return findFirstCategory(categories).map(c -> now.isBefore(c.getZonedInception())).orElse(false);
     }
 
     public static Stream<MapSqlParameterSource> generateEmptyTickets(Event event, Date creationDate, int limit) {

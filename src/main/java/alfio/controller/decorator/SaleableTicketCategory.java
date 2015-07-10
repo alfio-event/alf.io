@@ -97,6 +97,10 @@ public class SaleableTicketCategory {
     	return getExpiration(zoneId);
     }
 
+    public ZonedDateTime getZonedInception() {
+        return getInception(zoneId);
+    }
+
     public String getFinalPrice() {
         return formatCents(getFinalPriceInCents());
     }

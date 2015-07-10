@@ -204,7 +204,8 @@ public class EventController {
 			.addAttribute("pageTitle", "show-event.header.title")
 			.addAttribute("hasPromoCodeDiscount", promoCodeDiscount.isPresent())
 			.addAttribute("promoCodeDiscount", promoCodeDiscount.orElse(null))
-            .addAttribute("displaySoldOutWarning", EventUtil.displaySoldOutWarning(event, ticketCategories, configurationManager))
+            .addAttribute("displayWaitingQueueForm", EventUtil.displayWaitingQueueForm(event, ticketCategories, configurationManager))
+            .addAttribute("preSales", EventUtil.isPreSales(event, ticketCategories))
             .addAttribute("userLanguage", locale)
 			.addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable));
 		model.asMap().putIfAbsent("hasErrors", false);//

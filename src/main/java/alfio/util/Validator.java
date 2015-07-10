@@ -128,6 +128,9 @@ public final class Validator {
     }
 
     public static ValidationResult validateWaitingQueueSubscription(WaitingQueueSubscriptionForm form, Errors errors) {
+        if(!form.isTermAndConditionsAccepted()) {
+            errors.rejectValue("termAndConditionsAccepted", "error.termAndConditionsAccepted");
+        }
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fullName", "error.fullName");
         if(!isEmailValid(form.getEmail())) {
             errors.rejectValue("email", "error.email");

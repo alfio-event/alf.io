@@ -20,6 +20,7 @@ import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.manager.WaitingQueueManager;
 import alfio.model.Event;
 import alfio.repository.EventRepository;
+import alfio.util.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -45,12 +46,14 @@ public class WaitingQueueController {
 
     @RequestMapping(value = "/event/{eventName}/waiting-queue/subscribe", method = RequestMethod.POST)
     public String subscribe(@ModelAttribute WaitingQueueSubscriptionForm subscription, BindingResult bindingResult, Model model, @PathVariable("eventName") String eventName, RedirectAttributes redirectAttributes) {
-        Event event = eventRepository.findOptionalByShortName(eventName).orElseThrow(IllegalArgumentException::new);
-        if(waitingQueueManager.subscribe(event, subscription.getFullName(), subscription.getEmail(), subscription.getUserLanguage())) {
-            redirectAttributes.addFlashAttribute("subscriptionComplete", true);
-        } else {
-            redirectAttributes.addFlashAttribute("subscriptionError", true);
-        }
+        Validator.validateWaitingQueueSubscription(subscription, bindingResult).ifSuccess(() -> {
+            Event event = eventRepository.findOptionalByShortName(eventName).orElseThrow(IllegalArgumentException::new);
+            if(waitingQueueManager.subscribe(event, subscription.getFullName(), subscription.getEmail(), subscription.getUserLanguage())) {
+                redirectAttributes.addFlashAttribute("subscriptionComplete", true);
+            } else {
+                redirectAttributes.addFlashAttribute("subscriptionError", true);
+            }
+        });
         return "redirect:/event/"+eventName+"/";
     }
 
