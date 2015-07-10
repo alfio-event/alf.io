@@ -73,6 +73,14 @@ public class WaitingQueueManager {
         }
     }
 
+    public List<WaitingQueueSubscription> loadAllSubscriptionsForEvent(int eventId) {
+        return waitingQueueRepository.loadAllWaiting(eventId);
+    }
+
+    public int countSubscribers(int eventId) {
+        return waitingQueueRepository.countWaitingPeople(eventId);
+    }
+
     Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeSeats(Event event) {
         int eventId = event.getId();
         int waitingPeople = waitingQueueRepository.countWaitingPeople(eventId);

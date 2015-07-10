@@ -88,6 +88,11 @@
                 url: '/compose-custom-message/:eventName',
                 templateUrl: BASE_STATIC_URL + '/custom-message/index.html',
                 controller: 'ComposeCustomMessage'
+            })
+            .state('events.show-waiting-queue', {
+                url: '/:eventName/waiting-queue',
+                templateUrl: BASE_STATIC_URL + '/waiting-queue/index.html',
+                controller: 'ShowWaitingQueue as ctrl'
             });
 
         var printLabel = function(val) {
@@ -1128,6 +1133,15 @@
             });
         };
     });
+
+    admin.controller('ShowWaitingQueue', ['WaitingQueueService', '$stateParams', function(WaitingQueueService, $stateParams) {
+        var ctrl = this;
+        this.loading = true;
+        WaitingQueueService.loadAllSubscribers($stateParams.eventName).success(function(result) {
+            ctrl.subscriptions = result;
+            ctrl.loading = false;
+        });
+    }]);
 
     admin.run(function($rootScope, PriceCalculator) {
         var calculateNetPrice = function(event) {

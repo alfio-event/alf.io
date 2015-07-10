@@ -481,4 +481,22 @@
        };
     });
 
+    directives.directive('waitingQueueDisplayCounter', function() {
+        return {
+            restrict: 'E',
+            bindToController: true,
+            scope: {
+                event: '='
+            },
+            controllerAs: 'ctrl',
+            controller: function(WaitingQueueService) {
+                var ctrl = this;
+                WaitingQueueService.countSubscribers(this.event).success(function(result) {
+                    ctrl.count = result;
+                });
+            },
+            template: '<span><a class="btn btn-warning" data-ui-sref="events.show-waiting-queue({eventName: ctrl.event.shortName})"><i class="fa fa-group"></i> waiting queue <span class="badge">{{ctrl.count}}</span></a></span>'
+        }
+    })
+
 })();
