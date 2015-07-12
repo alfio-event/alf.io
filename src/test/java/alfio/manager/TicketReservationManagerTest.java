@@ -48,6 +48,8 @@ import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_START;
 import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
 import static com.insightfullogic.lambdabehave.Suite.describe;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.*;
 
 @RunWith(JunitSuiteRunner.class)
@@ -297,7 +299,7 @@ public class TicketReservationManagerTest {{
         it.should("reserve tickets for bounded categories", expect -> {
             when(tc.isBounded()).thenReturn(true);
             List<Integer> ids = Collections.singletonList(1);
-            when(ticketRepository.selectTicketInCategoryForUpdate(eq(eventId), eq(ticketCategoryId), eq(1), eq(TicketRepository.FREE))).thenReturn(ids);
+            when(ticketRepository.selectTicketInCategoryForUpdate(eq(eventId), eq(ticketCategoryId), eq(1), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(ids);
             when(trm.getAmount()).thenReturn(1);
             when(trm.getTicketCategoryId()).thenReturn(ticketCategoryId);
             ticketReservationManager.reserveTicketsForCategory(eventId, Optional.<String>empty(), "trid", trm, Locale.ENGLISH, false);
@@ -307,7 +309,7 @@ public class TicketReservationManagerTest {{
         it.should("reserve tickets for bounded categories (waiting queue)", expect -> {
             when(tc.isBounded()).thenReturn(true);
             List<Integer> ids = Collections.singletonList(1);
-            when(ticketRepository.selectTicketInCategoryForUpdate(eq(eventId), eq(ticketCategoryId), eq(1), eq(TicketRepository.RELEASED))).thenReturn(ids);
+            when(ticketRepository.selectTicketInCategoryForUpdate(eq(eventId), eq(ticketCategoryId), eq(1), eq(asList(TicketStatus.RELEASED.name(), TicketStatus.PRE_RESERVED.name())))).thenReturn(ids);
             when(trm.getAmount()).thenReturn(1);
             when(trm.getTicketCategoryId()).thenReturn(ticketCategoryId);
             ticketReservationManager.reserveTicketsForCategory(eventId, Optional.<String>empty(), "trid", trm, Locale.ENGLISH, true);
@@ -317,7 +319,7 @@ public class TicketReservationManagerTest {{
         it.should("reserve tickets for unbounded categories", expect -> {
             when(tc.isBounded()).thenReturn(false);
             List<Integer> ids = Collections.singletonList(1);
-            when(ticketRepository.selectNotAllocatedTicketsForUpdate(eq(eventId), eq(1), eq(TicketRepository.FREE))).thenReturn(ids);
+            when(ticketRepository.selectNotAllocatedTicketsForUpdate(eq(eventId), eq(1), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(ids);
             when(trm.getAmount()).thenReturn(1);
             when(trm.getTicketCategoryId()).thenReturn(ticketCategoryId);
             ticketReservationManager.reserveTicketsForCategory(eventId, Optional.<String>empty(), "trid", trm, Locale.ENGLISH, false);
@@ -327,7 +329,7 @@ public class TicketReservationManagerTest {{
         it.should("reserve tickets for unbounded categories (waiting queue)", expect -> {
             when(tc.isBounded()).thenReturn(false);
             List<Integer> ids = Collections.singletonList(1);
-            when(ticketRepository.selectNotAllocatedTicketsForUpdate(eq(eventId), eq(1), eq(TicketRepository.RELEASED))).thenReturn(ids);
+            when(ticketRepository.selectNotAllocatedTicketsForUpdate(eq(eventId), eq(1), eq(asList(TicketStatus.RELEASED.name(), TicketStatus.PRE_RESERVED.name())))).thenReturn(ids);
             when(trm.getAmount()).thenReturn(1);
             when(trm.getTicketCategoryId()).thenReturn(ticketCategoryId);
             ticketReservationManager.reserveTicketsForCategory(eventId, Optional.<String>empty(), "trid", trm, Locale.ENGLISH, true);

@@ -44,6 +44,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 @Component
@@ -54,7 +55,6 @@ public class WaitingQueueManager {
     private final TicketRepository ticketRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final ConfigurationManager configurationManager;
-    private final EventManager eventManager;
     private final EventStatisticsManager eventStatisticsManager;
     private final NamedParameterJdbcTemplate jdbc;
 
@@ -63,14 +63,12 @@ public class WaitingQueueManager {
                                TicketRepository ticketRepository,
                                TicketCategoryRepository ticketCategoryRepository,
                                ConfigurationManager configurationManager,
-                               EventManager eventManager,
                                EventStatisticsManager eventStatisticsManager,
                                NamedParameterJdbcTemplate jdbc) {
         this.waitingQueueRepository = waitingQueueRepository;
         this.ticketRepository = ticketRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.configurationManager = configurationManager;
-        this.eventManager = eventManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.jdbc = jdbc;
     }
@@ -104,17 +102,27 @@ public class WaitingQueueManager {
         } else if (waitingPeople > 0 && waitingTickets > 0) {
             return distributeAvailableSeats(event, waitingPeople, waitingTickets);
         } else if(configurationManager.getBooleanConfigValue(Configuration.event(event), ConfigurationKeys.ENABLE_PRE_REGISTRATION, false)) {
-            Optional<TicketCategory> ticketCategory = ticketCategoryRepository.findAllTicketCategories(eventId).stream()
-                    .findFirst()
-                    .filter(t -> ZonedDateTime.now(event.getZoneId()).isBefore(t.getInception(event.getZoneId())));
-            if(ticketCategory.isPresent()) {
-                evaluatePreReservation(event, Math.min(waitingPeople, event.getAvailableSeats()));
-            }
+            return handlePreReservation(event, waitingPeople, waitingTickets);
         }
         return Stream.empty();
     }
 
-    private void evaluatePreReservation(Event event, int ticketsNeeded) {
+    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> handlePreReservation(Event event, int waitingPeople, int waitingTickets) {
+        List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        Optional<TicketCategory> categoryWithInceptionInFuture = ticketCategories.stream()
+                .findFirst()
+                .filter(t -> ZonedDateTime.now(event.getZoneId()).isBefore(t.getInception(event.getZoneId())));
+        int ticketsNeeded = Math.min(waitingPeople, event.getAvailableSeats());
+        if(categoryWithInceptionInFuture.isPresent()) {
+            preReserveIfNeeded(event, ticketsNeeded);
+            return Stream.empty();
+        } else if(waitingPeople > 0) {
+            return distributeAvailableSeats(event, Ticket.TicketStatus.PRE_RESERVED, () -> waitingPeople);
+        }
+        return Stream.empty();
+    }
+
+    private void preReserveIfNeeded(Event event, int ticketsNeeded) {
         int eventId = event.getId();
         int alreadyReserved = ticketRepository.countPreReservedTickets(eventId);
         if(alreadyReserved < ticketsNeeded) {
@@ -142,14 +150,22 @@ public class WaitingQueueManager {
 
 
     private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeAvailableSeats(Event event, int waitingPeople, int waitingTickets) {
-        int availableSeats = Math.min(waitingPeople, waitingTickets);
+        return distributeAvailableSeats(event, Ticket.TicketStatus.RELEASED, () -> Math.min(waitingPeople, waitingTickets));
+    }
+
+    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeAvailableSeats(Event event, Ticket.TicketStatus status, Supplier<Integer> availableSeatSupplier) {
+        int availableSeats = availableSeatSupplier.get();
         int eventId = event.getId();
         log.debug("processing {} subscribers from waiting queue", availableSeats);
-        Iterator<Ticket> tickets = ticketRepository.selectWaitingTicketsForUpdate(eventId, availableSeats).iterator();
+        Iterator<Ticket> tickets = ticketRepository.selectWaitingTicketsForUpdate(eventId, status.name(), availableSeats).iterator();
         Optional<TicketCategory> unboundedCategory = ticketCategoryRepository.findUnboundedOrderByExpirationDesc(eventId).stream().findFirst();
         int expirationTimeout = configurationManager.getIntConfigValue(Configuration.event(event), ConfigurationKeys.WAITING_QUEUE_RESERVATION_TIMEOUT, 4);
         ZonedDateTime expiration = ZonedDateTime.now(event.getZoneId()).plusHours(expirationTimeout).with(WorkingDaysAdjusters.defaultWorkingDays());
 
+        if(!tickets.hasNext()) {
+            log.warn("Unable to assign tickets, returning an empty stream");
+            return Stream.empty();
+        }
         return waitingQueueRepository.loadWaiting(eventId, availableSeats).stream()
             .map(wq -> Pair.of(wq, tickets.next()))
             .map(pair -> {

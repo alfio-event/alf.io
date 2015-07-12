@@ -24,6 +24,7 @@ import alfio.model.Event;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.SpecialPrice;
 import alfio.model.Ticket;
+import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketCategory;
 import alfio.model.modification.*;
 import alfio.model.system.Configuration;
@@ -56,6 +57,7 @@ import java.util.stream.Stream;
 
 import static alfio.util.EventUtil.*;
 import static java.lang.String.format;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -181,7 +183,7 @@ public class EventManager {
                 final MapSqlParameterSource[] params = generateEmptyTickets(modified, Date.from(ZonedDateTime.now(modified.getZoneId()).toInstant()), seatsDifference).toArray(MapSqlParameterSource[]::new);
                 jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
             } else {
-                List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, Math.abs(seatsDifference), TicketRepository.FREE);
+                List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, Math.abs(seatsDifference), singletonList(TicketStatus.FREE.name()));
                 Validate.isTrue(ids.size() == Math.abs(seatsDifference), "cannot lock enough tickets for deletion.");
                 int invalidatedTickets = ticketRepository.invalidateTickets(ids);
                 Validate.isTrue(ids.size() == invalidatedTickets, String.format("error during ticket invalidation: expected %d, got %d", ids.size(), invalidatedTickets));
@@ -244,7 +246,7 @@ public class EventManager {
             log.info("since all the ticket have been sold, ticket moving is not needed anymore.");
             return;
         }
-        List<Integer> lockedTickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), src.getId(), notSoldTickets, TicketRepository.FREE);
+        List<Integer> lockedTickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), src.getId(), notSoldTickets, singletonList(TicketStatus.FREE.name()));
         int locked = lockedTickets.size();
         if(locked != notSoldTickets) {
             throw new IllegalStateException(String.format("Expected %d free tickets, got %d.", notSoldTickets, locked));
@@ -339,7 +341,7 @@ public class EventManager {
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.getDescription(), tc.isBounded() ? tc.getMaxTickets() : 0, price, tc.isTokenGenerationRequested(), eventId, tc.isBounded());
         TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getKey(), eventId);
         if(tc.isBounded()) {
-            List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), TicketRepository.FREE);
+            List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), singletonList(TicketStatus.FREE.name()));
             jdbc.batchUpdate(ticketRepository.bulkTicketUpdate(), lockedTickets.stream().map(id -> new MapSqlParameterSource("id", id).addValue("categoryId", ticketCategory.getId()).addValue("originalPrice", ticketCategory.getPriceInCents()).addValue("paidPrice", ticketCategory.getPriceInCents())).toArray(MapSqlParameterSource[]::new));
             if(tc.isTokenGenerationRequested()) {
                 insertTokens(ticketCategory);
@@ -374,7 +376,7 @@ public class EventManager {
         if(original.getPriceInCents() == updated.getPriceInCents()) {
             return;
         }
-        final List<Integer> ids = ticketRepository.selectTicketInCategoryForUpdate(eventId, updated.getId(), updated.getMaxTickets(), TicketRepository.FREE);
+        final List<Integer> ids = ticketRepository.selectTicketInCategoryForUpdate(eventId, updated.getId(), updated.getMaxTickets(), singletonList(TicketStatus.FREE.name()));
         if(ids.size() < updated.getMaxTickets()) {
             throw new IllegalStateException("not enough tickets");
         }
@@ -412,7 +414,7 @@ public class EventManager {
 
         if(addedTickets > 0) {
             //the updated category contains more tickets than the older one
-            List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), addedTickets, TicketRepository.FREE);
+            List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), addedTickets, singletonList(TicketStatus.FREE.name()));
             jdbc.batchUpdate(ticketRepository.bulkTicketUpdate(), lockedTickets.stream()
                     .map(id -> new MapSqlParameterSource("id", id)
                             .addValue("categoryId", updated.getId())

@@ -69,6 +69,8 @@ import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYM
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.formatCents;
 import static alfio.util.OptionalWrapper.optionally;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
@@ -179,7 +181,7 @@ public class TicketReservationManager {
 		//first check if there is another pending special price token bound to the current sessionId
 		Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), eventId, specialPriceSessionId, ticketReservation);
 
-		List<Integer> reservedForUpdate = reserveTickets(eventId, ticketReservation, forWaitingQueue);
+		List<Integer> reservedForUpdate = reserveTickets(eventId, ticketReservation, forWaitingQueue ? asList(TicketStatus.RELEASED, TicketStatus.PRE_RESERVED) : singletonList(TicketStatus.FREE));
 		int requested = ticketReservation.getAmount();
 		if (reservedForUpdate.size() != requested) {
             throw new NotEnoughTicketsException();
@@ -199,13 +201,13 @@ public class TicketReservationManager {
         ticketRepository.updateTicketPrice(reservedForUpdate, category.getId(), eventId, category.getPriceInCents());
 	}
 
-	List<Integer> reserveTickets(int eventId, TicketReservationWithOptionalCodeModification ticketReservation, boolean forWaitingQueue) {
+	List<Integer> reserveTickets(int eventId, TicketReservationWithOptionalCodeModification ticketReservation, List<TicketStatus> requiredStatuses) {
 		TicketCategory category = ticketCategoryRepository.getById(ticketReservation.getTicketCategoryId(), eventId);
-        String requiredStatus = forWaitingQueue ? TicketRepository.RELEASED : TicketRepository.FREE;
+        List<String> statusesAsString = requiredStatuses.stream().map(TicketStatus::name).collect(toList());
 		if(category.isBounded()) {
-			return ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount(), requiredStatus);
+            return ticketRepository.selectTicketInCategoryForUpdate(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount(), statusesAsString);
 		}
-		return ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketReservation.getAmount(), requiredStatus);
+		return ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketReservation.getAmount(), statusesAsString);
 	}
 
 	Optional<SpecialPrice> fixToken(Optional<SpecialPrice> token, int ticketCategoryId, int eventId, Optional<String> specialPriceSessionId, TicketReservationWithOptionalCodeModification ticketReservation) {
@@ -429,7 +431,7 @@ public class TicketReservationManager {
 	private void acquireTickets(TicketStatus ticketStatus, PaymentProxy paymentProxy, String reservationId, String email, String fullName, String billingAddress) {
 		int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
 		Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
-		specialPriceRepository.updateStatusForReservation(Collections.singletonList(reservationId), Status.TAKEN.toString());
+		specialPriceRepository.updateStatusForReservation(singletonList(reservationId), Status.TAKEN.toString());
 		ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
 		int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, billingAddress, timestamp, paymentProxy.toString());
 		Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
@@ -639,7 +641,7 @@ public class TicketReservationManager {
 	}
 
 	private void cancelReservation(String reservationId) {
-		List<String> reservationIdsToRemove = Collections.singletonList(reservationId);
+		List<String> reservationIdsToRemove = singletonList(reservationId);
 		specialPriceRepository.updateStatusForReservation(reservationIdsToRemove, Status.FREE.toString());
 		int updatedTickets = ticketRepository.freeFromReservation(reservationIdsToRemove);
 		Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
@@ -869,7 +871,7 @@ public class TicketReservationManager {
 		int result = ticketRepository.releaseTicket(ticketReservation.getId(), event.getId(), ticket.getId());
 		Validate.isTrue(result == 1, String.format("Expected 1 row to be updated, got %d", result));
 		if(category.isAccessRestricted()) {
-			ticketRepository.unbindTicketsFromCategory(event.getId(), category.getId(), Collections.singletonList(ticket.getId()));
+			ticketRepository.unbindTicketsFromCategory(event.getId(), category.getId(), singletonList(ticket.getId()));
 		}
 		Organization organization = organizationRepository.getById(event.getOrganizationId());
         Map<String, Object> model = new HashMap<>();
@@ -881,7 +883,7 @@ public class TicketReservationManager {
 		String adminTemplate = messageSource.getMessage("email-ticket-released.admin.text", new Object[] {ticket.getId(), ticket.getUuid(), ticket.getFullName(), ticket.getEmail(), category.getDescription(), category.getId()}, Locale.ENGLISH);
 		notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject", new Object[]{ticket.getId(), event.getShortName()}, locale), () -> templateManager.renderString(adminTemplate, model, Locale.ENGLISH, TemplateOutput.TEXT));
         if(ticketRepository.countTicketsInReservation(ticketReservation.getId()) == 0) {
-            deleteReservations(Collections.singletonList(ticketReservation.getId()));
+            deleteReservations(singletonList(ticketReservation.getId()));
         }
 	}
 

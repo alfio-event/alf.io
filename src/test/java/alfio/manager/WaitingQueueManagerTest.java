@@ -18,16 +18,25 @@ package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.Ticket;
 import alfio.model.WaitingQueueSubscription;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
+import org.apache.commons.lang3.tuple.Triple;
 import org.junit.runner.RunWith;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static org.mockito.Matchers.eq;
@@ -37,13 +46,13 @@ import static org.mockito.Mockito.*;
 public class WaitingQueueManagerTest {{
     describe("basicOperations", it -> {
         WaitingQueueRepository waitingQueueRepository = it.usesMock(WaitingQueueRepository.class);
-        EventManager eventManager = it.usesMock(EventManager.class);
+        EventStatisticsManager eventStatisticsManager = it.usesMock(EventStatisticsManager.class);
         TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
         TicketCategoryRepository ticketCategoryRepository = it.usesMock(TicketCategoryRepository.class);
         ConfigurationManager configurationManager = it.usesMock(ConfigurationManager.class);
         NamedParameterJdbcTemplate jdbc = it.usesMock(NamedParameterJdbcTemplate.class);
 
-        WaitingQueueManager manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventManager, null, jdbc);
+        WaitingQueueManager manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, jdbc);
         String reservationId = "reservation-id";
         it.should("handle a reservation confirmation", expect -> {
             manager.fireReservationConfirmed(reservationId);
@@ -69,7 +78,7 @@ public class WaitingQueueManagerTest {{
             verify(ticketRepository).countWaiting(eq(eventId));
             verify(ticketRepository).revertToFree(eq(eventId));
         });
-        it.should("doesn't do anything if there are 0 subscribers and 0 waiting tickets", expect -> {
+        it.should("do anything if there are 0 subscribers and 0 waiting tickets", expect -> {
             Event event = it.usesMock(Event.class);
             int eventId = 1;
             when(event.getId()).thenReturn(eventId);
@@ -80,6 +89,25 @@ public class WaitingQueueManagerTest {{
             verify(ticketRepository).countWaiting(eq(eventId));
             verify(ticketRepository, never()).revertToFree(eq(eventId));
         });
-        it.completesWith(() -> verifyNoMoreInteractions(waitingQueueRepository, eventManager, ticketRepository));
+        it.should("process pre-reservations if there are 0 waiting tickets 1 or more subscribers", expect -> {
+            Event event = it.usesMock(Event.class);
+            int eventId = 1;
+            when(event.getId()).thenReturn(eventId);
+            when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+
+            when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(1);
+            when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
+            when(configurationManager.getBooleanConfigValue(Configuration.event(event), ConfigurationKeys.ENABLE_PRE_REGISTRATION, false)).thenReturn(true);
+            Ticket ticket = it.usesMock(Ticket.class);
+            when(ticketRepository.selectWaitingTicketsForUpdate(eventId, Ticket.TicketStatus.PRE_RESERVED.name(), 1)).thenReturn(Collections.singletonList(ticket));
+            WaitingQueueSubscription subscription = it.usesMock(WaitingQueueSubscription.class);
+            when(waitingQueueRepository.loadWaiting(eventId, 1)).thenReturn(Collections.singletonList(subscription));
+            Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> stream = manager.distributeSeats(event);
+            expect.that(stream.count()).is(1L);
+            verify(waitingQueueRepository).countWaitingPeople(eq(eventId));
+            verify(ticketRepository).countWaiting(eq(eventId));
+            verify(ticketRepository, never()).revertToFree(eq(eventId));
+        });
+        it.completesWith(() -> verifyNoMoreInteractions(waitingQueueRepository, eventStatisticsManager, ticketRepository));
     });
 }}
