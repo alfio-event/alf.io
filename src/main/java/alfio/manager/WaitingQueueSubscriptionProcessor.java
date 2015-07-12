@@ -18,14 +18,17 @@ package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.repository.WaitingQueueRepository;
 import alfio.util.TemplateManager;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Date;
 import java.time.ZonedDateTime;
@@ -33,6 +36,7 @@ import java.util.*;
 
 @Log4j2
 @Component
+@Transactional
 public class WaitingQueueSubscriptionProcessor {
 
     private final EventManager eventManager;
@@ -40,6 +44,7 @@ public class WaitingQueueSubscriptionProcessor {
     private final ConfigurationManager configurationManager;
     private final WaitingQueueManager waitingQueueManager;
     private final NotificationManager notificationManager;
+    private final WaitingQueueRepository waitingQueueRepository;
     private final MessageSource messageSource;
     private final TemplateManager templateManager;
 
@@ -49,6 +54,7 @@ public class WaitingQueueSubscriptionProcessor {
                                              ConfigurationManager configurationManager,
                                              WaitingQueueManager waitingQueueManager,
                                              NotificationManager notificationManager,
+                                             WaitingQueueRepository waitingQueueRepository,
                                              MessageSource messageSource,
                                              TemplateManager templateManager) {
         this.eventManager = eventManager;
@@ -56,6 +62,7 @@ public class WaitingQueueSubscriptionProcessor {
         this.configurationManager = configurationManager;
         this.waitingQueueManager = waitingQueueManager;
         this.notificationManager = notificationManager;
+        this.waitingQueueRepository = waitingQueueRepository;
         this.messageSource = messageSource;
         this.templateManager = templateManager;
     }
@@ -74,21 +81,23 @@ public class WaitingQueueSubscriptionProcessor {
 
     void distributeAvailableSeats(Event event) {
         waitingQueueManager.distributeSeats(event).forEach(triple -> {
-            Locale locale = triple.getLeft().getLocale();
+            WaitingQueueSubscription subscription = triple.getLeft();
+            Locale locale = subscription.getLocale();
             ZonedDateTime expiration = triple.getRight();
             String reservationId = createReservation(event.getId(), triple.getMiddle(), expiration, locale);
             String eventShortName = event.getShortName();
             String subject = messageSource.getMessage("email-waiting-queue-acquired.subject", new Object[]{eventShortName}, locale);
             Map<String, Object> model = new HashMap<>();
             model.put("event", event);
-            model.put("subscription", triple.getLeft());
+            model.put("subscription", subscription);
             model.put("reservationUrl", ticketReservationManager.reservationUrl(reservationId, event));
             model.put("reservationTimeout", expiration);
             model.put("organization", eventManager.loadOrganizerUsingSystemPrincipal(event));
             notificationManager.sendSimpleEmail(event,
-                    triple.getLeft().getEmailAddress(),
+                    subscription.getEmailAddress(),
                     subject,
                     () -> templateManager.renderClassPathResource("/alfio/templates/waiting-queue-reservation-email-txt.ms", model, locale, TemplateManager.TemplateOutput.TEXT));
+            waitingQueueRepository.flagAsPending(reservationId, subscription.getId());
         });
     }
 

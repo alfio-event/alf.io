@@ -26,7 +26,7 @@ import java.util.Locale;
 public class WaitingQueueSubscription {
 
     public enum Status {
-        WAITING, ACQUIRED, EXPIRED
+        WAITING, PENDING, ACQUIRED, EXPIRED
     }
 
     private final int id;
@@ -35,6 +35,7 @@ public class WaitingQueueSubscription {
     private final Status status;
     private final String fullName;
     private final String emailAddress;
+    private final String reservationId;
     private final String userLanguage;
 
     public WaitingQueueSubscription(@Column("id") int id,
@@ -43,6 +44,7 @@ public class WaitingQueueSubscription {
                                     @Column("status") String status,
                                     @Column("full_name") String fullName,
                                     @Column("email_address") String emailAddress,
+                                    @Column("ticket_reservation_id") String reservationId,
                                     @Column("user_language") String userLanguage) {
         this.id = id;
         this.creation = creation;
@@ -50,6 +52,7 @@ public class WaitingQueueSubscription {
         this.userLanguage = userLanguage;
         this.status = Status.valueOf(status);
         this.fullName = fullName;
+        this.reservationId = reservationId;
         this.emailAddress = emailAddress;
     }
 
