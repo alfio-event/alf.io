@@ -56,6 +56,8 @@ public class TicketReservationManagerIntegrationTest {
     @Autowired
     private EventManager eventManager;
     @Autowired
+    private EventStatisticsManager eventStatisticsManager;
+    @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
     private UserManager userManager;
@@ -71,7 +73,7 @@ public class TicketReservationManagerIntegrationTest {
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         "desc", BigDecimal.TEN, false, "", false));
-        EventWithStatistics event = eventManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
+        EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(2);
@@ -98,7 +100,7 @@ public class TicketReservationManagerIntegrationTest {
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         "desc", BigDecimal.TEN, false, "", true));
-        EventWithStatistics event = eventManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
+        EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
 
         TicketCategoryWithStatistic bounded = event.getTicketCategories().stream().filter(TicketCategoryWithStatistic::isBounded).findFirst().orElseThrow(IllegalStateException::new);
         TicketCategoryWithStatistic unbounded = event.getTicketCategories().stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);

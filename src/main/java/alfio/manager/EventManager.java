@@ -18,18 +18,19 @@ package alfio.manager;
 
 import alfio.manager.location.LocationManager;
 import alfio.manager.support.CategoryEvaluator;
-import alfio.manager.support.OrderSummary;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.*;
+import alfio.model.Event;
 import alfio.model.PromoCodeDiscount.DiscountType;
+import alfio.model.SpecialPrice;
+import alfio.model.Ticket;
+import alfio.model.TicketCategory;
 import alfio.model.modification.*;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
-import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -39,7 +40,6 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -52,12 +52,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static alfio.util.EventUtil.*;
-import static alfio.util.OptionalWrapper.optionally;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -70,9 +67,9 @@ public class EventManager {
     private static final Predicate<TicketCategory> IS_CATEGORY_BOUNDED = TicketCategory::isBounded;
     private final UserManager userManager;
     private final EventRepository eventRepository;
+    private final EventStatisticsManager eventStatisticsManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
-    private final TicketReservationManager ticketReservationManager;
     private final SpecialPriceRepository specialPriceRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final LocationManager locationManager;
@@ -82,9 +79,9 @@ public class EventManager {
     @Autowired
     public EventManager(UserManager userManager,
                         EventRepository eventRepository,
+                        EventStatisticsManager eventStatisticsManager,
                         TicketCategoryRepository ticketCategoryRepository,
                         TicketRepository ticketRepository,
-                        TicketReservationManager ticketReservationManager,
                         SpecialPriceRepository specialPriceRepository,
                         PromoCodeDiscountRepository promoCodeRepository,
                         LocationManager locationManager,
@@ -92,28 +89,14 @@ public class EventManager {
                         ConfigurationManager configurationManager) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
+        this.eventStatisticsManager = eventStatisticsManager;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.ticketRepository = ticketRepository;
-        this.ticketReservationManager = ticketReservationManager;
         this.specialPriceRepository = specialPriceRepository;
         this.promoCodeRepository = promoCodeRepository;
         this.locationManager = locationManager;
         this.jdbc = jdbc;
         this.configurationManager = configurationManager;
-    }
-
-    public List<Event> getAllEvents(String username) {
-        return userManager.findUserOrganizations(username)
-                .parallelStream()
-                .flatMap(o -> eventRepository.findByOrganizationId(o.getId()).stream())
-                .collect(Collectors.toList());
-    }
-
-    @Cacheable
-    public List<EventWithStatistics> getAllEventsWithStatistics(String username) {
-        return getAllEvents(username).stream()
-                 .map(this::fillWithStatistics)
-                 .collect(toList());
     }
 
     public Event getSingleEvent(String eventName, String username) {
@@ -131,31 +114,8 @@ public class EventManager {
                 .orElseThrow(IllegalArgumentException::new);
     }
 
-    public EventWithStatistics getSingleEventWithStatistics(String eventName, String username) {
-        return fillWithStatistics(getSingleEvent(eventName, username));
-    }
-
-    EventWithStatistics fillWithStatistics(Event event) {
-        return new EventWithStatistics(event, loadTicketCategoriesWithStats(event));
-    }
-
     public List<TicketCategory> loadTicketCategories(Event event) {
         return ticketCategoryRepository.findByEventId(event.getId());
-    }
-
-    public TicketCategoryWithStatistic loadTicketCategoryWithStats(int categoryId, Event event) {
-        final TicketCategory tc = ticketCategoryRepository.getById(categoryId, event.getId());
-        return new TicketCategoryWithStatistic(tc,
-                ticketReservationManager.loadModifiedTickets(event.getId(), tc.getId()),
-                specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId(),
-                categoryPriceCalculator(event));
-    }
-
-    public List<TicketCategoryWithStatistic> loadTicketCategoriesWithStats(Event event) {
-        return loadTicketCategories(event).stream()
-                    .map(tc -> new TicketCategoryWithStatistic(tc, ticketReservationManager.loadModifiedTickets(tc.getEventId(), tc.getId()), specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId(), categoryPriceCalculator(event)))
-                    .sorted()
-                    .collect(toList());
     }
 
     public Organization loadOrganizer(Event event, String username) {
@@ -199,7 +159,7 @@ public class EventManager {
     public void updateEventPrices(int eventId, EventModification em, String username) {
         final Event original = eventRepository.findById(eventId);
         checkOwnership(original, username, em.getOrganizationId());
-        final EventWithStatistics eventWithStatistics = fillWithStatistics(original);
+        final EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(original);
         int seatsDifference = em.getAvailableSeats() - original.getAvailableSeats();
         if(seatsDifference < 0) {
             int allocatedSeats = eventWithStatistics.getTicketCategories().stream()
@@ -255,7 +215,7 @@ public class EventManager {
     }
 
     void fixOutOfRangeCategories(EventModification em, String username, ZoneId zoneId, ZonedDateTime end) {
-        getSingleEventWithStatistics(em.getShortName(), username).getTicketCategories().stream()
+        eventStatisticsManager.getSingleEventWithStatistics(em.getShortName(), username).getTicketCategories().stream()
                 .map(tc -> Triple.of(tc, tc.getInception(zoneId), tc.getExpiration(zoneId)))
                 .filter(t -> t.getRight().isAfter(end))
                 .forEach(t -> fixTicketCategoryDates(end, t.getLeft(), t.getMiddle(), t.getRight()));
@@ -275,7 +235,7 @@ public class EventManager {
 
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
         Event event = eventRepository.findById(eventId);
-        reallocateTickets(loadTicketCategoryWithStats(srcCategoryId, event), Optional.of(ticketCategoryRepository.getById(targetCategoryId, event.getId())), event);
+        reallocateTickets(eventStatisticsManager.loadTicketCategoryWithStats(srcCategoryId, event), Optional.of(ticketCategoryRepository.getById(targetCategoryId, event.getId())), event);
     }
 
     void reallocateTickets(TicketCategoryWithStatistic src, Optional<TicketCategory> target, Event event) {
@@ -305,7 +265,7 @@ public class EventManager {
     public void unbindTickets(String eventName, int categoryId, String username) {
         Event event = getSingleEvent(eventName, username);
         Validate.isTrue(ticketCategoryRepository.countUnboundedCategoriesByEventId(event.getId()) > 0, "cannot unbind tickets: there aren't any unbounded categories");
-        TicketCategoryWithStatistic ticketCategory = loadTicketCategoryWithStats(categoryId, event);
+        TicketCategoryWithStatistic ticketCategory = eventStatisticsManager.loadTicketCategoryWithStats(categoryId, event);
         Validate.isTrue(ticketCategory.isBounded(), "cannot unbind tickets from an unbounded category!");
         reallocateTickets(ticketCategory, Optional.<TicketCategory>empty(), event);
     }
@@ -487,34 +447,6 @@ public class EventManager {
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
     }
 
-    /**
-     * Calculate the price for ticket category edit page
-     *
-     * @param e
-     * @return
-     */
-    private static UnaryOperator<Integer> categoryPriceCalculator(Event e) {
-        return p -> {
-            if(e.isFreeOfCharge()) {
-                return 0;
-            }
-            if(e.isVatIncluded()) {
-                return MonetaryUtil.addVAT(p, e.getVat());
-            }
-            return p;
-        };
-    }
-
-    static int evaluatePrice(int price, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge) {
-        if(freeOfCharge) {
-            return 0;
-        }
-        if(!vatIncluded) {
-            return price;
-        }
-        return MonetaryUtil.removeVAT(price, vat);
-    }
-
     private int insertEvent(EventModification em) {
         String paymentProxies = collectPaymentProxies(em);
         int actualPrice = evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
@@ -547,38 +479,6 @@ public class EventManager {
         return true;
     }
 
-    public List<Pair<TicketReservation, OrderSummary>> getPendingPayments(String eventName, String username) {
-        EventWithStatistics eventWithStatistics = getSingleEventWithStatistics(eventName, username);
-        Event event = eventWithStatistics.getEvent();
-        List<String> reservationIds = ticketRepository.findPendingTicketsInCategories(eventWithStatistics.getTicketCategories().stream().map(TicketCategoryWithStatistic::getId).collect(toList()))
-                .stream()
-                .map(Ticket::getTicketsReservationId)
-                .distinct()
-                .collect(toList());
-        return ticketReservationManager.fetchWaitingForPayment(reservationIds, event);
-    }
-
-    public void confirmPayment(String eventName, String reservationId, String username) {
-        ticketReservationManager.confirmOfflinePayment(getSingleEvent(eventName, username), reservationId);
-    }
-
-    public void confirmPayment(String eventName, String reservationId, BigDecimal paidAmount, String username) {
-        Optional<Event> eventOptional = optionally(() -> getSingleEvent(eventName, username));
-        Validate.isTrue(eventOptional.isPresent(), "Event not found");
-        Event event = eventOptional.get();
-        TicketReservation reservation = ticketReservationManager.findByPartialID(reservationId);
-        Optional<OrderSummary> optionalOrderSummary = optionally(() -> ticketReservationManager.orderSummaryForReservationId(reservation.getId(), event));
-        Validate.isTrue(optionalOrderSummary.isPresent(), "Reservation not found");
-        OrderSummary orderSummary = optionalOrderSummary.get();
-        Validate.isTrue(MonetaryUtil.centsToUnit(orderSummary.getOriginalTotalPrice().getPriceWithVAT()).compareTo(paidAmount) == 0, "paid price differs from due price");
-        ticketReservationManager.confirmOfflinePayment(event, reservation.getId());
-    }
-
-    public void deletePendingOfflinePayment(String eventName, String reservationId, String username) {
-        ticketReservationManager.deleteOfflinePayment(getSingleEvent(eventName, username), reservationId);
-    }
-    
-    
     public void addPromoCode(String promoCode, int eventId, ZonedDateTime start, ZonedDateTime end, int discountAmount, DiscountType discountType) {
     	promoCodeRepository.addPromoCode(promoCode, eventId, start, end, discountAmount, discountType.toString());
     }

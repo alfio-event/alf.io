@@ -19,17 +19,14 @@ package alfio.manager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
-import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
-import alfio.util.TemplateManager;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
-import org.springframework.context.MessageSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static com.insightfullogic.lambdabehave.Suite.describe;
@@ -44,8 +41,9 @@ public class WaitingQueueManagerTest {{
         TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
         TicketCategoryRepository ticketCategoryRepository = it.usesMock(TicketCategoryRepository.class);
         ConfigurationManager configurationManager = it.usesMock(ConfigurationManager.class);
+        NamedParameterJdbcTemplate jdbc = it.usesMock(NamedParameterJdbcTemplate.class);
 
-        WaitingQueueManager manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager);
+        WaitingQueueManager manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventManager, null, jdbc);
         String reservationId = "reservation-id";
         it.should("handle a reservation confirmation", expect -> {
             manager.fireReservationConfirmed(reservationId);

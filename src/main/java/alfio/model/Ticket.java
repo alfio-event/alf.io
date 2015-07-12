@@ -16,8 +16,8 @@
  */
 package alfio.model;
 
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import alfio.util.MonetaryUtil;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -37,7 +37,7 @@ import java.util.Set;
 public class Ticket {
 
     public enum TicketStatus {
-        FREE, PENDING, TO_BE_PAID, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED, INVALIDATED, RELEASED
+        FREE, PENDING, TO_BE_PAID, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED, INVALIDATED, RELEASED, PRE_RESERVED
     }
 
     private static final Set<TicketStatus> SOLD_STATUSES = EnumSet.of(TicketStatus.TO_BE_PAID, TicketStatus.ACQUIRED, TicketStatus.CANCELLED, TicketStatus.CHECKED_IN, TicketStatus.RELEASED);

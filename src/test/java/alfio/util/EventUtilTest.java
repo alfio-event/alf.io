@@ -24,6 +24,7 @@ import alfio.model.system.ConfigurationKeys;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
 
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
@@ -192,5 +193,12 @@ public class EventUtilTest {{
         });
 
         it.completesWith(() -> verifyNoMoreInteractions(first));
+    });
+
+    final int hundred = 10000;//100.00
+    describe("evaluatePrice", it -> {
+        it.should("deduct vat if included into event price", expect -> expect.that(EventUtil.evaluatePrice(hundred, BigDecimal.TEN, true, false)).is(9091));
+        it.should("not deduct vat if not included into event price", expect -> expect.that(EventUtil.evaluatePrice(hundred, BigDecimal.TEN, false, false)).is(hundred));
+        it.should("return BigDecimal.ZERO if the event is free of charge", expect -> expect.that(EventUtil.evaluatePrice(hundred, BigDecimal.TEN, false, true)).is(0));
     });
 }}

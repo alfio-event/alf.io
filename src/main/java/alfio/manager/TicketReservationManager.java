@@ -24,6 +24,8 @@ import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.SpecialPrice.Status;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation.TicketReservationStatus;
+import alfio.model.modification.EventWithStatistics;
+import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.TicketWithStatistic;
 import alfio.model.system.Configuration;
@@ -67,6 +69,7 @@ import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYM
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.formatCents;
 import static alfio.util.OptionalWrapper.optionally;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
 
@@ -884,5 +887,24 @@ public class TicketReservationManager {
 
     public int getReservationTimeout(Event event) {
         return configurationManager.getIntConfigValue(Configuration.event(event), RESERVATION_TIMEOUT, 25);
+    }
+
+    public void validateAndConfirmOfflinePayment(String reservationId, Event event, BigDecimal paidAmount) {
+        TicketReservation reservation = findByPartialID(reservationId);
+        Optional<OrderSummary> optionalOrderSummary = optionally(() -> orderSummaryForReservationId(reservation.getId(), event));
+        Validate.isTrue(optionalOrderSummary.isPresent(), "Reservation not found");
+        OrderSummary orderSummary = optionalOrderSummary.get();
+        Validate.isTrue(MonetaryUtil.centsToUnit(orderSummary.getOriginalTotalPrice().getPriceWithVAT()).compareTo(paidAmount) == 0, "paid price differs from due price");
+        confirmOfflinePayment(event, reservation.getId());
+    }
+
+    public List<Pair<TicketReservation, OrderSummary>> getPendingPayments(EventWithStatistics eventWithStatistics) {
+        Event event = eventWithStatistics.getEvent();
+        List<String> reservationIds = ticketRepository.findPendingTicketsInCategories(eventWithStatistics.getTicketCategories().stream().map(TicketCategoryWithStatistic::getId).collect(toList()))
+                .stream()
+                .map(Ticket::getTicketsReservationId)
+                .distinct()
+                .collect(toList());
+        return fetchWaitingForPayment(reservationIds, event);
     }
 }

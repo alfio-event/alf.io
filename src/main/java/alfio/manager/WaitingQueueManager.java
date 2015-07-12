@@ -18,6 +18,8 @@ package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.modification.EventWithStatistics;
+import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
@@ -25,6 +27,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
+import alfio.util.PreReservedTicketDistributor;
 import alfio.util.WorkingDaysAdjusters;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
@@ -32,6 +35,8 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -49,16 +54,25 @@ public class WaitingQueueManager {
     private final TicketRepository ticketRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final ConfigurationManager configurationManager;
+    private final EventManager eventManager;
+    private final EventStatisticsManager eventStatisticsManager;
+    private final NamedParameterJdbcTemplate jdbc;
 
     @Autowired
     public WaitingQueueManager(WaitingQueueRepository waitingQueueRepository,
                                TicketRepository ticketRepository,
                                TicketCategoryRepository ticketCategoryRepository,
-                               ConfigurationManager configurationManager) {
+                               ConfigurationManager configurationManager,
+                               EventManager eventManager,
+                               EventStatisticsManager eventStatisticsManager,
+                               NamedParameterJdbcTemplate jdbc) {
         this.waitingQueueRepository = waitingQueueRepository;
         this.ticketRepository = ticketRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.configurationManager = configurationManager;
+        this.eventManager = eventManager;
+        this.eventStatisticsManager = eventStatisticsManager;
+        this.jdbc = jdbc;
     }
 
     public boolean subscribe(Event event, String fullName, String email, Locale userLanguage) {
@@ -88,13 +102,48 @@ public class WaitingQueueManager {
         if (waitingPeople == 0 && waitingTickets > 0) {
             ticketRepository.revertToFree(eventId);
         } else if (waitingPeople > 0 && waitingTickets > 0) {
-            return distributeAvailableSeats(event, eventId, waitingPeople, waitingTickets);
+            return distributeAvailableSeats(event, waitingPeople, waitingTickets);
+        } else if(configurationManager.getBooleanConfigValue(Configuration.event(event), ConfigurationKeys.ENABLE_PRE_REGISTRATION, false)) {
+            Optional<TicketCategory> ticketCategory = ticketCategoryRepository.findAllTicketCategories(eventId).stream()
+                    .findFirst()
+                    .filter(t -> ZonedDateTime.now(event.getZoneId()).isBefore(t.getInception(event.getZoneId())));
+            if(ticketCategory.isPresent()) {
+                evaluatePreReservation(event, Math.min(waitingPeople, event.getAvailableSeats()));
+            }
         }
         return Stream.empty();
     }
 
-    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeAvailableSeats(Event event, int eventId, int waitingPeople, int waitingTickets) {
+    private void evaluatePreReservation(Event event, int ticketsNeeded) {
+        int eventId = event.getId();
+        int alreadyReserved = ticketRepository.countPreReservedTickets(eventId);
+        if(alreadyReserved < ticketsNeeded) {
+            preReserveTickets(event, ticketsNeeded, eventId, alreadyReserved);
+        }
+    }
+
+    private void preReserveTickets(Event event, int ticketsNeeded, int eventId, int alreadyReserved) {
+        final int toBeGenerated = Math.abs(alreadyReserved - ticketsNeeded);
+        EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(event);
+        List<Pair<Integer, Integer>> collectedTickets = eventWithStatistics.getTicketCategories().stream()
+                .filter(tc -> !tc.isAccessRestricted())
+                .map(tc -> Pair.of(determineAvailableSeats(tc, eventWithStatistics), tc))
+                .collect(new PreReservedTicketDistributor(toBeGenerated));
+        MapSqlParameterSource[] candidates = collectedTickets.stream()
+                .flatMap(p -> ticketRepository.selectFreeTicketsForPreReservation(eventId, p.getValue(), p.getKey()).stream())
+                .map(id -> new MapSqlParameterSource().addValue("id", id))
+                .toArray(MapSqlParameterSource[]::new);
+        jdbc.batchUpdate(ticketRepository.preReserveTicket(), candidates);
+    }
+
+    private int determineAvailableSeats(TicketCategoryWithStatistic tc, EventWithStatistics e) {
+        return tc.isBounded() ? tc.getNotSoldTickets() : e.getDynamicAllocation();
+    }
+
+
+    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeAvailableSeats(Event event, int waitingPeople, int waitingTickets) {
         int availableSeats = Math.min(waitingPeople, waitingTickets);
+        int eventId = event.getId();
         log.debug("processing {} subscribers from waiting queue", availableSeats);
         Iterator<Ticket> tickets = ticketRepository.selectWaitingTicketsForUpdate(eventId, availableSeats).iterator();
         Optional<TicketCategory> unboundedCategory = ticketCategoryRepository.findUnboundedOrderByExpirationDesc(eventId).stream().findFirst();

@@ -26,12 +26,14 @@ import alfio.model.system.ConfigurationKeys;
 import lombok.experimental.UtilityClass;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 @UtilityClass
@@ -94,5 +96,33 @@ public class EventUtil {
                 .addValue("status", Ticket.TicketStatus.FREE.name())
                 .addValue("originalPrice", originalPrice)
                 .addValue("paidPrice", paidPrice);
+    }
+
+    /**
+     * Calculate the price for ticket category edit page
+     *
+     * @param e
+     * @return
+     */
+    public static UnaryOperator<Integer> categoryPriceCalculator(Event e) {
+        return p -> {
+            if(e.isFreeOfCharge()) {
+                return 0;
+            }
+            if(e.isVatIncluded()) {
+                return MonetaryUtil.addVAT(p, e.getVat());
+            }
+            return p;
+        };
+    }
+
+    public static int evaluatePrice(int price, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge) {
+        if(freeOfCharge) {
+            return 0;
+        }
+        if(!vatIncluded) {
+            return price;
+        }
+        return MonetaryUtil.removeVAT(price, vat);
     }
 }

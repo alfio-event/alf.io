@@ -17,6 +17,8 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.EventManager;
+import alfio.manager.EventStatisticsManager;
+import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.ContentLanguage;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
@@ -49,6 +51,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static alfio.util.OptionalWrapper.optionally;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
@@ -58,12 +61,19 @@ public class EventApiController {
 
     private static final String OK = "OK";
     private final EventManager eventManager;
+    private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
+    private final TicketReservationManager ticketReservationManager;
 
     @Autowired
-    public EventApiController(EventManager eventManager, I18nManager i18nManager) {
+    public EventApiController(EventManager eventManager,
+                              EventStatisticsManager eventStatisticsManager,
+                              I18nManager i18nManager,
+                              TicketReservationManager ticketReservationManager) {
         this.eventManager = eventManager;
+        this.eventStatisticsManager = eventStatisticsManager;
         this.i18nManager = i18nManager;
+        this.ticketReservationManager = ticketReservationManager;
     }
 
     @ExceptionHandler(Exception.class)
@@ -84,7 +94,7 @@ public class EventApiController {
 
     @RequestMapping(value = "/events", method = GET)
     public List<EventWithStatistics> getAllEvents(Principal principal) {
-        return eventManager.getAllEventsWithStatistics(principal.getName()).stream()
+        return eventStatisticsManager.getAllEventsWithStatistics(principal.getName()).stream()
                 .sorted().collect(Collectors.toList());
     }
 
@@ -92,7 +102,7 @@ public class EventApiController {
     public Map<String, Object> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
         Map<String, Object> out = new HashMap<>();
         final String username = principal.getName();
-        final EventWithStatistics event = eventManager.getSingleEventWithStatistics(eventName, username);
+        final EventWithStatistics event = eventStatisticsManager.getSingleEventWithStatistics(eventName, username);
         out.put("event", event);
         out.put("organization", eventManager.loadOrganizer(event.getEvent(), username));
         return out;
@@ -143,18 +153,19 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{eventName}/pending-payments")
     public List<SerializablePair<TicketReservation, OrderSummary>> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {
-        return eventManager.getPendingPayments(eventName, principal.getName()).stream().map(SerializablePair::fromPair).collect(Collectors.toList());
+        return ticketReservationManager.getPendingPayments(eventStatisticsManager.getSingleEventWithStatistics(eventName, principal.getName())).stream()
+                .map(SerializablePair::fromPair).collect(Collectors.toList());
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)
     public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
-        eventManager.confirmPayment(eventName, reservationId, principal.getName());
+        ticketReservationManager.confirmOfflinePayment(loadEvent(eventName, principal), reservationId);
         return OK;
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}", method = DELETE)
     public String deletePendingPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
-        eventManager.deletePendingOfflinePayment(eventName, reservationId, principal.getName());
+        ticketReservationManager.deleteOfflinePayment(loadEvent(eventName, principal), reservationId);
         return OK;
     }
 
@@ -165,14 +176,14 @@ public class EventApiController {
 
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream())) {
             CSVReader reader = new CSVReader(isr);
-            String username = principal.getName();
+            Event event = loadEvent(eventName, principal);
             return reader.readAll().stream()
                     .map(line -> {
                         String reservationID = null;
                         try {
                             Validate.isTrue(line.length >= 2);
                             reservationID = line[0];
-                            eventManager.confirmPayment(eventName, reservationID, new BigDecimal(line[1]), username);
+                            ticketReservationManager.validateAndConfirmOfflinePayment(reservationID, event, new BigDecimal(line[1]));
                             return Triple.of(Boolean.TRUE, reservationID, "");
                         } catch (Exception e) {
                             return Triple.of(Boolean.FALSE, Optional.ofNullable(reservationID).orElse(""), e.getMessage());
@@ -197,11 +208,17 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{eventName}/categories-containing-tickets", method = GET)
     public List<TicketCategoryModification> getCategoriesWithTickets(@PathVariable("eventName") String eventName, Principal principal) {
-        Event event = eventManager.getSingleEvent(eventName, principal.getName());
-        return eventManager.loadTicketCategoriesWithStats(event).stream()
+        Event event = loadEvent(eventName, principal);
+        return eventStatisticsManager.loadTicketCategoriesWithStats(event).stream()
                 .filter(tc -> !tc.getTickets().isEmpty())
                 .map(tc -> TicketCategoryModification.fromTicketCategory(tc.getTicketCategory(), event.getZoneId()))
                 .collect(Collectors.toList());
+    }
+
+    private Event loadEvent(String eventName, Principal principal) {
+        Optional<Event> singleEvent = optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()));
+        Validate.isTrue(singleEvent.isPresent(), "event not found");
+        return singleEvent.get();
     }
 
 }

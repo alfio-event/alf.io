@@ -62,8 +62,14 @@ public class WaitingQueueSubscriptionProcessor {
 
     public void handleWaitingTickets() {
         eventManager.getActiveEvents().stream()
-            .filter(event -> configurationManager.getBooleanConfigValue(Configuration.event(event), ConfigurationKeys.ENABLE_WAITING_QUEUE, false))
+            .filter(this::isWaitingListFormEnabled)
             .forEach(this::distributeAvailableSeats);
+    }
+
+    private boolean isWaitingListFormEnabled(Event event) {
+        Configuration.ConfigurationPath conf = Configuration.event(event);
+        return configurationManager.getBooleanConfigValue(conf, ConfigurationKeys.ENABLE_WAITING_QUEUE, false)
+                || configurationManager.getBooleanConfigValue(conf, ConfigurationKeys.ENABLE_PRE_REGISTRATION, false);
     }
 
     void distributeAvailableSeats(Event event) {
