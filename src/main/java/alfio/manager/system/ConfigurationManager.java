@@ -82,9 +82,9 @@ public class ConfigurationManager {
         return (T) c;
     }
 
-    public int getIntConfigValue(ConfigurationPath path, ConfigurationKeys key, int defaultValue) {
+    public int getIntConfigValue(ConfigurationPathKey pathKey, int defaultValue) {
         try {
-            return Optional.ofNullable(findByConfigurationPathAndKey(path, key))
+            return Optional.ofNullable(findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()))
                     .map(Configuration::getValue)
                     .map(Integer::parseInt).orElse(defaultValue);
         } catch (NumberFormatException | EmptyResultDataAccessException e) {
@@ -92,24 +92,24 @@ public class ConfigurationManager {
         }
     }
 
-    public boolean getBooleanConfigValue(ConfigurationPath path, ConfigurationKeys key, boolean defaultValue) {
-        return getStringConfigValue(path, key)
+    public boolean getBooleanConfigValue(ConfigurationPathKey pathKey, boolean defaultValue) {
+        return getStringConfigValue(pathKey)
                 .map(Boolean::parseBoolean)
                 .orElse(defaultValue);
     }
 
 
-    public String getStringConfigValue(ConfigurationPath path, ConfigurationKeys key, String defaultValue) {
-        return getStringConfigValue(path, key).orElse(defaultValue);
+    public String getStringConfigValue(ConfigurationPathKey pathKey, String defaultValue) {
+        return getStringConfigValue(pathKey).orElse(defaultValue);
     }
     
-    public Optional<String> getStringConfigValue(ConfigurationPath path, ConfigurationKeys key) {
-    	return optionally(() -> findByConfigurationPathAndKey(path, key)).map(Configuration::getValue);
+    public Optional<String> getStringConfigValue(ConfigurationPathKey pathKey) {
+    	return optionally(() -> findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())).map(Configuration::getValue);
     }
 
-    public String getRequiredValue(ConfigurationPath path, ConfigurationKeys key) {
-        return getStringConfigValue(path, key)
-                .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + key + " not present"));
+    public String getRequiredValue(ConfigurationPathKey pathKey) {
+        return getStringConfigValue(pathKey)
+                .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + pathKey.getKey() + " not present"));
     }
 
     // begin SYSTEM related configuration methods

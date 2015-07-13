@@ -42,7 +42,7 @@ public class DynamicResourcesController {
     @RequestMapping("/resources/js/google-analytics")
     public void getGoogleAnalyticsScript(HttpServletResponse response) throws IOException {
         response.setContentType("application/javascript");
-        final Optional<String> id = configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.GOOGLE_ANALYTICS_KEY);
+        final Optional<String> id = configurationManager.getStringConfigValue(Configuration.googleAnalyticsKey());
         response.getWriter().write(id.map(x -> String.format(GOOGLE_ANALYTICS_SCRIPT, x)).orElse(EMPTY));
     }
 }

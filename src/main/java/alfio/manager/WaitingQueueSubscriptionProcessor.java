@@ -74,9 +74,8 @@ public class WaitingQueueSubscriptionProcessor {
     }
 
     private boolean isWaitingListFormEnabled(Event event) {
-        Configuration.ConfigurationPath conf = Configuration.event(event);
-        return configurationManager.getBooleanConfigValue(conf, ConfigurationKeys.ENABLE_WAITING_QUEUE, false)
-                || configurationManager.getBooleanConfigValue(conf, ConfigurationKeys.ENABLE_PRE_REGISTRATION, false);
+        return configurationManager.getBooleanConfigValue(Configuration.enableWaitingQueue(event), false)
+                || configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false);
     }
 
     void distributeAvailableSeats(Event event) {

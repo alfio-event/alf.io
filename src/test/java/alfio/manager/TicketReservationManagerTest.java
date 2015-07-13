@@ -25,6 +25,7 @@ import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.model.system.Configuration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
@@ -45,8 +46,6 @@ import java.time.ZonedDateTime;
 import java.util.*;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
-import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_START;
-import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -111,12 +110,14 @@ public class TicketReservationManagerTest {{
         TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager, null);
         it.initializesWith(() -> reset(notificationManager, eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, configurationManager, promoCodeDiscountRepository, messageSource, transactionManager));
         it.should("send the reminder before event end", expect -> {
-            when(configurationManager.getIntConfigValue(any(), eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
-            when(configurationManager.getStringConfigValue(any(), any())).thenReturn(Optional.empty());
+            Event event = it.usesMock(Event.class);
+
+            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
             when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
-            Event event = it.usesMock(Event.class);
+
             when(eventRepository.findByReservationId("abcd")).thenReturn(event);
             when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
             when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
@@ -127,12 +128,14 @@ public class TicketReservationManagerTest {{
         });
 
         it.should("not send the reminder after event end", expect -> {
-            when(configurationManager.getIntConfigValue(any(), eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
-            when(configurationManager.getStringConfigValue(any(), any())).thenReturn(Optional.empty());
+            Event event = it.usesMock(Event.class);
+
+            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
             when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
-            Event event = it.usesMock(Event.class);
+
             when(eventRepository.findByReservationId("abcd")).thenReturn(event);
             when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
             when(event.getBegin()).thenReturn(ZonedDateTime.now().minusDays(1));
@@ -143,12 +146,14 @@ public class TicketReservationManagerTest {{
         });
 
         it.should("consider ZoneId while checking (valid)", expect -> {
-            when(configurationManager.getIntConfigValue(any(), eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
-            when(configurationManager.getStringConfigValue(any(), any())).thenReturn(Optional.empty());
+            Event event = it.usesMock(Event.class);
+
+            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
             when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
-            Event event = it.usesMock(Event.class);
+
             when(eventRepository.findByReservationId("abcd")).thenReturn(event);
             when(event.getZoneId()).thenReturn(ZoneId.of("GMT-4"));
             when(event.getBegin()).thenReturn(ZonedDateTime.now(ZoneId.of("GMT-4")).plusDays(1));
@@ -159,12 +164,13 @@ public class TicketReservationManagerTest {{
         });
 
         it.should("consider ZoneId while checking (expired)", expect -> {
-            when(configurationManager.getIntConfigValue(any(), eq(ASSIGNMENT_REMINDER_START), anyInt())).thenReturn(10);
-            when(configurationManager.getStringConfigValue(any(), any())).thenReturn(Optional.empty());
+            Event event = it.usesMock(Event.class);
+            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
             when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
-            Event event = it.usesMock(Event.class);
+
             when(eventRepository.findByReservationId("abcd")).thenReturn(event);
             when(event.getZoneId()).thenReturn(ZoneId.of("UTC-8"));
             when(event.getBegin()).thenReturn(ZonedDateTime.now(ZoneId.of("UTC-8")));//same day
@@ -177,8 +183,9 @@ public class TicketReservationManagerTest {{
 
     describe("offlinePaymentDeadline", it -> {
         ConfigurationManager configurationManager = mock(ConfigurationManager.class);
-        when(configurationManager.getIntConfigValue(any(), eq(OFFLINE_PAYMENT_DAYS), anyInt())).thenReturn(2);
         Event event = mock(Event.class);
+        when(configurationManager.getIntConfigValue(eq(Configuration.offlinePaymentDays(event)), anyInt())).thenReturn(2);
+
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
 
         it.should("return the expire date as configured", expect -> {

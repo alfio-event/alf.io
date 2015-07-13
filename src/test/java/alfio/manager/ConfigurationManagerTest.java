@@ -32,6 +32,8 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.IntegrationTestUtil;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,94 +56,17 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
-@ActiveProfiles(Initializer.PROFILE_DEV)
+@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @Transactional
 public class ConfigurationManagerTest {
 
     @BeforeClass
     public static void initEnv() {
-        System.setProperty("datasource.dialect", "HSQLDB");
-        System.setProperty("datasource.driver", "org.hsqldb.jdbcDriver");
-        System.setProperty("datasource.url", "jdbc:hsqldb:mem:alfio");
-        System.setProperty("datasource.username", "sa");
-        System.setProperty("datasource.password", "");
-        System.setProperty("datasource.validationQuery", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
-        //System.setProperty("spring.profiles.active", Initializer.PROFILE_DEV);
+        IntegrationTestUtil.initSystemProperties();
     }
 
-    @Autowired
-    private ConfigurationManager configurationManager;
-
-    @Autowired
-    private ConfigurationRepository configurationRepository;
-
-    @Autowired
-    private EventManager eventManager;
-
-    @Autowired
-    private OrganizationRepository organizationRepository;
-
-    @Autowired
-    private UserManager userManager;
-
-    @Test
-    public void testPresentStringConfigValue() {
-        assertEquals(Optional.of("5"), configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION));
-    }
-
-    @Test
-    public void testEmptyStringConfigValue() {
-        assertEquals(Optional.empty(), configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.SMTP_PASSWORD));
-    }
-
-    @Test
-    public void testStringValueWithDefault() {
-        assertEquals("5", configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, "-1"));
-        assertEquals("-1", configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.SMTP_PASSWORD, "-1"));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testMissingConfigValue() {
-        configurationManager.getRequiredValue(Configuration.system(), ConfigurationKeys.SMTP_PASSWORD);
-    }
-
-    @Test
-    public void testRequiredValue() {
-        assertEquals("5", configurationManager.getRequiredValue(Configuration.system(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION));
-    }
-
-    @Test
-    public void testIntValue() {
-        assertEquals(5, configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, -1));
-
-        //missing value
-        assertEquals(-1, configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL, -1));
-
-
-        configurationManager.saveSystemConfiguration(ConfigurationKeys.BASE_URL, "blabla");
-        assertEquals("blabla", configurationManager.getRequiredValue(Configuration.system(), ConfigurationKeys.BASE_URL));
-        //not a number
-        assertEquals(-1, configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.BASE_URL, -1));
-    }
-
-    @Test
-    public void testBooleanValue() {
-        //missing value
-        assertFalse(configurationManager.getBooleanConfigValue(Configuration.system(), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, false));
-
-        //false value
-        configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "false");
-        assertFalse(configurationManager.getBooleanConfigValue(Configuration.system(), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, true));
-
-        //true value
-        configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "true");
-        assertTrue(configurationManager.getBooleanConfigValue(Configuration.system(), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, false));
-    }
-
-    @Test
-    public void testOverrideMechanism() {
-
-
+    @Before
+    public void prepareEnv() {
         //setup...
         organizationRepository.create("org", "org", "email@example.com");
         Organization organization = organizationRepository.findByName("org").get(0);
@@ -161,21 +86,105 @@ public class ConfigurationManagerTest {
                 BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""));
         eventManager.createEvent(em);
 
+        event = eventManager.getSingleEvent("eventShortName", "test");
+    }
+
+    Event event;
+
+    @Autowired
+    private ConfigurationManager configurationManager;
+
+    @Autowired
+    private ConfigurationRepository configurationRepository;
+
+    @Autowired
+    private EventManager eventManager;
+
+    @Autowired
+    private OrganizationRepository organizationRepository;
+
+    @Autowired
+    private UserManager userManager;
+
+    @Test
+    public void testPresentStringConfigValue() {
+        assertEquals(Optional.of("5"), configurationManager.getStringConfigValue(Configuration.maxAmountOfTicketsByReservation(event)));
+    }
+
+    @Test
+    public void testEmptyStringConfigValue() {
+        assertEquals(Optional.empty(), configurationManager.getStringConfigValue(Configuration.smtpPassword(event)));
+    }
+
+    @Test
+    public void testStringValueWithDefault() {
+        assertEquals("5", configurationManager.getStringConfigValue(Configuration.maxAmountOfTicketsByReservation(event), "-1"));
+        assertEquals("-1", configurationManager.getStringConfigValue(Configuration.smtpPassword(event), "-1"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMissingConfigValue() {
+        configurationManager.getRequiredValue(Configuration.smtpPassword(event));
+    }
+
+    @Test
+    public void testRequiredValue() {
+        assertEquals("5", configurationManager.getRequiredValue(Configuration.maxAmountOfTicketsByReservation(event)));
+    }
+
+    @Test
+    public void testIntValue() {
+        assertEquals(5, configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event), -1));
+
+        //missing value
+        assertEquals(-1, configurationManager.getIntConfigValue(Configuration.assignmentReminderInterval(event), -1));
+
+
+        configurationManager.saveSystemConfiguration(ConfigurationKeys.BASE_URL, "blabla");
+        assertEquals("blabla", configurationManager.getRequiredValue(Configuration.baseUrl(event)));
+        //not a number
+        assertEquals(-1, configurationManager.getIntConfigValue(Configuration.baseUrl(event), -1));
+    }
+
+    @Test
+    public void testBooleanValue() {
+        //missing value
+        assertFalse(configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event), false));
+
+        //false value
+        configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "false");
+        assertFalse(configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event), true));
+
+        //true value
+        configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "true");
+        assertTrue(configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event), false));
+    }
+
+    @Test
+    public void testOverrideMechanism() {
+
+        Organization organization = organizationRepository.findByName("org").get(0);
+
+
         Event event = eventManager.getSingleEvent("eventShortName", "test");
 
         TicketCategory tc = eventManager.loadTicketCategories(event).get(0);
         //
 
-        //insert override value at each level
+        //check override level up to event level
+
+        assertEquals(5, configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event), -1));
 
         configurationRepository.insertOrganizationLevel(organization.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "6", "desc");
+
+        assertEquals(6, configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event), -1));
+
         configurationRepository.insertEventLevel(organization.getId(), event.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "7", "desc");
+        assertEquals(7, configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event), -1));
+
         configurationRepository.insertTicketCategoryLevel(organization.getId(), event.getId(), tc.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "8", "desc");
 
-        assertEquals(5, configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, -1));
-        assertEquals(6, configurationManager.getIntConfigValue(Configuration.organization(organization.getId()), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, -1));
-        assertEquals(7, configurationManager.getIntConfigValue(Configuration.event(event), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, -1));
-        assertEquals(8, configurationManager.getIntConfigValue(Configuration.ticketCategory(organization.getId(), event.getId(), tc.getId()), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, -1));
+        assertEquals(7, configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event), -1));
 
     }
 

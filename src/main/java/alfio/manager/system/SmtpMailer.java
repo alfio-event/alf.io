@@ -18,8 +18,6 @@ package alfio.manager.system;
 
 import alfio.model.Event;
 import alfio.model.system.Configuration;
-import alfio.model.system.Configuration.ConfigurationPath;
-import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
@@ -57,8 +55,8 @@ class SmtpMailer implements Mailer {
 			MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
 					: new MimeMessageHelper(mimeMessage, "UTF-8");
 			message.setSubject(subject);
-			message.setFrom(configurationManager.getRequiredValue(Configuration.system(), ConfigurationKeys.SMTP_FROM_EMAIL), event.getShortName());
-            String replyTo = configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.MAIL_REPLY_TO, "");
+			message.setFrom(configurationManager.getRequiredValue(Configuration.smtpFromEmail(event)), event.getShortName());
+            String replyTo = configurationManager.getStringConfigValue(Configuration.mailReplyTo(event), "");
             if(StringUtils.isNotBlank(replyTo)) {
                 message.setReplyTo(replyTo);
             }
@@ -84,14 +82,14 @@ class SmtpMailer implements Mailer {
 	private JavaMailSender toMailSender(Event event) {
 		JavaMailSenderImpl r = new CustomJavaMailSenderImpl();
 		r.setDefaultEncoding("UTF-8");
-		ConfigurationPath configurationPath = Configuration.event(event);
-		r.setHost(configurationManager.getRequiredValue(configurationPath, ConfigurationKeys.SMTP_HOST));
-		r.setPort(Integer.valueOf(configurationManager.getRequiredValue(configurationPath, ConfigurationKeys.SMTP_PORT)));
-		r.setProtocol(configurationManager.getRequiredValue(configurationPath, ConfigurationKeys.SMTP_PROTOCOL));
-		r.setUsername(configurationManager.getStringConfigValue(configurationPath, ConfigurationKeys.SMTP_USERNAME, null));
-		r.setPassword(configurationManager.getStringConfigValue(configurationPath, ConfigurationKeys.SMTP_PASSWORD, null));
 
-		String properties = configurationManager.getStringConfigValue(configurationPath, ConfigurationKeys.SMTP_PROPERTIES, null);
+		r.setHost(configurationManager.getRequiredValue(Configuration.smtpHost(event)));
+		r.setPort(Integer.valueOf(configurationManager.getRequiredValue(Configuration.smtpPort(event))));
+		r.setProtocol(configurationManager.getRequiredValue(Configuration.smtpProtocol(event)));
+		r.setUsername(configurationManager.getStringConfigValue(Configuration.smtpUsername(event), null));
+		r.setPassword(configurationManager.getStringConfigValue(Configuration.smtpPassword(event), null));
+
+		String properties = configurationManager.getStringConfigValue(Configuration.smtpProperties(event), null);
 
 		if (properties != null) {
 			try {

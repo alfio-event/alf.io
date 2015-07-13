@@ -117,7 +117,7 @@ public class NotificationManager {
     }
 
     void sendWaitingMessages() {
-        Set<EmailMessage> toBeSent = messages.poll(configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.MAX_EMAIL_PER_CYCLE, 10));
+        Set<EmailMessage> toBeSent = messages.poll(configurationManager.getIntConfigValue(Configuration.maxEmailPerCycle(), 10));
         toBeSent.forEach(m -> {
             try {
                 processMessage(m);

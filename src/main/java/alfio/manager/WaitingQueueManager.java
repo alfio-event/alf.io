@@ -101,7 +101,7 @@ public class WaitingQueueManager {
             ticketRepository.revertToFree(eventId);
         } else if (waitingPeople > 0 && waitingTickets > 0) {
             return distributeAvailableSeats(event, waitingPeople, waitingTickets);
-        } else if(configurationManager.getBooleanConfigValue(Configuration.event(event), ConfigurationKeys.ENABLE_PRE_REGISTRATION, false)) {
+        } else if(configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false)) {
             return handlePreReservation(event, waitingPeople, waitingTickets);
         }
         return Stream.empty();
@@ -159,7 +159,7 @@ public class WaitingQueueManager {
         log.debug("processing {} subscribers from waiting queue", availableSeats);
         Iterator<Ticket> tickets = ticketRepository.selectWaitingTicketsForUpdate(eventId, status.name(), availableSeats).iterator();
         Optional<TicketCategory> unboundedCategory = ticketCategoryRepository.findUnboundedOrderByExpirationDesc(eventId).stream().findFirst();
-        int expirationTimeout = configurationManager.getIntConfigValue(Configuration.event(event), ConfigurationKeys.WAITING_QUEUE_RESERVATION_TIMEOUT, 4);
+        int expirationTimeout = configurationManager.getIntConfigValue(Configuration.waitingQueueReservationTimeout(event), 4);
         ZonedDateTime expiration = ZonedDateTime.now(event.getZoneId()).plusHours(expirationTimeout).with(WorkingDaysAdjusters.defaultWorkingDays());
 
         if(!tickets.hasNext()) {

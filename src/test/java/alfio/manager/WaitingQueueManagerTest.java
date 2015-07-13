@@ -22,7 +22,6 @@ import alfio.model.Ticket;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
@@ -97,7 +96,7 @@ public class WaitingQueueManagerTest {{
 
             when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(1);
             when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
-            when(configurationManager.getBooleanConfigValue(Configuration.event(event), ConfigurationKeys.ENABLE_PRE_REGISTRATION, false)).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false)).thenReturn(true);
             Ticket ticket = it.usesMock(Ticket.class);
             when(ticketRepository.selectWaitingTicketsForUpdate(eventId, Ticket.TicketStatus.PRE_RESERVED.name(), 1)).thenReturn(Collections.singletonList(ticket));
             WaitingQueueSubscription subscription = it.usesMock(WaitingQueueSubscription.class);

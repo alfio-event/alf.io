@@ -18,8 +18,6 @@ package alfio.manager.system;
 
 import alfio.model.Event;
 import alfio.model.system.Configuration;
-import alfio.model.system.Configuration.ConfigurationPath;
-import alfio.model.system.ConfigurationKeys;
 import com.squareup.okhttp.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -42,16 +40,14 @@ class MailgunMailer implements Mailer {
 			Optional<String> html, Attachment... attachments)
 			throws IOException {
 
-		ConfigurationPath configurationPath = Configuration.event(event);
-
-		String from = event.getShortName() + " <" + configurationManager.getRequiredValue(configurationPath, ConfigurationKeys.MAILGUN_FROM) +">";
+		String from = event.getShortName() + " <" + configurationManager.getRequiredValue(Configuration.mailgunFrom(event)) +">";
 
 		if (ArrayUtils.isEmpty(attachments)) {
 			FormEncodingBuilder builder = new FormEncodingBuilder()
 					.add("from", from).add("to", to).add("subject", subject)
 					.add("text", text);
 
-            String replyTo = configurationManager.getStringConfigValue(configurationPath, ConfigurationKeys.MAIL_REPLY_TO, "");
+            String replyTo = configurationManager.getStringConfigValue(Configuration.mailReplyTo(event), "");
             if(StringUtils.isNotBlank(replyTo)) {
                 builder.add("h:Reply-To", replyTo);
             }
@@ -85,10 +81,8 @@ class MailgunMailer implements Mailer {
 	public void send(Event event, String to, String subject, String text,
 			Optional<String> html, Attachment... attachment) {
 
-		String apiKey = configurationManager
-				.getRequiredValue(Configuration.event(event), ConfigurationKeys.MAILGUN_KEY);
-		String domain = configurationManager
-				.getRequiredValue(Configuration.event(event), ConfigurationKeys.MAILGUN_DOMAIN);
+		String apiKey = configurationManager.getRequiredValue(Configuration.mailgunKey(event));
+		String domain = configurationManager.getRequiredValue(Configuration.mailgunDomain(event));
 
 		try {
 

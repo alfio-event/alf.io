@@ -57,13 +57,13 @@ public class WaitingQueueSubscriptionProcessorTest {{
         List<Event> activeEvents = Collections.singletonList(event);
         it.should("filter events whose 'waiting queue' flag is not active", expect -> {
             when(eventManager.getActiveEvents()).thenReturn(activeEvents);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false))).thenReturn(false);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.enableWaitingQueue(event)), eq(false))).thenReturn(false);
             processor.handleWaitingTickets();
             verify(waitingQueueManager, never()).distributeSeats(eq(event));
         });
         it.should("process pending tickets", expect -> {
             when(eventManager.getActiveEvents()).thenReturn(activeEvents);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false))).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.enableWaitingQueue(event)), eq(false))).thenReturn(true);
             when(messageSource.getMessage(anyString(), any(), eq(Locale.ENGLISH))).thenReturn("subject");
             WaitingQueueSubscription subscription = it.usesMock(WaitingQueueSubscription.class);
             when(subscription.getLocale()).thenReturn(Locale.ENGLISH);
@@ -73,7 +73,7 @@ public class WaitingQueueSubscriptionProcessorTest {{
             when(waitingQueueManager.distributeSeats(eq(event))).thenReturn(Stream.of(Triple.of(subscription, reservation, expiration)));
             when(ticketReservationManager.createTicketReservation(eq(eventId), anyListOf(TicketReservationWithOptionalCodeModification.class), any(Date.class), eq(Optional.<String>empty()), eq(Optional.<String>empty()), any(Locale.class), eq(true))).thenReturn(reservationId);
             processor.handleWaitingTickets();
-            verify(configurationManager).getBooleanConfigValue(eq(Configuration.event(event)), eq(ConfigurationKeys.ENABLE_WAITING_QUEUE), eq(false));
+            verify(configurationManager).getBooleanConfigValue(eq(Configuration.enableWaitingQueue(event)), eq(false));
             verify(ticketReservationManager).createTicketReservation(eq(eventId), eq(Collections.singletonList(reservation)), eq(Date.from(expiration.toInstant())), eq(Optional.<String>empty()), eq(Optional.<String>empty()), eq(Locale.ENGLISH), eq(true));
             verify(notificationManager).sendSimpleEmail(eq(event), eq("me"), eq("subject"), any(TextTemplateGenerator.class));
         });

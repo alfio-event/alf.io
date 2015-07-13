@@ -59,7 +59,7 @@ public class DefaultLocationManager implements LocationManager {
     private GeoApiContext getApiContext() {
         GeoApiContext ctx = CTX.get();
         if(ctx == null) {
-            ctx = new GeoApiContext().setApiKey(configurationManager.getRequiredValue(Configuration.system(), ConfigurationKeys.MAPS_SERVER_API_KEY));
+            ctx = new GeoApiContext().setApiKey(configurationManager.getRequiredValue(Configuration.mapsServerApiKey()));
             CTX.compareAndSet(null, ctx);
         }
         return CTX.get();

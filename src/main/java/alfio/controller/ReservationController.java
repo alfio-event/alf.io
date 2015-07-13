@@ -169,7 +169,7 @@ public class ReservationController {
 
 			Event ev = event.get();
 
-            boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.event(ev), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, false);
+            boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(ev), false);
 			model.addAttribute(
 					"ticketsByCategory",
 					tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
@@ -272,7 +272,7 @@ public class ReservationController {
 			model.addAttribute("reservation", ticketReservation);
 			model.addAttribute("paymentReason", ev.getShortName() + " " + ticketReservationManager.getShortReservationID(reservationId));
 			model.addAttribute("pageTitle", "reservation-page-waiting.header.title");
-			model.addAttribute("bankAccount", configurationManager.getStringConfigValue(Configuration.event(ev), ConfigurationKeys.BANK_ACCOUNT_NR).orElse(""));
+			model.addAttribute("bankAccount", configurationManager.getStringConfigValue(Configuration.bankAccountNr(ev)).orElse(""));
 			model.addAttribute("expires", ZonedDateTime.ofInstant(ticketReservation.getValidity().toInstant(), ev.getZoneId()));
 			model.addAttribute("event", ev);
 			return "/event/reservation-waiting-for-payment";

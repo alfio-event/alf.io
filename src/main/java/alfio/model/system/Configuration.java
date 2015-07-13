@@ -131,15 +131,181 @@ public class Configuration {
         return new SystemConfigurationPath();
     }
 
-    public static ConfigurationPath organization(int id) {
+    private static ConfigurationPath organization(int id) {
         return new OrganizationConfigurationPath(id);
     }
 
-    public static ConfigurationPath event(Event event) {
+    private static ConfigurationPath event(Event event) {
         return new EventConfigurationPath(event.getOrganizationId(), event.getId());
     }
 
-    public static ConfigurationPath ticketCategory(int organizationId, int eventId, int id) {
+    private static ConfigurationPath ticketCategory(int organizationId, int eventId, int id) {
         return new TicketCategoryConfigurationPath(organizationId, eventId, id);
+    }
+
+
+    //
+    @Getter
+    @EqualsAndHashCode
+    public static class ConfigurationPathKey {
+        private final ConfigurationPath path;
+        private final ConfigurationKeys key;
+
+        private ConfigurationPathKey(ConfigurationPath path, ConfigurationKeys key) {
+            this.path = path;
+            this.key = key;
+        }
+    }
+    //
+
+
+    public static ConfigurationPathKey initCompleted() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.INIT_COMPLETED);
+    }
+
+    public static ConfigurationPathKey baseUrl(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.BASE_URL);
+    }
+
+    public static ConfigurationPathKey vatNr() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.VAT_NR);
+    }
+
+    // --- google maps ---
+
+    public static ConfigurationPathKey mapsServerApiKey() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.MAPS_SERVER_API_KEY);
+    }
+
+    public static ConfigurationPathKey mapsClientApiKey() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.MAPS_CLIENT_API_KEY);
+    }
+
+    // --- end google maps ---
+
+    // --- stripe ---
+
+    public static ConfigurationPathKey stripeSecretKey(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.STRIPE_SECRET_KEY);
+    }
+
+    public static ConfigurationPathKey stripePublicKey(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.STRIPE_PUBLIC_KEY);
+    }
+
+    // --- end stripe ---
+
+    public static ConfigurationPathKey specialPriceCodeLength() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.SPECIAL_PRICE_CODE_LENGTH);
+    }
+
+    public static ConfigurationPathKey maxAmountOfTicketsByReservation(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
+    }
+
+    public static ConfigurationPathKey assignmentReminderStart(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.ASSIGNMENT_REMINDER_START);
+    }
+
+    public static ConfigurationPathKey assignmentReminderInterval(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL);
+    }
+
+    public static ConfigurationPathKey reservationTimeout(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.RESERVATION_TIMEOUT);
+    }
+
+    public static ConfigurationPathKey mailerType(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.MAILER_TYPE);
+    }
+
+    public static ConfigurationPathKey maxEmailPerCycle() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.MAX_EMAIL_PER_CYCLE);
+    }
+
+    public static ConfigurationPathKey mailReplyTo(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.MAIL_REPLY_TO);
+    }
+
+    // --- smtp related ---
+
+    public static ConfigurationPathKey smtpHost(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_HOST);
+    }
+
+    public static ConfigurationPathKey smtpPort(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_PORT);
+    }
+
+    public static ConfigurationPathKey smtpProtocol(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_PROTOCOL);
+    }
+
+    public static ConfigurationPathKey smtpUsername(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_USERNAME);
+    }
+
+    public static ConfigurationPathKey smtpPassword(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_PASSWORD);
+    }
+
+    public static ConfigurationPathKey smtpFromEmail(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_FROM_EMAIL);
+    }
+
+    public static ConfigurationPathKey smtpProperties(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_PROPERTIES);
+    }
+
+    // --- end smtp related ---
+
+    public static ConfigurationPathKey offlinePaymentDays(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.OFFLINE_PAYMENT_DAYS);
+    }
+
+    public static ConfigurationPathKey offlineReminderHours() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.OFFLINE_REMINDER_HOURS);
+    }
+
+    public static ConfigurationPathKey bankAccountNr(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.BANK_ACCOUNT_NR);
+    }
+
+    public static ConfigurationPathKey partialReservationIdLength() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.PARTIAL_RESERVATION_ID_LENGTH);
+    }
+
+    // --- mailgun related ---
+    public static ConfigurationPathKey mailgunKey(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.MAILGUN_KEY);
+    }
+
+    public static ConfigurationPathKey mailgunDomain(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.MAILGUN_DOMAIN);
+    }
+
+    public static ConfigurationPathKey mailgunFrom(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.MAILGUN_FROM);
+    }
+    // --- end mailgun related ---
+
+    public static ConfigurationPathKey googleAnalyticsKey() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.GOOGLE_ANALYTICS_KEY);
+    }
+
+    public static ConfigurationPathKey allowFreeTicketsCancellation(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION);
+    }
+
+    public static ConfigurationPathKey enableWaitingQueue(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.ENABLE_WAITING_QUEUE);
+    }
+
+    public static ConfigurationPathKey enablePreRegistration(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.ENABLE_PRE_REGISTRATION);
+    }
+
+    public static ConfigurationPathKey waitingQueueReservationTimeout(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.WAITING_QUEUE_RESERVATION_TIMEOUT);
     }
 }

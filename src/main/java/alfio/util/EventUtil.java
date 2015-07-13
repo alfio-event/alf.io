@@ -49,8 +49,8 @@ public class EventUtil {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         SaleableTicketCategory lastCategory = lastCategoryOptional.get();
         if(isPreSales(event, categories)) {
-            return configurationManager.getBooleanConfigValue(Configuration.event(event), ConfigurationKeys.ENABLE_PRE_REGISTRATION, false);
-        } else if(configurationManager.getBooleanConfigValue(Configuration.event(event), ConfigurationKeys.ENABLE_WAITING_QUEUE, false)) {
+            return configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false);
+        } else if(configurationManager.getBooleanConfigValue(Configuration.enableWaitingQueue(event), false)) {
             return now.isBefore(lastCategory.getZonedExpiration()) && noTicketAvailable(categories);
         }
         return false;

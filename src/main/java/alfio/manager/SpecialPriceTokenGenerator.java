@@ -68,7 +68,7 @@ public class SpecialPriceTokenGenerator {
     private void generateCode(SpecialPrice specialPrice) {
 
         //TODO: get Event from categoryId present in specialPrice
-        int maxLength = configurationManager.getIntConfigValue(Configuration.system(), ConfigurationKeys.SPECIAL_PRICE_CODE_LENGTH, 6);
+        int maxLength = configurationManager.getIntConfigValue(Configuration.specialPriceCodeLength(), 6);
 
         while (true) {
             try {

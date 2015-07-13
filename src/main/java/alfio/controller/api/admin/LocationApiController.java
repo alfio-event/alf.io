@@ -30,7 +30,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 import java.util.TimeZone;
 
-import static alfio.model.system.ConfigurationKeys.MAPS_CLIENT_API_KEY;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
 @RestController
@@ -66,7 +65,7 @@ public class LocationApiController {
     }
 
     private Optional<String> getMapsClientApiKey() {
-        return configurationManager.getStringConfigValue(Configuration.system(), MAPS_CLIENT_API_KEY);
+        return configurationManager.getStringConfigValue(Configuration.mapsClientApiKey());
     }
 
     @RequestMapping(value = "/location/map", method = GET)

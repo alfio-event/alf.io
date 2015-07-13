@@ -60,11 +60,11 @@ public class StripeManager {
     }
 
     private String getSecretKey(Event event) {
-        return configurationManager.getRequiredValue(Configuration.event(event), STRIPE_SECRET_KEY);
+        return configurationManager.getRequiredValue(Configuration.stripeSecretKey(event));
     }
 
     public String getPublicKey(Event event) {
-        return configurationManager.getRequiredValue(Configuration.event(event), STRIPE_PUBLIC_KEY);
+        return configurationManager.getRequiredValue(Configuration.stripePublicKey(event));
     }
 
     /**

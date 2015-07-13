@@ -29,7 +29,6 @@ import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.TicketWithStatistic;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
@@ -383,7 +382,7 @@ public class TicketReservationManager {
 		ZonedDateTime eventBegin = event.getBegin();
 		int daysToBegin = Period.between(now.toLocalDate(), eventBegin.toLocalDate()).getDays();
 		Validate.isTrue(daysToBegin >= 0, "Cannot confirm an offline reservation after event start");
-		int waitingPeriod = configurationManager.getIntConfigValue(Configuration.event(event), OFFLINE_PAYMENT_DAYS, 5);
+		int waitingPeriod = configurationManager.getIntConfigValue(Configuration.offlinePaymentDays(event), 5);
 		return Math.min(daysToBegin, waitingPeriod);
 	}
 
@@ -607,18 +606,18 @@ public class TicketReservationManager {
     }
 
 	public String reservationUrl(String reservationId, Event event) {
-		return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.event(event), ConfigurationKeys.BASE_URL), "/")
+		return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl(event)), "/")
 				+ "/event/" + event.getShortName() + "/reservation/" + reservationId;
 	}
 
 	public String ticketUrl(String reservationId, Event event, String ticketId) {
-		return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.event(event), ConfigurationKeys.BASE_URL), "/")
+		return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl(event)), "/")
 				+ "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/" + ticketId;
 	}
 
 
 	public int maxAmountOfTickets(Event event) {
-        return configurationManager.getIntConfigValue(Configuration.event(event), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, 5);
+        return configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event), 5);
 	}
 	
 	public Optional<TicketReservation> findById(String reservationId) {
@@ -692,7 +691,7 @@ public class TicketReservationManager {
 	}
 
 	public Optional<String> getVAT() {
-		return configurationManager.getStringConfigValue(Configuration.system(), ConfigurationKeys.VAT_NR);
+		return configurationManager.getStringConfigValue(Configuration.vatNr());
 	}
 
 	public void updateTicketOwner(Ticket ticket,
@@ -786,7 +785,7 @@ public class TicketReservationManager {
 	}
 
 	void sendReminderForOfflinePayments() {
-		Date expiration = truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.system(), OFFLINE_REMINDER_HOURS, 24)), Calendar.DATE);
+		Date expiration = truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.offlineReminderHours(), 24)), Calendar.DATE);
 		ticketReservationRepository.findAllOfflinePaymentReservationForNotification(expiration).stream()
 				.map(reservation -> {
 					Optional<Ticket> ticket = ticketRepository.findTicketsInReservation(reservation.getId()).stream().findFirst();
@@ -808,9 +807,9 @@ public class TicketReservationManager {
 	}
 
     void sendReminderForTicketAssignment() {
-        int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.system(), ASSIGNMENT_REMINDER_START, 10);
 		eventRepository.findAll().stream()
 				.filter(e -> {
+					int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.assignmentReminderStart(e), 10);
 					int days = Period.between(ZonedDateTime.now(e.getZoneId()).toLocalDate(), e.getBegin().toLocalDate()).getDays();
 					return days > 0 && days <= daysBeforeStart;
 				})
@@ -824,7 +823,7 @@ public class TicketReservationManager {
             requiresNewTransactionTemplate.execute(status -> {
                 Event event = p.getLeft();
                 ZoneId eventZoneId = event.getZoneId();
-                int quietPeriod = configurationManager.getIntConfigValue(Configuration.event(event), ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL, 3);
+                int quietPeriod = configurationManager.getIntConfigValue(Configuration.assignmentReminderInterval(event), 3);
                 p.getRight().stream()
                         .map(id -> findByIdForNotification(id, eventZoneId, quietPeriod))
                         .filter(Optional::isPresent)
@@ -853,7 +852,7 @@ public class TicketReservationManager {
 	}
 
 	public String getShortReservationID(String reservationId) {
-		return StringUtils.substring(reservationId, 0, configurationManager.getIntConfigValue(Configuration.system(), PARTIAL_RESERVATION_ID_LENGTH, 8)).toUpperCase();
+		return StringUtils.substring(reservationId, 0, configurationManager.getIntConfigValue(Configuration.partialReservationIdLength(), 8)).toUpperCase();
 	}
 
 	public int countAvailableTickets(Event event, TicketCategory category) {
@@ -879,16 +878,21 @@ public class TicketReservationManager {
 		model.put("ticket", ticket);
 		model.put("organization", organization);
         Locale locale = Locale.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
-		notificationManager.sendSimpleEmail(event, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject", new Object[]{event.getShortName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/ticket-has-been-cancelled-txt.ms", model, locale, TemplateOutput.TEXT));
-		String adminTemplate = messageSource.getMessage("email-ticket-released.admin.text", new Object[] {ticket.getId(), ticket.getUuid(), ticket.getFullName(), ticket.getEmail(), category.getDescription(), category.getId()}, Locale.ENGLISH);
-		notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject", new Object[]{ticket.getId(), event.getShortName()}, locale), () -> templateManager.renderString(adminTemplate, model, Locale.ENGLISH, TemplateOutput.TEXT));
+		notificationManager.sendSimpleEmail(event, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
+				new Object[]{event.getShortName()}, locale),
+				() -> templateManager.renderClassPathResource("/alfio/templates/ticket-has-been-cancelled-txt.ms", model, locale, TemplateOutput.TEXT));
+		String adminTemplate = messageSource.getMessage("email-ticket-released.admin.text",
+				new Object[] {ticket.getId(), ticket.getUuid(), ticket.getFullName(), ticket.getEmail(), category.getDescription(), category.getId()}, Locale.ENGLISH);
+		notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject",
+				new Object[]{ticket.getId(), event.getShortName()}, locale),
+				() -> templateManager.renderString(adminTemplate, model, Locale.ENGLISH, TemplateOutput.TEXT));
         if(ticketRepository.countTicketsInReservation(ticketReservation.getId()) == 0) {
             deleteReservations(singletonList(ticketReservation.getId()));
         }
 	}
 
     public int getReservationTimeout(Event event) {
-        return configurationManager.getIntConfigValue(Configuration.event(event), RESERVATION_TIMEOUT, 25);
+        return configurationManager.getIntConfigValue(Configuration.reservationTimeout(event), 25);
     }
 
     public void validateAndConfirmOfflinePayment(String reservationId, Event event, BigDecimal paidAmount) {
