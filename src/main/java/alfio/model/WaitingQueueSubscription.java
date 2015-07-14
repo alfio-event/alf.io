@@ -21,12 +21,17 @@ import lombok.Getter;
 
 import java.time.ZonedDateTime;
 import java.util.Locale;
+import java.util.Optional;
 
 @Getter
 public class WaitingQueueSubscription {
 
     public enum Status {
         WAITING, PENDING, ACQUIRED, EXPIRED
+    }
+
+    public enum Type {
+        PRE_SALES, SOLD_OUT
     }
 
     private final int id;
@@ -37,6 +42,7 @@ public class WaitingQueueSubscription {
     private final String emailAddress;
     private final String reservationId;
     private final String userLanguage;
+    private final Type subscriptionType;
 
     public WaitingQueueSubscription(@Column("id") int id,
                                     @Column("creation") ZonedDateTime creation,
@@ -45,11 +51,13 @@ public class WaitingQueueSubscription {
                                     @Column("full_name") String fullName,
                                     @Column("email_address") String emailAddress,
                                     @Column("ticket_reservation_id") String reservationId,
-                                    @Column("user_language") String userLanguage) {
+                                    @Column("user_language") String userLanguage,
+                                    @Column("subscription_type") Type subscriptionType) {
         this.id = id;
         this.creation = creation;
         this.eventId = eventId;
         this.userLanguage = userLanguage;
+        this.subscriptionType = subscriptionType;
         this.status = Status.valueOf(status);
         this.fullName = fullName;
         this.reservationId = reservationId;
@@ -58,5 +66,9 @@ public class WaitingQueueSubscription {
 
     public Locale getLocale() {
         return Locale.forLanguageTag(userLanguage);
+    }
+
+    public boolean isPreSales() {
+        return Optional.ofNullable(subscriptionType).map(s -> s == Type.PRE_SALES).orElse(false);
     }
 }

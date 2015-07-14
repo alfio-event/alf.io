@@ -124,13 +124,14 @@ public class WaitingQueueProcessorIntegrationTest {
         List<WaitingQueueSubscription> subscriptions = waitingQueueRepository.loadAll(event.getId());
         assertEquals(2, subscriptions.stream().filter(w -> StringUtils.isNotBlank(w.getReservationId())).count());
         assertTrue(subscriptions.stream().allMatch(w -> w.getStatus().equals(WaitingQueueSubscription.Status.PENDING)));
+        assertTrue(subscriptions.stream().allMatch(w -> w.getSubscriptionType().equals(WaitingQueueSubscription.Type.PRE_SALES)));
 
     }
 
     @Test
     public void testSoldOut() throws InterruptedException {
         List<TicketCategoryModification> categories = Collections.singletonList(
-                new TicketCategoryModification(null, "default", 0,
+                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                         new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
                         "desc", BigDecimal.ZERO, false, "", true));
@@ -148,7 +149,9 @@ public class WaitingQueueProcessorIntegrationTest {
         waitingQueueManager.subscribe(event, "Giuseppe Garibaldi", "peppino@garibaldi.com", Locale.ENGLISH);
         Thread.sleep(1L);//we are testing ordering, not concurrency...
         waitingQueueManager.subscribe(event, "Nino Bixio", "bixio@mille.org", Locale.ITALIAN);
+        List<WaitingQueueSubscription> subscriptions = waitingQueueRepository.loadAll(event.getId());
         assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
+        assertTrue(subscriptions.stream().allMatch(w -> w.getSubscriptionType().equals(WaitingQueueSubscription.Type.SOLD_OUT)));
 
         //the following call shouldn't have any effect
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -160,7 +163,7 @@ public class WaitingQueueProcessorIntegrationTest {
 
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
 
-        List<WaitingQueueSubscription> subscriptions = waitingQueueRepository.loadAll(event.getId());
+        subscriptions = waitingQueueRepository.loadAll(event.getId());
         assertEquals(1, subscriptions.stream().filter(w -> StringUtils.isNotBlank(w.getReservationId())).count());
         Optional<WaitingQueueSubscription> first = subscriptions.stream().filter(w -> w.getStatus().equals(WaitingQueueSubscription.Status.PENDING)).findFirst();
         assertTrue(first.isPresent());

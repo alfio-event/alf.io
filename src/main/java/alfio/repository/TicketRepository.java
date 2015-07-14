@@ -88,7 +88,7 @@ public interface TicketRepository {
 			+ " and tickets_reservation_id in (:reservationIds)")
 	int freeFromReservation(@Bind("reservationIds") List<String> reservationIds);
 
-    @Query("update ticket set category_id = null where tickets_reservation_id in (:reservationIds) and status in ('PENDING', 'OFFLINE_PAYMENT') and category_id in (select id from ticket_category tc, ticket t where t.tickets_reservation_id in (:reservationIds) and t.category_id = tc.id and tc.bounded = false)")
+    @Query("update ticket set category_id = null where tickets_reservation_id in (:reservationIds) and status in ('PENDING', 'OFFLINE_PAYMENT') and category_id in (select tc.id from ticket_category tc, ticket t where t.tickets_reservation_id in (:reservationIds) and t.category_id = tc.id and tc.bounded = false)")
     int resetCategoryIdForUnboundedCategories(@Bind("reservationIds") List<String> reservationIds);
 
 	@Query("update ticket set category_id = null where event_id = :eventId and category_id = :categoryId and id in (:ticketIds)")

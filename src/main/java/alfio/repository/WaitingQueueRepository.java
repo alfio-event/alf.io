@@ -39,8 +39,8 @@ public interface WaitingQueueRepository {
     @Query("select * from waiting_queue where event_id = :eventId and status = 'WAITING' limit 1")
     WaitingQueueSubscription loadFirstWaiting(@Bind("eventId") int eventId);
 
-    @Query("insert into waiting_queue (event_id, full_name, email_address, creation, status, user_language) values(:eventId, :fullName, :emailAddress, :creation, 'WAITING', :userLanguage)")
-    int insert(@Bind("eventId") int eventId, @Bind("fullName") String fullName, @Bind("emailAddress") String emailAddress, @Bind("creation") ZonedDateTime creation, @Bind("userLanguage") String userLanguage);
+    @Query("insert into waiting_queue (event_id, full_name, email_address, creation, status, user_language, subscription_type) values(:eventId, :fullName, :emailAddress, :creation, 'WAITING', :userLanguage, :subscriptionType)")
+    int insert(@Bind("eventId") int eventId, @Bind("fullName") String fullName, @Bind("emailAddress") String emailAddress, @Bind("creation") ZonedDateTime creation, @Bind("userLanguage") String userLanguage, @Bind("subscriptionType") WaitingQueueSubscription.Type subscriptionType);
 
     @Query("update waiting_queue set status = :status where ticket_reservation_id = :reservationId")
     int updateStatusByReservationId(@Bind("reservationId") String reservationId, @Bind("status") String status);

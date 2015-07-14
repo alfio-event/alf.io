@@ -77,7 +77,7 @@ public final class Validator {
 
     public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors) {
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "name", "error.category.name");
-        if(category.getMaxTickets() < 1) {
+        if(category.isBounded() && category.getMaxTickets() < 1) {
             errors.rejectValue("maxTickets", "error.category.maxtickets");
         }
         if(!category.getInception().isBefore(category.getExpiration())) {

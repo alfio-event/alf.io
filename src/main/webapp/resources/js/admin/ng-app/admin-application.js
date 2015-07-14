@@ -594,6 +594,7 @@
                 price: category.actualPrice,
                 description: category.description,
                 maxTickets: category.maxTickets,
+                bounded: category.bounded,
                 inception: {
                     date: inception.format('YYYY-MM-DD'),
                     time: inception.format('HH:mm')

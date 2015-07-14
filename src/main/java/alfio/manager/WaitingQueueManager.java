@@ -23,13 +23,13 @@ import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
 import alfio.util.PreReservedTicketDistributor;
 import alfio.util.WorkingDaysAdjusters;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
@@ -75,13 +75,34 @@ public class WaitingQueueManager {
 
     public boolean subscribe(Event event, String fullName, String email, Locale userLanguage) {
         try {
-            waitingQueueRepository.insert(event.getId(), fullName, email, ZonedDateTime.now(event.getZoneId()), userLanguage.getLanguage());
+            WaitingQueueSubscription.Type subscriptionType = getSubscriptionType(event);
+            validateSubscriptionType(event, subscriptionType);
+            waitingQueueRepository.insert(event.getId(), fullName, email, ZonedDateTime.now(event.getZoneId()), userLanguage.getLanguage(), subscriptionType);
             return true;
         } catch(DuplicateKeyException e) {
             return true;//why are you subscribing twice?
         } catch (Exception e) {
             log.catching(Level.ERROR, e);
             return false;
+        }
+    }
+
+    private WaitingQueueSubscription.Type getSubscriptionType(Event event) {
+        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        return eventStatisticsManager.loadTicketCategories(event).stream()
+                .findFirst()
+                .filter(tc -> now.isBefore(tc.getInception(event.getZoneId())))
+                .map(tc -> WaitingQueueSubscription.Type.PRE_SALES)
+                .orElse(WaitingQueueSubscription.Type.SOLD_OUT);
+    }
+
+    private void validateSubscriptionType(Event event, WaitingQueueSubscription.Type type) {
+        if(type == WaitingQueueSubscription.Type.PRE_SALES) {
+            Validate.isTrue(configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false), "PRE_SALES Waiting queue is not active");
+        } else {
+            EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(event);
+            Validate.isTrue(eventWithStatistics.getTicketCategories().stream()
+                    .allMatch(tc -> determineAvailableSeats(tc, eventWithStatistics) == 0), "SOLD_OUT Waiting queue is not active");
         }
     }
 
@@ -95,13 +116,14 @@ public class WaitingQueueManager {
 
     Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeSeats(Event event) {
         int eventId = event.getId();
-        int waitingPeople = waitingQueueRepository.countWaitingPeople(eventId);
+        List<WaitingQueueSubscription> subscriptions = waitingQueueRepository.loadAllWaiting(eventId);
+        int waitingPeople = subscriptions.size();
         int waitingTickets = ticketRepository.countWaiting(eventId);
         if (waitingPeople == 0 && waitingTickets > 0) {
             ticketRepository.revertToFree(eventId);
         } else if (waitingPeople > 0 && waitingTickets > 0) {
             return distributeAvailableSeats(event, waitingPeople, waitingTickets);
-        } else if(configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false)) {
+        } else if(subscriptions.stream().anyMatch(WaitingQueueSubscription::isPreSales) && configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false)) {
             return handlePreReservation(event, waitingPeople, waitingTickets);
         }
         return Stream.empty();
@@ -113,11 +135,11 @@ public class WaitingQueueManager {
                 .findFirst()
                 .filter(t -> ZonedDateTime.now(event.getZoneId()).isBefore(t.getInception(event.getZoneId())));
         int ticketsNeeded = Math.min(waitingPeople, event.getAvailableSeats());
-        if(categoryWithInceptionInFuture.isPresent()) {
+        if(ticketsNeeded > 0) {
             preReserveIfNeeded(event, ticketsNeeded);
-            return Stream.empty();
-        } else if(waitingPeople > 0) {
-            return distributeAvailableSeats(event, Ticket.TicketStatus.PRE_RESERVED, () -> waitingPeople);
+            if(!categoryWithInceptionInFuture.isPresent()) {
+                return distributeAvailableSeats(event, Ticket.TicketStatus.PRE_RESERVED, () -> ticketsNeeded);
+            }
         }
         return Stream.empty();
     }
