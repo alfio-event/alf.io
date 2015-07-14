@@ -28,7 +28,6 @@ import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketCategory;
 import alfio.model.modification.*;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
@@ -212,6 +211,9 @@ public class EventManager {
         Validate.isTrue(tcm.getMaxTickets() - existing.getMaxTickets() + categories.stream().mapToInt(TicketCategory::getMaxTickets).sum() <= event.getAvailableSeats(), "not enough seats");
         if((tcm.isTokenGenerationRequested() ^ existing.isAccessRestricted()) && ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) > 0) {
             throw new IllegalStateException("cannot update the category. There are tickets already sold.");
+        }
+        if(tcm.isBounded() ^ existing.isBounded()) {
+            throw new IllegalStateException("Bounded flag modification is not yet implemented.");
         }
         updateCategory(tcm, event.getVat(), event.isVatIncluded(), event.isFreeOfCharge(), event.getZoneId(), event);
     }
