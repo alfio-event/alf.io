@@ -238,7 +238,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 	@Bean
 	public MessageSource messageSource() {
 		ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-		source.setBasenames("alfio.i18n.application", "alfio.i18n.admin");
+		source.setBasenames("alfio.i18n.public", "alfio.i18n.admin");
 		//since we have all the english translations in the default file, we don't need
 		//the fallback to the system locale.
 		source.setFallbackToSystemLocale(false);
