@@ -30,23 +30,23 @@ public class StripeManagerTest {{
     describe("Exception handler", it -> {
 
         it.should("return stripe's code in case of CardException", expect ->
-                expect.that(stripeManager.handleException(new CardException("abcd", "houston_we_ve_a_problem", "param", null)))
+                expect.that(stripeManager.handleException(new CardException("abcd", "houston_we_ve_a_problem", "param", null, null, null, null)))
                       .is("error.STEP2_STRIPE_houston_we_ve_a_problem"));
 
         it.should("return a code containing the field in error in case of InvalidRequestException", expect ->
-                expect.that(stripeManager.handleException(new InvalidRequestException("abcd", "param", null)))
+                expect.that(stripeManager.handleException(new InvalidRequestException("abcd", "param", null, null)))
                         .is("error.STEP2_STRIPE_invalid_param"));
 
         it.should("return the 'abort' error code in case of AuthenticationException, " +
                 "APIConnectionException and RateLimitException", expect -> {
-            expect.that(stripeManager.handleException(new AuthenticationException("abcd")))
+            expect.that(stripeManager.handleException(new AuthenticationException("abcd", null)))
                     .is("error.STEP2_STRIPE_abort");
             expect.that(stripeManager.handleException(new APIConnectionException("abcd")))
                     .is("error.STEP2_STRIPE_abort");
         });
 
         it.should("return the 'unexpected' error in the other cases", expect ->
-                expect.that(stripeManager.handleException(new StripeException("") {}))
+                expect.that(stripeManager.handleException(new StripeException("", null) {}))
                         .is("error.STEP2_STRIPE_unexpected"));
 
     });

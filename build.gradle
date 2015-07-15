@@ -1,6 +1,6 @@
 buildscript {
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.3.RELEASE")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.5.RELEASE")
     }
     repositories {
         jcenter()
@@ -11,10 +11,10 @@ plugins {
     id 'java'
     id 'idea'
     id 'jacoco'
-    id 'com.github.kt3k.coveralls' version '2.3.1'
-    id 'com.github.ben-manes.versions' version '0.9'
+    id 'com.github.kt3k.coveralls' version '2.4.0'
+    id 'com.github.ben-manes.versions' version '0.11.3'
     id 'com.github.hierynomus.license' version '0.11.0'
-    id 'net.researchgate.release' version '2.0.2'
+    id 'net.researchgate.release' version '2.1.2'
 }
 
 apply plugin: 'war'
@@ -131,10 +131,10 @@ dependencies {
     compile "org.apache.logging.log4j:log4j-core:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-jcl:$log4jVersion"
     compile "com.stripe:stripe-java:$stripeVersion"
-    compile "com.google.maps:google-maps-services:0.1.6"
+    compile "com.google.maps:google-maps-services:0.1.7"
     compile "org.apache.commons:commons-lang3:3.4"
-    compile "com.squareup.okhttp:okhttp:2.3.0"
-    compile "com.opencsv:opencsv:3.3"
+    compile "com.squareup.okhttp:okhttp:2.4.0"
+    compile "com.opencsv:opencsv:3.4"
     compile 'commons-codec:commons-codec:1.10'
     compile 'net.sf.biweekly:biweekly:0.4.2'
 

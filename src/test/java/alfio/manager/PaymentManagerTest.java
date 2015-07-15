@@ -45,7 +45,7 @@ public class PaymentManagerTest {{
         when(successStripe.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenReturn(new Charge() {{
             setId(paymentId);
         }});
-        when(failureStripe.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenThrow(new AuthenticationException("401"));
+        when(failureStripe.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenThrow(new AuthenticationException("401", null));
         when(failureStripe.handleException(any(StripeException.class))).thenReturn(error);
         when(failureTR.insert(anyString(), anyString(), any(ZonedDateTime.class), anyInt(), anyString(), anyString(), anyString()))
                 .thenThrow(new NullPointerException());
