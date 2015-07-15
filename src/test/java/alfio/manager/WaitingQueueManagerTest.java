@@ -25,9 +25,12 @@ import alfio.model.system.Configuration;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
+import alfio.repository.user.OrganizationRepository;
+import alfio.util.TemplateManager;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.runner.RunWith;
+import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.time.ZoneId;
@@ -50,8 +53,12 @@ public class WaitingQueueManagerTest {{
         TicketCategoryRepository ticketCategoryRepository = it.usesMock(TicketCategoryRepository.class);
         ConfigurationManager configurationManager = it.usesMock(ConfigurationManager.class);
         NamedParameterJdbcTemplate jdbc = it.usesMock(NamedParameterJdbcTemplate.class);
+        NotificationManager notificationManager = it.usesMock(NotificationManager.class);
+        TemplateManager templateManager = it.usesMock(TemplateManager.class);
+        MessageSource messageSource = it.usesMock(MessageSource.class);
+        OrganizationRepository organizationRepository = it.usesMock(OrganizationRepository.class);
 
-        WaitingQueueManager manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, jdbc);
+        WaitingQueueManager manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, jdbc, notificationManager, templateManager, messageSource, organizationRepository);
         String reservationId = "reservation-id";
         it.should("handle a reservation confirmation", expect -> {
             manager.fireReservationConfirmed(reservationId);
@@ -77,7 +84,7 @@ public class WaitingQueueManagerTest {{
             verify(ticketRepository).countWaiting(eq(eventId));
             verify(ticketRepository).revertToFree(eq(eventId));
         });
-        it.should("do anything if there are 0 subscribers and 0 waiting tickets", expect -> {
+        it.should("do nothing if there are 0 subscribers and 0 waiting tickets", expect -> {
             Event event = it.usesMock(Event.class);
             int eventId = 1;
             when(event.getId()).thenReturn(eventId);

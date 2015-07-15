@@ -16,8 +16,8 @@
  */
 package alfio.model.system;
 
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import alfio.model.Event;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -303,6 +303,10 @@ public class Configuration {
 
     public static ConfigurationPathKey enablePreRegistration(Event event) {
         return new ConfigurationPathKey(event(event), ConfigurationKeys.ENABLE_PRE_REGISTRATION);
+    }
+
+    public static ConfigurationPathKey notifyForEachWaitingQueueSubscription(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.ENABLE_WAITING_QUEUE_NOTIFICATION);
     }
 
     public static ConfigurationPathKey waitingQueueReservationTimeout(Event event) {

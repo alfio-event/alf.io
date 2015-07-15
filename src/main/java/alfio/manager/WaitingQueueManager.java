@@ -23,10 +23,13 @@ import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
+import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.PreReservedTicketDistributor;
+import alfio.util.TemplateManager;
 import alfio.util.WorkingDaysAdjusters;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
@@ -34,16 +37,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -57,6 +58,10 @@ public class WaitingQueueManager {
     private final ConfigurationManager configurationManager;
     private final EventStatisticsManager eventStatisticsManager;
     private final NamedParameterJdbcTemplate jdbc;
+    private final NotificationManager notificationManager;
+    private final TemplateManager templateManager;
+    private final MessageSource messageSource;
+    private final OrganizationRepository organizationRepository;
 
     @Autowired
     public WaitingQueueManager(WaitingQueueRepository waitingQueueRepository,
@@ -64,13 +69,21 @@ public class WaitingQueueManager {
                                TicketCategoryRepository ticketCategoryRepository,
                                ConfigurationManager configurationManager,
                                EventStatisticsManager eventStatisticsManager,
-                               NamedParameterJdbcTemplate jdbc) {
+                               NamedParameterJdbcTemplate jdbc,
+                               NotificationManager notificationManager,
+                               TemplateManager templateManager,
+                               MessageSource messageSource,
+                               OrganizationRepository organizationRepository) {
         this.waitingQueueRepository = waitingQueueRepository;
         this.ticketRepository = ticketRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.configurationManager = configurationManager;
         this.eventStatisticsManager = eventStatisticsManager;
+        this.notificationManager = notificationManager;
         this.jdbc = jdbc;
+        this.templateManager = templateManager;
+        this.messageSource = messageSource;
+        this.organizationRepository = organizationRepository;
     }
 
     public boolean subscribe(Event event, String fullName, String email, Locale userLanguage) {
@@ -78,6 +91,7 @@ public class WaitingQueueManager {
             WaitingQueueSubscription.Type subscriptionType = getSubscriptionType(event);
             validateSubscriptionType(event, subscriptionType);
             waitingQueueRepository.insert(event.getId(), fullName, email, ZonedDateTime.now(event.getZoneId()), userLanguage.getLanguage(), subscriptionType);
+            notifySubscription(event, fullName, email, userLanguage, subscriptionType);
             return true;
         } catch(DuplicateKeyException e) {
             return true;//why are you subscribing twice?
@@ -85,6 +99,24 @@ public class WaitingQueueManager {
             log.catching(Level.ERROR, e);
             return false;
         }
+    }
+
+    private void notifySubscription(Event event, String fullName, String email, Locale userLanguage, WaitingQueueSubscription.Type subscriptionType) {
+        Organization organization = organizationRepository.getById(event.getOrganizationId());
+        Map<String, Object> model = new HashMap<>();
+        model.put("eventName", event.getShortName());
+        model.put("fullName", fullName);
+        model.put("organization", organization);
+        notificationManager.sendSimpleEmail(event, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getShortName()}, userLanguage),
+                () -> templateManager.renderClassPathResource("/alfio/templates/waiting-queue-joined.ms", model, userLanguage, TemplateManager.TemplateOutput.TEXT));
+        if(configurationManager.getBooleanConfigValue(Configuration.notifyForEachWaitingQueueSubscription(event), false)) {
+            String adminTemplate = messageSource.getMessage("email-waiting-queue.subscribed.admin.text",
+                    new Object[] {subscriptionType, event.getShortName()}, Locale.ENGLISH);
+            notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-waiting-queue.subscribed.admin.subject",
+                            new Object[]{event.getShortName()}, Locale.ENGLISH),
+                    () -> templateManager.renderString(adminTemplate, model, Locale.ENGLISH, TemplateManager.TemplateOutput.TEXT));
+        }
+
     }
 
     private WaitingQueueSubscription.Type getSubscriptionType(Event event) {
