@@ -44,7 +44,8 @@ import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplate
 import javax.sql.DataSource;
 import java.net.URISyntaxException;
 import java.util.Objects;
-import java.util.Optional;
+
+import static java.util.Optional.ofNullable;
 
 @EnableTransactionManagement
 @EnableScheduling
@@ -52,7 +53,10 @@ import java.util.Optional;
 @ComponentScan(basePackages = {"alfio.manager"})
 public class DataSourceConfiguration implements ResourceLoaderAware {
 
-	@Autowired
+    private static final String POSTGRESQL_DRIVER = "org.postgresql.Driver";
+    private static final String PGSQL = "PGSQL";
+
+    @Autowired
 	private ResourceLoader resourceLoader;
 
 	/**
@@ -72,7 +76,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 		OPENSHIFT {
 			@Override
 			public String getDriveClassName(Environment env) {
-				return "org.postgresql.Driver";
+				return POSTGRESQL_DRIVER;
 			}
 			
 			@Override
@@ -102,14 +106,14 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 			
 			@Override
 			public String getDialect(Environment env) {
-				return "PGSQL";
+				return PGSQL;
 			}
 		},
 
 		DOCKER {
 			@Override
 			public String getDriveClassName(Environment env) {
-				return "org.postgresql.Driver";
+				return POSTGRESQL_DRIVER;
 			}
 
 			@Override
@@ -138,9 +142,51 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 
 			@Override
 			public String getDialect(Environment env) {
-				return "PGSQL";
+				return PGSQL;
 			}
-		};
+		},
+
+        /**
+         * Cloud Foundry configuration.
+         * see https://docs.cloudfoundry.org/buildpacks/java/spring-service-bindings.html
+         *
+         * We assume that the "ElephantSQL" has already been bound to the application.
+         * Anyway, since we use Spring, the Cloud Foundry engine should replace the "DataSource" bean with the right one.
+         */
+        CLOUD_FOUNDRY {
+
+            @Override
+			public String getDriveClassName(Environment env) {
+				return POSTGRESQL_DRIVER;
+			}
+
+			@Override
+			public String getUrl(Environment env) {
+				return env.getRequiredProperty("vcap.services.elephantsql.credentials.uri");
+			}
+
+			@Override
+			public String getUsername(Environment env) {
+				return "";
+			}
+
+
+			@Override
+			public String getPassword(Environment env) {
+				return "";
+			}
+
+			@Override
+			public String getValidationQuery(Environment env) {
+				return "SELECT 1";
+			}
+
+			@Override
+			public String getDialect(Environment env) {
+				return PGSQL;
+			}
+
+        };
 		
 		public String getDriveClassName(Environment env) {
 			return env.getRequiredProperty("datasource.driver");
@@ -169,12 +215,16 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 	
 	@Bean
 	public PlatformProvider getCloudProvider() {
-		Optional<String> dockerDbName = Optional.ofNullable(System.getenv("DB_ENV_DOCKER_DB_NAME"));
-		if(dockerDbName.isPresent()) {
+		if(ofNullable(System.getenv("DB_ENV_DOCKER_DB_NAME")).isPresent()) {
 			return PlatformProvider.DOCKER;
 		}
-		Optional<String> openshiftAppName = Optional.ofNullable(System.getenv("OPENSHIFT_APP_NAME"));
-		return openshiftAppName.map(n -> PlatformProvider.OPENSHIFT).orElse(PlatformProvider.DEFAULT);
+        if(ofNullable(System.getenv("OPENSHIFT_APP_NAME")).isPresent()) {
+            return PlatformProvider.OPENSHIFT;
+        }
+        if(ofNullable(System.getenv("VCAP_APPLICATION")).isPresent()) {
+            return PlatformProvider.CLOUD_FOUNDRY;
+        }
+		return PlatformProvider.DEFAULT;
 	}
 
 	@Bean(destroyMethod = "close")
