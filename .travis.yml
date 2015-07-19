@@ -1,5 +1,5 @@
 language: java
-
+sudo: false
 install:
     - TERM=dumb ./gradlew -q assemble
 
