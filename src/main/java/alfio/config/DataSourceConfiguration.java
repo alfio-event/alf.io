@@ -16,10 +16,12 @@
  */
 package alfio.config;
 
+import alfio.config.support.PlatformProvider;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.npjt.QueryFactory;
 import ch.digitalfondue.npjt.QueryRepositoryScanner;
 import ch.digitalfondue.npjt.mapper.ZonedDateTimeMapper;
+import lombok.extern.log4j.Log4j2;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,188 +45,30 @@ import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplate
 
 import javax.sql.DataSource;
 import java.net.URISyntaxException;
-import java.util.Objects;
-
-import static java.util.Optional.ofNullable;
+import java.util.EnumSet;
+import java.util.Set;
 
 @EnableTransactionManagement
 @EnableScheduling
 @EnableAsync
 @ComponentScan(basePackages = {"alfio.manager"})
+@Log4j2
 public class DataSourceConfiguration implements ResourceLoaderAware {
 
-    private static final String POSTGRESQL_DRIVER = "org.postgresql.Driver";
-    private static final String PGSQL = "PGSQL";
+    private static final Set<PlatformProvider> PLATFORM_PROVIDERS = EnumSet.complementOf(EnumSet.of(PlatformProvider.DEFAULT));
 
     @Autowired
 	private ResourceLoader resourceLoader;
 
-	/**
-	 * For handling the various differences between the cloud providers.
-	 * 
-	 * Supported:
-	 *  - openshift : pgsql only
-	 *  - local use with system properties
-	 */
-	public enum PlatformProvider {
-		DEFAULT, 
-		
-		/**
-		 * See https://developers.openshift.com/en/managing-environment-variables.html
-		 * 
-		 * **/
-		OPENSHIFT {
-			@Override
-			public String getDriveClassName(Environment env) {
-				return POSTGRESQL_DRIVER;
-			}
-			
-			@Override
-			public String getUrl(Environment env) {
-				String dbHost = Objects.requireNonNull(System.getenv("OPENSHIFT_POSTGRESQL_DB_HOST"), "OPENSHIFT_POSTGRESQL_DB_HOST env variable is missing");
-				String port = Objects.requireNonNull(System.getenv("OPENSHIFT_POSTGRESQL_DB_PORT"), "OPENSHIFT_POSTGRESQL_DB_PORT env variable is missing");
-				String dbName = Objects.requireNonNull(System.getenv("OPENSHIFT_APP_NAME"), "OPENSHIFT_APP_NAME env variable is missing");
-				
-				return "jdbc:postgresql://" + dbHost + ":" + port + "/" + dbName;
-			}
-			
-			@Override
-			public String getUsername(Environment env) {
-				return Objects.requireNonNull(System.getenv("OPENSHIFT_POSTGRESQL_DB_USERNAME"), "OPENSHIFT_POSTGRESQL_DB_USERNAME env variable is missing");
-			}
-			
-			
-			@Override
-			public String getPassword(Environment env) {
-				return Objects.requireNonNull(System.getenv("OPENSHIFT_POSTGRESQL_DB_PASSWORD"), "OPENSHIFT_POSTGRESQL_DB_PASSWORD env variable is missing");
-			}
-			
-			@Override
-			public String getValidationQuery(Environment env) {
-				return "SELECT 1";
-			}
-			
-			@Override
-			public String getDialect(Environment env) {
-				return PGSQL;
-			}
-		},
-
-		DOCKER {
-			@Override
-			public String getDriveClassName(Environment env) {
-				return POSTGRESQL_DRIVER;
-			}
-
-			@Override
-			public String getUrl(Environment env) {
-				String dbHost = Objects.requireNonNull(System.getenv("DB_PORT_5432_TCP_ADDR"), "DB_PORT_5432_TCP_ADDR env variable is missing");
-				String port = Objects.requireNonNull(System.getenv("DB_PORT_5432_TCP_PORT"), "DB_PORT_5432_TCP_PORT env variable is missing");
-				String dbName = Objects.requireNonNull(System.getenv("DB_ENV_POSTGRES_USERNAME"), "DB_ENV_POSTGRES_USERNAME env variable is missing");
-				return "jdbc:postgresql://" + dbHost + ":" + port + "/" + dbName;
-			}
-
-			@Override
-			public String getUsername(Environment env) {
-				return Objects.requireNonNull(System.getenv("DB_ENV_POSTGRES_USERNAME"), "DB_ENV_POSTGRES_USERNAME env variable is missing");
-			}
-
-
-			@Override
-			public String getPassword(Environment env) {
-				return Objects.requireNonNull(System.getenv("DB_ENV_POSTGRES_PASSWORD"), "DB_ENV_POSTGRES_PASSWORD env variable is missing");
-			}
-
-			@Override
-			public String getValidationQuery(Environment env) {
-				return "SELECT 1";
-			}
-
-			@Override
-			public String getDialect(Environment env) {
-				return PGSQL;
-			}
-		},
-
-        /**
-         * Cloud Foundry configuration.
-         * see https://docs.cloudfoundry.org/buildpacks/java/spring-service-bindings.html
-         *
-         * We assume that the "ElephantSQL" has already been bound to the application.
-         * Anyway, since we use Spring, the Cloud Foundry engine should replace the "DataSource" bean with the right one.
-         */
-        CLOUD_FOUNDRY {
-
-            @Override
-			public String getDriveClassName(Environment env) {
-				return POSTGRESQL_DRIVER;
-			}
-
-			@Override
-			public String getUrl(Environment env) {
-				return env.getRequiredProperty("vcap.services.elephantsql.credentials.uri");
-			}
-
-			@Override
-			public String getUsername(Environment env) {
-				return "";
-			}
-
-
-			@Override
-			public String getPassword(Environment env) {
-				return "";
-			}
-
-			@Override
-			public String getValidationQuery(Environment env) {
-				return "SELECT 1";
-			}
-
-			@Override
-			public String getDialect(Environment env) {
-				return PGSQL;
-			}
-
-        };
-		
-		public String getDriveClassName(Environment env) {
-			return env.getRequiredProperty("datasource.driver");
-		}
-		
-		public String getUrl(Environment env) {
-			return env.getRequiredProperty("datasource.url");
-		}
-		
-		public String getUsername(Environment env) {
-			return env.getRequiredProperty("datasource.username");
-		}
-		
-		public String getPassword(Environment env) {
-			return env.getRequiredProperty("datasource.password");
-		}
-		
-		public String getValidationQuery(Environment env) {
-			return env.getRequiredProperty("datasource.validationQuery");
-		}
-		
-		public String getDialect(Environment env) {
-			return env.getRequiredProperty("datasource.dialect");
-		}
-	}
-	
-	@Bean
-	public PlatformProvider getCloudProvider() {
-		if(ofNullable(System.getenv("DB_ENV_DOCKER_DB_NAME")).isPresent()) {
-			return PlatformProvider.DOCKER;
-		}
-        if(ofNullable(System.getenv("OPENSHIFT_APP_NAME")).isPresent()) {
-            return PlatformProvider.OPENSHIFT;
-        }
-        if(ofNullable(System.getenv("VCAP_APPLICATION")).isPresent()) {
-            return PlatformProvider.CLOUD_FOUNDRY;
-        }
-		return PlatformProvider.DEFAULT;
+    @Bean
+	public PlatformProvider getCloudProvider(Environment environment) {
+        PlatformProvider current = PLATFORM_PROVIDERS
+                                    .stream()
+                                    .filter(p -> p.isHosting(environment))
+                                    .findFirst()
+                                    .orElse(PlatformProvider.DEFAULT);
+        log.info("Detected {} cloud provider", current);
+        return current;
 	}
 
 	@Bean(destroyMethod = "close")
