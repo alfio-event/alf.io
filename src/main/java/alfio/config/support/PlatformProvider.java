@@ -185,7 +185,7 @@ public enum PlatformProvider {
         public String getUrl(Environment env) {
             String dbHost = Objects.requireNonNull(System.getenv("DB_PORT_5432_TCP_ADDR"), "DB_PORT_5432_TCP_ADDR env variable is missing");
             String port = Objects.requireNonNull(System.getenv("DB_PORT_5432_TCP_PORT"), "DB_PORT_5432_TCP_PORT env variable is missing");
-            String dbName = Objects.requireNonNull(System.getenv("DB_ENV_POSTGRES_USERNAME"), "DB_ENV_POSTGRES_USERNAME env variable is missing");
+            String dbName = Objects.requireNonNull(System.getenv("DB_ENV_POSTGRES_DB"), "DB_ENV_POSTGRES_DB env variable is missing");
             return "jdbc:postgresql://" + dbHost + ":" + port + "/" + dbName;
         }
 
@@ -212,7 +212,7 @@ public enum PlatformProvider {
 
         @Override
         public boolean isHosting(Environment env) {
-            return ofNullable(env.getProperty("DB_ENV_DOCKER_DB_NAME")).isPresent();
+            return ofNullable(env.getProperty("DB_ENV_POSTGRES_DB")).isPresent();
         }
     };
 
