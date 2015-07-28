@@ -190,7 +190,7 @@ public class EventManagerIntegrationTest {
                         "desc", BigDecimal.TEN, false, "", false));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), null, null, null, null, null, event.getOrganizationId(), null, null,
+        EventModification update = new EventModification(event.getId(), null, null, null, null, null, null, event.getOrganizationId(), null, null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null);
         eventManager.updateEventPrices(event.getId(), update, pair.getValue());
@@ -210,7 +210,7 @@ public class EventManagerIntegrationTest {
                         "desc", BigDecimal.TEN, false, "", true));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), null, null, null, null, null, event.getOrganizationId(), null, null,
+        EventModification update = new EventModification(event.getId(), null, null, null, null, null, null, event.getOrganizationId(), null, null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null);
         eventManager.updateEventPrices(event.getId(), update, pair.getValue());
@@ -230,7 +230,7 @@ public class EventManagerIntegrationTest {
                         "desc", BigDecimal.TEN, false, "", false));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), null, null, null, null, null, event.getOrganizationId(), null, null,
+        EventModification update = new EventModification(event.getId(), null, null, null, null, null, null, event.getOrganizationId(), null, null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null);
         eventManager.updateEventPrices(event.getId(), update, pair.getValue());
@@ -250,7 +250,7 @@ public class EventManagerIntegrationTest {
                         "desc", BigDecimal.TEN, false, "", true));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), null, null, null, null, null, event.getOrganizationId(), null, null,
+        EventModification update = new EventModification(event.getId(), null, null, null, null, null, null, event.getOrganizationId(), null, null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null);
         eventManager.updateEventPrices(event.getId(), update, pair.getValue());

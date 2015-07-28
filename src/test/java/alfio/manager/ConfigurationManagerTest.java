@@ -79,7 +79,7 @@ public class ConfigurationManagerTest {
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         "desc", BigDecimal.TEN, false, "", false));
         EventModification em = new EventModification(null, "url", "url", "url", null,
-                "eventShortName", organization.getId(),
+                "eventShortName", "displayName", organization.getId(),
                 "muh location", "muh description",
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),

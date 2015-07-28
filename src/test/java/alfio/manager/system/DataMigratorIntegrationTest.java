@@ -93,6 +93,10 @@ public class DataMigratorIntegrationTest {
     }
 
     private Pair<Event, String> initEvent(List<TicketCategoryModification> categories) {
+        return initEvent(categories, "display name");
+    }
+
+    private Pair<Event,String> initEvent(List<TicketCategoryModification> categories, String displayName) {
         String organizationName = UUID.randomUUID().toString();
         String username = UUID.randomUUID().toString();
         String eventName = UUID.randomUUID().toString();
@@ -102,7 +106,7 @@ public class DataMigratorIntegrationTest {
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com");
 
         EventModification em = new EventModification(null, "url", "url", "url", null,
-                eventName, organization.getId(),
+                eventName, displayName, organization.getId(),
                 "muh location", "muh description",
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now().plusHours(1)),
@@ -182,5 +186,26 @@ public class DataMigratorIntegrationTest {
         assertFalse(tickets.isEmpty());
         assertEquals(AVAILABLE_SEATS, tickets.size());//<-- the migration has not been done
         assertTrue(tickets.stream().allMatch(t -> t.getCategoryId() == null));
+    }
+
+    @Test
+    public void testUpdateDisplayName() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        "desc", BigDecimal.TEN, false, "", false));
+        Event event = initEvent(categories, null).getKey();
+
+        dataMigrator.migrateEventsToCurrentVersion();
+        EventMigration eventMigration = eventMigrationRepository.loadEventMigration(event.getId());
+        assertNotNull(eventMigration);
+        assertEquals(buildTimestamp, eventMigration.getBuildTimestamp().toString());
+        assertEquals(currentVersion, eventMigration.getCurrentVersion());
+
+        Event withDescription = eventRepository.findById(event.getId());
+        assertNotNull(withDescription.getDisplayName());
+        assertEquals(event.getShortName(), withDescription.getShortName());
+        assertEquals(event.getShortName(), withDescription.getDisplayName());
     }
 }

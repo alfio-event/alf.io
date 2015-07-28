@@ -62,7 +62,7 @@ public class IntegrationTestUtil {
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com");
 
         EventModification em = new EventModification(null, "url", "url", "url", null,
-                eventName, organization.getId(),
+                eventName, "event display name", organization.getId(),
                 "muh location", "muh description",
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now().plusHours(1)),
