@@ -1,6 +1,6 @@
 {{#i18n}}email.hello [{{ticket.fullName}}]{{/i18n}}
 
-{{#i18n}}email-ticket.attached [{{event.shortName}}]{{/i18n}}
+{{#i18n}}email-ticket.attached [{{event.displayName}}]{{/i18n}}
 
 {{#i18n}}email-confirmation.reservationURL [{{reservationUrl}}]{{/i18n}}
 

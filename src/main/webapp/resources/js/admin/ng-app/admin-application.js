@@ -1077,7 +1077,7 @@
 
                 var eventDescriptor = results[2].data;
                 $scope.organization = eventDescriptor.organization;
-                $scope.eventName = eventDescriptor.event.shortName;
+                $scope.eventName = eventDescriptor.event.displayName;
         });
 
         $scope.cancel = function() {

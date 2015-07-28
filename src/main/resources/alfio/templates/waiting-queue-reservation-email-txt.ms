@@ -1,6 +1,6 @@
 {{#i18n}}email.hello [{{subscription.fullName}}]{{/i18n}}
 
-{{#i18n}}email-waiting-queue-acquired.text [{{event.shortName}}] [{{reservationUrl}}]{{/i18n}}
+{{#i18n}}email-waiting-queue-acquired.text [{{event.displayName}}] [{{reservationUrl}}]{{/i18n}}
 
 #### {{#i18n}}email-waiting-queue-acquired.warning [{{#format-date}}{{reservationTimeout}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}} ####
 

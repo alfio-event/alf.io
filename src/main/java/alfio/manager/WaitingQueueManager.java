@@ -104,16 +104,16 @@ public class WaitingQueueManager {
     private void notifySubscription(Event event, String fullName, String email, Locale userLanguage, WaitingQueueSubscription.Type subscriptionType) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         Map<String, Object> model = new HashMap<>();
-        model.put("eventName", event.getShortName());
+        model.put("eventName", event.getDisplayName());
         model.put("fullName", fullName);
         model.put("organization", organization);
-        notificationManager.sendSimpleEmail(event, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getShortName()}, userLanguage),
+        notificationManager.sendSimpleEmail(event, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getDisplayName()}, userLanguage),
                 () -> templateManager.renderClassPathResource("/alfio/templates/waiting-queue-joined.ms", model, userLanguage, TemplateManager.TemplateOutput.TEXT));
         if(configurationManager.getBooleanConfigValue(Configuration.notifyForEachWaitingQueueSubscription(event), false)) {
             String adminTemplate = messageSource.getMessage("email-waiting-queue.subscribed.admin.text",
-                    new Object[] {subscriptionType, event.getShortName()}, Locale.ENGLISH);
+                    new Object[] {subscriptionType, event.getDisplayName()}, Locale.ENGLISH);
             notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-waiting-queue.subscribed.admin.subject",
-                            new Object[]{event.getShortName()}, Locale.ENGLISH),
+                            new Object[]{event.getDisplayName()}, Locale.ENGLISH),
                     () -> templateManager.renderString(adminTemplate, model, Locale.ENGLISH, TemplateManager.TemplateOutput.TEXT));
         }
 

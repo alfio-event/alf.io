@@ -45,6 +45,7 @@ public class EventModification {
     private final String imageUrl;
     private final String fileBlobId;
     private final String shortName;
+    private final String displayName;
     private final int organizationId;
     private final String location;
     private final String description;
@@ -67,6 +68,7 @@ public class EventModification {
                              @JsonProperty("imageUrl") String imageUrl,
                              @JsonProperty("fileBlobId") String fileBlobId,
                              @JsonProperty("shortName") String shortName,
+                             @JsonProperty("displayName") String displayName,
                              @JsonProperty("organizationId") int organizationId,
                              @JsonProperty("location") String location,
                              @JsonProperty("description") String description,
@@ -87,6 +89,7 @@ public class EventModification {
         this.imageUrl = imageUrl;
         this.fileBlobId = fileBlobId;
         this.shortName = shortName;
+        this.displayName = displayName;
         this.organizationId = organizationId;
         this.location = location;
         this.description = description;
@@ -119,6 +122,7 @@ public class EventModification {
                 event.getImageUrl(),
                 event.getFileBlobId(),
                 event.getShortName(),
+                event.getDisplayName(),
                 event.getOrganizationId(),
                 event.getLocation(),
                 event.getDescription(),

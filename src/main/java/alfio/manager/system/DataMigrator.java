@@ -22,6 +22,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.util.EventUtil;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,6 +46,7 @@ import static alfio.util.OptionalWrapper.optionally;
 
 @Component
 @Transactional(readOnly = true)
+@Log4j2
 public class DataMigrator {
 
     private static final Pattern VERSION_PATTERN = Pattern.compile("(\\d\\.)([0-9\\.]*)(-SNAPSHOT)?");
@@ -87,20 +89,33 @@ public class DataMigrator {
         if(!alreadyDefined || optional.filter(this::needsFixing).isPresent()) {
             transactionTemplate.execute(s -> {
                 optional.ifPresent(eventMigration -> eventMigrationRepository.lockEventMigrationForUpdate(eventMigration.getId()));
-                int existingTickets = ticketRepository.countExistingTicketsForEvent(event.getId());
-                if(existingTickets < event.getAvailableSeats()) {
-                    MapSqlParameterSource[] tickets = EventUtil.generateEmptyTickets(event, new Date(), event.getAvailableSeats() - existingTickets).toArray(MapSqlParameterSource[]::new);
-                    jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), tickets);
-                }
+                createMissingTickets(event);
+                fillDescriptions(event);
                 if(alreadyDefined) {
                     EventMigration eventMigration = optional.get();
                     int result = eventMigrationRepository.updateMigrationData(eventMigration.getId(), currentVersionAsString, buildTimestamp, EventMigration.Status.COMPLETE.name());
-                    Validate.isTrue(result == 1, "error during update "+result);
+                    Validate.isTrue(result == 1, "error during update " + result);
                 } else {
                     eventMigrationRepository.insertMigrationData(event.getId(), currentVersionAsString, buildTimestamp, EventMigration.Status.COMPLETE.name());
                 }
+
                 return null;
             });
+        }
+    }
+
+    private void fillDescriptions(Event event) {
+        int result = eventRepository.fillDisplayNameIfRequired(event.getId());
+        if(result > 0) {
+            log.info("Event {} didn't have displayName, filled with shortName", event.getShortName());
+        }
+    }
+
+    private void createMissingTickets(Event event) {
+        int existingTickets = ticketRepository.countExistingTicketsForEvent(event.getId());
+        if(existingTickets < event.getAvailableSeats()) {
+            MapSqlParameterSource[] tickets = EventUtil.generateEmptyTickets(event, new Date(), event.getAvailableSeats() - existingTickets).toArray(MapSqlParameterSource[]::new);
+            jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), tickets);
         }
     }
 

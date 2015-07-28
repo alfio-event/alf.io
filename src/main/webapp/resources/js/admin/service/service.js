@@ -307,4 +307,15 @@
             }
         };
     }]);
+
+    baseServices.service('EventUtilsService', ['$http', 'HttpErrorHandler', function($http, HttpErrorHandler) {
+        return {
+            generateShortName: function(displayName) {
+                return $http.get('/admin/api/utils/short-name/generate?displayName='+displayName).error(HttpErrorHandler.handle);
+            },
+            validateShortName: function(shortName) {
+                return $http['post']('/admin/api/utils/short-name/validate', null, {params: {shortName: shortName}}).error(HttpErrorHandler.handle);
+            }
+        };
+    }]);
 })();

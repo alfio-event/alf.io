@@ -36,7 +36,7 @@
     <li class="active">{{#i18n}}breadcrumb.step3{{/i18n}}</li>
 </ol>
 <div class="page-header">
-	<h2>{{#i18n}}reservation-page.title{{/i18n}} {{event.shortName}}</h2>
+	<h2>{{#i18n}}reservation-page.title{{/i18n}} {{event.displayName}}</h2>
 </div>
 <table class="table">
 	<thead>

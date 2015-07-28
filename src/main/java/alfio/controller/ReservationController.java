@@ -398,7 +398,7 @@ public class ReservationController {
 				ticketReservationManager.prepareModelForReservationEmail(event, reservation), locale, TemplateOutput.TEXT);
 		String shortReservationID = ticketReservationManager.getShortReservationID(reservation.getId());
 		notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-				new Object[] { shortReservationID, event.getShortName() }, locale), reservationTxt);
+				new Object[] { shortReservationID, event.getDisplayName() }, locale), reservationTxt);
 	}
 	
 	private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {

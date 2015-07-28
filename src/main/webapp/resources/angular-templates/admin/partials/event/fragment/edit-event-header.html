@@ -2,9 +2,22 @@
 <div class="row" data-ng-form="editEventHeader">
     <div class="col-sm-12 col-md-6">
         <div class="form-group">
-            <label for="shortName">Name</label>
-            <input type="text" data-ng-model="obj.shortName" name="shortName" data-grab-focus id="shortName" class="form-control" required pattern="^[A-Za-z0-9]{1,}_*[A-Za-z0-9]{1,}$"/>
-            <field-error data-form-obj="editEventHeader" data-required-pattern="'A-Za-z0-9_ (no spaces)'" data-field-obj="editEventHeader.shortName"  data-show-existing-errors="showExistingErrors"></field-error>
+            <label for="displayName">Name</label>
+            <input type="text" data-ng-model="obj.displayName" name="displayName" data-grab-focus id="displayName" class="form-control" required data-ng-change="updateURL(obj.displayName)" data-ng-model-options="{ updateOn: 'default blur', debounce: 500}"/>
+            <field-error data-form-obj="editEventHeader" data-min-char="1" data-field-obj="editEventHeader.displayName" data-show-existing-errors="showExistingErrors"></field-error>
+
+            <label for="shortName">URL</label>
+            <div class="input-group">
+                <span class="input-group-addon">
+                    <span>/event/</span>
+                </span>
+                <input type="text" id="shortName" data-ng-model="obj.shortName" class="form-control" data-ng-disabled="isUpdate" required pattern="^[A-Za-z0-9]{1,}[-_]*[A-Za-z0-9]{1,}$" name="shortName" data-validate-short-name="isUpdate" data-ng-model-options="{updateOn:'blur'}"/>
+                <span class="form-control-feedback" data-ng-if="loading"><i class="fa fa-circle-o-notch fa-spin"></i></span>
+                <field-error data-form-obj="editEventHeader" data-required-pattern="'A-Za-z0-9_- (no spaces)'" data-field-obj="editEventHeader.shortName"  data-show-existing-errors="showExistingErrors"></field-error>
+                <span class="input-group-addon">
+                    <span>/</span>
+                </span>
+            </div>
 
             <label for="organizationId">Owner Organization</label>
             <select data-ng-model="obj.organizationId" name="organizationId" id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>

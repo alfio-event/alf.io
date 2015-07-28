@@ -55,7 +55,7 @@ class SmtpMailer implements Mailer {
 			MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
 					: new MimeMessageHelper(mimeMessage, "UTF-8");
 			message.setSubject(subject);
-			message.setFrom(configurationManager.getRequiredValue(Configuration.smtpFromEmail(event)), event.getShortName());
+			message.setFrom(configurationManager.getRequiredValue(Configuration.smtpFromEmail(event)), event.getDisplayName());
             String replyTo = configurationManager.getStringConfigValue(Configuration.mailReplyTo(event), "");
             if(StringUtils.isNotBlank(replyTo)) {
                 message.setReplyTo(replyTo);

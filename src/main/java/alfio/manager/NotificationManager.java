@@ -93,8 +93,8 @@ public class NotificationManager {
         event.getIcal().map(ics -> new Mailer.Attachment("calendar.ics", ics, "text/calendar")).ifPresent(attachments::add);
 
 
-        String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[] {}));
-        String subject = messageSource.getMessage("ticket-email-subject", new Object[]{event.getShortName()}, locale);
+        String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[attachments.size()]));
+        String subject = messageSource.getMessage("ticket-email-subject", new Object[]{event.getDisplayName()}, locale);
         String text = textBuilder.generate(ticket);
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text);
         String recipient = ticket.getEmail();

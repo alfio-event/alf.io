@@ -71,11 +71,10 @@ public final class TemplateProcessor {
                                                                  TemplateManager templateManager,
                                                                  Locale language) {
         return (newTicket) -> {
-            String eventName = e.getShortName();
             Map<String, Object> emailModel = new HashMap<>();
             emailModel.put("ticket", oldTicket);
             emailModel.put("organization", organizationRepository.getById(e.getOrganizationId()));
-            emailModel.put("eventName", eventName);
+            emailModel.put("eventName", e.getDisplayName());
             emailModel.put("previousEmail", oldTicket.getEmail());
             emailModel.put("newEmail", newTicket.getEmail());
             emailModel.put("reservationUrl", ticketReservationManager.reservationUrl(oldTicket.getTicketsReservationId()));

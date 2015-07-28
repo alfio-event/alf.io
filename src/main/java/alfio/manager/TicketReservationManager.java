@@ -313,7 +313,7 @@ public class TicketReservationManager {
 		acquireTickets(TicketStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getBillingAddress());
 		Locale language = findReservationLanguage(reservationId);
 		notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-				new Object[]{ getShortReservationID(reservationId), event.getShortName()}, language), () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language, TemplateOutput.TEXT));
+				new Object[]{ getShortReservationID(reservationId), event.getDisplayName()}, language), () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language, TemplateOutput.TEXT));
 	}
 
     private Locale findReservationLanguage(String reservationId) {
@@ -325,7 +325,7 @@ public class TicketReservationManager {
 		Validate.isTrue(reservation.getStatus() == OFFLINE_PAYMENT, "Invalid reservation status");
         Map<String, Object> emailModel = prepareModelForReservationEmail(event, reservation);
         Locale reservationLanguage = findReservationLanguage(reservationId);
-        String subject = messageSource.getMessage("reservation-email-expired-subject", new Object[]{getShortReservationID(reservationId), event.getShortName()}, reservationLanguage);
+        String subject = messageSource.getMessage("reservation-email-expired-subject", new Object[]{getShortReservationID(reservationId), event.getDisplayName()}, reservationLanguage);
 		cancelReservation(reservationId);
         notificationManager.sendSimpleEmail(event, reservation.getEmail(), subject, () -> {
 			return templateManager.renderClassPathResource("/alfio/templates/offline-reservation-expired-email-txt.ms", emailModel, reservationLanguage, TemplateOutput.TEXT);
@@ -724,7 +724,7 @@ public class TicketReservationManager {
         boolean admin = isAdmin(userDetails);
 
 		if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail())) {
-			String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getShortName()}, locale);
+			String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, locale);
 			notificationManager.sendSimpleEmail(event, ticket.getEmail(), subject, ownerChangeTextBuilder.generate(newTicket));
 		}
 
@@ -833,7 +833,7 @@ public class TicketReservationManager {
                             model.put("reservationShortID", getShortReservationID(reservation.getId()));
                             ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(eventZoneId));
                             Locale locale = findReservationLanguage(reservation.getId());
-                            notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", new Object[]{event.getShortName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-tickets-assignment-email-txt.ms", model, locale, TemplateOutput.TEXT));
+                            notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-tickets-assignment-email-txt.ms", model, locale, TemplateOutput.TEXT));
                         });
                 return null;
             });
@@ -874,17 +874,17 @@ public class TicketReservationManager {
 		}
 		Organization organization = organizationRepository.getById(event.getOrganizationId());
         Map<String, Object> model = new HashMap<>();
-		model.put("eventName", event.getShortName());
+		model.put("eventName", event.getDisplayName());
 		model.put("ticket", ticket);
 		model.put("organization", organization);
         Locale locale = Locale.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
 		notificationManager.sendSimpleEmail(event, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
-				new Object[]{event.getShortName()}, locale),
+				new Object[]{event.getDisplayName()}, locale),
 				() -> templateManager.renderClassPathResource("/alfio/templates/ticket-has-been-cancelled-txt.ms", model, locale, TemplateOutput.TEXT));
 		String adminTemplate = messageSource.getMessage("email-ticket-released.admin.text",
 				new Object[] {ticket.getId(), ticket.getUuid(), ticket.getFullName(), ticket.getEmail(), category.getDescription(), category.getId()}, Locale.ENGLISH);
 		notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject",
-				new Object[]{ticket.getId(), event.getShortName()}, locale),
+				new Object[]{ticket.getId(), event.getDisplayName()}, locale),
 				() -> templateManager.renderString(adminTemplate, model, Locale.ENGLISH, TemplateOutput.TEXT));
         if(ticketRepository.countTicketsInReservation(ticketReservation.getId()) == 0) {
             deleteReservations(singletonList(ticketReservation.getId()));

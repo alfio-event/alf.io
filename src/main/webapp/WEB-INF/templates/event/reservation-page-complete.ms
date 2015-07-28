@@ -16,10 +16,10 @@
 
 <h1>
 	{{#ticketsAreAllAssigned}}
-		{{#i18n}}reservation-page-complete.your-tickets [{{event.shortName}}]{{/i18n}} 
+		{{#i18n}}reservation-page-complete.your-tickets [{{event.displayName}}]{{/i18n}}
 	{{/ticketsAreAllAssigned}}
 	{{^ticketsAreAllAssigned}}
-		{{#i18n}}reservation-page-complete.assign-your-tickets [{{event.shortName}}]{{/i18n}}
+		{{#i18n}}reservation-page-complete.assign-your-tickets [{{event.displayName}}]{{/i18n}}
 	{{/ticketsAreAllAssigned}}
 </h1>
 
@@ -44,7 +44,7 @@
 <div class="alert alert-success">
 	<div class="row">
 		<div class="col-sm-12">
-			{{#i18n}}reservation-page-complete.info-assign [{{event.shortName}}]{{/i18n}}
+			{{#i18n}}reservation-page-complete.info-assign [{{event.displayName}}]{{/i18n}}
 		</div>
 	</div>
     <div class="row">

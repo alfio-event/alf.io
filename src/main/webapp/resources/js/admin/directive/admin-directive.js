@@ -237,9 +237,9 @@
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
-            controller: function EditEventHeaderController($scope, LocationService, FileUploadService) {
+            controller: function EditEventHeaderController($scope, LocationService, FileUploadService, EventUtilsService) {
                 if(!angular.isDefined($scope.fullEditMode)) {
-                    var source = _.pick($scope.eventObj, ['id','shortName', 'organizationId', 'location',
+                    var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',
                         'description', 'websiteUrl', 'termsAndConditionsUrl', 'imageUrl', 'fileBlobId', 'formattedBegin',
                         'formattedEnd', 'geolocation']);
                     angular.extend($scope.obj, source);
@@ -254,6 +254,9 @@
                         time: endDateTime.format('HH:mm')
                     };
                 }
+
+                var isUpdate = angular.isDefined($scope.eventObj) && angular.isDefined($scope.eventObj.id);
+                $scope.isUpdate = isUpdate;
 
                 var previousFileBlobId;
 
@@ -278,6 +281,23 @@
                         delete $scope.obj['geolocation'];
                         $scope.loadingMap = false;
                     });
+                };
+
+                $scope.updateURL = function(eventName) {
+                    var targetElement = $('#shortName');
+                    var shouldUpdate = function() {
+                        return targetElement.val() === "" || (!isUpdate && !targetElement.hasClass('ng-touched'));
+                    };
+                    if(shouldUpdate()) {
+                        $scope.loading = true;
+                        EventUtilsService.generateShortName(eventName).success(function(data) {
+                            if(shouldUpdate()) {
+                                $scope.obj.shortName = data;
+                            }
+                        })['finally'](function() {
+                            $scope.loading = false;
+                        });
+                    }
                 };
 
                 $scope.uploadedImage = {};
@@ -497,6 +517,24 @@
             },
             template: '<span><a class="btn btn-warning" data-ui-sref="events.show-waiting-queue({eventName: ctrl.event.shortName})"><i class="fa fa-group"></i> waiting queue <span class="badge">{{ctrl.count}}</span></a></span>'
         }
-    })
+    });
+
+    directives.directive('validateShortName', ['EventUtilsService', function(EventUtilsService) {
+        return {
+            require: 'ngModel',
+            link: function(scope, element, attrs, ngModelCtrl) {
+                var isUpdate = scope[attrs.validateShortName];
+                if(!isUpdate) {
+                    ngModelCtrl.$asyncValidators.validateShortName = function(modelValue, viewValue) {
+                        var value = modelValue || viewValue;
+                        scope.loading = true;
+                        return EventUtilsService.validateShortName(value)['finally'](function() {
+                            scope.loading = false;
+                        });
+                    }
+                }
+            }
+        }
+    }]);
 
 })();

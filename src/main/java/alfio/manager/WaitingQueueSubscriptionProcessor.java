@@ -84,8 +84,7 @@ public class WaitingQueueSubscriptionProcessor {
             Locale locale = subscription.getLocale();
             ZonedDateTime expiration = triple.getRight();
             String reservationId = createReservation(event.getId(), triple.getMiddle(), expiration, locale);
-            String eventShortName = event.getShortName();
-            String subject = messageSource.getMessage("email-waiting-queue-acquired.subject", new Object[]{eventShortName}, locale);
+            String subject = messageSource.getMessage("email-waiting-queue-acquired.subject", new Object[]{event.getDisplayName()}, locale);
             Map<String, Object> model = new HashMap<>();
             model.put("event", event);
             model.put("subscription", subscription);

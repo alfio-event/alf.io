@@ -40,7 +40,7 @@ class MailgunMailer implements Mailer {
 			Optional<String> html, Attachment... attachments)
 			throws IOException {
 
-		String from = event.getShortName() + " <" + configurationManager.getRequiredValue(Configuration.mailgunFrom(event)) +">";
+		String from = event.getDisplayName() + " <" + configurationManager.getRequiredValue(Configuration.mailgunFrom(event)) +">";
 
 		if (ArrayUtils.isEmpty(attachments)) {
 			FormEncodingBuilder builder = new FormEncodingBuilder()

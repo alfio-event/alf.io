@@ -4,7 +4,7 @@
     <h1 class="center">
     	{{>/event/output-event-image-tag}}
     	{{^event.imageIsPresent}}
-    		{{event.shortName}}
+    		{{event.displayName}}
     	{{/event.imageIsPresent}}
     </h1>
 </div>

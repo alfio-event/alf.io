@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 public class Event {
     private final int id;
     private final String shortName;
+    private final String displayName;
     private final String websiteUrl;
     private final String termsAndConditionsUrl;
     private final String imageUrl;
@@ -69,6 +70,7 @@ public class Event {
 
     public Event(@Column("id") int id,
                  @Column("short_name") String shortName,
+                 @Column("display_name") String displayName,
                  @Column("description") String description,
                  @Column("location") String location,
                  @Column("latitude") String latitude,
@@ -88,6 +90,7 @@ public class Event {
                  @Column("allowed_payment_proxies") String allowedPaymentProxies,
                  @Column("private_key") String privateKey,
                  @Column("org_id") int organizationId) {
+        this.displayName = displayName;
         this.websiteUrl = websiteUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
         this.imageUrl = imageUrl;
@@ -202,7 +205,7 @@ public class Event {
                 .queryParam("action", "TEMPLATE")
                 .queryParam("dates", getBegin().format(formatter) + "/" + getEnd().format(formatter))
                 .queryParam("ctz", getTimeZone())
-                .queryParam("text", getShortName())
+                .queryParam("text", getDisplayName())
                 .queryParam("details", getDescription())
                 .queryParam("location", getLocation())
                 .toUriString();
@@ -212,7 +215,7 @@ public class Event {
     public Optional<byte[]> getIcal() {
         ICalendar ical = new ICalendar();
         VEvent vEvent = new VEvent();
-        vEvent.setSummary(getShortName());
+        vEvent.setSummary(getDisplayName());
         vEvent.setDescription(getDescription());
         vEvent.setLocation(getLocation());
         vEvent.setDateStart(Date.from(getBegin().toInstant()));

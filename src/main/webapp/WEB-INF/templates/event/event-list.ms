@@ -8,7 +8,7 @@
 			<div>
                 <div>
 					{{>/event/output-event-image-tag}}
-					<h2>{{shortName}}</h2>
+					<h2>{{displayName}}</h2>
                 </div>
 				<div>
 	            {{#sameDay}}

@@ -103,7 +103,7 @@ public class CustomMessageManager {
     private List<MessageModification> preview(Event event, List<MessageModification> input, String username) {
         Model model = new ExtendedModelMap();
         Organization organization = eventManager.loadOrganizer(event, username);
-        model.addAttribute("eventName", event.getShortName());
+        model.addAttribute("eventName", event.getDisplayName());
         model.addAttribute("fullName", "John Doe");
         model.addAttribute("organizationName", organization.getName());
         model.addAttribute("organizationEmail", organization.getEmail());

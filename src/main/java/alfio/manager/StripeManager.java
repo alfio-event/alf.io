@@ -86,7 +86,7 @@ public class StripeManager {
         chargeParams.put("card", stripeToken);
 
         int tickets = ticketRepository.countTicketsInReservation(reservationId);
-        chargeParams.put("description", String.format("%d ticket(s) for event %s", tickets, event.getShortName()));
+        chargeParams.put("description", String.format("%d ticket(s) for event %s", tickets, event.getDisplayName()));
 
         Map<String, String> initialMetadata = new HashMap<>();
         initialMetadata.put("reservationId", reservationId);

@@ -26,7 +26,7 @@
 	<body>
 		<table style="width:100%">
 			<tr>
-				<td><h1>{{event.shortName}}</h1></td>
+				<td><h1>{{event.displayName}}</h1></td>
 				<td style="width:200px;"><div style="text-align:right"><img src="{{qrCodeDataUri}}"/></div></td>
 			</tr>
 		</table>

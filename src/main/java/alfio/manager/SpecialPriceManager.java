@@ -96,7 +96,7 @@ public class SpecialPriceManager {
             model.put("eventPage", eventManager.getEventUrl(event));
             model.put("assignee", m.getAssignee());
 
-            notificationManager.sendSimpleEmail(event, m.getEmail(), messageSource.getMessage("email-code.subject", new Object[] {event.getShortName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/send-reserved-code-txt.ms", model, locale, TemplateManager.TemplateOutput.TEXT));
+            notificationManager.sendSimpleEmail(event, m.getEmail(), messageSource.getMessage("email-code.subject", new Object[] {event.getDisplayName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/send-reserved-code-txt.ms", model, locale, TemplateManager.TemplateOutput.TEXT));
         });
         return true;
     }
