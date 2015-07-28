@@ -39,3 +39,41 @@ You can configure additional System properties (if you need them) by creating th
 > vi custom.jvmargs
 
 please be aware that since this file could contain sensitive information (such as Google Maps private API key) it will be automatically ignored by git
+
+
+## Docker images
+Alf.io is also offered has a 3 tier application using 3 docker images:
+
+ * postgres --> docker official image for PostgreSQL database
+ * exteso/alfio-web --> application runtime. Docker image is generate from this project (see below). 
+ * tutum/haproxy --> front layer proxy, force redirect to https and support load-balancing if multiple alfio-web instances are running
+
+### Generate a new version of the exteso/alfio-web docker image
+ * Build application and Dockerfile: "./gradlew distribution" 
+ * Enter directory: "cd build/dockerize"
+ * Create docker image: "docker build -t exteso/alfio-web ."
+
+### Publish a new version of the exteso/alfio-web on docker hub
+TODO
+
+### Launch alf.io container instances
+ * define local directory (on docker host, in order for data to survive postgres image restarts):  /path/to/local/pgdata = /etc/pgdata
+ * docker run --name alfio-db -e POSTGRES_DB=postgres -e POSTGRES_USERNAME=postgres -e POSTGRES_PASSWORD=alfiopassword --restart=always -d -v /path/to/local/pgdata:/var/lib/postgresql/data/pgdata postgres
+    * Note: on Mac volumes don't work (see https://jhipster.github.io/installation.html for a possible workaround), launch the above command without the -v parameter (data are lost at every restart)
+ * docker run --name alfio-web --link alfio-db:db -d exteso/alfio-web
+ * docker run --name alfio-proxy --link alfio-web:web1 -e SSL_CERT="$(awk 1 ORS='\\n' src/main/dist/servercert.pem)" -e FORCE_SSL=yes -e PORT=8080 -p 443:443 -p 80:80 -d tutum/haproxy
+    
+### Test alf.io application
+ * See alfio-web logs: "docker logs alfio-web"
+ * Copy admin password in a secure place
+ * Get IP of your docker container: (HOW?)
+    * "boot2docker ip" on Mac/Windows
+    * "docker inspect --format '{{ .NetworkSettings.IPAddress }}' ${CID}" on Linux
+ * Open browser at: https://<DOCKER_IP>/admin
+ * Insert user admin and the password you just copied 
+
+### Expose docker instance on public internet
+ * Make docker container IP visible to the internet (HOW?)
+ * define DNS domain
+ * create SSL certificate
+ * change DNS

@@ -46,6 +46,7 @@ public class DataSourceConfigurationTest {{
             expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.HEROKU);
         });
         it.should("select DOCKER environment", expect -> {
+            when(environment.getProperty("DB_ENV_POSTGRES_DB")).thenReturn("docker");
             when(environment.getProperty("DB_ENV_DOCKER_DB_NAME")).thenReturn("docker");
             expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.DOCKER);
         });

@@ -71,6 +71,13 @@ ext {
     datasourcePassword = ''
     datasourceValidationQuery = 'SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS'
     springProfilesActive = 'dev'
+    baseImage = "ubuntu"
+    port = "8080"
+
+
+    // dockerfile template attributes
+
+
 
     switch (profile) {
         case 'dev-pgsql':
@@ -193,6 +200,7 @@ license {
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import org.apache.tools.ant.filters.ReplaceTokens
 
 processResources << {
 
@@ -250,4 +258,20 @@ jacocoTestReport {
         csv.enabled = false
         html.enabled = true
     }
+}
+
+task dockerize(type: Copy) {
+    from 'src/main/dist/Dockerfile'
+    into "${buildDir}/dockerize"
+    filter(ReplaceTokens, tokens: [APP_NAME   : project.name,
+                                   APP_VERSION: project.version,
+                                   BASE_IMAGE : baseImage,
+                                   PORT       : port])
+}
+
+task distribution(type: Copy) {
+    from new File(project.buildDir, "libs/alfio-${project.version}-boot.war")
+    into "${buildDir}/dockerize"
+
+    dependsOn build, dockerize
 }
