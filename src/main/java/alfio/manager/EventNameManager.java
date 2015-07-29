@@ -35,6 +35,7 @@ import java.util.stream.IntStream;
 public class EventNameManager {
 
     private static final Pattern NUMBER_MATCHER = Pattern.compile("^\\d+$");
+    public static final String SPACES_AND_PUNCTUATION = "[\\s\\p{Punct}]";
     private final EventRepository eventRepository;
 
     @Autowired
@@ -81,7 +82,7 @@ public class EventNameManager {
     }
 
     private Optional<String> getCroppedName(String cleanDisplayName) {
-        String candidate = Arrays.stream(cleanDisplayName.split("\\s"))
+        String candidate = Arrays.stream(cleanDisplayName.split(SPACES_AND_PUNCTUATION))
                 .map(w -> Pair.of(NUMBER_MATCHER.matcher(w).matches(), w))
                 .map(p -> p.getKey() ? p.getValue() : StringUtils.left(p.getValue(), 1))
                 .collect(Collectors.joining());
@@ -93,7 +94,7 @@ public class EventNameManager {
 
     private Optional<String> getDashedName(String cleanDisplayName) {
         if(cleanDisplayName.length() < 15) {
-            String candidate = cleanDisplayName.replaceAll("\\s", "-");
+            String candidate = cleanDisplayName.replaceAll(SPACES_AND_PUNCTUATION, "-");
             if(isUnique(candidate)) {
                 return Optional.of(candidate);
             }

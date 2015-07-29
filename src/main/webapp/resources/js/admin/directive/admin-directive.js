@@ -284,6 +284,9 @@
                 };
 
                 $scope.updateURL = function(eventName) {
+                    if(!angular.isDefined(eventName) || eventName === '') {
+                        return;
+                    }
                     var targetElement = $('#shortName');
                     var shouldUpdate = function() {
                         return targetElement.val() === "" || (!isUpdate && !targetElement.hasClass('ng-touched'));

@@ -51,6 +51,10 @@ public class EventNameManagerTest {{
             expect.that(eventNameManager.generateShortName("Voxxed Days Zürich 2016")).never().is("vdz2016");
         });
 
+        it.should("remove punctuation", expect -> {
+            expect.that(eventNameManager.generateShortName("BigG I/O 2015")).is("bigg-i-o-2015");
+        });
+
         it.should("try to generate a random short name for a maximum of 5 times and then give up", expect -> {
             Mockito.reset(eventRepository);
             when(eventRepository.countByShortName(anyString())).thenReturn(1);
