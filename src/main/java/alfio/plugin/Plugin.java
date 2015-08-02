@@ -26,6 +26,8 @@ import java.util.Collection;
  */
 public interface Plugin {
 
+    String ENABLED_CONF_NAME = "enabled";
+
     /**
      * Returns an unique ID for this
      * @return

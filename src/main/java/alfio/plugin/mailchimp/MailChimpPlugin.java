@@ -18,14 +18,13 @@ package alfio.plugin.mailchimp;
 
 import alfio.model.Ticket;
 import alfio.model.TicketReservation;
-import alfio.model.system.ComponentType;
 import alfio.model.plugin.PluginConfigOption;
+import alfio.model.system.ComponentType;
 import alfio.plugin.PluginDataStorageProvider;
 import alfio.plugin.PluginDataStorageProvider.PluginDataStorage;
 import alfio.plugin.ReservationConfirmationPlugin;
 import alfio.plugin.TicketAssignmentPlugin;
 import com.squareup.okhttp.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -65,7 +64,12 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
     public void onReservationConfirmation(TicketReservation ticketReservation) {
         String email = ticketReservation.getEmail();
         String name = ticketReservation.getFullName();
-        //String language =
+        String language = ticketReservation.getUserLanguage();
+        Optional<String> listAddress = getListAddress(email, name, language);
+        Optional<String> apiKey = getApiKey(email, name, language);
+        if(listAddress.isPresent() && apiKey.isPresent()) {
+            send(listAddress.get(), apiKey.get(), email, name, language);
+        }
     }
 
     @Override
@@ -80,7 +84,7 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
 
     @Override
     public boolean isEnabled() {
-        return false;
+        return pluginDataStorage.getConfigValue(ENABLED_CONF_NAME).map(Boolean::getBoolean).orElse(false);
     }
 
     @Override

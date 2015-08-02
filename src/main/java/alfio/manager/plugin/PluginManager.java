@@ -67,7 +67,7 @@ public class PluginManager implements ApplicationListener<ContextRefreshedEvent>
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         plugins.stream()
-                .filter(p -> !pluginConfigurationRepository.loadSingleOption(p.getId(), "enabled").isPresent())
-                .forEach(p -> pluginConfigurationRepository.insert(p.getId(), "enabled", "false", "Enabled", ComponentType.BOOLEAN));
+                .filter(p -> !pluginConfigurationRepository.loadSingleOption(p.getId(), Plugin.ENABLED_CONF_NAME).isPresent())
+                .forEach(p -> pluginConfigurationRepository.insert(p.getId(), Plugin.ENABLED_CONF_NAME, "false", "Enabled", ComponentType.BOOLEAN));
     }
 }
