@@ -14,31 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.plugin.mailchimp;
+package alfio.model.system;
 
-import alfio.model.Ticket;
-import alfio.model.TicketReservation;
-import alfio.plugin.ReservationConfirmationPlugin;
-import alfio.plugin.TicketAssignmentPlugin;
-
-public class MailchimpPlugin implements ReservationConfirmationPlugin, TicketAssignmentPlugin {
-    @Override
-    public void onTicketAssignment(Ticket ticket) {
-
-    }
-
-    @Override
-    public void onReservationConfirmation(TicketReservation ticketReservation) {
-
-    }
-
-    @Override
-    public String getName() {
-        return "Mailchimp newsletter subscriber";
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return false;
-    }
+public enum ComponentType {
+    TEXT, BOOLEAN
 }

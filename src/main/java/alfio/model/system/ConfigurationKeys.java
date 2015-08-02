@@ -92,10 +92,6 @@ public enum ConfigurationKeys {
 
     }
 
-    public enum ComponentType {
-        TEXT, BOOLEAN
-    }
-
     private static final Predicate<ConfigurationKeys> INTERNAL = ConfigurationKeys::isInternal;
     private final String description;
     private final boolean internal;

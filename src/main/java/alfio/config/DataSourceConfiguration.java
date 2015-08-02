@@ -17,6 +17,10 @@
 package alfio.config;
 
 import alfio.config.support.PlatformProvider;
+import alfio.plugin.PluginDataStorageProvider;
+import alfio.plugin.mailchimp.MailChimpPlugin;
+import alfio.repository.plugin.PluginConfigurationRepository;
+import alfio.repository.plugin.PluginEventRepository;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.npjt.QueryFactory;
 import ch.digitalfondue.npjt.QueryRepositoryScanner;
@@ -150,6 +154,16 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 		JMustacheTemplateLoader loader = new JMustacheTemplateLoader();
 		loader.setResourceLoader(resourceLoader);
 		return loader;
+	}
+
+	@Bean
+	public MailChimpPlugin getMailChimpPlugin(PluginConfigurationRepository pluginConfigurationRepository, PluginEventRepository pluginEventRepository) {
+		return new MailChimpPlugin(pluginDataStorageProvider(pluginConfigurationRepository, pluginEventRepository));
+	}
+
+	@Bean
+	public PluginDataStorageProvider pluginDataStorageProvider(PluginConfigurationRepository pluginConfigurationRepository, PluginEventRepository pluginEventRepository) {
+		return new PluginDataStorageProvider(pluginConfigurationRepository, pluginEventRepository);
 	}
 
 	@Override

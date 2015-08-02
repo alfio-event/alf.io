@@ -26,8 +26,10 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -37,6 +39,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -81,6 +84,7 @@ public class DataMigrator {
         eventRepository.findAll().stream()
                 .filter(e -> ZonedDateTime.now(e.getZoneId()).isBefore(e.getEnd()))
                 .forEach(this::migrateEventToCurrentVersion);
+        fillReservationsLanguage();
     }
 
     void migrateEventToCurrentVersion(Event event) {
@@ -102,6 +106,18 @@ public class DataMigrator {
                 return null;
             });
         }
+    }
+
+    void fillReservationsLanguage() {
+        transactionTemplate.execute(s -> {
+            jdbc.queryForList("select id from tickets_reservation where user_language is null", new EmptySqlParameterSource(), String.class)
+                    .forEach(id -> {
+                        MapSqlParameterSource param = new MapSqlParameterSource("reservationId", id);
+                        String language = jdbc.queryForObject("select user_language from ticket where tickets_reservation_id = :reservationId limit 1", param, String.class);
+                        jdbc.update("update tickets_reservation set user_language = :userLanguage where id = :reservationId", param.addValue("userLanguage", language));
+                    });
+            return null;
+        });
     }
 
     private void fillDescriptions(Event event) {

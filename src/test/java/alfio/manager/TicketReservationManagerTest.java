@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.TextTemplateGenerator;
@@ -65,9 +66,10 @@ public class TicketReservationManagerTest {{
         UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
         when(event.getShortName()).thenReturn("short-name");
         NotificationManager notificationManager = it.usesMock(NotificationManager.class);
-        MessageSource messageSource = mock(MessageSource.class);
+        MessageSource messageSource = it.usesMock(MessageSource.class);
         TicketReservationRepository ticketReservationRepository = mock(TicketReservationRepository.class);
-        TicketReservationManager trm = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, null, null, notificationManager, messageSource, null, null, null);
+        PluginManager pluginManager = mock(PluginManager.class);
+        TicketReservationManager trm = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, null, null, notificationManager, messageSource, null, null, null, pluginManager);
 
         it.initializesWith(() -> {
             when(original.getUuid()).thenReturn(ticketId);
@@ -76,6 +78,7 @@ public class TicketReservationManagerTest {{
             when(ticketRepository.findByUUID(eq(ticketId))).thenReturn(modified);
             form.setEmail("new@email.tld");
             form.setFullName(originalName);
+            form.setUserLanguage("it");
         });
 
         it.should("not send the warning e-mail if the current user is admin", expect -> {
@@ -84,14 +87,25 @@ public class TicketReservationManagerTest {{
             when(ticketReservationRepository.findReservationById(eq(ticketReservationId))).thenReturn(reservation);
             UserDetails userDetails = new User("user", "password", Collections.singletonList(new SimpleGrantedAuthority(AuthorityRepository.ROLE_ADMIN)));
             trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null,(b) -> null, (c) -> null, Optional.of(userDetails));
-            verify(messageSource, never()).getMessage(eq("ticket-has-changed-owner-subject"), eq(new Object[] {"short-name"}), eq(Locale.ENGLISH));
+            verify(messageSource, never()).getMessage(eq("ticket-has-changed-owner-subject"), eq(new Object[] {"short-name"}), eq(Locale.ITALIAN));
         });
 
         it.should("send the warning e-mail otherwise", expect -> {
             PartialTicketTextGenerator ownerChangeTextBuilder = it.usesMock(PartialTicketTextGenerator.class);
             when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn("Hello, world");
+            when(original.getUserLanguage()).thenReturn("it");
             trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, (c) -> null, Optional.empty());
-            verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ENGLISH));
+            verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ITALIAN));
+            verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(originalEmail), anyString(), eq("Hello, world"));
+        });
+
+        it.should("fall back to the current locale", expect -> {
+            form.setUserLanguage("");
+            PartialTicketTextGenerator ownerChangeTextBuilder = it.usesMock(PartialTicketTextGenerator.class);
+            when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn("Hello, world");
+            trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, (c) -> null, Optional.empty());
+            verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ITALIAN));
+            verify(notificationManager, times(1)).sendTicketByEmail(eq(modified), eq(event), eq(Locale.ENGLISH), any(), any());
             verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(originalEmail), anyString(), eq("Hello, world"));
         });
     });
@@ -107,7 +121,8 @@ public class TicketReservationManagerTest {{
         PromoCodeDiscountRepository promoCodeDiscountRepository = it.usesMock(PromoCodeDiscountRepository.class);
         NotificationManager notificationManager = mock(NotificationManager.class);
         MessageSource messageSource = it.usesMock(MessageSource.class);
-        TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager, null);
+        PluginManager pluginManager = mock(PluginManager.class);
+        TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager, null, pluginManager);
         it.initializesWith(() -> reset(notificationManager, eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, configurationManager, promoCodeDiscountRepository, messageSource, transactionManager));
         it.should("send the reminder before event end", expect -> {
             Event event = it.usesMock(Event.class);
@@ -231,7 +246,8 @@ public class TicketReservationManagerTest {{
         TicketCategoryRepository ticketCategoryRepository = mock(TicketCategoryRepository.class);
         TicketCategory tc = it.usesMock(TicketCategory.class);
         WaitingQueueManager waitingQueueManager = it.usesMock(WaitingQueueManager.class);
-        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, ticketCategoryRepository, null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager);
+        PluginManager pluginManager = mock(PluginManager.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, ticketCategoryRepository, null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager, pluginManager);
         String specialPriceCode = "SPECIAL-PRICE";
         String specialPriceSessionId = "session-id";
         int specialPriceId = -42;
@@ -299,7 +315,8 @@ public class TicketReservationManagerTest {{
         TicketReservationRepository ticketReservationRepository = it.usesMock(TicketReservationRepository.class);
         TicketCategoryRepository ticketCategoryRepository = mock(TicketCategoryRepository.class);
         TicketCategory tc = it.usesMock(TicketCategory.class);
-        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, ticketCategoryRepository, null, null, null, null, null, null, null, null, null, null);
+        PluginManager pluginManager = mock(PluginManager.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, ticketCategoryRepository, null, null, null, null, null, null, null, null, null, null, pluginManager);
         when(ticketCategoryRepository.getById(eq(ticketCategoryId), eq(eventId))).thenReturn(tc);
         TicketReservationWithOptionalCodeModification trm = it.usesMock(TicketReservationWithOptionalCodeModification.class);
 
@@ -352,7 +369,8 @@ public class TicketReservationManagerTest {{
         SpecialPriceRepository specialPriceRepository = it.usesMock(SpecialPriceRepository.class);
         TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
         WaitingQueueManager waitingQueueManager = it.usesMock(WaitingQueueManager.class);
-        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager);
+        PluginManager pluginManager = mock(PluginManager.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager, pluginManager);
         it.should("do nothing if there are no reservations", expect -> {
             when(ticketReservationRepository.findExpiredReservation(eq(now))).thenReturn(Collections.emptyList());
             ticketReservationManager.cleanupExpiredReservations(now);
@@ -377,7 +395,8 @@ public class TicketReservationManagerTest {{
         Event event = mock(Event.class);
         when(event.getId()).thenReturn(42);
         TicketCategory category = it.usesMock(TicketCategory.class);
-        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null);
+        PluginManager pluginManager = mock(PluginManager.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, pluginManager);
         it.should("count how many tickets are yet available for a category", expect -> {
             when(category.isBounded()).thenReturn(true);
             when(category.getId()).thenReturn(24);
@@ -399,7 +418,8 @@ public class TicketReservationManagerTest {{
         TicketCategoryRepository ticketCategoryRepository = mock(TicketCategoryRepository.class);
         OrganizationRepository organizationRepository = it.usesMock(OrganizationRepository.class);
         TicketReservationRepository ticketReservationRepository = it.usesMock(TicketReservationRepository.class);
-        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, organizationRepository, ticketRepository, ticketReservationRepository, ticketCategoryRepository, null, null, null, null, null, notificationManager, messageSource, null, null, null);
+        PluginManager pluginManager = mock(PluginManager.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, organizationRepository, ticketRepository, ticketReservationRepository, ticketCategoryRepository, null, null, null, null, null, notificationManager, messageSource, null, null, null, pluginManager);
         TicketReservation ticketReservation = mock(TicketReservation.class);
         Ticket ticket = mock(Ticket.class);
         Event event = mock(Event.class);
@@ -488,47 +508,48 @@ public class TicketReservationManagerTest {{
         ConfigurationManager configurationManager = it.usesMock(ConfigurationManager.class);
         NotificationManager notificationManager = it.usesMock(NotificationManager.class);
         MessageSource messageSource = it.usesMock(MessageSource.class);
-        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, configurationManager, paymentManager, null, specialPriceRepository, null, notificationManager, messageSource, null, platformTransactionManager, waitingQueueManager);
+        PluginManager pluginManager = mock(PluginManager.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, configurationManager, paymentManager, null, specialPriceRepository, null, notificationManager, messageSource, null, platformTransactionManager, waitingQueueManager, pluginManager);
         Event event = mock(Event.class);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(5));
         it.should("confirm a paid reservation", expect -> {
-            when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
+            when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
             when(ticketRepository.updateTicketsStatusWithReservationId(eq(reservationId), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
-            when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(IN_PAYMENT.toString()), anyString(), anyString(), anyString(), isNull(ZonedDateTime.class), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
+            when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), isNull(ZonedDateTime.class), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
             when(paymentManager.processPayment(eq(reservationId), eq(gatewayToken), anyInt(), eq(event), anyString(), anyString(), anyString())).thenReturn(PaymentResult.successful(transactionId));
-            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.STRIPE));
+            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.STRIPE));
             expect.that(result.isSuccessful()).is(true);
             expect.that(result.getGatewayTransactionId()).is(Optional.of(transactionId));
-            verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()));
+            verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()));
             verify(ticketReservationRepository).lockReservationForUpdate(eq(reservationId));
             verify(paymentManager).processPayment(eq(reservationId), eq(gatewayToken), anyInt(), eq(event), anyString(), anyString(), anyString());
             verify(ticketRepository).updateTicketsStatusWithReservationId(eq(reservationId), eq(TicketStatus.ACQUIRED.toString()));
             verify(specialPriceRepository).updateStatusForReservation(eq(Collections.singletonList(reservationId)), eq(SpecialPrice.Status.TAKEN.toString()));
-            verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()));
+            verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()));
             verify(waitingQueueManager).fireReservationConfirmed(eq(reservationId));
         });
         it.should("return failure code if payment was not successful", expect -> {
-            when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(IN_PAYMENT.toString()), anyString(), anyString(), anyString(), isNull(ZonedDateTime.class), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
+            when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), isNull(ZonedDateTime.class), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
             when(ticketReservationRepository.updateTicketStatus(eq(reservationId), eq(TicketReservationStatus.PENDING.toString()))).thenReturn(1);
             when(paymentManager.processPayment(eq(reservationId), eq(gatewayToken), anyInt(), eq(event), anyString(), anyString(), anyString())).thenReturn(PaymentResult.unsuccessful("error-code"));
-            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.STRIPE));
+            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.STRIPE));
             expect.that(result.isSuccessful()).is(false);
             expect.that(result.getGatewayTransactionId()).is(Optional.empty());
             expect.that(result.getErrorCode()).is(Optional.of("error-code"));
-            verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()));
+            verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()));
             verify(ticketReservationRepository).lockReservationForUpdate(eq(reservationId));
             verify(paymentManager).processPayment(eq(reservationId), eq(gatewayToken), anyInt(), eq(event), anyString(), anyString(), anyString());
             verify(ticketReservationRepository).updateTicketStatus(eq(reservationId), eq(TicketReservationStatus.PENDING.toString()));
         });
         it.should("handle the ON_SITE payment method", expect -> {
             when(ticketRepository.updateTicketsStatusWithReservationId(eq(reservationId), eq(TicketStatus.TO_BE_PAID.toString()))).thenReturn(1);
-            when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(COMPLETE.toString()), anyString(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()))).thenReturn(1);
+            when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()))).thenReturn(1);
             when(paymentManager.processPayment(eq(reservationId), eq(gatewayToken), anyInt(), eq(event), anyString(), anyString(), anyString())).thenReturn(PaymentResult.unsuccessful("error-code"));
-            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.ON_SITE));
+            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.ON_SITE));
             expect.that(result.isSuccessful()).is(true);
             expect.that(result.getGatewayTransactionId()).is(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
-            verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()));
+            verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()));
             verify(ticketReservationRepository).lockReservationForUpdate(eq(reservationId));
             verify(ticketRepository).updateTicketsStatusWithReservationId(eq(reservationId), eq(TicketStatus.TO_BE_PAID.toString()));
             verify(specialPriceRepository).updateStatusForReservation(eq(Collections.singletonList(reservationId)), eq(SpecialPrice.Status.TAKEN.toString()));
@@ -537,7 +558,7 @@ public class TicketReservationManagerTest {{
 
         it.should("handle the OFFLINE payment method", expect -> {
             when(ticketReservationRepository.postponePayment(eq(reservationId), any(Date.class), anyString(), anyString(), anyString())).thenReturn(1);
-            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.OFFLINE));
+            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.OFFLINE));
             expect.that(result.isSuccessful()).is(true);
             expect.that(result.getGatewayTransactionId()).is(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
             verify(waitingQueueManager, never()).fireReservationConfirmed(eq(reservationId));
@@ -549,12 +570,12 @@ public class TicketReservationManagerTest {{
             when(reservation.getStatus()).thenReturn(OFFLINE_PAYMENT);
             when(ticketReservationRepository.findReservationById(eq(reservationId))).thenReturn(reservation);
             when(ticketRepository.updateTicketsStatusWithReservationId(eq(reservationId), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
-            when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(COMPLETE.toString()), anyString(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.OFFLINE.toString()))).thenReturn(1);
+            when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.OFFLINE.toString()))).thenReturn(1);
             ticketReservationManager.confirmOfflinePayment(event, reservationId);
             verify(ticketReservationRepository).lockReservationForUpdate(eq(reservationId));
             verify(ticketReservationRepository).updateTicketReservationStatus(eq(reservationId), eq(COMPLETE.toString()));
             verify(ticketRepository).updateTicketsStatusWithReservationId(eq(reservationId), eq(TicketStatus.ACQUIRED.toString()));
-            verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.OFFLINE.toString()));
+            verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.OFFLINE.toString()));
             verify(waitingQueueManager).fireReservationConfirmed(eq(reservationId));
         });
 

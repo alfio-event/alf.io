@@ -29,9 +29,9 @@ public interface TicketReservationRepository {
 	@Query("insert into tickets_reservation(id, validity, promo_code_id_fk, status) values (:id, :validity, :promotionCodeDiscountId, 'PENDING')")
 	int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity, @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId);
 
-	@Query("update tickets_reservation set status = :status, full_name = :fullName, email_address = :email, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod where id = :reservationId")
+	@Query("update tickets_reservation set status = :status, full_name = :fullName, email_address = :email, user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod where id = :reservationId")
 	int updateTicketReservation(@Bind("reservationId") String reservationId, @Bind("status") String status,
-			@Bind("email") String email, @Bind("fullName") String fullName,
+			@Bind("email") String email, @Bind("fullName") String fullName, @Bind("userLanguage") String userLanguage,
 			@Bind("billingAddress") String billingAddress, @Bind("timestamp") ZonedDateTime timestamp, @Bind("paymentMethod") String paymentMethod);
 
 	@Query("update tickets_reservation set validity = :validity, status = 'OFFLINE_PAYMENT', payment_method = 'OFFLINE', full_name = :fullName, email_address = :email, billing_address = :billingAddress where id = :reservationId")

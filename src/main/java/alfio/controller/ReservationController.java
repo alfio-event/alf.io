@@ -335,7 +335,7 @@ public class ReservationController {
 			return redirectReservation(ticketReservation, eventName, reservationId);
 		}
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getStripeToken(), event, reservationId, paymentForm.getEmail(),
-                paymentForm.getFullName(), paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request), Optional.ofNullable(paymentForm.getPaymentMethod()));
+                paymentForm.getFullName(), locale, paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request), Optional.ofNullable(paymentForm.getPaymentMethod()));
 
         if(!status.isSuccessful()) {
             String errorMessageCode = status.getErrorCode().get();

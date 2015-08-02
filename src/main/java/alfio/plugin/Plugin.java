@@ -16,6 +16,10 @@
  */
 package alfio.plugin;
 
+import alfio.model.plugin.PluginConfigOption;
+
+import java.util.Collection;
+
 /**
  * This is the base interface for developing external Alf.io plugins.
  * A plugin can be integrated either in the Pre-Confirmation or in the Post-Confirmation phases.
@@ -23,7 +27,13 @@ package alfio.plugin;
 public interface Plugin {
 
     /**
-     * Returns the plugin name
+     * Returns an unique ID for this
+     * @return
+     */
+    String getId();
+
+    /**
+     * Returns the plugin name. This is used mainly for informational purposes
      * @return the plugin name
      */
     String getName();
@@ -33,4 +43,15 @@ public interface Plugin {
      * @return {@code true} if enabled, {@code false} otherwise
      */
     boolean isEnabled();
+
+    /**
+     * Returns all the config options needed by the current plugin. This collection must contains at least one element
+     * @return the options, never {@code null}
+     */
+    Collection<PluginConfigOption> getConfigOptions();
+
+    /**
+     * Triggers the installation procedure. In this phase, the plugin can safely write its configuration on the database.
+     */
+    void install();
 }

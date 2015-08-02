@@ -46,7 +46,7 @@ public class Configuration {
         this.configurationPathLevel = configurationPathLevel;
     }
 
-    public ConfigurationKeys.ComponentType getComponentType() {
+    public ComponentType getComponentType() {
         return configurationKey.getComponentType();
     }
 

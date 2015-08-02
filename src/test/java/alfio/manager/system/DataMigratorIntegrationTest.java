@@ -20,12 +20,13 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.EventManager;
+import alfio.manager.TicketReservationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.SpecialPrice;
 import alfio.model.Ticket;
-import alfio.model.modification.DateTimeModification;
-import alfio.model.modification.EventModification;
-import alfio.model.modification.TicketCategoryModification;
+import alfio.model.TicketReservation;
+import alfio.model.modification.*;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.EventMigration;
 import alfio.model.user.Organization;
@@ -33,6 +34,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.repository.user.OrganizationRepository;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -49,9 +51,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -77,6 +77,8 @@ public class DataMigratorIntegrationTest {
     private DataMigrator dataMigrator;
     @Autowired
     private EventMigrationRepository eventMigrationRepository;
+    @Autowired
+    private TicketReservationManager ticketReservationManager;
     @Value("${alfio.version}")
     private String currentVersion;
     @Value("${alfio.build-ts}")
@@ -207,5 +209,24 @@ public class DataMigratorIntegrationTest {
         assertNotNull(withDescription.getDisplayName());
         assertEquals(event.getShortName(), withDescription.getShortName());
         assertEquals(event.getShortName(), withDescription.getDisplayName());
+    }
+
+    @Test
+    public void testUpdateTicketReservation() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        "desc", BigDecimal.TEN, false, "", false));
+        Event event = initEvent(categories).getKey();
+        TicketReservationModification trm = new TicketReservationModification();
+        trm.setAmount(1);
+        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
+        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.<SpecialPrice>empty());
+        Date expiration = DateUtils.addDays(new Date(), 1);
+        String reservationId = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(r), expiration, Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
+        dataMigrator.fillReservationsLanguage();
+        TicketReservation ticketReservation = ticketReservationManager.findById(reservationId).get();
+        assertEquals("en", ticketReservation.getUserLanguage());
     }
 }

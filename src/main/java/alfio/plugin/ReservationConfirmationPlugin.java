@@ -21,7 +21,7 @@ import alfio.model.TicketReservation;
 /**
  * A plugin that will be triggered once a reservation has been confirmed.
  */
-public interface ReservationConfirmationPlugin {
+public interface ReservationConfirmationPlugin extends Plugin {
     /**
      * Does something immediately after the confirmation of a reservation.
      * @param ticketReservation the confirmed reservation
