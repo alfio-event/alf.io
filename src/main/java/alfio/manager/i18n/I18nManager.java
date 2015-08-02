@@ -25,7 +25,7 @@ import java.util.List;
 public class I18nManager {
 
     public List<ContentLanguage> getAvailableLocales() {
-        return Arrays.asList(ContentLanguage.ITALIAN, ContentLanguage.ENGLISH);
+        return Arrays.asList(ContentLanguage.ITALIAN, ContentLanguage.GERMAN, ContentLanguage.ENGLISH);
     }
 
     public List<ContentLanguage> getEventLocales(String eventName) {

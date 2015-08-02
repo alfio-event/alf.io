@@ -23,6 +23,7 @@ public class ContentLanguage {
 
     public static final ContentLanguage ITALIAN = new ContentLanguage(Locale.ITALIAN, Locale.ENGLISH);
     public static final ContentLanguage ENGLISH = new ContentLanguage(Locale.ENGLISH, Locale.ENGLISH);
+    public static final ContentLanguage GERMAN = new ContentLanguage(Locale.GERMAN, Locale.GERMAN);
 
     private final Locale locale;
     private final Locale displayLocale;
