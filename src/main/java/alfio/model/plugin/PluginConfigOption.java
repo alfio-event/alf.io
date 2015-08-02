@@ -44,4 +44,12 @@ public class PluginConfigOption {
         this.description = description;
         this.componentType = componentType;
     }
+
+    public String getKey() {
+        return optionName;
+    }
+
+    public String getValue() {
+        return optionValue;
+    }
 }

@@ -40,7 +40,7 @@ public interface PluginConfigurationRepository {
     @Query("insert into plugin_configuration(plugin_id, conf_name, conf_value, conf_description, conf_type) values (:pluginId, :name, :value, :description, :type)")
     int insert(@Bind("pluginId") String pluginId, @Bind("name") String name, @Bind("value") String value, @Bind("description") String description, @Bind("type") ComponentType type);
 
-    @Query("update plugin_configuration set conf_value = :value, conf_description = :description, conf_type = :type where plugin_id = :pluginId and conf_name = :name")
-    int update(@Bind("pluginId") String pluginId, @Bind("name") String name, @Bind("value") String value, @Bind("description") String description, @Bind("type") ComponentType type);
+    @Query("update plugin_configuration set conf_value = :value where plugin_id = :pluginId and conf_name = :name")
+    int update(@Bind("pluginId") String pluginId, @Bind("name") String name, @Bind("value") String value);
 
 }

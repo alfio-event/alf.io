@@ -178,6 +178,12 @@
             },
             remove: function(key) {
             	return $http['delete']('/admin/api/configuration/key/' + key).error(HttpErrorHandler.handle);
+            },
+            loadPlugins: function() {
+                return $http.get('/admin/api/configuration/plugin/load').error(HttpErrorHandler.handle);
+            },
+            bulkUpdatePlugins: function(pluginConfigOptions) {
+                return $http.post('/admin/api/configuration/plugin/update-bulk', pluginConfigOptions).error(HttpErrorHandler.handle);
             }
         };
     });

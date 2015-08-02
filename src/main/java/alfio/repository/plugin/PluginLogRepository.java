@@ -16,7 +16,7 @@
  */
 package alfio.repository.plugin;
 
-import alfio.model.plugin.PluginEvent;
+import alfio.model.plugin.PluginLog;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -25,11 +25,11 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 @QueryRepository
-public interface PluginEventRepository {
+public interface PluginLogRepository {
 
-    @Query("insert into plugin_event (plugin_id, description, type, event_ts) values(:pluginId, :description, :type, :event_ts)")
-    int insertEvent(@Bind("pluginId") String pluginId, @Bind("description") String description, @Bind("type") PluginEvent.Type type, @Bind("eventTs") ZonedDateTime timestamp);
+    @Query("insert into plugin_log (plugin_id, event_id, description, type, event_ts) values(:pluginId, :eventId, :description, :type, :eventTs)")
+    int insertEvent(@Bind("pluginId") String pluginId, @Bind("eventId") int eventId, @Bind("description") String description, @Bind("type") PluginLog.Type type, @Bind("eventTs") ZonedDateTime timestamp);
 
-    @Query("select * from plugin_event")
-    List<PluginEvent> loadAll();
+    @Query("select * from plugin_log")
+    List<PluginLog> loadAll();
 }

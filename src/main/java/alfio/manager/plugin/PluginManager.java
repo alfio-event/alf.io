@@ -18,12 +18,13 @@ package alfio.manager.plugin;
 
 import alfio.model.Ticket;
 import alfio.model.TicketReservation;
+import alfio.model.modification.PluginConfigOptionModification;
+import alfio.model.plugin.PluginConfigOption;
 import alfio.model.system.ComponentType;
 import alfio.plugin.Plugin;
 import alfio.plugin.ReservationConfirmationPlugin;
 import alfio.plugin.TicketAssignmentPlugin;
 import alfio.repository.plugin.PluginConfigurationRepository;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
@@ -39,7 +41,7 @@ public class PluginManager implements ApplicationListener<ContextRefreshedEvent>
 
     private final List<Plugin> plugins;
     private final PluginConfigurationRepository pluginConfigurationRepository;
-    private final Executor executor = Executors.newCachedThreadPool();
+    private final ExecutorService executor = Executors.newCachedThreadPool();
 
     @Autowired
     public PluginManager(List<Plugin> plugins, PluginConfigurationRepository pluginConfigurationRepository) {
@@ -47,14 +49,20 @@ public class PluginManager implements ApplicationListener<ContextRefreshedEvent>
         this.pluginConfigurationRepository = pluginConfigurationRepository;
     }
 
-    public void handleReservationConfirmation(TicketReservation reservation) {
-        filterPlugins(plugins, ReservationConfirmationPlugin.class)
-                .forEach(p -> executor.execute(() -> p.onReservationConfirmation(reservation)));
+    public void handleReservationConfirmation(TicketReservation reservation, int eventId) {
+        executor.submit(() -> filterPlugins(plugins, ReservationConfirmationPlugin.class).forEach(p -> p.onReservationConfirmation(reservation, eventId)));
     }
 
     public void handleTicketAssignment(Ticket ticket) {
-        filterPlugins(plugins, TicketAssignmentPlugin.class)
-                .forEach(p -> executor.execute(() -> p.onTicketAssignment(ticket)));
+        executor.submit(() -> filterPlugins(plugins, TicketAssignmentPlugin.class).forEach(p -> p.onTicketAssignment(ticket)));
+    }
+
+    public List<PluginConfigOption> loadAllConfigOptions() {
+        return pluginConfigurationRepository.loadAll();
+    }
+
+    public void saveAllConfigOptions(List<PluginConfigOptionModification> input) {
+        input.forEach(m -> pluginConfigurationRepository.update(m.getPluginId(), m.getName(), m.getValue()));
     }
 
     private static <T extends Plugin> Stream<T> filterPlugins(List<Plugin> plugins, Class<T> type) {
@@ -68,6 +76,9 @@ public class PluginManager implements ApplicationListener<ContextRefreshedEvent>
     public void onApplicationEvent(ContextRefreshedEvent event) {
         plugins.stream()
                 .filter(p -> !pluginConfigurationRepository.loadSingleOption(p.getId(), Plugin.ENABLED_CONF_NAME).isPresent())
-                .forEach(p -> pluginConfigurationRepository.insert(p.getId(), Plugin.ENABLED_CONF_NAME, "false", "Enabled", ComponentType.BOOLEAN));
+                .forEach(p -> {
+                    pluginConfigurationRepository.insert(p.getId(), Plugin.ENABLED_CONF_NAME, "false", "Enabled", ComponentType.BOOLEAN);
+                    p.install();
+                });
     }
 }

@@ -16,8 +16,11 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.plugin.PluginManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.modification.ConfigurationModification;
+import alfio.model.modification.PluginConfigOptionModification;
+import alfio.model.plugin.PluginConfigOption;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,10 +42,12 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 public class SettingsApiController {
 
     private final ConfigurationManager configurationManager;
+    private final PluginManager pluginManager;
 
     @Autowired
-    public SettingsApiController(ConfigurationManager configurationManager) {
+    public SettingsApiController(ConfigurationManager configurationManager, PluginManager pluginManager) {
         this.configurationManager = configurationManager;
+        this.pluginManager = pluginManager;
     }
 
     @RequestMapping(value = "/configuration/load", method = GET)
@@ -62,6 +67,18 @@ public class SettingsApiController {
         List<ConfigurationModification> list = input.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         configurationManager.saveAllSystemConfiguration(list);
         return loadConfiguration();
+    }
+
+    @RequestMapping(value = "/configuration/plugin/load", method = GET)
+    public List<PluginConfigOption> loadPluginConfiguration() {
+        return pluginManager.loadAllConfigOptions();
+    }
+
+    @RequestMapping(value = "/configuration/plugin/update-bulk", method = POST)
+    public List<PluginConfigOption> updatePluginConfiguration(@RequestBody List<PluginConfigOptionModification> input) {
+        Objects.requireNonNull(input);
+        pluginManager.saveAllConfigOptions(input);
+        return loadPluginConfiguration();
     }
 
     @RequestMapping(value = "/configuration/key/{key}", method = DELETE)

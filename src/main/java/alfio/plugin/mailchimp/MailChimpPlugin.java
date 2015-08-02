@@ -37,7 +37,7 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
     private static final String API_KEY = "apiKey";
     private static final String LIST_ID = "listId";
     private static final String LIST_ADDRESS = "https://%s.api.mailchimp.com/3.0/lists/%s/members/";
-    private static final String REQUEST_TEMPLATE = "{ \"email_address\": \"%s\", \"status\": \"subscribed\", \"merge_fields\": { \"FNAME\": \"%s\", \"MC_LANGUAGE\": \"%s\" }}";
+    private static final String REQUEST_TEMPLATE = "{ \"email_address\": \"%s\", \"status\": \"subscribed\", \"merge_fields\": { \"FNAME\": \"%s\" }, \"language\": \"%s\"}";
     public static final String FAILURE_MSG = "cannot add user {email: %s, name:%s, language: %s} to the list (%s)";
     private final String id = "alfio.mailchimp";
     private final PluginDataStorage pluginDataStorage;
@@ -50,25 +50,26 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
 
     @Override
     public void onTicketAssignment(Ticket ticket) {
+        int eventId = ticket.getEventId();
         String email = ticket.getEmail();
         String name = ticket.getFullName();
         String language = ticket.getUserLanguage();
-        Optional<String> listAddress = getListAddress(email, name, language);
-        Optional<String> apiKey = getApiKey(email, name, language);
+        Optional<String> listAddress = getListAddress(eventId, email, name, language);
+        Optional<String> apiKey = getApiKey(eventId, email, name, language);
         if(listAddress.isPresent() && apiKey.isPresent()) {
-            send(listAddress.get(), apiKey.get(), email, name, language);
+            send(eventId, listAddress.get(), apiKey.get(), email, name, language);
         }
     }
 
     @Override
-    public void onReservationConfirmation(TicketReservation ticketReservation) {
+    public void onReservationConfirmation(TicketReservation ticketReservation, int eventId) {
         String email = ticketReservation.getEmail();
         String name = ticketReservation.getFullName();
         String language = ticketReservation.getUserLanguage();
-        Optional<String> listAddress = getListAddress(email, name, language);
-        Optional<String> apiKey = getApiKey(email, name, language);
+        Optional<String> listAddress = getListAddress(eventId, email, name, language);
+        Optional<String> apiKey = getApiKey(eventId, email, name, language);
         if(listAddress.isPresent() && apiKey.isPresent()) {
-            send(listAddress.get(), apiKey.get(), email, name, language);
+            send(eventId, listAddress.get(), apiKey.get(), email, name, language);
         }
     }
 
@@ -84,7 +85,7 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
 
     @Override
     public boolean isEnabled() {
-        return pluginDataStorage.getConfigValue(ENABLED_CONF_NAME).map(Boolean::getBoolean).orElse(false);
+        return pluginDataStorage.getConfigValue(ENABLED_CONF_NAME).map(Boolean::parseBoolean).orElse(false);
     }
 
     @Override
@@ -99,26 +100,26 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
         getConfigOptions().stream().forEach(o -> pluginDataStorage.insertConfigValue(o.getOptionName(), o.getOptionValue(), o.getDescription(), o.getComponentType()));
     }
 
-    private Optional<String> getListAddress(String email, String name, String language) {
+    private Optional<String> getListAddress(int eventId, String email, String name, String language) {
         Optional<String> dataCenter = pluginDataStorage.getConfigValue(DATA_CENTER);
         Optional<String> listId = pluginDataStorage.getConfigValue(LIST_ID);
         if(dataCenter.isPresent() && listId.isPresent()) {
             return Optional.of(String.format(LIST_ADDRESS, dataCenter.get(), listId.get()));
         } else {
-            pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, "check listId and dataCenter"));
+            pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, "check listId and dataCenter"), eventId);
         }
         return Optional.empty();
     }
 
-    private Optional<String> getApiKey(String email, String name, String language) {
+    private Optional<String> getApiKey(int eventId, String email, String name, String language) {
         Optional<String> apiKey = pluginDataStorage.getConfigValue(API_KEY);
         if(!apiKey.isPresent()) {
-            pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, "missing API Key"));
+            pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, "missing API Key"), eventId);
         }
         return apiKey;
     }
 
-    private boolean send(String address, String apiKey, String email, String name, String language) {
+    private boolean send(int eventId, String address, String apiKey, String email, String name, String language) {
         Request request = new Request.Builder()
                 .url(address)
                 .header("Authorization", Credentials.basic("api", apiKey))
@@ -127,14 +128,17 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
         try {
             Response response = httpClient.newCall(request).execute();
             if(response.isSuccessful()) {
-                pluginDataStorage.registerSuccess(String.format("user %s has been subscribed to list", email));
-            } else if(response.code() != 400) {
-                pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, response.body()));
+                pluginDataStorage.registerSuccess(String.format("user %s has been subscribed to list", email), eventId);
+                return true;
+            }
+            String responseBody = response.body().string();
+            if(response.code() != 400 || responseBody.contains("\"errors\"")) {
+                pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
                 return false;
             }
             return true;
         } catch (IOException e) {
-            pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, e.toString()));
+            pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, e.toString()), eventId);
             return false;
         }
     }

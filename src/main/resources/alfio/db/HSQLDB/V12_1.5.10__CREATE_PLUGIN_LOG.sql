@@ -15,10 +15,13 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create table PLUGIN_EVENT(
-  id serial primary key not null,
+create table PLUGIN_LOG(
+  id integer identity not null,
   plugin_id varchar(255) not null,
-  description varchar(1024) not null,
+  event_id int not null,
+  description CLOB not null,
   type varchar(255),
   event_ts timestamp with TIME ZONE not null
 );
+
+alter table plugin_log add foreign key(event_id) references event(id);

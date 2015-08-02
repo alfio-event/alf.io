@@ -274,7 +274,7 @@ public class TicketReservationManager {
 			} else {
                 paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
             }
-            completeReservation(reservationId, email, fullName, userLanguage, billingAddress, specialPriceSessionId, paymentProxy);
+            completeReservation(event.getId(), reservationId, email, fullName, userLanguage, billingAddress, specialPriceSessionId, paymentProxy);
             return paymentResult;
         } catch(Exception ex) {
             //it is guaranteed that in this case we're dealing with "local" error (e.g. database failure),
@@ -318,7 +318,7 @@ public class TicketReservationManager {
 		Locale language = findReservationLanguage(reservationId);
 		notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
 				new Object[]{ getShortReservationID(reservationId), event.getDisplayName()}, language), () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language, TemplateOutput.TEXT));
-        pluginManager.handleReservationConfirmation(ticketReservationRepository.findReservationById(reservationId));
+        pluginManager.handleReservationConfirmation(ticketReservationRepository.findReservationById(reservationId), event.getId());
 	}
 
     private Locale findReservationLanguage(String reservationId) {
@@ -423,11 +423,11 @@ public class TicketReservationManager {
 	 * @param billingAddress
 	 * @param specialPriceSessionId
 	 */
-	private void completeReservation(String reservationId, String email, String fullName, Locale userLanguage, String billingAddress, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
+	private void completeReservation(int eventId, String reservationId, String email, String fullName, Locale userLanguage, String billingAddress, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
 		if(paymentProxy != PaymentProxy.OFFLINE) {
 			TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
 			acquireTickets(ticketStatus, paymentProxy, reservationId, email, fullName, userLanguage.getLanguage(), billingAddress);
-            pluginManager.handleReservationConfirmation(ticketReservationRepository.findReservationById(reservationId));
+            pluginManager.handleReservationConfirmation(ticketReservationRepository.findReservationById(reservationId), eventId);
 		}
 		//cleanup unused special price codes...
 		specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);

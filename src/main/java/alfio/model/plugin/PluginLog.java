@@ -22,24 +22,27 @@ import lombok.Getter;
 import java.time.ZonedDateTime;
 
 @Getter
-public class PluginEvent {
+public class PluginLog {
 
     public enum Type {
         SUCCESS, ERROR, WARNING
     }
 
     private final int id;
+    private final int eventId;
     private final String pluginId;
     private final String description;
     private final Type type;
     private final ZonedDateTime timestamp;
 
-    public PluginEvent(@Column("id") int id,
-                       @Column("plugin_id") String pluginId,
-                       @Column("description") String description,
-                       @Column("type") Type type,
-                       @Column("event_ts") ZonedDateTime timestamp) {
+    public PluginLog(@Column("id") int id,
+                     @Column("event_id") int eventId,
+                     @Column("plugin_id") String pluginId,
+                     @Column("description") String description,
+                     @Column("type") Type type,
+                     @Column("event_ts") ZonedDateTime timestamp) {
         this.id = id;
+        this.eventId = eventId;
         this.pluginId = pluginId;
         this.description = description;
         this.type = type;

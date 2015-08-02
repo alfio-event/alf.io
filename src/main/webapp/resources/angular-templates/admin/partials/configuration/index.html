@@ -3,7 +3,7 @@
         <h1>General</h1>
         <span>General settings</span>
     </div>
-    <form name="settingsForm" novalidate data-ng-submit="saveSettings(settingsForm, settings)">
+    <form name="settingsForm" novalidate data-ng-submit="saveSettings(settingsForm, settings, pluginSettings)">
         <div data-ng-if="general">
             <div data-ng-repeat="setting in general.settings">
                 <setting data-obj="setting"></setting>
@@ -50,6 +50,18 @@
                 <setting data-obj="setting"></setting>
             </div>
             <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loading"></i>
+        </div>
+
+        <div class="page-header">
+            <h1>Plugins</h1>
+            <span>Plugins settings</span>
+        </div>
+
+        <div data-ng-repeat="(key, settings) in pluginSettingsByPluginId">
+            <div class="page-header"><h3 data-ng-bind="key"></h3></div>
+            <div data-ng-repeat="setting in settings">
+                <setting data-obj="setting"></setting>
+            </div>
         </div>
 
         <div class="pull-right wMarginBottom wMarginTop">

@@ -485,6 +485,7 @@
             templateUrl:'/resources/angular-templates/admin/partials/configuration/setting.html',
             link: angular.noop,
             controller: function($scope, $rootScope, ConfigurationService) {
+                $scope.displayDelete = angular.isDefined($scope.obj) && !angular.isDefined($scope.obj.pluginId);
                 $scope.removeConfigurationKey = function(key) {
                     $scope.loading = true;
                     ConfigurationService.remove(key).then(function() {$rootScope.$broadcast('ReloadSettings');});

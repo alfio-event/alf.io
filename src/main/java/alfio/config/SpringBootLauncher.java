@@ -16,9 +16,11 @@
  */
 package alfio.config;
 
+import alfio.util.DefaultExceptionHandler;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
+import org.apache.logging.log4j.Level;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -31,6 +33,8 @@ public class SpringBootLauncher {
      * @param args original arguments
      */
     public static void main(String[] args) {
+
+        Thread.setDefaultUncaughtExceptionHandler(new DefaultExceptionHandler());
 
         String profiles = System.getProperty("spring.profiles.active", "");
         log.info("requested profiles {}", profiles);

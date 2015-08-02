@@ -14,18 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.plugin;
+package alfio.model.modification;
 
-import alfio.model.TicketReservation;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 
-/**
- * A plugin that will be triggered once a reservation has been confirmed.
- */
-public interface ReservationConfirmationPlugin extends Plugin {
-    /**
-     * Does something immediately after the confirmation of a reservation.
-     * @param ticketReservation the confirmed reservation
-     * @param eventId the id of the event
-     */
-    void onReservationConfirmation(TicketReservation ticketReservation, int eventId);
+@Getter
+public class PluginConfigOptionModification {
+    private final String pluginId;
+    private final String name;
+    private final String value;
+
+    public PluginConfigOptionModification(@JsonProperty("pluginId") String pluginId,
+                                          @JsonProperty("optionName") String name,
+                                          @JsonProperty("optionValue") String value) {
+        this.pluginId = pluginId;
+        this.name = name;
+        this.value = value;
+    }
 }

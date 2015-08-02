@@ -17,11 +17,10 @@
 package alfio.plugin;
 
 import alfio.model.plugin.PluginConfigOption;
-import alfio.model.plugin.PluginEvent;
+import alfio.model.plugin.PluginLog;
 import alfio.model.system.ComponentType;
 import alfio.repository.plugin.PluginConfigurationRepository;
-import alfio.repository.plugin.PluginEventRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import alfio.repository.plugin.PluginLogRepository;
 
 import java.time.Clock;
 import java.time.ZonedDateTime;
@@ -30,30 +29,30 @@ import java.util.Optional;
 public class PluginDataStorageProvider {
 
     private final PluginConfigurationRepository pluginConfigurationRepository;
-    private final PluginEventRepository pluginEventRepository;
+    private final PluginLogRepository pluginLogRepository;
 
     public PluginDataStorageProvider(PluginConfigurationRepository pluginConfigurationRepository,
-                                     PluginEventRepository pluginEventRepository) {
+                                     PluginLogRepository pluginLogRepository) {
         this.pluginConfigurationRepository = pluginConfigurationRepository;
-        this.pluginEventRepository = pluginEventRepository;
+        this.pluginLogRepository = pluginLogRepository;
     }
 
     public PluginDataStorage getDataStorage(String pluginId) {
-        return new PluginDataStorage(pluginId, pluginConfigurationRepository, pluginEventRepository);
+        return new PluginDataStorage(pluginId, pluginConfigurationRepository, pluginLogRepository);
     }
 
 
     public static class PluginDataStorage {
         private final String pluginId;
         private final PluginConfigurationRepository pluginConfigurationRepository;
-        private final PluginEventRepository pluginEventRepository;
+        private final PluginLogRepository pluginLogRepository;
 
         private PluginDataStorage(String pluginId,
                                   PluginConfigurationRepository pluginConfigurationRepository,
-                                  PluginEventRepository pluginEventRepository) {
+                                  PluginLogRepository pluginLogRepository) {
             this.pluginId = pluginId;
             this.pluginConfigurationRepository = pluginConfigurationRepository;
-            this.pluginEventRepository = pluginEventRepository;
+            this.pluginLogRepository = pluginLogRepository;
         }
 
         public Optional<String> getConfigValue(String name) {
@@ -64,12 +63,12 @@ public class PluginDataStorageProvider {
             pluginConfigurationRepository.insert(pluginId, name, value, description, componentType);
         }
 
-        public void registerSuccess(String description) {
-            pluginEventRepository.insertEvent(pluginId, description, PluginEvent.Type.SUCCESS, ZonedDateTime.now(Clock.systemUTC()));
+        public void registerSuccess(String description, int eventId) {
+            pluginLogRepository.insertEvent(pluginId, eventId, description, PluginLog.Type.SUCCESS, ZonedDateTime.now(Clock.systemUTC()));
         }
 
-        public void registerFailure(String description) {
-            pluginEventRepository.insertEvent(pluginId, description, PluginEvent.Type.ERROR, ZonedDateTime.now(Clock.systemUTC()));
+        public void registerFailure(String description, int eventId) {
+            pluginLogRepository.insertEvent(pluginId, eventId, description, PluginLog.Type.ERROR, ZonedDateTime.now(Clock.systemUTC()));
         }
 
     }

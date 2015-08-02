@@ -14,18 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.plugin;
+package alfio.util;
 
-import alfio.model.TicketReservation;
+import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.Level;
 
-/**
- * A plugin that will be triggered once a reservation has been confirmed.
- */
-public interface ReservationConfirmationPlugin extends Plugin {
-    /**
-     * Does something immediately after the confirmation of a reservation.
-     * @param ticketReservation the confirmed reservation
-     * @param eventId the id of the event
-     */
-    void onReservationConfirmation(TicketReservation ticketReservation, int eventId);
+@Log4j2
+public class DefaultExceptionHandler implements Thread.UncaughtExceptionHandler {
+    @Override
+    public void uncaughtException(Thread t, Throwable e) {
+        log.catching(Level.ERROR, e);
+    }
 }

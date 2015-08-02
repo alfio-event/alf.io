@@ -955,7 +955,7 @@
         });
     });
 
-    admin.controller('ConfigurationController', function($scope, ConfigurationService, $rootScope) {
+    admin.controller('ConfigurationController', function($scope, ConfigurationService, $rootScope, $q) {
         $scope.loading = true;
         var populateScope = function(result) {
             $scope.settings = result;
@@ -971,29 +971,41 @@
             $scope.payment = {
                 settings: result['PAYMENT']
             };
-            $scope.loading = false;
         };
+
+        var populatePluginScope = function(result) {
+            $scope.pluginSettings = result;
+            $scope.pluginSettingsByPluginId = _.groupBy(result, 'pluginId');
+        };
+
         var loadAll = function() {
             $scope.loading = true;
-            ConfigurationService.loadAll().success(function (result) {
-                populateScope(result);
-            });
-        };
-        loadAll();
-
-        $scope.saveSettings = function(frm, settings) {
-            if(!frm.$valid) {
-                return;
-            }
-            $scope.loading = true;
-            ConfigurationService.bulkUpdate(settings).then(function(result) {
-                populateScope(result.data);
+            $q.all([ConfigurationService.loadAll(), ConfigurationService.loadPlugins()]).then(function(results) {
+                populateScope(results[0].data);
+                populatePluginScope(results[1].data);
+                $scope.loading = false;
             }, function(e) {
                 alert(e.data);
                 $scope.loading = false;
             });
         };
-        
+        loadAll();
+
+        $scope.saveSettings = function(frm, settings, pluginSettings) {
+            if(!frm.$valid) {
+                return;
+            }
+            $scope.loading = true;
+            $q.all([ConfigurationService.bulkUpdate(settings), ConfigurationService.bulkUpdatePlugins(pluginSettings)]).then(function(results) {
+                populateScope(results[0].data);
+                populatePluginScope(results[1].data);
+                $scope.loading = false;
+            }, function(e) {
+                alert(e.data);
+                $scope.loading = false;
+            });
+        };
+
         $scope.configurationChange = function(conf) {
             if(!conf.value) {
                 return;
