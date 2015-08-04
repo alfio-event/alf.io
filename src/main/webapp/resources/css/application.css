@@ -7,10 +7,6 @@ div.col-md-8.col-md-offset-2 {
 	background-color:white;
 }
 
-div.col-md-8.col-md-offset-2 h1 {
-	margin-top:0;
-}
-
 div.col-md-8.col-md-offset-2 > div {
 	padding-top:1em;
 	padding-bottom:1em;
@@ -105,6 +101,10 @@ body {
 	content: "\00a0 "
 }
 
+a.no-decoration {
+    text-decoration:none;
+}
+
 @media screen and (max-width: 768px) {
 	.xs-payment-method {
 		width:100%;
@@ -113,6 +113,9 @@ body {
 }
 
 @media screen and (min-width: 768px) {
+    li img.logo {
+        margin-top:20px;
+    }
 	.j-btn-group {
 		display: table;
 		width: 100%;
@@ -126,3 +129,21 @@ body {
 		width: 1%;
 	}
 }
+
+/* source: https://github.com/twbs/bootstrap/issues/1982#issuecomment-7814657 thank you @ghost! :) */
+.wizard a {padding: 12px 12px 10px 12px; margin-right:5px; background:#efefef; position:relative; display:inline-block; }
+.wizard a:before {width:0; height:0; border-top: 20px inset transparent; border-bottom: 20px inset transparent; border-left: 20px solid #fff; position: absolute; content: ""; top: 0; left: 0;}
+.wizard a:after {width:0; height:0; border-top: 20px inset transparent; border-bottom: 20px inset transparent; border-left: 20px solid #efefef; position: absolute; content: ""; top: 0; right: -20px; z-index:2;}
+.wizard a:first-child:before {border:none;}
+.wizard a:last-child:after {border:none;}
+
+.wizard a:first-child {-moz-border-radius: 4px 0 0 4px; -webkit-border-radius: 4px 0 0 4px; border-radius:   4px 0 0 4px;}
+.wizard a:last-child {-moz-border-radius: 0 4px 4px 0; -webkit-border-radius: 0 4px 4px 0; border-radius:   0 4px 4px 0;}
+
+.wizard .badge {margin:0 5px 0 18px; position:relative; top:-1px;}
+.wizard a:first-child .badge {margin-left:0;}
+
+.wizard .current {background:#007ACC; color:#fff;}
+.wizard .current:after {border-left-color:#007ACC;}
+.wizard a:hover { text-decoration: none; } .wizard a:not(.current):hover { color:#08C; }
+.badge-inverse {color:#777; background-color: white}

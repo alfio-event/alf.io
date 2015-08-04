@@ -1,15 +1,13 @@
 {{>/event/page-top}}
 
-<div>
-	{{>/event/output-event-image-tag}}
-</div>
+{{>/event/header}}
 
 {{^ticketsAreAllAssigned}}
-<ol class="breadcrumb wMarginTop">
-    <li class="active">{{#i18n}}breadcrumb.step1{{/i18n}}</li>
-    <li class="active">{{#i18n}}breadcrumb.step2{{/i18n}}</li>
-    <li><i class="fa fa-download"></i> {{#i18n}}breadcrumb.step3{{/i18n}}</li>
-</ol>
+<div class="wizard wMarginBottom wMarginTop center">
+	<a><span class="badge">1</span> {{#i18n}}breadcrumb.step1{{/i18n}}</a>
+	<a><span class="badge">2</span> {{#i18n}}breadcrumb.step2{{/i18n}}</a>
+	<a class="current"><span class="badge badge-inverse">3</span> {{#i18n}}breadcrumb.step3{{/i18n}}</a>
+</div>
 {{/ticketsAreAllAssigned}}
 
 <div class="wMarginBottom"></div>
@@ -71,7 +69,7 @@
 				<h3><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.ticket-nr{{/i18n}}<span class="ticket-counter"></span></h3>
 			</div>
 			{{#i18n}}reservation-page-complete.ticket-type{{/i18n}} <strong>{{key.name}}</strong>
-			<div id="ticket-detail-{{uuid}}">
+			<div id="ticket-detail-{{uuid}}" data-collapse-enabled="true" class="collapsible-container">
 				{{> /event/assign-ticket-form}}
 			</div>
 	</li>

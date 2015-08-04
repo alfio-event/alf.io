@@ -1,52 +1,64 @@
 {{>/event/page-top}}
 
-<div class="page-header">
-    <h1 class="center">
-    	{{>/event/output-event-image-tag}}
-    	{{^event.imageIsPresent}}
-    		{{event.displayName}}
-    	{{/event.imageIsPresent}}
-    </h1>
-</div>
+{{>/event/header}}
+
 <div class="row">
 	<div class="col-md-7">
         <div>{{#i18n}}show-event.by{{/i18n}} <strong>{{organizer.name}}</strong> &lt;<a href="mailto:{{organizer.email}}">{{organizer.email}}</a>&gt;</div>
         <div>
-			<i class="fa fa-calendar"></i>
-            {{#event.sameDay}}
-                {{#i18n}}event-days.same-day
-                    [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-                    [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
-                    [{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
-                {{/i18n}}
-            {{/event.sameDay}}
-            {{^event.sameDay}}
-                {{#i18n}}event-days.not-same-day
-                    [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-                    [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
-                {{/i18n}}
-                -
-                {{#i18n}}event-days.not-same-day
-                    [{{#format-date}}{{event.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-                    [{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
-                {{/i18n}}
-            {{/event.sameDay}}
-			<i class="fa fa-info-circle text-info tooltip-handler" title="{{#i18n}}show-event.timezone.warn [{{event.timeZone}}]{{/i18n}}"></i>
-			<div class="alfio-event-add-to-calendar"><span>{{#i18n}}show-event.add-to-calendar{{/i18n}}</span> <a href="{{request.contextPath}}/event/{{event.shortName}}/calendar/?type=google">google</a> {{#i18n}}common.or{{/i18n}} <a href="{{request.contextPath}}/event/{{event.shortName}}/calendar/">iCalendar</a></div>
+            <ul class="list-unstyled">
+                <li>
+                    <i class="fa fa-calendar"></i>
+                    {{#event.sameDay}}
+                        {{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}<br/>
+                </li>
+                <li>
+                    <i class="fa fa-clock-o"></i>
+                    {{#i18n}}event-days.single-day.hours
+                        [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
+                        [{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
+                    {{/i18n}}
+                    {{/event.sameDay}}
+                    {{^event.sameDay}}
+                        {{#i18n}}event-days.not-same-day
+                            [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+                            [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
+                        {{/i18n}}
+                        -
+                        {{#i18n}}event-days.not-same-day
+                            [{{#format-date}}{{event.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+                            [{{#format-date}}{{event.end}} HH:mm{{/format-date}}]
+                        {{/i18n}}
+                    {{/event.sameDay}}
+                    <i class="fa fa-info-circle text-info tooltip-handler" title="{{#i18n}}show-event.timezone.warn [{{event.timeZone}}]{{/i18n}}"></i>
+                </li>
+                <li>
+                    <i class="fa fa-calendar-plus-o"></i> <span>{{#i18n}}show-event.add-to-calendar{{/i18n}}</span> <a title="{{#i18n}}show-event.add-to-calendar{{/i18n}} google" href="{{request.contextPath}}/event/{{event.shortName}}/calendar/?type=google"><i class="fa fa-google-plus-square"></i></a> <a title="{{#i18n}}show-event.add-to-calendar{{/i18n}} iCalendar" href="{{request.contextPath}}/event/{{event.shortName}}/calendar/"><i class="fa fa-calendar-check-o"></i></a>
+                </li>
+                <li>
+                    <i class="fa fa-compass"></i> {{event.location}}
+                </li>
+            </ul>
         </div>
-        <div><i class="fa fa-compass"></i> {{event.location}}</div>
-        <div class="event-description">{{event.description}}</div>
     </div>
 	<div class="col-md-5">
 		<img src="{{locationDescriptor.mapUrl}}" class="img-responsive img-center">
 	</div>
 </div>
 
-<ol class="breadcrumb wMarginBottom wMarginTop">
-    <li><i class="fa fa-check-square-o"></i> {{#i18n}}breadcrumb.step1{{/i18n}}</li>
-    <li class="active">{{#i18n}}breadcrumb.step2{{/i18n}}</li>
-    <li class="active">{{#i18n}}breadcrumb.step3{{/i18n}}</li>
-</ol>
+<hr/>
+
+<div class="row">
+    <div class="col-xs-12 event-description">
+        {{event.description}}
+    </div>
+</div>
+
+<div class="wizard wMarginBottom wMarginTop center">
+    <a class="current"><span class="badge badge-inverse">1</span> {{#i18n}}breadcrumb.step1{{/i18n}}</a>
+    <a><span class="badge">2</span> {{#i18n}}breadcrumb.step2{{/i18n}}</a>
+    <a><span class="badge">3</span> {{#i18n}}breadcrumb.step3{{/i18n}}</a>
+</div>
 
 <h2>{{#i18n}}show-event.tickets{{/i18n}}</h2>
 

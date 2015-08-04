@@ -51,78 +51,84 @@
             {{/lockedAssignment}}
         </div>
     </div>
-    <!-- -->
-    <div class="form-group">
-        <label class="col-sm-3 control-label" for="job-title-{{uuid}}">{{#i18n}}reservation-page-complete.job-title{{/i18n}}</label>
-        <div class="col-sm-9">
-            <input type="text" name="jobTitle" value="{{jobTitle}}" id="job-title-{{uuid}}" class="form-control"  maxlength="255">
-        </div>
+    <!-- optional values -->
+    <div class="hidden toggle-collapse center wMarginBottom">
+        <span class="collapse-more"><a class="btn btn-primary btn-xs toggle-collapse"><i class="fa fa-arrow-circle-o-down"></i> {{#i18n}}show.optional.fields{{/i18n}}</a></span>
+        <span class="collapse-less collapse-toggle hidden"><a class="btn btn-primary btn-xs toggle-collapse"><i class="fa fa-arrow-circle-o-up"></i> {{#i18n}}hide.optional.fields{{/i18n}}</a></span>
     </div>
-    <div class="form-group">
-        <label class="col-sm-3 control-label" for="company-{{uuid}}">{{#i18n}}reservation-page-complete.company{{/i18n}}</label>
-        <div class="col-sm-9">
-            <input type="text" name="company" value="{{company}}" id="company-{{uuid}}" class="form-control"  maxlength="255">
+    <div {{^assigned}}class="collapsible"{{/assigned}}>
+        <div class="form-group">
+            <label class="col-sm-3 control-label" for="job-title-{{uuid}}">{{#i18n}}reservation-page-complete.job-title{{/i18n}}</label>
+            <div class="col-sm-9">
+                <input type="text" name="jobTitle" value="{{jobTitle}}" id="job-title-{{uuid}}" class="form-control"  maxlength="255">
+            </div>
         </div>
-    </div>
-    <div class="form-group">
-        <label class="col-sm-3 control-label" for="phone-number-{{uuid}}">{{#i18n}}reservation-page-complete.phone-number{{/i18n}}</label>
-        <div class="col-sm-9">
-            <input type="tel" name="phoneNumber" value="{{phoneNumber}}" id="phone-number-{{uuid}}" class="form-control"  maxlength="255">
+        <div class="form-group">
+            <label class="col-sm-3 control-label" for="company-{{uuid}}">{{#i18n}}reservation-page-complete.company{{/i18n}}</label>
+            <div class="col-sm-9">
+                <input type="text" name="company" value="{{company}}" id="company-{{uuid}}" class="form-control"  maxlength="255">
+            </div>
         </div>
-    </div>
-    <div class="form-group">
-        <label class="col-sm-3 control-label" for="address-{{uuid}}">{{#i18n}}reservation-page-complete.address{{/i18n}}</label>
-        <div class="col-sm-9">
-            <textarea name="address" id="address-{{uuid}}" class="form-control"  maxlength="450">{{address}}</textarea>
+        <div class="form-group">
+            <label class="col-sm-3 control-label" for="phone-number-{{uuid}}">{{#i18n}}reservation-page-complete.phone-number{{/i18n}}</label>
+            <div class="col-sm-9">
+                <input type="tel" name="phoneNumber" value="{{phoneNumber}}" id="phone-number-{{uuid}}" class="form-control"  maxlength="255">
+            </div>
         </div>
-    </div>
-    <div class="form-group">
-        <label class="col-sm-3 control-label" for="country-{{uuid}}">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
-        <div class="col-sm-9">
-            <select name="country" value="{{country}}" id="country-{{uuid}}" class="form-control">
-                <option value=""></option>
-                {{#countries}}
-                    <option value="{{left}}">{{right}}</option>
-                {{/countries}}
-            </select>
+        <div class="form-group">
+            <label class="col-sm-3 control-label" for="address-{{uuid}}">{{#i18n}}reservation-page-complete.address{{/i18n}}</label>
+            <div class="col-sm-9">
+                <textarea name="address" id="address-{{uuid}}" class="form-control"  maxlength="450">{{address}}</textarea>
+            </div>
         </div>
-    </div>
-    <div class="form-group">
-        <label class="col-sm-3 control-label" for="t-shirt-size-{{uuid}}">{{#i18n}}reservation-page-complete.t-shirt-size{{/i18n}}</label>
-        <div class="col-sm-9">
-            <select name="tShirtSize" value="{{tshirtSize}}" id="t-shirt-size-{{uuid}}" class="form-control">
-                <option value=""></option>
-                <optgroup label="{{#i18n}}reservation-page-complete.women{{/i18n}}">
-                    <option value="SMALL-F">Small</option>
-                    <option value="MEDIUM-F">Medium</option>
-                    <option value="LARGE-F">Large</option>
-                    <option value="X-LARGE-F">X-Large</option>
-                </optgroup>
-                <optgroup label="{{#i18n}}reservation-page-complete.men{{/i18n}}">
-                    <option value="SMALL">Small</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="LARGE">Large</option>
-                    <option value="X-LARGE">X-Large</option>
-                    <option value="2X-LARGE">2X-Large</option>
-                </optgroup>
-            </select>
+        <div class="form-group">
+            <label class="col-sm-3 control-label" for="country-{{uuid}}">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
+            <div class="col-sm-9">
+                <select name="country" value="{{country}}" id="country-{{uuid}}" class="form-control">
+                    <option value=""></option>
+                    {{#countries}}
+                        <option value="{{left}}">{{right}}</option>
+                    {{/countries}}
+                </select>
+            </div>
         </div>
-    </div>
-    <div class="form-group">
-        <label class="col-sm-3 control-label" for="notes-{{uuid}}">{{#i18n}}reservation-page-complete.notes{{/i18n}}</label>
-        <div class="col-sm-9">
-            <textarea name="notes" id="notes-{{uuid}}" class="form-control" maxlength="1024" placeholder="{{#i18n}}reservation-page-complete.notes.placeholder{{/i18n}}">{{notes}}</textarea>
+        <div class="form-group">
+            <label class="col-sm-3 control-label" for="t-shirt-size-{{uuid}}">{{#i18n}}reservation-page-complete.t-shirt-size{{/i18n}}</label>
+            <div class="col-sm-9">
+                <select name="tShirtSize" value="{{tshirtSize}}" id="t-shirt-size-{{uuid}}" class="form-control">
+                    <option value=""></option>
+                    <optgroup label="{{#i18n}}reservation-page-complete.women{{/i18n}}">
+                        <option value="SMALL-F">Small</option>
+                        <option value="MEDIUM-F">Medium</option>
+                        <option value="LARGE-F">Large</option>
+                        <option value="X-LARGE-F">X-Large</option>
+                    </optgroup>
+                    <optgroup label="{{#i18n}}reservation-page-complete.men{{/i18n}}">
+                        <option value="SMALL">Small</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LARGE">Large</option>
+                        <option value="X-LARGE">X-Large</option>
+                        <option value="2X-LARGE">2X-Large</option>
+                    </optgroup>
+                </select>
+            </div>
         </div>
-    </div>
-    <div class="form-group">
-        <label class="col-sm-3 control-label" for="language-{{uuid}}">{{#i18n}}reservation-page-complete.language{{/i18n}}</label>
-        <div class="col-sm-9">
-            <select name="userLanguage" value="{{userLanguage}}" id="language-{{uuid}}" class="form-control">
-                <option value=""></option>
-                {{#availableLanguages}}
-                    <option value="{{language}}">{{displayLanguage}}</option>
-                {{/availableLanguages}}
-            </select>
+        <div class="form-group">
+            <label class="col-sm-3 control-label" for="notes-{{uuid}}">{{#i18n}}reservation-page-complete.notes{{/i18n}}</label>
+            <div class="col-sm-9">
+                <textarea name="notes" id="notes-{{uuid}}" class="form-control" maxlength="1024" placeholder="{{#i18n}}reservation-page-complete.notes.placeholder{{/i18n}}">{{notes}}</textarea>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-3 control-label" for="language-{{uuid}}">{{#i18n}}reservation-page-complete.language{{/i18n}}</label>
+            <div class="col-sm-9">
+                <select name="userLanguage" value="{{userLanguage}}" id="language-{{uuid}}" class="form-control">
+                    <option value=""></option>
+                    {{#availableLanguages}}
+                        <option value="{{language}}">{{displayLanguage}}</option>
+                    {{/availableLanguages}}
+                </select>
+            </div>
         </div>
     </div>
     <div class="text-center hide alert alert-danger" id="error-{{uuid}}"><i class="fa fa-exclamation"></i> {{#i18n}}error.generic{{/i18n}}</div>

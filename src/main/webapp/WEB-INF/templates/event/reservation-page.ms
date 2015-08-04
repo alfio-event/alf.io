@@ -27,17 +27,18 @@
  	data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
 {{/includeStripe}}
  ></script>
-<div class="center">
-		{{>/event/output-event-image-tag}}
+{{>/event/header}}
+
+<div class="wizard wMarginBottom wMarginTop center">
+    <a><span class="badge">1</span> {{#i18n}}breadcrumb.step1{{/i18n}}</a>
+    <a class="current"><span class="badge badge-inverse">2</span> {{#i18n}}breadcrumb.step2{{/i18n}}</a>
+    <a><span class="badge">3</span> {{#i18n}}breadcrumb.step3{{/i18n}}</a>
 </div>
-<ol class="breadcrumb wMarginBottom wMarginTop">
-    <li class="active">{{#i18n}}breadcrumb.step1{{/i18n}}</li>
-    <li><i class="fa fa-credit-card"></i> {{#i18n}}breadcrumb.step2{{/i18n}}</li>
-    <li class="active">{{#i18n}}breadcrumb.step3{{/i18n}}</li>
-</ol>
+
 <div class="page-header">
-	<h2>{{#i18n}}reservation-page.title{{/i18n}} {{event.displayName}}</h2>
+	<h2>{{#i18n}}reservation-page.title{{/i18n}}</h2>
 </div>
+
 <table class="table">
 	<thead>
 		<tr>

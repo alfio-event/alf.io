@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{#i18n}}locale{{/i18n}}" prefix="og: http://ogp.me/ns#">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,6 +8,16 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="{{request.contextPath}}/resources/css/application.css">
     <title>{{#i18n}}{{pageTitle}}[{{event.displayName}}]{{/i18n}}</title>
+    <meta property="og:type" content="website" />
+{{#event.imageIsPresent}}
+    {{#event.fileBlobIdIsPresent}}
+    <meta property="og:image" content="{{request.contextPath}}/file/{{event.fileBlobId}}" />
+    {{/event.fileBlobIdIsPresent}}
+    {{^event.fileBlobIdIsPresent}}
+    <meta property="og:image" content="{{event.imageUrl}}" />
+    {{/event.fileBlobIdIsPresent}}
+{{/event.imageIsPresent}}
+    <meta property="og:description" content="{{#i18n}}{{pageTitle}}[{{event.displayName}}]{{/i18n}}" />
 </head>
 <body>
 
