@@ -20,6 +20,7 @@ import alfio.model.Event;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import java.time.ZoneId;
@@ -111,6 +112,10 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
 
     public boolean isExpired() {
         return ZonedDateTime.now(event.getZoneId()).truncatedTo(ChronoUnit.DAYS).isAfter(event.getEnd().truncatedTo(ChronoUnit.DAYS));
+    }
+
+    public String getShortDescription() {
+        return StringUtils.abbreviate(getDescription(), 30);
     }
 
     @Override
