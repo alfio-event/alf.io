@@ -104,6 +104,11 @@ span.user-detail {
     cursor: pointer;
 }
 
+pre.white {
+    background-color: transparent;
+    border: none;
+}
+
 /* for phone :D */
 @media screen and (max-width: 767px) {
 
