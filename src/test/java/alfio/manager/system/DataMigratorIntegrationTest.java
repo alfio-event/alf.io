@@ -19,8 +19,11 @@ package alfio.manager.system;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.SpecialPrice;
@@ -29,11 +32,15 @@ import alfio.model.TicketReservation;
 import alfio.model.modification.*;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.EventMigration;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.LocaleUtil;
+import alfio.util.TemplateManager;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.BeforeClass;
@@ -42,9 +49,11 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.WebIntegrationTest;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -79,6 +88,10 @@ public class DataMigratorIntegrationTest {
     private EventMigrationRepository eventMigrationRepository;
     @Autowired
     private TicketReservationManager ticketReservationManager;
+    @Autowired
+    private TicketCategoryRepository ticketCategoryRepository;
+    @Autowired
+    private TemplateManager templateManager;
     @Value("${alfio.version}")
     private String currentVersion;
     @Value("${alfio.build-ts}")
@@ -228,5 +241,37 @@ public class DataMigratorIntegrationTest {
         dataMigrator.fillReservationsLanguage();
         TicketReservation ticketReservation = ticketReservationManager.findById(reservationId).get();
         assertEquals("en", ticketReservation.getUserLanguage());
+    }
+
+    @Test
+    public void testUpdateGender() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        "desc", BigDecimal.TEN, false, "", false));
+        Event event = initEvent(categories).getKey();
+        TicketReservationModification trm = new TicketReservationModification();
+        trm.setAmount(2);
+        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
+        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.<SpecialPrice>empty());
+        Date expiration = DateUtils.addDays(new Date(), 1);
+        String reservationId = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(r), expiration, Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
+        ticketReservationManager.confirm("TOKEN", event, reservationId, "email@email.ch", "full name", Locale.ENGLISH, null, new TicketReservationManager.TotalPrice(1000, 10, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.ON_SITE));
+        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
+        UpdateTicketOwnerForm first = new UpdateTicketOwnerForm();
+        first.setEmail("email@email.ch");
+        first.setTShirtSize("SMALL");
+        first.setGender("F");
+        first.setFullName("Full Name");
+        UpdateTicketOwnerForm second = new UpdateTicketOwnerForm();
+        second.setTShirtSize("SMALL-F");
+        second.setEmail("email@email.ch");
+        second.setFullName("Full Name");
+        PartialTicketPDFGenerator generator = TemplateProcessor.buildPartialPDFTicket(Locale.ITALIAN, event, ticketReservationManager.findById(reservationId).get(), ticketCategoryRepository.getById(tickets.get(0).getCategoryId(), event.getId()), organizationRepository.getById(event.getOrganizationId()), templateManager);
+        ticketReservationManager.updateTicketOwner(tickets.get(0), Locale.ITALIAN, event, first, (t) -> "", (t) -> "", generator::generate, Optional.<UserDetails>empty());
+        ticketReservationManager.updateTicketOwner(tickets.get(1), Locale.ITALIAN, event, second, (t) -> "", (t) -> "", generator::generate, Optional.<UserDetails>empty());
+        dataMigrator.fillTicketsGender();
+        ticketRepository.findTicketsInReservation(reservationId).forEach(t -> assertEquals("F", t.getGender()));
     }
 }

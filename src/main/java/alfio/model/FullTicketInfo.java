@@ -54,6 +54,7 @@ public class FullTicketInfo {
                           @Column("t_address") String address,
                           @Column("t_country") String country,
                           @Column("t_tshirt_size") String tshirtSize,
+                          @Column("t_gender") String gender,
                           @Column("t_notes") String notes,
                           @Column("t_user_language") String userLanguage,
                           //
@@ -87,7 +88,7 @@ public class FullTicketInfo {
 
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, originalPriceInCents, paidPriceInCents,
                 ticketsReservationId, fullName, email, lockedAssignment, jobTitle, company, phoneNumber, address, country,
-                tshirtSize, notes, userLanguage);
+                tshirtSize, gender, notes, userLanguage);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trEmail, trBillingAddress,
                 trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName, tcDescription,

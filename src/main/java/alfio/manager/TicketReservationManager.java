@@ -714,12 +714,14 @@ public class TicketReservationManager {
 		ticketRepository.updateTicketOwner(ticket.getUuid(), newEmail, newFullName);
 		//
         Locale userLocale = Optional.ofNullable(StringUtils.trimToNull(updateTicketOwner.getUserLanguage())).map(Locale::forLanguageTag).orElse(locale);
-        ticketRepository.updateOptionalTicketInfo(ticket.getUuid(), updateTicketOwner.getJobTitle(),
+
+		ticketRepository.updateOptionalTicketInfo(ticket.getUuid(), updateTicketOwner.getJobTitle(),
 				updateTicketOwner.getCompany(),
 				updateTicketOwner.getPhoneNumber(),
 				updateTicketOwner.getAddress(),
 				updateTicketOwner.getCountry(),
-				updateTicketOwner.getTShirtSize(),
+                updateTicketOwner.getTShirtSize(),
+                updateTicketOwner.getGender(),
 				updateTicketOwner.getNotes(),
                 userLocale.getLanguage());
 

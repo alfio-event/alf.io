@@ -93,23 +93,26 @@
             </div>
         </div>
         <div class="form-group">
+            <label class="col-sm-3 control-label" for="gender-{{uuid}}">{{#i18n}}reservation-page-complete.i-am{{/i18n}}</label>
+            <div class="col-sm-9">
+                <select name="gender" value="{{gender}}" class="form-control">
+                    <option value=""></option>
+                    <option value="F">{{#i18n}}reservation-page-complete.women{{/i18n}}</option>
+                    <option value="M">{{#i18n}}reservation-page-complete.men{{/i18n}}</option>
+                    <option value="X">{{#i18n}}reservation-page-complete.other{{/i18n}}</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
             <label class="col-sm-3 control-label" for="t-shirt-size-{{uuid}}">{{#i18n}}reservation-page-complete.t-shirt-size{{/i18n}}</label>
             <div class="col-sm-9">
                 <select name="tShirtSize" value="{{tshirtSize}}" id="t-shirt-size-{{uuid}}" class="form-control">
                     <option value=""></option>
-                    <optgroup label="{{#i18n}}reservation-page-complete.women{{/i18n}}">
-                        <option value="SMALL-F">Small</option>
-                        <option value="MEDIUM-F">Medium</option>
-                        <option value="LARGE-F">Large</option>
-                        <option value="X-LARGE-F">X-Large</option>
-                    </optgroup>
-                    <optgroup label="{{#i18n}}reservation-page-complete.men{{/i18n}}">
-                        <option value="SMALL">Small</option>
-                        <option value="MEDIUM">Medium</option>
-                        <option value="LARGE">Large</option>
-                        <option value="X-LARGE">X-Large</option>
-                        <option value="2X-LARGE">2X-Large</option>
-                    </optgroup>
+                    <option value="SMALL">Small</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LARGE">Large</option>
+                    <option value="X-LARGE">X-Large</option>
+                    <option value="2X-LARGE">2X-Large</option>
                 </select>
             </div>
         </div>

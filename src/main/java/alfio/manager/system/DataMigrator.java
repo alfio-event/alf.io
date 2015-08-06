@@ -17,6 +17,7 @@
 package alfio.manager.system;
 
 import alfio.model.Event;
+import alfio.model.Ticket;
 import alfio.model.system.EventMigration;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
@@ -29,7 +30,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -39,8 +39,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,6 +85,7 @@ public class DataMigrator {
                 .filter(e -> ZonedDateTime.now(e.getZoneId()).isBefore(e.getEnd()))
                 .forEach(this::migrateEventToCurrentVersion);
         fillReservationsLanguage();
+        fillTicketsGender();
     }
 
     void migrateEventToCurrentVersion(Event event) {
@@ -118,6 +119,16 @@ public class DataMigrator {
                     });
             return null;
         });
+    }
+
+    void fillTicketsGender() {
+        List<String> ticketIds = jdbc.queryForList("select uuid from ticket where status not in ('FREE','PENDING', 'PRE_RESERVED') and gender is null and tshirt_size is not null", new EmptySqlParameterSource(), String.class);
+        ticketIds.forEach(uuid -> transactionTemplate.execute(status -> {
+            Ticket ticket = ticketRepository.findByUUID(uuid);
+            String gender = ticket.getTshirtSize().endsWith("-F") ? "F" : "M";
+            jdbc.update("update ticket set gender = :gender where uuid = :uuid", new MapSqlParameterSource("uuid", uuid).addValue("gender", gender));
+            return null;
+        }));
     }
 
     private void fillDescriptions(Event event) {

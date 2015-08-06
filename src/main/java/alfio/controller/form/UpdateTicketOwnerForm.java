@@ -28,6 +28,7 @@ public class UpdateTicketOwnerForm {
 	private String address;
 	private String country;
 	private String tShirtSize;
+	private String gender;
 	private String userLanguage;
 	private String notes;
 }

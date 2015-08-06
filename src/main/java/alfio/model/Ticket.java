@@ -61,6 +61,7 @@ public class Ticket {
     private final String address;
     private final String country;
     private final String tshirtSize;
+    private final String gender;
     private final String notes;
     private final String userLanguage;
     
@@ -83,6 +84,7 @@ public class Ticket {
                   @Column("address") String address,
                   @Column("country") String country,
                   @Column("tshirt_size") String tshirtSize,
+                  @Column("gender") String gender,
                   @Column("notes") String notes,
                   @Column("user_language") String userLanguage) {
         this.id = id;
@@ -106,6 +108,7 @@ public class Ticket {
         this.address = address;
         this.country = country;
         this.tshirtSize = tshirtSize;
+        this.gender = gender;
     }
     
     public boolean getAssigned() {

@@ -22,7 +22,6 @@ import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import lombok.experimental.UtilityClass;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
