@@ -27,6 +27,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.SpecialPrice;
+import alfio.model.TicketCategory;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
@@ -197,7 +198,8 @@ public class EventController {
         final EventDescriptor eventDescriptor = new EventDescriptor(event);
 		model.addAttribute("event", eventDescriptor)//
 			.addAttribute("organizer", organizationRepository.getById(event.getOrganizationId()))
-			.addAttribute("ticketCategories", ticketCategories)//
+			.addAttribute("ticketCategories", ticketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList()))//
+			.addAttribute("expiredCategories", ticketCategories.stream().filter(SaleableTicketCategory::getExpired).collect(Collectors.toList()))//
 			.addAttribute("hasAccessPromotions", hasAccessPromotions)
 			.addAttribute("promoCode", specialCode.map(SpecialPrice::getCode).orElse(null))
 			.addAttribute("locationDescriptor", ld)
