@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.plugin.PluginManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.EventWithStatistics;
@@ -31,6 +32,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.PreReservedTicketDistributor;
 import alfio.util.TemplateManager;
 import alfio.util.WorkingDaysAdjusters;
+import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -62,6 +64,7 @@ public class WaitingQueueManager {
     private final TemplateManager templateManager;
     private final MessageSource messageSource;
     private final OrganizationRepository organizationRepository;
+    private final PluginManager pluginManager;
 
     @Autowired
     public WaitingQueueManager(WaitingQueueRepository waitingQueueRepository,
@@ -73,7 +76,8 @@ public class WaitingQueueManager {
                                NotificationManager notificationManager,
                                TemplateManager templateManager,
                                MessageSource messageSource,
-                               OrganizationRepository organizationRepository) {
+                               OrganizationRepository organizationRepository,
+                               PluginManager pluginManager) {
         this.waitingQueueRepository = waitingQueueRepository;
         this.ticketRepository = ticketRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -84,14 +88,16 @@ public class WaitingQueueManager {
         this.templateManager = templateManager;
         this.messageSource = messageSource;
         this.organizationRepository = organizationRepository;
+        this.pluginManager = pluginManager;
     }
 
     public boolean subscribe(Event event, String fullName, String email, Locale userLanguage) {
         try {
             WaitingQueueSubscription.Type subscriptionType = getSubscriptionType(event);
             validateSubscriptionType(event, subscriptionType);
-            waitingQueueRepository.insert(event.getId(), fullName, email, ZonedDateTime.now(event.getZoneId()), userLanguage.getLanguage(), subscriptionType);
+            AffectedRowCountAndKey<Integer> key = waitingQueueRepository.insert(event.getId(), fullName, email, ZonedDateTime.now(event.getZoneId()), userLanguage.getLanguage(), subscriptionType);
             notifySubscription(event, fullName, email, userLanguage, subscriptionType);
+            pluginManager.handleWaitingQueueSubscription(waitingQueueRepository.loadById(key.getKey()));
             return true;
         } catch(DuplicateKeyException e) {
             return true;//why are you subscribing twice?

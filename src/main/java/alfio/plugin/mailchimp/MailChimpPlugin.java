@@ -18,12 +18,14 @@ package alfio.plugin.mailchimp;
 
 import alfio.model.Ticket;
 import alfio.model.TicketReservation;
+import alfio.model.WaitingQueueSubscription;
 import alfio.model.plugin.PluginConfigOption;
 import alfio.model.system.ComponentType;
 import alfio.plugin.PluginDataStorageProvider;
 import alfio.plugin.PluginDataStorageProvider.PluginDataStorage;
 import alfio.plugin.ReservationConfirmationPlugin;
 import alfio.plugin.TicketAssignmentPlugin;
+import alfio.plugin.WaitingQueueSubscriptionPlugin;
 import com.squareup.okhttp.*;
 
 import java.io.IOException;
@@ -31,7 +33,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 
-public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAssignmentPlugin {
+public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAssignmentPlugin, WaitingQueueSubscriptionPlugin {
 
     private static final String DATA_CENTER = "dataCenter";
     private static final String API_KEY = "apiKey";
@@ -50,27 +52,17 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
 
     @Override
     public void onTicketAssignment(Ticket ticket) {
-        int eventId = ticket.getEventId();
-        String email = ticket.getEmail();
-        String name = ticket.getFullName();
-        String language = ticket.getUserLanguage();
-        Optional<String> listAddress = getListAddress(eventId, email, name, language);
-        Optional<String> apiKey = getApiKey(eventId, email, name, language);
-        if(listAddress.isPresent() && apiKey.isPresent()) {
-            send(eventId, listAddress.get(), apiKey.get(), email, name, language);
-        }
+        subscribeUser(ticket.getEmail(), ticket.getFullName(), ticket.getUserLanguage(), ticket.getEventId());
     }
 
     @Override
     public void onReservationConfirmation(TicketReservation ticketReservation, int eventId) {
-        String email = ticketReservation.getEmail();
-        String name = ticketReservation.getFullName();
-        String language = ticketReservation.getUserLanguage();
-        Optional<String> listAddress = getListAddress(eventId, email, name, language);
-        Optional<String> apiKey = getApiKey(eventId, email, name, language);
-        if(listAddress.isPresent() && apiKey.isPresent()) {
-            send(eventId, listAddress.get(), apiKey.get(), email, name, language);
-        }
+        subscribeUser(ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getUserLanguage(), eventId);
+    }
+
+    @Override
+    public void onWaitingQueueSubscription(WaitingQueueSubscription waitingQueueSubscription) {
+        subscribeUser(waitingQueueSubscription.getEmailAddress(), waitingQueueSubscription.getFullName(), waitingQueueSubscription.getUserLanguage(), waitingQueueSubscription.getEventId());
     }
 
     @Override
@@ -119,6 +111,14 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
         return apiKey;
     }
 
+    private void subscribeUser(String email, String name, String language, int eventId) {
+        Optional<String> listAddress = getListAddress(eventId, email, name, language);
+        Optional<String> apiKey = getApiKey(eventId, email, name, language);
+        if(listAddress.isPresent() && apiKey.isPresent()) {
+            send(eventId, listAddress.get(), apiKey.get(), email, name, language);
+        }
+    }
+
     private boolean send(int eventId, String address, String apiKey, String email, String name, String language) {
         Request request = new Request.Builder()
                 .url(address)
@@ -142,6 +142,5 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
             return false;
         }
     }
-
 
 }

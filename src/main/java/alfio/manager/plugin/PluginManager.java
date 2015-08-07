@@ -18,12 +18,14 @@ package alfio.manager.plugin;
 
 import alfio.model.Ticket;
 import alfio.model.TicketReservation;
+import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.PluginConfigOptionModification;
 import alfio.model.plugin.PluginConfigOption;
 import alfio.model.system.ComponentType;
 import alfio.plugin.Plugin;
 import alfio.plugin.ReservationConfirmationPlugin;
 import alfio.plugin.TicketAssignmentPlugin;
+import alfio.plugin.WaitingQueueSubscriptionPlugin;
 import alfio.repository.plugin.PluginConfigurationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
@@ -55,6 +57,10 @@ public class PluginManager implements ApplicationListener<ContextRefreshedEvent>
 
     public void handleTicketAssignment(Ticket ticket) {
         executor.submit(() -> filterPlugins(plugins, TicketAssignmentPlugin.class).forEach(p -> p.onTicketAssignment(ticket)));
+    }
+
+    public void handleWaitingQueueSubscription(WaitingQueueSubscription waitingQueueSubscription) {
+        executor.submit(() -> filterPlugins(plugins, WaitingQueueSubscriptionPlugin.class).forEach(p -> p.onWaitingQueueSubscription(waitingQueueSubscription)));
     }
 
     public List<PluginConfigOption> loadAllConfigOptions() {
