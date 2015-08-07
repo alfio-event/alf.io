@@ -208,7 +208,7 @@ public class EventController {
 			.addAttribute("promoCodeDiscount", promoCodeDiscount.orElse(null))
             .addAttribute("displayWaitingQueueForm", EventUtil.displayWaitingQueueForm(event, ticketCategories, configurationManager))
             .addAttribute("preSales", EventUtil.isPreSales(event, ticketCategories))
-            .addAttribute("userLanguage", locale)
+            .addAttribute("userLanguage", locale.getLanguage())
 			.addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable));
 		model.asMap().putIfAbsent("hasErrors", false);//
 		return "/event/show-event";

@@ -86,21 +86,24 @@
 			<hr/>
 			<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/waiting-queue/subscribe" role="form">
                 <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
-				<label>{{#i18n}}common.full-name{{/i18n}} <input type="text" class="form-control" name="fullName" required="required" aria-required="true"></label>
-				<label>{{#i18n}}common.email{{/i18n}} <input type="email" class="form-control" name="email"  required="required" aria-required="true"></label>
-				<label>{{#i18n}}reservation-page-complete.language{{/i18n}}
-					<select name="userLanguage" value="{{userLanguage}}" id="waiting-queue-language" class="form-control" required="required" aria-required="true">
-		                <option value=""></option>
-						{{#availableLanguages}}
-		                    <option value="{{language}}">{{displayLanguage}}</option>
-						{{/availableLanguages}}
-	                </select>
-				</label>
-                <label>
-                    <input type="checkbox" name="termAndConditionsAccepted" required="required" aria-required="true">
-					{{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termsAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
-                </label>
-				<button type="submit" id="waiting-queue-subscribe" class="btn btn-success">{{#i18n}}show-event.sold-out.subscribe{{/i18n}}</button>
+				<label for="fullName">{{#i18n}}common.full-name{{/i18n}} </label><input type="text" id="fullName" class="form-control" name="fullName" required="required" aria-required="true">
+				<label for="email">{{#i18n}}common.email{{/i18n}}</label><input type="email" id="email" class="form-control" name="email"  required="required" aria-required="true">
+				<label for="userLanguage">{{#i18n}}reservation-page-complete.language{{/i18n}}</label>
+				<select name="userLanguage" id="userLanguage" value="{{userLanguage}}" id="waiting-queue-language" class="form-control" required="required" aria-required="true">
+					<option value=""></option>
+					{{#availableLanguages}}
+						<option value="{{language}}">{{displayLanguage}}</option>
+					{{/availableLanguages}}
+				</select>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" required name="termAndConditionsAccepted" aria-required="true">
+						{{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termsAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
+                    </label>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 col-md-push-8 col-xs-12"><button type="submit" id="waiting-queue-subscribe" class="btn btn-success btn-block">{{#i18n}}show-event.sold-out.subscribe{{/i18n}}</button></div>
+                </div>
                 <div class="alert alert-danger wMarginTop wMarginBottom hide" id="generic-error">{{#i18n}}reservation-page-complete.please-check-input-fields{{/i18n}}</div>
 			</form>
             <div class="text-center loading hide" id="loading"><i class="fa fa-cog fa-2x fa-spin"></i></div>
