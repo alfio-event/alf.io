@@ -84,7 +84,7 @@
 				<h4>{{#i18n}}show-event.sold-out.message{{/i18n}}</h4>
 			{{/preSales}}
 			<hr/>
-			<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/waiting-queue/subscribe" class="form-horizontal">
+			<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/waiting-queue/subscribe" role="form">
                 <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 				<label>{{#i18n}}common.full-name{{/i18n}} <input type="text" class="form-control" name="fullName" required="required" aria-required="true"></label>
 				<label>{{#i18n}}common.email{{/i18n}} <input type="email" class="form-control" name="email"  required="required" aria-required="true"></label>
@@ -183,6 +183,7 @@
 	<div class="clearfix"></div>
 </form>
 <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="{{request.contextPath}}/resources/js/event/jquery.shorten.js"></script>
 <script src="{{request.contextPath}}/resources/js/event/show-event.js"></script>
 {{#displayWaitingQueueForm}}
 <script src="{{request.contextPath}}/resources/js/event/waiting-queue.js"></script>

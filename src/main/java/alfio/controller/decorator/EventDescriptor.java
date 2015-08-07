@@ -18,6 +18,7 @@ package alfio.controller.decorator;
 
 import alfio.model.Event;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.StringUtils;
 
 public class EventDescriptor {
 
@@ -30,5 +31,9 @@ public class EventDescriptor {
 
     public boolean getVatIncluded() {
         return event.isVatIncluded();
+    }
+
+    public String getShortDescription() {
+        return StringUtils.abbreviate(getDescription(), 100);
     }
 }

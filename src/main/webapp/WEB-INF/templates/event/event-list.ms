@@ -13,7 +13,7 @@
             <div class="col-xs-12 col-sm-5 col-md-8">
 		      <a href="{{request.contextPath}}/event/{{shortName}}/" class="no-decoration">
                   <h2>{{displayName}}</h2>
-                  <h6>{{description}}</h6>
+                  <h6>{{shortDescription}}</h6>
                   <div>
                       {{#sameDay}}
                           {{#i18n}}event-days.same-day
@@ -41,6 +41,5 @@
 	</li>
 {{/events}}
 </ul>
-	
 
 {{>/event/page-bottom}}
