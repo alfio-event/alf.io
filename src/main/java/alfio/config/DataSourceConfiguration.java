@@ -157,13 +157,17 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 	}
 
 	@Bean
-	public MailChimpPlugin getMailChimpPlugin(PluginConfigurationRepository pluginConfigurationRepository, PluginLogRepository pluginLogRepository) {
-		return new MailChimpPlugin(pluginDataStorageProvider(pluginConfigurationRepository, pluginLogRepository));
+	public MailChimpPlugin getMailChimpPlugin(PluginConfigurationRepository pluginConfigurationRepository,
+                                              PluginLogRepository pluginLogRepository,
+                                              PlatformTransactionManager platformTransactionManager) {
+		return new MailChimpPlugin(pluginDataStorageProvider(pluginConfigurationRepository, pluginLogRepository, platformTransactionManager));
 	}
 
 	@Bean
-	public PluginDataStorageProvider pluginDataStorageProvider(PluginConfigurationRepository pluginConfigurationRepository, PluginLogRepository pluginLogRepository) {
-		return new PluginDataStorageProvider(pluginConfigurationRepository, pluginLogRepository);
+	public PluginDataStorageProvider pluginDataStorageProvider(PluginConfigurationRepository pluginConfigurationRepository,
+															   PluginLogRepository pluginLogRepository,
+                                                               PlatformTransactionManager platformTransactionManager) {
+		return new PluginDataStorageProvider(pluginConfigurationRepository, pluginLogRepository, platformTransactionManager);
 	}
 
 	@Override

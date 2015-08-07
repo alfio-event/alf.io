@@ -21,6 +21,8 @@ import alfio.model.plugin.PluginLog;
 import alfio.model.system.ComponentType;
 import alfio.repository.plugin.PluginConfigurationRepository;
 import alfio.repository.plugin.PluginLogRepository;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
 import java.time.ZonedDateTime;
@@ -30,15 +32,18 @@ public class PluginDataStorageProvider {
 
     private final PluginConfigurationRepository pluginConfigurationRepository;
     private final PluginLogRepository pluginLogRepository;
+    private final PlatformTransactionManager platformTransactionManager;
 
     public PluginDataStorageProvider(PluginConfigurationRepository pluginConfigurationRepository,
-                                     PluginLogRepository pluginLogRepository) {
+                                     PluginLogRepository pluginLogRepository,
+                                     PlatformTransactionManager platformTransactionManager) {
         this.pluginConfigurationRepository = pluginConfigurationRepository;
         this.pluginLogRepository = pluginLogRepository;
+        this.platformTransactionManager = platformTransactionManager;
     }
 
     public PluginDataStorage getDataStorage(String pluginId) {
-        return new PluginDataStorage(pluginId, pluginConfigurationRepository, pluginLogRepository);
+        return new PluginDataStorage(pluginId, pluginConfigurationRepository, pluginLogRepository, new TransactionTemplate(platformTransactionManager));
     }
 
 
@@ -46,13 +51,15 @@ public class PluginDataStorageProvider {
         private final String pluginId;
         private final PluginConfigurationRepository pluginConfigurationRepository;
         private final PluginLogRepository pluginLogRepository;
+        private final TransactionTemplate tx;
 
         private PluginDataStorage(String pluginId,
                                   PluginConfigurationRepository pluginConfigurationRepository,
-                                  PluginLogRepository pluginLogRepository) {
+                                  PluginLogRepository pluginLogRepository, TransactionTemplate tx) {
             this.pluginId = pluginId;
             this.pluginConfigurationRepository = pluginConfigurationRepository;
             this.pluginLogRepository = pluginLogRepository;
+            this.tx = tx;
         }
 
         public Optional<String> getConfigValue(String name) {
@@ -64,11 +71,17 @@ public class PluginDataStorageProvider {
         }
 
         public void registerSuccess(String description, int eventId) {
-            pluginLogRepository.insertEvent(pluginId, eventId, description, PluginLog.Type.SUCCESS, ZonedDateTime.now(Clock.systemUTC()));
+            tx.execute(tc -> {
+                pluginLogRepository.insertEvent(pluginId, eventId, description, PluginLog.Type.SUCCESS, ZonedDateTime.now(Clock.systemUTC()));
+                return null;
+            });
         }
 
         public void registerFailure(String description, int eventId) {
-            pluginLogRepository.insertEvent(pluginId, eventId, description, PluginLog.Type.ERROR, ZonedDateTime.now(Clock.systemUTC()));
+            tx.execute(tc -> {
+                pluginLogRepository.insertEvent(pluginId, eventId, description, PluginLog.Type.ERROR, ZonedDateTime.now(Clock.systemUTC()));
+                return null;
+            });
         }
 
     }
