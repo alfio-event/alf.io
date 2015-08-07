@@ -50,7 +50,7 @@
 
 <div class="row wMarginBottom">
     <div class="col-xs-12 event-description">
-        {{event.description}}
+		<div class="preformatted">{{event.description}}</div>
     </div>
 </div>
 
@@ -183,9 +183,7 @@
 	<div class="clearfix"></div>
 </form>
 <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
-{{#hasAccessPromotions}}
 <script src="{{request.contextPath}}/resources/js/event/show-event.js"></script>
-{{/hasAccessPromotions}}
 {{#displayWaitingQueueForm}}
 <script src="{{request.contextPath}}/resources/js/event/waiting-queue.js"></script>
 {{/displayWaitingQueueForm}}
