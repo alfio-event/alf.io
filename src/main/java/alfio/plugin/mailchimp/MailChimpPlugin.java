@@ -26,12 +26,13 @@ import alfio.plugin.PluginDataStorageProvider.PluginDataStorage;
 import alfio.plugin.ReservationConfirmationPlugin;
 import alfio.plugin.TicketAssignmentPlugin;
 import alfio.plugin.WaitingQueueSubscriptionPlugin;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.squareup.okhttp.*;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Optional;
+import java.lang.reflect.Type;
+import java.util.*;
 
 public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAssignmentPlugin, WaitingQueueSubscriptionPlugin {
 
@@ -39,11 +40,11 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
     private static final String API_KEY = "apiKey";
     private static final String LIST_ID = "listId";
     private static final String LIST_ADDRESS = "https://%s.api.mailchimp.com/3.0/lists/%s/members/";
-    private static final String REQUEST_TEMPLATE = "{ \"email_address\": \"%s\", \"status\": \"subscribed\", \"merge_fields\": { \"FNAME\": \"%s\" }, \"language\": \"%s\"}";
     public static final String FAILURE_MSG = "cannot add user {email: %s, name:%s, language: %s} to the list (%s)";
     private final String id = "alfio.mailchimp";
     private final PluginDataStorage pluginDataStorage;
     private final OkHttpClient httpClient = new OkHttpClient();
+    private final Gson gson = new GsonBuilder().create();
 
     public MailChimpPlugin(PluginDataStorageProvider pluginDataStorageProvider) {
         this.pluginDataStorage = pluginDataStorageProvider.getDataStorage(id);
@@ -120,10 +121,15 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
     }
 
     private boolean send(int eventId, String address, String apiKey, String email, String name, String language) {
+        Map<String, Object> content = new HashMap<>();
+        content.put("email_address", email);
+        content.put("status", "subscribed");
+        content.put("merge_fields", Collections.singletonMap("FNAME", name));
+        content.put("language", language);
         Request request = new Request.Builder()
                 .url(address)
                 .header("Authorization", Credentials.basic("api", apiKey))
-                .post(RequestBody.create(MediaType.parse("application/json"), String.format(REQUEST_TEMPLATE, email, name, language)))
+                .post(RequestBody.create(MediaType.parse("application/json"), gson.toJson(content, Map.class)))
                 .build();
         try {
             Response response = httpClient.newCall(request).execute();
