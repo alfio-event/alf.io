@@ -28,25 +28,25 @@ import java.util.Optional;
 @Getter
 public class TicketReservation {
 
-	public enum TicketReservationStatus {
-		PENDING, IN_PAYMENT, OFFLINE_PAYMENT, COMPLETE, STUCK
-	}
+    public enum TicketReservationStatus {
+        PENDING, IN_PAYMENT, OFFLINE_PAYMENT, COMPLETE, STUCK
+    }
 
-	private final String id;
-	private final Date validity;
-	private final TicketReservationStatus status;
-	private final String fullName;
-	private final String email;
-	private final String billingAddress;
+    private final String id;
+    private final Date validity;
+    private final TicketReservationStatus status;
+    private final String fullName;
+    private final String email;
+    private final String billingAddress;
     private final ZonedDateTime confirmationTimestamp;
     private final ZonedDateTime latestReminder;
-	private final PaymentProxy paymentMethod;
-	private final Boolean reminderSent;
-	private final Integer promoCodeDiscountId;
-	private final boolean automatic;
-	private final String userLanguage;
+    private final PaymentProxy paymentMethod;
+    private final Boolean reminderSent;
+    private final Integer promoCodeDiscountId;
+    private final boolean automatic;
+    private final String userLanguage;
 
-	public TicketReservation(@Column("id") String id,
+    public TicketReservation(@Column("id") String id,
                              @Column("validity") Date validity,
                              @Column("status") TicketReservationStatus status,
                              @Column("full_name") String fullName,
@@ -57,30 +57,30 @@ public class TicketReservation {
                              @Column("payment_method") PaymentProxy paymentMethod,
                              @Column("offline_payment_reminder_sent") Boolean reminderSent,
                              @Column("promo_code_id_fk") Integer promoCodeDiscountId,
-							 @Column("automatic") boolean automatic,
-							 @Column("user_language") String userLanguage) {
-		this.id = id;
-		this.validity = validity;
-		this.status = status;
-		this.fullName = fullName;
-		this.email = email;
-		this.billingAddress = billingAddress;
+                             @Column("automatic") boolean automatic,
+                             @Column("user_language") String userLanguage) {
+        this.id = id;
+        this.validity = validity;
+        this.status = status;
+        this.fullName = fullName;
+        this.email = email;
+        this.billingAddress = billingAddress;
         this.confirmationTimestamp = confirmationTimestamp;
         this.latestReminder = latestReminder;
         this.paymentMethod = paymentMethod;
-		this.reminderSent = reminderSent;
-		this.promoCodeDiscountId = promoCodeDiscountId;
-		this.automatic = automatic;
-		this.userLanguage = userLanguage;
-	}
+        this.reminderSent = reminderSent;
+        this.promoCodeDiscountId = promoCodeDiscountId;
+        this.automatic = automatic;
+        this.userLanguage = userLanguage;
+    }
 
     public boolean isStuck() {
         return status == TicketReservationStatus.STUCK;
     }
 
-	public boolean isReminderSent() {
-		return Optional.ofNullable(reminderSent).orElse(false);
-	}
+    public boolean isReminderSent() {
+        return Optional.ofNullable(reminderSent).orElse(false);
+    }
 
     public Optional<ZonedDateTime> latestNotificationTimestamp(ZoneId zoneId) {
         return Optional.ofNullable(latestReminder).map(d -> d.withZoneSameInstant(zoneId));

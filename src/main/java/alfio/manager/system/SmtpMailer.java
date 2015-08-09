@@ -45,115 +45,115 @@ import java.util.Properties;
 @Log4j2
 @AllArgsConstructor
 class SmtpMailer implements Mailer {
-	
-	private final ConfigurationManager configurationManager;
+    
+    private final ConfigurationManager configurationManager;
 
-	@Override
-	public void send(Event event, String to, String subject, String text,
-			Optional<String> html, Attachment... attachments) {
-		MimeMessagePreparator preparator = (mimeMessage) -> {
-			MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
-					: new MimeMessageHelper(mimeMessage, "UTF-8");
-			message.setSubject(subject);
-			message.setFrom(configurationManager.getRequiredValue(Configuration.smtpFromEmail(event)), event.getDisplayName());
+    @Override
+    public void send(Event event, String to, String subject, String text,
+            Optional<String> html, Attachment... attachments) {
+        MimeMessagePreparator preparator = (mimeMessage) -> {
+            MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
+                    : new MimeMessageHelper(mimeMessage, "UTF-8");
+            message.setSubject(subject);
+            message.setFrom(configurationManager.getRequiredValue(Configuration.smtpFromEmail(event)), event.getDisplayName());
             String replyTo = configurationManager.getStringConfigValue(Configuration.mailReplyTo(event), "");
             if(StringUtils.isNotBlank(replyTo)) {
                 message.setReplyTo(replyTo);
             }
-			message.setTo(to);
-			if (html.isPresent()) {
-				message.setText(text, html.get());
-			} else {
-				message.setText(text, false);
-			}
+            message.setTo(to);
+            if (html.isPresent()) {
+                message.setText(text, html.get());
+            } else {
+                message.setText(text, false);
+            }
 
-			if (attachments != null) {
-				for (Attachment a : attachments) {
-					message.addAttachment(a.getFilename(), new ByteArrayResource(a.getSource()), a.getContentType());
-				}
-			}
-			
-			message.getMimeMessage().saveChanges();
-			message.getMimeMessage().removeHeader("Message-ID");
-		};
-		toMailSender(event).send(preparator);
-	}
-	
-	private JavaMailSender toMailSender(Event event) {
-		JavaMailSenderImpl r = new CustomJavaMailSenderImpl();
-		r.setDefaultEncoding("UTF-8");
+            if (attachments != null) {
+                for (Attachment a : attachments) {
+                    message.addAttachment(a.getFilename(), new ByteArrayResource(a.getSource()), a.getContentType());
+                }
+            }
+            
+            message.getMimeMessage().saveChanges();
+            message.getMimeMessage().removeHeader("Message-ID");
+        };
+        toMailSender(event).send(preparator);
+    }
+    
+    private JavaMailSender toMailSender(Event event) {
+        JavaMailSenderImpl r = new CustomJavaMailSenderImpl();
+        r.setDefaultEncoding("UTF-8");
 
-		r.setHost(configurationManager.getRequiredValue(Configuration.smtpHost(event)));
-		r.setPort(Integer.valueOf(configurationManager.getRequiredValue(Configuration.smtpPort(event))));
-		r.setProtocol(configurationManager.getRequiredValue(Configuration.smtpProtocol(event)));
-		r.setUsername(configurationManager.getStringConfigValue(Configuration.smtpUsername(event), null));
-		r.setPassword(configurationManager.getStringConfigValue(Configuration.smtpPassword(event), null));
+        r.setHost(configurationManager.getRequiredValue(Configuration.smtpHost(event)));
+        r.setPort(Integer.valueOf(configurationManager.getRequiredValue(Configuration.smtpPort(event))));
+        r.setProtocol(configurationManager.getRequiredValue(Configuration.smtpProtocol(event)));
+        r.setUsername(configurationManager.getStringConfigValue(Configuration.smtpUsername(event), null));
+        r.setPassword(configurationManager.getStringConfigValue(Configuration.smtpPassword(event), null));
 
-		String properties = configurationManager.getStringConfigValue(Configuration.smtpProperties(event), null);
+        String properties = configurationManager.getStringConfigValue(Configuration.smtpProperties(event), null);
 
-		if (properties != null) {
-			try {
-				Properties prop = PropertiesLoaderUtils.loadProperties(new EncodedResource(new ByteArrayResource(
-						properties.getBytes(StandardCharsets.UTF_8)), "UTF-8"));
-				r.setJavaMailProperties(prop);
-			} catch (IOException e) {
-				log.warn("error while setting the mail sender properties", e);
-			}
-		}
-		return r;
-	}
-	
-	static class CustomMimeMessage extends MimeMessage {
-		
-		private String defaultEncoding;
-		private FileTypeMap defaultFileTypeMap;
+        if (properties != null) {
+            try {
+                Properties prop = PropertiesLoaderUtils.loadProperties(new EncodedResource(new ByteArrayResource(
+                        properties.getBytes(StandardCharsets.UTF_8)), "UTF-8"));
+                r.setJavaMailProperties(prop);
+            } catch (IOException e) {
+                log.warn("error while setting the mail sender properties", e);
+            }
+        }
+        return r;
+    }
+    
+    static class CustomMimeMessage extends MimeMessage {
+        
+        private String defaultEncoding;
+        private FileTypeMap defaultFileTypeMap;
 
-		CustomMimeMessage(Session session, String defaultEncoding, FileTypeMap defaultFileTypeMap) {
-			super(session);
-			this.defaultEncoding = defaultEncoding;
-			this.defaultFileTypeMap = defaultFileTypeMap;
-		}
+        CustomMimeMessage(Session session, String defaultEncoding, FileTypeMap defaultFileTypeMap) {
+            super(session);
+            this.defaultEncoding = defaultEncoding;
+            this.defaultFileTypeMap = defaultFileTypeMap;
+        }
 
-		CustomMimeMessage(Session session, InputStream contentStream) throws MessagingException {
-			super(session, contentStream);
-		}
-		
-		public final String getDefaultEncoding() {
-			return this.defaultEncoding;
-		}
+        CustomMimeMessage(Session session, InputStream contentStream) throws MessagingException {
+            super(session, contentStream);
+        }
+        
+        public final String getDefaultEncoding() {
+            return this.defaultEncoding;
+        }
 
-		public final FileTypeMap getDefaultFileTypeMap() {
-			return this.defaultFileTypeMap;
-		}
-		
-		@Override
-		protected void updateMessageID() throws MessagingException {
-		    removeHeader("Message-Id");
-		}
-		
-		@Override
-		public void setHeader(String name, String value) throws MessagingException {
-			if(!"Message-Id".equals(name)) {
-				super.setHeader(name, value);
-			}
-		}
-	}
-	
-	static class CustomJavaMailSenderImpl extends JavaMailSenderImpl {
-		@Override
-		public MimeMessage createMimeMessage() {
-			return new CustomMimeMessage(getSession(), getDefaultEncoding(), getDefaultFileTypeMap());
-		}
-		
-		@Override
-		public MimeMessage createMimeMessage(InputStream contentStream) throws MailException {
-			try {
-				return new CustomMimeMessage(getSession(), contentStream);
-			}
-			catch (MessagingException ex) {
-				throw new MailParseException("Could not parse raw MIME content", ex);
-			}
-		}
-	}
+        public final FileTypeMap getDefaultFileTypeMap() {
+            return this.defaultFileTypeMap;
+        }
+        
+        @Override
+        protected void updateMessageID() throws MessagingException {
+            removeHeader("Message-Id");
+        }
+        
+        @Override
+        public void setHeader(String name, String value) throws MessagingException {
+            if(!"Message-Id".equals(name)) {
+                super.setHeader(name, value);
+            }
+        }
+    }
+    
+    static class CustomJavaMailSenderImpl extends JavaMailSenderImpl {
+        @Override
+        public MimeMessage createMimeMessage() {
+            return new CustomMimeMessage(getSession(), getDefaultEncoding(), getDefaultFileTypeMap());
+        }
+        
+        @Override
+        public MimeMessage createMimeMessage(InputStream contentStream) throws MailException {
+            try {
+                return new CustomMimeMessage(getSession(), contentStream);
+            }
+            catch (MessagingException ex) {
+                throw new MailParseException("Could not parse raw MIME content", ex);
+            }
+        }
+    }
 
 }

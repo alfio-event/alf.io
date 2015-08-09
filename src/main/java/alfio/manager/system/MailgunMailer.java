@@ -32,74 +32,74 @@ import java.util.Optional;
 @AllArgsConstructor
 class MailgunMailer implements Mailer {
 
-	private final OkHttpClient client = new OkHttpClient();
-	private final ConfigurationManager configurationManager;
+    private final OkHttpClient client = new OkHttpClient();
+    private final ConfigurationManager configurationManager;
 
-	
-	private RequestBody prepareBody(Event event, String to, String subject, String text,
-			Optional<String> html, Attachment... attachments)
-			throws IOException {
+    
+    private RequestBody prepareBody(Event event, String to, String subject, String text,
+            Optional<String> html, Attachment... attachments)
+            throws IOException {
 
-		String from = event.getDisplayName() + " <" + configurationManager.getRequiredValue(Configuration.mailgunFrom(event)) +">";
+        String from = event.getDisplayName() + " <" + configurationManager.getRequiredValue(Configuration.mailgunFrom(event)) +">";
 
-		if (ArrayUtils.isEmpty(attachments)) {
-			FormEncodingBuilder builder = new FormEncodingBuilder()
-					.add("from", from).add("to", to).add("subject", subject)
-					.add("text", text);
+        if (ArrayUtils.isEmpty(attachments)) {
+            FormEncodingBuilder builder = new FormEncodingBuilder()
+                    .add("from", from).add("to", to).add("subject", subject)
+                    .add("text", text);
 
             String replyTo = configurationManager.getStringConfigValue(Configuration.mailReplyTo(event), "");
             if(StringUtils.isNotBlank(replyTo)) {
                 builder.add("h:Reply-To", replyTo);
             }
-			html.ifPresent((htmlContent) -> builder.add("html", htmlContent));
-			return builder.build();
+            html.ifPresent((htmlContent) -> builder.add("html", htmlContent));
+            return builder.build();
 
-		} else {
-			// https://github.com/square/okhttp/blob/parent-2.1.0/samples/guide/src/main/java/com/squareup/okhttp/recipes/PostMultipart.java
-			MultipartBuilder multipartBuilder = new MultipartBuilder()
-					.type(MultipartBuilder.FORM);
+        } else {
+            // https://github.com/square/okhttp/blob/parent-2.1.0/samples/guide/src/main/java/com/squareup/okhttp/recipes/PostMultipart.java
+            MultipartBuilder multipartBuilder = new MultipartBuilder()
+                    .type(MultipartBuilder.FORM);
 
-			multipartBuilder.addFormDataPart("from", from)
-					.addFormDataPart("to", to)
-					.addFormDataPart("subject", subject)
-					.addFormDataPart("text", text);
+            multipartBuilder.addFormDataPart("from", from)
+                    .addFormDataPart("to", to)
+                    .addFormDataPart("subject", subject)
+                    .addFormDataPart("text", text);
 
-			html.ifPresent((htmlContent) -> multipartBuilder.addFormDataPart(
-					"html", htmlContent));
+            html.ifPresent((htmlContent) -> multipartBuilder.addFormDataPart(
+                    "html", htmlContent));
 
-			for (Attachment attachment : attachments) {
-				byte[] data = attachment.getSource();
-				multipartBuilder.addFormDataPart("attachment", attachment
-						.getFilename(), RequestBody.create(MediaType
-						.parse(attachment.getContentType()), Arrays.copyOf(data, data.length)));
-			}
-			return multipartBuilder.build();
-		}
-	}
+            for (Attachment attachment : attachments) {
+                byte[] data = attachment.getSource();
+                multipartBuilder.addFormDataPart("attachment", attachment
+                        .getFilename(), RequestBody.create(MediaType
+                        .parse(attachment.getContentType()), Arrays.copyOf(data, data.length)));
+            }
+            return multipartBuilder.build();
+        }
+    }
 
-	@Override
-	public void send(Event event, String to, String subject, String text,
-			Optional<String> html, Attachment... attachment) {
+    @Override
+    public void send(Event event, String to, String subject, String text,
+            Optional<String> html, Attachment... attachment) {
 
-		String apiKey = configurationManager.getRequiredValue(Configuration.mailgunKey(event));
-		String domain = configurationManager.getRequiredValue(Configuration.mailgunDomain(event));
+        String apiKey = configurationManager.getRequiredValue(Configuration.mailgunKey(event));
+        String domain = configurationManager.getRequiredValue(Configuration.mailgunDomain(event));
 
-		try {
+        try {
 
-			RequestBody formBody = prepareBody(event, to, subject, text, html,
-					attachment);
+            RequestBody formBody = prepareBody(event, to, subject, text, html,
+                    attachment);
 
-			Request request = new Request.Builder()
-					.url("https://api.mailgun.net/v2/" + domain + "/messages")
-					.header("Authorization", Credentials.basic("api", apiKey))
-					.post(formBody).build();
+            Request request = new Request.Builder()
+                    .url("https://api.mailgun.net/v2/" + domain + "/messages")
+                    .header("Authorization", Credentials.basic("api", apiKey))
+                    .post(formBody).build();
 
-			Response resp = client.newCall(request).execute();
-			if (!resp.isSuccessful()) {
-				log.warn("sending email was not successful:" + resp);
-			}
-		} catch (IOException e) {
-			log.warn("error while sending email", e);
-		}
-	}
+            Response resp = client.newCall(request).execute();
+            if (!resp.isSuccessful()) {
+                log.warn("sending email was not successful:" + resp);
+            }
+        } catch (IOException e) {
+            log.warn("error while sending email", e);
+        }
+    }
 }

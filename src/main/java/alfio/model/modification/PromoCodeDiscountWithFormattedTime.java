@@ -26,26 +26,26 @@ import alfio.model.PromoCodeDiscount;
 
 public class PromoCodeDiscountWithFormattedTime {
 
-	@JsonIgnore
-	@Delegate
-	private final PromoCodeDiscount promo;
+    @JsonIgnore
+    @Delegate
+    private final PromoCodeDiscount promo;
 
-	@JsonIgnore
-	private final ZoneId eventZoneId;
+    @JsonIgnore
+    private final ZoneId eventZoneId;
 
-	public PromoCodeDiscountWithFormattedTime(PromoCodeDiscount promo, ZoneId eventZoneId) {
-		this.promo = promo;
-		this.eventZoneId = eventZoneId;
-	}
+    public PromoCodeDiscountWithFormattedTime(PromoCodeDiscount promo, ZoneId eventZoneId) {
+        this.promo = promo;
+        this.eventZoneId = eventZoneId;
+    }
 
-	public boolean isCurrentlyValid() {
-		return isCurrentlyValid(eventZoneId, ZonedDateTime.now(eventZoneId));
-	}
-	
-	public boolean isExpired() {
-		return isExpired(eventZoneId, ZonedDateTime.now(eventZoneId));
-	}
-	
+    public boolean isCurrentlyValid() {
+        return isCurrentlyValid(eventZoneId, ZonedDateTime.now(eventZoneId));
+    }
+    
+    public boolean isExpired() {
+        return isExpired(eventZoneId, ZonedDateTime.now(eventZoneId));
+    }
+    
     public String getFormattedStart() {
         return getUtcStart().withZoneSameInstant(eventZoneId).format(EventWithStatistics.JSON_DATE_FORMATTER);
     }

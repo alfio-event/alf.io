@@ -22,21 +22,21 @@ import lombok.Getter;
 @Getter
 public class User {
 
-	private final int id;
-	private final String username;
-	private final String firstName;
-	private final String lastName;
-	private final String emailAddress;
+    private final int id;
+    private final String username;
+    private final String firstName;
+    private final String lastName;
+    private final String emailAddress;
     private final boolean enabled;
 
 
-	public User(@Column("id") int id, @Column("username") String username, @Column("first_name") String firstName,
-			@Column("last_name") String lastName, @Column("email_address") String emailAddress, @Column("enabled") boolean enabled) {
-		this.id = id;
-		this.username = username;
-		this.firstName = firstName;
-		this.lastName = lastName;
-		this.emailAddress = emailAddress;
+    public User(@Column("id") int id, @Column("username") String username, @Column("first_name") String firstName,
+            @Column("last_name") String lastName, @Column("email_address") String emailAddress, @Column("enabled") boolean enabled) {
+        this.id = id;
+        this.username = username;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.emailAddress = emailAddress;
         this.enabled=enabled;
-	}
+    }
 }

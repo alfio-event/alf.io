@@ -470,9 +470,9 @@ public class EventManager {
                 .collect(joining(","));
     }
 
-	public TicketCategory getTicketCategoryById(int id, int eventId) {
-		return ticketCategoryRepository.getById(id, eventId);
-	}
+    public TicketCategory getTicketCategoryById(int id, int eventId) {
+        return ticketCategoryRepository.getById(id, eventId);
+    }
 
     public boolean toggleTicketLocking(String eventName, int categoryId, int ticketId, String username) {
         Event event = getSingleEvent(eventName, username);
@@ -484,16 +484,16 @@ public class EventManager {
     }
 
     public void addPromoCode(String promoCode, int eventId, ZonedDateTime start, ZonedDateTime end, int discountAmount, DiscountType discountType) {
-    	promoCodeRepository.addPromoCode(promoCode, eventId, start, end, discountAmount, discountType.toString());
+        promoCodeRepository.addPromoCode(promoCode, eventId, start, end, discountAmount, discountType.toString());
     }
     
     public void deletePromoCode(int promoCodeId) {
-    	promoCodeRepository.deletePromoCode(promoCodeId);
+        promoCodeRepository.deletePromoCode(promoCodeId);
     }
     
     public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInEvent(int eventId) {
-    	ZoneId zoneId = eventRepository.findById(eventId).getZoneId();
-    	return promoCodeRepository.findAllInEvent(eventId).stream().map((p) -> new PromoCodeDiscountWithFormattedTime(p, zoneId)).collect(toList());
+        ZoneId zoneId = eventRepository.findById(eventId).getZoneId();
+        return promoCodeRepository.findAllInEvent(eventId).stream().map((p) -> new PromoCodeDiscountWithFormattedTime(p, zoneId)).collect(toList());
     }
 
     public String getEventUrl(Event event) {

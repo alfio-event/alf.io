@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public final class SessionUtil {
-	
+    
     private static final String SPECIAL_PRICE_CODE_SESSION_ID = "SPECIAL_PRICE_CODE_SESSION_ID";
     private static final String SPECIAL_PRICE_CODE = "SPECIAL_PRICE_CODE";
     
@@ -41,15 +41,15 @@ public final class SessionUtil {
     }
     
     public static void savePromotionCodeDiscount(String promoCodeDiscount, HttpServletRequest request) {
-    	request.getSession().setAttribute(PROMOTIONAL_CODE_DISCOUNT, promoCodeDiscount);
-	}
+        request.getSession().setAttribute(PROMOTIONAL_CODE_DISCOUNT, promoCodeDiscount);
+    }
 
     public static Optional<String> retrieveSpecialPriceCode(HttpServletRequest request) {
         return Optional.ofNullable((String)request.getSession().getAttribute(SPECIAL_PRICE_CODE));
     }
     
     public static Optional<String> retrievePromotionCodeDiscount(HttpServletRequest request) {
-    	return Optional.ofNullable((String) request.getSession().getAttribute(PROMOTIONAL_CODE_DISCOUNT));
+        return Optional.ofNullable((String) request.getSession().getAttribute(PROMOTIONAL_CODE_DISCOUNT));
     }
 
     public static Optional<String> retrieveSpecialPriceSessionId(HttpServletRequest request) {

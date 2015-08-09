@@ -28,30 +28,30 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @Getter
 public class PromoCodeDiscountModification {
 
-	private final String promoCode;
-	private final DateTimeModification start;
-	private final DateTimeModification end;
-	private final BigDecimal discountAmount;
-	private final DiscountType discountType;
+    private final String promoCode;
+    private final DateTimeModification start;
+    private final DateTimeModification end;
+    private final BigDecimal discountAmount;
+    private final DiscountType discountType;
 
-	@JsonCreator
-	public PromoCodeDiscountModification(@JsonProperty("promoCode") String promoCode,
-			@JsonProperty("start") DateTimeModification start,
-			@JsonProperty("end") DateTimeModification end,
-			@JsonProperty("discountAmount") BigDecimal discountAmount,
-			@JsonProperty("discountType") DiscountType discountType) {
-		this.promoCode = promoCode;
-		this.start = start;
-		this.end = end;
-		this.discountAmount = discountAmount;
-		this.discountType = discountType;	
-	}
-	
-	public int getDiscountAsPercent() {
-		return discountAmount.intValue();
-	}
-	
-	public int getDiscountInCents() {
+    @JsonCreator
+    public PromoCodeDiscountModification(@JsonProperty("promoCode") String promoCode,
+            @JsonProperty("start") DateTimeModification start,
+            @JsonProperty("end") DateTimeModification end,
+            @JsonProperty("discountAmount") BigDecimal discountAmount,
+            @JsonProperty("discountType") DiscountType discountType) {
+        this.promoCode = promoCode;
+        this.start = start;
+        this.end = end;
+        this.discountAmount = discountAmount;
+        this.discountType = discountType;   
+    }
+    
+    public int getDiscountAsPercent() {
+        return discountAmount.intValue();
+    }
+    
+    public int getDiscountInCents() {
         return MonetaryUtil.unitToCents(discountAmount);
     }
 }

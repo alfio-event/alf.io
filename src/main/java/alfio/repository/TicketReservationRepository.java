@@ -26,58 +26,58 @@ import java.util.List;
 @QueryRepository
 public interface TicketReservationRepository {
 
-	@Query("insert into tickets_reservation(id, validity, promo_code_id_fk, status) values (:id, :validity, :promotionCodeDiscountId, 'PENDING')")
-	int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity, @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId);
+    @Query("insert into tickets_reservation(id, validity, promo_code_id_fk, status) values (:id, :validity, :promotionCodeDiscountId, 'PENDING')")
+    int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity, @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId);
 
-	@Query("update tickets_reservation set status = :status, full_name = :fullName, email_address = :email, user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod where id = :reservationId")
-	int updateTicketReservation(@Bind("reservationId") String reservationId, @Bind("status") String status,
-			@Bind("email") String email, @Bind("fullName") String fullName, @Bind("userLanguage") String userLanguage,
-			@Bind("billingAddress") String billingAddress, @Bind("timestamp") ZonedDateTime timestamp, @Bind("paymentMethod") String paymentMethod);
+    @Query("update tickets_reservation set status = :status, full_name = :fullName, email_address = :email, user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod where id = :reservationId")
+    int updateTicketReservation(@Bind("reservationId") String reservationId, @Bind("status") String status,
+            @Bind("email") String email, @Bind("fullName") String fullName, @Bind("userLanguage") String userLanguage,
+            @Bind("billingAddress") String billingAddress, @Bind("timestamp") ZonedDateTime timestamp, @Bind("paymentMethod") String paymentMethod);
 
-	@Query("update tickets_reservation set validity = :validity, status = 'OFFLINE_PAYMENT', payment_method = 'OFFLINE', full_name = :fullName, email_address = :email, billing_address = :billingAddress where id = :reservationId")
-	int postponePayment(@Bind("reservationId") String reservationId, @Bind("validity") Date validity, @Bind("email") String email, @Bind("fullName") String fullName,
-						@Bind("billingAddress") String billingAddress);
+    @Query("update tickets_reservation set validity = :validity, status = 'OFFLINE_PAYMENT', payment_method = 'OFFLINE', full_name = :fullName, email_address = :email, billing_address = :billingAddress where id = :reservationId")
+    int postponePayment(@Bind("reservationId") String reservationId, @Bind("validity") Date validity, @Bind("email") String email, @Bind("fullName") String fullName,
+                        @Bind("billingAddress") String billingAddress);
 
-	@Query("update tickets_reservation set status = :status where id = :reservationId")
-	int updateTicketReservationStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
+    @Query("update tickets_reservation set status = :status where id = :reservationId")
+    int updateTicketReservationStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
 
     @Query("update tickets_reservation set full_name = :fullName where id = :reservationId")
     int updateAssignee(@Bind("reservationId") String reservationId, @Bind("fullName") String fullName);
 
-	@Query("select id from tickets_reservation where status = 'OFFLINE_PAYMENT'")
-	List<String> findAllReservationsWaitingForPayment();
+    @Query("select id from tickets_reservation where status = 'OFFLINE_PAYMENT'")
+    List<String> findAllReservationsWaitingForPayment();
 
-	@Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and offline_payment_reminder_sent = false")
-	@QueriesOverride(@QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false", db = "PGSQL"))
-	List<TicketReservation> findAllOfflinePaymentReservationForNotification(@Bind("expiration") Date expiration);
+    @Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and offline_payment_reminder_sent = false")
+    @QueriesOverride(@QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false", db = "PGSQL"))
+    List<TicketReservation> findAllOfflinePaymentReservationForNotification(@Bind("expiration") Date expiration);
 
-	@Query("update tickets_reservation set offline_payment_reminder_sent = true where id = :reservationId")
-	int flagAsOfflinePaymentReminderSent(@Bind("reservationId") String reservationId);
+    @Query("update tickets_reservation set offline_payment_reminder_sent = true where id = :reservationId")
+    int flagAsOfflinePaymentReminderSent(@Bind("reservationId") String reservationId);
 
     @Query("update tickets_reservation set latest_reminder_ts = :latestReminderTimestamp where id = :reservationId")
-	int updateLatestReminderTimestamp(@Bind("reservationId") String reservationId, @Bind("latestReminderTimestamp") ZonedDateTime latestReminderTimestamp);
+    int updateLatestReminderTimestamp(@Bind("reservationId") String reservationId, @Bind("latestReminderTimestamp") ZonedDateTime latestReminderTimestamp);
 
-	@Query("select id from tickets_reservation where id = :reservationId for update")
-	String lockReservationForUpdate(@Bind("reservationId") String reservationId);
+    @Query("select id from tickets_reservation where id = :reservationId for update")
+    String lockReservationForUpdate(@Bind("reservationId") String reservationId);
 
-	@Query("update tickets_reservation set status = :status where id = :reservationId")
-	int updateTicketStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
+    @Query("update tickets_reservation set status = :status where id = :reservationId")
+    int updateTicketStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
 
-	@Query("select * from tickets_reservation where id = :id")
-	TicketReservation findReservationById(@Bind("id") String id);
+    @Query("select * from tickets_reservation where id = :id")
+    TicketReservation findReservationById(@Bind("id") String id);
 
-	@Query("select id from tickets_reservation where validity < :date and status = 'PENDING'")
-	List<String> findExpiredReservation(@Bind("date") Date date);
+    @Query("select id from tickets_reservation where validity < :date and status = 'PENDING'")
+    List<String> findExpiredReservation(@Bind("date") Date date);
 
-	@Query("select id from tickets_reservation where validity < :date and status = 'OFFLINE_PAYMENT'")
+    @Query("select id from tickets_reservation where validity < :date and status = 'OFFLINE_PAYMENT'")
     List<String> findExpiredOfflineReservations(@Bind("date") Date date);
 
     @Query("select id from tickets_reservation where validity < :date and status = 'IN_PAYMENT'")
     List<String> findStuckReservations(@Bind("date") Date date);
 
-	@Query("delete from tickets_reservation where id in (:ids)")
-	int remove(@Bind("ids") List<String> ids);
+    @Query("delete from tickets_reservation where id in (:ids)")
+    int remove(@Bind("ids") List<String> ids);
 
-	@Query("select * from tickets_reservation where id like :partialID")
-	List<TicketReservation> findByPartialID(@Bind("partialID") String partialID);
+    @Query("select * from tickets_reservation where id like :partialID")
+    List<TicketReservation> findByPartialID(@Bind("partialID") String partialID);
 }

@@ -39,84 +39,84 @@ import java.util.Objects;
 @Log4j2
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
-	public static final String PROFILE_DEV = "dev";
-	public static final String PROFILE_LIVE = "!dev";
-	public static final String PROFILE_HTTP = "http";
-	public static final String PROFILE_SPRING_BOOT = "spring-boot";
-	public static final String PROFILE_DISABLE_JOBS = "disable-jobs";
-	private Environment environment;
+    public static final String PROFILE_DEV = "dev";
+    public static final String PROFILE_LIVE = "!dev";
+    public static final String PROFILE_HTTP = "http";
+    public static final String PROFILE_SPRING_BOOT = "spring-boot";
+    public static final String PROFILE_DISABLE_JOBS = "disable-jobs";
+    private Environment environment;
 
-	@Override
-	public void onStartup(ServletContext servletContext) throws ServletException {
-		super.onStartup(servletContext);
+    @Override
+    public void onStartup(ServletContext servletContext) throws ServletException {
+        super.onStartup(servletContext);
 
-		Thread.setDefaultUncaughtExceptionHandler(new DefaultExceptionHandler());
+        Thread.setDefaultUncaughtExceptionHandler(new DefaultExceptionHandler());
 
-		configureSessionCookie(servletContext);
-		
-		CharacterEncodingFilter cef = new CharacterEncodingFilter();
-		cef.setEncoding("UTF-8");
-		cef.setForceEncoding(true);
-		
-		Dynamic characterEncodingFilter = servletContext.addFilter("CharacterEncodingFilter", cef);
-		characterEncodingFilter.setAsyncSupported(true);
-		characterEncodingFilter.addMappingForUrlPatterns(null, false, "/*");
+        configureSessionCookie(servletContext);
+        
+        CharacterEncodingFilter cef = new CharacterEncodingFilter();
+        cef.setEncoding("UTF-8");
+        cef.setForceEncoding(true);
+        
+        Dynamic characterEncodingFilter = servletContext.addFilter("CharacterEncodingFilter", cef);
+        characterEncodingFilter.setAsyncSupported(true);
+        characterEncodingFilter.addMappingForUrlPatterns(null, false, "/*");
 
-		Dynamic redirectFilter = servletContext.addFilter("RedirectToHttpsFilter", RedirectToHttpsFilter.class);
-		redirectFilter.setAsyncSupported(true);
-		redirectFilter.addMappingForUrlPatterns(null, false, "/*");
+        Dynamic redirectFilter = servletContext.addFilter("RedirectToHttpsFilter", RedirectToHttpsFilter.class);
+        redirectFilter.setAsyncSupported(true);
+        redirectFilter.addMappingForUrlPatterns(null, false, "/*");
 
-		if (System.getProperty("startDBManager") != null) {
-			Class<?> cls;
-			try {
-				cls = ClassUtils.getClass("org.hsqldb.util.DatabaseManagerSwing");
-				MethodUtils.invokeStaticMethod(cls, "main", new Object[] { new String[] { "--url", "jdbc:hsqldb:mem:alfio", "--noexit" } });
-			} catch (ReflectiveOperationException e) {
-				log.warn("error starting db manager", e);
-			}
-		}
-	}
+        if (System.getProperty("startDBManager") != null) {
+            Class<?> cls;
+            try {
+                cls = ClassUtils.getClass("org.hsqldb.util.DatabaseManagerSwing");
+                MethodUtils.invokeStaticMethod(cls, "main", new Object[] { new String[] { "--url", "jdbc:hsqldb:mem:alfio", "--noexit" } });
+            } catch (ReflectiveOperationException e) {
+                log.warn("error starting db manager", e);
+            }
+        }
+    }
 
-	@Override
-	protected WebApplicationContext createRootApplicationContext() {
-		ConfigurableWebApplicationContext ctx = ((ConfigurableWebApplicationContext) super.createRootApplicationContext());
+    @Override
+    protected WebApplicationContext createRootApplicationContext() {
+        ConfigurableWebApplicationContext ctx = ((ConfigurableWebApplicationContext) super.createRootApplicationContext());
         Objects.requireNonNull(ctx, "Something really bad is happening...");
         ConfigurableEnvironment environment = ctx.getEnvironment();
-		if(environment.acceptsProfiles(PROFILE_DEV)) {
-			environment.addActiveProfile(PROFILE_HTTP);
-		}
-		this.environment = environment;
-		return ctx;
-	}
+        if(environment.acceptsProfiles(PROFILE_DEV)) {
+            environment.addActiveProfile(PROFILE_HTTP);
+        }
+        this.environment = environment;
+        return ctx;
+    }
 
-	private void configureSessionCookie(ServletContext servletContext) {
-		SessionCookieConfig config = servletContext.getSessionCookieConfig();
+    private void configureSessionCookie(ServletContext servletContext) {
+        SessionCookieConfig config = servletContext.getSessionCookieConfig();
 
-		config.setHttpOnly(true);
-		
-		Validate.notNull(environment, "environment cannot be null!");
-		// set secure cookie only if current environment doesn't strictly need HTTP
-		config.setSecure(!environment.acceptsProfiles(PROFILE_HTTP));
-		//
-		
+        config.setHttpOnly(true);
+        
+        Validate.notNull(environment, "environment cannot be null!");
+        // set secure cookie only if current environment doesn't strictly need HTTP
+        config.setSecure(!environment.acceptsProfiles(PROFILE_HTTP));
+        //
+        
 
-		// FIXME and CHECKME what a mess, ouch: https://issues.jboss.org/browse/WFLY-3448 ?
-		config.setPath(servletContext.getContextPath() + "/");
-		//
-	}
+        // FIXME and CHECKME what a mess, ouch: https://issues.jboss.org/browse/WFLY-3448 ?
+        config.setPath(servletContext.getContextPath() + "/");
+        //
+    }
 
-	@Override
-	protected Class<?>[] getRootConfigClasses() {
-		return new Class<?>[] { ApplicationPropertiesConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class };
-	}
+    @Override
+    protected Class<?>[] getRootConfigClasses() {
+        return new Class<?>[] { ApplicationPropertiesConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class };
+    }
 
-	@Override
-	protected Class<?>[] getServletConfigClasses() {
-		return new Class<?>[] { MvcConfiguration.class };
-	}
+    @Override
+    protected Class<?>[] getServletConfigClasses() {
+        return new Class<?>[] { MvcConfiguration.class };
+    }
 
-	@Override
-	protected String[] getServletMappings() {
-		return new String[] { "/" };
-	}
+    @Override
+    protected String[] getServletMappings() {
+        return new String[] { "/" };
+    }
 }

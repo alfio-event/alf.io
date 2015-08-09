@@ -41,58 +41,58 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @RequestMapping("/admin/api")
 public class CheckInApiController {
 
-	private final TicketRepository ticketRepository;
-	private final EventRepository eventRepository;
-	private final CheckInManager checkInManager;
+    private final TicketRepository ticketRepository;
+    private final EventRepository eventRepository;
+    private final CheckInManager checkInManager;
 
-	@Data
-	public static class TicketCode {
-		private String code;
-	}
-	
-	public enum CheckInStatus {
-		EVENT_NOT_FOUND, TICKET_NOT_FOUND, EMPTY_TICKET_CODE, INVALID_TICKET_CODE, INVALID_TICKET_STATE, ALREADY_CHECK_IN, MUST_PAY, OK_READY_TO_BE_CHECKED_IN, SUCCESS
-	}
+    @Data
+    public static class TicketCode {
+        private String code;
+    }
+    
+    public enum CheckInStatus {
+        EVENT_NOT_FOUND, TICKET_NOT_FOUND, EMPTY_TICKET_CODE, INVALID_TICKET_CODE, INVALID_TICKET_STATE, ALREADY_CHECK_IN, MUST_PAY, OK_READY_TO_BE_CHECKED_IN, SUCCESS
+    }
 
     @Data
     public static class TicketAndCheckInResult {
         private final Ticket ticket;
         private final CheckInResult result;
     }
-	
-	@Data
-	public static class CheckInResult {
-		private final CheckInStatus status;
-		private final String message;
-	}
-	
-	@Data
-	public static class OnSitePaymentConfirmation {
-		private final boolean status;
-		private final String message;
-	}
+    
+    @Data
+    public static class CheckInResult {
+        private final CheckInStatus status;
+        private final String message;
+    }
+    
+    @Data
+    public static class OnSitePaymentConfirmation {
+        private final boolean status;
+        private final String message;
+    }
 
-	@Autowired
-	public CheckInApiController(EventRepository eventRepository, TicketRepository ticketRepository, CheckInManager checkInManager) {
-		this.eventRepository = eventRepository;
-		this.ticketRepository = ticketRepository;
-		this.checkInManager = checkInManager;
-	}
-	
-	@RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}", method = GET)
-	public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode) {
+    @Autowired
+    public CheckInApiController(EventRepository eventRepository, TicketRepository ticketRepository, CheckInManager checkInManager) {
+        this.eventRepository = eventRepository;
+        this.ticketRepository = ticketRepository;
+        this.checkInManager = checkInManager;
+    }
+    
+    @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}", method = GET)
+    public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode) {
 
         CheckInResult result = extractStatus(eventId, ticketIdentifier, qrCode);
 
-		Optional<Event> event = optionally(() -> eventRepository.findById(eventId));
-		Optional<Ticket> ticket = optionally(() -> ticketRepository.findByUUID(ticketIdentifier));
+        Optional<Event> event = optionally(() -> eventRepository.findById(eventId));
+        Optional<Ticket> ticket = optionally(() -> ticketRepository.findByUUID(ticketIdentifier));
 
-		if(event.isPresent() && ticket.isPresent()) {
-			return new TicketAndCheckInResult(ticket.get(), result);
-		} else {
-			return new TicketAndCheckInResult(null, result);
-		}
-	}
+        if(event.isPresent() && ticket.isPresent()) {
+            return new TicketAndCheckInResult(ticket.get(), result);
+        } else {
+            return new TicketAndCheckInResult(null, result);
+        }
+    }
 
     private CheckInResult extractStatus(int eventId, String ticketIdentifier, String ticketCode) {
         Optional<Event> maybeEvent = optionally(() -> eventRepository.findById(eventId));
@@ -138,8 +138,8 @@ public class CheckInApiController {
         return new CheckInResult(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, "Ready to be checked in");
     }
 
-	@RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}", method = POST)
-	public TicketAndCheckInResult checkIn(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestBody TicketCode ticketCode) {
+    @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}", method = POST)
+    public TicketAndCheckInResult checkIn(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestBody TicketCode ticketCode) {
         CheckInResult status = extractStatus(eventId, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode).orElse(null));
         if(status.getStatus() == CheckInStatus.OK_READY_TO_BE_CHECKED_IN) {
             checkInManager.checkIn(ticketIdentifier);
@@ -163,28 +163,28 @@ public class CheckInApiController {
             return true;
         }).orElse(false);
     }
-	
-	@RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment", method = POST)
-	public OnSitePaymentConfirmation confirmOnSitePayment(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
-		
-		Optional<Ticket> ticket = optionally(() -> ticketRepository.findByUUID(ticketIdentifier));
-		
-		if (!ticket.isPresent()) {
-			return new OnSitePaymentConfirmation(false, "Ticket with uuid " + ticketIdentifier + " not found");
-		}
-		
-		Ticket t = ticket.get();
-		
-		if (t.getStatus() != TicketStatus.TO_BE_PAID) {
-			return new OnSitePaymentConfirmation(false, "Invalid ticket state, expected TO_BE_PAID state, received " + t.getStatus());
-		}
-		
-		checkInManager.acquire(t.getUuid());
-		return new OnSitePaymentConfirmation(true, "ok");
-	}
-	
-	@RequestMapping(value = "/check-in/{eventId}/ticket", method = GET)
-	public List<FullTicketInfo> listAllTickets(@PathVariable("eventId") int eventId) {
-		return ticketRepository.findAllFullTicketInfoAssignedByEventId(eventId);
-	}
+    
+    @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment", method = POST)
+    public OnSitePaymentConfirmation confirmOnSitePayment(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
+        
+        Optional<Ticket> ticket = optionally(() -> ticketRepository.findByUUID(ticketIdentifier));
+        
+        if (!ticket.isPresent()) {
+            return new OnSitePaymentConfirmation(false, "Ticket with uuid " + ticketIdentifier + " not found");
+        }
+        
+        Ticket t = ticket.get();
+        
+        if (t.getStatus() != TicketStatus.TO_BE_PAID) {
+            return new OnSitePaymentConfirmation(false, "Invalid ticket state, expected TO_BE_PAID state, received " + t.getStatus());
+        }
+        
+        checkInManager.acquire(t.getUuid());
+        return new OnSitePaymentConfirmation(true, "ok");
+    }
+    
+    @RequestMapping(value = "/check-in/{eventId}/ticket", method = GET)
+    public List<FullTicketInfo> listAllTickets(@PathVariable("eventId") int eventId) {
+        return ticketRepository.findAllFullTicketInfoAssignedByEventId(eventId);
+    }
 }

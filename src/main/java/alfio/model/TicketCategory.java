@@ -68,12 +68,12 @@ public class TicketCategory {
     }
 
     public BigDecimal getPrice() {
-    	//TODO: apply this conversion only for some currency. Not all are cent based.
+        //TODO: apply this conversion only for some currency. Not all are cent based.
         return MonetaryUtil.centsToUnit(priceInCents);
     }
     
     public boolean getFree() {
-    	return priceInCents == 0;
+        return priceInCents == 0;
     }
 
     public ZonedDateTime getInception(ZoneId zoneId) {

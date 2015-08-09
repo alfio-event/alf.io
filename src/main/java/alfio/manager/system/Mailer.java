@@ -23,12 +23,12 @@ import java.util.Optional;
 
 public interface Mailer {
 
-	void send(Event event, String to, String subject, String text, Optional<String> html, Attachment... attachment);
+    void send(Event event, String to, String subject, String text, Optional<String> html, Attachment... attachment);
 
-	@Data
-	class Attachment {
-		private final String filename;
-		private final byte[] source;
-		private final String contentType;
-	}
+    @Data
+    class Attachment {
+        private final String filename;
+        private final byte[] source;
+        private final String contentType;
+    }
 }

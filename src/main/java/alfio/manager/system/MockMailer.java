@@ -41,8 +41,8 @@ public class MockMailer implements Mailer {
     }
 
     @Override
-	public void send(Event event, String to, String subject, String text, Optional<String> html, Attachment... attachments) {
-		log.info("Email: from: {}, replyTo: {}, to: {}, subject: {}, text: {}, html: {}, attachments amount: {}", event.getDisplayName(), configurationManager.getStringConfigValue(Configuration.mailReplyTo(event), ""), to, subject, text,
-				html.orElse("no html"), ArrayUtils.getLength(attachments));
-	}
+    public void send(Event event, String to, String subject, String text, Optional<String> html, Attachment... attachments) {
+        log.info("Email: from: {}, replyTo: {}, to: {}, subject: {}, text: {}, html: {}, attachments amount: {}", event.getDisplayName(), configurationManager.getStringConfigValue(Configuration.mailReplyTo(event), ""), to, subject, text,
+                html.orElse("no html"), ArrayUtils.getLength(attachments));
+    }
 }

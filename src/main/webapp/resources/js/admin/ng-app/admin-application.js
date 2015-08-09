@@ -60,9 +60,9 @@
                 controller: 'EventDetailController'
             })
             .state('events.checkIn', {
-            	url: '/:eventName/check-in',
-            	templateUrl: BASE_STATIC_URL + '/event/check-in.html',
-            	controller: 'EventCheckInController'
+                url: '/:eventName/check-in',
+                templateUrl: BASE_STATIC_URL + '/event/check-in.html',
+                controller: 'EventCheckInController'
             })
             .state('events.checkInScan', {
                 url: '/:eventName/check-in/scan',
@@ -70,9 +70,9 @@
                 controller: 'EventCheckInScanController'
             })
             .state('events.sendInvitations', {
-            	url: '/:eventName/c/:categoryId/send-invitation',
-            	templateUrl: BASE_STATIC_URL + '/event/fragment/send-reserved-codes.html',
-            	controller: 'SendInvitationsController'
+                url: '/:eventName/c/:categoryId/send-invitation',
+                templateUrl: BASE_STATIC_URL + '/event/fragment/send-reserved-codes.html',
+                controller: 'SendInvitationsController'
             })
             .state('configuration', {
                 url: '/configuration',
@@ -391,14 +391,14 @@
                 
                 
                 PromoCodeService.list(result.event.id).success(function(list) {
-                	$scope.promocodes = list;
-                	angular.forEach($scope.promocodes, function(v) {
-                		(function(v) {
-                			PromoCodeService.countUse(result.event.id, v.promoCode).then(function(val) {
-                				v.useCount = parseInt(val.data, 10);
-                			});
-                		})(v);
-                	});
+                    $scope.promocodes = list;
+                    angular.forEach($scope.promocodes, function(v) {
+                        (function(v) {
+                            PromoCodeService.countUse(result.event.id, v.promoCode).then(function(val) {
+                                v.useCount = parseInt(val.data, 10);
+                            });
+                        })(v);
+                    });
                 });
 
                 $scope.unbindTickets = function(event , category) {
@@ -641,38 +641,38 @@
         //
         
         $scope.deletePromocode = function(promocode) {
-        	if($window.confirm('Delete promo code ' + promocode.promoCode + '?')) {
-        		PromoCodeService.remove($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
-        	}
+            if($window.confirm('Delete promo code ' + promocode.promoCode + '?')) {
+                PromoCodeService.remove($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
+            }
         };
         
         $scope.disablePromocode = function(promocode) {
-        	if($window.confirm('Disable promo code ' + promocode.promoCode + '?')) {
-        		PromoCodeService.disable($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
-        	}
+            if($window.confirm('Disable promo code ' + promocode.promoCode + '?')) {
+                PromoCodeService.disable($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
+            }
         };
         
         $scope.addPromoCode = function(event) {
-        	$modal.open({
+            $modal.open({
                 size:'lg',
                 templateUrl:BASE_STATIC_URL + '/event/fragment/edit-promo-code-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
-                	
-                	$scope.event = event;
-                	
-                	var now = moment();
-                	var eventBegin = moment(event.formattedBegin);
-                	
-                	$scope.promocode = {discountType :'PERCENTAGE', start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')}, end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}};
-                	
-                	$scope.$watch('promocode.promoCode', function(newVal) {
-                		if(newVal) {
-                			$scope.promocode.promoCode = newVal.toUpperCase();
-                		}
-                	});
-                	
-                	$scope.cancel = function() {
+                    
+                    $scope.event = event;
+                    
+                    var now = moment();
+                    var eventBegin = moment(event.formattedBegin);
+                    
+                    $scope.promocode = {discountType :'PERCENTAGE', start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')}, end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}};
+                    
+                    $scope.$watch('promocode.promoCode', function(newVal) {
+                        if(newVal) {
+                            $scope.promocode.promoCode = newVal.toUpperCase();
+                        }
+                    });
+                    
+                    $scope.cancel = function() {
                         $scope.$dismiss('canceled');
                     };
                     $scope.update = function(form, promocode, event) {
@@ -748,33 +748,33 @@
             }
         }
 
-    	$scope.goToScanPage = function() {
-    	    $state.go('events.checkInScan', $stateParams);
-    	};
+        $scope.goToScanPage = function() {
+            $state.go('events.checkInScan', $stateParams);
+        };
 
-    	EventService.getEvent($stateParams.eventName).success(function(result) {
-    		$scope.event = result.event;
-    		CheckInService.findAllTickets(result.event.id).success(function(tickets) {
-    			$scope.tickets = tickets;
-    		});
-    	});
+        EventService.getEvent($stateParams.eventName).success(function(result) {
+            $scope.event = result.event;
+            CheckInService.findAllTickets(result.event.id).success(function(tickets) {
+                $scope.tickets = tickets;
+            });
+        });
 
-    	$scope.toBeCheckedIn = function(ticket, idx) {
+        $scope.toBeCheckedIn = function(ticket, idx) {
             return  ['TO_BE_PAID', 'ACQUIRED'].indexOf(ticket.status) >= 0;
         }
 
-    	
-    	$scope.reloadTickets = function() {
-    		CheckInService.findAllTickets($scope.event.id).success(function(tickets) {
-    			$scope.tickets = tickets;
-    		});
-    	};
+        
+        $scope.reloadTickets = function() {
+            CheckInService.findAllTickets($scope.event.id).success(function(tickets) {
+                $scope.tickets = tickets;
+            });
+        };
 
-    	$scope.manualCheckIn = function(ticket) {
-    	    CheckInService.manualCheckIn(ticket).then($scope.reloadTickets).then(function() {
-    	        $scope.selection = {};
-    	    });
-    	}
+        $scope.manualCheckIn = function(ticket) {
+            CheckInService.manualCheckIn(ticket).then($scope.reloadTickets).then(function() {
+                $scope.selection = {};
+            });
+        }
     });
 
     admin.controller('EventCheckInScanController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService) {
@@ -784,168 +784,168 @@
 
         var canReadCamera = MediaStreamTrack.getSources !== undefined;
 
-    	$scope.goToScanPage = function() {
-    	    $state.go('events.checkInScan', $stateParams);
-    	};
+        $scope.goToScanPage = function() {
+            $state.go('events.checkInScan', $stateParams);
+        };
 
-    	$scope.canReadCamera = canReadCamera;
-    	if(canReadCamera) {
+        $scope.canReadCamera = canReadCamera;
+        if(canReadCamera) {
 
-    	    var processingScannedImage = false;
+            var processingScannedImage = false;
 
-    		navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-    		$scope.videos = [];
-        	$scope.stream = null;
+            navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+            $scope.videos = [];
+            $scope.stream = null;
 
-        	var timeoutPromise = null;
-        	var worker = new Worker("../resources/js/jsqrcode/decode-worker.js");
+            var timeoutPromise = null;
+            var worker = new Worker("../resources/js/jsqrcode/decode-worker.js");
 
-    		worker.addEventListener('message', function(message) {
-    		    processingScannedImage = false;
-    			var result = message.data;
-    			$scope.scanning.loadingTicket = false;
-    			if(result === 'error decoding QR Code') {
-    				$log.debug('error decoding qr code');
-    			} else if ($scope.scanning.scannedResult == null) {
-    				$scope.$apply(function() {
-    				    $scope.scanning.visible = false;
-    					$scope.scanning.ticket.code = result;
+            worker.addEventListener('message', function(message) {
+                processingScannedImage = false;
+                var result = message.data;
+                $scope.scanning.loadingTicket = false;
+                if(result === 'error decoding QR Code') {
+                    $log.debug('error decoding qr code');
+                } else if ($scope.scanning.scannedResult == null) {
+                    $scope.$apply(function() {
+                        $scope.scanning.visible = false;
+                        $scope.scanning.ticket.code = result;
                         $scope.scanning.loadingTicket = true;
 
-    					CheckInService.getTicket($scope.event.id, result).success(function(result) {
-    						$scope.scanning.scannedTicketInfo = result.ticket;
-    						$scope.scanning.scannedResult = result.result;
-    						$scope.scanning.loadingTicket = false;
-    					});
-    				});
-    			} else {
-    			    $log.debug('scanned result already present, skipping');
-    			}
-    		}, false);
+                        CheckInService.getTicket($scope.event.id, result).success(function(result) {
+                            $scope.scanning.scannedTicketInfo = result.ticket;
+                            $scope.scanning.scannedResult = result.result;
+                            $scope.scanning.loadingTicket = false;
+                        });
+                    });
+                } else {
+                    $log.debug('scanned result already present, skipping');
+                }
+            }, false);
 
-    		var captureFrame = function() {
-        		if($scope.scanning.visible && $scope.scanning.scannedResult == null && !processingScannedImage) {
-        			$log.debug('try to capture frame');
-    	    		try {
-    	    			var videoElement = document.getElementById('checkInVideoElement');
-    					var canvas = document.getElementById("checkInImageCanvas");
-    					canvas.height = videoElement.videoHeight;
-    					canvas.width = videoElement.videoWidth;
+            var captureFrame = function() {
+                if($scope.scanning.visible && $scope.scanning.scannedResult == null && !processingScannedImage) {
+                    $log.debug('try to capture frame');
+                    try {
+                        var videoElement = document.getElementById('checkInVideoElement');
+                        var canvas = document.getElementById("checkInImageCanvas");
+                        canvas.height = videoElement.videoHeight;
+                        canvas.width = videoElement.videoWidth;
 
-    					canvas.getContext("2d").drawImage(videoElement, 0, 0);
-    					var imageData = canvas.getContext("2d").getImageData(0,0,canvas.width, canvas.height);
-    					worker.postMessage(imageData);
-    					processingScannedImage = true;
-    				} catch(e) {
-    				    processingScannedImage = false;
-    					$log.debug('error', e)
-    				}
-        		} else {
-        		    $log.debug('skipping');
-        		}
+                        canvas.getContext("2d").drawImage(videoElement, 0, 0);
+                        var imageData = canvas.getContext("2d").getImageData(0,0,canvas.width, canvas.height);
+                        worker.postMessage(imageData);
+                        processingScannedImage = true;
+                    } catch(e) {
+                        processingScannedImage = false;
+                        $log.debug('error', e)
+                    }
+                } else {
+                    $log.debug('skipping');
+                }
 
-    			timeoutPromise = $timeout(function() {
-    				captureFrame();
-    			}, 250);
-        	}
+                timeoutPromise = $timeout(function() {
+                    captureFrame();
+                }, 250);
+            }
 
-    		var endVideoStream = function () {
-    		    processingScannedImage = false;
-    			if (!!$scope.stream) {
-        			$scope.stream.stop();
-        		}
-    		}
+            var endVideoStream = function () {
+                processingScannedImage = false;
+                if (!!$scope.stream) {
+                    $scope.stream.stop();
+                }
+            }
 
-    		var stopScanning = function () {
-        		endVideoStream();
-        		$scope.resetScanning();
-        		$scope.scanning.visible = false;
-        		$timeout.cancel(timeoutPromise);
-        	}
+            var stopScanning = function () {
+                endVideoStream();
+                $scope.resetScanning();
+                $scope.scanning.visible = false;
+                $timeout.cancel(timeoutPromise);
+            }
 
-    		$scope.$on('$destroy', function() {
-    			worker.terminate();
-    			endVideoStream();
-    			stopScanning();
-    		});
+            $scope.$on('$destroy', function() {
+                worker.terminate();
+                endVideoStream();
+                stopScanning();
+            });
 
-    		$scope.stopScanning = stopScanning;
+            $scope.stopScanning = stopScanning;
 
-        	$scope.selectSource = function(source) {
-        		if(source == undefined) {
-        			return;
-        		}
+            $scope.selectSource = function(source) {
+                if(source == undefined) {
+                    return;
+                }
 
-        		endVideoStream();
-        		var videoElement = document.getElementById('checkInVideoElement');
-        		videoElement.src = null;
-
-
-        		var constraint = {video: {optional: [{sourceId: source.source.id}]}};
-
-        		navigator.getUserMedia(constraint, function(stream) {
-        			$scope.stream = stream; // make stream available to console
-        			videoElement.src = window.URL.createObjectURL(stream);
-        			videoElement.play();
-        			$timeout.cancel(timeoutPromise);
-        			captureFrame();
-        		}, function() {
-        			alert('error while loading camera');
-        			$timeout.cancel(timeoutPromise);
-        		});
-        	};
-
-        	MediaStreamTrack.getSources(function(sources) {
-        		var videos = [];
-        		angular.forEach(sources, function(v,i) {
-        			if(v.kind === 'video') {
-        				videos.push({ source: v, label: (v.label || 'camera ' + i)});
-        			}
-        		});
-        		$scope.$apply(function() {
-        			$scope.videos = videos;
-        		});
-        	});
-    	}
-
-    	EventService.getEvent($stateParams.eventName).success(function(result) {
-    		$scope.event = result.event;
-    	});
+                endVideoStream();
+                var videoElement = document.getElementById('checkInVideoElement');
+                videoElement.src = null;
 
 
-    	$scope.checkIn = function(ticket) {
-    	    $scope.scanning.checkInInAction = true;
-    		CheckInService.checkIn($scope.event.id, ticket).success(function(result) {
-    		    $scope.scanning.checkInInAction = false;
-    		    $scope.scanning.scannedTicketInfo = result.ticket;
-    		    $scope.scanning.scannedResult = result.result;
+                var constraint = {video: {optional: [{sourceId: source.source.id}]}};
+
+                navigator.getUserMedia(constraint, function(stream) {
+                    $scope.stream = stream; // make stream available to console
+                    videoElement.src = window.URL.createObjectURL(stream);
+                    videoElement.play();
+                    $timeout.cancel(timeoutPromise);
+                    captureFrame();
+                }, function() {
+                    alert('error while loading camera');
+                    $timeout.cancel(timeoutPromise);
+                });
+            };
+
+            MediaStreamTrack.getSources(function(sources) {
+                var videos = [];
+                angular.forEach(sources, function(v,i) {
+                    if(v.kind === 'video') {
+                        videos.push({ source: v, label: (v.label || 'camera ' + i)});
+                    }
+                });
+                $scope.$apply(function() {
+                    $scope.videos = videos;
+                });
+            });
+        }
+
+        EventService.getEvent($stateParams.eventName).success(function(result) {
+            $scope.event = result.event;
+        });
 
 
-    		    if(result.ticket.status === 'CHECKED_IN') {
-    		        $scope.resetScanning();
-    		    }
-    		});
-    	};
+        $scope.checkIn = function(ticket) {
+            $scope.scanning.checkInInAction = true;
+            CheckInService.checkIn($scope.event.id, ticket).success(function(result) {
+                $scope.scanning.checkInInAction = false;
+                $scope.scanning.scannedTicketInfo = result.ticket;
+                $scope.scanning.scannedResult = result.result;
 
-    	$scope.resetScanning = function() {
-    	    $scope.scanning = {visible: $scope.scanning, ticket: {}};
-    	};
 
-    	$scope.resetForm = function(ticket) {
-    		ticket.code = null;
+                if(result.ticket.status === 'CHECKED_IN') {
+                    $scope.resetScanning();
+                }
+            });
+        };
+
+        $scope.resetScanning = function() {
+            $scope.scanning = {visible: $scope.scanning, ticket: {}};
+        };
+
+        $scope.resetForm = function(ticket) {
+            ticket.code = null;
             $scope.resetScanning();
-    	};
+        };
 
-    	$scope.confirmPayment = function() {
-    	    $scope.scanning.confirmPaymentInAction = true;
-    	    CheckInService.confirmPayment($scope.event.id, $scope.scanning.ticket).then(function() {
-    	        CheckInService.getTicket($scope.event.id, $scope.scanning.ticket.code).success(function(result) {
-    	            $scope.scanning.scannedTicketInfo = result.ticket;
+        $scope.confirmPayment = function() {
+            $scope.scanning.confirmPaymentInAction = true;
+            CheckInService.confirmPayment($scope.event.id, $scope.scanning.ticket).then(function() {
+                CheckInService.getTicket($scope.event.id, $scope.scanning.ticket.code).success(function(result) {
+                    $scope.scanning.scannedTicketInfo = result.ticket;
                     $scope.scanning.scannedResult = result.result;
                     $scope.scanning.confirmPaymentInAction = false;
                 });
-    	    });
-    	};
+            });
+        };
 
     });
 

@@ -55,92 +55,92 @@ import static org.apache.commons.lang3.StringUtils.substring;
  */
 public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 
-	private static final String LOCALE_LABEL = "locale:";
+    private static final String LOCALE_LABEL = "locale:";
 
-	public static final Mustache.Lambda FORMAT_DATE = (frag, out) -> {
-		String execution = frag.execute().trim();
-		ZonedDateTime d = ZonedDateTime.parse(substring(execution, 0, execution.indexOf(" ")));
-		Pair<String, Optional<Locale>> p = parseParams(execution);
-		if (p.getRight().isPresent()) {
-			out.write(DateTimeFormatter.ofPattern(p.getLeft(), p.getRight().get()).format(d));
-		} else {
-			out.write(DateTimeFormatter.ofPattern(p.getLeft()).format(d));
-		}
-	};
+    public static final Mustache.Lambda FORMAT_DATE = (frag, out) -> {
+        String execution = frag.execute().trim();
+        ZonedDateTime d = ZonedDateTime.parse(substring(execution, 0, execution.indexOf(" ")));
+        Pair<String, Optional<Locale>> p = parseParams(execution);
+        if (p.getRight().isPresent()) {
+            out.write(DateTimeFormatter.ofPattern(p.getLeft(), p.getRight().get()).format(d));
+        } else {
+            out.write(DateTimeFormatter.ofPattern(p.getLeft()).format(d));
+        }
+    };
 
-	private static Pair<String, Optional<Locale>> parseParams(String r) {
+    private static Pair<String, Optional<Locale>> parseParams(String r) {
 
-		int indexLocale = r.indexOf(LOCALE_LABEL), end = Math.min(r.length(),
-				indexLocale != -1 ? indexLocale : r.length());
-		String format = substring(r, r.indexOf(" "), end);
+        int indexLocale = r.indexOf(LOCALE_LABEL), end = Math.min(r.length(),
+                indexLocale != -1 ? indexLocale : r.length());
+        String format = substring(r, r.indexOf(" "), end);
 
-		//
-		String[] res = r.split("\\s+");
-		Optional<Locale> locale = Arrays.asList(res).stream().filter((s) -> s.startsWith(LOCALE_LABEL)).findFirst()
-				.map((l) -> {
-					return Locale.forLanguageTag(substring(l, LOCALE_LABEL.length()));
-				});
-		//
+        //
+        String[] res = r.split("\\s+");
+        Optional<Locale> locale = Arrays.asList(res).stream().filter((s) -> s.startsWith(LOCALE_LABEL)).findFirst()
+                .map((l) -> {
+                    return Locale.forLanguageTag(substring(l, LOCALE_LABEL.length()));
+                });
+        //
 
-		return Pair.of(format, locale);
-	}
+        return Pair.of(format, locale);
+    }
 
-	private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*?)\\]");
+    private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*?)\\]");
 
-	private static final Function<ModelAndView, Mustache.Lambda> HAS_ERROR = (mv) -> {
-		return (frag, out) -> {
-			Errors err = (Errors) mv.getModelMap().get("error");
-			String execution = frag.execute().trim();
-			Matcher matcher = ARG_PATTERN.matcher(execution);
-			if (matcher.find()) {
-				String field = matcher.group(1);
-				if (err != null && err.hasFieldErrors(field)) {
-					out.write(execution.substring(matcher.end(1) + 1));
-				}
-			}
-		};
-	};
+    private static final Function<ModelAndView, Mustache.Lambda> HAS_ERROR = (mv) -> {
+        return (frag, out) -> {
+            Errors err = (Errors) mv.getModelMap().get("error");
+            String execution = frag.execute().trim();
+            Matcher matcher = ARG_PATTERN.matcher(execution);
+            if (matcher.find()) {
+                String field = matcher.group(1);
+                if (err != null && err.hasFieldErrors(field)) {
+                    out.write(execution.substring(matcher.end(1) + 1));
+                }
+            }
+        };
+    };
 
-	private static final Mustache.Lambda IS_PAYMENT_METHOD = (frag, out) -> {
-		String execution = frag.execute().trim();
-		Matcher matcher = ARG_PATTERN.matcher(execution);
-		if(matcher.find()) {
-			String[] values = matcher.group(1).split(",");
-			Optional<PaymentProxy> first = PaymentProxy.safeValueOf(values[0]);
-			Optional<PaymentProxy> second = PaymentProxy.safeValueOf(values[1]);
-			if(first.isPresent() && second.isPresent() && first.get().equals(second.get())) {
-				out.write(execution.substring(matcher.end(1) + 1));
-			}
-		}
-	};
+    private static final Mustache.Lambda IS_PAYMENT_METHOD = (frag, out) -> {
+        String execution = frag.execute().trim();
+        Matcher matcher = ARG_PATTERN.matcher(execution);
+        if(matcher.find()) {
+            String[] values = matcher.group(1).split(",");
+            Optional<PaymentProxy> first = PaymentProxy.safeValueOf(values[0]);
+            Optional<PaymentProxy> second = PaymentProxy.safeValueOf(values[1]);
+            if(first.isPresent() && second.isPresent() && first.get().equals(second.get())) {
+                out.write(execution.substring(matcher.end(1) + 1));
+            }
+        }
+    };
 
-	private static final Function<ModelAndView, Mustache.Lambda> FIELD_ERROR = (mv) -> {
-		return (frag, out) -> {
-			Errors err = (Errors) mv.getModelMap().get("error");
-			String field = frag.execute().trim();
-			if (err != null && err.hasFieldErrors(field)) {
-				FieldError fe = err.getFieldError(field);
-				out.write(fe.getCode()
-						+ " "
-						+ Arrays.stream(Optional.ofNullable(fe.getArguments()).orElse(new Object[] {}))
-								.map(x -> "[" + x.toString() + "]").collect(Collectors.joining(" ")));
-			} else {
-				out.write("empty");
-			}
-		};
-	};
+    private static final Function<ModelAndView, Mustache.Lambda> FIELD_ERROR = (mv) -> {
+        return (frag, out) -> {
+            Errors err = (Errors) mv.getModelMap().get("error");
+            String field = frag.execute().trim();
+            if (err != null && err.hasFieldErrors(field)) {
+                FieldError fe = err.getFieldError(field);
+                out.write(fe.getCode()
+                        + " "
+                        + Arrays.stream(Optional.ofNullable(fe.getArguments()).orElse(new Object[] {}))
+                                .map(x -> "[" + x.toString() + "]").collect(Collectors.joining(" ")));
+            } else {
+                out.write("empty");
+            }
+        };
+    };
 
-	@Override
-	public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
-			ModelAndView modelAndView) throws Exception {
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+            ModelAndView modelAndView) throws Exception {
 
-		if (modelAndView != null) {
-			modelAndView.addObject("format-date", FORMAT_DATE);
-			modelAndView.addObject("field-has-error", HAS_ERROR.apply(modelAndView));
-			modelAndView.addObject("field-error", FIELD_ERROR.apply(modelAndView));
-			modelAndView.addObject("is-payment-method", IS_PAYMENT_METHOD);
-		}
+        if (modelAndView != null) {
+            modelAndView.addObject("format-date", FORMAT_DATE);
+            modelAndView.addObject("field-has-error", HAS_ERROR.apply(modelAndView));
+            modelAndView.addObject("field-error", FIELD_ERROR.apply(modelAndView));
+            modelAndView.addObject("is-payment-method", IS_PAYMENT_METHOD);
+        }
 
-		super.postHandle(request, response, handler, modelAndView);
-	}
+        super.postHandle(request, response, handler, modelAndView);
+    }
 }

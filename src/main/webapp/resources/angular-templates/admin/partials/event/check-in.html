@@ -1,21 +1,21 @@
 <div class="container">
-	<div class="page-header">
-		<h1>Check-In: {{event.displayName}}</h1>
-	</div>
+    <div class="page-header">
+        <h1>Check-In: {{event.displayName}}</h1>
+    </div>
 
-	<div class="page-header">
-		<h2>Scan the ticket for event {{event.displayName}}</h2>
-	</div>
+    <div class="page-header">
+        <h2>Scan the ticket for event {{event.displayName}}</h2>
+    </div>
     <div>
         <p><button class="btn btn-primary" type="button" data-ng-click="goToScanPage()">Scan Page</button></p>
     </div>
 
 
-	<div>
-		<div class="page-header" >
-			<h2>Tickets to be checked in <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button></h2>
-		</div>
-		<div>
+    <div>
+        <div class="page-header" >
+            <h2>Tickets to be checked in <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button></h2>
+        </div>
+        <div>
             <div class="input-group wMarginBottom">
                 <div class="input-group-addon"><i class="fa fa-search"></i></div>
                 <input type="text" class="form-control input-sm" data-ng-model="selection.freeText">
@@ -64,74 +64,74 @@
 
                 <button class="btn btn-default" data-ng-click="resetAdvancedSearch()">Reset</button>
             </div>
-			<table class="table check-in-data">
-				<thead>
-					<th>Status</th>
+            <table class="table check-in-data">
+                <thead>
+                    <th>Status</th>
                     <th>Holder's name</th>
                     <th>Holder's e-mail</th>
                     <th>Type</th>
-					<th>Reference Number</th>
-					<th>Customer's name</th>
-					<th>Customer's e-mail</th>
+                    <th>Reference Number</th>
+                    <th>Customer's name</th>
+                    <th>Customer's e-mail</th>
                     <th>Order identifier</th>
-					<th>Payment Type</th>
-					<th>Transaction id</th>
-					<th>Transaction timestamp</th>
+                    <th>Payment Type</th>
+                    <th>Transaction id</th>
+                    <th>Transaction timestamp</th>
                     <th data-ng-if="filterResult.length == 1">Manual Check-In</th>
-				</thead>
-				<tbody>
-					<tr data-ng-repeat="ticket in tickets | filter: toBeCheckedIn | filter: selection.freeText | filter: advancedSearch | orderBy: ['timestamp', 'ticketReservationId' , 'uuid'] as filterResult">
-						<td data-ng-class-even="'active'" data-label="Status">{{::ticket.status | statusText}}</td>
+                </thead>
+                <tbody>
+                    <tr data-ng-repeat="ticket in tickets | filter: toBeCheckedIn | filter: selection.freeText | filter: advancedSearch | orderBy: ['timestamp', 'ticketReservationId' , 'uuid'] as filterResult">
+                        <td data-ng-class-even="'active'" data-label="Status">{{::ticket.status | statusText}}</td>
                         <td data-ng-class-even="'active'" data-label="Holder's name">{{::ticket.fullName}}</td>
                         <td data-ng-class-even="'active'" data-label="Holder's e-mail">{{::ticket.email}}</td>
                         <td data-ng-class-even="'active'" data-label="Type">{{::ticket.ticketCategory.name}}</td>
-						<td data-ng-class-even="'active'" data-label="Reference Number"><a data-ng-href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketsReservationId}}/{{::ticket.uuid}}">{{::ticket.uuid}}</a></td>
-						<td data-ng-class-even="'active'" data-label="Customer's name">{{::ticket.ticketReservation.fullName}}</td>
-						<td data-ng-class-even="'active'" data-label="Customer's e-mail">{{::ticket.ticketReservation.email}}</td>
+                        <td data-ng-class-even="'active'" data-label="Reference Number"><a data-ng-href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketsReservationId}}/{{::ticket.uuid}}">{{::ticket.uuid}}</a></td>
+                        <td data-ng-class-even="'active'" data-label="Customer's name">{{::ticket.ticketReservation.fullName}}</td>
+                        <td data-ng-class-even="'active'" data-label="Customer's e-mail">{{::ticket.ticketReservation.email}}</td>
                         <td data-ng-class-even="'active'" data-label="Order identifier">{{::ticket.ticketsReservationId}}</td>
-						<td data-ng-class-even="'active'" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
-						<td data-ng-class-even="'active'" data-label="Transaction id"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
-						<td data-ng-class-even="'active'" data-label="Transaction timestamp"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
+                        <td data-ng-class-even="'active'" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
+                        <td data-ng-class-even="'active'" data-label="Transaction id"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
+                        <td data-ng-class-even="'active'" data-label="Transaction timestamp"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
                         <td data-ng-class-even="'active'" data-label="Manual Check-In" data-ng-if="filterResult.length == 1"><button type="button" class="btn btn-primary btn-xs" data-ng-click="manualCheckIn(ticket)">Check-In</button></td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	
-		<div class="page-header">
-			<h2>Checked in tickets <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button></h2>
-		</div>
-		<div>
-			<table class="table check-in-data">
-				<thead>
-					<th>Status</th>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    
+        <div class="page-header">
+            <h2>Checked in tickets <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button></h2>
+        </div>
+        <div>
+            <table class="table check-in-data">
+                <thead>
+                    <th>Status</th>
                     <th>Holder's name</th>
                     <th>Holder's e-mail</th>
                     <th>Type</th>
-					<th>Reference Number</th>
-					<th>Customer's name</th>
-					<th>Customer's e-mail</th>
+                    <th>Reference Number</th>
+                    <th>Customer's name</th>
+                    <th>Customer's e-mail</th>
                     <th>Order identifier</th>
-					<th>Payment Type</th>
-					<th>Transaction id</th>
-					<th>Transaction timestamp</th>
-				</thead>
-				<tbody>
-					<tr data-ng-repeat="ticket in tickets | filter: {status: 'CHECKED_IN'} | orderBy: ['timestamp', 'ticketReservationId' , 'uuid']">
-						<td data-ng-class-even="'active'" data-label="Status">{{::ticket.status | statusText}}</td>
+                    <th>Payment Type</th>
+                    <th>Transaction id</th>
+                    <th>Transaction timestamp</th>
+                </thead>
+                <tbody>
+                    <tr data-ng-repeat="ticket in tickets | filter: {status: 'CHECKED_IN'} | orderBy: ['timestamp', 'ticketReservationId' , 'uuid']">
+                        <td data-ng-class-even="'active'" data-label="Status">{{::ticket.status | statusText}}</td>
                         <td data-ng-class-even="'active'" data-label="Owner's name">{{::ticket.fullName}}</td>
                         <td data-ng-class-even="'active'" data-label="Owner's e-mail">{{::ticket.email}}</td>
                         <td data-ng-class-even="'active'" data-label="Type">{{::ticket.ticketCategory.name}}</td>
-						<td data-ng-class-even="'active'" data-label="Reference Number"><a data-ng-href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketsReservationId}}/{{::ticket.uuid}}">{{::ticket.uuid}}</a></td>
-						<td data-ng-class-even="'active'" data-label="Customer's name">{{::ticket.ticketReservation.fullName}}</td>
-						<td data-ng-class-even="'active'" data-label="Customer's e-mail">{{::ticket.ticketReservation.email}}</td>
+                        <td data-ng-class-even="'active'" data-label="Reference Number"><a data-ng-href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketsReservationId}}/{{::ticket.uuid}}">{{::ticket.uuid}}</a></td>
+                        <td data-ng-class-even="'active'" data-label="Customer's name">{{::ticket.ticketReservation.fullName}}</td>
+                        <td data-ng-class-even="'active'" data-label="Customer's e-mail">{{::ticket.ticketReservation.email}}</td>
                         <td data-ng-class-even="'active'" data-label="Order identifier">{{::ticket.ticketsReservationId}}</td>
-						<td data-ng-class-even="'active'" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
-						<td data-ng-class-even="'active'" data-label="Transaction id"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
-						<td data-ng-class-even="'active'" data-label="Transaction timestamp"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	</div>
+                        <td data-ng-class-even="'active'" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
+                        <td data-ng-class-even="'active'" data-label="Transaction id"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
+                        <td data-ng-class-even="'active'" data-label="Transaction timestamp"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>

@@ -20,6 +20,6 @@ import lombok.Data;
 
 @Data
 public class TicketReservationModification {
-	private Integer ticketCategoryId;
-	private Integer amount;
+    private Integer ticketCategoryId;
+    private Integer amount;
 }

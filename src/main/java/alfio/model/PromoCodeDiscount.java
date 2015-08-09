@@ -26,49 +26,49 @@ import lombok.Getter;
 
 @Getter
 public class PromoCodeDiscount {
-	
-	public enum DiscountType {
-		FIXED_AMOUNT, PERCENTAGE
-	}
+    
+    public enum DiscountType {
+        FIXED_AMOUNT, PERCENTAGE
+    }
 
-	private final int id;
-	private final String promoCode;
-	private final int eventId;
-	private final ZonedDateTime utcStart;
-	private final ZonedDateTime utcEnd;
-	private final int discountAmount;
-	private final DiscountType discountType;
-	
-	public PromoCodeDiscount(@Column("id")int id, 
-			@Column("promo_code") String promoCode, 
-			@Column("event_id_fk") int eventId,
-			@Column("valid_from") ZonedDateTime utcStart, 
-			@Column("valid_to") ZonedDateTime utcEnd, 
-			@Column("discount_amount") int discountAmount,
-			@Column("discount_type") DiscountType discountType) {
-		this.id = id;
-		this.promoCode = promoCode;
-		this.eventId = eventId;
-		this.utcStart = utcStart;
-		this.utcEnd = utcEnd;
-		this.discountAmount = discountAmount;
-		this.discountType = discountType;
-	}
-	
-	public boolean isCurrentlyValid(ZoneId eventZoneId, ZonedDateTime now) {
-		return utcStart.withZoneSameInstant(eventZoneId).isBefore(now) && utcEnd.withZoneSameInstant(eventZoneId).isAfter(now);
-	}
-	
-	public boolean isExpired(ZoneId eventZoneId, ZonedDateTime now) {
-		return now.isAfter(utcEnd.withZoneSameInstant(eventZoneId));
-	}
-	
-	public BigDecimal getFormattedDiscountAmount() {
-    	//TODO: apply this conversion only for some currency. Not all are cent based.
+    private final int id;
+    private final String promoCode;
+    private final int eventId;
+    private final ZonedDateTime utcStart;
+    private final ZonedDateTime utcEnd;
+    private final int discountAmount;
+    private final DiscountType discountType;
+    
+    public PromoCodeDiscount(@Column("id")int id, 
+            @Column("promo_code") String promoCode, 
+            @Column("event_id_fk") int eventId,
+            @Column("valid_from") ZonedDateTime utcStart, 
+            @Column("valid_to") ZonedDateTime utcEnd, 
+            @Column("discount_amount") int discountAmount,
+            @Column("discount_type") DiscountType discountType) {
+        this.id = id;
+        this.promoCode = promoCode;
+        this.eventId = eventId;
+        this.utcStart = utcStart;
+        this.utcEnd = utcEnd;
+        this.discountAmount = discountAmount;
+        this.discountType = discountType;
+    }
+    
+    public boolean isCurrentlyValid(ZoneId eventZoneId, ZonedDateTime now) {
+        return utcStart.withZoneSameInstant(eventZoneId).isBefore(now) && utcEnd.withZoneSameInstant(eventZoneId).isAfter(now);
+    }
+    
+    public boolean isExpired(ZoneId eventZoneId, ZonedDateTime now) {
+        return now.isAfter(utcEnd.withZoneSameInstant(eventZoneId));
+    }
+    
+    public BigDecimal getFormattedDiscountAmount() {
+        //TODO: apply this conversion only for some currency. Not all are cent based.
         return MonetaryUtil.centsToUnit(discountAmount);
     }
-	
-	public boolean getFixedAmount() {
-		return DiscountType.FIXED_AMOUNT == discountType;
-	}
+    
+    public boolean getFixedAmount() {
+        return DiscountType.FIXED_AMOUNT == discountType;
+    }
 }

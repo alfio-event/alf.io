@@ -23,11 +23,11 @@ import java.util.function.Supplier;
 
 public class OptionalWrapper {
 
-	public static <T> Optional<T> optionally(Supplier<T> s) {
-		try {
-			return Optional.ofNullable(s.get());
-		} catch (EmptyResultDataAccessException | IllegalArgumentException e) {
-			return Optional.empty();
-		}
-	}
+    public static <T> Optional<T> optionally(Supplier<T> s) {
+        try {
+            return Optional.ofNullable(s.get());
+        } catch (EmptyResultDataAccessException | IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
 }

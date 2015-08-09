@@ -32,56 +32,56 @@ import java.util.Optional;
 //
 @Data
 public class PaymentForm {
-	private String stripeToken;
-	private String email;
-	private String fullName;
-	private String billingAddress;
-	private Boolean cancelReservation;
-	private Boolean termAndConditionsAccepted;
-	private PaymentProxy paymentMethod;
+    private String stripeToken;
+    private String email;
+    private String fullName;
+    private String billingAddress;
+    private Boolean cancelReservation;
+    private Boolean termAndConditionsAccepted;
+    private PaymentProxy paymentMethod;
 
-	private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
-			String value, int maxLength) {
-		if (value != null && value.length() > maxLength) {
-			bindingResult.rejectValue(field, errorCode);
-		}
-	}
+    private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
+            String value, int maxLength) {
+        if (value != null && value.length() > maxLength) {
+            bindingResult.rejectValue(field, errorCode);
+        }
+    }
 
-	public void validate(BindingResult bindingResult, TicketReservationManager.TotalPrice reservationCost, List<PaymentProxy> allowedPaymentMethods) {
+    public void validate(BindingResult bindingResult, TicketReservationManager.TotalPrice reservationCost, List<PaymentProxy> allowedPaymentMethods) {
 
-		Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentMethod);
-		PaymentProxy paymentProxy = paymentProxyOptional.filter(allowedPaymentMethods::contains).orElse(PaymentProxy.STRIPE);
-		boolean priceGreaterThanZero = reservationCost.getPriceWithVAT() > 0;
-		boolean multiplePaymentMethods = allowedPaymentMethods.size() > 1;
-		if (multiplePaymentMethods && priceGreaterThanZero && !paymentProxyOptional.isPresent()) {
-			bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
-		} else if (priceGreaterThanZero && (paymentProxy == PaymentProxy.STRIPE && StringUtils.isBlank(stripeToken))) {
-			bindingResult.reject(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
-		}
+        Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentMethod);
+        PaymentProxy paymentProxy = paymentProxyOptional.filter(allowedPaymentMethods::contains).orElse(PaymentProxy.STRIPE);
+        boolean priceGreaterThanZero = reservationCost.getPriceWithVAT() > 0;
+        boolean multiplePaymentMethods = allowedPaymentMethods.size() > 1;
+        if (multiplePaymentMethods && priceGreaterThanZero && !paymentProxyOptional.isPresent()) {
+            bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
+        } else if (priceGreaterThanZero && (paymentProxy == PaymentProxy.STRIPE && StringUtils.isBlank(stripeToken))) {
+            bindingResult.reject(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
+        }
 
-		if(Objects.isNull(termAndConditionsAccepted) || !termAndConditionsAccepted) {
-			bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
-		}
-		
-		email = StringUtils.trim(email);
-		fullName = StringUtils.trim(fullName);
-		billingAddress = StringUtils.trim(billingAddress);
+        if(Objects.isNull(termAndConditionsAccepted) || !termAndConditionsAccepted) {
+            bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
+        }
+        
+        email = StringUtils.trim(email);
+        fullName = StringUtils.trim(fullName);
+        billingAddress = StringUtils.trim(billingAddress);
 
-		ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "email", ErrorsCode.STEP_2_EMPTY_EMAIL);
-		rejectIfOverLength(bindingResult, "email", ErrorsCode.STEP_2_MAX_LENGTH_EMAIL, email, 255);
+        ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "email", ErrorsCode.STEP_2_EMPTY_EMAIL);
+        rejectIfOverLength(bindingResult, "email", ErrorsCode.STEP_2_MAX_LENGTH_EMAIL, email, 255);
 
-		ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "fullName", ErrorsCode.STEP_2_EMPTY_FULLNAME);
-		rejectIfOverLength(bindingResult, "fullName", ErrorsCode.STEP_2_MAX_LENGTH_FULLNAME, fullName, 255);
+        ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "fullName", ErrorsCode.STEP_2_EMPTY_FULLNAME);
+        rejectIfOverLength(bindingResult, "fullName", ErrorsCode.STEP_2_MAX_LENGTH_FULLNAME, fullName, 255);
 
-		rejectIfOverLength(bindingResult, "billingAddress", ErrorsCode.STEP_2_MAX_LENGTH_BILLING_ADDRESS,
-				billingAddress, 450);
+        rejectIfOverLength(bindingResult, "billingAddress", ErrorsCode.STEP_2_MAX_LENGTH_BILLING_ADDRESS,
+                billingAddress, 450);
 
-		if (email != null && !email.contains("@") && !bindingResult.hasFieldErrors("email")) {
-			bindingResult.rejectValue("email", ErrorsCode.STEP_2_INVALID_EMAIL);
-		}
-	}
+        if (email != null && !email.contains("@") && !bindingResult.hasFieldErrors("email")) {
+            bindingResult.rejectValue("email", ErrorsCode.STEP_2_INVALID_EMAIL);
+        }
+    }
 
-	public Boolean shouldCancelReservation() {
-		return Optional.ofNullable(cancelReservation).orElse(false);
-	}
+    public Boolean shouldCancelReservation() {
+        return Optional.ofNullable(cancelReservation).orElse(false);
+    }
 }

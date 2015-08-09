@@ -45,65 +45,65 @@ import static java.util.stream.Collectors.toList;
 @Data
 public class ReservationForm {
 
-	private String promoCode;
-	private List<TicketReservationModification> reservation;
+    private String promoCode;
+    private List<TicketReservationModification> reservation;
 
-	private List<TicketReservationModification> selected() {
-		return ofNullable(reservation)
-				.orElse(emptyList())
-				.stream()
-				.filter((e) -> e != null && e.getAmount() != null && e.getTicketCategoryId() != null
-						&& e.getAmount() > 0).collect(toList());
-	}
+    private List<TicketReservationModification> selected() {
+        return ofNullable(reservation)
+                .orElse(emptyList())
+                .stream()
+                .filter((e) -> e != null && e.getAmount() != null && e.getTicketCategoryId() != null
+                        && e.getAmount() > 0).collect(toList());
+    }
 
-	private int selectionCount() {
-		return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
-	}
+    private int selectionCount() {
+        return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
+    }
 
-	public Optional<List<TicketReservationWithOptionalCodeModification>> validate(BindingResult bindingResult,
-																				  TicketReservationManager tickReservationManager,
-																				  EventManager eventManager,
-																				  Event event, HttpServletRequest request) {
-		int selectionCount = selectionCount();
+    public Optional<List<TicketReservationWithOptionalCodeModification>> validate(BindingResult bindingResult,
+                                                                                  TicketReservationManager tickReservationManager,
+                                                                                  EventManager eventManager,
+                                                                                  Event event, HttpServletRequest request) {
+        int selectionCount = selectionCount();
 
-		if (selectionCount <= 0) {
-			bindingResult.reject(ErrorsCode.STEP_1_SELECT_AT_LEAST_ONE);
-			return Optional.empty();
-		}
-
-		final int maxAmountOfTicket = tickReservationManager.maxAmountOfTickets(event);
-
-		if (selectionCount > maxAmountOfTicket) {
-			bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM, new Object[] { maxAmountOfTicket }, null);
-			return Optional.empty();
-		}
-
-		final List<TicketReservationModification> selected = selected();
-		final ZoneId eventZoneId = selected.stream().findFirst().map(r -> {
-			TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
-			return eventManager.findEventByTicketCategory(tc).getZoneId();
-		}).orElseThrow(IllegalStateException::new);
-
-		List<TicketReservationWithOptionalCodeModification> res = new ArrayList<>();
-		//
-		Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode)).flatMap(
-				(trimmedCode) -> OptionalWrapper.optionally(() -> tickReservationManager.getSpecialPriceByCode(trimmedCode)));
-		//
-		final ZonedDateTime now = ZonedDateTime.now(eventZoneId);
-		selected.forEach((r) -> validateCategory(bindingResult, tickReservationManager, eventManager, event, maxAmountOfTicket, res, specialCode, now, r, request));
-		return bindingResult.hasErrors() ? Optional.empty() : Optional.of(res);
-	}
-
-	private static void validateCategory(BindingResult bindingResult, TicketReservationManager tickReservationManager, EventManager eventManager, Event event, int maxAmountOfTicket, List<TicketReservationWithOptionalCodeModification> res, Optional<SpecialPrice> specialCode, ZonedDateTime now, TicketReservationModification r, HttpServletRequest request) {
-		TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
-		SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, tickReservationManager
-                .countAvailableTickets(event, tc), maxAmountOfTicket, Optional.empty());
-
-		if (!ticketCategory.getSaleable()) {
-            bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE);
-			return;
+        if (selectionCount <= 0) {
+            bindingResult.reject(ErrorsCode.STEP_1_SELECT_AT_LEAST_ONE);
+            return Optional.empty();
         }
 
-		res.add(new TicketReservationWithOptionalCodeModification(r, ticketCategory.isAccessRestricted() ? specialCode : Optional.empty()));
-	}
+        final int maxAmountOfTicket = tickReservationManager.maxAmountOfTickets(event);
+
+        if (selectionCount > maxAmountOfTicket) {
+            bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM, new Object[] { maxAmountOfTicket }, null);
+            return Optional.empty();
+        }
+
+        final List<TicketReservationModification> selected = selected();
+        final ZoneId eventZoneId = selected.stream().findFirst().map(r -> {
+            TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
+            return eventManager.findEventByTicketCategory(tc).getZoneId();
+        }).orElseThrow(IllegalStateException::new);
+
+        List<TicketReservationWithOptionalCodeModification> res = new ArrayList<>();
+        //
+        Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode)).flatMap(
+                (trimmedCode) -> OptionalWrapper.optionally(() -> tickReservationManager.getSpecialPriceByCode(trimmedCode)));
+        //
+        final ZonedDateTime now = ZonedDateTime.now(eventZoneId);
+        selected.forEach((r) -> validateCategory(bindingResult, tickReservationManager, eventManager, event, maxAmountOfTicket, res, specialCode, now, r, request));
+        return bindingResult.hasErrors() ? Optional.empty() : Optional.of(res);
+    }
+
+    private static void validateCategory(BindingResult bindingResult, TicketReservationManager tickReservationManager, EventManager eventManager, Event event, int maxAmountOfTicket, List<TicketReservationWithOptionalCodeModification> res, Optional<SpecialPrice> specialCode, ZonedDateTime now, TicketReservationModification r, HttpServletRequest request) {
+        TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
+        SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, tickReservationManager
+                .countAvailableTickets(event, tc), maxAmountOfTicket, Optional.empty());
+
+        if (!ticketCategory.getSaleable()) {
+            bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE);
+            return;
+        }
+
+        res.add(new TicketReservationWithOptionalCodeModification(r, ticketCategory.isAccessRestricted() ? specialCode : Optional.empty()));
+    }
 }

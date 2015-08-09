@@ -82,11 +82,11 @@ public class SaleableTicketCategory {
     
     //jmustache
     public boolean getAccessRestricted() {
-    	return isAccessRestricted();
+        return isAccessRestricted();
     }
     
     public boolean getSouldOut() {
-    	return soldOut;
+        return soldOut;
     }
 
     public String getFormattedExpiration() {
@@ -94,7 +94,7 @@ public class SaleableTicketCategory {
     }
     
     public ZonedDateTime getZonedExpiration() {
-    	return getExpiration(zoneId);
+        return getExpiration(zoneId);
     }
 
     public ZonedDateTime getZonedInception() {

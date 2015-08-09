@@ -104,7 +104,7 @@ public class ConfigurationManager {
     }
     
     public Optional<String> getStringConfigValue(ConfigurationPathKey pathKey) {
-    	return optionally(() -> findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())).map(Configuration::getValue);
+        return optionally(() -> findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())).map(Configuration::getValue);
     }
 
     public String getRequiredValue(ConfigurationPathKey pathKey) {
@@ -143,7 +143,7 @@ public class ConfigurationManager {
         return result.stream().collect(Collectors.groupingBy(c -> c.getConfigurationKey().getCategory()));
     }
 
-	public void deleteKey(String key) {
-		configurationRepository.deleteByKey(key);
-	}
+    public void deleteKey(String key) {
+        configurationRepository.deleteByKey(key);
+    }
 }

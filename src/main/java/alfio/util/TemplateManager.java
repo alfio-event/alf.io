@@ -51,134 +51,134 @@ import java.util.regex.Pattern;
  * */
 public class TemplateManager {
 
-	private final MessageSource messageSource;
-	private final boolean cache;
-	private final Map<String, Template> templateCache = new ConcurrentHashMap<>(5); // 1 pdf, 2 email confirmation, 2 email
-																				// ticket
+    private final MessageSource messageSource;
+    private final boolean cache;
+    private final Map<String, Template> templateCache = new ConcurrentHashMap<>(5); // 1 pdf, 2 email confirmation, 2 email
+                                                                                // ticket
 
-	
-	public enum TemplateOutput {
-		TEXT, HTML
-	}
-	
-	private final Map<TemplateOutput, Compiler> compilers;
+    
+    public enum TemplateOutput {
+        TEXT, HTML
+    }
+    
+    private final Map<TemplateOutput, Compiler> compilers;
 
-	@Autowired
-	public TemplateManager(Environment environment,
-						   JMustacheTemplateLoader templateLoader,
-						   MessageSource messageSource) {
-		this.messageSource = messageSource;
-		this.cache = environment.acceptsProfiles(Initializer.PROFILE_LIVE);
-		Formatter dateFormatter = (o) -> {
-			return (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME
-					.format((ZonedDateTime) o) : String.valueOf(o);
-		};
-		this.compilers = new EnumMap<>(TemplateOutput.class);
-		this.compilers.put(TemplateOutput.TEXT, Mustache.compiler()
-				.escapeHTML(false)
-				.standardsMode(false)
-				.defaultValue("")
-				.nullValue("")
-				.withFormatter(dateFormatter)
-				.withLoader(templateLoader));
-		this.compilers.put(TemplateOutput.HTML, Mustache.compiler()
-				.escapeHTML(true)
-				.standardsMode(false)
-				.defaultValue("")
-				.nullValue("")
-				.withFormatter(dateFormatter)
-				.withLoader(templateLoader));
-	}
+    @Autowired
+    public TemplateManager(Environment environment,
+                           JMustacheTemplateLoader templateLoader,
+                           MessageSource messageSource) {
+        this.messageSource = messageSource;
+        this.cache = environment.acceptsProfiles(Initializer.PROFILE_LIVE);
+        Formatter dateFormatter = (o) -> {
+            return (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME
+                    .format((ZonedDateTime) o) : String.valueOf(o);
+        };
+        this.compilers = new EnumMap<>(TemplateOutput.class);
+        this.compilers.put(TemplateOutput.TEXT, Mustache.compiler()
+                .escapeHTML(false)
+                .standardsMode(false)
+                .defaultValue("")
+                .nullValue("")
+                .withFormatter(dateFormatter)
+                .withLoader(templateLoader));
+        this.compilers.put(TemplateOutput.HTML, Mustache.compiler()
+                .escapeHTML(true)
+                .standardsMode(false)
+                .defaultValue("")
+                .nullValue("")
+                .withFormatter(dateFormatter)
+                .withLoader(templateLoader));
+    }
 
-	public String renderClassPathResource(String classPathResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-		return render(new ClassPathResource(classPathResource), classPathResource, model, locale, templateOutput, true);
-	}
+    public String renderClassPathResource(String classPathResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+        return render(new ClassPathResource(classPathResource), classPathResource, model, locale, templateOutput, true);
+    }
 
-	public String renderString(String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-		return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), "", model, locale, templateOutput, false);
-	}
+    public String renderString(String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+        return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), "", model, locale, templateOutput, false);
+    }
 
-	public String renderServletContextResource(String servletContextResource, Map<String, Object> model, HttpServletRequest request, TemplateOutput templateOutput) {
-		model.put("request", request);
-		model.put(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
-		return render(new ServletContextResource(request.getServletContext(), servletContextResource), servletContextResource, model, RequestContextUtils.getLocale(request), templateOutput, true);
-	}
+    public String renderServletContextResource(String servletContextResource, Map<String, Object> model, HttpServletRequest request, TemplateOutput templateOutput) {
+        model.put("request", request);
+        model.put(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
+        return render(new ServletContextResource(request.getServletContext(), servletContextResource), servletContextResource, model, RequestContextUtils.getLocale(request), templateOutput, true);
+    }
 
-	private String render(AbstractResource resource, String key, Map<String, Object> model, Locale locale, TemplateOutput templateOutput, boolean cachingRequested) {
-		try {
-			ModelAndView mv = new ModelAndView((String) null, model);
-			mv.addObject("format-date", MustacheCustomTagInterceptor.FORMAT_DATE);
-			mv.addObject(MustacheLocalizationMessageInterceptor.DEFAULT_MODEL_KEY, new CustomLocalizationMessageInterceptor(locale, messageSource).createTranslator());
-			Template tmpl = (cachingRequested && cache) ? templateCache.computeIfAbsent(key + templateOutput.toString(), k -> compile(resource, templateOutput))
-					: compile(resource, templateOutput);
-			return tmpl.execute(mv.getModel());
-		} catch (Exception e) {
-			throw new IllegalStateException(e);
-		}
-	}
+    private String render(AbstractResource resource, String key, Map<String, Object> model, Locale locale, TemplateOutput templateOutput, boolean cachingRequested) {
+        try {
+            ModelAndView mv = new ModelAndView((String) null, model);
+            mv.addObject("format-date", MustacheCustomTagInterceptor.FORMAT_DATE);
+            mv.addObject(MustacheLocalizationMessageInterceptor.DEFAULT_MODEL_KEY, new CustomLocalizationMessageInterceptor(locale, messageSource).createTranslator());
+            Template tmpl = (cachingRequested && cache) ? templateCache.computeIfAbsent(key + templateOutput.toString(), k -> compile(resource, templateOutput))
+                    : compile(resource, templateOutput);
+            return tmpl.execute(mv.getModel());
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
-	private Template compile(AbstractResource resource, TemplateOutput templateOutput) {
-		try {
-			InputStreamReader tmpl = new InputStreamReader(resource.getInputStream(),
-					StandardCharsets.UTF_8);
-			return compilers.get(templateOutput).compile(tmpl);
-		} catch (IOException ioe) {
-			throw new IllegalStateException(ioe);
-		}
-	}
+    private Template compile(AbstractResource resource, TemplateOutput templateOutput) {
+        try {
+            InputStreamReader tmpl = new InputStreamReader(resource.getInputStream(),
+                    StandardCharsets.UTF_8);
+            return compilers.get(templateOutput).compile(tmpl);
+        } catch (IOException ioe) {
+            throw new IllegalStateException(ioe);
+        }
+    }
 
-	private static class CustomLocalizationMessageInterceptor {
+    private static class CustomLocalizationMessageInterceptor {
 
-		private static final Pattern KEY_PATTERN = Pattern.compile("(.*?)[\\s\\[]");
-		private static final Pattern ARGS_PATTERN = Pattern.compile("\\[(.*?)\\]");
-		private final Locale locale;
-		private final MessageSource messageSource;
+        private static final Pattern KEY_PATTERN = Pattern.compile("(.*?)[\\s\\[]");
+        private static final Pattern ARGS_PATTERN = Pattern.compile("\\[(.*?)\\]");
+        private final Locale locale;
+        private final MessageSource messageSource;
 
-		private CustomLocalizationMessageInterceptor(Locale locale, MessageSource messageSource) {
-			this.locale = locale;
-			this.messageSource = messageSource;
-		}
+        private CustomLocalizationMessageInterceptor(Locale locale, MessageSource messageSource) {
+            this.locale = locale;
+            this.messageSource = messageSource;
+        }
 
-		protected Mustache.Lambda createTranslator() {
-			return (frag, out) -> {
-				String template = frag.execute();
-				final String key = extractKey(template);
-				final List<String> args = extractParameters(template);
-				final String text = messageSource.getMessage(key, args.toArray(), locale);
-				out.write(text);
-			};
-		}
+        protected Mustache.Lambda createTranslator() {
+            return (frag, out) -> {
+                String template = frag.execute();
+                final String key = extractKey(template);
+                final List<String> args = extractParameters(template);
+                final String text = messageSource.getMessage(key, args.toArray(), locale);
+                out.write(text);
+            };
+        }
 
-		/**
-		 * Split key from (optional) arguments.
-		 *
-		 * @param key
-		 * @return localization key
-		 */
-		private String extractKey(String key) {
-			Matcher matcher = KEY_PATTERN.matcher(key);
-			if (matcher.find()) {
-				return matcher.group(1);
-			}
+        /**
+         * Split key from (optional) arguments.
+         *
+         * @param key
+         * @return localization key
+         */
+        private String extractKey(String key) {
+            Matcher matcher = KEY_PATTERN.matcher(key);
+            if (matcher.find()) {
+                return matcher.group(1);
+            }
 
-			return key;
-		}
+            return key;
+        }
 
-		/**
-		 * Split args from input string.
-		 * <p/>
-		 * localization_key [param1] [param2] [param3]
-		 *
-		 * @param key
-		 * @return List of extracted parameters
-		 */
-		private List<String> extractParameters(String key) {
-			final Matcher matcher = ARGS_PATTERN.matcher(key);
-			final List<String> args = new ArrayList<>();
-			while (matcher.find()) {
-				args.add(matcher.group(1));
-			}
-			return args;
-		}
-	}
+        /**
+         * Split args from input string.
+         * <p/>
+         * localization_key [param1] [param2] [param3]
+         *
+         * @param key
+         * @return List of extracted parameters
+         */
+        private List<String> extractParameters(String key) {
+            final Matcher matcher = ARGS_PATTERN.matcher(key);
+            final List<String> args = new ArrayList<>();
+            while (matcher.find()) {
+                args.add(matcher.group(1));
+            }
+            return args;
+        }
+    }
 }

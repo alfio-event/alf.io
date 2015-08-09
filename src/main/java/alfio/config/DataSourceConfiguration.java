@@ -62,10 +62,10 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     private static final Set<PlatformProvider> PLATFORM_PROVIDERS = EnumSet.complementOf(EnumSet.of(PlatformProvider.DEFAULT));
 
     @Autowired
-	private ResourceLoader resourceLoader;
+    private ResourceLoader resourceLoader;
 
     @Bean
-	public PlatformProvider getCloudProvider(Environment environment) {
+    public PlatformProvider getCloudProvider(Environment environment) {
         PlatformProvider current = PLATFORM_PROVIDERS
                                     .stream()
                                     .filter(p -> p.isHosting(environment))
@@ -73,105 +73,105 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
                                     .orElse(PlatformProvider.DEFAULT);
         log.info("Detected {} cloud provider", current);
         return current;
-	}
+    }
 
-	@Bean(destroyMethod = "close")
-	public DataSource getDataSource(Environment env, PlatformProvider platform) throws URISyntaxException {
-		org.apache.tomcat.jdbc.pool.DataSource dataSource = new org.apache.tomcat.jdbc.pool.DataSource();
-		dataSource.setDriverClassName(platform.getDriveClassName(env));
-		dataSource.setUrl(platform.getUrl(env));
-		dataSource.setUsername(platform.getUsername(env));
-		dataSource.setPassword(platform.getPassword(env));
-		dataSource.setValidationQuery(platform.getValidationQuery(env));
-		dataSource.setTestOnBorrow(true);
-		dataSource.setTestOnConnect(true);
-		dataSource.setTestWhileIdle(true);
+    @Bean(destroyMethod = "close")
+    public DataSource getDataSource(Environment env, PlatformProvider platform) throws URISyntaxException {
+        org.apache.tomcat.jdbc.pool.DataSource dataSource = new org.apache.tomcat.jdbc.pool.DataSource();
+        dataSource.setDriverClassName(platform.getDriveClassName(env));
+        dataSource.setUrl(platform.getUrl(env));
+        dataSource.setUsername(platform.getUsername(env));
+        dataSource.setPassword(platform.getPassword(env));
+        dataSource.setValidationQuery(platform.getValidationQuery(env));
+        dataSource.setTestOnBorrow(true);
+        dataSource.setTestOnConnect(true);
+        dataSource.setTestWhileIdle(true);
 
-		return dataSource;
-	}
+        return dataSource;
+    }
 
-	@Bean
+    @Bean
     @Profile("!"+Initializer.PROFILE_SPRING_BOOT)
-	public PlatformTransactionManager platformTransactionManager(DataSource dataSource) {
-		return new DataSourceTransactionManager(dataSource);
-	}
+    public PlatformTransactionManager platformTransactionManager(DataSource dataSource) {
+        return new DataSourceTransactionManager(dataSource);
+    }
 
-	@Bean
-	public NamedParameterJdbcTemplate namedParameterJdbcTemplate(DataSource dataSource) {
-		return new NamedParameterJdbcTemplate(dataSource);
-	}
+    @Bean
+    public NamedParameterJdbcTemplate namedParameterJdbcTemplate(DataSource dataSource) {
+        return new NamedParameterJdbcTemplate(dataSource);
+    }
 
-	@Bean
-	public QueryFactory queryFactory(Environment env, PlatformProvider platform, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
-		QueryFactory qf = new QueryFactory(platform.getDialect(env), namedParameterJdbcTemplate);
-		qf.addColumnMapperFactory(new ZonedDateTimeMapper.Factory());
-		qf.addParameterConverters(new ZonedDateTimeMapper.Converter());
-		return qf;
-	}
+    @Bean
+    public QueryFactory queryFactory(Environment env, PlatformProvider platform, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+        QueryFactory qf = new QueryFactory(platform.getDialect(env), namedParameterJdbcTemplate);
+        qf.addColumnMapperFactory(new ZonedDateTimeMapper.Factory());
+        qf.addParameterConverters(new ZonedDateTimeMapper.Converter());
+        return qf;
+    }
 
-	@Bean
-	public QueryRepositoryScanner queryRepositoryScanner(QueryFactory queryFactory) {
-		return new QueryRepositoryScanner(queryFactory, "alfio.repository");
-	}
+    @Bean
+    public QueryRepositoryScanner queryRepositoryScanner(QueryFactory queryFactory) {
+        return new QueryRepositoryScanner(queryFactory, "alfio.repository");
+    }
 
-	@Bean
-	public Flyway migrator(Environment env, PlatformProvider platform, DataSource dataSource) {
-		String sqlDialect = platform.getDialect(env);
-		Flyway migration = new Flyway();
-		migration.setDataSource(dataSource);
+    @Bean
+    public Flyway migrator(Environment env, PlatformProvider platform, DataSource dataSource) {
+        String sqlDialect = platform.getDialect(env);
+        Flyway migration = new Flyway();
+        migration.setDataSource(dataSource);
 
-		migration.setValidateOnMigrate(false);
-		migration.setTarget(MigrationVersion.LATEST);
+        migration.setValidateOnMigrate(false);
+        migration.setTarget(MigrationVersion.LATEST);
 
-		migration.setLocations("alfio/db/" + sqlDialect + "/");
-		migration.migrate();
-		return migration;
-	}
-	
-	@Bean
-	public PasswordEncoder getPasswordEncoder() {
-		 return new BCryptPasswordEncoder();
-	 }
+        migration.setLocations("alfio/db/" + sqlDialect + "/");
+        migration.migrate();
+        return migration;
+    }
+    
+    @Bean
+    public PasswordEncoder getPasswordEncoder() {
+         return new BCryptPasswordEncoder();
+     }
 
-	@Bean
-	public MessageSource messageSource() {
-		ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-		source.setBasenames("alfio.i18n.public", "alfio.i18n.admin");
-		//since we have all the english translations in the default file, we don't need
-		//the fallback to the system locale.
-		source.setFallbackToSystemLocale(false);
-		source.setAlwaysUseMessageFormat(true);
-		return source;
-	}
+    @Bean
+    public MessageSource messageSource() {
+        ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+        source.setBasenames("alfio.i18n.public", "alfio.i18n.admin");
+        //since we have all the english translations in the default file, we don't need
+        //the fallback to the system locale.
+        source.setFallbackToSystemLocale(false);
+        source.setAlwaysUseMessageFormat(true);
+        return source;
+    }
 
-	@Bean
-	public TemplateManager getTemplateManager(Environment environment) {
-		return new TemplateManager(environment, getTemplateLoader(), messageSource());
-	}
+    @Bean
+    public TemplateManager getTemplateManager(Environment environment) {
+        return new TemplateManager(environment, getTemplateLoader(), messageSource());
+    }
 
-	@Bean
-	public JMustacheTemplateLoader getTemplateLoader() {
-		JMustacheTemplateLoader loader = new JMustacheTemplateLoader();
-		loader.setResourceLoader(resourceLoader);
-		return loader;
-	}
+    @Bean
+    public JMustacheTemplateLoader getTemplateLoader() {
+        JMustacheTemplateLoader loader = new JMustacheTemplateLoader();
+        loader.setResourceLoader(resourceLoader);
+        return loader;
+    }
 
-	@Bean
-	public MailChimpPlugin getMailChimpPlugin(PluginConfigurationRepository pluginConfigurationRepository,
+    @Bean
+    public MailChimpPlugin getMailChimpPlugin(PluginConfigurationRepository pluginConfigurationRepository,
                                               PluginLogRepository pluginLogRepository,
                                               PlatformTransactionManager platformTransactionManager) {
-		return new MailChimpPlugin(pluginDataStorageProvider(pluginConfigurationRepository, pluginLogRepository, platformTransactionManager));
-	}
+        return new MailChimpPlugin(pluginDataStorageProvider(pluginConfigurationRepository, pluginLogRepository, platformTransactionManager));
+    }
 
-	@Bean
-	public PluginDataStorageProvider pluginDataStorageProvider(PluginConfigurationRepository pluginConfigurationRepository,
-															   PluginLogRepository pluginLogRepository,
+    @Bean
+    public PluginDataStorageProvider pluginDataStorageProvider(PluginConfigurationRepository pluginConfigurationRepository,
+                                                               PluginLogRepository pluginLogRepository,
                                                                PlatformTransactionManager platformTransactionManager) {
-		return new PluginDataStorageProvider(pluginConfigurationRepository, pluginLogRepository, platformTransactionManager);
-	}
+        return new PluginDataStorageProvider(pluginConfigurationRepository, pluginLogRepository, platformTransactionManager);
+    }
 
-	@Override
-	public void setResourceLoader(ResourceLoader resourceLoader) {
-		this.resourceLoader = resourceLoader;
-	}
+    @Override
+    public void setResourceLoader(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
 }

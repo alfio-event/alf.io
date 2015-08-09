@@ -3,7 +3,7 @@
 <h1>{{#i18n}}event-list.title{{/i18n}}</h1>
 <ul class="list-group">
 {{#events}}
-	<li class="list-group-item">
+    <li class="list-group-item">
         <div class="row">
             <div class="col-xs-12 col-sm-7 col-md-4">
                 <a href="{{request.contextPath}}/event/{{shortName}}/" class="no-decoration">
@@ -11,7 +11,7 @@
                 </a>
             </div>
             <div class="col-xs-12 col-sm-5 col-md-8">
-		      <a href="{{request.contextPath}}/event/{{shortName}}/" class="no-decoration">
+              <a href="{{request.contextPath}}/event/{{shortName}}/" class="no-decoration">
                   <h2>{{displayName}}</h2>
                   <h6>{{shortDescription}}</h6>
                   <div>
@@ -38,7 +38,7 @@
               </a>
             </div>
         </div>
-	</li>
+    </li>
 {{/events}}
 </ul>
 

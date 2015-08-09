@@ -50,7 +50,7 @@ public final class MonetaryUtil {
     }
     
     public static int calcVat(int priceInCents, BigDecimal percentage) {
-    	return calcPercentage(priceInCents, percentage);
+        return calcPercentage(priceInCents, percentage);
     }
 
     public static BigDecimal centsToUnit(int cents) {

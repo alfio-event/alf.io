@@ -99,21 +99,21 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     @Bean
     public HandlerInterceptorAdapter getDefaultTemplateObjectsFiller() {
         return new HandlerInterceptorAdapter() {
-    		@Override
-    		public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
-    			Optional.ofNullable(modelAndView).ifPresent(mv -> {
+            @Override
+            public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+                Optional.ofNullable(modelAndView).ifPresent(mv -> {
                     mv.addObject("request", request);
-                   	final ModelMap modelMap = mv.getModelMap();
+                    final ModelMap modelMap = mv.getModelMap();
                     modelMap.putIfAbsent("event", null);
                     if(!StringUtils.startsWith(mv.getViewName(), "redirect:")) {
                         mv.addObject("availableLanguages", i18nManager.getAvailableLocales().stream()
                                 .map(ContentLanguage.toLanguage(RequestContextUtils.getLocale(request)))
                                 .collect(Collectors.toList()));
-                    	modelMap.putIfAbsent("pageTitle", "empty");
+                        modelMap.putIfAbsent("pageTitle", "empty");
                     }
                 });
-    		}
-		};
+            }
+        };
     }
 
     @Bean
@@ -124,27 +124,27 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     }
 
     private HandlerInterceptor getCSPInterceptor() {
-    	return new HandlerInterceptorAdapter() {
-    		@Override
-    		public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
-    				ModelAndView modelAndView) throws Exception {
-    			// http://www.html5rocks.com/en/tutorials/security/content-security-policy/
-    			// lockdown policy
-    			response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
-    					+ " script-src 'self' https://ajax.googleapis.com/ https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/;"//
-    					+ " style-src 'self';"//
-    					+ " img-src 'self' https: data:;"//
-    					+ " child-src 'self';"//webworker
-    					+ " frame-src 'self' https://js.stripe.com;"
-    					+ " font-src 'self';"//
-    					+ " media-src 'self';"//for loading camera api
-    					+ " connect-src 'self' https://api.stripe.com;"); //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
-    		}
-    	};
-	}
+        return new HandlerInterceptorAdapter() {
+            @Override
+            public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+                    ModelAndView modelAndView) throws Exception {
+                // http://www.html5rocks.com/en/tutorials/security/content-security-policy/
+                // lockdown policy
+                response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
+                        + " script-src 'self' https://ajax.googleapis.com/ https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/;"//
+                        + " style-src 'self';"//
+                        + " img-src 'self' https: data:;"//
+                        + " child-src 'self';"//webworker
+                        + " frame-src 'self' https://js.stripe.com;"
+                        + " font-src 'self';"//
+                        + " media-src 'self';"//for loading camera api
+                        + " connect-src 'self' https://api.stripe.com;"); //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
+            }
+        };
+    }
     
 
-	@Bean
+    @Bean
     public HandlerInterceptor getCsrfInterceptor() {
         return new HandlerInterceptorAdapter() {
             @Override
@@ -195,22 +195,22 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
         templateFactory.setSuffix(".ms");
         templateFactory.setTemplateLoader(templateLoader);
         templateFactory.setCompiler(Mustache.compiler()
-        		.escapeHTML(true)
-        		.standardsMode(false)
-        		.defaultValue("")
-        		.nullValue("")
-				.withFormatter(
-						(o) -> {
-							if(o instanceof ZonedDateTime) {
-								return DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o);
-							} else if(o instanceof DefaultMessageSourceResolvable) {
-								DefaultMessageSourceResolvable m = ((DefaultMessageSourceResolvable) o);
-								return m.getCode()+ " " + Arrays.stream(Optional.ofNullable(m.getArguments()).orElse(new Object[]{})).map(x -> "["+x.toString()+"]").collect(Collectors.joining(" "));
-							} else {
-								return String.valueOf(o);
-							}
-						})
-        		.withLoader(templateLoader));
+                .escapeHTML(true)
+                .standardsMode(false)
+                .defaultValue("")
+                .nullValue("")
+                .withFormatter(
+                        (o) -> {
+                            if(o instanceof ZonedDateTime) {
+                                return DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o);
+                            } else if(o instanceof DefaultMessageSourceResolvable) {
+                                DefaultMessageSourceResolvable m = ((DefaultMessageSourceResolvable) o);
+                                return m.getCode()+ " " + Arrays.stream(Optional.ofNullable(m.getArguments()).orElse(new Object[]{})).map(x -> "["+x.toString()+"]").collect(Collectors.joining(" "));
+                            } else {
+                                return String.valueOf(o);
+                            }
+                        })
+                .withLoader(templateLoader));
         
         templateFactory.afterPropertiesSet();
         return templateFactory;

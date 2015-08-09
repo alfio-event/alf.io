@@ -30,40 +30,40 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
 
 public class RedirectToHttpsFilter implements Filter {
 
-	private Environment environment;
+    private Environment environment;
 
-	@Override
-	public void init(FilterConfig filterConfig) throws ServletException {
-		WebApplicationContext ctx = getRequiredWebApplicationContext(filterConfig.getServletContext());
-		environment = ctx.getBean(Environment.class);
-	}
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        WebApplicationContext ctx = getRequiredWebApplicationContext(filterConfig.getServletContext());
+        environment = ctx.getBean(Environment.class);
+    }
 
-	@Override
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
-			ServletException {
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
+            ServletException {
 
-		HttpServletRequest req = (HttpServletRequest) request;
+        HttpServletRequest req = (HttpServletRequest) request;
 
-		// redirecting if the request is not over https: note: this will work _only_ with the default port for https
-		if (environment.acceptsProfiles("!" + Initializer.PROFILE_HTTP) && !isOverHttps(req)) {
-			HttpServletResponse resp = (HttpServletResponse) response;
-			resp.sendRedirect(req.getRequestURL()
-					.append(ofNullable(req.getQueryString()).map((x) -> "?" + x).orElse("")).toString()
-					.replaceFirst("http", "https"));
-			return;
-		}
+        // redirecting if the request is not over https: note: this will work _only_ with the default port for https
+        if (environment.acceptsProfiles("!" + Initializer.PROFILE_HTTP) && !isOverHttps(req)) {
+            HttpServletResponse resp = (HttpServletResponse) response;
+            resp.sendRedirect(req.getRequestURL()
+                    .append(ofNullable(req.getQueryString()).map((x) -> "?" + x).orElse("")).toString()
+                    .replaceFirst("http", "https"));
+            return;
+        }
 
-		//
-		chain.doFilter(request, response);
-	}
+        //
+        chain.doFilter(request, response);
+    }
 
-	@Override
-	public void destroy() {
-	}
+    @Override
+    public void destroy() {
+    }
 
-	private static boolean isOverHttps(HttpServletRequest req) {
-		return req.isSecure() || req.getRequestURL().toString().startsWith("https://")
-				|| "https".equals(req.getHeader("X-Forwarded-Proto"));
-	}
+    private static boolean isOverHttps(HttpServletRequest req) {
+        return req.isSecure() || req.getRequestURL().toString().startsWith("https://")
+                || "https".equals(req.getHeader("X-Forwarded-Proto"));
+    }
 
 }

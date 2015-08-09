@@ -89,7 +89,7 @@ public final class TemplateProcessor {
                                                     TicketCategory ticketCategory,
                                                     Organization organization,
                                                     TemplateManager templateManager) {
-    	
+        
         return () -> {
             String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
             //
@@ -107,9 +107,9 @@ public final class TemplateProcessor {
             ITextRenderer renderer = new ITextRenderer();
             renderer.setDocumentFromString(page);
             try {
-            	renderer.getFontResolver().addFont("/alfio/font/DejaVuSansMono.ttf", BaseFont.IDENTITY_H, true);
+                renderer.getFontResolver().addFont("/alfio/font/DejaVuSansMono.ttf", BaseFont.IDENTITY_H, true);
             } catch(IOException | DocumentException e) {
-            	log.warn("error while loading DejaVuSansMono.ttf font", e);
+                log.warn("error while loading DejaVuSansMono.ttf font", e);
             }
             renderer.layout();
             return renderer;

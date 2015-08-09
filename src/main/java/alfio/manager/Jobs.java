@@ -39,27 +39,27 @@ public class Jobs {
     private final FileUploadManager fileUploadManager;
     private final WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
 
-	@Autowired
-	public Jobs(TicketReservationManager ticketReservationManager,
+    @Autowired
+    public Jobs(TicketReservationManager ticketReservationManager,
                 NotificationManager notificationManager,
                 SpecialPriceTokenGenerator specialPriceTokenGenerator,
                 FileUploadManager fileUploadManager,
                 WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor) {
-		this.ticketReservationManager = ticketReservationManager;
+        this.ticketReservationManager = ticketReservationManager;
         this.notificationManager = notificationManager;
         this.specialPriceTokenGenerator = specialPriceTokenGenerator;
         this.fileUploadManager = fileUploadManager;
         this.waitingQueueSubscriptionProcessor = waitingQueueSubscriptionProcessor;
     }
 
-	@Scheduled(initialDelay = ONE_MINUTE, fixedDelay = THIRTY_SECONDS)
-	public void cleanupExpiredPendingReservation() {
-		//cleanup reservation that have a expiration older than "now minus 10 minutes": this give some additional slack.
+    @Scheduled(initialDelay = ONE_MINUTE, fixedDelay = THIRTY_SECONDS)
+    public void cleanupExpiredPendingReservation() {
+        //cleanup reservation that have a expiration older than "now minus 10 minutes": this give some additional slack.
         final Date expirationDate = DateUtils.addMinutes(new Date(), -10);
         ticketReservationManager.cleanupExpiredReservations(expirationDate);
         ticketReservationManager.cleanupExpiredOfflineReservations(expirationDate);
         ticketReservationManager.markExpiredInPaymentReservationAsStuck(expirationDate);
-	}
+    }
 
     @Scheduled(fixedRate = THIRTY_MINUTES)
     public void sendOfflinePaymentReminder() {

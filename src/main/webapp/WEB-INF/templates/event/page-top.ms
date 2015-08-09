@@ -23,12 +23,12 @@
 
 
 <div class="container">
-	<div class="row">
-		<div class="col-md-8 col-md-offset-2">
-			<div>
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+            <div>
 
-				<!-- lang bar -->
-				<div class="row">
+                <!-- lang bar -->
+                <div class="row">
                     <div class="col-xs-4 col-xs-push-8 col-sm-3 col-sm-push-9 text-center">
                         <ol class="alfio-lang breadcrumb wMarginBottom wMarginTop">
                             {{#availableLanguages}}
@@ -37,4 +37,4 @@
                         </ol>
                     </div>
                 </div>
-				<!-- -->
+                <!-- -->

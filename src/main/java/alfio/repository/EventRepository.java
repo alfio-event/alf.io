@@ -68,7 +68,7 @@ public interface EventRepository {
      * TODO check: This one is kinda ugly.
      * */
     @Query("select * from event where id = (select event_id from ticket where tickets_reservation_id = :reservationId limit 1)")
-	Event findByReservationId(@Bind("reservationId") String reservationId);
+    Event findByReservationId(@Bind("reservationId") String reservationId);
 
     @Query("update event set display_name = short_name where id = :eventId and display_name is null")
     int fillDisplayNameIfRequired(@Bind("eventId") int eventId);

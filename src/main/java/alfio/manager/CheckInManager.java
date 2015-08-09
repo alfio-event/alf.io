@@ -26,23 +26,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @Transactional
 public class CheckInManager {
-	
-	private final TicketRepository ticketRepository;
-	
-	@Autowired
-	public CheckInManager(TicketRepository ticketRepository) {
-		this.ticketRepository = ticketRepository;
-	}
+    
+    private final TicketRepository ticketRepository;
+    
+    @Autowired
+    public CheckInManager(TicketRepository ticketRepository) {
+        this.ticketRepository = ticketRepository;
+    }
 
-	
-	public void checkIn(String uuid) {
-		Validate.isTrue(ticketRepository.findByUUID(uuid).getStatus() == TicketStatus.ACQUIRED);
-		
-		ticketRepository.updateTicketStatusWithUUID(uuid, TicketStatus.CHECKED_IN.toString());
-	}
-	
-	public void acquire(String uuid) {
-		Validate.isTrue(ticketRepository.findByUUID(uuid).getStatus() == TicketStatus.TO_BE_PAID);
-		ticketRepository.updateTicketStatusWithUUID(uuid, TicketStatus.ACQUIRED.toString());
-	}
+    
+    public void checkIn(String uuid) {
+        Validate.isTrue(ticketRepository.findByUUID(uuid).getStatus() == TicketStatus.ACQUIRED);
+        
+        ticketRepository.updateTicketStatusWithUUID(uuid, TicketStatus.CHECKED_IN.toString());
+    }
+    
+    public void acquire(String uuid) {
+        Validate.isTrue(ticketRepository.findByUUID(uuid).getStatus() == TicketStatus.TO_BE_PAID);
+        ticketRepository.updateTicketStatusWithUUID(uuid, TicketStatus.ACQUIRED.toString());
+    }
 }

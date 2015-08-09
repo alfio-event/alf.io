@@ -177,7 +177,7 @@
                 return $http.post('/admin/api/configuration/update-bulk', settings).error(HttpErrorHandler.handle);
             },
             remove: function(key) {
-            	return $http['delete']('/admin/api/configuration/key/' + key).error(HttpErrorHandler.handle);
+                return $http['delete']('/admin/api/configuration/key/' + key).error(HttpErrorHandler.handle);
             },
             loadPlugins: function() {
                 return $http.get('/admin/api/configuration/plugin/load').error(HttpErrorHandler.handle);
@@ -220,7 +220,7 @@
                 //TODO cleanup, not happy about that
                 var regularPrice = event.regularPrice;
                 if(editMode && event.vatIncluded) {
-                	regularPrice = instance.calculateTotalPrice(event, true);
+                    regularPrice = instance.calculateTotalPrice(event, true);
                 }
                 //
                 return instance.calcPercentage(category.price, regularPrice).format('0.00');
@@ -249,50 +249,50 @@
     });
     
     baseServices.service("PromoCodeService", function($http, HttpErrorHandler) {
-    	return {
-    			add : function(eventId, promoCode) {
-    				return $http['post']('/admin/api/events/' + eventId + '/promo-code', promoCode).error(HttpErrorHandler.handle);
-    			},
-    			remove: function(eventId, promoCode) {
-    				return $http['delete']('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)).error(HttpErrorHandler.handle);
-    			},
-    			list: function(eventId) {
-    				return $http.get('/admin/api/events/' + eventId + '/promo-code').error(HttpErrorHandler.handle);
-    			},
-    			countUse : function(eventId, promoCode) {
-    				return $http.get('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)+ '/count-use');
-    			},
-    			disable : function(eventId, promoCode) {
-    				return $http['post']('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)+ '/disable');
-    			}
-    	};
+        return {
+                add : function(eventId, promoCode) {
+                    return $http['post']('/admin/api/events/' + eventId + '/promo-code', promoCode).error(HttpErrorHandler.handle);
+                },
+                remove: function(eventId, promoCode) {
+                    return $http['delete']('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)).error(HttpErrorHandler.handle);
+                },
+                list: function(eventId) {
+                    return $http.get('/admin/api/events/' + eventId + '/promo-code').error(HttpErrorHandler.handle);
+                },
+                countUse : function(eventId, promoCode) {
+                    return $http.get('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)+ '/count-use');
+                },
+                disable : function(eventId, promoCode) {
+                    return $http['post']('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)+ '/disable');
+                }
+        };
     });
 
     baseServices.service("CheckInService", function($http) {
-    	return {
-    		findAllTickets : function(eventId) {
-    			return $http.get('/admin/api/check-in/' + eventId + '/ticket');
-    		},
-    		
-    		getTicket: function(eventId, code) {
-    			var ticketIdentifier = code.split('/')[0];
-    			return $http.get('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier + "?qrCode=" + encodeURIComponent(code));
-    		},
-    		
-    		checkIn: function(eventId, ticket) {
-    			var ticketIdentifier = ticket.code.split('/')[0];
-    			return $http['post']('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier, ticket);
-    		},
+        return {
+            findAllTickets : function(eventId) {
+                return $http.get('/admin/api/check-in/' + eventId + '/ticket');
+            },
+            
+            getTicket: function(eventId, code) {
+                var ticketIdentifier = code.split('/')[0];
+                return $http.get('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier + "?qrCode=" + encodeURIComponent(code));
+            },
+            
+            checkIn: function(eventId, ticket) {
+                var ticketIdentifier = ticket.code.split('/')[0];
+                return $http['post']('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier, ticket);
+            },
 
-    		manualCheckIn: function(ticket) {
-    		    return $http['post']('/admin/api/check-in/' + ticket.eventId + '/ticket/' + ticket.uuid + '/manual-check-in', ticket);
-    		},
-    		
-    		confirmPayment: function(eventId, ticket) {
-    			var ticketIdentifier = ticket.code.split('/')[0];
-    			return $http['post']('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier + '/confirm-on-site-payment');
-    		}
-    	};
+            manualCheckIn: function(ticket) {
+                return $http['post']('/admin/api/check-in/' + ticket.eventId + '/ticket/' + ticket.uuid + '/manual-check-in', ticket);
+            },
+            
+            confirmPayment: function(eventId, ticket) {
+                var ticketIdentifier = ticket.code.split('/')[0];
+                return $http['post']('/admin/api/check-in/' + eventId + '/ticket/' + ticketIdentifier + '/confirm-on-site-payment');
+            }
+        };
     });
 
     baseServices.service("FileUploadService", function($http) {

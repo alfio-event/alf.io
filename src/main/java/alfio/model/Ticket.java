@@ -109,11 +109,11 @@ public class Ticket {
     }
     
     public boolean getAssigned() {
-    	return StringUtils.isNotBlank(fullName) && StringUtils.isNotBlank(email);
+        return StringUtils.isNotBlank(fullName) && StringUtils.isNotBlank(email);
     }
     
     public boolean getLockedAssignment() {
-    	return lockedAssignment;
+        return lockedAssignment;
     }
 
     public BigDecimal getOriginalPrice() {
@@ -133,8 +133,8 @@ public class Ticket {
      * @return
      */
     public String ticketCode(String eventKey) {
-    	String code = StringUtils.join(new String[]{ticketsReservationId , uuid, fullName, email}, '/');
-		return uuid + '/' + hmacSHA256Base64(eventKey, code);
+        String code = StringUtils.join(new String[]{ticketsReservationId , uuid, fullName, email}, '/');
+        return uuid + '/' + hmacSHA256Base64(eventKey, code);
     }
 
     public boolean hasBeenSold() {
@@ -146,13 +146,13 @@ public class Ticket {
     }
 
     private static String hmacSHA256Base64(String key, String code) {
-    	try {
-    		Mac hmac = Mac.getInstance("HmacSHA256");
-    		hmac.init(new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-    		return Base64.getEncoder().encodeToString(hmac.doFinal(code.getBytes(StandardCharsets.UTF_8)));
-    	} catch(InvalidKeyException | NoSuchAlgorithmException e) {
-    		throw new IllegalStateException(e);
-    	}
+        try {
+            Mac hmac = Mac.getInstance("HmacSHA256");
+            hmac.init(new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return Base64.getEncoder().encodeToString(hmac.doFinal(code.getBytes(StandardCharsets.UTF_8)));
+        } catch(InvalidKeyException | NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public boolean containsOptionalInfo() {

@@ -125,7 +125,7 @@ public class Event {
     
     
     public boolean getSameDay() {
-    	return begin.truncatedTo(ChronoUnit.DAYS).equals(end.truncatedTo(ChronoUnit.DAYS));
+        return begin.truncatedTo(ChronoUnit.DAYS).equals(end.truncatedTo(ChronoUnit.DAYS));
     }
 
     @JsonIgnore
@@ -135,7 +135,7 @@ public class Event {
     
     @JsonIgnore
     public Pair<String, String> getLatLong() {
-    	return Pair.of(latitude, longitude);
+        return Pair.of(latitude, longitude);
     }
 
     /**
@@ -177,7 +177,7 @@ public class Event {
     }
     
     public boolean getImageIsPresent() {
-    	return StringUtils.isNotBlank(imageUrl) || StringUtils.isNotBlank(fileBlobId);
+        return StringUtils.isNotBlank(imageUrl) || StringUtils.isNotBlank(fileBlobId);
     }
 
     public boolean getFileBlobIdIsPresent() {

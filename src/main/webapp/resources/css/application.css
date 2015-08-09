@@ -1,44 +1,44 @@
 body {
-	background-color: #E5E5E5;
+    background-color: #E5E5E5;
 }
 
 
 div.col-md-8.col-md-offset-2 {
-	background-color:white;
+    background-color:white;
 }
 
 div.col-md-8.col-md-offset-2 > div {
-	padding-top:1em;
-	padding-bottom:1em;
+    padding-top:1em;
+    padding-bottom:1em;
 }
 
 .text-align-center {
-	text-align: center;
+    text-align: center;
 }
 
 .event-description {
-	margin-top:1em;
+    margin-top:1em;
 }
 
 .img-center {
-	margin:auto;
+    margin:auto;
 }
 
 .alfio-lang {
-	background-color:transparent;
+    background-color:transparent;
 }
 
 .event-expired {
-	color:#bbb;
+    color:#bbb;
 }
 
 p.ticket-info {
-	padding:15px;
-	margin-top:10px;
+    padding:15px;
+    margin-top:10px;
 }
 
 .hide-by-default {
-	display: none;
+    display: none;
 }
 
 .show-by-default {
@@ -47,24 +47,24 @@ p.ticket-info {
 
 
 .list-group-item {
-	border-left:none;
-	border-right:none;
+    border-left:none;
+    border-right:none;
 }
 
 .list-group-item:first-child {
-	border-top:none;
+    border-top:none;
 }
 
 .list-group-item:last-child {
-	border-bottom:none;
+    border-bottom:none;
 }
 
 .ticket-category-restricted-true {
-	background-color: #F5F5DC
+    background-color: #F5F5DC
 }
 
 .center {
-	text-align: center;
+    text-align: center;
 }
 
 .wMarginBottom {
@@ -72,7 +72,7 @@ p.ticket-info {
 }
 
 .wMarginTop {
-	margin-top:20px;
+    margin-top:20px;
 }
 
 body {
@@ -80,25 +80,25 @@ body {
 }
 
 .ticket-counter:before {
-	counter-increment: ticket-counter;
-  	content: counter(ticket-counter)
+    counter-increment: ticket-counter;
+    content: counter(ticket-counter)
 }
 
 .ticket-header-col {
-	width:150px;
-	vertical-align: top;
+    width:150px;
+    vertical-align: top;
 }
 
 .payment-method-container {
-	width:80%;
+    width:80%;
 }
 
 .alfio-event-add-to-calendar {
-	padding-left: 13px;
+    padding-left: 13px;
 }
 
 .alfio-event-add-to-calendar > span:before {
-	content: "\00a0 "
+    content: "\00a0 "
 }
 
 a.no-decoration {
@@ -106,28 +106,28 @@ a.no-decoration {
 }
 
 @media screen and (max-width: 768px) {
-	.xs-payment-method {
-		width:100%;
-		margin-bottom: 5px;
-	}
+    .xs-payment-method {
+        width:100%;
+        margin-bottom: 5px;
+    }
 }
 
 @media screen and (min-width: 768px) {
     li img.logo {
         margin-top:20px;
     }
-	.j-btn-group {
-		display: table;
-		width: 100%;
-		table-layout: fixed;
-		border-collapse: separate;
-	}
-	.j-btn-group > .btn,
-	.j-btn-group > .btn-group {
-		display: table-cell;
-		float: none;
-		width: 1%;
-	}
+    .j-btn-group {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: separate;
+    }
+    .j-btn-group > .btn,
+    .j-btn-group > .btn-group {
+        display: table-cell;
+        float: none;
+        width: 1%;
+    }
 }
 
 div.preformatted {

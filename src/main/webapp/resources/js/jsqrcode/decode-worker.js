@@ -4,10 +4,10 @@ importScripts('jsqrcode.min.js')
 
 onmessage = function(message) {
     try {
-	    decodeImageData(message.data, function(result) {
-		    postMessage(result);
-	    });
-	} catch(e) {
-	    postMessage('error decoding QR Code')
-	}
+        decodeImageData(message.data, function(result) {
+            postMessage(result);
+        });
+    } catch(e) {
+        postMessage('error decoding QR Code')
+    }
 }

@@ -27,7 +27,7 @@ div.category {
 
 input.ng-invalid.ng-touched, select.ng-invalid.ng-touched, textarea.ng-invalid.ng-touched,
 form.force-show-errors input.ng-invalid, form.force-show-errors select.ng-invalid, form.force-show-errors textarea.ng-invalid {
-	border:1px solid #d9534f;
+    border:1px solid #d9534f;
 }
 
 div.category-danger {
@@ -84,16 +84,16 @@ div.wMarginBottom {
 }
 
 .to-uppercase {
-	text-transform: uppercase;
+    text-transform: uppercase;
 }
 
 .video-container {
-	width:100%;
-	overflow: hidden;
+    width:100%;
+    overflow: hidden;
 }
 
 .video-container video {
-	width: 100%;
+    width: 100%;
 }
 
 span.user-detail {
