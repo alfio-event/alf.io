@@ -169,7 +169,7 @@ public class TicketController {
 		
 	}
 
-	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/cancel-ticket")
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/cancel-ticket", method = RequestMethod.POST)
     public String cancelTicket(@PathVariable("eventName") String eventName,
                              @PathVariable("reservationId") String reservationId,
                              @RequestParam("ticketId") String ticketIdentifier) {
