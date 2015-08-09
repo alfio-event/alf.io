@@ -28,10 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
-import java.util.Base64;
-import java.util.EnumSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Getter
 public class Ticket {
@@ -156,5 +153,10 @@ public class Ticket {
     	} catch(InvalidKeyException | NoSuchAlgorithmException e) {
     		throw new IllegalStateException(e);
     	}
+    }
+
+    public boolean containsOptionalInfo() {
+        return Arrays.asList(jobTitle, company, phoneNumber, address, country, tshirtSize, gender).stream()
+                .anyMatch(StringUtils::isNotBlank);
     }
 }

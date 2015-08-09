@@ -69,6 +69,7 @@ public class Jobs {
     @Scheduled(fixedRate = THIRTY_MINUTES)
     public void sendTicketAssignmentReminder() {
         ticketReservationManager.sendReminderForTicketAssignment();
+        ticketReservationManager.sendReminderForOptionalData();
     }
 
     @Scheduled(fixedDelay = THIRTY_SECONDS)

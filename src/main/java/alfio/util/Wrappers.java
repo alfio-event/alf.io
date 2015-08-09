@@ -16,13 +16,20 @@
  */
 package alfio.util;
 
+import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.Level;
 
+import java.util.function.Consumer;
+
+@UtilityClass
 @Log4j2
-public class DefaultExceptionHandler implements Thread.UncaughtExceptionHandler {
-    @Override
-    public void uncaughtException(Thread t, Throwable e) {
-        log.error("uncaught Exception", e);
+public class Wrappers {
+
+    public static <I> void voidTransactionWrapper(Consumer<I> consumer, I input) {
+        try {
+            consumer.accept(input);
+        } catch(Exception ex) {
+            log.error("Unexpected exception", ex);
+        }
     }
 }

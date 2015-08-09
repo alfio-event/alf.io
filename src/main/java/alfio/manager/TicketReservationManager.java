@@ -38,6 +38,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
+import alfio.util.Wrappers;
 import com.lowagie.text.DocumentException;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -63,6 +64,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
 import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
@@ -72,6 +74,8 @@ import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
 
@@ -621,6 +625,10 @@ public class TicketReservationManager {
 				+ "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/" + ticketId;
 	}
 
+    public String ticketUpdateUrl(String reservationId, Event event, String ticketId) {
+		return ticketUrl(reservationId, event, ticketId) + "/update";
+	}
+
 
 	public int maxAmountOfTickets(Event event) {
         return configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event), 5);
@@ -780,12 +788,12 @@ public class TicketReservationManager {
 	 */
 	public Optional<Triple<Event, TicketReservation, Ticket>> fetchCompleteAndAssigned(String eventName, String reservationId, String ticketIdentifier) {
 		return fetchComplete(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
-			if (t.getRight().getAssigned()) {
-				return Optional.of(t);
-			} else {
-				return Optional.empty();
-			}
-		});
+            if (t.getRight().getAssigned()) {
+                return Optional.of(t);
+            } else {
+                return Optional.empty();
+            }
+        });
 	}
 
 	public List<Pair<TicketReservation, OrderSummary>> fetchWaitingForPayment(List<String> reservationIds, Event event) {
@@ -818,15 +826,49 @@ public class TicketReservationManager {
 	}
 
     void sendReminderForTicketAssignment() {
-		eventRepository.findAll().stream()
-				.filter(e -> {
-					int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.assignmentReminderStart(e), 10);
-					int days = Period.between(ZonedDateTime.now(e.getZoneId()).toLocalDate(), e.getBegin().toLocalDate()).getDays();
-					return days > 0 && days <= daysBeforeStart;
-				})
+		getNotifiableEventsStream()
                 .map(e -> Pair.of(e, ticketRepository.findAllReservationsConfirmedButNotAssigned(e.getId())))
                 .filter(p -> !p.getRight().isEmpty())
-                .forEach(this::sendAssignmentReminder);
+                .forEach(p -> Wrappers.voidTransactionWrapper(this::sendAssignmentReminder, p));
+    }
+
+    void sendReminderForOptionalData() {
+        getNotifiableEventsStream()
+                .map(e -> Pair.of(e, ticketRepository.findAllAssignedButNotYetNotified(e.getId())))
+                .filter(p -> !p.getRight().isEmpty())
+                .forEach(p -> Wrappers.voidTransactionWrapper(this::sendOptionalDataReminder, p));
+    }
+
+    private void sendOptionalDataReminder(Pair<Event, List<Ticket>> eventAndTickets) {
+        requiresNewTransactionTemplate.execute(ts -> {
+            Event event = eventAndTickets.getLeft();
+            int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.assignmentReminderStart(event), 10);
+            List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !t.containsOptionalInfo()).collect(toList());
+            Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, event.getZoneId(), daysBeforeStart).isPresent()).collect(toSet());
+            tickets.stream()
+                    .filter(t -> notYetNotifiedReservations.contains(t.getTicketsReservationId()))
+                    .forEach(t -> {
+                        int result = ticketRepository.flagTicketAsReminderSent(t.getId());
+                        Validate.isTrue(result == 1);
+                        Map<String, Object> model = new HashMap<>();
+                        model.put("event", event);
+                        model.put("fullName", t.getFullName());
+                        model.put("organization", organizationRepository.getById(event.getOrganizationId()));
+                        model.put("ticketURL", ticketUpdateUrl(t.getTicketsReservationId(), event, t.getUuid()));
+                        Locale locale = Optional.ofNullable(t.getUserLanguage()).map(Locale::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
+                        notificationManager.sendSimpleEmail(event, t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/reminder-ticket-additional-info.ms", model, locale, TemplateOutput.TEXT));
+                    });
+            return null;
+        });
+    }
+
+    private Stream<Event> getNotifiableEventsStream() {
+        return eventRepository.findAll().stream()
+                .filter(e -> {
+                    int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.assignmentReminderStart(e), 10);
+                    int days = Period.between(ZonedDateTime.now(e.getZoneId()).toLocalDate(), e.getBegin().toLocalDate()).getDays();
+                    return days > 0 && days <= daysBeforeStart;
+                });
     }
 
     private void sendAssignmentReminder(Pair<Event, List<String>> p) {

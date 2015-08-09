@@ -17,13 +17,17 @@
 package alfio.controller;
 
 import alfio.controller.support.TemplateProcessor;
+import alfio.controller.support.TicketDecorator;
+import alfio.manager.EventManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PartialTicketPDFGenerator;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
+import alfio.model.system.Configuration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
@@ -33,6 +37,7 @@ import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import com.google.zxing.WriterException;
 import com.lowagie.text.DocumentException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -48,6 +53,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 public class TicketController {
@@ -57,19 +63,25 @@ public class TicketController {
 	private final TicketCategoryRepository ticketCategoryRepository;
 	private final TemplateManager templateManager;
 	private final NotificationManager notificationManager;
+    private final EventManager eventManager;
+    private final ConfigurationManager configurationManager;
 
 	@Autowired
 	public TicketController(OrganizationRepository organizationRepository,
-							TicketReservationManager ticketReservationManager,
-							TicketCategoryRepository ticketCategoryRepository,
-							TemplateManager templateManager,
-							NotificationManager notificationManager) {
+                            TicketReservationManager ticketReservationManager,
+                            TicketCategoryRepository ticketCategoryRepository,
+                            TemplateManager templateManager,
+                            NotificationManager notificationManager,
+                            EventManager eventManager,
+                            ConfigurationManager configurationManager) {
 		this.organizationRepository = organizationRepository;
 		this.ticketReservationManager = ticketReservationManager;
 		this.ticketCategoryRepository = ticketCategoryRepository;
 		this.templateManager = templateManager;
 		this.notificationManager = notificationManager;
-	}
+        this.eventManager = eventManager;
+        this.configurationManager = configurationManager;
+    }
 	
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.GET)
 	public String showTicket(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, 
@@ -100,6 +112,31 @@ public class TicketController {
 		return "/event/show-ticket";
 	}
 
+	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}/update", method = RequestMethod.GET)
+	public String showTicketForUpdate(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
+			@PathVariable("ticketIdentifier") String ticketIdentifier, Model model) {
+
+		Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+		if(!oData.isPresent()) {
+			return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+		}
+		Triple<Event, TicketReservation, Ticket> data = oData.get();
+        Event event = data.getLeft();
+        TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId(), event.getId());
+		Organization organization = organizationRepository.getById(event.getOrganizationId());
+
+        boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event), false);
+        Ticket ticket = data.getRight();
+		model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket))))//
+				.addAttribute("reservation", data.getMiddle())//
+				.addAttribute("event", event)//
+				.addAttribute("ticketCategory", ticketCategory)//
+				.addAttribute("organization", organization)//
+				.addAttribute("pageTitle", "show-ticket.header.title");
+
+		return "/event/update-ticket";
+	}
+
 	@RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}/send-ticket-by-email", method = RequestMethod.POST)
 	public String sendTicketByEmail(@PathVariable("eventName") String eventName,
 									@PathVariable("reservationId") String reservationId,
@@ -118,7 +155,7 @@ public class TicketController {
 
 		TicketReservation reservation = data.getMiddle();
 		notificationManager.sendTicketByEmail(ticket,
-				event, locale, TemplateProcessor.buildPartialEmail(event, organizationRepository, reservation, templateManager, ticketReservationManager.reservationUrl(reservation.getId(), event), request),
+				event, locale, TemplateProcessor.buildPartialEmail(event, organizationRepository, reservation, templateManager, ticketReservationManager.ticketUpdateUrl(reservation.getId(), event, ticket.getUuid()), request),
 				preparePdfTicket(request, event, reservation, ticket));
 		return "redirect:/event/" + eventName + "/reservation/" + reservationId
 				+ ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "/success") + "?ticket-email-sent=true";

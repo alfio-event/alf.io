@@ -2,7 +2,7 @@
 
 {{#i18n}}email-ticket.attached [{{event.displayName}}]{{/i18n}}
 
-{{#i18n}}email-confirmation.reservationURL [{{reservationUrl}}]{{/i18n}}
+{{#i18n}}email-confirmation.reservationURL [{{ticketUrl}}]{{/i18n}}
 
 #### {{#i18n}}email.event-info{{/i18n}} ####
 

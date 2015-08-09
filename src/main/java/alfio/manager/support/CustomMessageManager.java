@@ -85,7 +85,7 @@ public class CustomMessageManager {
                     model.addAttribute("organizationEmail", organization.getEmail());
                     model.addAttribute("reservationURL", ticketReservationManager.reservationUrl(t.getTicketsReservationId(), event));
                     model.addAttribute("reservationID", ticketReservationManager.getShortReservationID(t.getTicketsReservationId()));
-                    model.addAttribute("ticketURL", ticketReservationManager.ticketUrl(t.getTicketsReservationId(), event, t.getUuid()));
+                    model.addAttribute("ticketURL", ticketReservationManager.ticketUpdateUrl(t.getTicketsReservationId(), event, t.getUuid()));
                     return Triple.of(t.getUserLanguage(), t.getEmail(), model);
                 })
                 .forEach(triple -> {
@@ -108,7 +108,7 @@ public class CustomMessageManager {
         model.addAttribute("organizationName", organization.getName());
         model.addAttribute("organizationEmail", organization.getEmail());
         model.addAttribute("reservationURL", ticketReservationManager.reservationUrl("reservation-id", event));
-        model.addAttribute("ticketURL", ticketReservationManager.ticketUrl("reservation-id", event, "ticket-id"));
+        model.addAttribute("ticketURL", ticketReservationManager.ticketUpdateUrl("reservation-id", event, "ticket-id"));
         model.addAttribute("reservationID", "RESID");
         return input.stream()
                 .map(m -> MessageModification.preview(m, renderResource(m.getSubject(), model, m.getLocale(), templateManager), renderResource(m.getText(), model, m.getLocale(), templateManager)))

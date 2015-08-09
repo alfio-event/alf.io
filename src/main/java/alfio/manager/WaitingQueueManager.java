@@ -102,7 +102,7 @@ public class WaitingQueueManager {
         } catch(DuplicateKeyException e) {
             return true;//why are you subscribing twice?
         } catch (Exception e) {
-            log.catching(Level.ERROR, e);
+            log.error("error during subscription", e);
             return false;
         }
     }

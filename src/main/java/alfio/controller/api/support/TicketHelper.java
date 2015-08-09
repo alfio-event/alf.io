@@ -112,7 +112,7 @@ public class TicketHelper {
                 .map(Locale::forLanguageTag)
                 .orElseGet(() -> RequestContextUtils.getLocale(request));
         ticketReservationManager.updateTicketOwner(t, language, event, updateTicketOwner,
-                getConfirmationTextBuilder(request, event, ticketReservation),
+                getConfirmationTextBuilder(request, event, ticketReservation, t),
                 getOwnerChangeTextBuilder(request, t, event),
                 preparePdfTicket(request, event, ticketReservation, t),
                 userDetails);
@@ -122,8 +122,8 @@ public class TicketHelper {
         return TemplateProcessor.buildEmailForOwnerChange(event, t, organizationRepository, ticketReservationManager, templateManager, LocaleUtil.getTicketLanguage(t, request));
     }
 
-    private PartialTicketTextGenerator getConfirmationTextBuilder(HttpServletRequest request, Event event, TicketReservation ticketReservation) {
-        return TemplateProcessor.buildPartialEmail(event, organizationRepository, ticketReservation, templateManager, ticketReservationManager.reservationUrl(ticketReservation.getId(), event), request);
+    private PartialTicketTextGenerator getConfirmationTextBuilder(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {
+        return TemplateProcessor.buildPartialEmail(event, organizationRepository, ticketReservation, templateManager, ticketReservationManager.ticketUpdateUrl(ticketReservation.getId(), event, ticket.getUuid()), request);
     }
 
     private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {

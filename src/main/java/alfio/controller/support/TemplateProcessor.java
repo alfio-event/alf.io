@@ -50,14 +50,14 @@ public final class TemplateProcessor {
                                                    OrganizationRepository organizationRepository,
                                                    TicketReservation ticketReservation,
                                                    TemplateManager templateManager,
-                                                   String reservationURL,
+                                                   String ticketURL,
                                                    HttpServletRequest request) {
         return (ticket) -> {
             Map<String, Object> model = new HashMap<>();
             model.put("organization", organizationRepository.getById(event.getOrganizationId()));
             model.put("event", event);
             model.put("ticketReservation", ticketReservation);
-            model.put("reservationUrl", reservationURL);
+            model.put("ticketUrl", ticketURL);
             model.put("ticket", ticket);
             Locale language = LocaleUtil.getTicketLanguage(ticket, request);
             return templateManager.renderClassPathResource("/alfio/templates/ticket-email-txt.ms", model, language, TemplateOutput.TEXT);
@@ -77,7 +77,7 @@ public final class TemplateProcessor {
             emailModel.put("eventName", e.getDisplayName());
             emailModel.put("previousEmail", oldTicket.getEmail());
             emailModel.put("newEmail", newTicket.getEmail());
-            emailModel.put("reservationUrl", ticketReservationManager.reservationUrl(oldTicket.getTicketsReservationId()));
+            emailModel.put("ticketUrl", ticketReservationManager.ticketUpdateUrl(oldTicket.getTicketsReservationId(), e, oldTicket.getUuid()));
             return templateManager.renderClassPathResource("/alfio/templates/ticket-has-changed-owner-txt.ms", emailModel, language, TemplateOutput.TEXT);
         };
     }

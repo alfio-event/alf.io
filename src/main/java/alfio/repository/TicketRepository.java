@@ -160,6 +160,12 @@ public interface TicketRepository {
     @Query("select distinct tickets_reservation_id from ticket where event_id = :eventId and status in('ACQUIRED', 'TO_BE_PAID') and (full_name is null or email_address is null)")
     List<String> findAllReservationsConfirmedButNotAssigned(@Bind("eventId") int eventId);
 
+    @Query("select * from ticket where event_id = :eventId  and status in('ACQUIRED', 'TO_BE_PAID') and full_name is not null and email_address is not null and reminder_sent = false")
+    List<Ticket> findAllAssignedButNotYetNotified(@Bind("eventId") int eventId);
+
+    @Query("update ticket set reminder_sent = true where id = :id and reminder_sent = false")
+	int flagTicketAsReminderSent(@Bind("id") int ticketId);
+
     @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null where id = :ticketId and status = 'ACQUIRED' and tickets_reservation_id = :reservationId and event_id = :eventId")
     int releaseTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
 
