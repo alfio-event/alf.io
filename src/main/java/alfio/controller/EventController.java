@@ -196,10 +196,12 @@ public class EventController {
                 promoCodeRepository.countByEventId(event.getId()) > 0;
 
         final EventDescriptor eventDescriptor = new EventDescriptor(event);
+        List<SaleableTicketCategory> expiredCategories = ticketCategories.stream().filter(SaleableTicketCategory::getExpired).collect(Collectors.toList());
         model.addAttribute("event", eventDescriptor)//
             .addAttribute("organizer", organizationRepository.getById(event.getOrganizationId()))
             .addAttribute("ticketCategories", ticketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList()))//
-            .addAttribute("expiredCategories", ticketCategories.stream().filter(SaleableTicketCategory::getExpired).collect(Collectors.toList()))//
+            .addAttribute("expiredCategories", expiredCategories)//
+            .addAttribute("containsExpiredCategories", !expiredCategories.isEmpty())//
             .addAttribute("hasAccessPromotions", hasAccessPromotions)
             .addAttribute("promoCode", specialCode.map(SpecialPrice::getCode).orElse(null))
             .addAttribute("locationDescriptor", ld)

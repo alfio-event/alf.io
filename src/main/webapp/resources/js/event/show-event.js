@@ -47,6 +47,14 @@
 
         $('div.event-description>div.preformatted').shorten({showChars: 250});
 
+        var collapsible = $('#expiredCategories');
+        var showExpiredCategoriesLink = $('a.show-expired-categories');
+        collapsible.on('shown.bs.collapse', function() {
+            showExpiredCategoriesLink.find('i.fa-angle-double-down').removeClass('fa-angle-double-down').addClass('fa-angle-double-up');
+        });
+        collapsible.on('hidden.bs.collapse', function() {
+            showExpiredCategoriesLink.find('i.fa-angle-double-up').removeClass('fa-angle-double-up').addClass('fa-angle-double-down');
+        });
     });
     
 })();
