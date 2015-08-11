@@ -31,6 +31,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
@@ -61,11 +62,12 @@ public class IntegrationTestUtil {
         Organization organization = organizationRepository.findByName(organizationName).get(0);
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com");
 
+        LocalDateTime expiration = LocalDateTime.now().plusDays(5).plusHours(1);
         EventModification em = new EventModification(null, "url", "url", "url", null,
                 eventName, "event display name", organization.getId(),
                 "muh location", "muh description",
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
-                new DateTimeModification(LocalDate.now().plusDays(6), LocalTime.now()),
+                new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, null, categories, false, new LocationDescriptor("","","",""));
         eventManager.createEvent(em);
         return Pair.of(eventManager.getSingleEvent(eventName, username), username);
