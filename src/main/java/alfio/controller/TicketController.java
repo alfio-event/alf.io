@@ -82,37 +82,25 @@ public class TicketController {
         this.eventManager = eventManager;
         this.configurationManager = configurationManager;
     }
-    
+
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.GET)
     public String showTicket(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, 
             @PathVariable("ticketIdentifier") String ticketIdentifier,
             @RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
             Model model) {
-        
-        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
-        if(!oData.isPresent()) {
-            return "redirect:/event/" + eventName + "/reservation/" + reservationId;
-        }
-        Triple<Event, TicketReservation, Ticket> data = oData.get();
-        
-        
-        TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId(), data.getLeft().getId());
-        Organization organization = organizationRepository.getById(data.getLeft().getOrganizationId());
+        return internalShowTicket(eventName, reservationId, ticketIdentifier, ticketEmailSent, model, "success");
 
-        TicketReservation reservation = data.getMiddle();
-        model.addAttribute("ticket", data.getRight())//
-                .addAttribute("reservation", reservation)//
-                .addAttribute("event", data.getLeft())//
-                .addAttribute("ticketCategory", ticketCategory)//
-                .addAttribute("organization", organization)//
-                .addAttribute("ticketEmailSent", ticketEmailSent)
-                .addAttribute("deskPaymentRequired", Optional.ofNullable(reservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired())
-                .addAttribute("pageTitle", "show-ticket.header.title");
-        
-        return "/event/show-ticket";
     }
 
-    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}/update", method = RequestMethod.GET)
+    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/view", method = RequestMethod.GET)
+    public String showTicketFromTicketDetail(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
+                                             @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                             @RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
+                                             Model model) {
+        return internalShowTicket(eventName, reservationId, ticketIdentifier, ticketEmailSent, model, "ticket/"+ticketIdentifier+"/update");
+    }
+
+    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/update", method = RequestMethod.GET)
     public String showTicketForUpdate(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
             @PathVariable("ticketIdentifier") String ticketIdentifier, Model model) {
 
@@ -127,7 +115,7 @@ public class TicketController {
 
         boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event), false);
         Ticket ticket = data.getRight();
-        model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket))))//
+        model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view")))//
                 .addAttribute("reservation", data.getMiddle())//
                 .addAttribute("event", event)//
                 .addAttribute("ticketCategory", ticketCategory)//
@@ -155,8 +143,8 @@ public class TicketController {
 
         TicketReservation reservation = data.getMiddle();
         notificationManager.sendTicketByEmail(ticket,
-                event, locale, TemplateProcessor.buildPartialEmail(event, organizationRepository, reservation, templateManager, ticketReservationManager.ticketUpdateUrl(reservation.getId(), event, ticket.getUuid()), request),
-                preparePdfTicket(request, event, reservation, ticket));
+            event, locale, TemplateProcessor.buildPartialEmail(event, organizationRepository, reservation, templateManager, ticketReservationManager.ticketUpdateUrl(reservation.getId(), event, ticket.getUuid()), request),
+            preparePdfTicket(request, event, reservation, ticket));
         return "redirect:/event/" + eventName + "/reservation/" + reservationId
                 + ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "/success") + "?ticket-email-sent=true";
     }
@@ -219,5 +207,30 @@ public class TicketController {
         TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation, ticketCategory, organization, templateManager);
+    }
+
+    private String internalShowTicket(String eventName, String reservationId, String ticketIdentifier, boolean ticketEmailSent, Model model, String backSuffix) {
+        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+        if(!oData.isPresent()) {
+            return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+        }
+        Triple<Event, TicketReservation, Ticket> data = oData.get();
+
+
+        TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId(), data.getLeft().getId());
+        Organization organization = organizationRepository.getById(data.getLeft().getOrganizationId());
+
+        TicketReservation reservation = data.getMiddle();
+        model.addAttribute("ticket", data.getRight())//
+            .addAttribute("reservation", reservation)//
+            .addAttribute("event", data.getLeft())//
+            .addAttribute("ticketCategory", ticketCategory)//
+            .addAttribute("organization", organization)//
+            .addAttribute("ticketEmailSent", ticketEmailSent)
+            .addAttribute("deskPaymentRequired", Optional.ofNullable(reservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired())
+            .addAttribute("backSuffix", backSuffix)
+            .addAttribute("pageTitle", "show-ticket.header.title");
+
+        return "/event/show-ticket";
     }
 }

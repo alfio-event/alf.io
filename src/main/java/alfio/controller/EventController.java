@@ -198,7 +198,7 @@ public class EventController {
         final EventDescriptor eventDescriptor = new EventDescriptor(event);
         List<SaleableTicketCategory> expiredCategories = ticketCategories.stream().filter(SaleableTicketCategory::getExpired).collect(Collectors.toList());
         model.addAttribute("event", eventDescriptor)//
-            .addAttribute("organizer", organizationRepository.getById(event.getOrganizationId()))
+            .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
             .addAttribute("ticketCategories", ticketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList()))//
             .addAttribute("expiredCategories", expiredCategories)//
             .addAttribute("containsExpiredCategories", !expiredCategories.isEmpty())//

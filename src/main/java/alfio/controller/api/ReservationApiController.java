@@ -30,10 +30,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -62,6 +59,7 @@ public class ReservationApiController {
     public Map<String, Object> assignTicketToPerson(@PathVariable("eventName") String eventName,
                                                     @PathVariable("reservationId") String reservationId,
                                                     @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                                    @RequestParam(value = "single-ticket", required = false, defaultValue = "false") boolean singleTicket,
                                                     UpdateTicketOwnerForm updateTicketOwner,
                                                     BindingResult bindingResult,
                                                     HttpServletRequest request,
@@ -81,6 +79,8 @@ public class ReservationApiController {
             model.addAttribute("event", t.getMiddle());
             model.addAttribute("availableLanguages", i18nManager.getEventLocales(eventName).stream()
                     .map(ContentLanguage.toLanguage(requestLocale)).collect(Collectors.toList()));
+            String uuid = t.getRight().getUuid();
+            model.addAttribute("urlSuffix", singleTicket ? "ticket/"+uuid+"/view": uuid);
         }, userDetails);
         Map<String, Object> result = new HashMap<>();
         model.addAttribute("reservationId", reservationId);

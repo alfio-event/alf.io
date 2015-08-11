@@ -152,3 +152,10 @@ div.preformatted {
 .wizard .current:after {border-left-color:#007ACC;}
 .wizard a:hover { text-decoration: none; } .wizard a:not(.current):hover { color:#08C; }
 .badge-inverse {color:#777; background-color: white}
+
+.wMarginTop30px {
+    margin-top: 30px;
+}
+.wMarginBottom30px {
+    margin-bottom: 30px;
+}

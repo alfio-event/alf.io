@@ -64,6 +64,7 @@
                 }
                 $('#loading-'+uuid).show();
                 $('#buttons-bar-'+uuid).hide();
+                frm.parents('div[data-ticket-update-page=true]').find('input[name=single-ticket]').val('true');
                 jQuery.ajax({
                     url: action,
                     type: 'POST',

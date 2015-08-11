@@ -626,7 +626,8 @@ public class TicketReservationManager {
     }
 
     public String ticketUpdateUrl(String reservationId, Event event, String ticketId) {
-        return ticketUrl(reservationId, event, ticketId) + "/update";
+        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl(event)), "/")
+            + "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/ticket/" + ticketId + "/update";
     }
 
 

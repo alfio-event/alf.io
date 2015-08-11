@@ -29,11 +29,21 @@ public class TicketDecorator {
     private final Ticket ticket;
     private final boolean freeCancellationEnabled;
     private final boolean conditionsMet;
+    private final String urlSuffix;
 
     public TicketDecorator(Ticket ticket, boolean freeCancellationEnabled, boolean conditionsMet) {
+        this(ticket, freeCancellationEnabled, conditionsMet, ticket.getUuid());
+    }
+
+    public TicketDecorator(Ticket ticket, boolean freeCancellationEnabled, boolean conditionsMet, String urlSuffix) {
         this.ticket = ticket;
         this.freeCancellationEnabled = freeCancellationEnabled;
         this.conditionsMet = conditionsMet;
+        this.urlSuffix = urlSuffix;
+    }
+
+    public String getUrlSuffix() {
+        return urlSuffix;
     }
 
     public boolean hasBeenPaid() {

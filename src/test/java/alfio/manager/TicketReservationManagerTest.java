@@ -605,7 +605,7 @@ public class TicketReservationManagerTest {{
             expect.that(trm.ticketUrl(reservationId, event, "ticketId")).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId+"/ticketId");
         });
         it.should("generate the ticket update URL", expect -> {
-            expect.that(trm.ticketUpdateUrl(reservationId, event, "ticketId")).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId + "/ticketId/update");
+            expect.that(trm.ticketUpdateUrl(reservationId, event, "ticketId")).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId + "/ticket/ticketId/update");
         });
     });
 
