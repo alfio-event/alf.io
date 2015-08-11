@@ -65,7 +65,7 @@ public class IntegrationTestUtil {
                 eventName, "event display name", organization.getId(),
                 "muh location", "muh description",
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
-                new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now().plusHours(1)),
+                new DateTimeModification(LocalDate.now().plusDays(6), LocalTime.now()),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, null, categories, false, new LocationDescriptor("","","",""));
         eventManager.createEvent(em);
         return Pair.of(eventManager.getSingleEvent(eventName, username), username);
