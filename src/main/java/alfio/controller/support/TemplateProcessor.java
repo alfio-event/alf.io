@@ -16,6 +16,7 @@
  */
 package alfio.controller.support;
 
+import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PDFTemplateGenerator;
 import alfio.manager.support.PartialTicketPDFGenerator;
@@ -35,7 +36,9 @@ import com.lowagie.text.pdf.BaseFont;
 import lombok.extern.log4j.Log4j2;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 
@@ -83,12 +86,13 @@ public final class TemplateProcessor {
     }
 
     public static PDFTemplateGenerator buildPDFTicket(Locale language,
-                                                    Event event,
-                                                    TicketReservation ticketReservation,
-                                                    Ticket ticket,
-                                                    TicketCategory ticketCategory,
-                                                    Organization organization,
-                                                    TemplateManager templateManager) {
+                                                      Event event,
+                                                      TicketReservation ticketReservation,
+                                                      Ticket ticket,
+                                                      TicketCategory ticketCategory,
+                                                      Organization organization,
+                                                      TemplateManager templateManager,
+                                                      FileUploadManager fileUploadManager) {
         
         return () -> {
             String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
@@ -99,7 +103,15 @@ public final class TemplateProcessor {
             model.put("ticketCategory", ticketCategory);
             model.put("event", event);
             model.put("organization", organization);
+
             model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
+            if(event.getFileBlobIdIsPresent()) {
+                fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(m -> {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    fileUploadManager.outputFile(m.getId(), baos);
+                    model.put("eventImage", "data:" + m.getContentType() + ";base64," + Base64.getEncoder().encodeToString(baos.toByteArray()));
+                });
+            }
             model.put("deskPaymentRequired", Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired());
 
             String page = templateManager.renderClassPathResource("/alfio/templates/ticket.ms", model, language, TemplateOutput.HTML);
@@ -121,7 +133,8 @@ public final class TemplateProcessor {
                                                                   TicketReservation ticketReservation,
                                                                   TicketCategory ticketCategory,
                                                                   Organization organization,
-                                                                  TemplateManager templateManager) {
-        return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager).generate();
+                                                                  TemplateManager templateManager,
+                                                                  FileUploadManager fileUploadManager) {
+        return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager, fileUploadManager).generate();
     }
 }

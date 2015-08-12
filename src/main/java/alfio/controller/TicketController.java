@@ -19,6 +19,7 @@ package alfio.controller;
 import alfio.controller.support.TemplateProcessor;
 import alfio.controller.support.TicketDecorator;
 import alfio.manager.EventManager;
+import alfio.manager.FileUploadManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PartialTicketPDFGenerator;
@@ -65,6 +66,7 @@ public class TicketController {
     private final NotificationManager notificationManager;
     private final EventManager eventManager;
     private final ConfigurationManager configurationManager;
+    private final FileUploadManager fileUploadManager;
 
     @Autowired
     public TicketController(OrganizationRepository organizationRepository,
@@ -73,7 +75,8 @@ public class TicketController {
                             TemplateManager templateManager,
                             NotificationManager notificationManager,
                             EventManager eventManager,
-                            ConfigurationManager configurationManager) {
+                            ConfigurationManager configurationManager,
+                            FileUploadManager fileUploadManager) {
         this.organizationRepository = organizationRepository;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -81,6 +84,7 @@ public class TicketController {
         this.notificationManager = notificationManager;
         this.eventManager = eventManager;
         this.configurationManager = configurationManager;
+        this.fileUploadManager = fileUploadManager;
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.GET)
@@ -206,7 +210,7 @@ public class TicketController {
     private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
         TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation, ticketCategory, organization, templateManager);
+        return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation, ticketCategory, organization, templateManager, fileUploadManager);
     }
 
     private String internalShowTicket(String eventName, String reservationId, String ticketIdentifier, boolean ticketEmailSent, Model model, String backSuffix) {

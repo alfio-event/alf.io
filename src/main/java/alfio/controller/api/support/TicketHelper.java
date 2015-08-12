@@ -18,6 +18,7 @@ package alfio.controller.api.support;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
+import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
@@ -59,18 +60,21 @@ public class TicketHelper {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
     private final TemplateManager templateManager;
+    private final FileUploadManager fileUploadManager;
 
     @Autowired
     public TicketHelper(TicketReservationManager ticketReservationManager,
                         OrganizationRepository organizationRepository,
                         TicketCategoryRepository ticketCategoryRepository,
                         TicketRepository ticketRepository,
-                        TemplateManager templateManager) {
+                        TemplateManager templateManager,
+                        FileUploadManager fileUploadManager) {
         this.ticketReservationManager = ticketReservationManager;
         this.organizationRepository = organizationRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.ticketRepository = ticketRepository;
         this.templateManager = templateManager;
+        this.fileUploadManager = fileUploadManager;
     }
 
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
@@ -129,6 +133,6 @@ public class TicketHelper {
     private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {
         TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation, ticketCategory, organization, templateManager);
+        return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation, ticketCategory, organization, templateManager, fileUploadManager);
     }
 }

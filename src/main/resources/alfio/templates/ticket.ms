@@ -7,7 +7,7 @@
 			}
 			h1,h2,p {margin:0;}
 			h1 {
-				font-size:300%;
+				font-size:200%;
 				margin-bottom:30px;
 			}
 			
@@ -26,41 +26,52 @@
 	<body>
 		<table style="width:100%">
 			<tr>
+                {{#eventImage}}
+				<td><div style="text-align:center"><img style="margin:auto; max-width:200px; max-height:150px" src="{{eventImage}}"/></div></td>
+                {{/eventImage}}
+                {{^eventImage}}
 				<td><h1>{{event.displayName}}</h1></td>
-				<td style="width:200px;"><div style="text-align:right"><img src="{{qrCodeDataUri}}"/></div></td>
+                {{/eventImage}}
 			</tr>
 		</table>
 		<h2>{{#i18n}}ticket.event-info{{/i18n}}</h2>
 		<table>
-			<tr>
-				<td style="width:180px">{{#i18n}}ticket.date-time{{/i18n}}</td>
-				<td>			{{#event.sameDay}}
-				{{#i18n}}event-days.same-day 
-					[{{#format-date}}{{event.begin}} EEE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-					[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] 
-					[{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
-				{{/i18n}}
-			{{/event.sameDay}}
-			{{^event.sameDay}}
-				{{#i18n}}event-days.not-same-day 
-					[{{#format-date}}{{event.begin}} EE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-					[{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
-				{{/i18n}} 
-				- 
-				{{#i18n}}event-days.not-same-day 
-					[{{#format-date}}{{event.end}} EE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-					[{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
-				{{/i18n}} 
-			{{/event.sameDay}}</td>
-			</tr>
-			<tr>
-				<td>{{#i18n}}ticket.location{{/i18n}}</td>
-				<td>{{event.location}}</td>
-			</tr>
-			<tr>
-				<td>{{#i18n}}ticket.organized-by{{/i18n}}</td>
-				<td>{{organization.name}} &lt;{{organization.email}}&gt;</td>
-			</tr>
+            <tr>
+                <td>
+                    <table>
+                        <tr>
+                            <td style="width:180px">{{#i18n}}ticket.date-time{{/i18n}}</td>
+                            <td>			{{#event.sameDay}}
+                                {{#i18n}}event-days.same-day
+                                    [{{#format-date}}{{event.begin}} EEE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+                                    [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
+                                    [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
+                                {{/i18n}}
+                            {{/event.sameDay}}
+                                {{^event.sameDay}}
+                                    {{#i18n}}event-days.not-same-day
+                                        [{{#format-date}}{{event.begin}} EE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+                                        [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
+                                    {{/i18n}}
+                                    -
+                                    {{#i18n}}event-days.not-same-day
+                                        [{{#format-date}}{{event.end}} EE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+                                        [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
+                                    {{/i18n}}
+                                {{/event.sameDay}}</td>
+                        </tr>
+                        <tr>
+                            <td>{{#i18n}}ticket.location{{/i18n}}</td>
+                            <td>{{event.location}}</td>
+                        </tr>
+                        <tr>
+                            <td>{{#i18n}}ticket.organized-by{{/i18n}}</td>
+                            <td>{{organization.name}} &lt;{{organization.email}}&gt;</td>
+                        </tr>
+                    </table>
+                </td>
+                <td style="width:200px;"><div style="text-align:right"><img src="{{qrCodeDataUri}}"/></div></td>
+            </tr>
 		</table>
 		
 		<h2>{{#i18n}}ticket.ticket{{/i18n}}</h2>

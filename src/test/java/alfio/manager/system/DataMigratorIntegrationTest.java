@@ -22,6 +22,7 @@ import alfio.config.Initializer;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EventManager;
+import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.user.UserManager;
@@ -92,6 +93,8 @@ public class DataMigratorIntegrationTest {
     private TicketCategoryRepository ticketCategoryRepository;
     @Autowired
     private TemplateManager templateManager;
+    @Autowired
+    private FileUploadManager fileUploadManager;
     @Value("${alfio.version}")
     private String currentVersion;
     @Value("${alfio.build-ts}")
@@ -268,7 +271,7 @@ public class DataMigratorIntegrationTest {
         second.setTShirtSize("SMALL-F");
         second.setEmail("email@email.ch");
         second.setFullName("Full Name");
-        PartialTicketPDFGenerator generator = TemplateProcessor.buildPartialPDFTicket(Locale.ITALIAN, event, ticketReservationManager.findById(reservationId).get(), ticketCategoryRepository.getById(tickets.get(0).getCategoryId(), event.getId()), organizationRepository.getById(event.getOrganizationId()), templateManager);
+        PartialTicketPDFGenerator generator = TemplateProcessor.buildPartialPDFTicket(Locale.ITALIAN, event, ticketReservationManager.findById(reservationId).get(), ticketCategoryRepository.getById(tickets.get(0).getCategoryId(), event.getId()), organizationRepository.getById(event.getOrganizationId()), templateManager, fileUploadManager);
         ticketReservationManager.updateTicketOwner(tickets.get(0), Locale.ITALIAN, event, first, (t) -> "", (t) -> "", generator::generate, Optional.<UserDetails>empty());
         ticketReservationManager.updateTicketOwner(tickets.get(1), Locale.ITALIAN, event, second, (t) -> "", (t) -> "", generator::generate, Optional.<UserDetails>empty());
         dataMigrator.fillTicketsGender();
