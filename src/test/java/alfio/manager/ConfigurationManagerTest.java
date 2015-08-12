@@ -83,7 +83,7 @@ public class ConfigurationManagerTest {
                 "muh location", "muh description",
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""));
+                BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7);
         eventManager.createEvent(em);
 
         event = eventManager.getSingleEvent("eventShortName", "test");

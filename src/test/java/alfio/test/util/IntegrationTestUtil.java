@@ -68,7 +68,7 @@ public class IntegrationTestUtil {
                 "muh location", "muh description",
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
-                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, null, categories, false, new LocationDescriptor("","","",""));
+                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, null, categories, false, new LocationDescriptor("","","",""), 7);
         eventManager.createEvent(em);
         return Pair.of(eventManager.getSingleEvent(eventName, username), username);
     }

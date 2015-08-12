@@ -192,7 +192,7 @@ public class EventManagerIntegrationTest {
         Event event = pair.getKey();
         EventModification update = new EventModification(event.getId(), null, null, null, null, null, null, event.getOrganizationId(), null, null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
-                event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null);
+                event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7);
         eventManager.updateEventPrices(event.getId(), update, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
@@ -212,7 +212,7 @@ public class EventManagerIntegrationTest {
         Event event = pair.getKey();
         EventModification update = new EventModification(event.getId(), null, null, null, null, null, null, event.getOrganizationId(), null, null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
-                event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null);
+                event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7);
         eventManager.updateEventPrices(event.getId(), update, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
@@ -232,7 +232,7 @@ public class EventManagerIntegrationTest {
         Event event = pair.getKey();
         EventModification update = new EventModification(event.getId(), null, null, null, null, null, null, event.getOrganizationId(), null, null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
-                event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null);
+                event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7);
         eventManager.updateEventPrices(event.getId(), update, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
@@ -252,7 +252,7 @@ public class EventManagerIntegrationTest {
         Event event = pair.getKey();
         EventModification update = new EventModification(event.getId(), null, null, null, null, null, null, event.getOrganizationId(), null, null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
-                event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null);
+                event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7);
         eventManager.updateEventPrices(event.getId(), update, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
