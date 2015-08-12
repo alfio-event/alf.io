@@ -44,9 +44,8 @@
             <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
             <div class="container-fluid ">
                 <div class="row">
-                    <div class="col-md-4 col-md-push-8 col-xs-12"><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{ticket.uuid}}/download-ticket" class="btn btn-primary btn-block"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div>
+                    <div class="col-md-4 col-md-push-8 col-xs-12"><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{ticket.uuid}}/download-ticket" class="btn btn-success btn-block"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div>
                     <div class="col-md-4 col-md-pull-4 col-xs-12"><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{backSuffix}}" class="btn btn-default btn-block go-back"><i class="fa fa-backward"></i> {{#i18n}}show-ticket.go-back-to-reservation{{/i18n}}</a></div>
-                    <div class="col-md-4 col-md-pull-4 col-xs-12"><button type="submit" class="btn btn-primary btn-block"><i class="fa fa-envelope-o"></i> {{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{ticket.email}}]{{/i18n}}</button></div>
                 </div>
             </div>
         </form>
