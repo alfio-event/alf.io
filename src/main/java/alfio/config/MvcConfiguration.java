@@ -16,8 +16,9 @@
  */
 package alfio.config;
 
-import alfio.manager.i18n.ContentLanguage;
 import alfio.manager.i18n.I18nManager;
+import alfio.model.ContentLanguage;
+import alfio.model.Event;
 import alfio.util.MustacheCustomTagInterceptor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,11 +39,11 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
-import org.springframework.web.servlet.HandlerInterceptor;
-import org.springframework.web.servlet.LocaleResolver;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.ViewResolver;
+import org.springframework.web.servlet.*;
 import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
@@ -57,10 +58,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -88,12 +88,64 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(getLocaleChangeInterceptor());
+        registry.addInterceptor(getEventLocaleSetterInterceptor());
         registry.addInterceptor(getTemplateMessagesInterceptor());
         registry.addInterceptor(new MustacheCustomTagInterceptor());
         registry.addInterceptor(getCsrfInterceptor());
         registry.addInterceptor(getCSPInterceptor());
-        registry.addInterceptor(getLocaleChangeInterceptor());
         registry.addInterceptor(getDefaultTemplateObjectsFiller());
+    }
+
+    @Bean
+    public HandlerInterceptor getEventLocaleSetterInterceptor() {
+        return new HandlerInterceptorAdapter() {
+            @Override
+            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+
+                if(handler instanceof HandlerMethod) {
+                    HandlerMethod handlerMethod = ((HandlerMethod) handler);
+                    RequestMapping reqMapping = handlerMethod.getMethodAnnotation(RequestMapping.class);
+
+                    //check if the request mapping value has the form "/event/{something}"
+                    Pattern eventPattern = Pattern.compile("^/event/\\{(\\w+)}/{0,1}.*");
+                    if (reqMapping != null && reqMapping.value().length == 1 && eventPattern.matcher(reqMapping.value()[0]).matches()) {
+
+                        Matcher m = eventPattern.matcher(reqMapping.value()[0]);
+                        m.matches();
+
+                        String pathVariableName = m.group(1);
+
+                        //extract the parameter name
+                        Arrays.stream(handlerMethod.getMethodParameters())
+                            .map(methodParameter -> methodParameter.getParameterAnnotation(PathVariable.class))
+                            .filter(Objects::nonNull)
+                            .map(PathVariable::value)
+                            .filter(pathVariableName::equals)
+                            .findFirst().ifPresent((val) -> {
+
+                                //fetch the parameter value
+                                String eventName = Optional.ofNullable(((Map<String, Object>)request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE)).get(val)).orElse("").toString();
+
+
+                                LocaleResolver resolver = RequestContextUtils.getLocaleResolver(request);
+                                Locale locale = resolver.resolveLocale(request);
+                                List<ContentLanguage> cl = i18nManager.getEventLocales(eventName);
+
+                                request.setAttribute("ALFIO_EVENT_NAME", eventName);
+
+                                if(cl.stream().noneMatch(contentLanguage -> contentLanguage.getLanguage().equals(Optional.ofNullable(locale).orElse(Locale.ENGLISH).getLanguage()))) {
+                                    //override the user locale if it's not in the one permitted by the event
+                                    resolver.setLocale(request, response, cl.stream().findFirst().map(ContentLanguage::getLocale).orElse(Locale.ENGLISH));
+                                } else {
+                                    resolver.setLocale(request, response, locale);
+                                }
+                            });
+                    }
+                }
+                return true;
+            }
+        };
     }
 
     @Bean
@@ -104,11 +156,17 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                 Optional.ofNullable(modelAndView).ifPresent(mv -> {
                     mv.addObject("request", request);
                     final ModelMap modelMap = mv.getModelMap();
+
+                    Optional.ofNullable(request.getAttribute("ALFIO_EVENT_NAME")).map(Object::toString).ifPresent(eventName -> {
+
+                        List<?> availableLanguages = i18nManager.getEventLocales(eventName);
+
+                        modelMap.put("showAvailableLanguagesInPageTop", availableLanguages.size() > 1);
+                        modelMap.put("availableLanguages", availableLanguages);
+                    });
+
                     modelMap.putIfAbsent("event", null);
                     if(!StringUtils.startsWith(mv.getViewName(), "redirect:")) {
-                        mv.addObject("availableLanguages", i18nManager.getAvailableLocales().stream()
-                                .map(ContentLanguage.toLanguage(RequestContextUtils.getLocale(request)))
-                                .collect(Collectors.toList()));
                         modelMap.putIfAbsent("pageTitle", "empty");
                     }
                 });

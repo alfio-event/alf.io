@@ -66,6 +66,7 @@ public class Event {
     private final String privateKey;
     private final int organizationId;
     private final ZoneId timeZone;
+    private final int locales;
 
 
     public Event(@Column("id") int id,
@@ -89,7 +90,8 @@ public class Event {
                  @Column("vat") BigDecimal vat,
                  @Column("allowed_payment_proxies") String allowedPaymentProxies,
                  @Column("private_key") String privateKey,
-                 @Column("org_id") int organizationId) {
+                 @Column("org_id") int organizationId,
+                 @Column("locales") int locales) {
         this.displayName = displayName;
         this.websiteUrl = websiteUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
@@ -113,6 +115,7 @@ public class Event {
         this.vat = vat;
         this.privateKey = privateKey;
         this.organizationId = organizationId;
+        this.locales = locales;
         this.allowedPaymentProxies = Arrays.stream(allowedPaymentProxies.split(","))
                 .filter(StringUtils::isNotBlank)
                 .map(PaymentProxy::valueOf)
@@ -194,6 +197,12 @@ public class Event {
 
     public boolean supportsPaymentMethod(PaymentProxy paymentProxy) {
         return allowedPaymentProxies.contains(paymentProxy);
+    }
+
+    public List<ContentLanguage> getContentLanguages() {
+        return ContentLanguage.ALL_LANGUAGES.stream()
+            .filter(cl -> (cl.getValue() & getLocales()) == cl.getValue())
+            .collect(Collectors.toList());
     }
 
     @JsonIgnore

@@ -14,22 +14,28 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager.i18n;
+package alfio.model;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.function.Function;
 
 public class ContentLanguage {
 
-    public static final ContentLanguage ITALIAN = new ContentLanguage(Locale.ITALIAN, Locale.ENGLISH);
-    public static final ContentLanguage ENGLISH = new ContentLanguage(Locale.ENGLISH, Locale.ENGLISH);
-    public static final ContentLanguage GERMAN = new ContentLanguage(Locale.GERMAN, Locale.GERMAN);
+    public static final ContentLanguage ITALIAN = new ContentLanguage(Locale.ITALIAN, 0b0001, Locale.ITALIAN);
+    public static final ContentLanguage ENGLISH = new ContentLanguage(Locale.ENGLISH, 0b0010, Locale.ENGLISH);
+    public static final ContentLanguage GERMAN = new ContentLanguage(Locale.GERMAN,   0b0100, Locale.GERMAN);
+
+    public static final List<ContentLanguage> ALL_LANGUAGES = Arrays.asList(ITALIAN, ENGLISH, GERMAN);
 
     private final Locale locale;
+    private final int value;
     private final Locale displayLocale;
 
-    private ContentLanguage(Locale locale, Locale displayLocale) {
+    private ContentLanguage(Locale locale, int value, Locale displayLocale) {
         this.locale = locale;
+        this.value = value;
         this.displayLocale = displayLocale;
     }
 
@@ -41,8 +47,16 @@ public class ContentLanguage {
         return locale.getDisplayLanguage(displayLocale);
     }
 
+    public Locale getLocale() {
+        return locale;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
     private ContentLanguage switchDisplayLocaleTo(Locale displayLocale) {
-        return new ContentLanguage(this.locale, displayLocale);
+        return new ContentLanguage(this.locale, this.value, displayLocale);
     }
 
     public static Function<ContentLanguage, ContentLanguage> toLanguage(Locale targetLanguage) {

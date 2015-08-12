@@ -60,6 +60,7 @@ public class EventModification {
     private final List<TicketCategoryModification> ticketCategories;
     private final boolean freeOfCharge;
     private final LocationDescriptor locationDescriptor;
+    private final int locales;
 
     @JsonCreator
     public EventModification(@JsonProperty("id") Integer id,
@@ -82,7 +83,8 @@ public class EventModification {
                              @JsonProperty("allowedPaymentProxies") List<PaymentProxy> allowedPaymentProxies,
                              @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories,
                              @JsonProperty("freeOfCharge") boolean freeOfCharge,
-                             @JsonProperty("geoLocation") LocationDescriptor locationDescriptor) {
+                             @JsonProperty("geoLocation") LocationDescriptor locationDescriptor,
+                             @JsonProperty("locales") int locales) {
         this.id = id;
         this.websiteUrl = websiteUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
@@ -104,6 +106,7 @@ public class EventModification {
         this.allowedPaymentProxies = Optional.ofNullable(allowedPaymentProxies).orElse(Collections.<PaymentProxy>emptyList());
         this.ticketCategories = ticketCategories;
         this.freeOfCharge = freeOfCharge;
+        this.locales = locales;
     }
 
     public int getPriceInCents() {
@@ -136,6 +139,7 @@ public class EventModification {
                 event.getAllowedPaymentProxies(),
                 ticketCategories.stream().map(tc -> TicketCategoryModification.fromTicketCategory(tc, zoneId)).collect(toList()),
                 event.isFreeOfCharge(),
-                fromGeoData(Pair.of(event.getLatitude(), event.getLongitude()), TimeZone.getTimeZone(zoneId), mapsApiKey));
+                fromGeoData(Pair.of(event.getLatitude(), event.getLongitude()), TimeZone.getTimeZone(zoneId), mapsApiKey),
+                event.getLocales());
     }
 }

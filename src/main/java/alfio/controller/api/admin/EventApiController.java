@@ -19,7 +19,7 @@ package alfio.controller.api.admin;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.TicketReservationManager;
-import alfio.manager.i18n.ContentLanguage;
+import alfio.model.ContentLanguage;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
 import alfio.model.Event;
@@ -204,6 +204,11 @@ public class EventApiController {
     @RequestMapping(value = "/events/{eventName}/languages", method = GET)
     public List<ContentLanguage> getAvailableLocales(@PathVariable("eventName") String eventName) {
         return i18nManager.getEventLocales(eventName);
+    }
+
+    @RequestMapping(value = "/events-all-languages", method = GET)
+    public List<ContentLanguage> getAllLanguages() {
+        return i18nManager.getAllLocales();
     }
 
     @RequestMapping(value = "/events/{eventName}/categories-containing-tickets", method = GET)

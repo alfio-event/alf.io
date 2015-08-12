@@ -18,7 +18,7 @@ package alfio.controller.api;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.manager.i18n.ContentLanguage;
+import alfio.model.ContentLanguage;
 import alfio.manager.i18n.I18nManager;
 import alfio.model.Event;
 import alfio.model.Ticket;

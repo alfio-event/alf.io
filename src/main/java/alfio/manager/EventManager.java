@@ -151,7 +151,7 @@ public class EventManager {
         final ZonedDateTime end = em.getEnd().toZonedDateTime(zoneId);
         eventRepository.updateHeader(eventId, em.getDescription(), em.getDisplayName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(),
                 em.getImageUrl(), em.getFileBlobId(), em.getLocation(), geolocation.getLatitude(), geolocation.getLongitude(),
-                begin, end, geolocation.getTimeZone(), em.getOrganizationId());
+                begin, end, geolocation.getTimeZone(), em.getOrganizationId(), em.getLocales());
         if(!original.getBegin().equals(begin) || !original.getEnd().equals(end)) {
             fixOutOfRangeCategories(em, username, zoneId, end);
         }
@@ -460,7 +460,7 @@ public class EventManager {
         return eventRepository.insert(em.getDescription(), em.getShortName(), em.getDisplayName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(),
                 result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()), em.getEnd().toZonedDateTime(result.getZoneId()),
                 result.getTimeZone(), actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
-                privateKey, em.getOrganizationId()).getKey();
+                privateKey, em.getOrganizationId(), em.getLocales()).getKey();
     }
 
     private String collectPaymentProxies(EventModification em) {

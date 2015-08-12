@@ -237,11 +237,11 @@
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
-            controller: function EditEventHeaderController($scope, LocationService, FileUploadService, EventUtilsService) {
+            controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, EventUtilsService, EventService) {
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',
                         'description', 'websiteUrl', 'termsAndConditionsUrl', 'imageUrl', 'fileBlobId', 'formattedBegin',
-                        'formattedEnd', 'geolocation']);
+                        'formattedEnd', 'geolocation', 'locales']);
                     angular.extend($scope.obj, source);
                     var beginDateTime = moment(source['formattedBegin']);
                     var endDateTime = moment(source['formattedEnd']);
@@ -254,6 +254,32 @@
                         time: endDateTime.format('HH:mm')
                     };
                 }
+
+                EventService.getAllLanguages().success(function(result) {
+                    $scope.allLanguages = result;
+                });
+
+                if($stateParams.eventName) {
+                    EventService.getAvailableLanguages($stateParams.eventName).success(function(result) {
+                        $scope.selectedLanguages = _.map(result, function(r) {
+                            return r.value;
+                        });
+                    });
+                } else {
+                    EventService.getAllLanguages().success(function(result) {
+                        $scope.selectedLanguages = _.map(result, function(r) {
+                            return r.value;
+                        });
+                    });
+                }
+
+                $scope.updateLocales = function() {
+                    var locales = 0;
+                    angular.forEach($scope.selectedLanguages, function(val) {
+                        locales = locales | val;
+                    });
+                    $scope.obj.locales = locales;
+                };
 
                 var isUpdate = angular.isDefined($scope.eventObj) && angular.isDefined($scope.eventObj.id);
                 $scope.isUpdate = isUpdate;

@@ -21,13 +21,18 @@
 
 
             <label data-ng-if="event.fileBlobIdIsPresent">Event image</label>
-            <p data-ng-if="event.fileBlobIdIsPresent"><img data-ng-src="/file/{{event.fileBlobId}}"></p>
+            <p data-ng-if="event.fileBlobIdIsPresent"><img data-ng-src="/file/{{event.fileBlobId}}" class="img-responsive"></p>
 
             <label data-ng-if="!event.fileBlobIdIsPresent">Image URL</label>
             <p  data-ng-if="!event.fileBlobIdIsPresent" class="form-control-static"><a href="{{event.imageUrl}}" target="_blank">{{event.imageUrl}}</a></p>
 
             <label>Location</label>
             <p class="form-control-static">{{event.location}}</p>
+
+            <label>Languages</label>
+            <p class="form-control-static" data-ng-repeat="cl in event.contentLanguages">
+                - {{cl.displayLanguage}}
+            </p>
 
             <label>Description</label>
             <pre class="white form-control-static">{{event.description}}</pre>
@@ -45,6 +50,6 @@
     </div>
     <div class="col-sm-12 col-md-6">
         <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loadingMap"></i>
-        <img data-ng-if="event.geolocation && !loadingMap" data-ng-src="{{event.geolocation.mapUrl}}" alt="{{event.location}}" />
+        <img data-ng-if="event.geolocation && !loadingMap" data-ng-src="{{event.geolocation.mapUrl}}" alt="{{event.location}}" class="img-responsive" />
     </div>
 </div>

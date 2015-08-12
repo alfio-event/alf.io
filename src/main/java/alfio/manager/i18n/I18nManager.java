@@ -16,19 +16,34 @@
  */
 package alfio.manager.i18n;
 
+import alfio.model.ContentLanguage;
+import alfio.model.Event;
+import alfio.repository.EventRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class I18nManager {
 
-    public List<ContentLanguage> getAvailableLocales() {
-        return Arrays.asList(ContentLanguage.ITALIAN, ContentLanguage.GERMAN, ContentLanguage.ENGLISH);
+    private final EventRepository eventRepository;
+
+    @Autowired
+    public I18nManager(EventRepository eventRepository) {
+        this.eventRepository = eventRepository;
+    }
+
+    public List<ContentLanguage> getAllLocales() {
+        return Arrays.asList(ContentLanguage.ENGLISH, ContentLanguage.GERMAN, ContentLanguage.ITALIAN);
     }
 
     public List<ContentLanguage> getEventLocales(String eventName) {
-        return getAvailableLocales();
+        Event event = eventRepository.findByShortName(eventName);
+        return getAllLocales().stream()
+            .filter(cl -> (cl.getValue() & event.getLocales()) == cl.getValue())
+            .collect(Collectors.toList());
     }
 }

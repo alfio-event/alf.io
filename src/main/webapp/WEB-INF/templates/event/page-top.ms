@@ -30,11 +30,13 @@
                 <!-- lang bar -->
                 <div class="row hidden-print">
                     <div class="col-xs-4 col-xs-push-8 col-sm-3 col-sm-push-9 text-center">
+                    {{#showAvailableLanguagesInPageTop}}
                         <ol class="alfio-lang breadcrumb wMarginBottom wMarginTop">
                             {{#availableLanguages}}
                                 <li><a href="?lang={{language}}">{{language}}</a></li>
                             {{/availableLanguages}}
                         </ol>
+                    {{/showAvailableLanguagesInPageTop}}
                     </div>
                 </div>
                 <!-- -->

@@ -140,6 +140,9 @@
             getAvailableLanguages: function(eventName) {
                 return $http['get']('/admin/api/events/'+eventName+'/languages').error(HttpErrorHandler.handle);
             },
+            getAllLanguages: function() {
+                return $http['get']('/admin/api/events-all-languages').error(HttpErrorHandler.handle);
+            },
             getMessagesPreview: function(eventName, categoryId, messages) {
                 var queryString = angular.isDefined(categoryId) && categoryId !== "" ? '?categoryId='+categoryId : '';
                 return $http['post']('/admin/api/events/'+eventName+'/messages/preview'+queryString, messages).error(HttpErrorHandler.handle);

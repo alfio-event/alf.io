@@ -27,6 +27,9 @@
             <textarea data-ng-model="obj.location" name="location" id="location" class="form-control" required data-minlength="10" data-ng-change="updateLocation(obj.location)" data-ng-model-options="{ updateOn: 'blur'}"></textarea>
             <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.location" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
 
+            <label for="languages">Languages</label>
+            <select id="languages" class="form-control" multiple data-ng-model="selectedLanguages" data-ng-options="lang.value as lang.displayLanguage for lang in allLanguages" data-ng-change="updateLocales()"></select>
+
             <label for="description">Event Description</label>
             <textarea data-ng-model="obj.description" name="description" id="description" required class="form-control" data-minlength="10"></textarea>
             <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.description" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
