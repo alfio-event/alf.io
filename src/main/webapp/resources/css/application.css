@@ -24,6 +24,14 @@ div.col-md-8.col-md-offset-2 > div {
     margin:auto;
 }
 
+div.header {
+    max-height:100px;
+}
+
+div.header img.img-responsive {
+    max-height: 100px;
+}
+
 .alfio-lang {
     background-color:transparent;
 }

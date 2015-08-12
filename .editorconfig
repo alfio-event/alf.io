@@ -4,6 +4,10 @@
 root = true
 
 # Unix-style newlines with a newline ending every file
+
+[*.properties]
+charset = iso-8859-1
+
 [*]
 end_of_line = lf
 insert_final_newline = false

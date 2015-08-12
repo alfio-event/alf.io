@@ -23,7 +23,7 @@ CREATE TABLE event_description_text (
     event_id_fk integer not null,
     locale varchar(8) not null,
     type varchar(16) not null,
-    description varchar(2048) not null,
+    description varchar(2048) not null
 );
 
 alter table event_description_text add PRIMARY KEY (event_id_fk, locale, type);

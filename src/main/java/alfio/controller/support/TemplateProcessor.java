@@ -21,10 +21,7 @@ import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PDFTemplateGenerator;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.user.OrganizationRepository;
@@ -36,7 +33,6 @@ import com.lowagie.text.pdf.BaseFont;
 import lombok.extern.log4j.Log4j2;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
-import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -106,11 +102,7 @@ public final class TemplateProcessor {
 
             model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
             if(event.getFileBlobIdIsPresent()) {
-                fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(m -> {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    fileUploadManager.outputFile(m.getId(), baos);
-                    model.put("eventImage", "data:" + m.getContentType() + ";base64," + Base64.getEncoder().encodeToString(baos.toByteArray()));
-                });
+                fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(m -> fillWithImageData(m, fileUploadManager, model));
             }
             model.put("deskPaymentRequired", Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired());
 
@@ -126,6 +118,31 @@ public final class TemplateProcessor {
             renderer.layout();
             return renderer;
         };
+    }
+
+    static void fillWithImageData(FileBlobMetadata m, FileUploadManager fileUploadManager, Map<String, Object> model) {
+        Map<String, String> attributes = m.getAttributes();
+        if (attributes.containsKey(FileUploadManager.ATTR_IMG_WIDTH) && attributes.containsKey(FileUploadManager.ATTR_IMG_HEIGHT)) {
+            final int width = Integer.parseInt(attributes.get(FileUploadManager.ATTR_IMG_WIDTH));
+            final int height = Integer.parseInt(attributes.get(FileUploadManager.ATTR_IMG_HEIGHT));
+            //in the PDF the image can be maximum 300x150
+            int resizedWidth = width;
+            int resizedHeight = height;
+            if (resizedHeight > 150) {
+                resizedHeight = 150;
+                resizedWidth = width * resizedHeight / height;
+            }
+            if (resizedWidth > 300) {
+                resizedWidth = 300;
+                resizedHeight = height * resizedWidth / width;
+            }
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            fileUploadManager.outputFile(m.getId(), baos);
+            model.put("eventImage", "data:" + m.getContentType() + ";base64," + Base64.getEncoder().encodeToString(baos.toByteArray()));
+            model.put("imageWidth", resizedWidth);
+            model.put("imageHeight", resizedHeight);
+
+        }
     }
 
     public static PartialTicketPDFGenerator buildPartialPDFTicket(Locale language,

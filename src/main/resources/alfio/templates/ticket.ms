@@ -7,8 +7,7 @@
 			}
 			h1,h2,p {margin:0;}
 			h1 {
-				font-size:200%;
-				margin-bottom:30px;
+				font-size:160%;
 			}
 			
 			h2 {
@@ -27,11 +26,9 @@
 		<table style="width:100%">
 			<tr>
                 {{#eventImage}}
-				<td><div style="text-align:center"><img style="margin:auto; max-width:200px; max-height:150px" src="{{eventImage}}"/></div></td>
+				<td style="width:{{imageWidth}}px; height:{{imageHeight}}px"><img style="margin:auto; width:{{imageWidth}}px; height:{{imageHeight}}px" src="{{eventImage}}"/></td>
                 {{/eventImage}}
-                {{^eventImage}}
-				<td><h1>{{event.displayName}}</h1></td>
-                {{/eventImage}}
+				<td style="text-align: center; vertical-align: middle;"><h1>{{event.displayName}}</h1></td>
 			</tr>
 		</table>
 		<h2>{{#i18n}}ticket.event-info{{/i18n}}</h2>
