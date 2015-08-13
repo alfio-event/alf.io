@@ -14,33 +14,21 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.decorator;
+package alfio.model;
 
-import alfio.model.Event;
-import lombok.experimental.Delegate;
-import org.apache.commons.lang3.StringUtils;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
-public class EventDescriptor {
+@Getter
+public class TicketCategoryDescription {
 
-    @Delegate
-    private final Event event;
-    private final String eventDescription;
+    private final int ticketCategoryId;
+    private final String locale;
+    private final String description;
 
-    public EventDescriptor(Event event, String eventDescription) {
-        this.event = event;
-        this.eventDescription = eventDescription;
-    }
-
-    public String getDescription() {
-        return eventDescription;
-    }
-
-    public String getShortDescription() {
-        return StringUtils.abbreviate(getDescription(), 100);
-    }
-
-
-    public boolean getVatIncluded() {
-        return event.isVatIncluded();
+    public TicketCategoryDescription(@Column("ticket_category_id_fk") int ticketCategoryId, @Column("locale") String locale, @Column("description") String description) {
+        this.ticketCategoryId = ticketCategoryId;
+        this.locale = locale;
+        this.description = description;
     }
 }

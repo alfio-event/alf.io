@@ -51,7 +51,6 @@ public class Event {
     private final String termsAndConditionsUrl;
     private final String imageUrl;
     private final String fileBlobId;
-    private final String description;
     private final String location;
     private final String latitude;
     private final String longitude;
@@ -72,7 +71,6 @@ public class Event {
     public Event(@Column("id") int id,
                  @Column("short_name") String shortName,
                  @Column("display_name") String displayName,
-                 @Column("description") String description,
                  @Column("location") String location,
                  @Column("latitude") String latitude,
                  @Column("longitude") String longitude,
@@ -101,7 +99,6 @@ public class Event {
         final ZoneId zoneId = TimeZone.getTimeZone(timeZone).toZoneId();
         this.id = id;
         this.shortName = shortName;
-        this.description = description;
         this.location = location;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -200,13 +197,16 @@ public class Event {
     }
 
     public List<ContentLanguage> getContentLanguages() {
-        return ContentLanguage.ALL_LANGUAGES.stream()
-            .filter(cl -> (cl.getValue() & getLocales()) == cl.getValue())
-            .collect(Collectors.toList());
+        return ContentLanguage.findAllFor(getLocales());
     }
 
     @JsonIgnore
     public String getGoogleCalendarUrl() {
+        return getGoogleCalendarUrl("");//used by the email
+    }
+
+    @JsonIgnore
+    public String getGoogleCalendarUrl(String description) {
         //format described at http://stackoverflow.com/a/19867654
         // sprop does not seems to have any effect http://useroffline.blogspot.ch/2009/06/making-google-calendar-link.html
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyMMdd'T'HHmmss");
@@ -215,17 +215,17 @@ public class Event {
                 .queryParam("dates", getBegin().format(formatter) + "/" + getEnd().format(formatter))
                 .queryParam("ctz", getTimeZone())
                 .queryParam("text", getDisplayName())
-                .queryParam("details", getDescription())
+                .queryParam("details", description)
                 .queryParam("location", getLocation())
                 .toUriString();
     }
 
     @JsonIgnore
-    public Optional<byte[]> getIcal() {
+    public Optional<byte[]> getIcal(String description) {
         ICalendar ical = new ICalendar();
         VEvent vEvent = new VEvent();
         vEvent.setSummary(getDisplayName());
-        vEvent.setDescription(getDescription());
+        vEvent.setDescription(description);
         vEvent.setLocation(getLocation());
         vEvent.setDateStart(Date.from(getBegin().toInstant()));
         vEvent.setDateEnd(Date.from(getEnd().toInstant()));

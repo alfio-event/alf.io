@@ -17,6 +17,7 @@
 package alfio.model.modification;
 
 import alfio.model.Event;
+import alfio.model.EventDescription;
 import alfio.model.TicketCategory;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.transaction.PaymentProxy;
@@ -28,10 +29,9 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.TimeZone;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static alfio.model.modification.support.LocationDescriptor.fromGeoData;
 import static java.util.stream.Collectors.toList;
@@ -48,7 +48,7 @@ public class EventModification {
     private final String displayName;
     private final int organizationId;
     private final String location;
-    private final String description;
+    private final Map<String, String> description;
     private final DateTimeModification begin;
     private final DateTimeModification end;
     private final BigDecimal regularPrice;
@@ -72,7 +72,7 @@ public class EventModification {
                              @JsonProperty("displayName") String displayName,
                              @JsonProperty("organizationId") int organizationId,
                              @JsonProperty("location") String location,
-                             @JsonProperty("description") String description,
+                             @JsonProperty("description") Map<String, String> description,
                              @JsonProperty("begin") DateTimeModification begin,
                              @JsonProperty("end") DateTimeModification end,
                              @JsonProperty("regularPrice") BigDecimal regularPrice,
@@ -117,7 +117,7 @@ public class EventModification {
         return locationDescriptor;
     }
 
-    public static EventModification fromEvent(Event event, List<TicketCategory> ticketCategories, Optional<String> mapsApiKey) {
+    public static EventModification fromEvent(Event event, List<TicketCategory> ticketCategories, List<EventDescription> eventDescriptions, Optional<String> mapsApiKey) {
         final ZoneId zoneId = event.getZoneId();
         return new EventModification(event.getId(),
                 event.getWebsiteUrl(),
@@ -128,7 +128,7 @@ public class EventModification {
                 event.getDisplayName(),
                 event.getOrganizationId(),
                 event.getLocation(),
-                event.getDescription(),
+                eventDescriptions.stream().collect(Collectors.toMap(EventDescription::getLocale, EventDescription::getDescription)),
                 DateTimeModification.fromZonedDateTime(event.getBegin()),
                 DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(),

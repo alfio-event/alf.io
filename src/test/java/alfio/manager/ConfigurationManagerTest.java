@@ -22,6 +22,7 @@ import alfio.config.Initializer;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.EventDescription;
 import alfio.model.TicketCategory;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
@@ -46,9 +47,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -73,6 +72,11 @@ public class ConfigurationManagerTest {
 
         userManager.insertUser(organization.getId(), "test", "test", "test", "test@example.com");
 
+        Map<String, String> desc = new HashMap<>();
+        desc.put("en", "muh description");
+        desc.put("it", "muh description");
+        desc.put("de", "muh description");
+
         List<TicketCategoryModification> ticketsCategory = Collections.singletonList(
                 new TicketCategoryModification(null, "default", 20,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
@@ -80,7 +84,7 @@ public class ConfigurationManagerTest {
                         "desc", BigDecimal.TEN, false, "", false));
         EventModification em = new EventModification(null, "url", "url", "url", null,
                 "eventShortName", "displayName", organization.getId(),
-                "muh location", "muh description",
+                "muh location", desc,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7);

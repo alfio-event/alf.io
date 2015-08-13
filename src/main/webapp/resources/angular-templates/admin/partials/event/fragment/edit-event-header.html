@@ -30,9 +30,11 @@
             <label for="languages">Languages</label>
             <select id="languages" class="form-control" multiple data-ng-model="selectedLanguages" data-ng-options="lang.value as lang.displayLanguage for lang in allLanguages" data-ng-change="updateLocales()"></select>
 
-            <label for="description">Event Description</label>
-            <textarea data-ng-model="obj.description" name="description" id="description" required class="form-control" data-minlength="10"></textarea>
-            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.description" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
+            <div data-ng-repeat="langValue in selectedLanguages">
+                <label for="description">Event Description: {{allLanguagesMapping[langValue].displayLanguage}}</label>
+                <textarea data-ng-model="obj.description[allLanguagesMapping[langValue].locale]" name="description" id="description" required class="form-control" data-minlength="10"></textarea>
+                <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.description[allLanguagesMapping[langValue].locale]" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
 
             <label for="websiteUrl">Website URL</label>
             <input type="url" data-ng-model="obj.websiteUrl" name="websiteUrl" id="websiteUrl" required class="form-control" />
@@ -72,6 +74,6 @@
     <div class="col-sm-12 col-md-6">
         <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loadingMap"></i>
         <span class="text-danger" data-ng-if="mapError && !loadingMap">{{mapError}}</span>
-        <img data-ng-if="obj.geolocation && !loadingMap" data-ng-src="{{obj.geolocation.mapUrl}}" alt="{{obj.location}}" />
+        <img data-ng-if="obj.geolocation && !loadingMap" data-ng-src="{{obj.geolocation.mapUrl}}" alt="{{obj.location}}" class="img-responsive"/>
     </div>
 </div>

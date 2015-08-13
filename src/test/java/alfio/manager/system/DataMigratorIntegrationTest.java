@@ -26,10 +26,7 @@ import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
-import alfio.model.SpecialPrice;
-import alfio.model.Ticket;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.EventMigration;
@@ -123,9 +120,14 @@ public class DataMigratorIntegrationTest {
         Organization organization = organizationRepository.findByName(organizationName).get(0);
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com");
 
+        Map<String, String> desc = new HashMap<>();
+        desc.put("en", "muh description");
+        desc.put("it", "muh description");
+        desc.put("de", "muh description");
+
         EventModification em = new EventModification(null, "url", "url", "url", null,
                 eventName, displayName, organization.getId(),
-                "muh location", "muh description",
+                "muh location", desc,
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now().plusHours(1)),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, null, categories, false, new LocationDescriptor("","","",""), 7);

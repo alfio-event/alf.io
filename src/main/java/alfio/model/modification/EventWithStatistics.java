@@ -17,6 +17,7 @@
 package alfio.model.modification;
 
 import alfio.model.Event;
+import alfio.model.EventDescription;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.experimental.Delegate;
@@ -28,6 +29,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -41,12 +43,14 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
     @JsonIgnore
     private final Event event;
     private final List<TicketCategoryWithStatistic> ticketCategories;
+    private final Map<String, String> description;
     private final int soldTickets;
     private final int checkedInTickets;
     private final int allocatedTickets;
     private final boolean containsUnboundedCategories;
 
     public EventWithStatistics(Event event,
+                               List<EventDescription> eventDescriptions,
                                List<TicketCategoryWithStatistic> ticketCategories) {
         this.event = event;
         this.ticketCategories = ticketCategories;
@@ -54,6 +58,7 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
         this.checkedInTickets = countCheckedInTickets(ticketCategories);
         this.allocatedTickets = ticketCategories.stream().filter(IS_BOUNDED).mapToInt(TicketCategoryWithStatistic::getMaxTickets).sum();
         this.containsUnboundedCategories = ticketCategories.stream().anyMatch(IS_BOUNDED.negate());
+        this.description = eventDescriptions.stream().collect(Collectors.toMap(EventDescription::getLocale, EventDescription::getDescription));
     }
 
 
@@ -112,10 +117,6 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
 
     public boolean isExpired() {
         return ZonedDateTime.now(event.getZoneId()).truncatedTo(ChronoUnit.DAYS).isAfter(event.getEnd().truncatedTo(ChronoUnit.DAYS));
-    }
-
-    public String getShortDescription() {
-        return StringUtils.abbreviate(getDescription(), 30);
     }
 
     @Override

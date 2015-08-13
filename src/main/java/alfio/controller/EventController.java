@@ -23,18 +23,13 @@ import alfio.controller.form.ReservationForm;
 import alfio.controller.support.SessionUtil;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
-import alfio.model.PromoCodeDiscount;
-import alfio.model.SpecialPrice;
-import alfio.model.TicketCategory;
+import alfio.model.*;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
-import alfio.repository.EventRepository;
-import alfio.repository.PromoCodeDiscountRepository;
-import alfio.repository.SpecialPriceRepository;
-import alfio.repository.TicketCategoryRepository;
+import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.EventUtil;
@@ -59,8 +54,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.controller.support.SessionUtil.addToFlash;
-import static alfio.model.system.ConfigurationKeys.MAPS_CLIENT_API_KEY;
-import static alfio.model.system.ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION;
 import static alfio.util.OptionalWrapper.optionally;
 
 @Controller
@@ -68,6 +61,8 @@ public class EventController {
 
     private static final String REDIRECT = "redirect:";
     private final EventRepository eventRepository;
+    private final EventDescriptionRepository eventDescriptionRepository;
+    private final I18nManager i18nManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
@@ -79,6 +74,8 @@ public class EventController {
     @Autowired
     public EventController(ConfigurationManager configurationManager,
                            EventRepository eventRepository,
+                           EventDescriptionRepository eventDescriptionRepository,
+                           I18nManager i18nManager,
                            OrganizationRepository organizationRepository,
                            TicketCategoryRepository ticketCategoryRepository,
                            SpecialPriceRepository specialPriceRepository,
@@ -87,6 +84,8 @@ public class EventController {
                            TicketReservationManager ticketReservationManager) {
         this.configurationManager = configurationManager;
         this.eventRepository = eventRepository;
+        this.eventDescriptionRepository = eventDescriptionRepository;
+        this.i18nManager = i18nManager;
         this.organizationRepository = organizationRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.specialPriceRepository = specialPriceRepository;
@@ -101,9 +100,12 @@ public class EventController {
         if(events.size() == 1) {
             return REDIRECT + "/event/" + events.get(0).getShortName() + "/";
         } else {
-            model.addAttribute("events", events.stream().map(EventDescriptor::new).collect(Collectors.toList()));
+            model.addAttribute("events", events.stream().map(e -> new EventDescriptor(e, "")).collect(Collectors.toList()));
             model.addAttribute("pageTitle", "event-list.header.title");
             model.addAttribute("event", null);
+
+            model.addAttribute("showAvailableLanguagesInPageTop", true);
+            model.addAttribute("availableLanguages", i18nManager.getAllLocales());
             return "/event/event-list";
         }
     }
@@ -195,7 +197,9 @@ public class EventController {
         final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
                 promoCodeRepository.countByEventId(event.getId()) > 0;
 
-        final EventDescriptor eventDescriptor = new EventDescriptor(event);
+        String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
+
+        final EventDescriptor eventDescriptor = new EventDescriptor(event, eventDescription);
         List<SaleableTicketCategory> expiredCategories = ticketCategories.stream().filter(SaleableTicketCategory::getExpired).collect(Collectors.toList());
         model.addAttribute("event", eventDescriptor)//
             .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
@@ -216,8 +220,8 @@ public class EventController {
         return "/event/show-event";
     }
 
-    @RequestMapping(value = "/event/{eventName}/calendar", method = RequestMethod.GET)
-    public void calendar(@PathVariable("eventName") String eventName, @RequestParam(value = "type", required = false) String calendarType, HttpServletResponse response) throws IOException {
+    @RequestMapping(value = "/event/{eventName}/calendar/locale/{locale}", method = RequestMethod.GET)
+    public void calendar(@PathVariable("eventName") String eventName, @PathVariable("locale") String locale, @RequestParam(value = "type", required = false) String calendarType, HttpServletResponse response) throws IOException {
         Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
         if (!event.isPresent()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -227,10 +231,12 @@ public class EventController {
         //meh
         Event ev = event.get();
 
+        String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(ev.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale).orElse("");
+
         if("google".equals(calendarType)) {
-            response.sendRedirect(ev.getGoogleCalendarUrl());
+            response.sendRedirect(ev.getGoogleCalendarUrl(description));
         } else {
-            Optional<byte[]> ical = ev.getIcal();
+            Optional<byte[]> ical = ev.getIcal(description);
             //meh, checked exceptions don't work well with Function & co :(
             if(ical.isPresent()) {
                 response.setContentType("text/calendar");

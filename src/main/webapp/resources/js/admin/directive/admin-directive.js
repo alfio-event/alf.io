@@ -257,6 +257,10 @@
 
                 EventService.getAllLanguages().success(function(result) {
                     $scope.allLanguages = result;
+                    $scope.allLanguagesMapping = {};
+                    angular.forEach(result, function(r) {
+                        $scope.allLanguagesMapping[r.value] = r;
+                    });
                 });
 
                 if($stateParams.eventName) {

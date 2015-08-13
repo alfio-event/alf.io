@@ -37,13 +37,11 @@ public class I18nManager {
     }
 
     public List<ContentLanguage> getAllLocales() {
-        return Arrays.asList(ContentLanguage.ENGLISH, ContentLanguage.GERMAN, ContentLanguage.ITALIAN);
+        return ContentLanguage.ALL_LANGUAGES;
     }
 
     public List<ContentLanguage> getEventLocales(String eventName) {
         Event event = eventRepository.findByShortName(eventName);
-        return getAllLocales().stream()
-            .filter(cl -> (cl.getValue() & event.getLocales()) == cl.getValue())
-            .collect(Collectors.toList());
+        return ContentLanguage.findAllFor(event.getLocales());
     }
 }

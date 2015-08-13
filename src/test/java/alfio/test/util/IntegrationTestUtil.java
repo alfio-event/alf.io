@@ -19,6 +19,7 @@ package alfio.test.util;
 import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.EventDescription;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -33,7 +34,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class IntegrationTestUtil {
@@ -63,9 +66,15 @@ public class IntegrationTestUtil {
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com");
 
         LocalDateTime expiration = LocalDateTime.now().plusDays(5).plusHours(1);
+
+        Map<String, String> desc = new HashMap<>();
+        desc.put("en", "muh description");
+        desc.put("it", "muh description");
+        desc.put("de", "muh description");
+
         EventModification em = new EventModification(null, "url", "url", "url", null,
                 eventName, "event display name", organization.getId(),
-                "muh location", "muh description",
+                "muh location", desc,
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, null, categories, false, new LocationDescriptor("","","",""), 7);

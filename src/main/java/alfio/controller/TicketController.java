@@ -91,8 +91,9 @@ public class TicketController {
     public String showTicket(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, 
             @PathVariable("ticketIdentifier") String ticketIdentifier,
             @RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
+            Locale locale,
             Model model) {
-        return internalShowTicket(eventName, reservationId, ticketIdentifier, ticketEmailSent, model, "success");
+        return internalShowTicket(eventName, reservationId, ticketIdentifier, ticketEmailSent, model, "success", locale);
 
     }
 
@@ -100,8 +101,8 @@ public class TicketController {
     public String showTicketFromTicketDetail(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
                                              @PathVariable("ticketIdentifier") String ticketIdentifier,
                                              @RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
-                                             Model model) {
-        return internalShowTicket(eventName, reservationId, ticketIdentifier, ticketEmailSent, model, "ticket/"+ticketIdentifier+"/update");
+                                             Model model, Locale locale) {
+        return internalShowTicket(eventName, reservationId, ticketIdentifier, ticketEmailSent, model, "ticket/"+ticketIdentifier+"/update", locale);
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/update", method = RequestMethod.GET)
@@ -213,7 +214,7 @@ public class TicketController {
         return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation, ticketCategory, organization, templateManager, fileUploadManager);
     }
 
-    private String internalShowTicket(String eventName, String reservationId, String ticketIdentifier, boolean ticketEmailSent, Model model, String backSuffix) {
+    private String internalShowTicket(String eventName, String reservationId, String ticketIdentifier, boolean ticketEmailSent, Model model, String backSuffix, Locale locale) {
         Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
         if(!oData.isPresent()) {
             return "redirect:/event/" + eventName + "/reservation/" + reservationId;
@@ -233,6 +234,7 @@ public class TicketController {
             .addAttribute("ticketEmailSent", ticketEmailSent)
             .addAttribute("deskPaymentRequired", Optional.ofNullable(reservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired())
             .addAttribute("backSuffix", backSuffix)
+            .addAttribute("userLanguage", locale.getLanguage())
             .addAttribute("pageTitle", "show-ticket.header.title");
 
         return "/event/show-ticket";

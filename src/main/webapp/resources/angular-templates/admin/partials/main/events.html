@@ -11,7 +11,6 @@
         <thead>
             <tr>
                 <th>name</th>
-                <th class="hidden-xs">description</th>
                 <th class="hidden-xs">schedule</th>
                 <th>&nbsp;</th>
             </tr>
@@ -25,7 +24,6 @@
                 <span class="label label-danger" data-ng-if="event.warningNeeded"><i class="fa fa-warning" data-tooltip="something wrong is happening..."></i></span>
                 <a data-ui-sref="events.detail({eventName: event.shortName})">{{event.displayName}}</a>
             </td>
-            <td data-ng-class-even="'active'" class="hidden-xs">{{event.shortDescription}}</td>
             <td data-ng-class-even="'active'" class="hidden-xs">{{event.formattedBegin | formatDate}} / {{event.formattedEnd | formatDate}}</td>
             <td data-ng-class-even="'active'" class="text-right">
                 <a class="btn btn-primary btn-xs hidden-xs" data-ui-sref="events.detail({eventName: event.shortName})">

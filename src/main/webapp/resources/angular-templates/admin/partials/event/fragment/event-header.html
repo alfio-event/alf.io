@@ -35,7 +35,11 @@
             </p>
 
             <label>Description</label>
-            <pre class="white form-control-static">{{event.description}}</pre>
+            <div></div>
+            <div data-ng-repeat="cl in event.contentLanguages">
+                <p class="form-control-static">- {{cl.displayLanguage}}:</p>
+                <pre class="white form-control-static">{{event.description[cl.locale]}}</pre>
+            </div>
 
             <label>Start Date/Time</label>
             <p class="form-control-static">{{event.formattedBegin | formatDate}}</p>

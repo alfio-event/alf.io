@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ContentLanguage {
 
@@ -28,6 +29,12 @@ public class ContentLanguage {
     public static final ContentLanguage GERMAN = new ContentLanguage(Locale.GERMAN,   0b0100, Locale.GERMAN);
 
     public static final List<ContentLanguage> ALL_LANGUAGES = Arrays.asList(ITALIAN, ENGLISH, GERMAN);
+
+    public static List<ContentLanguage> findAllFor(int bitMask) {
+        return ALL_LANGUAGES.stream()
+            .filter(cl -> (cl.getValue() & bitMask) == cl.getValue())
+            .collect(Collectors.toList());
+    }
 
     private final Locale locale;
     private final int value;

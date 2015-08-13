@@ -20,12 +20,9 @@ import alfio.manager.location.LocationManager;
 import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
+import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
-import alfio.model.SpecialPrice;
-import alfio.model.Ticket;
 import alfio.model.Ticket.TicketStatus;
-import alfio.model.TicketCategory;
 import alfio.model.modification.*;
 import alfio.model.system.Configuration;
 import alfio.model.transaction.PaymentProxy;
@@ -52,6 +49,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static alfio.util.EventUtil.*;
@@ -68,6 +66,7 @@ public class EventManager {
     private static final Predicate<TicketCategory> IS_CATEGORY_BOUNDED = TicketCategory::isBounded;
     private final UserManager userManager;
     private final EventRepository eventRepository;
+    private final EventDescriptionRepository eventDescriptionRepository;
     private final EventStatisticsManager eventStatisticsManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
@@ -80,6 +79,7 @@ public class EventManager {
     @Autowired
     public EventManager(UserManager userManager,
                         EventRepository eventRepository,
+                        EventDescriptionRepository eventDescriptionRepository,
                         EventStatisticsManager eventStatisticsManager,
                         TicketCategoryRepository ticketCategoryRepository,
                         TicketRepository ticketRepository,
@@ -90,6 +90,7 @@ public class EventManager {
                         ConfigurationManager configurationManager) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
+        this.eventDescriptionRepository = eventDescriptionRepository;
         this.eventStatisticsManager = eventStatisticsManager;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.ticketRepository = ticketRepository;
@@ -138,8 +139,24 @@ public class EventManager {
     public void createEvent(EventModification em) {
         int eventId = insertEvent(em);
         Event event = eventRepository.findById(eventId);
+        createOrUpdateEventDescription(eventId, em);
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(eventId, event);
+    }
+
+    private void createOrUpdateEventDescription(int eventId, EventModification em) {
+        eventDescriptionRepository.delete(eventId, EventDescription.EventDescriptionType.DESCRIPTION);
+
+
+        Set<String> validLocales = ContentLanguage.findAllFor(em.getLocales()).stream()
+            .map(ContentLanguage::getLanguage)
+            .collect(Collectors.toSet());
+
+        Optional.ofNullable(em.getDescription()).orElse(Collections.emptyMap()).forEach((locale, description) -> {
+            if (validLocales.contains(locale)) {
+                eventDescriptionRepository.insert(eventId, locale, EventDescription.EventDescriptionType.DESCRIPTION, description);
+            }
+        });
     }
 
     public void updateEventHeader(int eventId, EventModification em, String username) {
@@ -149,9 +166,13 @@ public class EventManager {
         final ZoneId zoneId = geolocation.getZoneId();
         final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);
         final ZonedDateTime end = em.getEnd().toZonedDateTime(zoneId);
-        eventRepository.updateHeader(eventId, em.getDescription(), em.getDisplayName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(),
-                em.getImageUrl(), em.getFileBlobId(), em.getLocation(), geolocation.getLatitude(), geolocation.getLongitude(),
-                begin, end, geolocation.getTimeZone(), em.getOrganizationId(), em.getLocales());
+        eventRepository.updateHeader(eventId, em.getDisplayName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(),
+            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), geolocation.getLatitude(), geolocation.getLongitude(),
+            begin, end, geolocation.getTimeZone(), em.getOrganizationId(), em.getLocales());
+
+        createOrUpdateEventDescription(eventId, em);
+
+
         if(!original.getBegin().equals(begin) || !original.getEnd().equals(end)) {
             fixOutOfRangeCategories(em, username, zoneId, end);
         }
@@ -457,7 +478,7 @@ public class EventManager {
         BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
         String privateKey = UUID.randomUUID().toString();
         final GeolocationResult result = geolocate(em.getLocation());
-        return eventRepository.insert(em.getDescription(), em.getShortName(), em.getDisplayName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(),
+        return eventRepository.insert(em.getShortName(), em.getDisplayName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(),
                 result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()), em.getEnd().toZonedDateTime(result.getZoneId()),
                 result.getTimeZone(), actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
                 privateKey, em.getOrganizationId(), em.getLocales()).getKey();

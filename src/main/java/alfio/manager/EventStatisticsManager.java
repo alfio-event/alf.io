@@ -39,6 +39,7 @@ import static java.util.stream.Collectors.toList;
 public class EventStatisticsManager {
 
     private final EventRepository eventRepository;
+    private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketRepository ticketRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketReservationRepository ticketReservationRepository;
@@ -48,6 +49,7 @@ public class EventStatisticsManager {
 
     @Autowired
     public EventStatisticsManager(EventRepository eventRepository,
+                                  EventDescriptionRepository eventDescriptionRepository,
                                   TicketRepository ticketRepository,
                                   TicketCategoryRepository ticketCategoryRepository,
                                   TicketReservationRepository ticketReservationRepository,
@@ -55,6 +57,7 @@ public class EventStatisticsManager {
                                   UserManager userManager,
                                   TransactionRepository transactionRepository) {
         this.eventRepository = eventRepository;
+        this.eventDescriptionRepository = eventDescriptionRepository;
         this.ticketRepository = ticketRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.ticketReservationRepository = ticketReservationRepository;
@@ -64,7 +67,7 @@ public class EventStatisticsManager {
     }
 
     EventWithStatistics fillWithStatistics(Event event) {
-        return new EventWithStatistics(event, loadTicketCategoriesWithStats(event));
+        return new EventWithStatistics(event, eventDescriptionRepository.findByEventId(event.getId()), loadTicketCategoriesWithStats(event));
     }
 
     public List<Event> getAllEvents(String username) {

@@ -24,10 +24,11 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.EmailMessage;
 import alfio.model.Event;
+import alfio.model.EventDescription;
 import alfio.model.Ticket;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EmailMessageRepository;
+import alfio.repository.EventDescriptionRepository;
 import alfio.repository.EventRepository;
 import com.google.gson.*;
 import com.lowagie.text.DocumentException;
@@ -63,6 +64,7 @@ public class NotificationManager {
     private final EmailQueue messages;
     private final ConfigurationManager configurationManager;
     private final EventRepository eventRepository;
+    private final EventDescriptionRepository eventDescriptionRepository;
     private final Gson gson;
 
     @Autowired
@@ -71,12 +73,14 @@ public class NotificationManager {
                                PlatformTransactionManager transactionManager,
                                EmailMessageRepository emailMessageRepository,
                                ConfigurationManager configurationManager,
-                               EventRepository eventRepository) {
+                               EventRepository eventRepository,
+                               EventDescriptionRepository eventDescriptionRepository) {
         this.messageSource = messageSource;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
         this.configurationManager = configurationManager;
         this.eventRepository = eventRepository;
+        this.eventDescriptionRepository = eventDescriptionRepository;
         this.messages = new EmailQueue();
         this.tx = new TransactionTemplate(transactionManager);
         GsonBuilder builder = new GsonBuilder();
@@ -90,7 +94,10 @@ public class NotificationManager {
 
         List<Mailer.Attachment> attachments = new ArrayList<>();
         attachments.add(new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", baos.toByteArray(), "application/pdf"));
-        event.getIcal().map(ics -> new Mailer.Attachment("calendar.ics", ics, "text/calendar")).ifPresent(attachments::add);
+
+        String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
+
+        event.getIcal(description).map(ics -> new Mailer.Attachment("calendar.ics", ics, "text/calendar")).ifPresent(attachments::add);
 
 
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[attachments.size()]));
