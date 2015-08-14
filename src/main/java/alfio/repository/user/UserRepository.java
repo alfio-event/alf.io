@@ -24,8 +24,6 @@ import java.util.List;
 
 @QueryRepository
 public interface UserRepository {
-    @Query("SELECT * FROM ba_user")
-    List<User> findAll();
 
     @Query("SELECT * FROM ba_user WHERE id = :userId")
     User findById(@Bind("userId") int userId);

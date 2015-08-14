@@ -133,7 +133,7 @@ public class EventController {
         
         SessionUtil.removeSpecialPriceData(request);
 
-        Optional<Event> optional = optionally(() -> eventRepository.findByShortName(eventName));
+        Optional<Event> optional = eventRepository.findOptionalByShortName(eventName);
         if(!optional.isPresent()) {
             return ValidationResult.failed(new ValidationResult.ValidationError("event", ""));
         }
@@ -173,8 +173,8 @@ public class EventController {
     public String showEvent(@PathVariable("eventName") String eventName,
                             Model model, HttpServletRequest request, Locale locale) {
 
-        
-        Optional<Event> maybeEvent = optionally(() -> eventRepository.findByShortName(eventName));
+
+        Optional<Event> maybeEvent = eventRepository.findOptionalByShortName(eventName);
         
         if(!maybeEvent.isPresent()) {
             return REDIRECT + "/";
@@ -229,7 +229,7 @@ public class EventController {
 
     @RequestMapping(value = "/event/{eventName}/calendar/locale/{locale}", method = RequestMethod.GET)
     public void calendar(@PathVariable("eventName") String eventName, @PathVariable("locale") String locale, @RequestParam(value = "type", required = false) String calendarType, HttpServletResponse response) throws IOException {
-        Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
         if (!event.isPresent()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
@@ -261,7 +261,7 @@ public class EventController {
             @ModelAttribute ReservationForm reservation, BindingResult bindingResult, Model model,
             ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale) {
 
-        Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
         if (!event.isPresent()) {
             return "redirect:/";
         }

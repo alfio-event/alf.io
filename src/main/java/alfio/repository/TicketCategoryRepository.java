@@ -69,9 +69,6 @@ public interface TicketCategoryRepository {
     @Query("update ticket_category set max_tickets = :max_tickets where id = :id")
     int updateSeatsAvailability(@Bind("id") int id, @Bind("max_tickets") int maxTickets);
 
-    @Query("update ticket_category set tc_status = 'NOT_ACTIVE' where id = :id")
-    int deactivate(@Bind("id") int id);
-
     @Query("update ticket_category set inception = :inception, expiration = :expiration where id = :id")
     int fixDates(@Bind("id") int id, @Bind("inception") ZonedDateTime inception, @Bind("expiration") ZonedDateTime expiration);
 }

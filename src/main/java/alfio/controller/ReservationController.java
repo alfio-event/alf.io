@@ -113,7 +113,7 @@ public class ReservationController {
                                   Model model,
                                   HttpServletRequest request) {
 
-        Optional<Event> optionalEvent = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+        Optional<Event> optionalEvent = eventRepository.findOptionalByShortName(eventName);
         if (!optionalEvent.isPresent()) {
             return "redirect:/";
         }
@@ -150,7 +150,7 @@ public class ReservationController {
                                        Model model,
                                        HttpServletRequest request) {
 
-        Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
         if (!event.isPresent()) {
             return "redirect:/";
         }
@@ -193,7 +193,7 @@ public class ReservationController {
                                        @RequestParam(value = "confirmation-email-sent", required = false, defaultValue = "false") boolean confirmationEmailSent,
                                        @RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
                                        Model model) {
-        Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
         if (!event.isPresent()) {
             return "redirect:/";
         }
@@ -221,7 +221,7 @@ public class ReservationController {
     public String showReservationPage(@PathVariable("eventName") String eventName,
                                       @PathVariable("reservationId") String reservationId,
                                       Model model) {
-        Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
         if (!event.isPresent()) {
             return "redirect:/";
         }
@@ -234,7 +234,7 @@ public class ReservationController {
                                    @PathVariable("reservationId") String reservationId,
                                    Model model) {
 
-        Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
         if (!event.isPresent()) {
             return "redirect:/";
         }
@@ -256,7 +256,7 @@ public class ReservationController {
                                    @PathVariable("reservationId") String reservationId,
                                    Model model) {
 
-        Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
         if (!event.isPresent()) {
             return "redirect:/";
         }
@@ -311,7 +311,7 @@ public class ReservationController {
             @PathVariable("reservationId") String reservationId, PaymentForm paymentForm, BindingResult bindingResult,
             Model model, HttpServletRequest request, Locale locale, RedirectAttributes redirectAttributes) {
 
-        Optional<Event> eventOptional = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+        Optional<Event> eventOptional = eventRepository.findOptionalByShortName(eventName);
         if (!eventOptional.isPresent()) {
             return "redirect:/";
         }
@@ -358,7 +358,7 @@ public class ReservationController {
     public String reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName,
             @PathVariable("reservationId") String reservationId, HttpServletRequest request) {
 
-        Optional<Event> event = OptionalWrapper.optionally(() -> eventRepository.findByShortName(eventName));
+        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
         if (!event.isPresent()) {
             return "redirect:/";
         }

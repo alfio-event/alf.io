@@ -27,9 +27,6 @@ import java.util.List;
 @QueryRepository
 public interface TransactionRepository {
 
-    @Query("select * from b_transaction")
-    List<Transaction> loadAll();
-
     @Query("insert into b_transaction(gtw_tx_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy) " +
             "values(:transactionId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy)")
     int insert(@Bind("transactionId") String transactionId,
