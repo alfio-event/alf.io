@@ -36,7 +36,6 @@ public class TicketCategory {
     private final ZonedDateTime utcExpiration;
     private final int maxTickets;
     private final String name;
-    private final String description;
     private final int priceInCents;
     private final boolean accessRestricted;
     private final Status status;
@@ -48,7 +47,6 @@ public class TicketCategory {
                           @Column("expiration") ZonedDateTime utcExpiration,
                           @Column("max_tickets") int maxTickets,
                           @Column("name") String name,
-                          @Column("description") String description,
                           @Column("price_cts") int priceInCents,
                           @Column("access_restricted") boolean accessRestricted,
                           @Column("tc_status") Status status,
@@ -59,7 +57,6 @@ public class TicketCategory {
         this.utcExpiration = utcExpiration;
         this.maxTickets = maxTickets;
         this.name = name;
-        this.description = description;
         this.priceInCents = priceInCents;
         this.accessRestricted = accessRestricted;
         this.status = status;

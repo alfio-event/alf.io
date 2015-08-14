@@ -62,6 +62,8 @@ import static org.junit.Assert.assertTrue;
 @Transactional
 public class WaitingQueueProcessorIntegrationTest {
 
+    private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
+
     @BeforeClass
     public static void initEnv() {
         initSystemProperties();
@@ -103,7 +105,7 @@ public class WaitingQueueProcessorIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                         new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                        "desc", BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
         waitingQueueManager.subscribe(event, "Giuseppe Garibaldi", "peppino@garibaldi.com", Locale.ENGLISH);
@@ -116,7 +118,7 @@ public class WaitingQueueProcessorIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
-                "desc", BigDecimal.TEN, false, "", true);
+                DESCRIPTION, BigDecimal.TEN, false, "", true);
         eventManager.insertCategory(event.getId(), tcm, pair.getValue());
 
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -134,7 +136,7 @@ public class WaitingQueueProcessorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                         new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                        "desc", BigDecimal.ZERO, false, "", true));
+                        DESCRIPTION, BigDecimal.ZERO, false, "", true));
 
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();

@@ -29,6 +29,7 @@ import alfio.model.modification.EventWithStatistics;
 import alfio.model.modification.TicketAllocationModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.transaction.PaymentProxy;
+import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.opencsv.CSVReader;
@@ -64,16 +65,19 @@ public class EventApiController {
     private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
     private final TicketReservationManager ticketReservationManager;
+    private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
 
     @Autowired
     public EventApiController(EventManager eventManager,
                               EventStatisticsManager eventStatisticsManager,
                               I18nManager i18nManager,
-                              TicketReservationManager ticketReservationManager) {
+                              TicketReservationManager ticketReservationManager,
+                              TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository) {
         this.eventManager = eventManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.i18nManager = i18nManager;
         this.ticketReservationManager = ticketReservationManager;
+        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
     }
 
     @ExceptionHandler(Exception.class)
@@ -216,7 +220,7 @@ public class EventApiController {
         Event event = loadEvent(eventName, principal);
         return eventStatisticsManager.loadTicketCategoriesWithStats(event).stream()
                 .filter(tc -> !tc.getTickets().isEmpty())
-                .map(tc -> TicketCategoryModification.fromTicketCategory(tc.getTicketCategory(), event.getZoneId()))
+                .map(tc -> TicketCategoryModification.fromTicketCategory(tc.getTicketCategory(), ticketCategoryDescriptionRepository.findByTicketCategoryId(tc.getId()), event.getZoneId()))
                 .collect(Collectors.toList());
     }
 

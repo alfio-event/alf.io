@@ -24,6 +24,7 @@ import org.junit.runner.RunWith;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.Map;
 import java.util.function.UnaryOperator;
 
 import static com.insightfullogic.lambdabehave.Suite.describe;
@@ -33,6 +34,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(JunitSuiteRunner.class)
 public class TicketCategoryWithStatisticTest {{
+
+    Map<String, String> description = Collections.singletonMap("en", "desc");
+
     describe("Statistic calculation", it -> {
 
         describe("with checked-in tickets", _it -> {
@@ -51,7 +55,7 @@ public class TicketCategoryWithStatisticTest {{
             when(second.hasBeenSold()).thenReturn(true);
             when(second.isCheckedIn()).thenReturn(false);
 
-            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity());
+            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity(), description);
 
             _it.should("report only one checked-in ticket", expect -> expect.that(ticketCategoryWithStatistic.getCheckedInTickets()).is(1));
             _it.should("report only one sold ticket", expect -> expect.that(ticketCategoryWithStatistic.getSoldTickets()).is(1));
@@ -76,7 +80,7 @@ public class TicketCategoryWithStatisticTest {{
             when(second.hasBeenSold()).thenReturn(true);
             when(second.isCheckedIn()).thenReturn(false);
 
-            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity());
+            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity(), description);
 
             _it.should("report 0 tickets remaining", expect -> expect.that(ticketCategoryWithStatistic.getNotSoldTickets()).is(0));
             _it.should("report only one sold ticket", expect -> expect.that(ticketCategoryWithStatistic.getSoldTickets()).is(1));
@@ -100,7 +104,7 @@ public class TicketCategoryWithStatisticTest {{
             when(second.hasBeenSold()).thenReturn(true);
             when(second.isCheckedIn()).thenReturn(false);
 
-            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity());
+            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity(), description);
 
             _it.should("report no checked-in tickets", expect -> expect.that(ticketCategoryWithStatistic.getCheckedInTickets()).is(0));
             _it.should("report two sold tickets", expect -> expect.that(ticketCategoryWithStatistic.getSoldTickets()).is(2));
@@ -124,7 +128,7 @@ public class TicketCategoryWithStatisticTest {{
             when(second.hasBeenSold()).thenReturn(false);
             when(second.isCheckedIn()).thenReturn(false);
 
-            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity());
+            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity(), description);
 
             _it.should("report no checked-in tickets", expect -> expect.that(ticketCategoryWithStatistic.getCheckedInTickets()).is(0));
             _it.should("report no sold tickets", expect -> expect.that(ticketCategoryWithStatistic.getSoldTickets()).is(0));
@@ -149,7 +153,7 @@ public class TicketCategoryWithStatisticTest {{
             when(second.isCheckedIn()).thenReturn(false);
             when(second.isStuck()).thenReturn(true);
 
-            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity());
+            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity(), description);
             _it.should("report no checked-in tickets", expect -> expect.that(ticketCategoryWithStatistic.getCheckedInTickets()).is(0));
             _it.should("report 1 sold ticket", expect -> expect.that(ticketCategoryWithStatistic.getSoldTickets()).is(1));
             _it.should("report 1 available tickets", expect -> expect.that(ticketCategoryWithStatistic.getNotSoldTickets()).is(1));
@@ -173,7 +177,7 @@ public class TicketCategoryWithStatisticTest {{
             when(second.isCheckedIn()).thenReturn(false);
             when(second.isStuck()).thenReturn(false);
 
-            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity());
+            TicketCategoryWithStatistic ticketCategoryWithStatistic = new TicketCategoryWithStatistic(category, asList(first, second), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), UnaryOperator.<Integer>identity(), description);
             _it.should("report no checked-in tickets", expect -> expect.that(ticketCategoryWithStatistic.getCheckedInTickets()).is(0));
             _it.should("report 1 sold ticket", expect -> expect.that(ticketCategoryWithStatistic.getSoldTickets()).is(1));
             _it.should("report 1 available tickets", expect -> expect.that(ticketCategoryWithStatistic.getNotSoldTickets()).is(1));

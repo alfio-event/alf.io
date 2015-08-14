@@ -70,6 +70,8 @@ public class DataMigratorIntegrationTest {
 
     public static final int AVAILABLE_SEATS = 20;
 
+    private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
+
     @Autowired
     private EventManager eventManager;
     @Autowired
@@ -141,7 +143,7 @@ public class DataMigratorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        "desc", BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false));
         Event event = initEvent(categories).getKey();
 
         eventRepository.updatePrices(1000, "CHF", 40, false, BigDecimal.ONE, "STRIPE", event.getId());
@@ -165,7 +167,7 @@ public class DataMigratorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        "desc", BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false));
         Event event = initEvent(categories).getKey();
 
         eventMigrationRepository.insertMigrationData(event.getId(), "1.4", ZonedDateTime.now(ZoneId.of("UTC")).minusDays(1), EventMigration.Status.COMPLETE.toString());
@@ -189,7 +191,7 @@ public class DataMigratorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        "desc", BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false));
         Event event = initEvent(categories).getKey();
 
         ZonedDateTime migrationTs = ZonedDateTime.now(ZoneId.of("UTC"));
@@ -214,7 +216,7 @@ public class DataMigratorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        "desc", BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false));
         Event event = initEvent(categories, null).getKey();
 
         dataMigrator.migrateEventsToCurrentVersion();
@@ -235,7 +237,7 @@ public class DataMigratorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        "desc", BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false));
         Event event = initEvent(categories).getKey();
         TicketReservationModification trm = new TicketReservationModification();
         trm.setAmount(1);
@@ -254,7 +256,7 @@ public class DataMigratorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        "desc", BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false));
         Event event = initEvent(categories).getKey();
         TicketReservationModification trm = new TicketReservationModification();
         trm.setAmount(2);

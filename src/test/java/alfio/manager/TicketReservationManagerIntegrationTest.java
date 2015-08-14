@@ -48,6 +48,8 @@ import static org.junit.Assert.assertTrue;
 @ActiveProfiles(Initializer.PROFILE_DEV)
 public class TicketReservationManagerIntegrationTest {
 
+    private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
+
     @BeforeClass
     public static void initEnv() {
         initSystemProperties();
@@ -72,7 +74,7 @@ public class TicketReservationManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        "desc", BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false));
         EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
 
         TicketReservationModification tr = new TicketReservationModification();
@@ -95,11 +97,11 @@ public class TicketReservationManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        "desc", BigDecimal.TEN, false, "", false),
+                        DESCRIPTION, BigDecimal.TEN, false, "", false),
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        "desc", BigDecimal.TEN, false, "", true));
+                        DESCRIPTION, BigDecimal.TEN, false, "", true));
         EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
 
         TicketCategoryWithStatistic bounded = event.getTicketCategories().stream().filter(TicketCategoryWithStatistic::isBounded).findFirst().orElseThrow(IllegalStateException::new);

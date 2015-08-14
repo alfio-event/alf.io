@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
+import alfio.model.TicketCategoryDescription;
 import alfio.model.modification.EventWithStatistics;
 import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketWithStatistic;
@@ -29,6 +30,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static alfio.util.EventUtil.categoryPriceCalculator;
@@ -42,6 +44,7 @@ public class EventStatisticsManager {
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketRepository ticketRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final TicketReservationRepository ticketReservationRepository;
     private final SpecialPriceRepository specialPriceRepository;
     private final UserManager userManager;
@@ -52,6 +55,7 @@ public class EventStatisticsManager {
                                   EventDescriptionRepository eventDescriptionRepository,
                                   TicketRepository ticketRepository,
                                   TicketCategoryRepository ticketCategoryRepository,
+                                  TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
                                   TicketReservationRepository ticketReservationRepository,
                                   SpecialPriceRepository specialPriceRepository,
                                   UserManager userManager,
@@ -60,6 +64,7 @@ public class EventStatisticsManager {
         this.eventDescriptionRepository = eventDescriptionRepository;
         this.ticketRepository = ticketRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
         this.ticketReservationRepository = ticketReservationRepository;
         this.specialPriceRepository = specialPriceRepository;
         this.userManager = userManager;
@@ -89,12 +94,20 @@ public class EventStatisticsManager {
         return new TicketCategoryWithStatistic(tc,
                 loadModifiedTickets(event.getId(), tc.getId()),
                 specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId(),
-                categoryPriceCalculator(event));
+                categoryPriceCalculator(event),
+                descriptionForTicketCategory(tc.getId())
+            );
+    }
+
+    private Map<String, String> descriptionForTicketCategory(int ticketCategory) {
+        return ticketCategoryDescriptionRepository.findByTicketCategoryId(ticketCategory).stream().collect(Collectors.toMap(TicketCategoryDescription::getLocale, TicketCategoryDescription::getDescription));
     }
 
     public List<TicketCategoryWithStatistic> loadTicketCategoriesWithStats(Event event) {
         return loadTicketCategories(event).stream()
-                .map(tc -> new TicketCategoryWithStatistic(tc, loadModifiedTickets(tc.getEventId(), tc.getId()), specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId(), categoryPriceCalculator(event)))
+                .map(tc -> new TicketCategoryWithStatistic(tc, loadModifiedTickets(tc.getEventId(), tc.getId()),
+                    specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId(), categoryPriceCalculator(event),
+                    descriptionForTicketCategory(tc.getId())))
                 .sorted()
                 .collect(toList());
     }

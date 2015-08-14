@@ -93,6 +93,7 @@ public class TicketReservationManager {
     private final TicketRepository ticketRepository;
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final ConfigurationManager configurationManager;
     private final PaymentManager paymentManager;
     private final PromoCodeDiscountRepository promoCodeDiscountRepository;
@@ -131,6 +132,7 @@ public class TicketReservationManager {
                                     TicketRepository ticketRepository,
                                     TicketReservationRepository ticketReservationRepository,
                                     TicketCategoryRepository ticketCategoryRepository,
+                                    TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
                                     ConfigurationManager configurationManager,
                                     PaymentManager paymentManager,
                                     PromoCodeDiscountRepository promoCodeDiscountRepository,
@@ -147,6 +149,7 @@ public class TicketReservationManager {
         this.ticketRepository = ticketRepository;
         this.ticketReservationRepository = ticketReservationRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
         this.configurationManager = configurationManager;
         this.paymentManager = paymentManager;
         this.promoCodeDiscountRepository = promoCodeDiscountRepository;
@@ -935,8 +938,11 @@ public class TicketReservationManager {
         notificationManager.sendSimpleEmail(event, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
                 new Object[]{event.getDisplayName()}, locale),
                 () -> templateManager.renderClassPathResource("/alfio/templates/ticket-has-been-cancelled-txt.ms", model, locale, TemplateOutput.TEXT));
+
+        String ticketCategoryDescription = ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(category.getId(), ticket.getUserLanguage()).orElse("");
+
         String adminTemplate = messageSource.getMessage("email-ticket-released.admin.text",
-                new Object[] {ticket.getId(), ticket.getUuid(), ticket.getFullName(), ticket.getEmail(), category.getDescription(), category.getId()}, Locale.ENGLISH);
+                new Object[] {ticket.getId(), ticket.getUuid(), ticket.getFullName(), ticket.getEmail(), ticketCategoryDescription, category.getId()}, Locale.ENGLISH);
         notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject",
                 new Object[]{ticket.getId(), event.getDisplayName()}, locale),
                 () -> templateManager.renderString(adminTemplate, model, Locale.ENGLISH, TemplateOutput.TEXT));

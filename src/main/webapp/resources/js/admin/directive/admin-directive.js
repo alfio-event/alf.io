@@ -233,7 +233,9 @@
                 organizations: '=',
                 fullEditMode: '=',
                 showDatesWarning: '=',
-                showExistingErrors: '='
+                showExistingErrors: '=',
+                allLanguages: '=',
+                allLanguagesMapping: '='
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
@@ -254,14 +256,6 @@
                         time: endDateTime.format('HH:mm')
                     };
                 }
-
-                EventService.getAllLanguages().success(function(result) {
-                    $scope.allLanguages = result;
-                    $scope.allLanguagesMapping = {};
-                    angular.forEach(result, function(r) {
-                        $scope.allLanguagesMapping[r.value] = r;
-                    });
-                });
 
                 if($stateParams.eventName) {
                     EventService.getAvailableLanguages($stateParams.eventName).success(function(result) {
@@ -415,6 +409,10 @@
             controller: function($scope) {
                 $scope.buildPrefix = function(index, name) {
                     return angular.isDefined(index) ? index + "-" + name : name;
+                }
+
+                $scope.isLanguagePresent = function(locales, value) {
+                    return (locales & value) === value;
                 }
             }
         };

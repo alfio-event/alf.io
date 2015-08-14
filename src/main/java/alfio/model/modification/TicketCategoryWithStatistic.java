@@ -28,6 +28,7 @@ import java.math.RoundingMode;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.function.UnaryOperator;
 
 import static java.util.stream.Collectors.toList;
@@ -47,11 +48,14 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
     @JsonIgnore
     private final ZoneId eventZoneId;
 
+    private final Map<String, String> description;
+
     public TicketCategoryWithStatistic(TicketCategory ticketCategory,
                                        List<TicketWithStatistic> tickets,
                                        List<SpecialPrice> tokenStatus,
                                        ZoneId eventZoneId,
-                                       UnaryOperator<Integer> vatAdder) {
+                                       UnaryOperator<Integer> vatAdder,
+                                       Map<String, String> description) {
         this.ticketCategory = ticketCategory;
         this.tickets = tickets.stream().filter(tc -> tc.hasBeenSold() || tc.isStuck()).collect(toList());
         this.checkedInTickets = (int) this.tickets.stream().filter(TicketWithStatistic::isCheckedIn).count();
@@ -60,6 +64,7 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
         this.eventZoneId = eventZoneId;
         this.soldTicketsPercent = calcSoldTicketsPercent(ticketCategory, soldTickets);
         this.actualPrice = vatAdder.apply(ticketCategory.getPriceInCents());
+        this.description = description;
     }
 
     public BigDecimal getNotSoldTicketsPercent() {

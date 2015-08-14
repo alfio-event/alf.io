@@ -64,6 +64,7 @@ public class EventController {
     private final EventDescriptionRepository eventDescriptionRepository;
     private final I18nManager i18nManager;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
     private final SpecialPriceRepository specialPriceRepository;
@@ -78,6 +79,7 @@ public class EventController {
                            I18nManager i18nManager,
                            OrganizationRepository organizationRepository,
                            TicketCategoryRepository ticketCategoryRepository,
+                           TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
                            SpecialPriceRepository specialPriceRepository,
                            PromoCodeDiscountRepository promoCodeRepository,
                            EventManager eventManager,
@@ -88,6 +90,7 @@ public class EventController {
         this.i18nManager = i18nManager;
         this.organizationRepository = organizationRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
         this.specialPriceRepository = specialPriceRepository;
         this.promoCodeRepository = promoCodeRepository;
         this.eventManager = eventManager;
@@ -95,12 +98,15 @@ public class EventController {
     }
 
     @RequestMapping(value = {"/"}, method = RequestMethod.GET)
-    public String listEvents(Model model) {
+    public String listEvents(Model model, Locale locale) {
         List<Event> events = eventManager.getActiveEvents();
         if(events.size() == 1) {
             return REDIRECT + "/event/" + events.get(0).getShortName() + "/";
         } else {
-            model.addAttribute("events", events.stream().map(e -> new EventDescriptor(e, "")).collect(Collectors.toList()));
+            model.addAttribute("events", events.stream().map(e -> {
+                String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(e.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
+                return new EventDescriptor(e, eventDescription);
+            }).collect(Collectors.toList()));
             model.addAttribute("pageTitle", "event-list.header.title");
             model.addAttribute("event", null);
 
@@ -186,7 +192,8 @@ public class EventController {
         //hide access restricted ticket categories
         List<SaleableTicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
                 .filter((c) -> !c.isAccessRestricted() || (specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId()))
-                .map((m) -> new SaleableTicketCategory(m, now, event, ticketReservationManager.countAvailableTickets(event, m), maxTickets, promoCodeDiscount))
+                .map((m) -> new SaleableTicketCategory(m, ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(m.getId(), locale.getLanguage()).orElse(""),
+                    now, event, ticketReservationManager.countAvailableTickets(event, m), maxTickets, promoCodeDiscount))
                 .collect(Collectors.toList());
         //
 
@@ -265,7 +272,7 @@ public class EventController {
             return redirectToEvent;
         }
 
-        Optional<List<TicketReservationWithOptionalCodeModification>> selected = reservation.validate(bindingResult, ticketReservationManager, eventManager, event.get(), request.getRequest());
+        Optional<List<TicketReservationWithOptionalCodeModification>> selected = reservation.validate(bindingResult, ticketReservationManager, ticketCategoryDescriptionRepository, eventManager, event.get(), locale);
 
         if (bindingResult.hasErrors()) {
             addToFlash(bindingResult, redirectAttributes);

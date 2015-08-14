@@ -79,7 +79,6 @@ public class FullTicketInfo {
                           @Column("tc_expiration") ZonedDateTime tcUtcExpiration,
                           @Column("tc_max_tickets") int tcMaxTickets,
                           @Column("tc_name") String tcName,
-                          @Column("tc_description") String tcDescription,
                           @Column("tc_price_cts") int tcPriceInCents,
                           @Column("tc_access_restricted") boolean tcAccessRestricted,
                           @Column("tc_tc_status") TicketCategory.Status tcStatus,
@@ -91,7 +90,7 @@ public class FullTicketInfo {
                 tshirtSize, gender, notes, userLanguage);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trEmail, trBillingAddress,
                 trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage);
-        this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName, tcDescription,
+        this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,
                 tcPriceInCents, tcAccessRestricted, tcStatus, tcEventId, bounded);
 
     }

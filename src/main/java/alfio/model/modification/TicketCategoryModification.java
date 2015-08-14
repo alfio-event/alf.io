@@ -17,6 +17,7 @@
 package alfio.model.modification;
 
 import alfio.model.TicketCategory;
+import alfio.model.TicketCategoryDescription;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,7 +25,11 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Getter
 public class TicketCategoryModification {
@@ -34,7 +39,7 @@ public class TicketCategoryModification {
     private final int maxTickets;
     private final DateTimeModification inception;
     private final DateTimeModification expiration;
-    private final String description;
+    private final Map<String, String> description;
     private final BigDecimal price;
     private final boolean tokenGenerationRequested;
     private final String dateString;
@@ -46,7 +51,7 @@ public class TicketCategoryModification {
                                       @JsonProperty("maxTickets") int maxTickets,
                                       @JsonProperty("inception") DateTimeModification inception,
                                       @JsonProperty("expiration") DateTimeModification expiration,
-                                      @JsonProperty("description") String description,
+                                      @JsonProperty("description") Map<String, String> description,
                                       @JsonProperty("price") BigDecimal price,
                                       @JsonProperty("tokenGenerationRequested") boolean tokenGenerationRequested,
                                       @JsonProperty("dateString") String dateString,
@@ -67,13 +72,13 @@ public class TicketCategoryModification {
         return Optional.ofNullable(price).map(MonetaryUtil::unitToCents).orElse(0);
     }
 
-    public static TicketCategoryModification fromTicketCategory(TicketCategory tc, ZoneId zoneId) {
+    public static TicketCategoryModification fromTicketCategory(TicketCategory tc, List<TicketCategoryDescription> ticketCategoryDescriptions, ZoneId zoneId) {
         return new TicketCategoryModification(tc.getId(),
                 tc.getName(),
                 tc.getMaxTickets(),
                 DateTimeModification.fromZonedDateTime(tc.getInception(zoneId)),
                 DateTimeModification.fromZonedDateTime(tc.getExpiration(zoneId)),
-                tc.getDescription(),
+                ticketCategoryDescriptions.stream().collect(Collectors.toMap(TicketCategoryDescription::getLocale, TicketCategoryDescription::getDescription)),
                 tc.getPrice(),
                 tc.isAccessRestricted(), "", tc.isBounded());
     }

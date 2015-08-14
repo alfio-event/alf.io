@@ -3,7 +3,7 @@
 <div class="container" data-ng-if="event">
     <form name="headerForm" role="form" data-ng-submit="saveEventHeader(headerForm, eventHeader)" novalidate class="force-show-errors" data-error-sensitive="editEventHeader">
         <event-header data-ng-if="!editEventHeader"></event-header>
-        <edit-event-header data-ng-if="editEventHeader" data-show-dates-warning="true" data-show-existing-errors="true" data-event-obj="event" data-target-obj="eventHeader" data-organizations="organizations"></edit-event-header>
+        <edit-event-header data-ng-if="editEventHeader" data-show-dates-warning="true" data-show-existing-errors="true" data-event-obj="event" data-target-obj="eventHeader" data-organizations="organizations"  data-all-languages="allLanguages" data-all-languages-mapping="allLanguagesMapping"></edit-event-header>
         <button class="btn btn-warning" data-ng-if="!editEventHeader" data-ng-click="toggleEditHeader(false)"><i class="fa fa-edit"></i> edit</button>
         <button class="btn btn-success" type="submit" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting">save</button>
         <button class="btn btn-default" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting" data-ng-click="toggleEditHeader(true)">cancel</button>
@@ -90,7 +90,7 @@
         No categories matching the selected criteria have been found.
     </div>
 
-    <div data-ng-repeat="ticketCategory in event.ticketCategories | showSelectedCategories : selection" class="container wMarginBottom" data-ng-class="evaluateCategoryStatusClass($index, ticketCategory)">
+    <div data-ng-repeat="ticketCategory in event.ticketCategories | orderBy: ['id'] | showSelectedCategories : selection" class="container wMarginBottom" data-ng-class="evaluateCategoryStatusClass($index, ticketCategory)">
         <div class="page-header">
             <div class="alert alert-danger" data-ng-if="ticketCategory.containingOrphans" data-ng-form="moveTickets">
                 <div class="form-inline">
@@ -109,7 +109,6 @@
                 <div class="col-sm-8">
                     <div class="col-sm-5">
                         <h4>{{::ticketCategory.name}}</h4>
-                        <h5 class="text-muted">{{::ticketCategory.description}}</h5>
                     </div>
                     <div class="col-sm-7">
                         <div class="row">

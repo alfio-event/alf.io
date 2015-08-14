@@ -78,7 +78,7 @@ public class ConfigurationManagerTest {
                 new TicketCategoryModification(null, "default", 20,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        "desc", BigDecimal.TEN, false, "", false));
+                        Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false));
         EventModification em = new EventModification(null, "url", "url", "url", null,
                 "eventShortName", "displayName", organization.getId(),
                 "muh location", desc,

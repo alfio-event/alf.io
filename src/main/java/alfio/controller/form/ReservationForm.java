@@ -22,8 +22,10 @@ import alfio.manager.TicketReservationManager;
 import alfio.model.Event;
 import alfio.model.SpecialPrice;
 import alfio.model.TicketCategory;
+import alfio.model.TicketCategoryDescription;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
 import lombok.Data;
@@ -35,6 +37,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static java.util.Collections.emptyList;
@@ -62,8 +65,10 @@ public class ReservationForm {
 
     public Optional<List<TicketReservationWithOptionalCodeModification>> validate(BindingResult bindingResult,
                                                                                   TicketReservationManager tickReservationManager,
+                                                                                  TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
                                                                                   EventManager eventManager,
-                                                                                  Event event, HttpServletRequest request) {
+                                                                                  Event event,
+                                                                                  Locale locale) {
         int selectionCount = selectionCount();
 
         if (selectionCount <= 0) {
@@ -90,13 +95,16 @@ public class ReservationForm {
                 (trimmedCode) -> OptionalWrapper.optionally(() -> tickReservationManager.getSpecialPriceByCode(trimmedCode)));
         //
         final ZonedDateTime now = ZonedDateTime.now(eventZoneId);
-        selected.forEach((r) -> validateCategory(bindingResult, tickReservationManager, eventManager, event, maxAmountOfTicket, res, specialCode, now, r, request));
+        selected.forEach((r) -> validateCategory(bindingResult, tickReservationManager, ticketCategoryDescriptionRepository, eventManager, event, maxAmountOfTicket, res, specialCode, now, r, locale));
         return bindingResult.hasErrors() ? Optional.empty() : Optional.of(res);
     }
 
-    private static void validateCategory(BindingResult bindingResult, TicketReservationManager tickReservationManager, EventManager eventManager, Event event, int maxAmountOfTicket, List<TicketReservationWithOptionalCodeModification> res, Optional<SpecialPrice> specialCode, ZonedDateTime now, TicketReservationModification r, HttpServletRequest request) {
+    private static void validateCategory(BindingResult bindingResult, TicketReservationManager tickReservationManager, TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository, EventManager eventManager,
+                                         Event event, int maxAmountOfTicket, List<TicketReservationWithOptionalCodeModification> res,
+                                         Optional<SpecialPrice> specialCode, ZonedDateTime now, TicketReservationModification r,
+                                         Locale locale) {
         TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
-        SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, tickReservationManager
+        SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(tc.getId(), locale.getLanguage()).orElse(""), now, event, tickReservationManager
                 .countAvailableTickets(event, tc), maxAmountOfTicket, Optional.empty());
 
         if (!ticketCategory.getSaleable()) {

@@ -289,8 +289,16 @@
         $scope.event.ticketCategories.push(createCategory(sticky, $scope, expirationExtractor));
     };
 
-    var initScopeForEventEditing = function ($scope, OrganizationService, PaymentProxyService, LocationService, $state) {
+    var initScopeForEventEditing = function ($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state) {
         $scope.organizations = {};
+
+        EventService.getAllLanguages().success(function(result) {
+            $scope.allLanguages = result;
+            $scope.allLanguagesMapping = {};
+            angular.forEach(result, function(r) {
+                $scope.allLanguagesMapping[r.value] = r;
+            });
+        });
 
         OrganizationService.getAllOrganizations().success(function(result) {
             $scope.organizations = result;
@@ -339,9 +347,10 @@
         $scope.event = {
             freeOfCharge: false,
             begin: {},
-            end: {}
+            end: {},
+            locales: 7
         };
-        initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, $state);
+        initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state);
         $scope.event.ticketCategories = [];
         createAndPushCategory(true, $scope);
 
@@ -409,7 +418,7 @@
             });
         };
         loadData();
-        initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, $state);
+        initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state);
         $scope.evaluateCategoryStatusClass = function(index, category) {
             if(category.expired) {
                 return 'category-expired';
@@ -546,12 +555,15 @@
             }, errorHandler);
         };
 
+        var parentScope = $scope;
+
         var openCategoryDialog = function(category, event) {
             var editCategory = $modal.open({
                 size:'lg',
                 templateUrl:BASE_STATIC_URL + '/event/fragment/edit-category-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
+                    $scope.allLanguagesMapping = parentScope.allLanguagesMapping;
                     $scope.ticketCategory = category;
                     $scope.event = event;
                     $scope.editMode = true;

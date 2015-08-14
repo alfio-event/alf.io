@@ -16,8 +16,26 @@
  */
 package alfio.repository;
 
+import alfio.model.TicketCategoryDescription;
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
+
+import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface TicketCategoryDescriptionRepository {
+
+    @Query("select * from ticket_category_text where ticket_category_id_fk = :ticketCategoryId")
+    List<TicketCategoryDescription> findByTicketCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
+
+    @Query("select description from ticket_category_text where ticket_category_id_fk = :ticketCategoryId and locale = :locale")
+    Optional<String> findByTicketCategoryIdAndLocale(@Bind("ticketCategoryId") int ticketCategoryId, @Bind("locale") String locale);
+
+    @Query("insert into ticket_category_text(ticket_category_id_fk, locale, description) values (:ticketCategoryId, :locale, :description)")
+    int insert(@Bind("ticketCategoryId") int ticketCategoryId, @Bind("locale") String locale, @Bind("description") String description);
+
+    @Query("delete from ticket_category_text where ticket_category_id_fk = :ticketCategoryId")
+    int delete(@Bind("ticketCategoryId") int ticketCategoryId);
 }

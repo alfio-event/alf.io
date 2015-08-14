@@ -16,25 +16,18 @@
  */
 package alfio.model.modification;
 
-import alfio.model.Event;
-import alfio.model.EventDescription;
-import alfio.model.TicketCategory;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import org.apache.commons.lang3.tuple.Pair;
+
 
 import java.math.BigDecimal;
-import java.time.ZoneId;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
-import static alfio.model.modification.support.LocationDescriptor.fromGeoData;
-import static java.util.stream.Collectors.toList;
+import java.util.*;
+
 
 @Getter
 public class EventModification {
@@ -115,31 +108,5 @@ public class EventModification {
 
     public LocationDescriptor getGeolocation() {
         return locationDescriptor;
-    }
-
-    public static EventModification fromEvent(Event event, List<TicketCategory> ticketCategories, List<EventDescription> eventDescriptions, Optional<String> mapsApiKey) {
-        final ZoneId zoneId = event.getZoneId();
-        return new EventModification(event.getId(),
-                event.getWebsiteUrl(),
-                event.getTermsAndConditionsUrl(),
-                event.getImageUrl(),
-                event.getFileBlobId(),
-                event.getShortName(),
-                event.getDisplayName(),
-                event.getOrganizationId(),
-                event.getLocation(),
-                eventDescriptions.stream().collect(Collectors.toMap(EventDescription::getLocale, EventDescription::getDescription)),
-                DateTimeModification.fromZonedDateTime(event.getBegin()),
-                DateTimeModification.fromZonedDateTime(event.getEnd()),
-                event.getRegularPrice(),
-                event.getCurrency(),
-                event.getAvailableSeats(),
-                event.getVat(),
-                event.isVatIncluded(),
-                event.getAllowedPaymentProxies(),
-                ticketCategories.stream().map(tc -> TicketCategoryModification.fromTicketCategory(tc, zoneId)).collect(toList()),
-                event.isFreeOfCharge(),
-                fromGeoData(Pair.of(event.getLatitude(), event.getLongitude()), TimeZone.getTimeZone(zoneId), mapsApiKey),
-                event.getLocales());
     }
 }

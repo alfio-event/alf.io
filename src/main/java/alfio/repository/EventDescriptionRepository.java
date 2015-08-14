@@ -30,9 +30,6 @@ public interface EventDescriptionRepository {
     @Query("select * from event_description_text where event_id_fk = :eventId")
     List<EventDescription> findByEventId(@Bind("eventId") int eventId);
 
-    @Query("select * from event_description_text where event_id_fk = :eventId and type = :type and locale = :locale")
-    Optional<EventDescription> findByEventIdTypeAndLocale(@Bind("eventId") int eventId, @Bind("type") EventDescription.EventDescriptionType type, @Bind("locale") String locale);
-
     @Query("select description from event_description_text where event_id_fk = :eventId and type = :type and locale = :locale")
     Optional<String> findDescriptionByEventIdTypeAndLocale(@Bind("eventId") int eventId, @Bind("type") EventDescription.EventDescriptionType type, @Bind("locale") String locale);
 
