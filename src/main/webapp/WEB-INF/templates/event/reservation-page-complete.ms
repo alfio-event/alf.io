@@ -42,7 +42,7 @@
 <div class="alert alert-success">
     <div class="row">
         <div class="col-sm-12">
-            {{#i18n}}reservation-page-complete.info-assign [{{event.displayName}}]{{/i18n}}
+            <h3>{{#i18n}}reservation-page-complete.info-assign [{{event.displayName}}]{{/i18n}}</h3>
         </div>
     </div>
     <div class="row">

@@ -19,12 +19,17 @@ package alfio.manager.i18n;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.repository.EventRepository;
+import alfio.util.OptionalWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static alfio.util.OptionalWrapper.optionally;
 
 @Component
 public class I18nManager {
@@ -41,7 +46,7 @@ public class I18nManager {
     }
 
     public List<ContentLanguage> getEventLocales(String eventName) {
-        Event event = eventRepository.findByShortName(eventName);
-        return ContentLanguage.findAllFor(event.getLocales());
+        Optional<Event> optional = optionally(() -> eventRepository.findByShortName(eventName));
+        return optional.map(event -> ContentLanguage.findAllFor(event.getLocales())).orElse(Collections.emptyList());
     }
 }
