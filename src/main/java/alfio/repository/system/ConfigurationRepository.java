@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface ConfigurationRepository {
@@ -43,6 +44,9 @@ public interface ConfigurationRepository {
 
     @Query(SYSTEM_FIND_BY_KEY)
     Configuration findByKey(@Bind("key") String key);
+
+    @Query(SYSTEM_FIND_BY_KEY)
+    Optional<Configuration> findOptionalByKey(@Bind("key") String key);
 
     @Query(SYSTEM_FIND_BY_KEY + " UNION ALL " + ORGANIZATION_FIND_BY_KEY)
     List<Configuration> findByOrganizationAndKey(@Bind("organizationId") int organizationId, @Bind("key") String key);

@@ -6,7 +6,7 @@
     <form name="settingsForm" novalidate data-ng-submit="saveSettings(settingsForm, settings, pluginSettings)">
         <div data-ng-if="general">
             <div data-ng-repeat="setting in general.settings">
-                <setting data-obj="setting"></setting>
+                <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
             </div>
             <i class="fa fa-cog fa-spin fa-3x" data-ng-if="general.loading"></i>
         </div>
@@ -30,13 +30,13 @@
                 </label>
             </div>
             <div data-ng-repeat="setting in mail.settings | mailSettingsFilter:mail.type.value">
-                <setting data-obj="setting"></setting>
+                <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
             </div>
             <div>
-                <setting obj="mail.maxEmailPerCycle"></setting>
+                <setting obj="mail.maxEmailPerCycle" data-display-delete-if-needed="true"></setting>
             </div>
             <div>
-                <setting obj="mail.mailReplyTo"></setting>
+                <setting obj="mail.mailReplyTo" data-display-delete-if-needed="true"></setting>
             </div>
         </div>
 
@@ -47,7 +47,7 @@
 
         <div data-ng-if="payment">
             <div data-ng-repeat="setting in payment.settings">
-                <setting data-obj="setting"></setting>
+                <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
             </div>
             <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loading"></i>
         </div>
@@ -60,7 +60,7 @@
         <div data-ng-repeat="(key, settings) in pluginSettingsByPluginId">
             <div class="page-header"><h3 data-ng-bind="key"></h3></div>
             <div data-ng-repeat="setting in settings">
-                <setting data-obj="setting"></setting>
+                <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
             </div>
         </div>
 

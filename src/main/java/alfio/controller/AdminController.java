@@ -17,6 +17,7 @@
 package alfio.controller;
 
 import alfio.manager.EventManager;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.Ticket;
 import com.opencsv.CSVWriter;
 import org.apache.commons.lang3.StringUtils;
@@ -45,10 +46,12 @@ public class AdminController {
 
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
     private final EventManager eventManager;
+    private final ConfigurationManager configurationManager;
 
     @Autowired
-    public AdminController(EventManager eventManager) {
+    public AdminController(EventManager eventManager, ConfigurationManager configurationManager) {
         this.eventManager = eventManager;
+        this.configurationManager = configurationManager;
     }
 
     //catch both "/admin" and "/admin/"
@@ -56,6 +59,7 @@ public class AdminController {
     public String adminHome(Model model, @Value("${alfio.version}") String version, Principal principal) {
         model.addAttribute("alfioVersion", version);
         model.addAttribute("username", principal.getName());
+        model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
         return "/admin/index";
     }
 

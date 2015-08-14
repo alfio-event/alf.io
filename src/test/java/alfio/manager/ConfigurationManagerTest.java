@@ -22,7 +22,6 @@ import alfio.config.Initializer;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
-import alfio.model.EventDescription;
 import alfio.model.TicketCategory;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
@@ -49,9 +48,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
@@ -190,6 +187,21 @@ public class ConfigurationManagerTest {
 
         assertEquals(7, configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event), -1));
 
+    }
+
+    @Test
+    public void testBasicConfigurationNotNeeded() {
+        configurationRepository.update(ConfigurationKeys.BASE_URL.getValue(), "http://localhost:8080");
+        configurationRepository.insert(ConfigurationKeys.MAPS_SERVER_API_KEY.getValue(), "MAPS_SERVER_API_KEY", "");
+        configurationRepository.insert(ConfigurationKeys.MAPS_CLIENT_API_KEY.getValue(), "MAPS_CLIENT_API_KEY", "");
+        configurationRepository.insert(ConfigurationKeys.MAILER_TYPE.getValue(), "smtp", "");
+        assertFalse(configurationManager.isBasicConfigurationNeeded());
+    }
+
+    @Test
+    public void testBasicConfigurationNeeded() {
+        configurationRepository.deleteByKey(ConfigurationKeys.BASE_URL.getValue());
+        assertTrue(configurationManager.isBasicConfigurationNeeded());
     }
 
 

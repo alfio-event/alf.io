@@ -31,6 +31,7 @@ public class Configuration {
     private final String description;
     private final ConfigurationKeys configurationKey;
     private final ConfigurationPathLevel configurationPathLevel;
+    private final boolean basic;
 
 
     public Configuration(@Column("id") int id,
@@ -44,6 +45,7 @@ public class Configuration {
         this.description = description;
         this.configurationKey = ConfigurationKeys.valueOf(key);
         this.configurationPathLevel = configurationPathLevel;
+        this.basic = this.configurationKey.isBasic();
     }
 
     public ComponentType getComponentType() {

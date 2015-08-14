@@ -21,6 +21,7 @@ import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.system.ConfigurationRepository;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
@@ -33,6 +34,7 @@ import static alfio.util.OptionalWrapper.optionally;
 
 @Component
 @Transactional
+@Log4j2
 public class ConfigurationManager {
 
     private final ConfigurationRepository configurationRepository;
@@ -126,6 +128,26 @@ public class ConfigurationManager {
         } else {
             configurationRepository.update(key.getValue(), value);
         }
+    }
+
+    /**
+     * Checks if the basic options have been already configured:
+     * <ul>
+     *     <li>Google maps' api keys</li>
+     *     <li>Base application URL</li>
+     *     <li>E-Mail</li>
+     * </ul>
+     * @return {@code true} if there are missing options, {@code true} otherwise
+     */
+    public boolean isBasicConfigurationNeeded() {
+        return ConfigurationKeys.basic().stream()
+            .anyMatch(key -> {
+                boolean absent = !configurationRepository.findOptionalByKey(key.getValue()).isPresent();
+                if(absent) {
+                    log.warn("cannot find a value for "+key.getValue());
+                }
+                return absent;
+            });
     }
 
 
