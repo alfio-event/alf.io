@@ -18,9 +18,11 @@ package alfio.manager.system;
 
 import alfio.model.Event;
 import alfio.model.Ticket;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.EventMigration;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.util.EventUtil;
 import lombok.extern.log4j.Log4j2;
@@ -60,6 +62,7 @@ public class DataMigrator {
     private final String currentVersionAsString;
     private final ZonedDateTime buildTimestamp;
     private final TransactionTemplate transactionTemplate;
+    private final ConfigurationRepository configurationRepository;
     private final NamedParameterJdbcTemplate jdbc;
 
     @Autowired
@@ -69,10 +72,12 @@ public class DataMigrator {
                         @Value("${alfio.build-ts}") String buildTimestamp,
                         PlatformTransactionManager transactionManager,
                         TicketRepository ticketRepository,
+                        ConfigurationRepository configurationRepository,
                         NamedParameterJdbcTemplate jdbc) {
         this.eventMigrationRepository = eventMigrationRepository;
         this.eventRepository = eventRepository;
         this.ticketRepository = ticketRepository;
+        this.configurationRepository = configurationRepository;
         this.jdbc = jdbc;
         this.currentVersion = parseVersion(currentVersion);
         this.currentVersionAsString = currentVersion;
@@ -86,6 +91,17 @@ public class DataMigrator {
                 .forEach(this::migrateEventToCurrentVersion);
         fillReservationsLanguage();
         fillTicketsGender();
+        fillDefaultOptions();
+    }
+
+    private void fillDefaultOptions() {
+        transactionTemplate.execute(ts -> {
+            int count = jdbc.queryForObject("select count(*) from configuration where c_key = :key", new MapSqlParameterSource("key", ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE.getValue()), Integer.class);
+            if(count == 0) {
+                configurationRepository.insert(ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE.getValue(), "true", ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE.getDescription());
+            }
+            return null;
+        });
     }
 
     void migrateEventToCurrentVersion(Event event) {

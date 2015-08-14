@@ -27,6 +27,8 @@ import java.util.Optional;
 @QueryRepository
 public interface ConfigurationRepository {
 
+    String INSERT_STATEMENT = "INSERT into configuration(c_key, c_value, description) values(:key, :value, :description)";
+
     @Query("SELECT id, c_key, c_value, description, 'SYSTEM' as configuration_path_level  FROM configuration")
     List<Configuration> findAll();
 
@@ -64,7 +66,7 @@ public interface ConfigurationRepository {
     @Query("DELETE FROM configuration where c_key = :key")
     void deleteByKey(@Bind("key") String key);
 
-    @Query("INSERT into configuration(c_key, c_value, description) values(:key, :value, :description)")
+    @Query(INSERT_STATEMENT)
     int insert(@Bind("key") String key, @Bind("value") String value, @Bind("description") String description);
 
     @Query("INSERT into configuration_organization(organization_id_fk, c_key, c_value, description) values(:orgId, :key, :value, :description)")

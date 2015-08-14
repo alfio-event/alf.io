@@ -17,8 +17,8 @@
 package alfio.config;
 
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
-import alfio.model.Event;
 import alfio.util.MustacheCustomTagInterceptor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -74,6 +74,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     private JMustacheTemplateLoader templateLoader;
     @Autowired
     private I18nManager i18nManager;
+    @Autowired
+    private ConfigurationManager configurationManager;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -168,6 +170,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                     modelMap.putIfAbsent("event", null);
                     if(!StringUtils.startsWith(mv.getViewName(), "redirect:")) {
                         modelMap.putIfAbsent("pageTitle", "empty");
+                        modelMap.putIfAbsent("analyticsEnabled", StringUtils.isNotBlank(configurationManager.getStringConfigValue(alfio.model.system.Configuration.googleAnalyticsKey(), "")));
                     }
                 });
             }

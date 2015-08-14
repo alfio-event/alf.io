@@ -295,6 +295,10 @@ public class Configuration {
         return new ConfigurationPathKey(system(), ConfigurationKeys.GOOGLE_ANALYTICS_KEY);
     }
 
+    public static ConfigurationPathKey googleAnalyticsAnonymousMode() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE);
+    }
+
     public static ConfigurationPathKey allowFreeTicketsCancellation(Event event) {
         return new ConfigurationPathKey(event(event), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION);
     }
