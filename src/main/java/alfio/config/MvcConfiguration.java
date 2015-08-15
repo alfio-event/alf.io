@@ -127,6 +127,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                             .findFirst().ifPresent((val) -> {
 
                                 //fetch the parameter value
+                                @SuppressWarnings("unchecked")
                                 String eventName = Optional.ofNullable(((Map<String, Object>)request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE)).get(val)).orElse("").toString();
 
 
