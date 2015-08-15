@@ -27,7 +27,7 @@ insert into ticket_category_text ((SELECT ticket_category.id as ticket_category_
 union all
 (SELECT ticket_category.id as ticket_category_id_fk, 'de' as locale, description FROM TICKET_CATEGORY where ((select locales from event where event.id = event_id) = 7) and (select count(*) from ticket_category_text where ticket_category_id_fk = ticket_category.id) = 0)
 union all
-(SELECT ticket_category.id as ticket_category_id_fk, 'it' as locale, description FROM TICKET_CATEGORY where ((select locales from event where event.id = event_id) = 7) and (select count(*) from ticket_category_text where ticket_category_id_fk = ticket_category.id) = 0))
+(SELECT ticket_category.id as ticket_category_id_fk, 'it' as locale, description FROM TICKET_CATEGORY where ((select locales from event where event.id = event_id) = 7) and (select count(*) from ticket_category_text where ticket_category_id_fk = ticket_category.id) = 0));
 
 ALTER TABLE event DROP COLUMN description;
 ALTER TABLE ticket_category DROP COLUMN  description;
