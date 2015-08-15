@@ -20,7 +20,7 @@
 /bootstrap/js/**
 /bootstrap/less/**
 /bootstrap/dist/fonts/**
-/bootstrap/dist/js/**
+/bootstrap/dist/js/bootstrap.js
 /Chart.js/docs/**
 /Chart.js/samples/**
 /Chart.js/src/**
