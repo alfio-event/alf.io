@@ -1,7 +1,14 @@
 {{>/event/page-top}}
 
-<div class="clearfix"></div>
-<p>404 NOT FOUND</p>
-<p><a href="/">{{#i18n}}to-home{{/i18n}}</a></p>
+<div class="row">
+    <div class="col-xs-2"><h1><i class="fa fa-search fa-3x text-warning"></i></h1></div>
+    <div class="col-xs-10 text-warning">
+        <h1>Oops...</h1>
+        <h4>{{#i18n}}not-found{{/i18n}}</h4>
+    </div>
+</div>
+<div class="row wMarginTop30px">
+    <div class="col-xs-12"><a class="btn btn-default" href="{{request.contextPath}}/">{{#i18n}}to-home{{/i18n}}</a></div>
+</div>
 
 {{>/event/page-bottom}}
