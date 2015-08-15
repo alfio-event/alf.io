@@ -209,6 +209,7 @@
                 formObj: '=',
                 fieldObj: '=',
                 minChar: '=',
+                maxChar: '=',
                 requiredPattern: '=',
                 showExistingErrors: '='
             },
