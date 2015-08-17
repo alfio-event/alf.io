@@ -353,8 +353,10 @@
                         })
 
                     };
-                    if(files.length > 0 && (files[0].type == 'image/png') || files[0].type == 'image/jpeg') {
+                    if(files.length > 0 && ((files[0].type == 'image/png') || files[0].type == 'image/jpeg')) {
                         reader.readAsDataURL(files[0]);
+                    } else {
+                        alert('only png or jpeg files are accepted')
                     }
                 };
             }
