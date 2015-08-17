@@ -51,8 +51,8 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-sm-4 col-sm-offset-8">
-        <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/re-send-email" method="post" class="form-inline">
+        <div class="col-sm-12">
+        <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/re-send-email" method="post" class="form-inline text-align-right">
             <button type="submit" class="btn btn-default">{{#i18n}}reservation-page-complete.resend-reservation-email{{/i18n}}</button>
             <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
         </form>

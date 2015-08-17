@@ -16,6 +16,10 @@ div.col-md-8.col-md-offset-2 > div {
     text-align: center;
 }
 
+.text-align-right {
+    text-align: right;
+}
+
 .event-description {
     margin-top:1em;
 }
