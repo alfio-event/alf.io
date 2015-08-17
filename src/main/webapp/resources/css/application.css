@@ -144,7 +144,7 @@ div.preformatted {
 }
 
 /* source: https://github.com/twbs/bootstrap/issues/1982#issuecomment-7814657 thank you @ghost! :) */
-.wizard a {padding: 12px 12px 10px 12px; margin-right:5px; background:#efefef; position:relative; display:inline-block; width:31%}
+.wizard a {padding: 12px 12px 10px 12px; background:#efefef; position:relative; display:inline-block; width:31%}
 .wizard a:before {width:0; height:0; border-top: 20px inset transparent; border-bottom: 20px inset transparent; border-left: 20px solid #fff; position: absolute; content: ""; top: 0; left: 0;}
 .wizard a:after {width:0; height:0; border-top: 20px inset transparent; border-bottom: 20px inset transparent; border-left: 20px solid #efefef; position: absolute; content: ""; top: 0; right: -20px; z-index:2;}
 .wizard a:first-child:before {border:none;}
@@ -166,4 +166,19 @@ div.preformatted {
 }
 .wMarginBottom30px {
     margin-bottom: 30px;
+}
+
+.alfio-lang a {
+}
+
+html[lang=de] .alfio-lang a[lang=de] {
+    font-weight:bold;
+}
+
+html[lang=en] .alfio-lang a[lang=en] {
+    font-weight:bold;
+}
+
+html[lang=it] .alfio-lang a[lang=it] {
+    font-weight:bold;
 }
