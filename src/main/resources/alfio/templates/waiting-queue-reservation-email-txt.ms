@@ -2,7 +2,7 @@
 
 {{#i18n}}email-waiting-queue-acquired.text [{{event.displayName}}] [{{reservationUrl}}]{{/i18n}}
 
-#### {{#i18n}}email-waiting-queue-acquired.warning [{{#format-date}}{{reservationTimeout}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}} ####
+#### {{#i18n}}email-waiting-queue-acquired.warning [{{#format-date}}{{reservationTimeout}}EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{reservationTimeout}} HH:mm (z){{/format-date}}]{{/i18n}} ####
 
 
 #### {{#i18n}}email.event-info{{/i18n}} ####
