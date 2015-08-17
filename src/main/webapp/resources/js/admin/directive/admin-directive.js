@@ -142,6 +142,12 @@
                     timePickerIncrement: 1
                 });
 
+                scope.startModelObj['date'] = startDate.format('YYYY-MM-DD');
+                scope.startModelObj['time'] = startDate.format('HH:mm');
+
+                scope.endModelObj['date'] = endDate.format('YYYY-MM-DD');
+                scope.endModelObj['time'] = endDate.format('HH:mm');
+
                 element.on('apply.daterangepicker', function(ev, picker) {
                     if(angular.isDefined(picker)) {
                         scope.$apply(function() {
