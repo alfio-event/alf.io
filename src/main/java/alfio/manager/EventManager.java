@@ -155,11 +155,11 @@ public class EventManager {
             .map(ContentLanguage::getLanguage)
             .collect(Collectors.toSet());
 
-        Optional.ofNullable(em.getDescription()).orElse(Collections.emptyMap()).forEach((locale, description) -> {
+        Optional.ofNullable(em.getDescription()).ifPresent(descriptions -> descriptions.forEach((locale, description) -> {
             if (validLocales.contains(locale)) {
                 eventDescriptionRepository.insert(eventId, locale, EventDescription.EventDescriptionType.DESCRIPTION, description);
             }
-        });
+        }));
     }
 
     public void updateEventHeader(int eventId, EventModification em, String username) {
@@ -350,7 +350,7 @@ public class EventManager {
             final int price = evaluatePrice(tc.getPriceInCents(), em.getVat(), vatIncluded, freeOfCharge);
             final int maxTickets = tc.isBounded() ? tc.getMaxTickets() : 0;
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
-                    tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, price, tc.isTokenGenerationRequested(), eventId, tc.isBounded());
+                tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, price, tc.isTokenGenerationRequested(), eventId, tc.isBounded());
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
@@ -395,11 +395,11 @@ public class EventManager {
 
         Set<String> eventLang = ContentLanguage.findAllFor(event.getLocales()).stream().map(ContentLanguage::getLanguage).collect(Collectors.toSet());
 
-        tc.getDescription().forEach((locale, desc) -> {
-            if(eventLang.contains(locale)) {
+        Optional.ofNullable(tc.getDescription()).ifPresent(descriptions -> descriptions.forEach((locale, desc) -> {
+            if (eventLang.contains(locale)) {
                 ticketCategoryDescriptionRepository.insert(tcId, locale, desc);
             }
-        });
+        }));
     }
 
     private void updateCategory(TicketCategoryModification tc, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge, ZoneId zoneId, Event event) {
