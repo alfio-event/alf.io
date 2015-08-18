@@ -142,6 +142,12 @@
                     timePickerIncrement: 1
                 });
 
+                scope.startModelObj['date'] = startDate.format('YYYY-MM-DD');
+                scope.startModelObj['time'] = startDate.format('HH:mm');
+
+                scope.endModelObj['date'] = endDate.format('YYYY-MM-DD');
+                scope.endModelObj['time'] = endDate.format('HH:mm');
+
                 element.on('apply.daterangepicker', function(ev, picker) {
                     if(angular.isDefined(picker)) {
                         scope.$apply(function() {
@@ -353,8 +359,10 @@
                         })
 
                     };
-                    if(files.length > 0 && (files[0].type == 'image/png') || files[0].type == 'image/jpeg') {
+                    if(files.length > 0 && ((files[0].type == 'image/png') || files[0].type == 'image/jpeg')) {
                         reader.readAsDataURL(files[0]);
+                    } else {
+                        alert('only png or jpeg files are accepted')
                     }
                 };
             }

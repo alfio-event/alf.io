@@ -4,9 +4,9 @@
 
 {{^ticketsAreAllAssigned}}
 <div class="wizard wMarginBottom wMarginTop center">
-    <a><span class="badge">1</span> {{#i18n}}breadcrumb.step1{{/i18n}}</a>
-    <a><span class="badge">2</span> {{#i18n}}breadcrumb.step2{{/i18n}}</a>
-    <a class="current"><span class="badge badge-inverse">3</span> {{#i18n}}breadcrumb.step3{{/i18n}}</a>
+    <a><span class="badge">1</span> <span class="hidden-xs">{{#i18n}}breadcrumb.step1{{/i18n}}</span></a>
+    <a><span class="badge">2</span> <span class="hidden-xs">{{#i18n}}breadcrumb.step2{{/i18n}}</span></a>
+    <a class="current"><span class="badge badge-inverse">3</span> <span class="hidden-xs">{{#i18n}}breadcrumb.step3{{/i18n}}</span></a>
 </div>
 {{/ticketsAreAllAssigned}}
 
@@ -51,8 +51,8 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-sm-4 col-sm-offset-8">
-        <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/re-send-email" method="post" class="form-inline">
+        <div class="col-sm-12">
+        <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/re-send-email" method="post" class="form-inline text-align-right">
             <button type="submit" class="btn btn-default">{{#i18n}}reservation-page-complete.resend-reservation-email{{/i18n}}</button>
             <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
         </form>
