@@ -19,7 +19,9 @@ package alfio.util;
 import alfio.config.Initializer;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -29,6 +31,7 @@ import java.util.stream.IntStream;
 public final class PasswordGenerator {
 
     private static final char[] PASSWORD_CHARACTERS;
+    private static final boolean DEV_MODE;
     private static final int MAX_LENGTH = 14;
     private static final int MIN_LENGTH = 10;
 
@@ -53,13 +56,16 @@ public final class PasswordGenerator {
         chars.add('=');
 
         PASSWORD_CHARACTERS = ArrayUtils.toPrimitive(chars.toArray(new Character[chars.size()]));
+        DEV_MODE = Arrays.stream(StringUtils.split(System.getProperty("spring.profiles.active"), ','))
+            .map(StringUtils::trim)
+            .anyMatch(Initializer.PROFILE_DEV::equals);
     }
 
     private PasswordGenerator() {
     }
 
     public static String generateRandomPassword() {
-        if(Initializer.PROFILE_DEV.equals(System.getProperty("spring.profiles.active"))) {
+        if(DEV_MODE) {
             return "abcd";
         }
         Random r = new Random();

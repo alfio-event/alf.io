@@ -76,6 +76,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     private I18nManager i18nManager;
     @Autowired
     private ConfigurationManager configurationManager;
+    @Autowired
+    private Environment environment;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -200,7 +202,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                         + " frame-src 'self' https://js.stripe.com;"
                         + " font-src 'self';"//
                         + " media-src 'self';"//for loading camera api
-                        + " connect-src 'self' https://api.stripe.com;"); //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
+                        + " connect-src 'self' https://api.stripe.com;" //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
+                        + (environment.acceptsProfiles(Initializer.PROFILE_DEBUG_CSP) ? " report-uri /report-csp-violation" : ""));
             }
         };
     }

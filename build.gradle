@@ -70,7 +70,7 @@ ext {
     datasourceUsername = 'sa'
     datasourcePassword = ''
     datasourceValidationQuery = 'SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS'
-    springProfilesActive = 'dev'
+    springProfilesActive = 'dev,debug-csp'
     baseImage = "ubuntu"
     port = "8080"
 

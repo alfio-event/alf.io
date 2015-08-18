@@ -20,19 +20,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.annotation.web.servlet.configuration.EnableWebMvcSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
+import java.util.regex.Pattern;
 
 @Configuration
 @EnableWebMvcSecurity
@@ -91,6 +95,9 @@ public class WebSecurityConfig {
     @Order(2)
     public static class FormBasedWebSecurity extends BaseWebSecurity {
 
+        @Autowired
+        private Environment environment;
+
         @Bean
         public CsrfTokenRepository getCsrfTokenRepository() {
             HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
@@ -101,12 +108,17 @@ public class WebSecurityConfig {
 
         @Override
         protected void configure(HttpSecurity http) throws Exception {
-            http.exceptionHandling()
+            CsrfConfigurer<HttpSecurity> configurer =
+                http.exceptionHandling()
                     .accessDeniedPage("/session-expired")
                     .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher("X-Requested-With", "XMLHttpRequest"))
                     .and()
-                    .csrf()
-                    .csrfTokenRepository(getCsrfTokenRepository())
+                    .csrf();
+            if(environment.acceptsProfiles(Initializer.PROFILE_DEBUG_CSP)) {
+                Pattern whiteList = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
+                configurer.requireCsrfProtectionMatcher(new NegatedRequestMatcher((r) -> whiteList.matcher(r.getMethod()).matches() || r.getRequestURI().equals("/report-csp-violation")));
+            }
+            configurer.csrfTokenRepository(getCsrfTokenRepository())
                     .and()
                     .authorizeRequests()
                     .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/users/**", ADMIN_API + "/configuration/**").hasRole(ADMIN)

@@ -40,6 +40,7 @@ import java.util.Objects;
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
     public static final String PROFILE_DEV = "dev";
+    public static final String PROFILE_DEBUG_CSP = "debug-csp";
     public static final String PROFILE_LIVE = "!dev";
     public static final String PROFILE_HTTP = "http";
     public static final String PROFILE_SPRING_BOOT = "spring-boot";
