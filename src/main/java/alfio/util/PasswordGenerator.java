@@ -21,10 +21,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 
@@ -56,7 +53,7 @@ public final class PasswordGenerator {
         chars.add('=');
 
         PASSWORD_CHARACTERS = ArrayUtils.toPrimitive(chars.toArray(new Character[chars.size()]));
-        DEV_MODE = Arrays.stream(StringUtils.split(System.getProperty("spring.profiles.active"), ','))
+        DEV_MODE = Arrays.stream(Optional.ofNullable(System.getProperty("spring.profiles.active")).map(p -> p.split(",")).orElse(new String[0]))
             .map(StringUtils::trim)
             .anyMatch(Initializer.PROFILE_DEV::equals);
     }
