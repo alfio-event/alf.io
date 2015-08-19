@@ -111,9 +111,16 @@ public class NotificationManager {
     }
 
     public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder) {
+        sendSimpleEmail(event, recipient, subject, textBuilder, Collections.emptyList());
+    }
+
+    public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+
+        String encodedAttachments = attachments.isEmpty() ? null : encodeAttachments(attachments.toArray(new Mailer.Attachment[attachments.size()]));
+
         String text = textBuilder.generate();
-        String checksum = calculateChecksum(recipient, null, subject, text);
-        emailMessageRepository.insert(event.getId(), recipient, subject, text, null, checksum, ZonedDateTime.now(UTC));
+        String checksum = calculateChecksum(recipient, encodedAttachments, subject, text);
+        emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
         messages.offer(new EmailMessage(-1, event.getId(), WAITING.name(), recipient, subject, text, null, checksum));
     }
 

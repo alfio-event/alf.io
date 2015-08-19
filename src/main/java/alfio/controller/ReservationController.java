@@ -392,15 +392,8 @@ public class ReservationController {
     }
 
     private void sendReservationCompleteEmail(HttpServletRequest request, Event event, TicketReservation reservation) {
-
         Locale locale = RequestContextUtils.getLocale(request);
-
-        String shortReservationID = ticketReservationManager.getShortReservationID(reservation.getId());
-
-        notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-                new Object[] { shortReservationID, event.getDisplayName() }, locale), () -> {
-            return templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", ticketReservationManager.prepareModelForReservationEmail(event, reservation), locale, TemplateOutput.TEXT);
-        });
+        ticketReservationManager.sendConfirmationEmail(event, reservation, locale);
     }
     
     private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
