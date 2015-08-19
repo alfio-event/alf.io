@@ -19,7 +19,6 @@ package alfio.manager.location;
 import alfio.config.Initializer;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import com.google.maps.GeoApiContext;
 import com.google.maps.GeocodingApi;
 import com.google.maps.TimeZoneApi;

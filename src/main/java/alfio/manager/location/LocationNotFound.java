@@ -22,7 +22,4 @@ public class LocationNotFound extends RuntimeException {
         super(message);
     }
 
-    public LocationNotFound(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

@@ -108,13 +108,6 @@ public class UserManager {
         return getUserAuthorities(user).stream().anyMatch(a -> a.getRole().equals(AuthorityRepository.ROLE_ADMIN));
     }
 
-    public List<User> findMembers(Organization organization) {
-        return userOrganizationRepository.findByOrganizationId(organization.getId())
-                .stream()
-                .map(uo -> userRepository.findById(uo.getUserId()))
-                .collect(toList());
-    }
-
     public void createOrganization(String name, String description, String email) {
         organizationRepository.create(name, description, email);
     }
