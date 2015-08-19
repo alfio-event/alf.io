@@ -94,7 +94,7 @@ public class CustomMessageManager {
                     String subject = renderResource(m.getSubject(), model, m.getLocale(), templateManager);
                     String text = renderResource(m.getText(), model, m.getLocale(), templateManager);
                     counter.incrementAndGet();
-                    notificationManager.sendSimpleEmail(event, triple.getMiddle(), subject, text);
+                    notificationManager.sendSimpleEmail(event, triple.getMiddle(), subject, () -> text);
                 });
         return counter.get();
 

@@ -117,12 +117,6 @@ public class NotificationManager {
         messages.offer(new EmailMessage(-1, event.getId(), WAITING.name(), recipient, subject, text, null, checksum));
     }
 
-    public void sendSimpleEmail(Event event, String recipient, String subject, String text) {
-        String checksum = calculateChecksum(recipient, null, subject, text);
-        emailMessageRepository.insert(event.getId(), recipient, subject, text, null, checksum, ZonedDateTime.now(UTC));
-        messages.offer(new EmailMessage(-1, event.getId(), WAITING.name(), recipient, subject, text, null, checksum));
-    }
-
     void sendWaitingMessages() {
         Set<EmailMessage> toBeSent = messages.poll(configurationManager.getIntConfigValue(Configuration.maxEmailPerCycle(), 10));
         toBeSent.forEach(m -> {
