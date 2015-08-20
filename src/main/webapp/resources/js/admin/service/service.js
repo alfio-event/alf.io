@@ -35,6 +35,9 @@
             createOrganization : function(organization) {
                 return $http['post']('/admin/api/organizations/new', organization).error(HttpErrorHandler.handle);
             },
+            updateOrganization : function(organization) {
+                return $http['post']('/admin/api/organizations/update', organization).error(HttpErrorHandler.handle);
+            },
             checkOrganization : function(organization) {
                 return $http['post']('/admin/api/organizations/check', organization).error(HttpErrorHandler.handle);
             }

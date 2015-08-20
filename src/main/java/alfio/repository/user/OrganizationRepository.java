@@ -37,4 +37,7 @@ public interface OrganizationRepository {
 
     @Query("INSERT INTO organization(name, description, email) VALUES (:name, :description, :email)")
     int create(@Bind("name") String name, @Bind("description") String description, @Bind("email") String email);
+
+    @Query("update organization set name = :name, description = :description, email = :email where id = :id")
+    int update(@Bind("id") int id, @Bind("name") String name, @Bind("description") String description, @Bind("email") String email);
 }

@@ -25,6 +25,13 @@ div.category {
     border: 1px solid #c0c0c0;
 }
 
+div.organization-description {
+    width:75px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
 input.ng-invalid.ng-touched, select.ng-invalid.ng-touched, textarea.ng-invalid.ng-touched,
 form.force-show-errors input.ng-invalid, form.force-show-errors select.ng-invalid, form.force-show-errors textarea.ng-invalid {
     border:1px solid #d9534f;

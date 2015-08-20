@@ -18,11 +18,20 @@
                 templateUrl: BASE_TEMPLATE_URL + "/index.html"
             })
             .state('index.new-organization', {
-                url: "new-organization",
+                url: "organizations/new",
                 views: {
                     "newOrganization": {
                         templateUrl: BASE_STATIC_URL + "/main/edit-organization.html",
-                        controller: 'CreateOrganizationController'
+                        controller: 'EditOrganizationController'
+                    }
+                }
+            })
+            .state('index.edit-organization', {
+                url: "organizations/:organizationId/edit",
+                views: {
+                    "newOrganization": {
+                        templateUrl: BASE_STATIC_URL + "/main/edit-organization.html",
+                        controller: 'EditOrganizationController'
                     }
                 }
             })
@@ -191,14 +200,19 @@
         return deferred.promise;
     };
 
-    admin.controller('CreateOrganizationController', function($scope, $state, $rootScope, $q, OrganizationService) {
+    admin.controller('EditOrganizationController', function($scope, $state, $stateParams, $rootScope, $q, OrganizationService) {
+        if(angular.isDefined($stateParams.organizationId)) {
+            OrganizationService.getOrganization($stateParams.organizationId).success(function(result) {
+                $scope.organization = result;
+            });
+        }
         $scope.organization = {};
         $scope.save = function(form, organization) {
             if(!form.$valid) {
                 return;
             }
             validationPerformer($q, OrganizationService.checkOrganization, organization, form).then(function() {
-                OrganizationService.createOrganization(organization).success(function() {
+                OrganizationService.updateOrganization(organization).success(function() {
                     $rootScope.$emit('ReloadOrganizations', {});
                     $state.go('index');
                 });

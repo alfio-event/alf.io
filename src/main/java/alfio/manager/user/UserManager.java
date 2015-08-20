@@ -108,8 +108,14 @@ public class UserManager {
         return getUserAuthorities(user).stream().anyMatch(a -> a.getRole().equals(AuthorityRepository.ROLE_ADMIN));
     }
 
+    @Transactional
     public void createOrganization(String name, String description, String email) {
         organizationRepository.create(name, description, email);
+    }
+
+    @Transactional
+    public void updateOrganization(Integer id, String name, String email, String description) {
+        organizationRepository.update(id, name, description, email);
     }
 
     public ValidationResult validateOrganization(Integer id, String name, String email, String description) {

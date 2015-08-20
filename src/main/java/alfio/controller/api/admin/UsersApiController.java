@@ -88,6 +88,12 @@ public class UsersApiController {
         return OK;
     }
 
+    @RequestMapping(value = "/organizations/update", method = POST)
+    public String updateOrganization(@RequestBody OrganizationModification om) {
+        userManager.updateOrganization(om.getId(), om.getName(), om.getEmail(), om.getDescription());
+        return OK;
+    }
+
     @RequestMapping(value = "/organizations/check", method = POST)
     public ValidationResult validateOrganization(@RequestBody OrganizationModification om) {
         return userManager.validateOrganization(om.getId(), om.getName(), om.getEmail(), om.getDescription());
