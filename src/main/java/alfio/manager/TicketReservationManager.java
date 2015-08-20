@@ -322,10 +322,21 @@ public class TicketReservationManager {
         Validate.isTrue(ticketReservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT, "invalid status");
         ticketReservationRepository.updateTicketReservationStatus(reservationId, TicketReservationStatus.COMPLETE.name());
         acquireTickets(TicketStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getUserLanguage(), ticketReservation.getBillingAddress());
+
         Locale language = findReservationLanguage(reservationId);
-        notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-                new Object[]{ getShortReservationID(reservationId), event.getDisplayName()}, language), () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", prepareModelForReservationEmail(event, ticketReservation), language, TemplateOutput.TEXT));
+
+        sendConfirmationEmail(event, ticketReservation, language);
+
         pluginManager.handleReservationConfirmation(ticketReservationRepository.findReservationById(reservationId), event.getId());
+    }
+
+    public void sendConfirmationEmail(Event event, TicketReservation ticketReservation, Locale language) {
+        String reservationId = ticketReservation.getId();
+
+        Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
+        notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
+                new Object[]{ getShortReservationID(reservationId), event.getDisplayName()}, language),
+            () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", reservationEmailModel, language, TemplateOutput.TEXT));
     }
 
     private Locale findReservationLanguage(String reservationId) {
@@ -747,7 +758,7 @@ public class TicketReservationManager {
         if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail())) {
             Locale oldUserLocale = Locale.forLanguageTag(ticket.getUserLanguage());
             String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
-            notificationManager.sendSimpleEmail(event, ticket.getEmail(), subject, ownerChangeTextBuilder.generate(newTicket));
+            notificationManager.sendSimpleEmail(event, ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
         }
 
         if(admin) {
