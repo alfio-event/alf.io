@@ -29,6 +29,7 @@ public class PluginLog {
     }
 
     private final int id;
+    private final String eventName;
     private final int eventId;
     private final String pluginId;
     private final String description;
@@ -36,12 +37,14 @@ public class PluginLog {
     private final ZonedDateTime timestamp;
 
     public PluginLog(@Column("id") int id,
+                     @Column("short_name") String eventName,
                      @Column("event_id") int eventId,
                      @Column("plugin_id") String pluginId,
                      @Column("description") String description,
                      @Column("type") Type type,
                      @Column("event_ts") ZonedDateTime timestamp) {
         this.id = id;
+        this.eventName = eventName;
         this.eventId = eventId;
         this.pluginId = pluginId;
         this.description = description;

@@ -21,12 +21,14 @@ import alfio.model.TicketReservation;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.PluginConfigOptionModification;
 import alfio.model.plugin.PluginConfigOption;
+import alfio.model.plugin.PluginLog;
 import alfio.model.system.ComponentType;
 import alfio.plugin.Plugin;
 import alfio.plugin.ReservationConfirmationPlugin;
 import alfio.plugin.TicketAssignmentPlugin;
 import alfio.plugin.WaitingQueueSubscriptionPlugin;
 import alfio.repository.plugin.PluginConfigurationRepository;
+import alfio.repository.plugin.PluginLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -43,12 +45,14 @@ public class PluginManager implements ApplicationListener<ContextRefreshedEvent>
 
     private final List<Plugin> plugins;
     private final PluginConfigurationRepository pluginConfigurationRepository;
+    private final PluginLogRepository pluginLogRepository;
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
     @Autowired
-    public PluginManager(List<Plugin> plugins, PluginConfigurationRepository pluginConfigurationRepository) {
+    public PluginManager(List<Plugin> plugins, PluginConfigurationRepository pluginConfigurationRepository, PluginLogRepository pluginLogRepository) {
         this.plugins = plugins;
         this.pluginConfigurationRepository = pluginConfigurationRepository;
+        this.pluginLogRepository = pluginLogRepository;
     }
 
     public void handleReservationConfirmation(TicketReservation reservation, int eventId) {
@@ -69,6 +73,10 @@ public class PluginManager implements ApplicationListener<ContextRefreshedEvent>
 
     public void saveAllConfigOptions(List<PluginConfigOptionModification> input) {
         input.forEach(m -> pluginConfigurationRepository.update(m.getPluginId(), m.getName(), m.getValue()));
+    }
+
+    public List<PluginLog> loadAllLogMessages() {
+        return pluginLogRepository.loadAll();
     }
 
     private static <T extends Plugin> Stream<T> filterPlugins(List<Plugin> plugins, Class<T> type) {

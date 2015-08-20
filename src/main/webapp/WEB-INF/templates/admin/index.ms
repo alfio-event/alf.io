@@ -28,6 +28,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/directive/admin-directive.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/filter/util.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/service/service.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/plugin/plugin-log.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
@@ -48,6 +49,7 @@
                     <ul class="nav navbar-nav">
                         <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
                         <li data-ui-sref-active="active"><a data-ui-sref="configuration">Configuration</a></li>
+                        <li data-ui-sref-active="active"><a data-ui-sref="plugin-log">Plugin Log</a></li>
                         <li class="nav-divider"></li>
                         <li class="visible-xs"><span class="navbar-brand"><i class="fa fa-user"></i> {{username}}</span></li>
                     </ul>
