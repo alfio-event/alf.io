@@ -30,6 +30,19 @@ form.force-show-errors input.ng-invalid, form.force-show-errors select.ng-invali
     border:1px solid #d9534f;
 }
 
+field-error > div.text-danger {
+    display:none;
+}
+
+input.ng-invalid.ng-touched + field-error > div.text-danger,
+select.ng-invalid.ng-touched + field-error > div.text-danger,
+textarea.ng-invalid.ng-touched + field-error > div.text-danger,
+form.force-show-errors input.ng-invalid + field-error > div.text-danger,
+form.force-show-errors select.ng-invalid + field-error > div.text-danger,
+form.force-show-errors textarea.ng-invalid + field-error > div.text-danger {
+    display:block;
+}
+
 div.category-danger {
     border: 1px solid #d9534f;
     border-left-width: 5px;

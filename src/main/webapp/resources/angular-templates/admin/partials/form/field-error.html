@@ -1,6 +1,7 @@
-<div data-ng-messages="fieldObj.$error" data-ng-if="fieldObj.$touched || showExistingErrors || editMode" class="text-danger">
+<div data-ng-messages="fieldObj.$error" class="text-danger">
     <div data-ng-message="minlength">The value should be at least {{minChar}} characters</div>
     <div data-ng-message="maxlength">Max {{maxChar}} characters allowed</div>
     <div data-ng-message="pattern">The value should match the following pattern: {{requiredPattern}}</div>
     <div data-ng-message="email">The e-mail is not valid</div>
+    <div data-ng-message="url">The URL is not valid</div>
 </div>

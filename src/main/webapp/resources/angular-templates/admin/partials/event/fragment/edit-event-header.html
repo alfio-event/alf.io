@@ -24,7 +24,7 @@
             <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.organizationId" data-show-existing-errors="showExistingErrors"></field-error>
 
             <label for="location">Location</label>
-            <textarea data-ng-model="obj.location" name="location" id="location" class="form-control" required data-minlength="10" data-ng-change="updateLocation(obj.location)" data-ng-model-options="{ updateOn: 'blur'}"></textarea>
+            <textarea data-ng-model="obj.location" name="location" id="location" class="form-control" required data-ng-minlength="10" data-ng-change="updateLocation(obj.location)" data-ng-model-options="{ updateOn: 'blur'}"></textarea>
             <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.location" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
 
             <label for="languages">Languages</label>
@@ -32,8 +32,8 @@
 
             <div data-ng-repeat="langValue in selectedLanguages">
                 <label for="description">Event Description: {{allLanguagesMapping[langValue].displayLanguage}}</label>
-                <textarea data-ng-model="obj.description[allLanguagesMapping[langValue].locale]" name="description" id="description" required class="form-control" data-minlength="10" data-ng-maxlength="2048"></textarea>
-                <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.description[allLanguagesMapping[langValue].locale]" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
+                <textarea data-ng-model="obj.description[allLanguagesMapping[langValue].locale]" name="description-{{allLanguagesMapping[langValue].locale}}" id="description" required class="form-control" data-ng-minlength="10" data-ng-maxlength="2048"></textarea>
+                <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader['description-'+allLanguagesMapping[langValue].locale]" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
 
             <label for="websiteUrl">Website URL</label>
@@ -45,7 +45,7 @@
             <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.termsAndConditionsUrl" data-show-existing-errors="showExistingErrors"></field-error>
 
             <label for="imageUrl">Image URL</label>
-            <input type="url" data-ng-model="obj.imageUrl" name="imageUrl" id="imageUrl" class="form-control" /> <!-- data-ng-pattern="^https\:\/\/.*$" -->
+            <input type="url" data-ng-model="obj.imageUrl" name="imageUrl" id="imageUrl" class="form-control" data-ng-pattern="/^https\:\/\/.*$/" />
             <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.imageUrl" data-required-pattern="'must be a https url'" data-show-existing-errors="showExistingErrors"></field-error>
 
             <label for="imageFile">Or image file</label>
@@ -54,9 +54,10 @@
                     <img data-ng-src="{{imageBase64 || ('/file/' + obj.fileBlobId)}}" class="img-responsive center-block">
                 </div>
                 <div class="wMarginBottom">
-                    <button class="btn btn-default center-block" data-ng-click="removeImage(obj)" type="button">Remove image</button>
+                    <button class="btn btn-default pull-left" data-ng-click="removeImage(obj)" type="button">Remove image</button>
+                    <button class="btn btn-default pull-right" data-ng-click="resetImage(obj)" type="button">Reset image</button>
                 </div>
-                <button class="btn btn-default center-block" data-ng-click="resetImage(obj)" type="button">Reset image</button>
+                <div class="clearfix"></div>
             </div>
             <div id="imageFile" class="drop-file-zone wMarginBottom well" data-accept="image/*" data-ng-file-change="imageDropped($files)" data-ng-file-drop data-drag-over-class="'drop-file-zone-hover'">
                 Drop image here

@@ -217,7 +217,8 @@
                 minChar: '=',
                 maxChar: '=',
                 requiredPattern: '=',
-                showExistingErrors: '='
+                showExistingErrors: '=',
+                editMode: '='
             },
             link:angular.noop
         };
