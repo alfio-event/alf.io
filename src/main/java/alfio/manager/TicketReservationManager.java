@@ -17,9 +17,11 @@
 package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.controller.support.TemplateProcessor;
 import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.*;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.SpecialPrice.Status;
@@ -55,8 +57,15 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.FileSystemUtils;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -68,7 +77,6 @@ import java.util.stream.Stream;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
 import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
-import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.formatCents;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Arrays.asList;
@@ -105,6 +113,7 @@ public class TicketReservationManager {
     private final TransactionTemplate requiresNewTransactionTemplate;
     private final WaitingQueueManager waitingQueueManager;
     private final PluginManager pluginManager;
+    private final FileUploadManager fileUploadManager;
 
 
     public static class NotEnoughTicketsException extends RuntimeException {
@@ -143,7 +152,8 @@ public class TicketReservationManager {
                                     TemplateManager templateManager,
                                     PlatformTransactionManager transactionManager,
                                     WaitingQueueManager waitingQueueManager,
-                                    PluginManager pluginManager) {
+                                    PluginManager pluginManager,
+                                    FileUploadManager fileUploadManager) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -161,6 +171,7 @@ public class TicketReservationManager {
         this.waitingQueueManager = waitingQueueManager;
         this.pluginManager = pluginManager;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
+        this.fileUploadManager = fileUploadManager;
     }
     
     /**
@@ -325,7 +336,7 @@ public class TicketReservationManager {
 
         Locale language = findReservationLanguage(reservationId);
 
-        sendConfirmationEmail(event, ticketReservation, language);
+        sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language);
 
         pluginManager.handleReservationConfirmation(ticketReservationRepository.findReservationById(reservationId), event.getId());
     }
@@ -333,10 +344,24 @@ public class TicketReservationManager {
     public void sendConfirmationEmail(Event event, TicketReservation ticketReservation, Locale language) {
         String reservationId = ticketReservation.getId();
 
+        OrderSummary summary = orderSummaryForReservationId(reservationId, event);
+
         Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
+        List<Mailer.Attachment> attachments = new ArrayList<>(1);
+        if(!summary.getNotYetPaid()) {
+            Optional<byte[]> receipt = TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationEmailModel);
+            if(!receipt.isPresent()) {
+                log.warn("was not able to generate the bill for reservation id " + reservationId + " for locale " + language);
+            }
+            receipt.ifPresent(data -> {
+                attachments.add(new Mailer.Attachment("receipt.pdf", data, "application/pdf"));
+            });
+
+        }
+
         notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
                 new Object[]{ getShortReservationID(reservationId), event.getDisplayName()}, language),
-            () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", reservationEmailModel, language, TemplateOutput.TEXT));
+            () -> templateManager.renderClassPathResource("/alfio/templates/confirmation-email-txt.ms", reservationEmailModel, language, TemplateOutput.TEXT), attachments);
     }
 
     private Locale findReservationLanguage(String reservationId) {

@@ -19,6 +19,7 @@ package alfio.model;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import alfio.model.transaction.PaymentProxy;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -80,6 +81,10 @@ public class TicketReservation {
 
     public boolean isReminderSent() {
         return Optional.ofNullable(reminderSent).orElse(false);
+    }
+
+    public boolean getHasBillingAddress() {
+        return StringUtils.isNotBlank(billingAddress);
     }
 
     public Optional<ZonedDateTime> latestNotificationTimestamp(ZoneId zoneId) {

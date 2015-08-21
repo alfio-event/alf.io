@@ -26,7 +26,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Component
@@ -42,7 +45,14 @@ public class MockMailer implements Mailer {
 
     @Override
     public void send(Event event, String to, String subject, String text, Optional<String> html, Attachment... attachments) {
-        log.info("Email: from: {}, replyTo: {}, to: {}, subject: {}, text: {}, html: {}, attachments amount: {}", event.getDisplayName(), configurationManager.getStringConfigValue(Configuration.mailReplyTo(event), ""), to, subject, text,
-                html.orElse("no html"), ArrayUtils.getLength(attachments));
+
+        String printedAttachments = Optional.ofNullable(attachments)
+            .map(Arrays::asList)
+            .orElse(Collections.emptyList())
+            .stream().map(a -> "{filename:" +a.getFilename() + ", contentType: " + a.getContentType() + "}")
+            .collect(Collectors.joining(", "));
+
+        log.info("Email: from: {}, replyTo: {}, to: {}, subject: {}, text: {}, html: {}, attachments: {}", event.getDisplayName(), configurationManager.getStringConfigValue(Configuration.mailReplyTo(event), ""), to, subject, text,
+            html.orElse("no html"), printedAttachments);
     }
 }

@@ -108,16 +108,20 @@ public final class TemplateProcessor {
 
             String page = templateManager.renderClassPathResource("/alfio/templates/ticket.ms", model, language, TemplateOutput.HTML);
 
-            ITextRenderer renderer = new ITextRenderer();
-            renderer.setDocumentFromString(page);
-            try {
-                renderer.getFontResolver().addFont("/alfio/font/DejaVuSansMono.ttf", BaseFont.IDENTITY_H, true);
-            } catch(IOException | DocumentException e) {
-                log.warn("error while loading DejaVuSansMono.ttf font", e);
-            }
-            renderer.layout();
-            return renderer;
+            return prepareItextRenderer(page);
         };
+    }
+
+    private static ITextRenderer prepareItextRenderer(String page) {
+        ITextRenderer renderer = new ITextRenderer();
+        renderer.setDocumentFromString(page);
+        try {
+            renderer.getFontResolver().addFont("/alfio/font/DejaVuSansMono.ttf", BaseFont.IDENTITY_H, true);
+        } catch(IOException | DocumentException e) {
+            log.warn("error while loading DejaVuSansMono.ttf font", e);
+        }
+        renderer.layout();
+        return renderer;
     }
 
     static void fillWithImageData(FileBlobMetadata m, FileUploadManager fileUploadManager, Map<String, Object> model) {
@@ -153,5 +157,21 @@ public final class TemplateProcessor {
                                                                   TemplateManager templateManager,
                                                                   FileUploadManager fileUploadManager) {
         return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager, fileUploadManager).generate();
+    }
+
+    public static Optional<byte[]> buildReceiptPdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
+
+        if(event.getFileBlobIdIsPresent()) {
+            fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(m -> fillWithImageData(m, fileUploadManager, model));
+        }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        String page = templateManager.renderClassPathResource("/alfio/templates/receipt.ms", model, language, TemplateOutput.HTML);
+        try {
+            prepareItextRenderer(page).createPDF(baos);
+            return Optional.of(baos.toByteArray());
+        } catch (DocumentException ioe) {
+            return Optional.empty();
+        }
     }
 }
