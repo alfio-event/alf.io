@@ -86,6 +86,9 @@
 <div class="text-center">
     {{#i18n}}reservation-page-complete.order-information [{{reservation.id}}] [{{reservation.fullName}}]{{/i18n}}
 </div>
+<div class="text-center wMarginTop30px">
+    <span class="text-muted"><a href="https://alf.io" title="{{#i18n}}alfio.credits{{/i18n}}" target="_blank">{{#i18n}}alfio.credits{{/i18n}}</a></span>
+</div>
 
 <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
 <script src="{{request.contextPath}}/resources/js/h5f/h5f.min.js"></script>

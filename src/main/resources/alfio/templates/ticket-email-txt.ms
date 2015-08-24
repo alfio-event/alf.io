@@ -20,3 +20,5 @@
 {{#i18n}}email.kind-regards{{/i18n}}
 
 {{organization.name}} <{{organization.email}}>
+
+{{#i18n}}alfio.credits{{/i18n}}
