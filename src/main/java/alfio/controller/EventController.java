@@ -208,11 +208,13 @@ public class EventController {
 
         final EventDescriptor eventDescriptor = new EventDescriptor(event, eventDescription);
         List<SaleableTicketCategory> expiredCategories = ticketCategories.stream().filter(SaleableTicketCategory::getExpired).collect(Collectors.toList());
+        List<SaleableTicketCategory> validCategories = ticketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
         model.addAttribute("event", eventDescriptor)//
             .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
-            .addAttribute("ticketCategories", ticketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList()))//
+            .addAttribute("ticketCategories", validCategories)//
             .addAttribute("expiredCategories", expiredCategories)//
             .addAttribute("containsExpiredCategories", !expiredCategories.isEmpty())//
+            .addAttribute("showNoCategoriesWarning", validCategories.isEmpty())
             .addAttribute("hasAccessPromotions", hasAccessPromotions)
             .addAttribute("promoCode", specialCode.map(SpecialPrice::getCode).orElse(null))
             .addAttribute("locationDescriptor", ld)

@@ -85,6 +85,11 @@
         {{> /event/ticket-category.ms }}
     {{/ticketCategories}}
     </ul>
+    {{#showNoCategoriesWarning}}
+        <div class="alert alert-warning">
+            <h3>{{#i18n}}show-event.sold-out.header{{/i18n}}</h3>
+        </div>
+    {{/showNoCategoriesWarning}}
     {{#containsExpiredCategories}}
     <div class="expired">
         <div class="text-center">
