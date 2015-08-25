@@ -122,6 +122,8 @@ a.no-decoration {
         width:100%;
         margin-bottom: 5px;
     }
+    .wizard a:not(current) {padding: 12px 12px 10px 12px; background:#efefef; position:relative; display:inline-block; width:16%}
+    .wizard a.current {width:60%}
 }
 
 @media screen and (min-width: 768px) {
