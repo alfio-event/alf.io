@@ -122,6 +122,10 @@ a.no-decoration {
         width:100%;
         margin-bottom: 5px;
     }
+    .j-btn-group {
+        margin-bottom: 10px;
+        width: 100%;
+    }
     .wizard a:not(current) {padding: 12px 12px 10px 12px; background:#efefef; position:relative; display:inline-block; width:16%}
     .wizard a.current {width:60%}
 }
