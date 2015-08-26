@@ -18,7 +18,9 @@ package alfio.controller;
 
 import alfio.manager.EventManager;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.Event;
 import alfio.model.Ticket;
+import alfio.model.TicketCategory;
 import com.opencsv.CSVWriter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -34,14 +36,18 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.security.Principal;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
 
-    private static final String[] CSV_FULL_HEADER = new String[]{"ID", "Name", "E-Mail", "Phone Number", "T-Shirt size", "Notes", "Language"};
+    private static final String[] CSV_FULL_HEADER = new String[]{"ID", "creation", "category", "event", "status", "originalPrice", "paidPrice","reservationID", "Name", "E-Mail", "locked", "job title", "company", "Phone Number", "address", "country", "T-Shirt size", "gender", "Notes", "Language"};
     private static final String[] CSV_TICKETS_HEADER = new String[]{"ID", "Name", "Company"};
 
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
@@ -65,7 +71,15 @@ public class AdminController {
 
     @RequestMapping("/events/{eventName}/export/all-tickets.csv")
     public void downloadAllTicketsCSV(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) throws IOException {
-        downloadTicketsCSV(eventName, "all-tickets", CSV_FULL_HEADER, principal, response, eventManager, t -> new String[]{t.getUuid(), t.getFullName(), t.getEmail(), t.getPhoneNumber(), t.getTshirtSize(), t.getNotes(), t.getUserLanguage()});
+        Event event = Optional.ofNullable(eventManager.getSingleEvent(eventName, principal.getName())).orElseThrow(IllegalArgumentException::new);
+        Map<Integer, TicketCategory> categoriesMap = eventManager.loadTicketCategories(event).stream().collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
+        ZoneId eventZoneId = event.getZoneId();
+        downloadTicketsCSV(eventName, "all-tickets", CSV_FULL_HEADER, principal, response, eventManager,
+            t -> new String[]{
+                t.getUuid(), t.getCreation().withZoneSameInstant(eventZoneId).toString(), categoriesMap.get(t.getCategoryId()).getName(), eventName, t.getStatus().toString(),
+                t.getOriginalPrice().toString(), t.getPaidPrice().toString(), t.getTicketsReservationId(), t.getFullName(), t.getEmail(), String.valueOf(t.getLockedAssignment()),
+                t.getJobTitle(), t.getCompany(), t.getPhoneNumber(), t.getAddress(), t.getCountry(), t.getTshirtSize(), t.getGender(), t.getNotes(), t.getUserLanguage()
+            });
     }
 
     @RequestMapping("/events/{eventName}/export/badges.csv")
