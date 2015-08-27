@@ -20,12 +20,15 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.user.UserManager;
+import alfio.model.PromoCodeDiscount;
 import alfio.model.SpecialPrice;
 import alfio.model.Ticket;
 import alfio.model.modification.*;
+import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.time.DateUtils;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -67,6 +70,8 @@ public class TicketReservationManagerIntegrationTest {
     private TicketRepository ticketRepository;
     @Autowired
     private TicketReservationManager ticketReservationManager;
+    @Autowired
+    private SpecialPriceRepository specialPriceRepository;
 
     @Test
     public void testPriceIsOverridden() {
@@ -126,6 +131,53 @@ public class TicketReservationManagerIntegrationTest {
         assertTrue(tickets.stream().allMatch(t -> t.getCategoryId() == null));
     }
 
+    @Test
+    public void testTicketWithDiscount() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false));
+        EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
+
+        TicketCategoryWithStatistic unbounded = event.getTicketCategories().stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
+
+        eventManager.addPromoCode("MYPROMOCODE", event.getId(), event.getBegin(), event.getEnd(), 10, PromoCodeDiscount.DiscountType.PERCENTAGE);
+        eventManager.addPromoCode("MYFIXEDPROMO", event.getId(), event.getBegin(), event.getEnd(), 5, PromoCodeDiscount.DiscountType.FIXED_AMOUNT);
+
+        TicketReservationModification tr = new TicketReservationModification();
+        tr.setAmount(3);
+        tr.setTicketCategoryId(unbounded.getId());
+        TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
+
+        String reservationId = ticketReservationManager.createTicketReservation(event.getId(), Arrays.asList(mod), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.of("MYPROMOCODE"), Locale.ENGLISH, false);
+
+        TicketReservationManager.TotalPrice totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+
+        // 3 * 10 chf is the normal price, 10% discount -> 300 discount
+        Assert.assertEquals(2700, totalPrice.getPriceWithVAT());
+        Assert.assertEquals(27, totalPrice.getVAT());
+        Assert.assertEquals(-300, totalPrice.getDiscount());
+        Assert.assertEquals(1, totalPrice.getDiscountAppliedCount());
+
+
+
+        TicketReservationModification trFixed = new TicketReservationModification();
+        trFixed.setAmount(3);
+        trFixed.setTicketCategoryId(unbounded.getId());
+        TicketReservationWithOptionalCodeModification modFixed = new TicketReservationWithOptionalCodeModification(trFixed, Optional.empty());
+
+        String reservationIdFixed = ticketReservationManager.createTicketReservation(event.getId(), Arrays.asList(modFixed), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.of("MYFIXEDPROMO"), Locale.ENGLISH, false);
+
+        TicketReservationManager.TotalPrice totalPriceFixed = ticketReservationManager.totalReservationCostWithVAT(reservationIdFixed);
+
+        // 3 * 10 chf is the normal price, 3 * 5 is the discount
+        Assert.assertEquals(2985, totalPriceFixed.getPriceWithVAT());
+        Assert.assertEquals(30, totalPriceFixed.getVAT());
+        Assert.assertEquals(-15, totalPriceFixed.getDiscount());
+        Assert.assertEquals(3, totalPriceFixed.getDiscountAppliedCount());
+    }
+
     @Test(expected = TicketReservationManager.NotEnoughTicketsException.class)
     public void testTicketSelectionNotEnoughTicketsAvailable() {
         List<TicketCategoryModification> categories = Collections.singletonList(
@@ -140,7 +192,7 @@ public class TicketReservationManagerIntegrationTest {
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS + 1);
         tr.setTicketCategoryId(unbounded.getId());
-        TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.<SpecialPrice>empty());
+        TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
         ticketReservationManager.createTicketReservation(event.getId(), Arrays.asList(mod), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
     }
