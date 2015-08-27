@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.manager.support.OrderSummary;
 import alfio.manager.user.UserManager;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.SpecialPrice;
@@ -160,6 +161,10 @@ public class TicketReservationManagerIntegrationTest {
         Assert.assertEquals(-300, totalPrice.getDiscount());
         Assert.assertEquals(1, totalPrice.getDiscountAppliedCount());
 
+        OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event.getEvent());
+        Assert.assertEquals("27.00", orderSummary.getTotalPrice());
+        Assert.assertEquals("0.27", orderSummary.getTotalVAT());
+        Assert.assertEquals(3, orderSummary.getTicketAmount());
 
 
         TicketReservationModification trFixed = new TicketReservationModification();
@@ -176,6 +181,12 @@ public class TicketReservationManagerIntegrationTest {
         Assert.assertEquals(30, totalPriceFixed.getVAT());
         Assert.assertEquals(-15, totalPriceFixed.getDiscount());
         Assert.assertEquals(3, totalPriceFixed.getDiscountAppliedCount());
+
+        OrderSummary orderSummaryFixed = ticketReservationManager.orderSummaryForReservationId(reservationIdFixed, event.getEvent());
+        Assert.assertEquals("29.85", orderSummaryFixed.getTotalPrice());
+        Assert.assertEquals("0.30", orderSummaryFixed.getTotalVAT());
+        Assert.assertEquals(3, orderSummaryFixed.getTicketAmount());
+
     }
 
     @Test(expected = TicketReservationManager.NotEnoughTicketsException.class)

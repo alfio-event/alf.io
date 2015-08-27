@@ -49,7 +49,7 @@ public class OrderSummary {
     }
 
     public int getTicketAmount() {
-        return summary.stream().mapToInt(SummaryRow::getAmount).sum();
+        return summary.stream().filter(s-> SummaryRow.SummaryType.TICKET == s.getType()).mapToInt(SummaryRow::getAmount).sum();
     }
 
     public boolean getSingleTicketOrder() {
