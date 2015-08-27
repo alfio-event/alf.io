@@ -23,9 +23,12 @@ import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.modification.*;
+import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.tuple.Pair;
+import org.joda.time.DateTime;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,10 +40,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.Assert.*;
@@ -56,6 +56,9 @@ public class EventManagerIntegrationTest {
     public static void initEnv() {
         initSystemProperties();
     }
+
+    @Autowired
+    private EventRepository eventRepository;
 
     @Autowired
     private EventManager eventManager;
@@ -120,18 +123,18 @@ public class EventManagerIntegrationTest {
     @Test
     public void testEventGenerationWithUnboundedCategory() {
         List<TicketCategoryModification> categories = Arrays.asList(
-                new TicketCategoryModification(null, "default", 10,
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true),
-                new TicketCategoryModification(null, "default", 9,
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true),
-                new TicketCategoryModification(null, "default", 0,
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false));
+            new TicketCategoryModification(null, "default", 10,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", true),
+            new TicketCategoryModification(null, "default", 9,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", true),
+            new TicketCategoryModification(null, "default", 0,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager).getKey();
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
@@ -307,5 +310,45 @@ public class EventManagerIntegrationTest {
         assertEquals(0, tickets.stream().filter(t -> t.getCategoryId() == null).count());
     }
 
+    @Test
+    public void testUpdateEventHeader() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", 10,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
+        Event event = pair.getLeft();
+        String username = pair.getRight();
+
+        Map<String, String> desc = new HashMap<>();
+        desc.put("en", "muh description new");
+        desc.put("it", "muh description new");
+        desc.put("de", "muh description new");
+
+        EventModification em = new EventModification(event.getId(), "http://example.com/new", "http://example.com/tc", "https://example.com/img.png", null, event.getShortName(), "new display name",
+            event.getOrganizationId(), event.getLocation(), desc,
+            DateTimeModification.fromZonedDateTime(event.getBegin()),
+            DateTimeModification.fromZonedDateTime(event.getEnd().plusDays(42)),
+            event.getRegularPrice(),
+            event.getCurrency(),
+            event.getAvailableSeats(),
+            event.getVat(),
+            event.isVatIncluded(),
+            event.getAllowedPaymentProxies(),
+            Collections.emptyList(),
+            false,
+            null,
+            7);
+
+        eventManager.updateEventHeader(event.getId(), em, username);
+
+        Event updatedEvent = eventRepository.findById(event.getId());
+
+        Assert.assertEquals("http://example.com/new", updatedEvent.getWebsiteUrl());
+        Assert.assertEquals("http://example.com/tc", updatedEvent.getTermsAndConditionsUrl());
+        Assert.assertEquals("https://example.com/img.png", updatedEvent.getImageUrl());
+        Assert.assertEquals("new display name", updatedEvent.getDisplayName());
+    }
 
 }
