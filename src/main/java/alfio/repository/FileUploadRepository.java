@@ -23,6 +23,7 @@ import ch.digitalfondue.npjt.QueryRepository;
 import ch.digitalfondue.npjt.QueryType;
 
 import java.util.Date;
+import java.util.Optional;
 
 @QueryRepository
 public interface FileUploadRepository {
@@ -31,7 +32,7 @@ public interface FileUploadRepository {
     Integer isPresent(@Bind("id") String id);
 
     @Query("select id, name, content_size, content_type, attributes from file_blob where id = :id")
-    FileBlobMetadata findById(@Bind("id") String id);
+    Optional<FileBlobMetadata> findById(@Bind("id") String id);
 
     @Query("delete from file_blob where creation_time <= :date and id not in (select file_blob_id from event where file_blob_id is not null)")
     int cleanupUnreferencedBlobFiles(@Bind("date") Date date);

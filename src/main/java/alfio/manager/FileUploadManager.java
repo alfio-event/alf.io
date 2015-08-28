@@ -64,11 +64,7 @@ public class FileUploadManager {
     }
 
     public Optional<FileBlobMetadata> findMetadata(String id) {
-        if(Integer.valueOf(1).equals(repository.isPresent(id))) {
-            return Optional.of(repository.findById(id));
-        } else {
-            return Optional.empty();
-        }
+        return repository.findById(id);
     }
 
     public void outputFile(String id, OutputStream out) {
