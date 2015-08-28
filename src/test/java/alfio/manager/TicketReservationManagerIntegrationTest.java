@@ -20,11 +20,14 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.support.OrderSummary;
+import alfio.manager.support.PaymentResult;
 import alfio.manager.user.UserManager;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.SpecialPrice;
 import alfio.model.Ticket;
+import alfio.model.TicketReservation;
 import alfio.model.modification.*;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -125,13 +128,35 @@ public class TicketReservationManagerIntegrationTest {
 
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.<SpecialPrice>empty());
         TicketReservationWithOptionalCodeModification mod2 = new TicketReservationWithOptionalCodeModification(tr2, Optional.<SpecialPrice>empty());
-        ticketReservationManager.createTicketReservation(event.getId(), Arrays.asList(mod, mod2), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
+        String reservationId = ticketReservationManager.createTicketReservation(event.getId(), Arrays.asList(mod, mod2), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
         List<Ticket> pendingTickets = ticketRepository.findPendingTicketsInCategories(Arrays.asList(bounded.getId(), unbounded.getId()));
         assertEquals(19, pendingTickets.size());
         pendingTickets.forEach(t -> assertEquals(new BigDecimal("9.90"), t.getOriginalPrice()));
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertEquals(1, tickets.size());
         assertTrue(tickets.stream().allMatch(t -> t.getCategoryId() == null));
+
+        TicketReservationManager.TotalPrice totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+
+
+        assertEquals(0, ticketReservationManager.getPendingPayments(event).size());
+
+        PaymentResult confirm = ticketReservationManager.confirm(null, event.getEvent(), reservationId, "email@example.com", "full name", Locale.ENGLISH, "billing address",
+            totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
+
+
+        assertTrue(confirm.isSuccessful());
+
+
+
+        assertEquals(TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, ticketReservationManager.findById(reservationId).get().getStatus());
+
+        assertEquals(1, ticketReservationManager.getPendingPayments(event).size());
+
+        ticketReservationManager.validateAndConfirmOfflinePayment(reservationId, event.getEvent(), new BigDecimal("190.00"));
+
+        assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, ticketReservationManager.findById(reservationId).get().getStatus());
+
     }
 
     @Test
