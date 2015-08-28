@@ -147,8 +147,6 @@ public class TicketReservationManagerIntegrationTest {
 
         assertTrue(confirm.isSuccessful());
 
-
-
         assertEquals(TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, ticketReservationManager.findById(reservationId).get().getStatus());
 
         assertEquals(1, ticketReservationManager.getPendingPayments(event).size());
@@ -156,6 +154,24 @@ public class TicketReservationManagerIntegrationTest {
         ticketReservationManager.validateAndConfirmOfflinePayment(reservationId, event.getEvent(), new BigDecimal("190.00"));
 
         assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, ticketReservationManager.findById(reservationId).get().getStatus());
+
+
+        //-------------------
+
+        TicketReservationModification trForDelete = new TicketReservationModification();
+        trForDelete.setAmount(1);
+        trForDelete.setTicketCategoryId(unbounded.getId());
+        TicketReservationWithOptionalCodeModification modForDelete = new TicketReservationWithOptionalCodeModification(trForDelete, Optional.<SpecialPrice>empty());
+        String reservationId2 = ticketReservationManager.createTicketReservation(event.getId(), Arrays.asList(modForDelete), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
+
+        PaymentResult confirm2 = ticketReservationManager.confirm(null, event.getEvent(), reservationId2, "email@example.com", "full name", Locale.ENGLISH, "billing address",
+            totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
+
+        assertTrue(ticketReservationManager.findById(reservationId2).isPresent());
+
+        ticketReservationManager.deleteOfflinePayment(event.getEvent(), reservationId2);
+
+        Assert.assertFalse(ticketReservationManager.findById(reservationId2).isPresent());
 
     }
 
