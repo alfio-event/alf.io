@@ -25,4 +25,9 @@ public class SummaryRow {
     private final int amount;
     private final String subTotal;
     private final int originalSubTotal;
+    private final SummaryType type;
+
+    public enum SummaryType {
+        TICKET, PROMOTION_CODE;
+    }
 }

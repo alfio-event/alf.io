@@ -623,7 +623,7 @@ public class TicketReservationManager {
                 summary.add(new SummaryRow(promo.getPromoCode(), 
                         formattedSingleAmount, 
                         reservationCost.discountAppliedCount, 
-                        formatCents(reservationCost.discount), reservationCost.discount));
+                        formatCents(reservationCost.discount), reservationCost.discount, SummaryRow.SummaryType.PROMOTION_CODE));
             });
         }
                 
@@ -645,7 +645,7 @@ public class TicketReservationManager {
             }
             String categoryName = ticketCategoryRepository.getById(categoryId, event.getId()).getName();
             final int subTotal = paidPriceInCents * ticketsByCategory.size();
-            summary.add(new SummaryRow(categoryName, formatCents(paidPriceInCents), ticketsByCategory.size(), formatCents(subTotal), subTotal));
+            summary.add(new SummaryRow(categoryName, formatCents(paidPriceInCents), ticketsByCategory.size(), formatCents(subTotal), subTotal, SummaryRow.SummaryType.TICKET));
         });
         return summary;
     } 
