@@ -54,7 +54,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Controller
 public class TicketController {

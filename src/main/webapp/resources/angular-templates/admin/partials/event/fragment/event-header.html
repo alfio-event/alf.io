@@ -5,6 +5,7 @@
     <span><a class="btn btn-success" href="events/{{event.shortName}}/export/badges.csv" target="_blank"><i class="fa fa-ticket"></i> download badges' data</a></span>
     <span><a class="btn btn-warning" data-ui-sref="compose-custom-message({eventName: event.shortName})"><i class="fa fa-envelope"></i> send a message to attendees</a></span>
     <waiting-queue-display-counter data-event="event"></waiting-queue-display-counter>
+    <span><a class="btn btn-default" data-ui-sref="events.email-log({eventName:event.shortName})"><i class="fa fa-paper-plane-o"></i> view sent messages</a></span>
 </div>
 <div class="page-header"><h2>Logistic info</h2></div>
 <div class="row">

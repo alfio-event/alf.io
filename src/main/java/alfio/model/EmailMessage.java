@@ -22,6 +22,8 @@ import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.time.ZonedDateTime;
+
 @Getter
 public class EmailMessage implements Comparable<EmailMessage> {
 
@@ -37,6 +39,8 @@ public class EmailMessage implements Comparable<EmailMessage> {
     private final String message;
     private final String attachments;
     private final String checksum;
+    private final ZonedDateTime requestTimestamp;
+    private final ZonedDateTime sentTimestamp;
 
     public EmailMessage(@Column("id") int id,
                         @Column("event_id") int eventId,
@@ -45,9 +49,13 @@ public class EmailMessage implements Comparable<EmailMessage> {
                         @Column("subject") String subject,
                         @Column("message") String message,
                         @Column("attachments") String attachments,
-                        @Column("checksum") String checksum) {
+                        @Column("checksum") String checksum,
+                        @Column("request_ts") ZonedDateTime requestTimestamp,
+                        @Column("sent_ts") ZonedDateTime sentTimestamp) {
         this.id = id;
         this.eventId = eventId;
+        this.requestTimestamp = requestTimestamp;
+        this.sentTimestamp = sentTimestamp;
         this.status = Status.valueOf(status);
         this.recipient = recipient;
         this.subject = subject;

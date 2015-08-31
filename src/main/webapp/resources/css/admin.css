@@ -129,6 +129,11 @@ pre.white {
     border: none;
 }
 
+td.cell-wrap {
+    width:200px;
+    overflow-wrap: normal;
+}
+
 /* for phone :D */
 @media screen and (max-width: 767px) {
 

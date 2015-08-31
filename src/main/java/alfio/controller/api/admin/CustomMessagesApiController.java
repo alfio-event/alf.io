@@ -29,12 +29,12 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/admin/api/events/{eventName}/messages")
-public class MessagesApiController {
+public class CustomMessagesApiController {
 
     private final CustomMessageManager customMessageManager;
 
     @Autowired
-    public MessagesApiController(CustomMessageManager customMessageManager) {
+    public CustomMessagesApiController(CustomMessageManager customMessageManager) {
         this.customMessageManager = customMessageManager;
     }
 

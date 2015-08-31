@@ -107,7 +107,7 @@ public class NotificationManager {
         String recipient = ticket.getEmail();
         //TODO handle HTML
         tx.execute(status -> emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
-        messages.offer(new EmailMessage(-1, event.getId(), WAITING.name(), recipient, subject, text, null, checksum));
+        messages.offer(new EmailMessage(-1, event.getId(), WAITING.name(), recipient, subject, text, null, checksum, ZonedDateTime.now(), null));
     }
 
     public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder) {
@@ -121,7 +121,15 @@ public class NotificationManager {
         String text = textBuilder.generate();
         String checksum = calculateChecksum(recipient, encodedAttachments, subject, text);
         emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
-        messages.offer(new EmailMessage(-1, event.getId(), WAITING.name(), recipient, subject, text, null, checksum));
+        messages.offer(new EmailMessage(-1, event.getId(), WAITING.name(), recipient, subject, text, null, checksum, ZonedDateTime.now(), null));
+    }
+
+    public List<EmailMessage> loadAllMessagesForEvent(int eventId) {
+        return emailMessageRepository.findByEventId(eventId);
+    }
+
+    public Optional<EmailMessage> loadSingleMessageForEvent(int eventId, int messageId) {
+        return emailMessageRepository.findByEventIdAndMessageId(eventId, messageId);
     }
 
     void sendWaitingMessages() {

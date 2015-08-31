@@ -23,6 +23,7 @@ import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface EmailMessageRepository {
@@ -51,5 +52,11 @@ public interface EmailMessageRepository {
 
     @Query("update email_message set status = 'SENT', owner = null, sent_ts = :sentTimestamp where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatusToSent(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("sentTimestamp") ZonedDateTime sentTimestamp, @Bind("expectedStatuses") List<String> expectedStatuses);
+
+    @Query("select * from email_message where event_id = :eventId")
+    List<EmailMessage> findByEventId(@Bind("eventId") int eventId);
+
+    @Query("select * from email_message where event_id = :eventId and id = :messageId")
+    Optional<EmailMessage> findByEventIdAndMessageId(@Bind("eventId") int eventId, @Bind("messageId") int messageId);
 
 }
