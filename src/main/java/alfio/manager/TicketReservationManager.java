@@ -495,8 +495,8 @@ public class TicketReservationManager {
         specialPriceRepository.updateStatusForReservation(expiredReservationIds, Status.FREE.toString());
         ticketRepository.resetCategoryIdForUnboundedCategories(expiredReservationIds);
         ticketRepository.freeFromReservation(expiredReservationIds);
-        ticketReservationRepository.remove(expiredReservationIds);
         waitingQueueManager.cleanExpiredReservations(expiredReservationIds);
+        ticketReservationRepository.remove(expiredReservationIds);
     }
 
     void cleanupExpiredOfflineReservations(Date expirationDate) {
