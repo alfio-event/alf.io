@@ -201,7 +201,10 @@
     };
 
     admin.controller('EditOrganizationController', function($scope, $state, $stateParams, $rootScope, $q, OrganizationService) {
+        var updateOrAction = OrganizationService.createOrganization;
+
         if(angular.isDefined($stateParams.organizationId)) {
+            updateOrAction = OrganizationService.updateOrganization;
             OrganizationService.getOrganization($stateParams.organizationId).success(function(result) {
                 $scope.organization = result;
             });
@@ -212,7 +215,7 @@
                 return;
             }
             validationPerformer($q, OrganizationService.checkOrganization, organization, form).then(function() {
-                OrganizationService.updateOrganization(organization).success(function() {
+                updateOrAction(organization).success(function() {
                     $rootScope.$emit('ReloadOrganizations', {});
                     $state.go('index');
                 });
