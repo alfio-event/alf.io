@@ -6,7 +6,8 @@
 #### {{#i18n}}email-confirmation.reservation-summary{{/i18n}} ####
 
 {{#orderSummary.summary}}
-{{#i18n}}email-confirmation.summary [{{name}}] [{{amount}}] [{{subTotal}}] [{{event.currency}}]{{/i18n}}{{/orderSummary.summary}}
+{{#i18n}}email-confirmation.summary [{{name}}] [{{amount}}] [{{subTotal}}] [{{event.currency}}]{{/i18n}}
+{{/orderSummary.summary}}
 {{^orderSummary.free}}{{^event.vatIncluded}}
 {{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}: {{orderSummary.totalVAT}} {{event.currency}}{{/event.vatIncluded}}{{/orderSummary.free}}
 {{#i18n}}reservation-page.total{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}
