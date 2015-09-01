@@ -47,7 +47,7 @@ public interface WaitingQueueRepository {
     @Query("update waiting_queue set status = :status where ticket_reservation_id = :reservationId")
     int updateStatusByReservationId(@Bind("reservationId") String reservationId, @Bind("status") String status);
 
-    @Query("update waiting_queue set status = 'EXPIRED' where ticket_reservation_id in (:ticketReservationIds)")
+    @Query("update waiting_queue set status = 'EXPIRED', ticket_reservation_id = null where ticket_reservation_id in (:ticketReservationIds)")
     int bulkUpdateExpiredReservations(@Bind("ticketReservationIds") List<String> ticketReservationIds);
 
     @Query("select count(*) from waiting_queue where event_id = :eventId and status = 'WAITING'")

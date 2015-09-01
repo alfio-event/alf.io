@@ -130,7 +130,7 @@ public class DataMigrator {
             jdbc.queryForList("select id from tickets_reservation where user_language is null", new EmptySqlParameterSource(), String.class)
                     .forEach(id -> {
                         MapSqlParameterSource param = new MapSqlParameterSource("reservationId", id);
-                        String language = jdbc.queryForObject("select user_language from ticket where tickets_reservation_id = :reservationId limit 1", param, String.class);
+                        String language = optionally(() -> jdbc.queryForObject("select user_language from ticket where tickets_reservation_id = :reservationId limit 1", param, String.class)).orElse("en");
                         jdbc.update("update tickets_reservation set user_language = :userLanguage where id = :reservationId", param.addValue("userLanguage", language));
                     });
             return null;
