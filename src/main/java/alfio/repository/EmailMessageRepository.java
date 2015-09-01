@@ -47,7 +47,7 @@ public interface EmailMessageRepository {
     @Query("update email_message set status = 'RETRY', owner = :owner, request_ts = :requestTs where status in ('WAITING', 'ERROR', 'RETRY') and request_ts > :expiration")
     int updateStatusForRetry(@Bind("requestTs") ZonedDateTime now, @Bind("expiration") ZonedDateTime expiration, @Bind("owner") String owner);
 
-    @Query("select id, event_id, status, recipient, subject, message, null as attachments, checksum from email_message where owner = :owner and status = 'RETRY'")
+    @Query("select id, event_id, status, recipient, subject, message, null as attachments, checksum, request_ts, sent_ts from email_message where owner = :owner and status = 'RETRY'")
     List<EmailMessage> loadForRetry(@Bind("owner") String owner);
 
     @Query("update email_message set status = 'SENT', owner = null, sent_ts = :sentTimestamp where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
