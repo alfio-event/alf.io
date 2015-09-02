@@ -179,7 +179,6 @@ public class ReservationController {
             model.addAttribute("countries", ticketHelper.getLocalizedCountries(RequestContextUtils.getLocale(request)));
             model.addAttribute("pageTitle", "reservation-page-complete.header.title");
             model.addAttribute("event", event.get());
-            model.addAttribute("showTicketCancelButton", enableFreeCancellation);
             model.asMap().putIfAbsent("validationResult", ValidationResult.success());
             return "/event/reservation-page-complete";
         } else {

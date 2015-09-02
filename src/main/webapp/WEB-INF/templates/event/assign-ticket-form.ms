@@ -1,7 +1,7 @@
 {{#assigned}}
     <div class="wMarginBottom">
-        <p>{{#i18n}}reservation-page-complete.assigned-to [{{fullName}}] [{{email}}]{{/i18n}} {{#showTicketCancelButton}}<a href="#unbind-form-{{uuid}}" id="unbind-{{uuid}}" class="btn btn-xs btn-danger unbind-btn" data-ticket-uid="{{uuid}}"><i class="fa fa-eraser"></i> {{#i18n}}reservation-page-complete.release-button.text{{/i18n}}</a>{{/showTicketCancelButton}}</p>
-        {{#showTicketCancelButton}}
+        <p>{{#i18n}}reservation-page-complete.assigned-to [{{fullName}}] [{{email}}]{{/i18n}} {{#cancellationEnabled}}<a href="#unbind-form-{{uuid}}" id="unbind-{{uuid}}" class="btn btn-xs btn-danger unbind-btn" data-ticket-uid="{{uuid}}"><i class="fa fa-eraser"></i> {{#i18n}}reservation-page-complete.release-button.text{{/i18n}}</a>{{/cancellationEnabled}}</p>
+        {{#cancellationEnabled}}
         <div class="hide-by-default" id="unbind-form-{{uuid}}" tabindex="-1" role="dialog" aria-labelledby="modalTitle" aria-hidden="true" data-cancel-ticket="">
             <form name="cancel-ticket" method="POST" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/cancel-ticket">
                 <input type="hidden" name="ticketId" value="{{uuid}}" />
@@ -14,7 +14,7 @@
                 </div>
             </form>
         </div>
-        {{/showTicketCancelButton}}
+        {{/cancellationEnabled}}
         <div class="row">
             <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{urlSuffix}}" class="btn btn-primary btn-block"><i class="fa fa-search-plus"></i> {{#i18n}}reservation-page-complete.show-ticket{{/i18n}}</a></div>
             <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/download-ticket" class="btn btn-primary btn-block"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div>
