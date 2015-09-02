@@ -17,7 +17,12 @@
 package alfio.manager;
 
 import alfio.config.Initializer;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.time.DateUtils;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,7 +31,6 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 
 @Component
-@Profile("!"+ Initializer.PROFILE_DISABLE_JOBS)
 public class Jobs {
 
     private static final int ONE_MINUTE = 1000 * 60;
@@ -52,7 +56,7 @@ public class Jobs {
         this.waitingQueueSubscriptionProcessor = waitingQueueSubscriptionProcessor;
     }
 
-    @Scheduled(initialDelay = ONE_MINUTE, fixedDelay = THIRTY_SECONDS)
+
     public void cleanupExpiredPendingReservation() {
         //cleanup reservation that have a expiration older than "now minus 10 minutes": this give some additional slack.
         final Date expirationDate = DateUtils.addMinutes(new Date(), -10);
@@ -61,39 +65,162 @@ public class Jobs {
         ticketReservationManager.markExpiredInPaymentReservationAsStuck(expirationDate);
     }
 
-    @Scheduled(fixedRate = THIRTY_MINUTES)
     public void sendOfflinePaymentReminder() {
         ticketReservationManager.sendReminderForOfflinePayments();
     }
 
-    @Scheduled(fixedRate = THIRTY_MINUTES)
     public void sendTicketAssignmentReminder() {
         ticketReservationManager.sendReminderForTicketAssignment();
         ticketReservationManager.sendReminderForOptionalData();
     }
 
-    @Scheduled(fixedDelay = THIRTY_SECONDS)
     public void generateSpecialPriceCodes() {
         specialPriceTokenGenerator.generatePendingCodes();
     }
 
-    @Scheduled(fixedRate = FIVE_SECONDS)
     public void sendEmails() {
         notificationManager.sendWaitingMessages();
     }
 
-    @Scheduled(fixedRate = ONE_MINUTE)
     public void enqueueNotSentEmail() {
         notificationManager.processNotSentEmail();
     }
 
-    @Scheduled(fixedRate = THIRTY_SECONDS)
     public void processReleasedTickets() {
         waitingQueueSubscriptionProcessor.handleWaitingTickets();
     }
 
-    @Scheduled(fixedRate = ONE_MINUTE * 60)
     public void cleanupUnreferencedBlobFiles() {
         fileUploadManager.cleanupUnreferencedBlobFiles();
     }
+
+    @DisallowConcurrentExecution
+    @Log4j2
+    public static class CleanupExpiredPendingReservation implements Job {
+
+        public static long INTERVAL = THIRTY_SECONDS;
+
+        @Autowired
+        private Jobs jobs;
+
+        @Override
+        public void execute(JobExecutionContext context) throws JobExecutionException {
+            log.info("running job " + getClass().getSimpleName());
+            jobs.cleanupExpiredPendingReservation();
+        }
+    }
+
+    @DisallowConcurrentExecution
+    @Log4j2
+    public static class SendOfflinePaymentReminder implements  Job {
+
+        public static long INTERVAL = THIRTY_MINUTES;
+
+        @Autowired
+        private Jobs jobs;
+
+        @Override
+        public void execute(JobExecutionContext context) throws JobExecutionException {
+            log.info("running job " + getClass().getSimpleName());
+            jobs.sendOfflinePaymentReminder();
+        }
+    }
+
+    @DisallowConcurrentExecution
+    @Log4j2
+    public static class SendTicketAssignmentReminder implements  Job {
+
+        public static long INTERVAL = THIRTY_MINUTES;
+
+        @Autowired
+        private Jobs jobs;
+
+        @Override
+        public void execute(JobExecutionContext context) throws JobExecutionException {
+            log.info("running job " + getClass().getSimpleName());
+            jobs.sendTicketAssignmentReminder();
+        }
+    }
+
+
+    @DisallowConcurrentExecution
+    @Log4j2
+    public static class GenerateSpecialPriceCodes implements  Job {
+
+        public static long INTERVAL = THIRTY_SECONDS;
+
+        @Autowired
+        private Jobs jobs;
+
+        @Override
+        public void execute(JobExecutionContext context) throws JobExecutionException {
+            log.info("running job " + getClass().getSimpleName());
+            jobs.generateSpecialPriceCodes();
+        }
+    }
+
+    @DisallowConcurrentExecution
+    @Log4j2
+    public static class SendEmails implements Job {
+
+        public static long INTERVAL = FIVE_SECONDS;
+
+        @Autowired
+        private Jobs jobs;
+
+        @Override
+        public void execute(JobExecutionContext context) throws JobExecutionException {
+            log.info("running job " + getClass().getSimpleName());
+            jobs.sendEmails();
+        }
+    }
+
+    @DisallowConcurrentExecution
+    @Log4j2
+    public static class EnqueueNotSentEmail implements Job {
+
+        public static long INTERVAL = ONE_MINUTE;
+
+        @Autowired
+        private Jobs jobs;
+
+        @Override
+        public void execute(JobExecutionContext context) throws JobExecutionException {
+            log.info("running job " + getClass().getSimpleName());
+            jobs.enqueueNotSentEmail();
+        }
+    }
+
+    @DisallowConcurrentExecution
+    @Log4j2
+    public static class ProcessReleasedTickets implements Job {
+
+        public static long INTERVAL = THIRTY_SECONDS;
+
+        @Autowired
+        private Jobs jobs;
+
+        @Override
+        public void execute(JobExecutionContext context) throws JobExecutionException {
+            log.info("running job " + getClass().getSimpleName());
+            jobs.processReleasedTickets();
+        }
+    }
+
+    @DisallowConcurrentExecution
+    @Log4j2
+    public static class CleanupUnreferencedBlobFiles implements Job {
+
+        public static long INTERVAL = ONE_MINUTE * 60;
+
+        @Autowired
+        private Jobs jobs;
+
+        @Override
+        public void execute(JobExecutionContext context) throws JobExecutionException {
+            log.info("running job " + getClass().getSimpleName());
+            jobs.cleanupUnreferencedBlobFiles();
+        }
+    }
+
 }

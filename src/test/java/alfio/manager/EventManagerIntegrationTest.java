@@ -48,7 +48,7 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
-@ActiveProfiles(Initializer.PROFILE_DEV)
+@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @Transactional
 public class EventManagerIntegrationTest {
 
