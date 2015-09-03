@@ -138,6 +138,7 @@ dependencies {
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-core:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-jcl:$log4jVersion"
+    compile "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
     compile "com.stripe:stripe-java:$stripeVersion"
     compile "com.google.maps:google-maps-services:0.1.7"
     compile "org.apache.commons:commons-lang3:3.4"

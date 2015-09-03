@@ -214,6 +214,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         JobDetailFactoryBean jobDetailFactory = new JobDetailFactoryBean();
         jobDetailFactory.setJobClass(jobClass);
         jobDetailFactory.setName(name);
+        jobDetailFactory.setDurability(true);
 
         jobDetailFactory.afterPropertiesSet();
 

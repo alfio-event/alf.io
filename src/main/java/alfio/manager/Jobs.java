@@ -105,7 +105,7 @@ public class Jobs {
 
         @Override
         public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.info("running job " + getClass().getSimpleName());
+            log.debug("running job " + getClass().getSimpleName());
             jobs.cleanupExpiredPendingReservation();
         }
     }
@@ -121,7 +121,7 @@ public class Jobs {
 
         @Override
         public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.info("running job " + getClass().getSimpleName());
+            log.debug("running job " + getClass().getSimpleName());
             jobs.sendOfflinePaymentReminder();
         }
     }
@@ -137,7 +137,7 @@ public class Jobs {
 
         @Override
         public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.info("running job " + getClass().getSimpleName());
+            log.debug("running job " + getClass().getSimpleName());
             jobs.sendTicketAssignmentReminder();
         }
     }
@@ -154,7 +154,7 @@ public class Jobs {
 
         @Override
         public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.info("running job " + getClass().getSimpleName());
+            log.debug("running job " + getClass().getSimpleName());
             jobs.generateSpecialPriceCodes();
         }
     }
@@ -170,7 +170,7 @@ public class Jobs {
 
         @Override
         public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.info("running job " + getClass().getSimpleName());
+            log.debug("running job " + getClass().getSimpleName());
             jobs.sendEmails();
         }
     }
@@ -186,7 +186,7 @@ public class Jobs {
 
         @Override
         public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.info("running job " + getClass().getSimpleName());
+            log.debug("running job " + getClass().getSimpleName());
             jobs.enqueueNotSentEmail();
         }
     }
@@ -202,7 +202,7 @@ public class Jobs {
 
         @Override
         public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.info("running job " + getClass().getSimpleName());
+            log.debug("running job " + getClass().getSimpleName());
             jobs.processReleasedTickets();
         }
     }
@@ -218,7 +218,7 @@ public class Jobs {
 
         @Override
         public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.info("running job " + getClass().getSimpleName());
+            log.debug("running job " + getClass().getSimpleName());
             jobs.cleanupUnreferencedBlobFiles();
         }
     }
