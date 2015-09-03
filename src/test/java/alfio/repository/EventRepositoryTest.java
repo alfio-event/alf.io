@@ -44,7 +44,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
-@ActiveProfiles(Initializer.PROFILE_DEV)
+@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @WebIntegrationTest("server.port:9000")
 public class EventRepositoryTest {
 

@@ -124,6 +124,7 @@ dependencies {
     compile "com.samskivert:jmustache:1.10"
     compile "com.github.sps.mustache:mustache-spring-view:1.3"
     compile "javax.mail:mail:1.5.0-b01"
+    compile "org.quartz-scheduler:quartz:2.2.1"
     compile("org.xhtmlrenderer:flying-saucer-pdf:9.0.7") {
         exclude(module: 'bcmail-jdk14')
         exclude(module: 'bcprov-jdk14')

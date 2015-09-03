@@ -1,3 +1,6 @@
+Warning: this guide is outdated. Please refer to http://alf.io/tutorials/openshift/
+
+
 Notes for installing the application on openshift
 =================================================
 

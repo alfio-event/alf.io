@@ -40,7 +40,7 @@ import static alfio.test.util.IntegrationTestUtil.initSystemProperties;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
-@ActiveProfiles(Initializer.PROFILE_DEV)
+@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @Transactional
 public class FileUploadManagerIntegrationTest {
 
