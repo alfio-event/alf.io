@@ -61,6 +61,7 @@ public class EventManagerTest {{
         when(updated.getPriceInCents()).thenReturn(1000);
         when(original.getMaxTickets()).thenReturn(10);
         when(updated.getMaxTickets()).thenReturn(11);
+        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         it.should("throw exception if there are tickets already sold", expect -> {
             when(ticketRepository.lockTicketsToInvalidate(eventId, 30, 2)).thenReturn(singletonList(1));
             expect.exception(IllegalStateException.class, () -> eventManager.handleTicketNumberModification(event, original, updated, -2));
