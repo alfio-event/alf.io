@@ -221,7 +221,8 @@ public class EventManager {
                 .filter(IS_CATEGORY_BOUNDED)
                 .mapToInt(TicketCategory::getMaxTickets)
                 .sum();
-        Validate.isTrue(sum + tcm.getMaxTickets() <= event.getAvailableSeats(), "Not enough seats");
+        int requestedTickets = tcm.isBounded() ? tcm.getMaxTickets() : 1;
+        Validate.isTrue(sum + requestedTickets <= event.getAvailableSeats(), "Not enough seats");
         Validate.isTrue(tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), "expiration must be before the end of the event");
         insertCategory(tcm, event);
     }
@@ -237,7 +238,7 @@ public class EventManager {
             throw new IllegalStateException("cannot update the category. There are tickets already sold.");
         }
         if(tcm.isBounded() ^ existing.isBounded()) {
-            throw new IllegalStateException("Bounded flag modification is not yet implemented.");
+            throw new IllegalStateException("Bounded flag modification not yet implemented.");
         }
         updateCategory(tcm, event.getVat(), event.isVatIncluded(), event.isFreeOfCharge(), event.getZoneId(), event);
     }
@@ -474,6 +475,8 @@ public class EventManager {
                 throw new IllegalStateException("Cannot invalidate "+absDifference+" tickets. There are only "+actualDifference+" free tickets");
             }
             ticketRepository.invalidateTickets(ids);
+            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), Math.abs(addedTickets)).toArray(MapSqlParameterSource[]::new);
+            jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
         }
     }
 

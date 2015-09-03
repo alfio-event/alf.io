@@ -24,6 +24,7 @@ import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.modification.*;
 import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.tuple.Pair;
@@ -72,6 +73,8 @@ public class EventManagerIntegrationTest {
     private UserManager userManager;
     @Autowired
     private TicketRepository ticketRepository;
+    @Autowired
+    private TicketCategoryRepository ticketCategoryRepository;
 
     @Test
     public void testUnboundedTicketsGeneration() {
@@ -187,6 +190,39 @@ public class EventManagerIntegrationTest {
         assertFalse(tickets.isEmpty());
         assertEquals(AVAILABLE_SEATS, tickets.size());
         assertEquals(10, tickets.stream().filter(t -> t.getCategoryId() == null).count());
+    }
+
+    @Test
+    public void testAddUnboundedCategoryShrinkBoundedCategory() {
+        //create the event with a single category which contains all the tickets
+        List<TicketCategoryModification> categories = Collections.singletonList(
+                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        DESCRIPTION, BigDecimal.TEN, false, "", true));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
+        Event event = pair.getKey();
+        //shrink the original category to AVAILABLE_SEATS - 2, this would free two seats
+        int categoryId = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0).getId();
+        TicketCategoryModification shrink = new TicketCategoryModification(categoryId, "default", AVAILABLE_SEATS - 2,
+            new DateTimeModification(LocalDate.now(), LocalTime.now()),
+            new DateTimeModification(LocalDate.now(), LocalTime.now()),
+            DESCRIPTION, BigDecimal.TEN, false, "", true);
+        eventManager.updateCategory(categoryId, event.getId(), shrink, pair.getRight());
+
+        //now insert an unbounded ticket category
+        TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false);
+        eventManager.insertCategory(event.getId(), tcm, pair.getValue());
+
+        List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
+        assertNotNull(tickets);
+        assertFalse(tickets.isEmpty());
+        assertEquals(AVAILABLE_SEATS, tickets.size());
+        assertEquals(18, tickets.stream().filter(t -> t.getCategoryId() != null && t.getCategoryId() == categoryId).count());
+        assertEquals(2, tickets.stream().filter(t -> t.getCategoryId() == null).count());
     }
 
     @Test
