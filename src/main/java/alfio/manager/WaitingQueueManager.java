@@ -198,7 +198,7 @@ public class WaitingQueueManager {
                 .map(tc -> Pair.of(determineAvailableSeats(tc, eventWithStatistics), tc))
                 .collect(new PreReservedTicketDistributor(toBeGenerated));
         MapSqlParameterSource[] candidates = collectedTickets.stream()
-                .flatMap(p -> ticketRepository.selectFreeTicketsForPreReservation(eventId, p.getValue(), p.getKey()).stream())
+                .flatMap(p -> ticketRepository.selectFreeTicketsForPreReservation(eventId, p.getKey()).stream())
                 .map(id -> new MapSqlParameterSource().addValue("id", id))
                 .toArray(MapSqlParameterSource[]::new);
         jdbc.batchUpdate(ticketRepository.preReserveTicket(), candidates);

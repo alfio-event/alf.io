@@ -179,7 +179,7 @@ public interface TicketRepository {
     List<Ticket> selectWaitingTicketsForUpdate(@Bind("eventId") int eventId, @Bind("status") String status, @Bind("amount") int amount);
 
     @Query("select id from ticket where status = 'FREE' and event_id = :eventId order by id limit :amount for update")
-    List<Integer> selectFreeTicketsForPreReservation(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId, @Bind("amount") int amount);
+    List<Integer> selectFreeTicketsForPreReservation(@Bind("eventId") int eventId, @Bind("amount") int amount);
 
     @Query("select count(*) from ticket where status = 'PRE_RESERVED'")
     Integer countPreReservedTickets(@Bind("eventId") int eventId);

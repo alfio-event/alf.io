@@ -132,19 +132,26 @@ public class WaitingQueueProcessorIntegrationTest {
 
     @Test
     public void testSoldOut() throws InterruptedException {
-        List<TicketCategoryModification> categories = Collections.singletonList(
-                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                        new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
-                        new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.ZERO, false, "", true));
+        List<TicketCategoryModification> categories = Arrays.asList(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS -1,
+                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
+                DESCRIPTION, BigDecimal.ZERO, false, "", true),
+            new TicketCategoryModification(null, "unbounded", 0,
+                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
+                DESCRIPTION, BigDecimal.ZERO, false, "", false));
 
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        TicketCategory ticketCategory = eventManager.loadTicketCategories(event).get(0);
-        List<Integer> reserved = ticketRepository.selectFreeTicketsForPreReservation(event.getId(), ticketCategory.getId(), 20);
+        List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
+        TicketCategory bounded = ticketCategories.get(0);
+        TicketCategory unbounded = ticketCategories.get(1);
+        List<Integer> reserved = ticketRepository.selectFreeTicketsForPreReservation(event.getId(), 20);
         String reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(reservationId, DateUtils.addHours(new Date(), 1), null);
-        ticketRepository.reserveTickets(reservationId, reserved, ticketCategory.getId(), Locale.ITALIAN.getLanguage());
+        ticketRepository.reserveTickets(reservationId, reserved.subList(0, 19), bounded.getId(), Locale.ITALIAN.getLanguage());
+        ticketRepository.reserveTickets(reservationId, reserved.subList(19, 20), unbounded.getId(), Locale.ITALIAN.getLanguage());
         ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name());
 
         //sold-out

@@ -27,10 +27,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
@@ -56,12 +53,17 @@ public class EventUtil {
     }
 
     private static Optional<SaleableTicketCategory> findLastCategory(List<SaleableTicketCategory> categories) {
-        return Optional.ofNullable(categories).filter(IS_EMPTY.negate()).map(l -> l.get(l.size() - 1));
+        return sortCategories(categories, (c1, c2) -> c2.getUtcExpiration().compareTo(c1.getUtcExpiration())).findFirst();
     }
 
     private static Optional<SaleableTicketCategory> findFirstCategory(List<SaleableTicketCategory> categories) {
-        return Optional.ofNullable(categories).filter(IS_EMPTY.negate()).flatMap(l -> l.stream().findFirst());
+        return sortCategories(categories, (c1, c2) -> c1.getUtcExpiration().compareTo(c2.getUtcExpiration())).findFirst();
     }
+
+    private static Stream<SaleableTicketCategory> sortCategories(List<SaleableTicketCategory> categories, Comparator<SaleableTicketCategory> comparator) {
+        return Optional.ofNullable(categories).orElse(Collections.emptyList()).stream().sorted(comparator);
+    }
+
 
     private static boolean noTicketAvailable(List<SaleableTicketCategory> categories) {
         return categories.stream().noneMatch(c -> c.getAvailableTickets() > 0);
