@@ -21,6 +21,8 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
+import alfio.model.modification.EventWithStatistics;
+import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.system.Configuration;
 import lombok.experimental.UtilityClass;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -37,20 +39,20 @@ public class EventUtil {
 
     private static final Predicate<List<SaleableTicketCategory>> IS_EMPTY = List::isEmpty;
 
-    public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager) {
+    public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<Event> noTicketsAvailable) {
         Optional<SaleableTicketCategory> lastCategoryOptional = findLastCategory(categories);
         if(!lastCategoryOptional.isPresent()) {
             return false;
         }
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        SaleableTicketCategory lastCategory = lastCategoryOptional.get();
         if(isPreSales(event, categories)) {
             return configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false);
         } else if(configurationManager.getBooleanConfigValue(Configuration.enableWaitingQueue(event), false)) {
-            return now.isBefore(lastCategory.getZonedExpiration()) && noTicketAvailable(categories);
+            return now.isBefore(lastCategoryOptional.get().getZonedExpiration()) && noTicketsAvailable.test(event);
         }
         return false;
     }
+
 
     private static Optional<SaleableTicketCategory> findLastCategory(List<SaleableTicketCategory> categories) {
         return sortCategories(categories, (c1, c2) -> c2.getUtcExpiration().compareTo(c1.getUtcExpiration())).findFirst();
@@ -65,9 +67,6 @@ public class EventUtil {
     }
 
 
-    private static boolean noTicketAvailable(List<SaleableTicketCategory> categories) {
-        return categories.stream().noneMatch(c -> c.getAvailableTickets() > 0);
-    }
 
     public static boolean isPreSales(Event event, List<SaleableTicketCategory> categories) {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
@@ -126,4 +125,10 @@ public class EventUtil {
         }
         return MonetaryUtil.removeVAT(price, vat);
     }
+
+    public static int determineAvailableSeats(TicketCategoryWithStatistic tc, EventWithStatistics e) {
+        return tc.isBounded() ? tc.getNotSoldTickets() : e.getDynamicAllocation();
+    }
+
+
 }

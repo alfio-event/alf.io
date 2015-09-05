@@ -22,6 +22,7 @@ import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.support.SessionUtil;
 import alfio.manager.EventManager;
+import alfio.manager.EventStatisticsManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
@@ -71,6 +72,7 @@ public class EventController {
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final EventManager eventManager;
     private final TicketReservationManager ticketReservationManager;
+    private final EventStatisticsManager eventStatisticsManager;
 
     @Autowired
     public EventController(ConfigurationManager configurationManager,
@@ -83,7 +85,8 @@ public class EventController {
                            SpecialPriceRepository specialPriceRepository,
                            PromoCodeDiscountRepository promoCodeRepository,
                            EventManager eventManager,
-                           TicketReservationManager ticketReservationManager) {
+                           TicketReservationManager ticketReservationManager,
+                           EventStatisticsManager eventStatisticsManager) {
         this.configurationManager = configurationManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -95,6 +98,7 @@ public class EventController {
         this.promoCodeRepository = promoCodeRepository;
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
+        this.eventStatisticsManager = eventStatisticsManager;
     }
 
     @RequestMapping(value = {"/"}, method = RequestMethod.GET)
@@ -221,7 +225,7 @@ public class EventController {
             .addAttribute("pageTitle", "show-event.header.title")
             .addAttribute("hasPromoCodeDiscount", promoCodeDiscount.isPresent())
             .addAttribute("promoCodeDiscount", promoCodeDiscount.orElse(null))
-            .addAttribute("displayWaitingQueueForm", EventUtil.displayWaitingQueueForm(event, ticketCategories, configurationManager))
+            .addAttribute("displayWaitingQueueForm", EventUtil.displayWaitingQueueForm(event, ticketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable()))
             .addAttribute("preSales", EventUtil.isPreSales(event, ticketCategories))
             .addAttribute("userLanguage", locale.getLanguage())
             .addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable));

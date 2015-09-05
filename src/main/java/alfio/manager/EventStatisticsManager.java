@@ -24,6 +24,7 @@ import alfio.model.modification.EventWithStatistics;
 import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketWithStatistic;
 import alfio.repository.*;
+import alfio.util.EventUtil;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.util.EventUtil.categoryPriceCalculator;
@@ -143,4 +145,12 @@ public class EventStatisticsManager {
                 .sorted()
                 .collect(Collectors.toList());
     }
+
+    public Predicate<Event> noSeatsAvailable() {
+        return event -> {
+            EventWithStatistics eventWithStatistics = fillWithStatistics(event);
+            return eventWithStatistics.getTicketCategories().stream().allMatch(tc -> EventUtil.determineAvailableSeats(tc, eventWithStatistics) == 0);
+        };
+    }
+
 }

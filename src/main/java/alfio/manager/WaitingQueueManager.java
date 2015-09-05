@@ -29,6 +29,7 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.EventUtil;
 import alfio.util.PreReservedTicketDistributor;
 import alfio.util.TemplateManager;
 import alfio.util.WorkingDaysAdjusters;
@@ -49,6 +50,8 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import static alfio.util.EventUtil.determineAvailableSeats;
 
 @Component
 @Log4j2
@@ -138,9 +141,7 @@ public class WaitingQueueManager {
         if(type == WaitingQueueSubscription.Type.PRE_SALES) {
             Validate.isTrue(configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false), "PRE_SALES Waiting queue is not active");
         } else {
-            EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(event);
-            Validate.isTrue(eventWithStatistics.getTicketCategories().stream()
-                    .allMatch(tc -> determineAvailableSeats(tc, eventWithStatistics) == 0), "SOLD_OUT Waiting queue is not active");
+            Validate.isTrue(eventStatisticsManager.noSeatsAvailable().test(event), "SOLD_OUT Waiting queue is not active");
         }
     }
 
@@ -202,10 +203,6 @@ public class WaitingQueueManager {
                 .map(id -> new MapSqlParameterSource().addValue("id", id))
                 .toArray(MapSqlParameterSource[]::new);
         jdbc.batchUpdate(ticketRepository.preReserveTicket(), candidates);
-    }
-
-    private int determineAvailableSeats(TicketCategoryWithStatistic tc, EventWithStatistics e) {
-        return tc.isBounded() ? tc.getNotSoldTickets() : e.getDynamicAllocation();
     }
 
 
