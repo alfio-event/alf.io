@@ -40,7 +40,7 @@
                 var loadUsers = function() {
                     $scope.loading = true;
                     UserService.getAllUsers().success(function(result) {
-                        $scope.users = result;
+                        $scope.users = _.sortBy(result, 'username');
                         $scope.loading=false;
                     });
                 };

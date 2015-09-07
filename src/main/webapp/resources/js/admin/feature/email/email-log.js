@@ -32,6 +32,7 @@
     function EmailLogController(EmailService, $stateParams, $state, $filter, $scope) {
         var ctrl = this;
         ctrl.emailMessages = [];
+        ctrl.eventName = $stateParams.eventName;
         var evaluateResultsLength = function(results) {
             ctrl.emailMessages = results;
             ctrl.filteredResults = $filter('filter')(results, ctrl.searchFilter);

@@ -10,11 +10,10 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th class="hidden-xs">id</th>
                 <th>name</th>
-                <th class="hidden-xs">description</th>
-                <th>e-mail</th>
-                <th>actions</th>
+                <th class="hidden-xs" width="35%">description</th>
+                <th width="30%">e-mail</th>
+                <th width="10%">actions</th>
             </tr>
         </thead>
         <tbody>
@@ -22,11 +21,10 @@
                 <td colspan="4">no organizations have been found. <a data-ui-sref="index.new-organization">Insert a new one</a></td>
             </tr>
             <tr data-ng-repeat="organization in organizations">
-                <td class="hidden-xs">{{organization.id}}</td>
                 <td>{{organization.name}}</td>
                 <td class="hidden-xs"><div class="organization-description" data-tooltip="{{organization.description}}">{{organization.description}}</div></td>
                 <td>{{organization.email}}</td>
-                <td>
+                <td class="text-center">
                     <a class="btn btn-xs btn-default" data-ui-sref="index.edit-organization({organizationId:organization.id})" data-tooltip="Edit"><i class="fa fa-edit"></i><span class="sr-only">Edit</span></a>
                 </td>
             </tr>

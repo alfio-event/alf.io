@@ -10,14 +10,12 @@
     <table class="table">
         <thead>
             <tr>
-                <th>id</th>
-                <th>username</th>
+                <th width="70%">username</th>
                 <th>actions</th>
             </tr>
         </thead>
         <tbody>
             <tr data-ng-repeat="user in users" data-ng-class-even="active">
-                <td>{{user.id}}</td>
                 <td><a data-ui-sref="index.edit-user({userId:user.id})">{{user.username}}</a></td>
                 <td>
                     <a class="btn btn-xs btn-default" data-ui-sref="index.edit-user({userId:user.id})" data-tooltip="Edit"><i class="fa fa-edit"></i><span class="sr-only">Edit</span></a>

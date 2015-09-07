@@ -1176,10 +1176,11 @@
         };
     });
 
-    admin.controller('ShowWaitingQueue', ['WaitingQueueService', '$stateParams', function(WaitingQueueService, $stateParams) {
+    admin.controller('ShowWaitingQueue', ['WaitingQueueService', '$stateParams', '$state', function(WaitingQueueService, $stateParams, $state) {
         var ctrl = this;
         this.loading = true;
-        WaitingQueueService.loadAllSubscribers($stateParams.eventName).success(function(result) {
+        this.eventName = $stateParams.eventName;
+        WaitingQueueService.loadAllSubscribers(this.eventName).success(function(result) {
             ctrl.subscriptions = result;
             ctrl.loading = false;
         });
