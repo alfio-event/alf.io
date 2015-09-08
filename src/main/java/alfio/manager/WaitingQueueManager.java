@@ -240,7 +240,7 @@ public class WaitingQueueManager {
     }
 
     public void fireReservationExpired(String reservationId) {
-        updateStatus(reservationId, WaitingQueueSubscription.Status.EXPIRED.toString());
+        waitingQueueRepository.bulkUpdateExpiredReservations(Collections.singletonList(reservationId));
     }
 
     public void cleanExpiredReservations(List<String> reservationIds) {

@@ -701,8 +701,8 @@ public class TicketReservationManager {
         specialPriceRepository.updateStatusForReservation(reservationIdsToRemove, Status.FREE.toString());
         int updatedTickets = ticketRepository.freeFromReservation(reservationIdsToRemove);
         Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
-        deleteReservations(reservationIdsToRemove);
         waitingQueueManager.fireReservationExpired(reservationId);
+        deleteReservations(reservationIdsToRemove);
     }
 
     private void deleteReservations(List<String> reservationIdsToRemove) {
