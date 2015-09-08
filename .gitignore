@@ -13,3 +13,4 @@ build/
 deploy*.sh
 custom.jvmargs
 classes/
+logs/

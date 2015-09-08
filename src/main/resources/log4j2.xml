@@ -1,19 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-	<appenders>
-		<Console name="Console" target="SYSTEM_OUT">
-			<PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
-		</Console>
-	</appenders>
-	<loggers>
-		<logger name="alfio" level="info" additivity="false">
-			<appender-ref ref="Console" />
-		</logger>
-        <logger name="org.springframework" level="warn" additivity="false">
-			<appender-ref ref="Console" />
-		</logger>
-		<root level="error">
-			<appender-ref ref="Console" />
-		</root>
-	</loggers>
+    <Properties>
+        <Property name="log-path">logs</Property>
+    </Properties>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+        </Console>
+        <RollingFile name="file-log" fileName="${log-path}/alfio.log"
+                     filePattern="${log-path}/alfio-%d{yyyy-MM-dd}.log">
+            <PatternLayout>
+                <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingFile>
+        <Async name="Async">
+            <AppenderRef ref="file-log"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="alfio" level="info" additivity="false">
+            <appender-ref ref="Console" />
+            <appender-ref ref="Async" />
+        </Logger>
+        <Logger name="org.springframework" level="warn" additivity="false">
+            <appender-ref ref="Console" />
+            <appender-ref ref="Async" />
+        </Logger>
+        <Root level="error">
+            <Appender-ref ref="Console" />
+            <Appender-ref ref="Async" />
+        </Root>
+    </Loggers>
 </configuration>

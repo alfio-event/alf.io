@@ -268,7 +268,8 @@ task dockerize(type: Copy) {
     filter(ReplaceTokens, tokens: [APP_NAME   : project.name,
                                    APP_VERSION: project.version,
                                    BASE_IMAGE : baseImage,
-                                   PORT       : port])
+                                   PORT       : port
+                                  ])
 }
 
 task distribution(type: Copy) {
