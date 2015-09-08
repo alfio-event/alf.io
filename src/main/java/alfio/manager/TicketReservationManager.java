@@ -655,18 +655,21 @@ public class TicketReservationManager {
     }
 
     public String reservationUrl(String reservationId, Event event) {
+        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
         return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl(event)), "/")
-                + "/event/" + event.getShortName() + "/reservation/" + reservationId;
+                + "/event/" + event.getShortName() + "/reservation/" + reservationId + "?lang="+reservation.getUserLanguage();
     }
 
     public String ticketUrl(String reservationId, Event event, String ticketId) {
+        Ticket ticket = ticketRepository.findByUUID(ticketId);
         return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl(event)), "/")
-                + "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/" + ticketId;
+                + "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/" + ticketId + "?lang=" + ticket.getUserLanguage();
     }
 
     public String ticketUpdateUrl(String reservationId, Event event, String ticketId) {
+        Ticket ticket = ticketRepository.findByUUID(ticketId);
         return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl(event)), "/")
-            + "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/ticket/" + ticketId + "/update";
+            + "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/ticket/" + ticketId + "/update?lang="+ticket.getUserLanguage();
     }
 
 

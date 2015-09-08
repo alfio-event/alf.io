@@ -613,25 +613,34 @@ public class TicketReservationManagerTest {{
         Event event = mock(Event.class);
         String reservationId = "abcd";
         String shortName = "shortName";
+        String ticketId = "ticketId";
         when(event.getShortName()).thenReturn(shortName);
         EventRepository eventRepository = mock(EventRepository.class);
         when(eventRepository.findByReservationId(reservationId)).thenReturn(event);
+        TicketReservationRepository ticketReservationRepository = mock(TicketReservationRepository.class);
+        TicketRepository ticketRepository = mock(TicketRepository.class);
+        TicketReservation reservation = mock(TicketReservation.class);
+        when(reservation.getUserLanguage()).thenReturn("en");
+        when(ticketReservationRepository.findReservationById(reservationId)).thenReturn(reservation);
+        Ticket ticket = mock(Ticket.class);
+        when(ticketRepository.findByUUID(ticketId)).thenReturn(ticket);
+        when(ticket.getUserLanguage()).thenReturn("it");
         ConfigurationManager configurationManager = mock(ConfigurationManager.class);
         String baseUrl = "http://my-website/";
         when(configurationManager.getRequiredValue(Configuration.baseUrl(event))).thenReturn(baseUrl);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager trm = new TicketReservationManager(eventRepository, null, null, null, null, null, configurationManager, null, null, null, null, null, null, null, null, null, null, fileUploadManager);
+        TicketReservationManager trm = new TicketReservationManager(eventRepository, null, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, null, null, null, null, null, null, null, null, null, fileUploadManager);
         it.should("generate the reservationUrl from reservationId", expect -> {
-            expect.that(trm.reservationUrl(reservationId)).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId);
+            expect.that(trm.reservationUrl(reservationId)).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId + "?lang=en");
         });
         it.should("generate the reservationUrl from reservationId and event", expect -> {
-            expect.that(trm.reservationUrl(reservationId, event)).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId);
+            expect.that(trm.reservationUrl(reservationId, event)).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId + "?lang=en");
         });
         it.should("generate the ticket URL", expect -> {
-            expect.that(trm.ticketUrl(reservationId, event, "ticketId")).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId+"/ticketId");
+            expect.that(trm.ticketUrl(reservationId, event, ticketId)).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId+"/ticketId?lang=it");
         });
         it.should("generate the ticket update URL", expect -> {
-            expect.that(trm.ticketUpdateUrl(reservationId, event, "ticketId")).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId + "/ticket/ticketId/update");
+            expect.that(trm.ticketUpdateUrl(reservationId, event, "ticketId")).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId + "/ticket/ticketId/update?lang=it");
         });
     });
 
@@ -672,6 +681,7 @@ public class TicketReservationManagerTest {{
             when(eventRepository.findAll()).thenReturn(singletonList(event));
             when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(singletonList(reservationId));
             when(ticketRepository.flagTicketAsReminderSent(ticketId)).thenReturn(1);
+            when(ticketRepository.findByUUID(anyString())).thenReturn(ticket);
             trm.sendReminderForOptionalData();
             verify(notificationManager, times(1)).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
         });
