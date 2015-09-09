@@ -170,9 +170,12 @@ public class WaitingQueueManager {
 
     private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> handlePreReservation(Event event, int waitingPeople, int waitingTickets) {
         List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        // Given that this Job runs more than once in a minute, in order to ensure that all the waiting queue subscribers would get a seat *before*
+        // all other people, we must process their a little bit before the sale period starts
         Optional<TicketCategory> categoryWithInceptionInFuture = ticketCategories.stream()
+                .sorted(TicketCategory.COMPARATOR)
                 .findFirst()
-                .filter(t -> ZonedDateTime.now(event.getZoneId()).isBefore(t.getInception(event.getZoneId())));
+                .filter(t -> ZonedDateTime.now(event.getZoneId()).isBefore(t.getInception(event.getZoneId()).minusMinutes(5)));
         int ticketsNeeded = Math.min(waitingPeople, event.getAvailableSeats());
         if(ticketsNeeded > 0) {
             preReserveIfNeeded(event, ticketsNeeded);

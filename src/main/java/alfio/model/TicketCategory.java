@@ -19,13 +19,17 @@ package alfio.model;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import alfio.util.MonetaryUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Comparator;
 
 @Getter
 public class TicketCategory {
+
+    public static Comparator<TicketCategory> COMPARATOR = (tc1, tc2) -> new CompareToBuilder().append(tc1.utcInception, tc2.utcInception).append(tc1.utcExpiration, tc2.utcExpiration).toComparison();
 
     public enum Status {
         ACTIVE, NOT_ACTIVE

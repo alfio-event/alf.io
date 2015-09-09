@@ -149,14 +149,14 @@ public class WaitingQueueProcessorIntegrationTest {
         TicketCategory unbounded = ticketCategories.get(1);
         List<Integer> reserved = ticketRepository.selectFreeTicketsForPreReservation(event.getId(), 20);
         String reservationId = UUID.randomUUID().toString();
-        ticketReservationRepository.createNewReservation(reservationId, DateUtils.addHours(new Date(), 1), null);
+        ticketReservationRepository.createNewReservation(reservationId, DateUtils.addHours(new Date(), 1), null, Locale.ITALIAN.getLanguage());
         ticketRepository.reserveTickets(reservationId, reserved.subList(0, 19), bounded.getId(), Locale.ITALIAN.getLanguage());
         ticketRepository.reserveTickets(reservationId, reserved.subList(19, 20), unbounded.getId(), Locale.ITALIAN.getLanguage());
         ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name());
 
         //sold-out
         waitingQueueManager.subscribe(event, "Giuseppe Garibaldi", "peppino@garibaldi.com", Locale.ENGLISH);
-        Thread.sleep(1L);//we are testing ordering, not concurrency...
+        Thread.sleep(100L);//we are testing ordering, not concurrency...
         waitingQueueManager.subscribe(event, "Nino Bixio", "bixio@mille.org", Locale.ITALIAN);
         List<WaitingQueueSubscription> subscriptions = waitingQueueRepository.loadAll(event.getId());
         assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
