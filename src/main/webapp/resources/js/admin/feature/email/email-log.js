@@ -49,10 +49,6 @@
                 evaluateResultsLength(ctrl.emailMessages);
             }
         });
-
-        ctrl.openDetail = function(message) {
-            $state.go('events.email-log-detail', {eventName: $stateParams.eventName, messageId: message.id})
-        }
     }
 
     EmailLogController.prototype.$inject = ['EmailService','$stateParams', '$state', '$filter', '$scope'];

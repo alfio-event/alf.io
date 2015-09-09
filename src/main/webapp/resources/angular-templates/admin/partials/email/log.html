@@ -40,7 +40,7 @@
                 <tr data-ng-repeat="email in ctrl.filteredResults | limitTo:50" data-ng-class="{'text-success': email.status === 'SENT', 'text-danger': email.status === 'ERROR', 'text-warning': email.status === 'RETRY'}">
                     <td data-ng-class-even="'active'" class="cell-wrap">{{::email.recipient}}</td>
                     <td data-ng-class-even="'active'" class="cell-wrap">{{::email.subject | truncateString}}</td>
-                    <td data-ng-class-even="'active'" class="cell-wrap"><a href="#" data-ng-click="ctrl.openDetail(email)">{{::email.message | truncateString:100}}</a></td>
+                    <td data-ng-class-even="'active'" class="cell-wrap"><a href="#" data-ui-sref="events.email-log-detail({eventName: ctrl.eventName, messageId: email.id})">{{::email.message | truncateString:100}}</a></td>
                     <td data-ng-class-even="'active'" class="cell-wrap">{{::email.status}}</td>
                     <td data-ng-class-even="'active'" class="cell-wrap">{{::email.checksum | truncateString:10}}</td>
                     <td data-ng-class-even="'active'" class="cell-wrap">{{::email.requestTimestamp | formatDate}}</td>
