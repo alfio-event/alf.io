@@ -18,10 +18,17 @@ package alfio.model.modification;
 
 import lombok.Data;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
 @Data
 public class UploadBase64FileModification {
 
     private byte[] file;
     private String type;
     private String name;
+
+    public InputStream getInputStream() {
+        return new ByteArrayInputStream(file);
+    }
 }

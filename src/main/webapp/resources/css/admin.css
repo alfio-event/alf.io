@@ -169,3 +169,7 @@ td.cell-wrap {
       font-weight: bold;
     }
 }
+
+.ngf-hide {
+    display:none !important
+}

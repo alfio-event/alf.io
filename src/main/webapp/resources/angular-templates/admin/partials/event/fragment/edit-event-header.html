@@ -59,8 +59,9 @@
                 </div>
                 <div class="clearfix"></div>
             </div>
-            <div id="imageFile" class="drop-file-zone wMarginBottom well" data-accept="image/*" data-ng-file-change="imageDropped($files)" data-ng-file-drop data-drag-over-class="'drop-file-zone-hover'">
-                Drop image here
+
+            <div id="imageFile" class="drop-file-zone wMarginBottom well" data-accept="image/*" data-ngf-pattern="'image/*'" data-ng-model="droppedFile" data-ngf-drop data-ngf-select data-ngf-multiple="false" data-ngf-allow-dir="false" data-ngf-drag-over-class="'drop-file-zone-hover'">
+                Drop image here or click to upload
             </div>
         </div>
         <div class="form-group">

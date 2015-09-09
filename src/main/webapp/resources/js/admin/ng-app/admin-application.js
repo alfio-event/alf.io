@@ -8,7 +8,7 @@
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)'
     };
-    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'angularFileUpload', 'chart.js', 'alfio-plugins', 'alfio-email']);
+    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'alfio-plugins', 'alfio-email', 'alfio-util']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.otherwise("/");
@@ -730,7 +730,7 @@
 
     });
 
-    admin.controller('SendInvitationsController', function($scope, $stateParams, $state, EventService, $upload, $log) {
+    admin.controller('SendInvitationsController', function($scope, $stateParams, $state, EventService, $log) {
         $scope.eventName = $stateParams.eventName;
         $scope.categoryId = $stateParams.categoryId;
 
@@ -743,20 +743,10 @@
             });
         };
 
-        $scope.uploadFile = function(files) {
-            $scope.results = [];
-            $scope.upload = $upload.upload({
-                url: '/admin/api/events/'+$stateParams.eventName+'/categories/'+$stateParams.categoryId+'/link-codes',
-                method: 'POST',
-                file: files[0]
-            }).progress(function(evt) {
-                $log.info('progress: ' + parseInt(100.0 * evt.loaded / evt.total) + '% file : '+ evt.config.file.name);
-            }).success(function(data/*, status, headers, config*/) {
-                $scope.results = data;
-            }).error(function(e) {
-                alert(e.data);
-            });
+        $scope.uploadSuccess = function(data) {
+            $scope.results = data;
         };
+        $scope.uploadUrl = '/admin/api/events/'+$stateParams.eventName+'/categories/'+$stateParams.categoryId+'/link-codes';
     });
     
     admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService) {
@@ -1051,7 +1041,7 @@
         });
     });
 
-    admin.controller('PendingReservationsController', function($scope, EventService, $stateParams, $upload, $log, $window) {
+    admin.controller('PendingReservationsController', function($scope, EventService, $stateParams, $log, $window) {
         var getPendingPayments = function() {
             EventService.getPendingPayments($stateParams.eventName).success(function(data) {
                 $scope.pendingReservations = data;
@@ -1060,19 +1050,12 @@
         };
 
         $scope.eventName = $stateParams.eventName;
-        $scope.uploadFiles = function(files) {
-            $scope.results = [];
-            $scope.upload = $upload.upload({
-                url: '/admin/api/events/'+$stateParams.eventName+'/pending-payments/bulk-confirmation',
-                method: 'POST',
-                file: files[0]
-            }).progress(function(evt) {
-                $log.info('progress: ' + parseInt(100.0 * evt.loaded / evt.total) + '% file :'+ evt.config.file.name);
-            }).success(function(data, status, headers, config) {
-                $scope.results = data;
-                getPendingPayments();
-            });
+        $scope.uploadSuccess = function(data) {
+            $scope.results = data;
+            getPendingPayments();
         };
+
+        $scope.uploadUrl = '/admin/api/events/'+$stateParams.eventName+'/pending-payments/bulk-confirmation';
 
         getPendingPayments();
         $scope.registerPayment = function(eventName, id) {

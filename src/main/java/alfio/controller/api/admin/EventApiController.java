@@ -24,10 +24,7 @@ import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
 import alfio.model.Event;
 import alfio.model.TicketReservation;
-import alfio.model.modification.EventModification;
-import alfio.model.modification.EventWithStatistics;
-import alfio.model.modification.TicketAllocationModification;
-import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.util.ValidationResult;
@@ -42,14 +39,12 @@ import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.security.Principal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.util.OptionalWrapper.optionally;
@@ -176,7 +171,7 @@ public class EventApiController {
     @RequestMapping(value = "/events/{eventName}/pending-payments/bulk-confirmation", method = POST)
     public List<Triple<Boolean, String, String>> bulkConfirmation(@PathVariable("eventName") String eventName,
                                                                   Principal principal,
-                                                                  @RequestParam("file") MultipartFile file) throws IOException {
+                                                                  @RequestBody UploadBase64FileModification file) throws IOException {
 
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream())) {
             CSVReader reader = new CSVReader(isr);

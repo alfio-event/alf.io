@@ -20,9 +20,7 @@
     </pre>
 </div>
 
-<div class="drop-file-zone wMarginBottom well" data-accept="text/*" data-ng-file-change="uploadFile($files)" data-ng-file-drop data-drag-over-class="'drop-file-zone-hover'">
-    Drop file here
-</div>
+<file-upload data-accept="'text/csv'" data-target-url="uploadUrl" data-success-callback="uploadSuccess"></file-upload>
 
 <div class="wMarginBottom table-responsive" data-ng-if="results">
     <form name="invitationForm" data-ng-submit="sendCodes(invitationForm, results)" novalidate data-error-sensitive>

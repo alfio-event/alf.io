@@ -19,8 +19,8 @@
     <script src="{{request.contextPath}}/resources/bower_components/angular-messages/angular-messages.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
-    <script src="{{request.contextPath}}/resources/bower_components/ng-file-upload/angular-file-upload-shim.min.js"></script>
-    <script src="{{request.contextPath}}/resources/bower_components/ng-file-upload/angular-file-upload.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/ng-file-upload/ng-file-upload-shim.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/ng-file-upload/ng-file-upload.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/Chart.js/Chart.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-chart.js/angular-chart.js"></script>
     <script src="{{request.contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
@@ -30,6 +30,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/service/service.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/plugin/plugin-log.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/email/email-log.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/util/file-upload.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>

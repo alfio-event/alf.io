@@ -18,6 +18,7 @@ package alfio.controller.api.admin;
 
 import alfio.manager.SpecialPriceManager;
 import alfio.model.modification.SendCodeModification;
+import alfio.model.modification.UploadBase64FileModification;
 import com.opencsv.CSVReader;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -59,7 +60,7 @@ public class SpecialPriceApiController {
     @RequestMapping("/events/{eventName}/categories/{categoryId}/link-codes")
     public List<SendCodeModification> linkAssigneeToCodes(@PathVariable("eventName") String eventName,
                                                           @PathVariable("categoryId") int categoryId,
-                                                          @RequestParam("file") MultipartFile file,
+                                                          @RequestBody UploadBase64FileModification file,
                                                           Principal principal) throws IOException {
 
         Validate.isTrue(StringUtils.isNotEmpty(eventName));

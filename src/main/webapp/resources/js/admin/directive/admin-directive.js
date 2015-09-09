@@ -346,7 +346,17 @@
                 $scope.resetImage = function(obj) {
                     obj.fileBlobId = previousFileBlobId;
                     $scope.imageBase64 = undefined;
-                }
+                };
+
+                $scope.$watch('droppedFile', function (droppedFile) {
+                    if(angular.isDefined(droppedFile)) {
+                        if(droppedFile === null) {
+                            alert('File drag&drop is not working, please click on the element and select the file.')
+                        } else {
+                            $scope.imageDropped([droppedFile]);
+                        }
+                    }
+                });
 
                 $scope.imageDropped = function(files) {
                     var reader = new FileReader();
