@@ -10,6 +10,10 @@
 				font-size:160%;
 			}
 
+            pre {
+                font-size:
+            }
+
 			h2 {
 				font-size:120%;
 				font-weight:normal;
@@ -45,11 +49,11 @@
 
 <h3>{{#i18n}}receipt.order-information{{/i18n}} {{ticketReservation.id}}</h3>
 
-<div>{{#i18n}}receipt.date{{/i18n}}: </div>
+<div>{{#i18n}}receipt.date{{/i18n}} {{#format-date}}{{ticketReservation.confirmationTimestamp}} EEE dd MMM yyyy HH:mm (z) locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</div>
 
 
 <div>{{#i18n}}receipt.buyer{{/i18n}}</div>
-<pre>
+<pre style="font-size: 110%">
 {{ticketReservation.fullName}}
 {{#ticketReservation.hasBillingAddress}}
 {{ticketReservation.billingAddress}}
