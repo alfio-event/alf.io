@@ -221,8 +221,10 @@ public class EventManager {
                 .filter(IS_CATEGORY_BOUNDED)
                 .mapToInt(TicketCategory::getMaxTickets)
                 .sum();
+        int notBoundedTickets = ticketRepository.countNotSoldTicketsForUnbounded(eventId);
         int requestedTickets = tcm.isBounded() ? tcm.getMaxTickets() : 1;
         Validate.isTrue(sum + requestedTickets <= event.getAvailableSeats(), "Not enough seats");
+        Validate.isTrue(requestedTickets <= notBoundedTickets, "All the tickets have already been assigned to a category. Try increasing the total seats number.");
         Validate.isTrue(tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), "expiration must be before the end of the event");
         insertCategory(tcm, event);
     }
