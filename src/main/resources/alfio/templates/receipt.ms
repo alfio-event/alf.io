@@ -44,36 +44,22 @@
 <h2>{{#i18n}}receipt.receipt{{/i18n}}</h2>
 
 <h3>{{#i18n}}receipt.order-information{{/i18n}}</h3>
-<table style="width:100%">
-    <tr>
-        <td>{{#i18n}}receipt.buyer{{/i18n}}</td>
-        <td>{{ticketReservation.fullName}} &lt;{{ticketReservation.email}}&gt;</td>
-    </tr>
-
-    {{#ticketReservation.hasBillingAddress}}
-        <tr>
-            <td>{{#i18n}}receipt.billing-address{{/i18n}}</td>
-            <td>{{ticketReservation.billingAddress}}</td>
-        </tr>
-    {{/ticketReservation.hasBillingAddress}}
-
-    <tr>
-        <td>{{#i18n}}receipt.date{{/i18n}}</td>
-        <td>{{#format-date}}{{ticketReservation.confirmationTimestamp}} EEE dd MMM yyyy HH:mm (z) locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</td>
-    </tr>
-
+<dl style="width: 100%">
+    <dt>{{#i18n}}receipt.buyer{{/i18n}}</dt>
+    <dd>{{ticketReservation.fullName}} &lt;{{ticketReservation.email}}&gt;</dd>
+{{#ticketReservation.hasBillingAddress}}
+    <dt>{{#i18n}}receipt.billing-address{{/i18n}}</dt>
+    <dd>{{ticketReservation.billingAddress}}</dd>
+{{/ticketReservation.hasBillingAddress}}
+    <dt>{{#i18n}}receipt.date{{/i18n}}</dt>
+    <dd>{{#format-date}}{{ticketReservation.confirmationTimestamp}} EEE dd MMM yyyy HH:mm (z) locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</dd>
 {{^orderSummary.free}}
-    <tr>
-        <td>{{#i18n}}receipt.payment-for{{/i18n}}</td>
-        <td>{{organization.name}} &lt;{{organization.email}}&gt;</td>
-    </tr>
+    <dt>{{#i18n}}receipt.payment-for{{/i18n}}</dt>
+    <dd>{{organization.name}} &lt;{{organization.email}}&gt;</dd>
 {{/orderSummary.free}}
-    <tr>
-        <td>{{#i18n}}email-confirmation.order-information []{{/i18n}}</td>
-        <td>{{ticketReservation.id}}</td>
-    </tr>
-
-</table>
+    <dt>{{#i18n}}email-confirmation.order-information []{{/i18n}}</dt>
+    <dd>{{ticketReservation.id}}</dd>
+</dl>
 
 <h3>{{#i18n}}email-confirmation.reservation-summary{{/i18n}}</h3>
 <table style="width:100%">
