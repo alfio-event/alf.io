@@ -22,7 +22,7 @@ COPY ./@APP_NAME@-@APP_VERSION@-boot.war /@APP_NAME@/
 
 # Define working directory.
 WORKDIR /@APP_NAME@
-RUN MKDIR /@APP_NAME@/logs
+RUN mkdir /@APP_NAME@/logs
 
 VOLUME ["/@APP_NAME@/logs"]
 
