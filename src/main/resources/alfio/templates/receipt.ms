@@ -43,23 +43,19 @@
 </table>
 <h2>{{#i18n}}receipt.receipt{{/i18n}}</h2>
 
-<h3>{{#i18n}}receipt.order-information{{/i18n}}</h3>
-<dl style="width: 100%">
-    <dt>{{#i18n}}receipt.buyer{{/i18n}}</dt>
-    <dd>{{ticketReservation.fullName}} &lt;{{ticketReservation.email}}&gt;</dd>
+<h3>{{#i18n}}receipt.order-information{{/i18n}} {{ticketReservation.id}}</h3>
+
+<div>{{#i18n}}receipt.date{{/i18n}}: </div>
+
+
+<div>{{#i18n}}receipt.buyer{{/i18n}}</div>
+<pre>
+{{ticketReservation.fullName}}
 {{#ticketReservation.hasBillingAddress}}
-    <dt>{{#i18n}}receipt.billing-address{{/i18n}}</dt>
-    <dd>{{ticketReservation.billingAddress}}</dd>
+{{ticketReservation.billingAddress}}
 {{/ticketReservation.hasBillingAddress}}
-    <dt>{{#i18n}}receipt.date{{/i18n}}</dt>
-    <dd>{{#format-date}}{{ticketReservation.confirmationTimestamp}} EEE dd MMM yyyy HH:mm (z) locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</dd>
-{{^orderSummary.free}}
-    <dt>{{#i18n}}receipt.payment-for{{/i18n}}</dt>
-    <dd>{{organization.name}} &lt;{{organization.email}}&gt;</dd>
-{{/orderSummary.free}}
-    <dt>{{#i18n}}email-confirmation.order-information []{{/i18n}}</dt>
-    <dd>{{ticketReservation.id}}</dd>
-</dl>
+{{ticketReservation.email}}
+</pre>
 
 <h3>{{#i18n}}email-confirmation.reservation-summary{{/i18n}}</h3>
 <table style="width:100%">
