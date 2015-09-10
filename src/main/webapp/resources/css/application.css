@@ -117,7 +117,7 @@ a.no-decoration {
     text-decoration:none;
 }
 
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 767px) {
     .xs-payment-method {
         width:100%;
         margin-bottom: 5px;
@@ -126,8 +126,8 @@ a.no-decoration {
         margin-bottom: 10px;
         width: 100%;
     }
-    .wizard a:not(current) {padding: 12px 12px 10px 12px; background:#efefef; position:relative; display:inline-block; width:16%}
-    .wizard a.current {width:60%}
+    .wizard a:not(current) {padding: 12px 12px 10px 12px; background:#efefef; position:relative; display:inline-block; width:20%}
+    .wizard a.current {width:50%}
 }
 
 @media screen and (min-width: 768px) {
