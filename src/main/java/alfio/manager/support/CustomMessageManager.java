@@ -107,8 +107,8 @@ public class CustomMessageManager {
         model.addAttribute("fullName", "John Doe");
         model.addAttribute("organizationName", organization.getName());
         model.addAttribute("organizationEmail", organization.getEmail());
-        model.addAttribute("reservationURL", ticketReservationManager.reservationUrl("reservation-id", event));
-        model.addAttribute("ticketURL", ticketReservationManager.ticketUpdateUrl("reservation-id", event, "ticket-id"));
+        model.addAttribute("reservationURL", "https://this-is-the-reservation-url");
+        model.addAttribute("ticketURL", "https://this-is-the-ticket-url");
         model.addAttribute("reservationID", "RESID");
         return input.stream()
                 .map(m -> MessageModification.preview(m, renderResource(m.getSubject(), model, m.getLocale(), templateManager), renderResource(m.getText(), model, m.getLocale(), templateManager)))
