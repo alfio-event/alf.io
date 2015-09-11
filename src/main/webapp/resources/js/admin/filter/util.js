@@ -60,4 +60,13 @@
             });
         };
     });
+
+    filters.filter('addTrailingSlash', ['$window', function($window) {
+        return function(targetUrl) {
+            if(!$window.location.href.endsWith('/')) {
+                return '/admin/' + targetUrl;
+            }
+            return targetUrl;
+        }
+    }]);
 })();
