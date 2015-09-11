@@ -57,15 +57,8 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.util.FileSystemUtils;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.OpenOption;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -331,7 +324,7 @@ public class TicketReservationManager {
         ticketReservationRepository.lockReservationForUpdate(reservationId);
         Validate.isTrue(ticketReservation.getPaymentMethod() == PaymentProxy.OFFLINE, "invalid payment method");
         Validate.isTrue(ticketReservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT, "invalid status");
-        ticketReservationRepository.updateTicketReservationStatus(reservationId, TicketReservationStatus.COMPLETE.name());
+        ticketReservationRepository.confirmOfflinePayment(reservationId, TicketReservationStatus.COMPLETE.name(), ZonedDateTime.now());
         acquireTickets(TicketStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getUserLanguage(), ticketReservation.getBillingAddress());
 
         Locale language = findReservationLanguage(reservationId);

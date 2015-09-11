@@ -600,7 +600,7 @@ public class TicketReservationManagerTest {{
 
             ticketReservationManager.confirmOfflinePayment(event, reservationId);
             verify(ticketReservationRepository).lockReservationForUpdate(eq(reservationId));
-            verify(ticketReservationRepository).updateTicketReservationStatus(eq(reservationId), eq(COMPLETE.toString()));
+            verify(ticketReservationRepository).confirmOfflinePayment(eq(reservationId), eq(COMPLETE.toString()), any(ZonedDateTime.class));
             verify(ticketRepository).updateTicketsStatusWithReservationId(eq(reservationId), eq(TicketStatus.ACQUIRED.toString()));
             verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.OFFLINE.toString()));
             verify(waitingQueueManager).fireReservationConfirmed(eq(reservationId));
