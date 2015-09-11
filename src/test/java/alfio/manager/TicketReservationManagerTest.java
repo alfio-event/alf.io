@@ -587,6 +587,7 @@ public class TicketReservationManagerTest {{
 
         it.should("confirm OFFLINE payments", expect -> {
             TicketReservation reservation = it.usesMock(TicketReservation.class);
+            when(reservation.getConfirmationTimestamp()).thenReturn(ZonedDateTime.now());
             when(reservation.getId()).thenReturn(reservationId);
             when(reservation.getPaymentMethod()).thenReturn(PaymentProxy.OFFLINE);
             when(reservation.getStatus()).thenReturn(OFFLINE_PAYMENT);
