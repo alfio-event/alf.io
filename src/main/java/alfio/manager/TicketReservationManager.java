@@ -347,6 +347,7 @@ public class TicketReservationManager {
         OrderSummary summary = orderSummaryForReservationId(reservationId, event);
 
         Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
+        reservationEmailModel.put("confirmationDate", ticketReservation.getConfirmationTimestamp().withZoneSameInstant(event.getZoneId()));
         List<Mailer.Attachment> attachments = new ArrayList<>(1);
         if(!summary.getNotYetPaid()) {
             Optional<byte[]> receipt = TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationEmailModel);
