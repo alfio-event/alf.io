@@ -1,8 +1,6 @@
 {{>/event/page-top}}
 
-<div>
-    {{>/event/output-event-image-tag}}
-</div>
+{{>/event/header}}
 
 <div class="alert alert-warning wMarginTop wMarginBottom">
     <h2><i class="fa fa-warning"></i> {{#i18n}}reservation-page-waiting.title [{{#format-date}}{{expires}} dd/MM/yyyy HH:mm locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}</h2>
