@@ -7,7 +7,7 @@ Content-Type: text/html
 <html>
     <head>
         <title>The System is currently in maintenance mode</title>
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
         <style>
             .margin-20 {
                 margin-top:20px;
@@ -17,6 +17,7 @@ Content-Type: text/html
                 align-items: center;
             }
         </style>
+        <meta http-equiv="refresh" content="30">
     </head>
     <body>
         <div class="container">
