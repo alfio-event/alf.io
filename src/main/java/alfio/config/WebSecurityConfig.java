@@ -113,6 +113,7 @@ public class WebSecurityConfig {
                     .accessDeniedPage("/session-expired")
                     .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher("X-Requested-With", "XMLHttpRequest"))
                     .and()
+                    .headers().cacheControl().disable()
                     .csrf();
             if(environment.acceptsProfiles(Initializer.PROFILE_DEBUG_CSP)) {
                 Pattern whiteList = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");

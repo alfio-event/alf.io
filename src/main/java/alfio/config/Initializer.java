@@ -22,7 +22,6 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.reflect.MethodUtils;
-import org.apache.logging.log4j.Level;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
