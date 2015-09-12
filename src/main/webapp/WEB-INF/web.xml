@@ -28,4 +28,16 @@
     <session-config>
         <session-timeout>240</session-timeout>
     </session-config>
+
+    <error-page>
+        <error-code>404</error-code>
+        <location>/404-not-found</location>
+    </error-page>
+    <error-page>
+        <error-code>500</error-code>
+        <location>/500-internal-server-error</location>
+    </error-page>
+    <error-page>
+        <location>/session-expired</location>
+    </error-page>
 </web-app>
