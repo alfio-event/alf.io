@@ -57,23 +57,17 @@ Alf.io is also offered has a 3 tier application using 3 docker images:
 TODO
 
 ### Launch alf.io container instances
- * define local directory (on docker host, in order for data to survive postgres image restarts):  /path/to/local/pgdata = /etc/pgdata
- * docker run --name alfio-db -e POSTGRES_DB=postgres -e POSTGRES_USERNAME=postgres -e POSTGRES_PASSWORD=alfiopassword --restart=always -d -v /path/to/local/pgdata:/var/lib/postgresql/data/pgdata postgres
+ * define local directory for database data (on docker host, in order for data to survive postgres image restarts):  /path/to/local/data = /data/postgres/alfio
+ * define a local directory for logs: /path/to/logs = /home/alfio/logs
+ * docker run --name alfio-db -e POSTGRES_DB=postgres -e POSTGRES_USERNAME=postgres -e POSTGRES_PASSWORD=alfiopassword --restart=always -d -v /path/to/local/data:/var/lib/postgresql/data postgres
     * Note: on Mac volumes don't work (see https://jhipster.github.io/installation.html for a possible workaround), launch the above command without the -v parameter (data are lost at every restart)
- * docker run --name alfio-web --link alfio-db:db -d exteso/alfio-web
+ * docker run --name alfio-web --link alfio-db:db -v /path/to/logs:/alfio/logs -d exteso/alfio-web
  * docker run --name alfio-proxy --link alfio-web:web1 -e SSL_CERT="$(awk 1 ORS='\\n' src/main/dist/servercert.pem)" -e FORCE_SSL=yes -e PORT=8080 -p 443:443 -p 80:80 -d tutum/haproxy
     
 ### Test alf.io application
- * See alfio-web logs: "docker logs alfio-web"
+ * See alfio-web logs: "docker logs alfio-web" or "less /path/to/logs/alfio.log"
  * Copy admin password in a secure place
- * Get IP of your docker container: (HOW?)
+ * Get IP of your docker container: (only on Mac/Windows, on linux the proxy will bind directly on your public IP)
     * "boot2docker ip" on Mac/Windows
-    * "docker inspect --format '{{ .NetworkSettings.IPAddress }}' ${CID}" on Linux
  * Open browser at: https://<DOCKER_IP>/admin
  * Insert user admin and the password you just copied 
-
-### Expose docker instance on public internet
- * Make docker container IP visible to the internet (HOW?)
- * define DNS domain
- * create SSL certificate
- * change DNS
