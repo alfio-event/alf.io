@@ -16,6 +16,9 @@
         <li>{{#i18n}}reservation-page-waiting.required-steps.3{{/i18n}}</li>
     </ol>
 </div>
+<div class="text-center wMarginTop">
+    <h4>{{#i18n}}reservation-page-waiting.questions [{{emailAddress}}] [{{reservation.id}}]{{/i18n}}</h4>
+</div>
 <div class="wMarginBottom">&nbsp;</div>
 <div class="container-fluid" id="back-to-event-site">
     <div class="pull-left"><a href="{{event.websiteUrl}}" class="btn btn-default">{{#i18n}}to-event-site{{/i18n}}</a></div>
