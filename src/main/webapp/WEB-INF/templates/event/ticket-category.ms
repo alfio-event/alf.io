@@ -5,7 +5,7 @@
             {{^expired}}
                 <div>
                     {{#saleInFuture}}
-                        {{#i18n}}show-event.sales-not-started{{/i18n}}
+                        {{#i18n}}show-event.sales-not-started [{{#format-date}}{{zonedInception}} dd.MM.yyyy HH:mm locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}
                     {{/saleInFuture}}
                     {{^saleInFuture}}
                         {{#i18n}}show-event.sales-end [{{#format-date}}{{zonedExpiration}} dd.MM.yyyy HH:mm locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}
