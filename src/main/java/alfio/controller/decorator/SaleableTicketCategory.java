@@ -127,6 +127,10 @@ public class SaleableTicketCategory {
         return promoCodeDiscount.map(d -> formatCents(calcDiscount(d))).orElseGet(this::getFinalPrice);
     }
 
+    public boolean getSupportsDiscount() {
+        return promoCodeDiscount.isPresent() && getSaleable();
+    }
+
     static int[] generateRangeOfTicketQuantity(int maxTickets, int availableTickets) {
         final int maximumSaleableTickets = max(0, min(maxTickets, availableTickets));
         return IntStream.rangeClosed(0, maximumSaleableTickets).toArray();
