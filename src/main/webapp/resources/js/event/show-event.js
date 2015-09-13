@@ -55,6 +55,9 @@
         collapsible.on('hidden.bs.collapse', function() {
             showExpiredCategoriesLink.find('i.fa-angle-double-up').removeClass('fa-angle-double-up').addClass('fa-angle-double-down');
         });
+        $('#collapseOne').on('shown.bs.collapse', function () {
+            $('#promo-code').focus();
+        })
     });
     
 })();
