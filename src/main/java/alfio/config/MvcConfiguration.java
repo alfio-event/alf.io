@@ -82,9 +82,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         ResourceHandlerRegistration reg = registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
-        if(environment.acceptsProfiles(Initializer.PROFILE_LIVE)) {
-            reg.setCachePeriod(15 * 60); //15 minutes
-        }
+        int cacheMinutes = environment.acceptsProfiles(Initializer.PROFILE_LIVE) ? 15 : 0;
+        reg.setCachePeriod(cacheMinutes * 60);
     }
 
     @Override
