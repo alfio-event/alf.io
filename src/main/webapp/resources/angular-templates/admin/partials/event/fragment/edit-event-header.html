@@ -11,9 +11,9 @@
                 <span class="input-group-addon">
                     <span>/event/</span>
                 </span>
-                <input type="text" id="shortName" data-ng-model="obj.shortName" class="form-control" data-ng-disabled="isUpdate" required pattern="^[A-Za-z0-9]{1,}[-_]*[A-Za-z0-9]{1,}$" name="shortName" data-validate-short-name="isUpdate" data-ng-model-options="{updateOn:'blur'}"/>
+                <input type="text" id="shortName" data-ng-model="obj.shortName" class="form-control" data-ng-disabled="isUpdate" required pattern="^[A-Za-z0-9]{1,}([-_]*[A-Za-z0-9]+)+$" name="shortName" data-validate-short-name="isUpdate" data-ng-model-options="{updateOn:'blur'}"/>
                 <span class="form-control-feedback" data-ng-if="loading"><i class="fa fa-circle-o-notch fa-spin"></i></span>
-                <field-error data-form-obj="editEventHeader" data-required-pattern="'A-Za-z0-9_- (no spaces)'" data-field-obj="editEventHeader.shortName"  data-show-existing-errors="showExistingErrors"></field-error>
+                <field-error data-form-obj="editEventHeader" data-required-pattern="'A-Za-z0-9_- (no spaces, letter or number at the end)'" data-field-obj="editEventHeader.shortName"  data-show-existing-errors="showExistingErrors"></field-error>
                 <span class="input-group-addon">
                     <span>/</span>
                 </span>
