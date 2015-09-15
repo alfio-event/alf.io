@@ -84,5 +84,12 @@ public class PluginDataStorageProvider {
             });
         }
 
+        public void registerWarning(String description, int eventId) {
+            tx.execute(tc -> {
+                pluginLogRepository.insertEvent(pluginId, eventId, description, PluginLog.Type.WARNING, ZonedDateTime.now(Clock.systemUTC()));
+                return null;
+            });
+        }
+
     }
 }

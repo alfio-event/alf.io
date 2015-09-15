@@ -33,7 +33,7 @@
                     <th>Timestamp</th>
                 </thead>
                 <tbody>
-                    <tr data-ng-repeat="entry in ctrl.logEntries | filter:ctrl.searchFilter" data-ng-class="{'text-success': entry.type === 'SUCCESS', 'text-danger': entry.type === 'ERROR'}">
+                    <tr data-ng-repeat="entry in ctrl.logEntries | filter:ctrl.searchFilter" data-ng-class="{'text-success': entry.type === 'SUCCESS', 'text-danger': entry.type === 'ERROR', 'text-warning': entry.type === 'WARNING'}">
                         <td data-ng-class-even="'active'">{{entry.eventName}}</td>
                         <td data-ng-class-even="'active'">{{entry.pluginId}}</td>
                         <td data-ng-class-even="'active'">{{entry.description}}</td>
