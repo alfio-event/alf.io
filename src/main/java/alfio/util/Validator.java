@@ -75,15 +75,21 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
-    public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors) {
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "name", "error.category.name");
+    public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors, String prefix) {
+        if(StringUtils.isBlank(category.getName())) {
+            errors.rejectValue(prefix + "name", "error.category.name");
+        }
         if(category.isBounded() && category.getMaxTickets() < 1) {
-            errors.rejectValue("maxTickets", "error.category.maxtickets");
+            errors.rejectValue(prefix + "maxTickets", "error.category.maxtickets");
         }
         if(!category.getInception().isBefore(category.getExpiration())) {
-            errors.rejectValue("dateString", "error.date");
+            errors.rejectValue(prefix + "dateString", "error.date");
         }
         return evaluateValidationResult(errors);
+    }
+
+    public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors) {
+        return validateCategory(category, errors, "");
     }
 
     private static boolean isCollectionEmpty(Collection<?> collection) {

@@ -45,9 +45,13 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static alfio.util.OptionalWrapper.optionally;
+import static alfio.util.Validator.validateCategory;
+import static alfio.util.Validator.validateEventHeader;
+import static alfio.util.Validator.validateEventPrices;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
@@ -108,8 +112,14 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/check", method = POST)
-    public ValidationResult validateEvent(@RequestBody EventModification eventModification) {
-        return ValidationResult.success();
+    public ValidationResult validateEvent(@RequestBody EventModification eventModification, Errors errors) {
+        ValidationResult base = validateEventHeader(eventModification, errors)
+            .or(validateEventPrices(eventModification, errors));
+        AtomicInteger counter = new AtomicInteger();
+        return base.or(eventModification.getTicketCategories().stream()
+            .map(c -> validateCategory(c, errors, "ticketCategories["+counter.getAndIncrement()+"]."))
+            .reduce(ValidationResult::or)
+            .orElse(ValidationResult.success()));
     }
 
     @RequestMapping(value = "/events/new", method = POST)
@@ -120,22 +130,22 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{id}/header/update", method = POST)
     public ValidationResult updateHeader(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
-        return Validator.validateEventHeader(eventModification, errors).ifSuccess(() -> eventManager.updateEventHeader(id, eventModification, principal.getName()));
+        return validateEventHeader(eventModification, errors).ifSuccess(() -> eventManager.updateEventHeader(id, eventModification, principal.getName()));
     }
 
     @RequestMapping(value = "/events/{id}/prices/update", method = POST)
     public ValidationResult updatePrices(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
-        return Validator.validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(id, eventModification, principal.getName()));
+        return validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(id, eventModification, principal.getName()));
     }
 
     @RequestMapping(value = "/events/{eventId}/categories/{categoryId}/update", method = POST)
     public ValidationResult updateExistingCategory(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
-        return Validator.validateCategory(category, errors).ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
+        return validateCategory(category, errors).ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
     }
 
     @RequestMapping(value = "/events/{eventId}/categories/new", method = POST)
     public ValidationResult createCategory(@PathVariable("eventId") int eventId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
-        return Validator.validateCategory(category, errors).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
+        return validateCategory(category, errors).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
     }
 
     @RequestMapping(value = "/events/reallocate", method = PUT)

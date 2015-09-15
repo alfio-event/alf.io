@@ -19,9 +19,11 @@ package alfio.util;
 import lombok.Getter;
 import org.springframework.validation.FieldError;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 @Getter
 public final class ValidationResult {
@@ -55,6 +57,16 @@ public final class ValidationResult {
         return this;
     }
 
+    public ValidationResult or(ValidationResult second) {
+        if(!isSuccess()) {
+            List<ValidationError> joined = new ArrayList<>();
+            joined.addAll(validationErrors);
+            joined.addAll(second.getValidationErrors());
+            return new ValidationResult(joined);
+        }
+        return second;
+    }
+
     public boolean isSuccess() {
         return errorCount == 0;
     }
@@ -75,7 +87,7 @@ public final class ValidationResult {
     }
 
     @FunctionalInterface
-    public static interface Operation {
+    public interface Operation {
         void doIt();
     }
 }
