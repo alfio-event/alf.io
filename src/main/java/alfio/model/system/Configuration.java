@@ -17,9 +17,11 @@
 package alfio.model.system;
 
 import alfio.model.Event;
+import alfio.model.TicketCategory;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import org.apache.commons.lang3.Validate;
 
 @Getter
 @EqualsAndHashCode
@@ -52,11 +54,6 @@ public class Configuration {
         return configurationKey.getComponentType();
     }
 
-
-
-    public enum ConfigurationPathLevel {
-        SYSTEM, ORGANIZATION, EVENT, TICKET_CATEGORY
-    }
 
     public interface ConfigurationPath {
         ConfigurationPathLevel pathLevel();
@@ -160,6 +157,25 @@ public class Configuration {
     }
     //
 
+    public static ConfigurationPathKey getSystemConfiguration(ConfigurationKeys configurationKey) {
+        Validate.isTrue(configurationKey.supports(ConfigurationPathLevel.SYSTEM));
+        return new ConfigurationPathKey(system(), configurationKey);
+    }
+
+    public static ConfigurationPathKey getOrganizationConfiguration(int organizationId, ConfigurationKeys configurationKey) {
+        Validate.isTrue(configurationKey.supports(ConfigurationPathLevel.ORGANIZATION));
+        return new ConfigurationPathKey(organization(organizationId), configurationKey);
+    }
+
+    public static ConfigurationPathKey getEventConfiguration(Event event, ConfigurationKeys configurationKey) {
+        Validate.isTrue(configurationKey.supports(ConfigurationPathLevel.EVENT));
+        return new ConfigurationPathKey(event(event), configurationKey);
+    }
+
+    public static ConfigurationPathKey getTicketCategoryConfiguration(Event event, TicketCategory ticketCategory, ConfigurationKeys configurationKey) {
+        Validate.isTrue(configurationKey.supports(ConfigurationPathLevel.TICKET_CATEGORY));
+        return new ConfigurationPathKey(ticketCategory(event.getOrganizationId(), event.getId(), ticketCategory.getId()), configurationKey);
+    }
 
     public static ConfigurationPathKey initCompleted() {
         return new ConfigurationPathKey(system(), ConfigurationKeys.INIT_COMPLETED);

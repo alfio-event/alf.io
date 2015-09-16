@@ -20,6 +20,7 @@ import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.ConfigurationPathLevel;
 import alfio.repository.system.ConfigurationRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -158,7 +159,7 @@ public class ConfigurationManager {
                 .collect(Collectors.toList());
         final List<Configuration> missing = Arrays.stream(ConfigurationKeys.visible())
                 .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
-                .map(k -> new Configuration(-1, k.getValue(), null, k.getDescription(), Configuration.ConfigurationPathLevel.SYSTEM))
+                .map(k -> new Configuration(-1, k.getValue(), null, k.getDescription(), ConfigurationPathLevel.SYSTEM))
                 .collect(Collectors.toList());
         List<Configuration> result = new LinkedList<>(existing);
         result.addAll(missing);
