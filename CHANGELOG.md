@@ -15,6 +15,11 @@
 - support waiting queue [\#39](https://github.com/exteso/alf.io/issues/39)
 - support multi language event and ticket category description [\#38](https://github.com/exteso/alf.io/issues/38)
 - Add event name [\#35](https://github.com/exteso/alf.io/issues/35)
+- add mailchimp integration [\#36](https://github.com/exteso/alf.io/issues/36)
+- Export ticket details [\#42](https://github.com/exteso/alf.io/issues/42)
+- add quartz scheduler for cluster aware job [\#73](https://github.com/exteso/alf.io/issues/73)
+- Cookie-law compliance [\#67](https://github.com/exteso/alf.io/issues/67)
+- support multi tenancy [\#56](https://github.com/exteso/alf.io/issues/56)
 
 **Closed issues:**
 
@@ -23,12 +28,7 @@
 - Bug creating new organizations [\#70](https://github.com/exteso/alf.io/issues/70)
 - Error while doing the environment setup [\#57](https://github.com/exteso/alf.io/issues/57)
 - Create settings.properties [\#52](https://github.com/exteso/alf.io/issues/52)
-- Export ticket details [\#42](https://github.com/exteso/alf.io/issues/42)
-- add quartz scheduler for cluster aware job [\#73](https://github.com/exteso/alf.io/issues/73)
-- Cookie-law compliance [\#67](https://github.com/exteso/alf.io/issues/67)
 - GUI UX/UI redesign [\#66](https://github.com/exteso/alf.io/issues/66)
-- support multi tenancy [\#56](https://github.com/exteso/alf.io/issues/56)
-- add mailchimp integration [\#36](https://github.com/exteso/alf.io/issues/36)
 
 ## [1.4.1](https://github.com/exteso/alf.io/tree/1.4.1) (2015-04-07)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.4...1.4.1)
