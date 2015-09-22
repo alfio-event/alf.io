@@ -281,5 +281,8 @@ task distribution(type: Copy) {
 }
 
 release {
-    requireBranch ''
+    git {
+        requireBranch = ''
+        pushToRemote = 'origin'
+    }
 }
