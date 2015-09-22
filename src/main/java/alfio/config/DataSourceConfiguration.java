@@ -48,6 +48,7 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.quartz.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -63,7 +64,7 @@ import java.util.Properties;
 import java.util.Set;
 
 @EnableTransactionManagement
-//@EnableScheduling
+@EnableScheduling
 @EnableAsync
 @ComponentScan(basePackages = {"alfio.manager"})
 @Log4j2
