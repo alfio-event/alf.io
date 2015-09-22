@@ -279,3 +279,7 @@ task distribution(type: Copy) {
 
     dependsOn build, dockerize
 }
+
+release {
+    requireBranch ''
+}
