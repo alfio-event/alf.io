@@ -217,7 +217,7 @@ public enum PlatformProvider {
     };
 
     private static final String POSTGRESQL_DRIVER = "org.postgresql.Driver";
-    private static final String PGSQL = "PGSQL";
+    public static final String PGSQL = "PGSQL";
 
 
     public String getDriveClassName(Environment env) {
