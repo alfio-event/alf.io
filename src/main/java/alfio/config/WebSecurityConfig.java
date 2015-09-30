@@ -120,20 +120,21 @@ public class WebSecurityConfig {
                 configurer.requireCsrfProtectionMatcher(new NegatedRequestMatcher((r) -> whiteList.matcher(r.getMethod()).matches() || r.getRequestURI().equals("/report-csp-violation")));
             }
             configurer.csrfTokenRepository(getCsrfTokenRepository())
-                    .and()
-                    .authorizeRequests()
-                    .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/users/**", ADMIN_API + "/configuration/**").hasRole(ADMIN)
-                    .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
-                    .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
-                    .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
-                    .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
-                    .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
-                    .antMatchers("/**").permitAll()
-                    .and()
-                    .formLogin()
-                    .loginPage("/authentication")
-                    .loginProcessingUrl("/authentication")
-                    .failureUrl("/authentication?failed");
+                .and()
+                .authorizeRequests()
+                .antMatchers(ADMIN_API + "/configuration/organizations/**").hasAnyRole(ADMIN, OWNER)
+                .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/users/**", ADMIN_API + "/configuration/**").hasRole(ADMIN)
+                .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
+                .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
+                .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
+                .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
+                .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
+                .antMatchers("/**").permitAll()
+                .and()
+                .formLogin()
+                .loginPage("/authentication")
+                .loginProcessingUrl("/authentication")
+                .failureUrl("/authentication?failed");
         }
     }
 

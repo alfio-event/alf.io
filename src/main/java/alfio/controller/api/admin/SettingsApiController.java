@@ -23,12 +23,15 @@ import alfio.model.modification.PluginConfigOptionModification;
 import alfio.model.plugin.PluginConfigOption;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.user.Organization;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -51,22 +54,39 @@ public class SettingsApiController {
     }
 
     @RequestMapping(value = "/configuration/load", method = GET)
-    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration() {
-        return configurationManager.loadAllSystemConfigurationIncludingMissing();
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration(Principal principal) {
+        return configurationManager.loadAllSystemConfigurationIncludingMissing(principal.getName());
     }
 
     @RequestMapping(value = "/configuration/update", method = POST)
-    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> updateConfiguration(@RequestBody ConfigurationModification configuration) {
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> updateConfiguration(@RequestBody ConfigurationModification configuration, Principal principal) {
         configurationManager.saveSystemConfiguration(ConfigurationKeys.fromValue(configuration.getKey()), configuration.getValue());
-        return loadConfiguration();
+        return loadConfiguration(principal);
     }
 
     @RequestMapping(value = "/configuration/update-bulk", method = POST)
-    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> updateConfiguration(@RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input) {
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> updateConfiguration(@RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input,
+                                                                                           Principal principal) {
         Objects.requireNonNull(input);
         List<ConfigurationModification> list = input.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         configurationManager.saveAllSystemConfiguration(list);
-        return loadConfiguration();
+        return loadConfiguration(principal);
+    }
+
+    @RequestMapping(value = "/configuration/organizations/load", method = GET)
+    public List<OrganizationConfig> loadOrganizationsConfiguration(Principal principal) {
+        return configurationManager.loadAllOrganizationConfiguration(principal.getName()).entrySet()
+            .stream()
+            .map(e -> new OrganizationConfig(e.getKey(), e.getValue()))
+            .collect(Collectors.toList());
+    }
+
+    @RequestMapping(value = "/configuration/organizations/{organizationId}/update", method = POST)
+    public List<OrganizationConfig> updateOrganizationsConfiguration(@PathVariable("organizationId") int organizationId,
+                                                                     @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input,
+                                                                     Principal principal) {
+        configurationManager.saveAllOrganizationConfiguration(organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
+        return loadOrganizationsConfiguration(principal);
     }
 
     @RequestMapping(value = "/configuration/plugin/load", method = GET)
@@ -85,5 +105,11 @@ public class SettingsApiController {
     public boolean deleteKey(@PathVariable("key") String key) {
         configurationManager.deleteKey(key);
         return true;
+    }
+
+    @Data
+    class OrganizationConfig {
+        private final Organization organization;
+        private final Map<ConfigurationKeys.SettingCategory, List<Configuration>> config;
     }
 }

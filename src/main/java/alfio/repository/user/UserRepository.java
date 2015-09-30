@@ -21,6 +21,7 @@ import ch.digitalfondue.npjt.*;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface UserRepository {
@@ -35,7 +36,7 @@ public interface UserRepository {
     List<User> findByUsername(@Bind("username") String username);
 
     @Query("select * from ba_user where username = :username and enabled = true")
-    User findEnabledByUsername(@Bind("username") String username);
+    Optional<User> findEnabledByUsername(@Bind("username") String username);
 
     @Query("INSERT INTO ba_user(username, password, first_name, last_name, email_address, enabled) VALUES"
             + " (:username, :password, :first_name, :last_name, :email_address, :enabled)")

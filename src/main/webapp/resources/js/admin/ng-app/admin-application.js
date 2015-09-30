@@ -8,7 +8,7 @@
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)'
     };
-    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'alfio-plugins', 'alfio-email', 'alfio-util']);
+    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.otherwise("/");
@@ -82,11 +82,6 @@
                 url: '/:eventName/c/:categoryId/send-invitation',
                 templateUrl: BASE_STATIC_URL + '/event/fragment/send-reserved-codes.html',
                 controller: 'SendInvitationsController'
-            })
-            .state('configuration', {
-                url: '/configuration',
-                templateUrl: BASE_STATIC_URL + '/configuration/index.html',
-                controller: 'ConfigurationController'
             })
             .state('pending-reservations', {
                 url: '/pending-reservations/:eventName/',
@@ -971,73 +966,6 @@
     admin.controller('MessageBarController', function($scope, $rootScope) {
         $rootScope.$on('Message', function(m) {
             $scope.message = m;
-        });
-    });
-
-    admin.controller('ConfigurationController', function($scope, ConfigurationService, $rootScope, $q) {
-        $scope.loading = true;
-        var populateScope = function(result) {
-            $scope.settings = result;
-            $scope.general = {
-                settings: result['GENERAL']
-            };
-            $scope.mail = {
-                settings: _.filter(result['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
-                type: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAILER_TYPE';}),
-                maxEmailPerCycle: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';}),
-                mailReplyTo: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';})
-            };
-            $scope.payment = {
-                settings: result['PAYMENT']
-            };
-        };
-
-        var populatePluginScope = function(result) {
-            $scope.pluginSettings = result;
-            $scope.pluginSettingsByPluginId = _.groupBy(result, 'pluginId');
-        };
-
-        var loadAll = function() {
-            $scope.loading = true;
-            $q.all([ConfigurationService.loadAll(), ConfigurationService.loadPlugins()]).then(function(results) {
-                populateScope(results[0].data);
-                populatePluginScope(results[1].data);
-                $scope.loading = false;
-            }, function(e) {
-                alert(e.data);
-                $scope.loading = false;
-            });
-        };
-        loadAll();
-
-        $scope.saveSettings = function(frm, settings, pluginSettings) {
-            if(!frm.$valid) {
-                return;
-            }
-            $scope.loading = true;
-            $q.all([ConfigurationService.bulkUpdate(settings), ConfigurationService.bulkUpdatePlugins(pluginSettings)]).then(function(results) {
-                populateScope(results[0].data);
-                populatePluginScope(results[1].data);
-                $scope.loading = false;
-            }, function(e) {
-                alert(e.data);
-                $scope.loading = false;
-            });
-        };
-
-        $scope.configurationChange = function(conf) {
-            if(!conf.value) {
-                return;
-            }
-            $scope.loading = true;
-            ConfigurationService.update(conf).success(function(result) {
-                $scope.settings = result;
-                $scope.loading = false;
-            });
-        };
-
-        $rootScope.$on('ReloadSettings', function() {
-            loadAll();
         });
     });
 

@@ -16,19 +16,28 @@
  */
 package alfio.manager.system;
 
+import alfio.manager.user.UserManager;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
+import alfio.model.user.Organization;
+import alfio.model.user.User;
+import alfio.model.user.join.UserOrganization;
 import alfio.repository.system.ConfigurationRepository;
+import jdk.nashorn.internal.runtime.regexp.joni.Config;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static alfio.util.OptionalWrapper.optionally;
@@ -38,11 +47,18 @@ import static alfio.util.OptionalWrapper.optionally;
 @Log4j2
 public class ConfigurationManager {
 
+    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> TICKET_CATEGORY_CONFIGURATION = ConfigurationKeys.byPathLevel(ConfigurationPathLevel.ORGANIZATION)
+        .stream()
+        .map(mapEmptyKeys(ConfigurationPathLevel.ORGANIZATION))
+        .collect(groupByCategory());
+
     private final ConfigurationRepository configurationRepository;
+    private final UserManager userManager;
 
     @Autowired
-    public ConfigurationManager(ConfigurationRepository configurationRepository) {
+    public ConfigurationManager(ConfigurationRepository configurationRepository, UserManager userManager) {
         this.configurationRepository = configurationRepository;
+        this.userManager = userManager;
     }
 
     //TODO: refactor, not the most beautiful code, find a better solution...
@@ -121,6 +137,19 @@ public class ConfigurationManager {
         list.forEach(c -> saveSystemConfiguration(ConfigurationKeys.fromValue(c.getKey()), c.getValue()));
     }
 
+    public void saveAllOrganizationConfiguration(int organizationId, List<ConfigurationModification> list) {
+        list.stream()
+            .filter(c -> c.getId() > -1 || !StringUtils.isBlank(c.getValue()))
+            .forEach(c -> {
+                Optional<Configuration> existing = configurationRepository.findByKeyAtOrganizationLevel(organizationId, c.getKey());
+                if (existing.isPresent()) {
+                    configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), c.getValue());
+                } else {
+                    configurationRepository.insertOrganizationLevel(organizationId, c.getKey(), c.getValue(), ConfigurationKeys.fromValue(c.getKey()).getDescription());
+                }
+            });
+    }
+
     public void saveSystemConfiguration(ConfigurationKeys key, String value) {
         Optional<Configuration> conf = optionally(() -> findByConfigurationPathAndKey(Configuration.system(), key));
         Optional<String> valueOpt = Optional.ofNullable(value);
@@ -144,26 +173,60 @@ public class ConfigurationManager {
         return ConfigurationKeys.basic().stream()
             .anyMatch(key -> {
                 boolean absent = !configurationRepository.findOptionalByKey(key.getValue()).isPresent();
-                if(absent) {
-                    log.warn("cannot find a value for "+key.getValue());
+                if (absent) {
+                    log.warn("cannot find a value for " + key.getValue());
                 }
                 return absent;
             });
     }
 
+    public Map<Organization, Map<ConfigurationKeys.SettingCategory, List<Configuration>>> loadAllOrganizationConfiguration(String username) {
+        User user = userManager.findUserByUsername(username);
+        if(!userManager.isOwner(user)) {
+            return Collections.emptyMap();
+        }
+        return userManager.findUserOrganizations(user).stream()
+            .collect(Collectors.toMap(Function.identity(), o -> {
+                Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(o.getId()).stream().collect(groupByCategory());
+                return TICKET_CATEGORY_CONFIGURATION.entrySet().stream()
+                    .map(e -> {
+                        Set<Configuration> entries = new LinkedHashSet<>();
+                        ConfigurationKeys.SettingCategory key = e.getKey();
+                        entries.addAll(e.getValue());
+                        if(existing.containsKey(key)) {
+                            List<Configuration> configurations = existing.get(key);
+                            entries.removeAll(configurations);
+                            entries.addAll(configurations);
+                        }
+                        return Pair.of(key, new ArrayList<>(entries));
+                    })
+                    .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+            }));
+    }
 
-    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadAllSystemConfigurationIncludingMissing() {
-        final List<Configuration> existing = configurationRepository.findAll()
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadAllSystemConfigurationIncludingMissing(String username) {
+        if(!userManager.isAdmin(userManager.findUserByUsername(username))) {
+            return Collections.emptyMap();
+        }
+        final List<Configuration> existing = configurationRepository.findSystemConfiguration()
                 .stream()
                 .filter(c -> !ConfigurationKeys.fromValue(c.getKey()).isInternal())
                 .collect(Collectors.toList());
         final List<Configuration> missing = Arrays.stream(ConfigurationKeys.visible())
                 .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
-                .map(k -> new Configuration(-1, k.getValue(), null, k.getDescription(), ConfigurationPathLevel.SYSTEM))
+                .map(mapEmptyKeys(ConfigurationPathLevel.SYSTEM))
                 .collect(Collectors.toList());
         List<Configuration> result = new LinkedList<>(existing);
         result.addAll(missing);
-        return result.stream().collect(Collectors.groupingBy(c -> c.getConfigurationKey().getCategory()));
+        return result.stream().collect(groupByCategory());
+    }
+
+    private static Collector<Configuration, ?, Map<ConfigurationKeys.SettingCategory, List<Configuration>>> groupByCategory() {
+        return Collectors.groupingBy(c -> c.getConfigurationKey().getCategory());
+    }
+
+    private static Function<ConfigurationKeys, Configuration> mapEmptyKeys(ConfigurationPathLevel level) {
+        return k -> new Configuration(-1, k.getValue(), null, k.getDescription(), level);
     }
 
     public void deleteKey(String key) {

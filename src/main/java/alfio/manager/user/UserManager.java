@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static java.util.stream.Collectors.toList;
 
@@ -78,6 +79,10 @@ public class UserManager {
                 .collect(toList());
     }
 
+    public User findUserByUsername(String username) {
+        return userRepository.findEnabledByUsername(username).orElseThrow(IllegalArgumentException::new);
+    }
+
     public User findUser(int id) {
         return userRepository.findById(id);
     }
@@ -105,7 +110,15 @@ public class UserManager {
     }
 
     public boolean isAdmin(User user) {
-        return getUserAuthorities(user).stream().anyMatch(a -> a.getRole().equals(AuthorityRepository.ROLE_ADMIN));
+        return checkRole(user, a -> a.getRole().equals(AuthorityRepository.ROLE_ADMIN));
+    }
+
+    public boolean isOwner(User user) {
+        return checkRole(user, a -> a.getRole().equals(AuthorityRepository.ROLE_ADMIN) || a.getRole().equals(AuthorityRepository.ROLE_OWNER));
+    }
+
+    private boolean checkRole(User user, Predicate<Authority> matcher) {
+        return getUserAuthorities(user).stream().anyMatch(matcher);
     }
 
     @Transactional
@@ -161,7 +174,7 @@ public class UserManager {
 
     @Transactional
     public void deleteUser(int userId, String currentUsername) {
-        User currentUser = userRepository.findEnabledByUsername(currentUsername);
+        User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
         Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot commit suicide");
         Assert.isTrue(userRepository.toggleEnabled(userId, false) == 1, "unexpected update result");
     }

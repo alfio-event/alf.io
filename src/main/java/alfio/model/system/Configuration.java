@@ -22,9 +22,10 @@ import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 @Getter
-@EqualsAndHashCode
 public class Configuration {
 
     private final int id;
@@ -333,5 +334,27 @@ public class Configuration {
 
     public static ConfigurationPathKey waitingQueueReservationTimeout(Event event) {
         return new ConfigurationPathKey(event(event), ConfigurationKeys.WAITING_QUEUE_RESERVATION_TIMEOUT);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Configuration that = (Configuration) o;
+
+        return new EqualsBuilder()
+            .append(key, that.key)
+            .append(configurationKey, that.configurationKey)
+            .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37)
+            .append(key)
+            .append(configurationKey)
+            .toHashCode();
     }
 }

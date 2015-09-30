@@ -16,6 +16,7 @@
  */
 package alfio.model.modification;
 
+import alfio.model.system.Configuration;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -33,5 +34,9 @@ public class ConfigurationModification {
         this.id = id;
         this.key = key;
         this.value = value;
+    }
+
+    public static ConfigurationModification fromConfiguration(Configuration in) {
+        return new ConfigurationModification(in.getId(), in.getKey(), in.getValue());
     }
 }

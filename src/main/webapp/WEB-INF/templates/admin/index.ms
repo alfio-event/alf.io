@@ -31,6 +31,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/plugin/plugin-log.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/email/email-log.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/util/file-upload.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>

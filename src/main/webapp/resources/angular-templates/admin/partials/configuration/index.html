@@ -1,72 +1,96 @@
 <div class="container">
-    <div class="page-header">
-        <h1>General</h1>
-        <span>General settings</span>
+    <div class="row">
+        <div class="col-xs-12 col-sm-4 col-md-3">
+            <div class="page-header">
+                <h1>Level</h1>
+                <span>select the level</span>
+            </div>
+            <ul class="nav nav-pills nav-stacked">
+                <li role="presentation" data-ng-class="{'active':!configCtrl.organization}"><a role="button" href="" data-ng-click="configCtrl.viewGlobalSettings()"><i class="fa fa-globe"></i> Global</a></li>
+                <li role="presentation"><strong><i class="fa fa-users"></i> Organization</strong>
+                    <ul class="nav nav-pills nav-stacked">
+                        <li role="presentation" data-ng-class="{'active':configCtrl.organization.id === c.organization.id}" data-ng-repeat="c in configCtrl.organizationsConfig"><a href="" role="button" data-ng-click="configCtrl.viewOrganizationSettings(c.organization, c.config)">{{c.organization.name}}</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="col-xs-12 col-sm-8 col-md-9">
+            <div class="page-header">
+                <h1>General</h1>
+                <span>General settings</span>
+            </div>
+
+            <form name="settingsForm" novalidate data-ng-submit="configCtrl.saveSettings(settingsForm)">
+                <div data-ng-if="configCtrl.general">
+                    <div data-ng-repeat="setting in configCtrl.general.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="configCtrl.globalSettings"></setting>
+                    </div>
+                    <i class="fa fa-cog fa-spin fa-3x" data-ng-if="configCtrl.general.loading"></i>
+                </div>
+
+                <div class="page-header">
+                    <h1>E-Mail</h1>
+                    <span>E-Mail settings</span>
+                </div>
+
+                <div data-ng-if="configCtrl.mail">
+                    <div data-ng-if="configCtrl.mail.type">
+                        <div class="radio-inline">
+                            <label>
+                                <input type="radio" name="mailer.type" data-ng-model="configCtrl.mail.type.value" data-ng-value="'smtp'">
+                                SMTP
+                            </label>
+                        </div>
+                        <div class="radio-inline">
+                            <label>
+                                <input type="radio" name="mailer.type" data-ng-model="configCtrl.mail.type.value" data-ng-value="'mailgun'">
+                                Mailgun.com
+                            </label>
+                        </div>
+                        <div data-ng-repeat="setting in configCtrl.mail.settings | mailSettingsFilter:configCtrl.mail.type.value">
+                            <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
+                        </div>
+                        <div>
+                            <setting obj="configCtrl.mail.maxEmailPerCycle" data-display-delete-if-needed="true"></setting>
+                        </div>
+                        <div>
+                            <setting obj="configCtrl.mail.mailReplyTo" data-display-delete-if-needed="true"></setting>
+                        </div>
+                    </div>
+                    <div data-ng-repeat="setting in configCtrl.mail.settings" data-ng-if="!configCtrl.mail.type">
+                        <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
+                    </div>
+                </div>
+
+                <div class="page-header">
+                    <h1>Payment</h1>
+                    <span>Payment provider settings</span>
+                </div>
+
+                <div data-ng-if="payment">
+                    <div data-ng-repeat="setting in configCtrl.payment.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
+                    </div>
+                    <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loading"></i>
+                </div>
+
+                <div class="page-header">
+                    <h1>Plugins</h1>
+                    <span>Plugins settings</span>
+                </div>
+
+                <div data-ng-repeat="(key, settings) in configCtrl.pluginSettingsByPluginId">
+                    <div class="page-header"><h3 data-ng-bind="key"></h3></div>
+                    <div data-ng-repeat="setting in settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
+                    </div>
+                </div>
+
+                <div class="pull-right wMarginBottom wMarginTop">
+                    <button type="submit" class="btn btn-success" data-ng-disabled="loading">save</button>
+                    <a class="btn btn-default" data-ui-sref="index">cancel</a>
+                </div>
+            </form>
+        </div>
     </div>
-    <form name="settingsForm" novalidate data-ng-submit="saveSettings(settingsForm, settings, pluginSettings)">
-        <div data-ng-if="general">
-            <div data-ng-repeat="setting in general.settings">
-                <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
-            </div>
-            <i class="fa fa-cog fa-spin fa-3x" data-ng-if="general.loading"></i>
-        </div>
-
-        <div class="page-header">
-            <h1>E-Mail</h1>
-            <span>E-Mail settings</span>
-        </div>
-
-        <div data-ng-if="mail">
-            <div class="radio-inline">
-                <label>
-                    <input type="radio" name="mailer.type" data-ng-model="mail.type.value" data-ng-value="'smtp'">
-                    SMTP
-                </label>
-            </div>
-            <div class="radio-inline">
-                <label>
-                    <input type="radio" name="mailer.type" data-ng-model="mail.type.value" data-ng-value="'mailgun'">
-                    Mailgun.com
-                </label>
-            </div>
-            <div data-ng-repeat="setting in mail.settings | mailSettingsFilter:mail.type.value">
-                <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
-            </div>
-            <div>
-                <setting obj="mail.maxEmailPerCycle" data-display-delete-if-needed="true"></setting>
-            </div>
-            <div>
-                <setting obj="mail.mailReplyTo" data-display-delete-if-needed="true"></setting>
-            </div>
-        </div>
-
-        <div class="page-header">
-            <h1>Payment</h1>
-            <span>Payment provider settings</span>
-        </div>
-
-        <div data-ng-if="payment">
-            <div data-ng-repeat="setting in payment.settings">
-                <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
-            </div>
-            <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loading"></i>
-        </div>
-
-        <div class="page-header">
-            <h1>Plugins</h1>
-            <span>Plugins settings</span>
-        </div>
-
-        <div data-ng-repeat="(key, settings) in pluginSettingsByPluginId">
-            <div class="page-header"><h3 data-ng-bind="key"></h3></div>
-            <div data-ng-repeat="setting in settings">
-                <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
-            </div>
-        </div>
-
-        <div class="pull-right wMarginBottom wMarginTop">
-            <button type="submit" class="btn btn-success" data-ng-disabled="loading">save</button>
-            <a class="btn btn-default" data-ui-sref="index">cancel</a>
-        </div>
-    </form>
 </div>
