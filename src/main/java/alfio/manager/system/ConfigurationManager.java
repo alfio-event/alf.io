@@ -29,6 +29,7 @@ import alfio.repository.system.ConfigurationRepository;
 import jdk.nashorn.internal.runtime.regexp.joni.Config;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -231,5 +232,10 @@ public class ConfigurationManager {
 
     public void deleteKey(String key) {
         configurationRepository.deleteByKey(key);
+    }
+
+    public void deleteOrganizationLevelByKey(String key, int organizationId, String username) {
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "User is not owner of the organization. Therefore, delete is not allowed.");
+        configurationRepository.deleteOrganizationLevelByKey(key, organizationId);
     }
 }

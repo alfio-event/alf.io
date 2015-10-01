@@ -101,6 +101,12 @@ public class SettingsApiController {
         return loadPluginConfiguration();
     }
 
+    @RequestMapping(value = "/configuration/organization/{organizationId}/key/{key}", method = DELETE)
+    public boolean deleteKey(@PathVariable("organizationId") int organizationId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
+        configurationManager.deleteOrganizationLevelByKey(key.getValue(), organizationId, principal.getName());
+        return true;
+    }
+
     @RequestMapping(value = "/configuration/key/{key}", method = DELETE)
     public boolean deleteKey(@PathVariable("key") String key) {
         configurationManager.deleteKey(key);

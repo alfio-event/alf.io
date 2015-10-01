@@ -117,6 +117,10 @@ public class UserManager {
         return checkRole(user, a -> a.getRole().equals(AuthorityRepository.ROLE_ADMIN) || a.getRole().equals(AuthorityRepository.ROLE_OWNER));
     }
 
+    public boolean isOwnerOfOrganization(User user, int organizationId) {
+        return isAdmin(user) || (isOwner(user) && userOrganizationRepository.findByUserId(user.getId()).stream().anyMatch(uo -> uo.getOrganizationId() == organizationId));
+    }
+
     private boolean checkRole(User user, Predicate<Authority> matcher) {
         return getUserAuthorities(user).stream().anyMatch(matcher);
     }

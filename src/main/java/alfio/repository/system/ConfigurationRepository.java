@@ -78,6 +78,9 @@ public interface ConfigurationRepository {
     @Query("DELETE FROM configuration where c_key = :key")
     void deleteByKey(@Bind("key") String key);
 
+    @Query("DELETE FROM configuration_organization where c_key = :key and organization_id_fk = :organizationId")
+    void deleteOrganizationLevelByKey(@Bind("key") String key, @Bind("organizationId") int organizationId);
+
     @Query(INSERT_STATEMENT)
     int insert(@Bind("key") String key, @Bind("value") String value, @Bind("description") String description);
 

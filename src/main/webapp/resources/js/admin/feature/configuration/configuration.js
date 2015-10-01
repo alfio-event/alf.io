@@ -30,8 +30,11 @@
             updateOrganizationConfig: function(organization, settings) {
                 return $http.post('/admin/api/configuration/organizations/'+organization.id+'/update', settings).error(HttpErrorHandler.handle);
             },
-            remove: function(key) {
-                return $http['delete']('/admin/api/configuration/key/' + key).error(HttpErrorHandler.handle);
+            remove: function(conf) {
+                return $http['delete']('/admin/api/configuration/key/' + conf.configurationKey).error(HttpErrorHandler.handle);
+            },
+            removeOrganizationConfig: function(conf, organization) {
+                return $http['delete']('/admin/api/configuration/organization/'+organization.id+'/key/' + conf.configurationKey).error(HttpErrorHandler.handle);
             },
             loadPlugins: function() {
                 return $http.get('/admin/api/configuration/plugin/load').error(HttpErrorHandler.handle);

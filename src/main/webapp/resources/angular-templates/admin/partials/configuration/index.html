@@ -23,7 +23,7 @@
             <form name="settingsForm" novalidate data-ng-submit="configCtrl.saveSettings(settingsForm)">
                 <div data-ng-if="configCtrl.general">
                     <div data-ng-repeat="setting in configCtrl.general.settings">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="configCtrl.globalSettings"></setting>
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="configCtrl.globalSettings" data-organization="configCtrl.organization"></setting>
                     </div>
                     <i class="fa fa-cog fa-spin fa-3x" data-ng-if="configCtrl.general.loading"></i>
                 </div>
@@ -48,17 +48,17 @@
                             </label>
                         </div>
                         <div data-ng-repeat="setting in configCtrl.mail.settings | mailSettingsFilter:configCtrl.mail.type.value">
-                            <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-organization="configCtrl.organization"></setting>
                         </div>
                         <div>
-                            <setting obj="configCtrl.mail.maxEmailPerCycle" data-display-delete-if-needed="true"></setting>
+                            <setting obj="configCtrl.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-organization="configCtrl.organization"></setting>
                         </div>
                         <div>
-                            <setting obj="configCtrl.mail.mailReplyTo" data-display-delete-if-needed="true"></setting>
+                            <setting obj="configCtrl.mail.mailReplyTo" data-display-delete-if-needed="true" data-organization="configCtrl.organization"></setting>
                         </div>
                     </div>
                     <div data-ng-repeat="setting in configCtrl.mail.settings" data-ng-if="!configCtrl.mail.type">
-                        <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-organization="configCtrl.organization"></setting>
                     </div>
                 </div>
 
@@ -69,7 +69,7 @@
 
                 <div data-ng-if="payment">
                     <div data-ng-repeat="setting in configCtrl.payment.settings">
-                        <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-organization="configCtrl.organization"></setting>
                     </div>
                     <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loading"></i>
                 </div>
@@ -82,7 +82,7 @@
                 <div data-ng-repeat="(key, settings) in configCtrl.pluginSettingsByPluginId">
                     <div class="page-header"><h3 data-ng-bind="key"></h3></div>
                     <div data-ng-repeat="setting in settings">
-                        <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-organization="configCtrl.organization"></setting>
                     </div>
                 </div>
 
