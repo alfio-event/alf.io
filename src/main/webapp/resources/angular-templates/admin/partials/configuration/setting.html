@@ -1,5 +1,5 @@
 <div class="form-group">
-    <label for="{{setting.key}}">{{setting.description}} {{setting.id}}</label>
+    <label for="{{setting.key}}">{{setting.description}}</label>
     <div data-ng-class="{'input-group': displayDelete && setting.componentType === 'TEXT' && setting.id > -1}" data-ng-switch="setting.componentType">
         <input data-ng-switch-when="TEXT" class="form-control" data-ng-model="setting.value" name="{{setting.key}}" id="{{setting.key}}">
         <input type="checkbox" data-ng-switch-when="BOOLEAN" data-ng-model="setting.value" data-ng-true-value="'true'" data-ng-false-value="'false'" name="{{setting.key}}" id="{{setting.key}}">
