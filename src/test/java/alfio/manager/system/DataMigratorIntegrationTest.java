@@ -29,18 +29,21 @@ import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.modification.support.LocationDescriptor;
+import alfio.model.plugin.PluginConfigOption;
+import alfio.model.system.ComponentType;
 import alfio.model.system.EventMigration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.plugin.PluginConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.repository.user.OrganizationRepository;
-import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,7 +54,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -94,6 +96,8 @@ public class DataMigratorIntegrationTest {
     private TemplateManager templateManager;
     @Autowired
     private FileUploadManager fileUploadManager;
+    @Autowired
+    private PluginConfigurationRepository pluginConfigurationRepository;
     @Value("${alfio.version}")
     private String currentVersion;
     @Value("${alfio.build-ts}")
@@ -280,5 +284,21 @@ public class DataMigratorIntegrationTest {
         ticketReservationManager.updateTicketOwner(tickets.get(1), Locale.ITALIAN, event, second, (t) -> "", (t) -> "", generator::generate, Optional.<UserDetails>empty());
         dataMigrator.fillTicketsGender();
         ticketRepository.findTicketsInReservation(reservationId).forEach(t -> assertEquals("F", t.getGender()));
+    }
+
+    @Test
+    public void testUpdatePluginConfiguration() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false));
+        pluginConfigurationRepository.insert("my-plugin", -1, "name", "value", "description", ComponentType.TEXT);
+        Event event = initEvent(categories).getKey();
+        dataMigrator.migratePluginConfig(event);
+        List<PluginConfigOption> options = pluginConfigurationRepository.loadByPluginIdAndEventId("my-plugin", event.getId());
+        assertFalse(options.isEmpty());
+        assertEquals(1, options.size());
+        assertEquals(event.getId(), options.get(0).getEventId());
     }
 }

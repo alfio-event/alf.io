@@ -92,10 +92,10 @@ public class SettingsApiController {
         return pluginManager.loadAllConfigOptions();
     }
 
-    @RequestMapping(value = "/configuration/plugin/update-bulk", method = POST)
-    public List<PluginConfigOption> updatePluginConfiguration(@RequestBody List<PluginConfigOptionModification> input) {
+    @RequestMapping(value = "/configuration/event/{eventId}/plugin/update-bulk", method = POST)
+    public List<PluginConfigOption> updatePluginConfiguration(@PathVariable int eventId, @RequestBody List<PluginConfigOptionModification> input) {
         Objects.requireNonNull(input);
-        pluginManager.saveAllConfigOptions(input);
+        pluginManager.saveAllConfigOptions(eventId, input);
         return loadPluginConfiguration();
     }
 

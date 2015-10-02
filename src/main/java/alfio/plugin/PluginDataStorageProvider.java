@@ -62,12 +62,12 @@ public class PluginDataStorageProvider {
             this.tx = tx;
         }
 
-        public Optional<String> getConfigValue(String name) {
-            return pluginConfigurationRepository.loadSingleOption(pluginId, name).map(PluginConfigOption::getOptionValue);
+        public Optional<String> getConfigValue(String name, int eventId) {
+            return pluginConfigurationRepository.loadSingleOption(pluginId, eventId, name).map(PluginConfigOption::getOptionValue);
         }
 
-        public void insertConfigValue(String name, String value, String description, ComponentType componentType) {
-            pluginConfigurationRepository.insert(pluginId, name, value, description, componentType);
+        public void insertConfigValue(int eventId, String name, String value, String description, ComponentType componentType) {
+            pluginConfigurationRepository.insert(pluginId, eventId, name, value, description, componentType);
         }
 
         public void registerSuccess(String description, int eventId) {

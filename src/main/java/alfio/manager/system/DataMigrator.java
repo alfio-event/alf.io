@@ -22,6 +22,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.EventMigration;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.plugin.PluginConfigurationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.util.EventUtil;
@@ -41,6 +42,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -63,6 +65,7 @@ public class DataMigrator {
     private final ZonedDateTime buildTimestamp;
     private final TransactionTemplate transactionTemplate;
     private final ConfigurationRepository configurationRepository;
+    private final PluginConfigurationRepository pluginConfigurationRepository;
     private final NamedParameterJdbcTemplate jdbc;
 
     @Autowired
@@ -73,11 +76,12 @@ public class DataMigrator {
                         PlatformTransactionManager transactionManager,
                         TicketRepository ticketRepository,
                         ConfigurationRepository configurationRepository,
-                        NamedParameterJdbcTemplate jdbc) {
+                        PluginConfigurationRepository pluginConfigurationRepository, NamedParameterJdbcTemplate jdbc) {
         this.eventMigrationRepository = eventMigrationRepository;
         this.eventRepository = eventRepository;
         this.ticketRepository = ticketRepository;
         this.configurationRepository = configurationRepository;
+        this.pluginConfigurationRepository = pluginConfigurationRepository;
         this.jdbc = jdbc;
         this.currentVersion = parseVersion(currentVersion);
         this.currentVersionAsString = currentVersion;
@@ -112,6 +116,7 @@ public class DataMigrator {
                 optional.ifPresent(eventMigration -> eventMigrationRepository.lockEventMigrationForUpdate(eventMigration.getId()));
                 createMissingTickets(event);
                 fillDescriptions(event);
+                migratePluginConfig(event);
                 if(alreadyDefined) {
                     EventMigration eventMigration = optional.get();
                     int result = eventMigrationRepository.updateMigrationData(eventMigration.getId(), currentVersionAsString, buildTimestamp, EventMigration.Status.COMPLETE.name());
@@ -123,6 +128,22 @@ public class DataMigrator {
                 return null;
             });
         }
+    }
+
+    void migratePluginConfig(Event event) {
+        transactionTemplate.execute(s -> {
+            pluginConfigurationRepository.loadByEventId(-1).forEach(p -> {
+                MapSqlParameterSource source = new MapSqlParameterSource("pluginId", p.getPluginId())
+                    .addValue("eventId", event.getId())
+                    .addValue("confName", p.getOptionName())
+                    .addValue("confValue", p.getValue())
+                    .addValue("description", p.getDescription())
+                    .addValue("confType", p.getComponentType().name());
+                jdbc.update("insert into plugin_configuration(plugin_id, event_id, conf_name, conf_value, conf_description, conf_type) values(:pluginId, :eventId, :confName, :confValue, :description, :confType)", source);
+            });
+            jdbc.update("update plugin_configuration set event_id = -2 where event_id = -1", new EmptySqlParameterSource());
+            return null;
+        });
     }
 
     void fillReservationsLanguage() {

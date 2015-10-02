@@ -42,18 +42,21 @@ public interface Plugin {
 
     /**
      * Returns the state of this plugin: whether or not the admin activated it
+     * @param eventId the Event under examination
      * @return {@code true} if enabled, {@code false} otherwise
      */
-    boolean isEnabled();
+    boolean isEnabled(int eventId);
 
     /**
      * Returns all the config options needed by the current plugin. This collection must contains at least one element
+     * @param eventId the id of the event
      * @return the options, never {@code null}
      */
-    Collection<PluginConfigOption> getConfigOptions();
+    Collection<PluginConfigOption> getConfigOptions(int eventId);
 
     /**
      * Triggers the installation procedure. In this phase, the plugin can safely write its configuration on the database.
+     * @param eventId id of the event to be configured
      */
-    void install();
+    void install(int eventId);
 }

@@ -27,72 +27,84 @@ import alfio.plugin.Plugin;
 import alfio.plugin.ReservationConfirmationPlugin;
 import alfio.plugin.TicketAssignmentPlugin;
 import alfio.plugin.WaitingQueueSubscriptionPlugin;
+import alfio.repository.EventRepository;
 import alfio.repository.plugin.PluginConfigurationRepository;
 import alfio.repository.plugin.PluginLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 @Component
+@Order(Ordered.LOWEST_PRECEDENCE)
 public class PluginManager implements ApplicationListener<ContextRefreshedEvent> {
 
     private final List<Plugin> plugins;
     private final PluginConfigurationRepository pluginConfigurationRepository;
     private final PluginLogRepository pluginLogRepository;
+    private final EventRepository eventRepository;
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
     @Autowired
-    public PluginManager(List<Plugin> plugins, PluginConfigurationRepository pluginConfigurationRepository, PluginLogRepository pluginLogRepository) {
+    public PluginManager(List<Plugin> plugins, PluginConfigurationRepository pluginConfigurationRepository, PluginLogRepository pluginLogRepository, EventRepository eventRepository) {
         this.plugins = plugins;
         this.pluginConfigurationRepository = pluginConfigurationRepository;
         this.pluginLogRepository = pluginLogRepository;
+        this.eventRepository = eventRepository;
     }
 
     public void handleReservationConfirmation(TicketReservation reservation, int eventId) {
-        executor.submit(() -> filterPlugins(plugins, ReservationConfirmationPlugin.class).forEach(p -> p.onReservationConfirmation(reservation, eventId)));
+        executor.submit(() -> filterPlugins(plugins, eventId, ReservationConfirmationPlugin.class).forEach(p -> p.onReservationConfirmation(reservation, eventId)));
     }
 
     public void handleTicketAssignment(Ticket ticket) {
-        executor.submit(() -> filterPlugins(plugins, TicketAssignmentPlugin.class).forEach(p -> p.onTicketAssignment(ticket)));
+        executor.submit(() -> filterPlugins(plugins, ticket.getEventId(), TicketAssignmentPlugin.class).forEach(p -> p.onTicketAssignment(ticket)));
     }
 
     public void handleWaitingQueueSubscription(WaitingQueueSubscription waitingQueueSubscription) {
-        executor.submit(() -> filterPlugins(plugins, WaitingQueueSubscriptionPlugin.class).forEach(p -> p.onWaitingQueueSubscription(waitingQueueSubscription)));
+        executor.submit(() -> filterPlugins(plugins, waitingQueueSubscription.getEventId(), WaitingQueueSubscriptionPlugin.class).forEach(p -> p.onWaitingQueueSubscription(waitingQueueSubscription)));
     }
 
     public List<PluginConfigOption> loadAllConfigOptions() {
         return pluginConfigurationRepository.loadAll();
     }
 
-    public void saveAllConfigOptions(List<PluginConfigOptionModification> input) {
-        input.forEach(m -> pluginConfigurationRepository.update(m.getPluginId(), m.getName(), m.getValue()));
+    public void saveAllConfigOptions(int eventId, List<PluginConfigOptionModification> input) {
+        input.forEach(m -> pluginConfigurationRepository.update(m.getPluginId(), eventId, m.getName(), m.getValue()));
     }
 
     public List<PluginLog> loadAllLogMessages() {
         return pluginLogRepository.loadAll();
     }
 
-    private static <T extends Plugin> Stream<T> filterPlugins(List<Plugin> plugins, Class<T> type) {
+    private static <T extends Plugin> Stream<T> filterPlugins(List<Plugin> plugins, int eventId, Class<T> type) {
         return plugins.stream()
                 .filter(type::isInstance)
-                .filter(Plugin::isEnabled)
+                .filter(p -> p.isEnabled(eventId))
                 .map(type::cast);
     }
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        plugins.stream()
-                .filter(p -> !pluginConfigurationRepository.loadSingleOption(p.getId(), Plugin.ENABLED_CONF_NAME).isPresent())
-                .forEach(p -> {
-                    pluginConfigurationRepository.insert(p.getId(), Plugin.ENABLED_CONF_NAME, "false", "Enabled", ComponentType.BOOLEAN);
-                    p.install();
-                });
+        eventRepository.findAll()
+            .stream()
+            .filter(e -> e.getEnd().isBefore(ZonedDateTime.now(e.getZoneId())))
+            .forEach(e -> {
+                final int eventId = e.getId();
+                plugins.stream()
+                    .filter(p -> !pluginConfigurationRepository.loadSingleOption(p.getId(), eventId, Plugin.ENABLED_CONF_NAME).isPresent())
+                    .forEach(p -> {
+                        pluginConfigurationRepository.insert(p.getId(), eventId, Plugin.ENABLED_CONF_NAME, "false", "Enabled", ComponentType.BOOLEAN);
+                        p.install(eventId);
+                    });
+            });
     }
 }

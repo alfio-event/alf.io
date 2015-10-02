@@ -77,25 +77,25 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
     }
 
     @Override
-    public boolean isEnabled() {
-        return pluginDataStorage.getConfigValue(ENABLED_CONF_NAME).map(Boolean::parseBoolean).orElse(false);
+    public boolean isEnabled(int eventId) {
+        return pluginDataStorage.getConfigValue(ENABLED_CONF_NAME, eventId).map(Boolean::parseBoolean).orElse(false);
     }
 
     @Override
-    public Collection<PluginConfigOption> getConfigOptions() {
-        return Arrays.asList(new PluginConfigOption(getId(), DATA_CENTER, "", "The MailChimp data center used by your account (e.g. us6)", ComponentType.TEXT),
-                new PluginConfigOption(getId(), API_KEY, "", "the Mailchimp API Key", ComponentType.TEXT),
-                new PluginConfigOption(getId(), LIST_ID, "", "the list ID", ComponentType.TEXT));
+    public Collection<PluginConfigOption> getConfigOptions(int eventId) {
+        return Arrays.asList(new PluginConfigOption(getId(), eventId, DATA_CENTER, "", "The MailChimp data center used by your account (e.g. us6)", ComponentType.TEXT),
+                new PluginConfigOption(getId(), eventId, API_KEY, "", "the Mailchimp API Key", ComponentType.TEXT),
+                new PluginConfigOption(getId(), eventId, LIST_ID, "", "the list ID", ComponentType.TEXT));
     }
 
     @Override
-    public void install() {
-        getConfigOptions().stream().forEach(o -> pluginDataStorage.insertConfigValue(o.getOptionName(), o.getOptionValue(), o.getDescription(), o.getComponentType()));
+    public void install(int eventId) {
+        getConfigOptions(eventId).stream().forEach(o -> pluginDataStorage.insertConfigValue(eventId, o.getOptionName(), o.getOptionValue(), o.getDescription(), o.getComponentType()));
     }
 
     private Optional<String> getListAddress(int eventId, String email, String name, String language) {
-        Optional<String> dataCenter = pluginDataStorage.getConfigValue(DATA_CENTER);
-        Optional<String> listId = pluginDataStorage.getConfigValue(LIST_ID);
+        Optional<String> dataCenter = pluginDataStorage.getConfigValue(DATA_CENTER, eventId);
+        Optional<String> listId = pluginDataStorage.getConfigValue(LIST_ID, eventId);
         if(dataCenter.isPresent() && listId.isPresent()) {
             return Optional.of(String.format(LIST_ADDRESS, dataCenter.get(), listId.get()));
         } else {
@@ -105,7 +105,7 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
     }
 
     private Optional<String> getApiKey(int eventId, String email, String name, String language) {
-        Optional<String> apiKey = pluginDataStorage.getConfigValue(API_KEY);
+        Optional<String> apiKey = pluginDataStorage.getConfigValue(API_KEY, eventId);
         if(!apiKey.isPresent()) {
             pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, "missing API Key"), eventId);
         }
