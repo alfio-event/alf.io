@@ -59,18 +59,17 @@ public class SettingsApiController {
     }
 
     @RequestMapping(value = "/configuration/update", method = POST)
-    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> updateConfiguration(@RequestBody ConfigurationModification configuration, Principal principal) {
+    public boolean updateConfiguration(@RequestBody ConfigurationModification configuration) {
         configurationManager.saveSystemConfiguration(ConfigurationKeys.fromValue(configuration.getKey()), configuration.getValue());
-        return loadConfiguration(principal);
+        return true;
     }
 
     @RequestMapping(value = "/configuration/update-bulk", method = POST)
-    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> updateConfiguration(@RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input,
-                                                                                           Principal principal) {
+    public boolean updateConfiguration(@RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input) {
         Objects.requireNonNull(input);
         List<ConfigurationModification> list = input.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         configurationManager.saveAllSystemConfiguration(list);
-        return loadConfiguration(principal);
+        return true;
     }
 
     @RequestMapping(value = "/configuration/organizations/load", method = GET)
@@ -82,11 +81,10 @@ public class SettingsApiController {
     }
 
     @RequestMapping(value = "/configuration/organizations/{organizationId}/update", method = POST)
-    public List<OrganizationConfig> updateOrganizationsConfiguration(@PathVariable("organizationId") int organizationId,
-                                                                     @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input,
-                                                                     Principal principal) {
+    public boolean updateOrganizationsConfiguration(@PathVariable("organizationId") int organizationId,
+                                                                     @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input) {
         configurationManager.saveAllOrganizationConfiguration(organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
-        return loadOrganizationsConfiguration(principal);
+        return true;
     }
 
     @RequestMapping(value = "/configuration/plugin/load", method = GET)

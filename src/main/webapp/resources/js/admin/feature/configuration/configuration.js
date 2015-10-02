@@ -77,10 +77,18 @@
         var loadAll = function() {
             configCtrl.loading = true;
             $q.all([ConfigurationService.loadAll(), ConfigurationService.loadPlugins(), ConfigurationService.loadOrganizations()]).then(function(results) {
-                populateModel(results[0].data);
                 configCtrl.globalSettings = results[0].data;
                 populatePluginModel(results[1].data);
                 configCtrl.organizationsConfig = results[2].data;
+                if(configCtrl.organization) {
+                    var configObj = _.chain(configCtrl.organizationsConfig)
+                        .filter(function(o) { return o.organization.id === configCtrl.organization.id })
+                        .first()
+                        .value();
+                    populateModel(configObj.config);
+                } else {
+                    populateModel(configCtrl.globalSettings);
+                }
                 configCtrl.loading = false;
             }, function(e) {
                 alert(e.data);
@@ -112,8 +120,7 @@
             configCtrl.loading = true;
             var promise = angular.isDefined(configCtrl.organization) ? updateOrganizationSettings() : updateGlobalSettings();
             promise.then(function(results) {
-                populateModel(results[0].data);
-                populatePluginModel(results[1].data);
+                loadAll();
                 configCtrl.loading = false;
             }, function(e) {
                 alert(e.data);
