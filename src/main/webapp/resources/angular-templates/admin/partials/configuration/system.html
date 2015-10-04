@@ -1,0 +1,71 @@
+<div class="text-center" data-ng-if="systemConf.loading">
+    <i class="fa fa-cog fa-spin fa-3x"></i><span class="sr-only">Loading...</span>
+</div>
+<div class="alert alert-warning" data-ng-if="systemConf.noResults">
+    <h1>You are not authorized to see system-wide configuration.</h1>
+    <span>Please try selecting an Organization or an Event</span>
+</div>
+<div data-ng-if="systemConf.hasResults">
+    <div class="page-header">
+        <h1>General</h1>
+        <span>General settings</span>
+    </div>
+
+    <form name="settingsForm" novalidate data-ng-submit="systemConf.saveSettings(settingsForm)">
+        <div data-ng-if="systemConf.general">
+            <div data-ng-repeat="setting in systemConf.general.settings">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="systemConf.globalSettings" data-delete-handler="systemConf.delete(config)"></setting>
+            </div>
+        </div>
+
+        <div class="page-header">
+            <h1>E-Mail</h1>
+            <span>E-Mail settings</span>
+        </div>
+
+        <div data-ng-if="systemConf.mail">
+            <div data-ng-if="systemConf.mail.type">
+                <div class="radio-inline">
+                    <label>
+                        <input type="radio" name="mailer.type" data-ng-model="systemConf.mail.type.value" data-ng-value="'smtp'">
+                        SMTP
+                    </label>
+                </div>
+                <div class="radio-inline">
+                    <label>
+                        <input type="radio" name="mailer.type" data-ng-model="systemConf.mail.type.value" data-ng-value="'mailgun'">
+                        Mailgun.com
+                    </label>
+                </div>
+                <div data-ng-repeat="setting in systemConf.mail.settings | mailSettingsFilter:systemConf.mail.type.value">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                </div>
+                <div>
+                    <setting obj="systemConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                </div>
+                <div>
+                    <setting obj="systemConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                </div>
+            </div>
+            <div data-ng-repeat="setting in systemConf.mail.settings" data-ng-if="!systemConf.mail.type">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+            </div>
+        </div>
+
+        <div class="page-header">
+            <h1>Payment</h1>
+            <span>Payment provider settings</span>
+        </div>
+
+        <div data-ng-if="systemConf.payment">
+            <div data-ng-repeat="setting in systemConf.payment.settings">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+            </div>
+        </div>
+
+        <div class="pull-right wMarginBottom wMarginTop">
+            <button type="submit" class="btn btn-success" data-ng-disabled="systemConf.loading">save</button>
+            <a class="btn btn-default" data-ui-sref="index">cancel</a>
+        </div>
+    </form>
+</div>

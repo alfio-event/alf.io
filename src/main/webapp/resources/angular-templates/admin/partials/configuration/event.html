@@ -1,0 +1,11 @@
+<div class="page-header">
+    <h1>Plugins</h1>
+    <span>Plugins settings</span>
+</div>
+
+<div data-ng-repeat="(key, settings) in systemConf.pluginSettingsByPluginId">
+    <div class="page-header"><h3 data-ng-bind="key"></h3></div>
+    <div data-ng-repeat="setting in settings">
+        <setting data-obj="setting" data-display-delete-if-needed="true" data-organization="systemConf.organization"></setting>
+    </div>
+</div>

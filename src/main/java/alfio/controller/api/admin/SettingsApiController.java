@@ -72,12 +72,9 @@ public class SettingsApiController {
         return true;
     }
 
-    @RequestMapping(value = "/configuration/organizations/load", method = GET)
-    public List<OrganizationConfig> loadOrganizationsConfiguration(Principal principal) {
-        return configurationManager.loadAllOrganizationConfiguration(principal.getName()).entrySet()
-            .stream()
-            .map(e -> new OrganizationConfig(e.getKey(), e.getValue()))
-            .collect(Collectors.toList());
+    @RequestMapping(value = "/configuration/organizations/{organizationId}/load", method = GET)
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadOrganizationConfiguration(@PathVariable("organizationId") int organizationId, Principal principal) {
+        return configurationManager.loadOrganizationConfig(organizationId, principal.getName());
     }
 
     @RequestMapping(value = "/configuration/organizations/{organizationId}/update", method = POST)
@@ -85,6 +82,16 @@ public class SettingsApiController {
                                                                      @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input) {
         configurationManager.saveAllOrganizationConfiguration(organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
         return true;
+    }
+
+    @RequestMapping(value = "/configuration/events/{eventId}/load", method = GET)
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfiguration(@PathVariable("eventId") int eventId, Principal principal) {
+        return configurationManager.loadEventConfig(eventId, principal.getName());
+    }
+
+    @RequestMapping(value = "/configuration/events/{eventId}/categories/{categoryId}/load", method = GET)
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfiguration(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, Principal principal) {
+        return configurationManager.loadCategoryConfig(eventId, categoryId, principal.getName());
     }
 
     @RequestMapping(value = "/configuration/plugin/load", method = GET)

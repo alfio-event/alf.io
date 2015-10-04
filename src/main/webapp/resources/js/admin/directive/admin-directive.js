@@ -530,7 +530,7 @@
             scope: {
                 setting: '=obj',
                 displayDeleteIfNeeded: '=',
-                organization: '='
+                deleteHandler: '&'
             },
             templateUrl:'/resources/angular-templates/admin/partials/configuration/setting.html',
             link: angular.noop,
@@ -538,8 +538,7 @@
                 $scope.displayDelete = $scope.displayDeleteIfNeeded && angular.isDefined($scope.setting) && !angular.isDefined($scope.setting.pluginId);
                 $scope.removeConfiguration = function(config) {
                     $scope.loading = true;
-                    var promise = angular.isDefined($scope.organization) ? ConfigurationService.removeOrganizationConfig(config, $scope.organization) : ConfigurationService.remove(config);
-                    promise.then(function() {$rootScope.$broadcast('ReloadSettings');});
+                    $scope.deleteHandler({config: config}).then(function() {$rootScope.$broadcast('ReloadSettings');});
                 };
             }
         }

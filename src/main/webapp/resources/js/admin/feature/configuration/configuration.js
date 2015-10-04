@@ -8,9 +8,30 @@
                     templateUrl: '/resources/angular-templates/admin/partials/configuration/index.html',
                     controller: 'ConfigurationController',
                     controllerAs: 'configCtrl'
+                })
+                .state('configuration.system', {
+                    url: '/system',
+                    templateUrl: '/resources/angular-templates/admin/partials/configuration/system.html',
+                    controller: 'SystemConfigurationController',
+                    controllerAs: 'systemConf'
+                })
+                .state('configuration.organization', {
+                    url: '/organization/:organizationId',
+                    templateUrl: '/resources/angular-templates/admin/partials/configuration/organization.html',
+                    controller: 'OrganizationConfigurationController',
+                    controllerAs: 'organizationConf'
+                })
+                .state('configuration.event', {
+                    url: '/organization/:organizationId/event/:eventId',
+                    templateUrl: '/resources/angular-templates/admin/partials/configuration/event.html',
+                    controller: 'EventConfigurationController',
+                    controllerAs: 'eventConf'
                 });
         }])
         .controller('ConfigurationController', ConfigurationController)
+        .controller('SystemConfigurationController', SystemConfigurationController)
+        .controller('OrganizationConfigurationController', OrganizationConfigurationController)
+        .controller('EventConfigurationController', EventConfigurationController)
         .service('ConfigurationService', ConfigurationService);
 
     function ConfigurationService($http, HttpErrorHandler) {
@@ -18,8 +39,14 @@
             loadAll: function() {
                 return $http.get('/admin/api/configuration/load').error(HttpErrorHandler.handle);
             },
-            loadOrganizations: function() {
-                return $http.get('/admin/api/configuration/organizations/load').error(HttpErrorHandler.handle);
+            loadOrganization: function(organizationId) {
+                return $http.get('/admin/api/configuration/organizations/'+organizationId+'/load').error(HttpErrorHandler.handle);
+            },
+            loadEvent: function(eventId) {
+                return $http.get('/admin/api/configuration/events/'+eventId+'/load').error(HttpErrorHandler.handle)
+            },
+            loadCategory: function(eventId, categoryId) {
+                return $http.get('/admin/api/configuration/events/'+eventId+'/categories/'+categoryId+'/load').error(HttpErrorHandler.handle);
             },
             update: function(configuration) {
                 return $http.post('/admin/api/configuration/update', configuration).error(HttpErrorHandler.handle);
@@ -33,110 +60,98 @@
             remove: function(conf) {
                 return $http['delete']('/admin/api/configuration/key/' + conf.configurationKey).error(HttpErrorHandler.handle);
             },
-            removeOrganizationConfig: function(conf, organization) {
-                return $http['delete']('/admin/api/configuration/organization/'+organization.id+'/key/' + conf.configurationKey).error(HttpErrorHandler.handle);
+            removeOrganizationConfig: function(conf, organizationId) {
+                return $http['delete']('/admin/api/configuration/organization/'+organizationId+'/key/' + conf.configurationKey).error(HttpErrorHandler.handle);
             },
             loadPlugins: function() {
                 return $http.get('/admin/api/configuration/plugin/load').error(HttpErrorHandler.handle);
             },
             bulkUpdatePlugins: function(pluginConfigOptions) {
                 return $http.post('/admin/api/configuration/plugin/update-bulk', pluginConfigOptions).error(HttpErrorHandler.handle);
+            },
+            transformConfigurationObject: function(original) {
+                var transformed = {};
+                transformed.settings = original;
+                transformed.general = {
+                    settings: original['GENERAL']
+                };
+                transformed.mail = {
+                    settings: _.filter(original['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
+                    type: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAILER_TYPE';}),
+                    maxEmailPerCycle: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';}),
+                    mailReplyTo: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';})
+                };
+                if(angular.isDefined(original['PAYMENT']) && original['PAYMENT'].length > 0) {
+                    transformed.payment = {
+                        settings: original['PAYMENT']
+                    };
+                }
+                return transformed;
             }
         };
     }
 
     ConfigurationService.prototype.$inject = ['$http', 'HttpErrorHandler'];
 
-    function ConfigurationController(ConfigurationService, $rootScope, $q) {
+    function ConfigurationController(OrganizationService, EventService, $q) {
         var configCtrl = this;
         configCtrl.loading = true;
+        $q.all([OrganizationService.getAllOrganizations(), EventService.getAllEvents()]).then(function(results) {
+            var organizations = results[0].data;
+            var events = results[1].data;
+            configCtrl.organizations = _.map(organizations, function(org) {
+                org.events = _.filter(events, function(e) {return !e.expired && e.organizationId === org.id});
+                return org;
+            });
+            configCtrl.loading = false;
+        }, function(e) {
+            alert(e);
+            configCtrl.loading = false;
+        });
+    }
+
+    ConfigurationController.prototype.$inject = ['OrganizationService', 'EventService', '$q'];
+
+    function SystemConfigurationController(ConfigurationService, $rootScope) {
+        var systemConf = this;
+        systemConf.loading = true;
 
         var populateModel = function(result) {
-            configCtrl.settings = result;
-            configCtrl.general = {
-                settings: result['GENERAL']
-            };
-            configCtrl.mail = {
-                settings: _.filter(result['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
-                type: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAILER_TYPE';}),
-                maxEmailPerCycle: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';}),
-                mailReplyTo: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';})
-            };
-            if(angular.isDefined(result['PAYMENT']) && result['PAYMENT'].length > 0) {
-                configCtrl.payment = {
-                    settings: result['PAYMENT']
-                };
-            }
-        };
-
-        var populatePluginModel = function(result) {
-            configCtrl.pluginSettings = result;
-            configCtrl.pluginSettingsByPluginId = _.groupBy(result, 'pluginId');
+            angular.extend(systemConf, ConfigurationService.transformConfigurationObject(result));
         };
 
         var loadAll = function() {
-            configCtrl.loading = true;
-            $q.all([ConfigurationService.loadAll(), ConfigurationService.loadPlugins(), ConfigurationService.loadOrganizations()]).then(function(results) {
-                configCtrl.globalSettings = results[0].data;
-                populatePluginModel(results[1].data);
-                configCtrl.organizationsConfig = results[2].data;
-                if(configCtrl.organization) {
-                    var configObj = _.chain(configCtrl.organizationsConfig)
-                        .filter(function(o) { return o.organization.id === configCtrl.organization.id })
-                        .first()
-                        .value();
-                    populateModel(configObj.config);
-                } else {
-                    populateModel(configCtrl.globalSettings);
+            systemConf.loading = true;
+            ConfigurationService.loadAll().then(function(result) {
+                systemConf.loading = false;
+                var settings = result.data;
+                systemConf.hasResults = settings['GENERAL'].length > 0;
+                systemConf.noResults = settings['GENERAL'].length === 0;
+                if(settings['GENERAL'].length > 0) {
+                    systemConf.settings = settings;
+                    populateModel(settings);
                 }
-                configCtrl.loading = false;
-            }, function(e) {
-                alert(e.data);
-                configCtrl.loading = false;
+            }, function() {
+                systemConf.loading = false;
             });
-        };
-        configCtrl.organization = undefined;
-        configCtrl.viewGlobalSettings = function() {
-            configCtrl.organization = undefined;
-            populateModel(configCtrl.globalSettings);
-        };
-        configCtrl.viewOrganizationSettings = function(org, config) {
-            configCtrl.organization = org;
-            populateModel(config);
         };
         loadAll();
 
-        var updateGlobalSettings = function() {
-            return $q.all([ConfigurationService.bulkUpdate(configCtrl.settings), ConfigurationService.bulkUpdatePlugins(configCtrl.pluginSettings)]);
-        };
-
-        var updateOrganizationSettings = function() {
-            return $q.all([ConfigurationService.updateOrganizationConfig(configCtrl.organization, configCtrl.settings), ConfigurationService.bulkUpdatePlugins(configCtrl.pluginSettings)]);
-        };
-        configCtrl.saveSettings = function(frm) {
+        systemConf.saveSettings = function(frm) {
             if(!frm.$valid) {
                 return;
             }
-            configCtrl.loading = true;
-            var promise = angular.isDefined(configCtrl.organization) ? updateOrganizationSettings() : updateGlobalSettings();
-            promise.then(function(results) {
+            systemConf.loading = true;
+            ConfigurationService.bulkUpdate(systemConf.settings).then(function() {
                 loadAll();
-                configCtrl.loading = false;
             }, function(e) {
                 alert(e.data);
-                configCtrl.loading = false;
+                systemConf.loading = false;
             });
         };
 
-        configCtrl.configurationChange = function(conf) {
-            if(!conf.value) {
-                return;
-            }
-            configCtrl.loading = true;
-            ConfigurationService.update(conf).success(function(result) {
-                configCtrl.settings = result;
-                configCtrl.loading = false;
-            });
+        systemConf.delete = function(config) {
+            return ConfigurationService.remove(config);
         };
 
         $rootScope.$on('ReloadSettings', function() {
@@ -144,5 +159,57 @@
         });
     }
 
-    ConfigurationController.prototype.$inject = ['ConfigurationService', '$rootScope', '$q'];
+    SystemConfigurationController.prototype.$inject = ['ConfigurationService', '$rootScope', '$q'];
+
+    function OrganizationConfigurationController(ConfigurationService, OrganizationService, $stateParams, $q, $rootScope) {
+        var organizationConf = this;
+        organizationConf.organizationId = $stateParams.organizationId;
+        organizationConf.delete = function(config) {
+            return ConfigurationService.removeOrganizationConfig(config, organizationConf.organizationId);
+        };
+        var load = function() {
+            organizationConf.loading = true;
+            $q.all([OrganizationService.getOrganization(organizationConf.organizationId), ConfigurationService.loadOrganization(organizationConf.organizationId)])
+                .then(function(result) {
+                    organizationConf.organization = result[0].data;
+                    var settings = result[1].data;
+                    organizationConf.hasResults = settings['GENERAL'].length > 0;
+                    organizationConf.noResults = settings['GENERAL'].length === 0;
+                    if(settings['GENERAL'].length > 0) {
+                        organizationConf.settings = settings;
+                        angular.extend(organizationConf, ConfigurationService.transformConfigurationObject(settings));
+                    }
+                    organizationConf.loading = false;
+                }, function() {
+                    organizationConf.loading = false;
+                });
+        };
+        load();
+        $rootScope.$on('ReloadSettings', function() {
+            load();
+        });
+        organizationConf.saveSettings = function(frm) {
+            if(!frm.$valid) {
+                return;
+            }
+            organizationConf.loading = true;
+            ConfigurationService.updateOrganizationConfig(organizationConf.organization, organizationConf.settings).then(function() {
+                load();
+            }, function(e) {
+                alert(e.data);
+                organizationConf.loading = false;
+            });
+        };
+
+        organizationConf.delete = function(config) {
+            return ConfigurationService.removeOrganizationConfig(config, organizationConf.organizationId);
+        };
+
+    }
+
+    OrganizationConfigurationController.prototype.$inject = ['ConfigurationService', 'OrganizationService', '$stateParams', '$q', '$rootScope'];
+
+    function EventConfigurationController() {
+
+    }
 })();

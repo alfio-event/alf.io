@@ -17,16 +17,16 @@
 package alfio.manager.system;
 
 import alfio.manager.user.UserManager;
+import alfio.model.Event;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
-import alfio.model.user.Organization;
 import alfio.model.user.User;
-import alfio.model.user.join.UserOrganization;
+import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.ConfigurationRepository;
-import jdk.nashorn.internal.runtime.regexp.joni.Config;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -48,18 +48,25 @@ import static alfio.util.OptionalWrapper.optionally;
 @Log4j2
 public class ConfigurationManager {
 
-    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> TICKET_CATEGORY_CONFIGURATION = ConfigurationKeys.byPathLevel(ConfigurationPathLevel.ORGANIZATION)
-        .stream()
-        .map(mapEmptyKeys(ConfigurationPathLevel.ORGANIZATION))
-        .collect(groupByCategory());
+    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.ORGANIZATION);
+    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> EVENT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.EVENT);
+    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
+
 
     private final ConfigurationRepository configurationRepository;
     private final UserManager userManager;
+    private final EventRepository eventRepository;
+    private final TicketCategoryRepository ticketCategoryRepository;
 
     @Autowired
-    public ConfigurationManager(ConfigurationRepository configurationRepository, UserManager userManager) {
+    public ConfigurationManager(ConfigurationRepository configurationRepository,
+                                UserManager userManager,
+                                EventRepository eventRepository,
+                                TicketCategoryRepository ticketCategoryRepository) {
         this.configurationRepository = configurationRepository;
         this.userManager = userManager;
+        this.eventRepository = eventRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
     }
 
     //TODO: refactor, not the most beautiful code, find a better solution...
@@ -181,28 +188,51 @@ public class ConfigurationManager {
             });
     }
 
-    public Map<Organization, Map<ConfigurationKeys.SettingCategory, List<Configuration>>> loadAllOrganizationConfiguration(String username) {
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadOrganizationConfig(int organizationId, String username) {
         User user = userManager.findUserByUsername(username);
-        if(!userManager.isOwner(user)) {
+        if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
-        return userManager.findUserOrganizations(user).stream()
-            .collect(Collectors.toMap(Function.identity(), o -> {
-                Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(o.getId()).stream().collect(groupByCategory());
-                return TICKET_CATEGORY_CONFIGURATION.entrySet().stream()
-                    .map(e -> {
-                        Set<Configuration> entries = new LinkedHashSet<>();
-                        ConfigurationKeys.SettingCategory key = e.getKey();
-                        entries.addAll(e.getValue());
-                        if(existing.containsKey(key)) {
-                            List<Configuration> configurations = existing.get(key);
-                            entries.removeAll(configurations);
-                            entries.addAll(configurations);
-                        }
-                        return Pair.of(key, new ArrayList<>(entries));
-                    })
-                    .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
-            }));
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().collect(groupByCategory());
+        return groupByCategory(ORGANIZATION_CONFIGURATION, existing);
+    }
+
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfig(int eventId, String username) {
+        User user = userManager.findUserByUsername(username);
+        Event event = eventRepository.findById(eventId);
+        int organizationId = event.getOrganizationId();
+        if(!userManager.isOwnerOfOrganization(user, organizationId)) {
+            return Collections.emptyMap();
+        }
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().collect(groupByCategory());
+        return groupByCategory(EVENT_CONFIGURATION, existing);
+    }
+
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfig(int eventId, int categoryId, String username) {
+        User user = userManager.findUserByUsername(username);
+        Event event = eventRepository.findById(eventId);
+        int organizationId = event.getOrganizationId();
+        if(!userManager.isOwnerOfOrganization(user, organizationId)) {
+            return Collections.emptyMap();
+        }
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().collect(groupByCategory());
+        return groupByCategory(EVENT_CONFIGURATION, existing);
+    }
+
+    private Map<ConfigurationKeys.SettingCategory, List<Configuration>> groupByCategory(Map<ConfigurationKeys.SettingCategory, List<Configuration>> all, Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing) {
+        return all.entrySet().stream()
+            .map(e -> {
+                Set<Configuration> entries = new LinkedHashSet<>();
+                ConfigurationKeys.SettingCategory key = e.getKey();
+                entries.addAll(e.getValue());
+                if(existing.containsKey(key)) {
+                    List<Configuration> configurations = existing.get(key);
+                    entries.removeAll(configurations);
+                    entries.addAll(configurations);
+                }
+                return Pair.of(key, new ArrayList<>(entries));
+            })
+            .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
     }
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadAllSystemConfigurationIncludingMissing(String username) {
@@ -237,5 +267,12 @@ public class ConfigurationManager {
     public void deleteOrganizationLevelByKey(String key, int organizationId, String username) {
         Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "User is not owner of the organization. Therefore, delete is not allowed.");
         configurationRepository.deleteOrganizationLevelByKey(key, organizationId);
+    }
+
+    private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> collectConfigurationKeysByCategory(ConfigurationPathLevel pathLevel) {
+        return ConfigurationKeys.byPathLevel(pathLevel)
+            .stream()
+            .map(mapEmptyKeys(pathLevel))
+            .collect(groupByCategory());
     }
 }
