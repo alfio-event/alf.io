@@ -145,7 +145,8 @@ public class ConfigurationManager {
         list.forEach(c -> saveSystemConfiguration(ConfigurationKeys.fromValue(c.getKey()), c.getValue()));
     }
 
-    public void saveAllOrganizationConfiguration(int organizationId, List<ConfigurationModification> list) {
+    public void saveAllOrganizationConfiguration(int organizationId, List<ConfigurationModification> list, String username) {
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "Cannot update settings, user is not owner");
         list.stream()
             .filter(c -> c.getId() > -1 || !StringUtils.isBlank(c.getValue()))
             .forEach(c -> {
@@ -154,6 +155,26 @@ public class ConfigurationManager {
                     configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), c.getValue());
                 } else {
                     configurationRepository.insertOrganizationLevel(organizationId, c.getKey(), c.getValue(), ConfigurationKeys.fromValue(c.getKey()).getDescription());
+                }
+            });
+    }
+
+    public void saveEventConfiguration(int eventId, int organizationId, List<ConfigurationModification> list, String username) {
+        User user = userManager.findUserByUsername(username);
+        Validate.isTrue(userManager.isOwnerOfOrganization(user, organizationId), "Cannot update settings, user is not owner");
+        Event event = eventRepository.findById(eventId);
+        Validate.notNull(event, "event does not exist");
+        if(organizationId != event.getOrganizationId()) {
+            Validate.isTrue(userManager.isOwnerOfOrganization(user, event.getOrganizationId()), "Cannot update settings, user is not owner of event");
+        }
+        list.stream()
+            .filter(c -> c.getId() > -1 || !StringUtils.isBlank(c.getValue()))
+            .forEach(c -> {
+                Optional<Configuration> existing = configurationRepository.findByKeyAtEventLevel(eventId, organizationId, c.getKey());
+                if (existing.isPresent()) {
+                    configurationRepository.updateEventLevel(eventId, organizationId, c.getKey(), c.getValue());
+                } else {
+                    configurationRepository.insertEventLevel(organizationId, eventId, c.getKey(), c.getValue(), ConfigurationKeys.fromValue(c.getKey()).getDescription());
                 }
             });
     }
@@ -215,7 +236,7 @@ public class ConfigurationManager {
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().collect(groupByCategory());
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findCategoryConfiguration(organizationId, eventId, categoryId).stream().collect(groupByCategory());
         return groupByCategory(EVENT_CONFIGURATION, existing);
     }
 
@@ -267,6 +288,13 @@ public class ConfigurationManager {
     public void deleteOrganizationLevelByKey(String key, int organizationId, String username) {
         Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "User is not owner of the organization. Therefore, delete is not allowed.");
         configurationRepository.deleteOrganizationLevelByKey(key, organizationId);
+    }
+
+    public void deleteEventLevelByKey(String key, int eventId, String username) {
+        Event event = eventRepository.findById(eventId);
+        Validate.notNull(event, "Wrong event id");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
+        configurationRepository.deleteEventLevelByKey(key, eventId);
     }
 
     private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> collectConfigurationKeysByCategory(ConfigurationPathLevel pathLevel) {

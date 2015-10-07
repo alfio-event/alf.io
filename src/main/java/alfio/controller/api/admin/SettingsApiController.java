@@ -78,9 +78,9 @@ public class SettingsApiController {
     }
 
     @RequestMapping(value = "/configuration/organizations/{organizationId}/update", method = POST)
-    public boolean updateOrganizationsConfiguration(@PathVariable("organizationId") int organizationId,
-                                                                     @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input) {
-        configurationManager.saveAllOrganizationConfiguration(organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
+    public boolean updateOrganizationConfiguration(@PathVariable("organizationId") int organizationId,
+                                                                     @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
+        configurationManager.saveAllOrganizationConfiguration(organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), principal.getName());
         return true;
     }
 
@@ -89,26 +89,38 @@ public class SettingsApiController {
         return configurationManager.loadEventConfig(eventId, principal.getName());
     }
 
+    @RequestMapping(value = "/configuration/organizations/{organizationId}/events/{eventId}/update", method = POST)
+    public boolean updateEventConfiguration(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId,
+                                                    @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
+        configurationManager.saveEventConfiguration(eventId, organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), principal.getName());
+        return true;
+    }
+
     @RequestMapping(value = "/configuration/events/{eventId}/categories/{categoryId}/load", method = GET)
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfiguration(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, Principal principal) {
         return configurationManager.loadCategoryConfig(eventId, categoryId, principal.getName());
     }
 
-    @RequestMapping(value = "/configuration/plugin/load", method = GET)
-    public List<PluginConfigOption> loadPluginConfiguration() {
-        return pluginManager.loadAllConfigOptions();
+    @RequestMapping(value = "/configuration/events/{eventId}/plugin/load", method = GET)
+    public List<PluginConfigOption> loadPluginConfiguration(@PathVariable("eventId") int eventId, Principal principal) {
+        return pluginManager.loadAllConfigOptions(eventId, principal.getName());
     }
 
-    @RequestMapping(value = "/configuration/event/{eventId}/plugin/update-bulk", method = POST)
-    public List<PluginConfigOption> updatePluginConfiguration(@PathVariable int eventId, @RequestBody List<PluginConfigOptionModification> input) {
-        Objects.requireNonNull(input);
-        pluginManager.saveAllConfigOptions(eventId, input);
-        return loadPluginConfiguration();
+    @RequestMapping(value = "/configuration/events/{eventId}/plugin/update-bulk", method = POST)
+    public boolean updatePluginConfiguration(@PathVariable int eventId, @RequestBody List<PluginConfigOptionModification> input, Principal principal) {
+        pluginManager.saveAllConfigOptions(eventId, Objects.requireNonNull(input), principal.getName());
+        return true;
     }
 
     @RequestMapping(value = "/configuration/organization/{organizationId}/key/{key}", method = DELETE)
     public boolean deleteKey(@PathVariable("organizationId") int organizationId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
         configurationManager.deleteOrganizationLevelByKey(key.getValue(), organizationId, principal.getName());
+        return true;
+    }
+
+    @RequestMapping(value = "/configuration/event/{eventId}/key/{key}", method = DELETE)
+    public boolean deleteEventLevelKey(@PathVariable("eventId") int eventId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
+        configurationManager.deleteEventLevelByKey(key.getValue(), eventId, principal.getName());
         return true;
     }
 

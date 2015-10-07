@@ -99,6 +99,9 @@
             getEvent: function(name) {
                 return $http.get('/admin/api/events/'+name+'.json').error(HttpErrorHandler.handle);
             },
+            getEventById: function(eventId) {
+                return $http.get('/admin/api/events/id/'+eventId+'.json').error(HttpErrorHandler.handle);
+            },
             checkEvent : function(event) {
                 return $http['post']('/admin/api/events/check', event).error(HttpErrorHandler.handle);
             },

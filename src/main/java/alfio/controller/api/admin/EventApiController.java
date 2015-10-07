@@ -111,6 +111,11 @@ public class EventApiController {
         return out;
     }
 
+    @RequestMapping(value = "/events/id/{eventId}", method = GET)
+    public Event getSingleEventById(@PathVariable("eventId") int eventId, Principal principal) {
+        return eventManager.getSingleEventById(eventId, principal.getName());
+    }
+
     @RequestMapping(value = "/events/check", method = POST)
     public ValidationResult validateEvent(@RequestBody EventModification eventModification, Errors errors) {
         ValidationResult base = validateEventHeader(eventModification, errors)

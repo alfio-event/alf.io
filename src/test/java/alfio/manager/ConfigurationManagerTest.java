@@ -213,11 +213,11 @@ public class ConfigurationManagerTest {
     public void testSaveOnlyExistingConfiguration() {
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue(), "MY-ACCOUNT_NUMBER", "empty");
         Configuration existing = configurationRepository.findByKeyAtOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue()).orElseThrow(IllegalStateException::new);
-        Map<Organization, Map<ConfigurationKeys.SettingCategory, List<Configuration>>> all = configurationManager.loadAllOrganizationConfiguration(USERNAME);
-        List<Configuration> flatten = all.entrySet().stream().flatMap(e -> e.getValue().values().stream().flatMap(Collection::stream)).collect(Collectors.toList());
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> all = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
+        List<Configuration> flatten = all.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(Collectors.toList());
         List<ConfigurationModification> modified = flatten.stream().filter(c -> !c.getKey().equals(ConfigurationKeys.BANK_ACCOUNT_NR.getValue())).map(ConfigurationModification::fromConfiguration).collect(Collectors.toList());
         modified.add(new ConfigurationModification(existing.getId(), existing.getKey(), "NEW-NUMBER"));
-        configurationManager.saveAllOrganizationConfiguration(event.getOrganizationId(), modified);
+        configurationManager.saveAllOrganizationConfiguration(event.getOrganizationId(), modified, USERNAME);
         List<Configuration> organizationConfiguration = configurationRepository.findOrganizationConfiguration(event.getOrganizationId());
         assertEquals(1, organizationConfiguration.size());
         Optional<Configuration> result = configurationRepository.findByKeyAtOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue());
@@ -231,12 +231,12 @@ public class ConfigurationManagerTest {
     public void testSaveOnlyValidConfiguration() {
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue(), "MY-ACCOUNT_NUMBER", "empty");
         Configuration existing = configurationRepository.findByKeyAtOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue()).orElseThrow(IllegalStateException::new);
-        Map<Organization, Map<ConfigurationKeys.SettingCategory, List<Configuration>>> all = configurationManager.loadAllOrganizationConfiguration(USERNAME);
-        List<Configuration> flatten = all.entrySet().stream().flatMap(e -> e.getValue().values().stream().flatMap(Collection::stream)).collect(Collectors.toList());
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> all = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
+        List<Configuration> flatten = all.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(Collectors.toList());
         List<ConfigurationModification> modified = flatten.stream().filter(c -> !c.getKey().equals(ConfigurationKeys.BANK_ACCOUNT_NR.getValue()) && !c.getKey().equals(ConfigurationKeys.PARTIAL_RESERVATION_ID_LENGTH.getValue())).map(ConfigurationModification::fromConfiguration).collect(Collectors.toList());
         modified.add(new ConfigurationModification(existing.getId(), existing.getKey(), "NEW-NUMBER"));
         modified.add(new ConfigurationModification(-1, ConfigurationKeys.PARTIAL_RESERVATION_ID_LENGTH.getValue(), "9"));
-        configurationManager.saveAllOrganizationConfiguration(event.getOrganizationId(), modified);
+        configurationManager.saveAllOrganizationConfiguration(event.getOrganizationId(), modified, USERNAME);
         List<Configuration> organizationConfiguration = configurationRepository.findOrganizationConfiguration(event.getOrganizationId());
         assertEquals(2, organizationConfiguration.size());
         Optional<Configuration> result = configurationRepository.findByKeyAtOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue());
@@ -253,15 +253,13 @@ public class ConfigurationManagerTest {
 
     @Test
     public void testLoadOrganizationConfiguration() {
-        Map<Organization, Map<ConfigurationKeys.SettingCategory, List<Configuration>>> map = configurationManager.loadAllOrganizationConfiguration("test");
-        assertEquals(1, map.size());
-        Organization org = organizationRepository.findByName("org").get(0);
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> orgConf = map.get(org);
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> orgConf = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
+        assertEquals(3, orgConf.size());
         assertEquals(ConfigurationKeys.byPathLevel(ConfigurationPathLevel.ORGANIZATION).size(), orgConf.values().stream().flatMap(Collection::stream).count());
         String value = "MY-ACCOUNT_NUMBER";
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue(), value, "empty");
-        orgConf = configurationManager.loadAllOrganizationConfiguration("test").get(org);
-        assertEquals(1, map.size());
+        orgConf = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
+        assertEquals(3, orgConf.size());
         assertEquals(ConfigurationKeys.byPathLevel(ConfigurationPathLevel.ORGANIZATION).size(), orgConf.values().stream().flatMap(Collection::stream).count());
         assertEquals(value, orgConf.get(ConfigurationKeys.SettingCategory.PAYMENT).stream().filter(c -> c.getConfigurationKey() == ConfigurationKeys.BANK_ACCOUNT_NR).findFirst().orElseThrow(IllegalStateException::new).getValue());
     }
