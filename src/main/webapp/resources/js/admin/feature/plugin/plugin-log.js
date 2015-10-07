@@ -4,8 +4,8 @@
     angular.module('alfio-plugins', ['adminServices'])
         .config(['$stateProvider', function($stateProvider) {
             $stateProvider
-                .state('plugin-log', {
-                    url: '/plugin-log',
+                .state('events.plugin-log', {
+                    url: '/:eventName/plugin-log',
                     templateUrl: '/resources/angular-templates/admin/partials/plugin/log.html',
                     controller: PluginLogController,
                     controllerAs: 'ctrl'
@@ -14,20 +14,23 @@
         .service('PluginService', PluginService);
 
 
-    function PluginLogController(PluginService) {
+    function PluginLogController(PluginService, EventService, $stateParams) {
         var ctrl = this;
         ctrl.logEntries = [];
-        PluginService.loadLogEntries().success(function(result) {
+        EventService.getEvent($stateParams.eventName).success(function(result) {
+            ctrl.event = result.event;
+        });
+        PluginService.loadLogEntries($stateParams.eventName).success(function(result) {
             ctrl.logEntries = result;
-        })
+        });
     }
 
-    PluginLogController.prototype.$inject = ['PluginService'];
+    PluginLogController.prototype.$inject = ['PluginService', 'EventService', '$stateParams'];
 
     function PluginService($http, HttpErrorHandler) {
 
-        this.loadLogEntries = function() {
-            return $http.get('/admin/api/plugin/log').error(HttpErrorHandler.handle);
+        this.loadLogEntries = function(eventName) {
+            return $http.get('/admin/api/events/'+eventName+'/plugin/log').error(HttpErrorHandler.handle);
         };
     }
 

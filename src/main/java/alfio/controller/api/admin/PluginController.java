@@ -19,14 +19,16 @@ package alfio.controller.api.admin;
 import alfio.manager.plugin.PluginManager;
 import alfio.model.plugin.PluginLog;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/admin/api/plugin")
+@RequestMapping("/admin/api")
 public class PluginController {
 
     private final PluginManager pluginManager;
@@ -36,9 +38,9 @@ public class PluginController {
         this.pluginManager = pluginManager;
     }
 
-    @RequestMapping(value = "/log", method = RequestMethod.GET)
-    public List<PluginLog> loadAllLogMessages() {
-        return pluginManager.loadAllLogMessages();
+    @RequestMapping(value = "/events/{eventName}/plugin/log", method = RequestMethod.GET)
+    public List<PluginLog> loadAllLogMessages(@PathVariable("eventName") String eventName, Principal principal) {
+        return pluginManager.loadAllLogMessages(eventName, principal.getName());
     }
 
 }

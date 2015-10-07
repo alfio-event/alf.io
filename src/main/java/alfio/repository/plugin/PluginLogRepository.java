@@ -32,4 +32,7 @@ public interface PluginLogRepository {
 
     @Query("select pl.id, pl.plugin_id, pl.event_id, pl.description, pl.type, pl.event_ts, e.short_name from plugin_log pl, event e where pl.event_id = e.id order by pl.event_ts asc")
     List<PluginLog> loadAll();
+
+    @Query("select pl.id, pl.plugin_id, pl.event_id, pl.description, pl.type, pl.event_ts, e.short_name from plugin_log pl, event e where pl.event_id = :eventId and pl.event_id = e.id  order by pl.event_ts asc")
+    List<PluginLog> loadByEventId(@Bind("eventId") int eventId);
 }
