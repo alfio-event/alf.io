@@ -279,3 +279,11 @@ task distribution(type: Copy) {
 
     dependsOn build, dockerize
 }
+
+release {
+    git {
+        requireBranch = ''
+        pushToRemote = 'origin'
+        pushToCurrentBranch = true
+    }
+}

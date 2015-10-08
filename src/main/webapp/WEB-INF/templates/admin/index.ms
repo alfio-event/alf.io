@@ -31,6 +31,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/plugin/plugin-log.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/email/email-log.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/util/file-upload.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
@@ -50,7 +51,7 @@
                 <div class="collapse navbar-collapse" data-collapse="menuCollapsed">
                     <ul class="nav navbar-nav">
                         <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
-                        <li data-ui-sref-active="active"><a data-ui-sref="configuration">Configuration</a></li>
+                        <li data-ui-sref-active="active"><a data-ui-sref="configuration.system">Configuration</a></li>
                         <li data-ui-sref-active="active"><a data-ui-sref="plugin-log">Plugin Log</a></li>
                         <li class="nav-divider"></li>
                         <li class="visible-xs"><span class="navbar-brand"><i class="fa fa-user"></i> {{username}}</span></li>

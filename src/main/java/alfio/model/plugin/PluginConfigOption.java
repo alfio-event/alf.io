@@ -27,6 +27,7 @@ import lombok.Data;
 @Data
 public class PluginConfigOption {
     private final String pluginId;
+    private final int eventId;
     private final String optionName;
     private final String optionValue;
     private final String description;
@@ -34,11 +35,13 @@ public class PluginConfigOption {
 
 
     public PluginConfigOption(@Column("plugin_id") String pluginId,
+                              @Column("event_id") int eventId,
                               @Column("conf_name") String optionName,
                               @Column("conf_value") String optionValue,
                               @Column("conf_description") String description,
                               @Column("conf_type") ComponentType componentType) {
         this.pluginId = pluginId;
+        this.eventId = eventId;
         this.optionName = optionName;
         this.optionValue = optionValue;
         this.description = description;

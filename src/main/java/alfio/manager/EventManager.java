@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.location.LocationManager;
+import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -76,6 +77,7 @@ public class EventManager {
     private final LocationManager locationManager;
     private final NamedParameterJdbcTemplate jdbc;
     private final ConfigurationManager configurationManager;
+    private final PluginManager pluginManager;
 
     @Autowired
     public EventManager(UserManager userManager,
@@ -89,7 +91,8 @@ public class EventManager {
                         PromoCodeDiscountRepository promoCodeRepository,
                         LocationManager locationManager,
                         NamedParameterJdbcTemplate jdbc,
-                        ConfigurationManager configurationManager) {
+                        ConfigurationManager configurationManager,
+                        PluginManager pluginManager) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -102,10 +105,17 @@ public class EventManager {
         this.locationManager = locationManager;
         this.jdbc = jdbc;
         this.configurationManager = configurationManager;
+        this.pluginManager = pluginManager;
     }
 
     public Event getSingleEvent(String eventName, String username) {
         final Event event = eventRepository.findByShortName(eventName);
+        checkOwnership(event, username, event.getOrganizationId());
+        return event;
+    }
+
+    public Event getSingleEventById(int eventId, String username) {
+        final Event event = eventRepository.findById(eventId);
         checkOwnership(event, username, event.getOrganizationId());
         return event;
     }
@@ -145,6 +155,11 @@ public class EventManager {
         createOrUpdateEventDescription(eventId, em);
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(eventId, event);
+        initPlugins(event);
+    }
+
+    private void initPlugins(Event event) {
+        pluginManager.installPlugins(event);
     }
 
     private void createOrUpdateEventDescription(int eventId, EventModification em) {

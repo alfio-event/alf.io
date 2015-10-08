@@ -1,10 +1,10 @@
 <div class="form-group">
     <label for="{{setting.key}}">{{setting.description}}</label>
-    <div data-ng-class="{'input-group': displayDelete && setting.componentType === 'TEXT'}" data-ng-switch="setting.componentType">
+    <div data-ng-class="{'input-group': displayDelete && setting.componentType === 'TEXT' && setting.id > -1}" data-ng-switch="setting.componentType">
         <input data-ng-switch-when="TEXT" class="form-control" data-ng-model="setting.value" name="{{setting.key}}" id="{{setting.key}}">
         <input type="checkbox" data-ng-switch-when="BOOLEAN" data-ng-model="setting.value" data-ng-true-value="'true'" data-ng-false-value="'false'" name="{{setting.key}}" id="{{setting.key}}">
-        <div class="input-group-btn" data-ng-if="displayDelete && setting.componentType === 'TEXT'">
-            <button class="btn btn-danger" data-ng-click="removeConfigurationKey(setting.key)" type="button"><i class="fa fa-trash" data-tooltip="Delete"></i></button>
+        <div class="input-group-btn" data-ng-if="displayDelete && setting.componentType === 'TEXT' && setting.id > -1">
+            <button class="btn btn-danger" data-ng-click="removeConfiguration(setting)" type="button"><i class="fa fa-trash" data-tooltip="Delete"></i></button>
         </div>
     </div>
 </div>

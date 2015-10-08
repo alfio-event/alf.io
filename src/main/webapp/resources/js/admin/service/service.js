@@ -99,6 +99,9 @@
             getEvent: function(name) {
                 return $http.get('/admin/api/events/'+name+'.json').error(HttpErrorHandler.handle);
             },
+            getEventById: function(eventId) {
+                return $http.get('/admin/api/events/id/'+eventId+'.json').error(HttpErrorHandler.handle);
+            },
             checkEvent : function(event) {
                 return $http['post']('/admin/api/events/check', event).error(HttpErrorHandler.handle);
             },
@@ -167,29 +170,6 @@
             },
             getMapUrl : function(latitude, longitude) {
                 return $http.get('/admin/api/location/map.json?lat='+latitude+'&long='+longitude).error(HttpErrorHandler.handle);
-            }
-        };
-    });
-
-    baseServices.service('ConfigurationService', function($http, HttpErrorHandler) {
-        return {
-            loadAll: function() {
-                return $http.get('/admin/api/configuration/load').error(HttpErrorHandler.handle);
-            },
-            update: function(configuration) {
-                return $http.post('/admin/api/configuration/update', configuration).error(HttpErrorHandler.handle);
-            },
-            bulkUpdate: function(settings) {
-                return $http.post('/admin/api/configuration/update-bulk', settings).error(HttpErrorHandler.handle);
-            },
-            remove: function(key) {
-                return $http['delete']('/admin/api/configuration/key/' + key).error(HttpErrorHandler.handle);
-            },
-            loadPlugins: function() {
-                return $http.get('/admin/api/configuration/plugin/load').error(HttpErrorHandler.handle);
-            },
-            bulkUpdatePlugins: function(pluginConfigOptions) {
-                return $http.post('/admin/api/configuration/plugin/update-bulk', pluginConfigOptions).error(HttpErrorHandler.handle);
             }
         };
     });

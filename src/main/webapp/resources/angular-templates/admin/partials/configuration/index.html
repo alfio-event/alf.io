@@ -1,72 +1,25 @@
 <div class="container">
-    <div class="page-header">
-        <h1>General</h1>
-        <span>General settings</span>
+    <div class="row">
+        <div class="col-xs-12 col-sm-4 col-md-3">
+            <div class="page-header">
+                <h1>Level</h1>
+                <span>select the level</span>
+            </div>
+            <ul class="nav">
+                <li role="presentation" data-ui-sref-active="active"><a role="button" href="" data-ui-sref="configuration.system"><i class="fa fa-globe"></i> System</a></li>
+                <li role="presentation"><strong><i class="fa fa-users"></i> Organization</strong>
+                    <ul class="nav">
+                        <li role="presentation" data-ui-sref-active="active" data-ng-repeat="org in configCtrl.organizations"><a href="" role="button" data-ui-sref="configuration.organization({organizationId: org.id})">{{org.name}}</a>
+                            <ul class="nav">
+                                <li role="presentation" data-ui-sref-active="active" data-ng-repeat="ev in org.events"><a href="" role="button" data-ui-sref="configuration.event({organizationId: org.id, eventId: ev.id})">{{ev.shortName}}</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="col-xs-12 col-sm-8 col-md-9">
+            <div data-ui-view></div>
+        </div>
     </div>
-    <form name="settingsForm" novalidate data-ng-submit="saveSettings(settingsForm, settings, pluginSettings)">
-        <div data-ng-if="general">
-            <div data-ng-repeat="setting in general.settings">
-                <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
-            </div>
-            <i class="fa fa-cog fa-spin fa-3x" data-ng-if="general.loading"></i>
-        </div>
-
-        <div class="page-header">
-            <h1>E-Mail</h1>
-            <span>E-Mail settings</span>
-        </div>
-
-        <div data-ng-if="mail">
-            <div class="radio-inline">
-                <label>
-                    <input type="radio" name="mailer.type" data-ng-model="mail.type.value" data-ng-value="'smtp'">
-                    SMTP
-                </label>
-            </div>
-            <div class="radio-inline">
-                <label>
-                    <input type="radio" name="mailer.type" data-ng-model="mail.type.value" data-ng-value="'mailgun'">
-                    Mailgun.com
-                </label>
-            </div>
-            <div data-ng-repeat="setting in mail.settings | mailSettingsFilter:mail.type.value">
-                <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
-            </div>
-            <div>
-                <setting obj="mail.maxEmailPerCycle" data-display-delete-if-needed="true"></setting>
-            </div>
-            <div>
-                <setting obj="mail.mailReplyTo" data-display-delete-if-needed="true"></setting>
-            </div>
-        </div>
-
-        <div class="page-header">
-            <h1>Payment</h1>
-            <span>Payment provider settings</span>
-        </div>
-
-        <div data-ng-if="payment">
-            <div data-ng-repeat="setting in payment.settings">
-                <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
-            </div>
-            <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loading"></i>
-        </div>
-
-        <div class="page-header">
-            <h1>Plugins</h1>
-            <span>Plugins settings</span>
-        </div>
-
-        <div data-ng-repeat="(key, settings) in pluginSettingsByPluginId">
-            <div class="page-header"><h3 data-ng-bind="key"></h3></div>
-            <div data-ng-repeat="setting in settings">
-                <setting data-obj="setting" data-display-delete-if-needed="true"></setting>
-            </div>
-        </div>
-
-        <div class="pull-right wMarginBottom wMarginTop">
-            <button type="submit" class="btn btn-success" data-ng-disabled="loading">save</button>
-            <a class="btn btn-default" data-ui-sref="index">cancel</a>
-        </div>
-    </form>
 </div>

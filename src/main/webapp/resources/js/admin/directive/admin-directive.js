@@ -529,15 +529,16 @@
             restrict: 'E',
             scope: {
                 setting: '=obj',
-                displayDeleteIfNeeded: '='
+                displayDeleteIfNeeded: '=',
+                deleteHandler: '&'
             },
             templateUrl:'/resources/angular-templates/admin/partials/configuration/setting.html',
             link: angular.noop,
             controller: function($scope, $rootScope, ConfigurationService) {
                 $scope.displayDelete = $scope.displayDeleteIfNeeded && angular.isDefined($scope.setting) && !angular.isDefined($scope.setting.pluginId);
-                $scope.removeConfigurationKey = function(key) {
+                $scope.removeConfiguration = function(config) {
                     $scope.loading = true;
-                    ConfigurationService.remove(key).then(function() {$rootScope.$broadcast('ReloadSettings');});
+                    $scope.deleteHandler({config: config}).then(function() {$rootScope.$broadcast('ReloadSettings');});
                 };
             }
         }
