@@ -221,7 +221,7 @@
                 return;
             }
             eventConf.loading = true;
-            ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings).then(function() {
+            $q.all([ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings), ConfigurationService.bulkUpdatePlugins(eventConf.eventId, eventConf.pluginSettings)]).then(function() {
                 load();
             }, function(e) {
                 alert(e.data);

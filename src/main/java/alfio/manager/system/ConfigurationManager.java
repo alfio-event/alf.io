@@ -214,7 +214,7 @@ public class ConfigurationManager {
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().collect(groupByCategory());
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().sorted().collect(groupByCategory());
         return groupByCategory(ORGANIZATION_CONFIGURATION, existing);
     }
 
@@ -225,7 +225,7 @@ public class ConfigurationManager {
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().collect(groupByCategory());
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().sorted().collect(groupByCategory());
         return groupByCategory(EVENT_CONFIGURATION, existing);
     }
 
@@ -236,14 +236,14 @@ public class ConfigurationManager {
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findCategoryConfiguration(organizationId, eventId, categoryId).stream().collect(groupByCategory());
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findCategoryConfiguration(organizationId, eventId, categoryId).stream().sorted().collect(groupByCategory());
         return groupByCategory(EVENT_CONFIGURATION, existing);
     }
 
     private Map<ConfigurationKeys.SettingCategory, List<Configuration>> groupByCategory(Map<ConfigurationKeys.SettingCategory, List<Configuration>> all, Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing) {
         return all.entrySet().stream()
             .map(e -> {
-                Set<Configuration> entries = new LinkedHashSet<>();
+                Set<Configuration> entries = new TreeSet<>();
                 ConfigurationKeys.SettingCategory key = e.getKey();
                 entries.addAll(e.getValue());
                 if(existing.containsKey(key)) {
@@ -270,7 +270,7 @@ public class ConfigurationManager {
                 .collect(Collectors.toList());
         List<Configuration> result = new LinkedList<>(existing);
         result.addAll(missing);
-        return result.stream().collect(groupByCategory());
+        return result.stream().sorted().collect(groupByCategory());
     }
 
     private static Collector<Configuration, ?, Map<ConfigurationKeys.SettingCategory, List<Configuration>>> groupByCategory() {
@@ -301,6 +301,7 @@ public class ConfigurationManager {
         return ConfigurationKeys.byPathLevel(pathLevel)
             .stream()
             .map(mapEmptyKeys(pathLevel))
+            .sorted()
             .collect(groupByCategory());
     }
 }
