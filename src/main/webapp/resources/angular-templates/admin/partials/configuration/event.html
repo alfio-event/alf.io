@@ -2,12 +2,16 @@
     <i class="fa fa-cog fa-spin fa-3x"></i><span class="sr-only">Loading...</span>
 </div>
 <div class="alert alert-warning" data-ng-if="eventConf.noResults">
-    <h1>You are not authorized to see Organization-wide configuration.</h1>
-    <span>Please try selecting an Event</span>
+    <h1>You are not authorized to see Event configuration.</h1>
 </div>
 <div data-ng-if="eventConf.hasResults">
+
+    <div>
+        <h1>Configuration for {{eventConf.event.displayName}}</h1>
+    </div>
+
     <div class="page-header">
-        <h1>General</h1>
+        <h2>General</h2>
         <span>General settings</span>
     </div>
 
@@ -19,7 +23,7 @@
         </div>
 
         <div class="page-header">
-            <h1>E-Mail</h1>
+            <h2>E-Mail</h2>
             <span>E-Mail settings</span>
         </div>
 
@@ -53,7 +57,7 @@
         </div>
 
         <div class="page-header">
-            <h1>Payment</h1>
+            <h2>Payment</h2>
             <span>Payment provider settings</span>
         </div>
 
@@ -65,7 +69,7 @@
 
         <div data-ng-if="eventConf.pluginSettingsByPluginId">
             <div class="page-header">
-                <h1>Plugins</h1>
+                <h2>Plugins</h2>
                 <span>Plugins settings</span>
             </div>
 
