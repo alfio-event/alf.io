@@ -181,6 +181,10 @@ div.preformatted {
 .alfio-lang a {
 }
 
+html[lang=nl] .alfio-lang a[lang=nl] {
+    font-weight:bold;
+}
+
 html[lang=de] .alfio-lang a[lang=de] {
     font-weight:bold;
 }
