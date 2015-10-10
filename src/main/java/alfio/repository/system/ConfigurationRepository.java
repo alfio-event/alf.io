@@ -68,6 +68,9 @@ public interface ConfigurationRepository {
     @Query(EVENT_FIND_BY_KEY)
     Optional<Configuration> findByKeyAtEventLevel(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId, @Bind("key") String key);
 
+    @Query(TICKET_CATEGORY_FIND_BY_KEY)
+    Optional<Configuration> findByKeyAtCategoryLevel(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId, @Bind("ticketCategoryId") int ticketCategoryId, @Bind("key") String key);
+
     @Query(SYSTEM_FIND_BY_KEY + " UNION ALL " + ORGANIZATION_FIND_BY_KEY + " UNION ALL " + EVENT_FIND_BY_KEY)
     List<Configuration> findByEventAndKey(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId,
                                           @Bind("key") String key);
@@ -87,6 +90,9 @@ public interface ConfigurationRepository {
     @Query("DELETE FROM configuration_event where c_key = :key and event_id_fk = :eventId")
     void deleteEventLevelByKey(@Bind("key") String key, @Bind("eventId") int eventId);
 
+    @Query("DELETE FROM configuration_ticket_category where c_key = :key and event_id_fk = :eventId and ticket_category_id_fk = :categoryId")
+    void deleteCategoryLevelByKey(@Bind("key") String key, @Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
+
     @Query(INSERT_STATEMENT)
     int insert(@Bind("key") String key, @Bind("value") String value, @Bind("description") String description);
 
@@ -98,6 +104,9 @@ public interface ConfigurationRepository {
 
     @Query("update configuration_event set c_value = :value where event_id_fk = :eventId and organization_id_fk = :organizationId and c_key = :key")
     int updateEventLevel(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId, @Bind("key") String key, @Bind("value") String value);
+
+    @Query("update configuration_ticket_category set c_value = :value where event_id_fk = :eventId and organization_id_fk = :organizationId and ticket_category_id_fk = :ticketCategoryId and c_key = :key")
+    int updateCategoryLevel(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId, @Bind("ticketCategoryId") int ticketCategoryId, @Bind("key") String key, @Bind("value") String value);
 
     @Query("INSERT into configuration_event(organization_id_fk, event_id_fk, c_key, c_value, description) values(:orgId, :eventId, :key, :value, :description)")
     int insertEventLevel(@Bind("orgId") int orgId, @Bind("eventId") int eventId, @Bind("key") String key, @Bind("value") String value, @Bind("description") String description);

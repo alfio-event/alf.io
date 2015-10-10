@@ -28,10 +28,12 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.support.LocationDescriptor;
+import alfio.model.system.ComponentType;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.user.Organization;
+import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -68,37 +70,8 @@ public class ConfigurationManagerTest {
         IntegrationTestUtil.initSystemProperties();
     }
 
-    @Before
-    public void prepareEnv() {
-        //setup...
-        organizationRepository.create("org", "org", "email@example.com");
-        Organization organization = organizationRepository.findByName("org").get(0);
-
-        userManager.insertUser(organization.getId(), USERNAME, "test", "test", "test@example.com");
-        authorityRepository.create(USERNAME, AuthorityRepository.ROLE_OWNER);
-
-        Map<String, String> desc = new HashMap<>();
-        desc.put("en", "muh description");
-        desc.put("it", "muh description");
-        desc.put("de", "muh description");
-
-        List<TicketCategoryModification> ticketsCategory = Collections.singletonList(
-                new TicketCategoryModification(null, "default", 20,
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false));
-        EventModification em = new EventModification(null, "url", "url", "url", null,
-                "eventShortName", "displayName", organization.getId(),
-                "muh location", desc,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7);
-        eventManager.createEvent(em);
-
-        event = eventManager.getSingleEvent("eventShortName", "test");
-    }
-
     Event event;
+    TicketCategory ticketCategory;
 
     @Autowired
     private ConfigurationManager configurationManager;
@@ -117,6 +90,40 @@ public class ConfigurationManagerTest {
 
     @Autowired
     private UserManager userManager;
+
+    @Autowired
+    private TicketCategoryRepository ticketCategoryRepository;
+
+    @Before
+    public void prepareEnv() {
+        //setup...
+        organizationRepository.create("org", "org", "email@example.com");
+        Organization organization = organizationRepository.findByName("org").get(0);
+
+        userManager.insertUser(organization.getId(), USERNAME, "test", "test", "test@example.com");
+        authorityRepository.create(USERNAME, AuthorityRepository.ROLE_OWNER);
+
+        Map<String, String> desc = new HashMap<>();
+        desc.put("en", "muh description");
+        desc.put("it", "muh description");
+        desc.put("de", "muh description");
+
+        List<TicketCategoryModification> ticketsCategory = Collections.singletonList(
+            new TicketCategoryModification(null, "default", 20,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false));
+        EventModification em = new EventModification(null, "url", "url", "url", null,
+            "eventShortName", "displayName", organization.getId(),
+            "muh location", desc,
+            new DateTimeModification(LocalDate.now(), LocalTime.now()),
+            new DateTimeModification(LocalDate.now(), LocalTime.now()),
+            BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7);
+        eventManager.createEvent(em);
+
+        event = eventManager.getSingleEvent("eventShortName", "test");
+        ticketCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+    }
 
     @Test
     public void testPresentStringConfigValue() {
@@ -161,15 +168,15 @@ public class ConfigurationManagerTest {
     @Test
     public void testBooleanValue() {
         //missing value
-        assertFalse(configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event), false));
+        assertFalse(configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event, ticketCategory), false));
 
         //false value
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "false");
-        assertFalse(configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event), true));
+        assertFalse(configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event, ticketCategory), true));
 
         //true value
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "true");
-        assertTrue(configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event), false));
+        assertTrue(configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event, ticketCategory), false));
     }
 
     @Test
@@ -219,7 +226,8 @@ public class ConfigurationManagerTest {
         modified.add(new ConfigurationModification(existing.getId(), existing.getKey(), "NEW-NUMBER"));
         configurationManager.saveAllOrganizationConfiguration(event.getOrganizationId(), modified, USERNAME);
         List<Configuration> organizationConfiguration = configurationRepository.findOrganizationConfiguration(event.getOrganizationId());
-        assertEquals(1, organizationConfiguration.size());
+        assertEquals(5, organizationConfiguration.size());
+        assertTrue(organizationConfiguration.stream().filter(o -> o.getComponentType() == ComponentType.BOOLEAN).count() == 4);
         Optional<Configuration> result = configurationRepository.findByKeyAtOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue());
         assertTrue(result.isPresent());
         Configuration configuration = result.get();
@@ -238,7 +246,8 @@ public class ConfigurationManagerTest {
         modified.add(new ConfigurationModification(-1, ConfigurationKeys.PARTIAL_RESERVATION_ID_LENGTH.getValue(), "9"));
         configurationManager.saveAllOrganizationConfiguration(event.getOrganizationId(), modified, USERNAME);
         List<Configuration> organizationConfiguration = configurationRepository.findOrganizationConfiguration(event.getOrganizationId());
-        assertEquals(2, organizationConfiguration.size());
+        assertEquals(6, organizationConfiguration.size());
+        assertTrue(organizationConfiguration.stream().filter(o -> o.getComponentType() == ComponentType.BOOLEAN).count() == 4);
         Optional<Configuration> result = configurationRepository.findByKeyAtOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue());
         assertTrue(result.isPresent());
         Configuration configuration = result.get();

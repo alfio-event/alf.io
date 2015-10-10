@@ -185,6 +185,24 @@ public class ConfigurationManager {
             });
     }
 
+    public void saveCategoryConfiguration(int categoryId, int eventId, List<ConfigurationModification> list, String username) {
+        User user = userManager.findUserByUsername(username);
+        Event event = eventRepository.findById(eventId);
+        Validate.notNull(event, "event does not exist");
+        Validate.isTrue(userManager.isOwnerOfOrganization(user, event.getOrganizationId()), "Cannot update settings, user is not owner of event");
+        list.stream()
+            .filter(TO_BE_SAVED)
+            .forEach(c -> {
+                Optional<Configuration> existing = configurationRepository.findByKeyAtCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey());
+                String value = evaluateValue(c.getKey(), c.getValue());
+                if (existing.isPresent()) {
+                    configurationRepository.updateCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey(), value);
+                } else {
+                    configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), eventId, categoryId, c.getKey(), value, ConfigurationKeys.fromString(c.getKey()).getDescription());
+                }
+            });
+    }
+
     private String evaluateValue(String key, String value) {
         if(ConfigurationKeys.fromString(key).isBooleanComponentType()) {
             return StringUtils.defaultString(value, "false");
@@ -250,7 +268,7 @@ public class ConfigurationManager {
             return Collections.emptyMap();
         }
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findCategoryConfiguration(organizationId, eventId, categoryId).stream().sorted().collect(groupByCategory());
-        return groupByCategory(EVENT_CONFIGURATION, existing);
+        return groupByCategory(CATEGORY_CONFIGURATION, existing);
     }
 
     private Map<ConfigurationKeys.SettingCategory, List<Configuration>> groupByCategory(Map<ConfigurationKeys.SettingCategory, List<Configuration>> all, Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing) {
@@ -308,6 +326,13 @@ public class ConfigurationManager {
         Validate.notNull(event, "Wrong event id");
         Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
         configurationRepository.deleteEventLevelByKey(key, eventId);
+    }
+
+    public void deleteCategoryLevelByKey(String key, int eventId, int categoryId, String username) {
+        Event event = eventRepository.findById(eventId);
+        Validate.notNull(event, "Wrong event id");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
+        configurationRepository.deleteCategoryLevelByKey(key, eventId, categoryId);
     }
 
     private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> collectConfigurationKeysByCategory(ConfigurationPathLevel pathLevel) {

@@ -603,6 +603,34 @@
             });
         };
 
+        $scope.openConfiguration = function(event, category) {
+            $modal.open({
+                size:'lg',
+                templateUrl:BASE_STATIC_URL + '/event/fragment/category-configuration-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                    $scope.allLanguagesMapping = parentScope.allLanguagesMapping;
+                    $scope.ticketCategory = category;
+                    $scope.event = event;
+                    $scope.editMode = true;
+                    $scope.modal = $modal;
+                    $scope.cancel = function() {
+                        $scope.$dismiss('canceled');
+                    };
+                    $scope.update = function(form, category, event) {
+                        if(!form.$valid) {
+                            return;
+                        }
+                        EventService.saveTicketCategory(event, category).then(function(result) {
+                            validationErrorHandler(result, form, form).then(function() {
+                                $scope.$close(true);
+                            });
+                        }, errorHandler);
+                    };
+                }
+            });
+        };
+
         $scope.toggleLocking = function(event, ticket, category) {
             EventService.toggleTicketLocking(event, ticket, category).then(function() {
                 loadData();

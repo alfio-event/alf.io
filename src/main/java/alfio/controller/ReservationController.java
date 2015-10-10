@@ -30,6 +30,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
+import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.system.Configuration;
@@ -169,11 +170,13 @@ public class ReservationController {
 
             Event ev = event.get();
 
-            boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(ev), false);
             model.addAttribute(
                     "ticketsByCategory",
                     tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
-                            .map((e) -> Pair.of(eventManager.getTicketCategoryById(e.getKey(), event.get().getId()), TicketDecorator.decorate(e.getValue(), enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites())))
+                            .map((e) -> {
+                                TicketCategory category = eventManager.getTicketCategoryById(e.getKey(), event.get().getId());
+                                return Pair.of(category, TicketDecorator.decorate(e.getValue(), configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(ev, category), false), eventManager.checkTicketCancellationPrerequisites()));
+                            })
                             .collect(Collectors.toList()));
             model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
             model.addAttribute("countries", ticketHelper.getLocalizedCountries(RequestContextUtils.getLocale(request)));

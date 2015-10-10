@@ -247,6 +247,10 @@ public class Configuration implements Comparable<Configuration> {
         return new ConfigurationPathKey(event(event), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
     }
 
+    public static ConfigurationPathKey maxAmountOfTicketsByReservation(int organizationId, int eventId, int ticketCategoryId) {
+        return new ConfigurationPathKey(ticketCategory(organizationId, eventId, ticketCategoryId), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
+    }
+
     public static ConfigurationPathKey assignmentReminderStart(Event event) {
         return new ConfigurationPathKey(event(event), ConfigurationKeys.ASSIGNMENT_REMINDER_START);
     }
@@ -311,6 +315,10 @@ public class Configuration implements Comparable<Configuration> {
         return new ConfigurationPathKey(system(), ConfigurationKeys.OFFLINE_REMINDER_HOURS);
     }
 
+    public static ConfigurationPathKey offlineReminderHours(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.OFFLINE_REMINDER_HOURS);
+    }
+
     public static ConfigurationPathKey bankAccountNr(Event event) {
         return new ConfigurationPathKey(event(event), ConfigurationKeys.BANK_ACCOUNT_NR);
     }
@@ -341,8 +349,8 @@ public class Configuration implements Comparable<Configuration> {
         return new ConfigurationPathKey(system(), ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE);
     }
 
-    public static ConfigurationPathKey allowFreeTicketsCancellation(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION);
+    public static ConfigurationPathKey allowFreeTicketsCancellation(Event event, TicketCategory category) {
+        return new ConfigurationPathKey(ticketCategory(event.getOrganizationId(), event.getId(), category.getId()), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION);
     }
 
     public static ConfigurationPathKey enableWaitingQueue(Event event) {
