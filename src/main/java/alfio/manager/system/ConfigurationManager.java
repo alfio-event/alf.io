@@ -19,6 +19,7 @@ package alfio.manager.system;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.modification.ConfigurationModification;
+import alfio.model.system.ComponentType;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeys;
@@ -38,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -51,6 +53,8 @@ public class ConfigurationManager {
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.ORGANIZATION);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> EVENT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.EVENT);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
+
+    private static final Predicate<ConfigurationModification> TO_BE_SAVED = c -> c.getId() > -1 || !StringUtils.isBlank(c.getValue()) || ConfigurationKeys.fromString(c.getKey()).getComponentType() == ComponentType.BOOLEAN;
 
 
     private final ConfigurationRepository configurationRepository;
@@ -142,19 +146,20 @@ public class ConfigurationManager {
     // begin SYSTEM related configuration methods
 
     public void saveAllSystemConfiguration(List<ConfigurationModification> list) {
-        list.forEach(c -> saveSystemConfiguration(ConfigurationKeys.fromValue(c.getKey()), c.getValue()));
+        list.forEach(c -> saveSystemConfiguration(ConfigurationKeys.fromString(c.getKey()), c.getValue()));
     }
 
     public void saveAllOrganizationConfiguration(int organizationId, List<ConfigurationModification> list, String username) {
         Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "Cannot update settings, user is not owner");
         list.stream()
-            .filter(c -> c.getId() > -1 || !StringUtils.isBlank(c.getValue()))
+            .filter(TO_BE_SAVED)
             .forEach(c -> {
+                String value = evaluateValue(c.getKey(), c.getValue());
                 Optional<Configuration> existing = configurationRepository.findByKeyAtOrganizationLevel(organizationId, c.getKey());
                 if (existing.isPresent()) {
-                    configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), c.getValue());
+                    configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), value);
                 } else {
-                    configurationRepository.insertOrganizationLevel(organizationId, c.getKey(), c.getValue(), ConfigurationKeys.fromValue(c.getKey()).getDescription());
+                    configurationRepository.insertOrganizationLevel(organizationId, c.getKey(), value, ConfigurationKeys.fromString(c.getKey()).getDescription());
                 }
             });
     }
@@ -168,15 +173,23 @@ public class ConfigurationManager {
             Validate.isTrue(userManager.isOwnerOfOrganization(user, event.getOrganizationId()), "Cannot update settings, user is not owner of event");
         }
         list.stream()
-            .filter(c -> c.getId() > -1 || !StringUtils.isBlank(c.getValue()))
+            .filter(TO_BE_SAVED)
             .forEach(c -> {
                 Optional<Configuration> existing = configurationRepository.findByKeyAtEventLevel(eventId, organizationId, c.getKey());
+                String value = evaluateValue(c.getKey(), c.getValue());
                 if (existing.isPresent()) {
-                    configurationRepository.updateEventLevel(eventId, organizationId, c.getKey(), c.getValue());
+                    configurationRepository.updateEventLevel(eventId, organizationId, c.getKey(), value);
                 } else {
-                    configurationRepository.insertEventLevel(organizationId, eventId, c.getKey(), c.getValue(), ConfigurationKeys.fromValue(c.getKey()).getDescription());
+                    configurationRepository.insertEventLevel(organizationId, eventId, c.getKey(), value, ConfigurationKeys.fromString(c.getKey()).getDescription());
                 }
             });
+    }
+
+    private String evaluateValue(String key, String value) {
+        if(ConfigurationKeys.fromString(key).isBooleanComponentType()) {
+            return StringUtils.defaultString(value, "false");
+        }
+        return value;
     }
 
     public void saveSystemConfiguration(ConfigurationKeys key, String value) {
@@ -262,7 +275,7 @@ public class ConfigurationManager {
         }
         final List<Configuration> existing = configurationRepository.findSystemConfiguration()
                 .stream()
-                .filter(c -> !ConfigurationKeys.fromValue(c.getKey()).isInternal())
+                .filter(c -> !ConfigurationKeys.fromString(c.getKey()).isInternal())
                 .collect(Collectors.toList());
         final List<Configuration> missing = Arrays.stream(ConfigurationKeys.visible())
                 .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))

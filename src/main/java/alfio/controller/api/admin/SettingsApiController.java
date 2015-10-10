@@ -60,7 +60,7 @@ public class SettingsApiController {
 
     @RequestMapping(value = "/configuration/update", method = POST)
     public boolean updateConfiguration(@RequestBody ConfigurationModification configuration) {
-        configurationManager.saveSystemConfiguration(ConfigurationKeys.fromValue(configuration.getKey()), configuration.getValue());
+        configurationManager.saveSystemConfiguration(ConfigurationKeys.fromString(configuration.getKey()), configuration.getValue());
         return true;
     }
 

@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationPathLevel.*;
@@ -126,8 +125,8 @@ public enum ConfigurationKeys {
         return pathLevels.contains(pathLevel);
     }
 
-    public static ConfigurationKeys fromValue(String value) {
-        return valueOf(value);
+    public static ConfigurationKeys fromString(String configurationKey) {
+        return valueOf(configurationKey);
     }
 
     public static ConfigurationKeys[] visible() {
@@ -143,6 +142,10 @@ public enum ConfigurationKeys {
             .filter(ConfigurationKeys::isBasic)
             .collect(toList());
 
+    }
+
+    public boolean isBooleanComponentType() {
+        return componentType == ComponentType.BOOLEAN;
     }
 
     public static List<ConfigurationKeys> byPathLevel(ConfigurationPathLevel pathLevel) {

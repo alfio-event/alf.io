@@ -29,6 +29,9 @@
                 <a class="btn btn-primary btn-xs hidden-xs" data-ui-sref="events.detail({eventName: event.shortName})">
                     <i class="fa fa-bar-chart"></i> Detail
                 </a>
+                <a class="btn btn-primary btn-xs hidden-xs" data-ui-sref="events.configuration({eventName: event.shortName})">
+                    <i class="fa fa-wrench"></i> Settings
+                </a>
                 <a class="btn btn-primary btn-xs" data-ng-if="!event.expired" data-ui-sref="events.checkIn({eventName: event.shortName})">
                     <i class="fa fa-check"></i> Check-In
                 </a>

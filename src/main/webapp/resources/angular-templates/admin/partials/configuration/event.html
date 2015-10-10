@@ -81,9 +81,13 @@
             </div>
         </div>
 
+        <div class="pull-left wMarginBottom wMarginTop" data-ng-if="eventConf.eventName">
+            <a class="btn btn-default" data-ng-if="eventConf.eventName" data-ui-sref="events.detail({eventName: eventConf.eventName})">back to event</a>
+        </div>
         <div class="pull-right wMarginBottom wMarginTop">
             <button type="submit" class="btn btn-success" data-ng-disabled="eventConf.loading">save</button>
-            <a class="btn btn-default" data-ui-sref="index">cancel</a>
+            <a class="btn btn-default" data-ng-if="!eventConf.eventName" data-ui-sref="index">cancel</a>
+            <a class="btn btn-default" data-ng-if="eventConf.eventName" data-ui-sref="events.detail({eventName: eventConf.eventName})">cancel</a>
         </div>
     </form>
 </div>

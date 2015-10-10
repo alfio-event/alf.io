@@ -26,6 +26,12 @@
                     templateUrl: '/resources/angular-templates/admin/partials/configuration/event.html',
                     controller: 'EventConfigurationController',
                     controllerAs: 'eventConf'
+                })
+                .state('events.configuration', {
+                    url: '/:eventName/configuration',
+                    templateUrl: '/resources/angular-templates/admin/partials/configuration/event.html',
+                    controller: 'EventConfigurationController',
+                    controllerAs: 'eventConf'
                 });
         }])
         .controller('ConfigurationController', ConfigurationController)
@@ -39,10 +45,10 @@
             loadAll: function() {
                 return $http.get('/admin/api/configuration/load').error(HttpErrorHandler.handle);
             },
-            loadOrganization: function(organizationId) {
+            loadOrganizationConfig: function(organizationId) {
                 return $http.get('/admin/api/configuration/organizations/'+organizationId+'/load').error(HttpErrorHandler.handle);
             },
-            loadEvent: function(eventId) {
+            loadEventConfig: function(eventId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/load').error(HttpErrorHandler.handle)
             },
             loadCategory: function(eventId, categoryId) {
@@ -69,7 +75,7 @@
             removeEventConfig: function(conf, eventId) {
                 return $http['delete']('/admin/api/configuration/event/'+eventId+'/key/' + conf.configurationKey).error(HttpErrorHandler.handle);
             },
-            loadPlugins: function(eventId) {
+            loadPluginsConfig: function(eventId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/plugin/load').error(HttpErrorHandler.handle);
             },
             bulkUpdatePlugins: function(eventId, pluginConfigOptions) {
@@ -164,7 +170,7 @@
         };
         var load = function() {
             organizationConf.loading = true;
-            $q.all([OrganizationService.getOrganization(organizationConf.organizationId), ConfigurationService.loadOrganization(organizationConf.organizationId)])
+            $q.all([OrganizationService.getOrganization(organizationConf.organizationId), ConfigurationService.loadOrganizationConfig(organizationConf.organizationId)])
                 .then(function(result) {
                     organizationConf.organization = result[0].data;
                     loadSettings(organizationConf, result[1].data, ConfigurationService);
@@ -197,14 +203,35 @@
 
     OrganizationConfigurationController.prototype.$inject = ['ConfigurationService', 'OrganizationService', '$stateParams', '$q', '$rootScope'];
 
-    function EventConfigurationController(ConfigurationService, EventService, $stateParams, $q, $rootScope) {
+    function EventConfigurationController(ConfigurationService, EventService, $q, $rootScope, $stateParams) {
         var eventConf = this;
-        eventConf.organizationId = $stateParams.organizationId;
-        eventConf.eventId = $stateParams.eventId;
+        var getData = function() {
+            if(angular.isDefined($stateParams.eventName)) {
+                var deferred = $q.defer();
+                EventService.getEvent($stateParams.eventName).then(function(result) {
+                    eventConf.organizationId = result.data.organization.id;
+                    var event = result.data.event;
+                    eventConf.eventName = event.shortName;
+                    eventConf.eventId = event.id;
+                    $q.all([ConfigurationService.loadEventConfig(eventConf.eventId), ConfigurationService.loadPluginsConfig(eventConf.eventId)]).then(function(result) {
+                        deferred.resolve([{data:event}].concat(result));
+                    }, function(e) {
+                        deferred.reject(e);
+                    });
+                }, function(e) {
+                    deferred.reject(e);
+                });
+                return deferred.promise;
+            } else {
+                eventConf.eventId = $stateParams.eventId;
+                eventConf.organizationId = $stateParams.organizationId;
+                return $q.all([EventService.getEventById($stateParams.eventId), ConfigurationService.loadEventConfig($stateParams.eventId), ConfigurationService.loadPluginsConfig($stateParams.eventId)])
+            }
+        };
+
         var load = function() {
             eventConf.loading = true;
-            $q.all([EventService.getEventById(eventConf.eventId), ConfigurationService.loadEvent(eventConf.eventId), ConfigurationService.loadPlugins(eventConf.eventId)])
-                .then(function(result) {
+            getData().then(function(result) {
                     eventConf.event = result[0].data;
                     loadSettings(eventConf, result[1].data, ConfigurationService);
                     eventConf.pluginSettings = result[2].data;
@@ -238,7 +265,7 @@
         });
     }
 
-    EventConfigurationController.prototype.$inject = ['ConfigurationService', 'OrganizationService', 'EventService', '$stateParams', '$q', '$rootScope'];
+    EventConfigurationController.prototype.$inject = ['ConfigurationService', 'OrganizationService', 'EventService', '$q', '$rootScope', '$stateParams'];
 
     function loadSettings(container, settings, ConfigurationService) {
         container.hasResults = settings['GENERAL'].length > 0;
