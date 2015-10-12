@@ -18,11 +18,14 @@ package alfio.controller;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.Configuration;
+import alfio.model.system.Configuration.ConfigurationPathKey;
+import alfio.repository.EventRepository;
 import alfio.util.TemplateManager;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -36,17 +39,20 @@ public class DynamicResourcesController {
     private static final String EMPTY = "(function(){})();";
     private final ConfigurationManager configurationManager;
     private final TemplateManager templateManager;
+    private final EventRepository eventRepository;
 
     @Autowired
-    public DynamicResourcesController(ConfigurationManager configurationManager, TemplateManager templateManager) {
+    public DynamicResourcesController(ConfigurationManager configurationManager, TemplateManager templateManager, EventRepository eventRepository) {
         this.configurationManager = configurationManager;
         this.templateManager = templateManager;
+        this.eventRepository = eventRepository;
     }
 
     @RequestMapping("/resources/js/google-analytics")
-    public void getGoogleAnalyticsScript(HttpSession session, HttpServletResponse response) throws IOException {
+    public void getGoogleAnalyticsScript(HttpSession session, HttpServletResponse response, @RequestParam("e") Integer eventId) throws IOException {
         response.setContentType("application/javascript");
-        final Optional<String> id = configurationManager.getStringConfigValue(Configuration.googleAnalyticsKey());
+        ConfigurationPathKey pathKey = Optional.ofNullable(eventId).flatMap(id -> Optional.ofNullable(eventRepository.findById(id)).map(Configuration::googleAnalyticsKey)).orElseGet(Configuration::googleAnalyticsKey);
+        final Optional<String> id = configurationManager.getStringConfigValue(pathKey);
         final String script;
         if(id.isPresent() && configurationManager.getBooleanConfigValue(Configuration.googleAnalyticsAnonymousMode(), true)) {
             String trackingId = Optional.ofNullable(StringUtils.trimToNull((String)session.getAttribute("GA_TRACKING_ID"))).orElseGet(() -> UUID.randomUUID().toString());

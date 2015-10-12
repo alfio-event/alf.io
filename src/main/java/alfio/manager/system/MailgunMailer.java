@@ -81,8 +81,8 @@ class MailgunMailer implements Mailer {
     public void send(Event event, String to, String subject, String text,
             Optional<String> html, Attachment... attachment) {
 
-        String apiKey = configurationManager.getRequiredValue(Configuration.mailgunKey(event));
-        String domain = configurationManager.getRequiredValue(Configuration.mailgunDomain(event));
+        String apiKey = configurationManager.getRequiredValue(Configuration.mailgunKey());
+        String domain = configurationManager.getRequiredValue(Configuration.mailgunDomain());
 
         try {
 

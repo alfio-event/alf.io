@@ -132,7 +132,7 @@ public class ReservationController {
             boolean includeStripe = !orderSummary.getFree() && event.getAllowedPaymentProxies().contains(PaymentProxy.STRIPE);
             model.addAttribute("includeStripe", includeStripe);
             if (includeStripe) {
-                model.addAttribute("stripe_p_key", stripeManager.getPublicKey(event));
+                model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
             }
             Map<String, Object> modelMap = model.asMap();
             modelMap.putIfAbsent("paymentForm", new PaymentForm());

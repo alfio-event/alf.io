@@ -76,20 +76,20 @@ class SmtpMailer implements Mailer {
             message.getMimeMessage().saveChanges();
             message.getMimeMessage().removeHeader("Message-ID");
         };
-        toMailSender(event).send(preparator);
+        toMailSender().send(preparator);
     }
     
-    private JavaMailSender toMailSender(Event event) {
+    private JavaMailSender toMailSender() {
         JavaMailSenderImpl r = new CustomJavaMailSenderImpl();
         r.setDefaultEncoding("UTF-8");
 
-        r.setHost(configurationManager.getRequiredValue(Configuration.smtpHost(event)));
-        r.setPort(Integer.valueOf(configurationManager.getRequiredValue(Configuration.smtpPort(event))));
-        r.setProtocol(configurationManager.getRequiredValue(Configuration.smtpProtocol(event)));
-        r.setUsername(configurationManager.getStringConfigValue(Configuration.smtpUsername(event), null));
-        r.setPassword(configurationManager.getStringConfigValue(Configuration.smtpPassword(event), null));
+        r.setHost(configurationManager.getRequiredValue(Configuration.smtpHost()));
+        r.setPort(Integer.valueOf(configurationManager.getRequiredValue(Configuration.smtpPort())));
+        r.setProtocol(configurationManager.getRequiredValue(Configuration.smtpProtocol()));
+        r.setUsername(configurationManager.getStringConfigValue(Configuration.smtpUsername(), null));
+        r.setPassword(configurationManager.getStringConfigValue(Configuration.smtpPassword(), null));
 
-        String properties = configurationManager.getStringConfigValue(Configuration.smtpProperties(event), null);
+        String properties = configurationManager.getStringConfigValue(Configuration.smtpProperties(), null);
 
         if (properties != null) {
             try {

@@ -59,12 +59,12 @@ public class StripeManager {
         handlers.put(StripeException.class, this::handleGenericException);
     }
 
-    private String getSecretKey(Event event) {
-        return configurationManager.getRequiredValue(Configuration.stripeSecretKey(event));
+    private String getSecretKey() {
+        return configurationManager.getRequiredValue(Configuration.stripeSecretKey());
     }
 
-    public String getPublicKey(Event event) {
-        return configurationManager.getRequiredValue(Configuration.stripePublicKey(event));
+    public String getPublicKey() {
+        return configurationManager.getRequiredValue(Configuration.stripePublicKey());
     }
 
     /**
@@ -96,7 +96,7 @@ public class StripeManager {
             initialMetadata.put("billingAddress", billingAddress);
         }
         chargeParams.put("metadata", initialMetadata);
-        return Charge.create(chargeParams, RequestOptions.builder().setApiKey(getSecretKey(event)).build());
+        return Charge.create(chargeParams, RequestOptions.builder().setApiKey(getSecretKey()).build());
     }
 
     public String handleException(StripeException exc) {

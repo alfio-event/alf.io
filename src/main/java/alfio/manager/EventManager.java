@@ -560,7 +560,7 @@ public class EventManager {
     }
 
     public String getEventUrl(Event event) {
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl(event)), "/") + "/event/" + event.getShortName() + "/";
+        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl()), "/") + "/event/" + event.getShortName() + "/";
     }
 
     public List<Ticket> findAllConfirmedTickets(String eventName, String username) {

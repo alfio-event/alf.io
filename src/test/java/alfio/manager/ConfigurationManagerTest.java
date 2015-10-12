@@ -132,18 +132,18 @@ public class ConfigurationManagerTest {
 
     @Test
     public void testEmptyStringConfigValue() {
-        assertEquals(Optional.empty(), configurationManager.getStringConfigValue(Configuration.smtpPassword(event)));
+        assertEquals(Optional.empty(), configurationManager.getStringConfigValue(Configuration.smtpPassword()));
     }
 
     @Test
     public void testStringValueWithDefault() {
         assertEquals("5", configurationManager.getStringConfigValue(Configuration.maxAmountOfTicketsByReservation(event), "-1"));
-        assertEquals("-1", configurationManager.getStringConfigValue(Configuration.smtpPassword(event), "-1"));
+        assertEquals("-1", configurationManager.getStringConfigValue(Configuration.smtpPassword(), "-1"));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testMissingConfigValue() {
-        configurationManager.getRequiredValue(Configuration.smtpPassword(event));
+        configurationManager.getRequiredValue(Configuration.smtpPassword());
     }
 
     @Test
@@ -160,9 +160,9 @@ public class ConfigurationManagerTest {
 
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.BASE_URL, "blabla");
-        assertEquals("blabla", configurationManager.getRequiredValue(Configuration.baseUrl(event)));
+        assertEquals("blabla", configurationManager.getRequiredValue(Configuration.baseUrl()));
         //not a number
-        assertEquals(-1, configurationManager.getIntConfigValue(Configuration.baseUrl(event), -1));
+        assertEquals(-1, configurationManager.getIntConfigValue(Configuration.baseUrl(), -1));
     }
 
     @Test

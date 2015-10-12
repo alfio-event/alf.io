@@ -207,12 +207,12 @@ public class Configuration implements Comparable<Configuration> {
         return new ConfigurationPathKey(system(), ConfigurationKeys.INIT_COMPLETED);
     }
 
-    public static ConfigurationPathKey baseUrl(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.BASE_URL);
+    public static ConfigurationPathKey baseUrl() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.BASE_URL);
     }
 
-    public static ConfigurationPathKey vatNr() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.VAT_NR);
+    public static ConfigurationPathKey vatNr(int organizationId) {
+        return new ConfigurationPathKey(organization(organizationId), ConfigurationKeys.VAT_NR);
     }
 
     // --- google maps ---
@@ -229,12 +229,12 @@ public class Configuration implements Comparable<Configuration> {
 
     // --- stripe ---
 
-    public static ConfigurationPathKey stripeSecretKey(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.STRIPE_SECRET_KEY);
+    public static ConfigurationPathKey stripeSecretKey() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.STRIPE_SECRET_KEY);
     }
 
-    public static ConfigurationPathKey stripePublicKey(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.STRIPE_PUBLIC_KEY);
+    public static ConfigurationPathKey stripePublicKey() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.STRIPE_PUBLIC_KEY);
     }
 
     // --- end stripe ---
@@ -263,8 +263,8 @@ public class Configuration implements Comparable<Configuration> {
         return new ConfigurationPathKey(event(event), ConfigurationKeys.RESERVATION_TIMEOUT);
     }
 
-    public static ConfigurationPathKey mailerType(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.MAILER_TYPE);
+    public static ConfigurationPathKey mailerType() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.MAILER_TYPE);
     }
 
     public static ConfigurationPathKey maxEmailPerCycle() {
@@ -277,32 +277,32 @@ public class Configuration implements Comparable<Configuration> {
 
     // --- smtp related ---
 
-    public static ConfigurationPathKey smtpHost(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_HOST);
+    public static ConfigurationPathKey smtpHost() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.SMTP_HOST);
     }
 
-    public static ConfigurationPathKey smtpPort(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_PORT);
+    public static ConfigurationPathKey smtpPort() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.SMTP_PORT);
     }
 
-    public static ConfigurationPathKey smtpProtocol(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_PROTOCOL);
+    public static ConfigurationPathKey smtpProtocol() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.SMTP_PROTOCOL);
     }
 
-    public static ConfigurationPathKey smtpUsername(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_USERNAME);
+    public static ConfigurationPathKey smtpUsername() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.SMTP_USERNAME);
     }
 
-    public static ConfigurationPathKey smtpPassword(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_PASSWORD);
+    public static ConfigurationPathKey smtpPassword() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.SMTP_PASSWORD);
     }
 
     public static ConfigurationPathKey smtpFromEmail(Event event) {
         return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_FROM_EMAIL);
     }
 
-    public static ConfigurationPathKey smtpProperties(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_PROPERTIES);
+    public static ConfigurationPathKey smtpProperties() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.SMTP_PROPERTIES);
     }
 
     // --- end smtp related ---
@@ -328,12 +328,12 @@ public class Configuration implements Comparable<Configuration> {
     }
 
     // --- mailgun related ---
-    public static ConfigurationPathKey mailgunKey(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.MAILGUN_KEY);
+    public static ConfigurationPathKey mailgunKey() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.MAILGUN_KEY);
     }
 
-    public static ConfigurationPathKey mailgunDomain(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.MAILGUN_DOMAIN);
+    public static ConfigurationPathKey mailgunDomain() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.MAILGUN_DOMAIN);
     }
 
     public static ConfigurationPathKey mailgunFrom(Event event) {
@@ -343,6 +343,10 @@ public class Configuration implements Comparable<Configuration> {
 
     public static ConfigurationPathKey googleAnalyticsKey() {
         return new ConfigurationPathKey(system(), ConfigurationKeys.GOOGLE_ANALYTICS_KEY);
+    }
+
+    public static ConfigurationPathKey googleAnalyticsKey(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.GOOGLE_ANALYTICS_KEY);
     }
 
     public static ConfigurationPathKey googleAnalyticsAnonymousMode() {

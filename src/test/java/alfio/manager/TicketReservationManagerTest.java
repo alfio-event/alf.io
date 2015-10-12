@@ -628,7 +628,7 @@ public class TicketReservationManagerTest {{
         when(ticket.getUserLanguage()).thenReturn("it");
         ConfigurationManager configurationManager = mock(ConfigurationManager.class);
         String baseUrl = "http://my-website/";
-        when(configurationManager.getRequiredValue(Configuration.baseUrl(event))).thenReturn(baseUrl);
+        when(configurationManager.getRequiredValue(Configuration.baseUrl())).thenReturn(baseUrl);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
         TicketReservationManager trm = new TicketReservationManager(eventRepository, null, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, null, null, null, null, null, null, null, null, null, fileUploadManager);
         it.should("generate the reservationUrl from reservationId", expect -> {

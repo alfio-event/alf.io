@@ -383,7 +383,7 @@ public class TicketReservationManager {
         model.put("event", event);
         model.put("ticketReservation", reservation);
 
-        Optional<String> vat = getVAT();
+        Optional<String> vat = getVAT(event.getOrganizationId());
 
         model.put("hasVat", vat.isPresent());
         model.put("vatNr", vat.orElse(""));
@@ -652,19 +652,19 @@ public class TicketReservationManager {
 
     public String reservationUrl(String reservationId, Event event) {
         TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl(event)), "/")
+        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl()), "/")
                 + "/event/" + event.getShortName() + "/reservation/" + reservationId + "?lang="+reservation.getUserLanguage();
     }
 
     public String ticketUrl(String reservationId, Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl(event)), "/")
+        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl()), "/")
                 + "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/" + ticketId + "?lang=" + ticket.getUserLanguage();
     }
 
     public String ticketUpdateUrl(String reservationId, Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl(event)), "/")
+        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl()), "/")
             + "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/ticket/" + ticketId + "/update?lang="+ticket.getUserLanguage();
     }
 
@@ -747,8 +747,8 @@ public class TicketReservationManager {
         return ticketRepository.findTicketsInReservation(reservationId);
     }
 
-    public Optional<String> getVAT() {
-        return configurationManager.getStringConfigValue(Configuration.vatNr());
+    public Optional<String> getVAT(int organizationId) {
+        return configurationManager.getStringConfigValue(Configuration.vatNr(organizationId));
     }
 
     public void updateTicketOwner(Ticket ticket,
