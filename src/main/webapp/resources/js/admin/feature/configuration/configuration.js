@@ -273,7 +273,7 @@
         });
     }
 
-    EventConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', 'EventService', '$q', '$rootScope', '$stateParams'];
+    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', '$q', '$rootScope', '$stateParams'];
 
     function loadSettings(container, settings, ConfigurationService) {
         container.hasResults = settings['GENERAL'].length > 0;
