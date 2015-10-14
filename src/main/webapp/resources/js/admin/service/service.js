@@ -143,11 +143,14 @@
             sendCodesByEmail: function(eventName, categoryId, pairs) {
                 return $http['post']('/admin/api/events/'+eventName+'/categories/'+categoryId+'/send-codes', pairs).error(HttpErrorHandler.handle);
             },
-            getAvailableLanguages: function(eventName) {
+            getSelectedLanguages: function(eventName) {
                 return $http['get']('/admin/api/events/'+eventName+'/languages').error(HttpErrorHandler.handle);
             },
             getAllLanguages: function() {
                 return $http['get']('/admin/api/events-all-languages').error(HttpErrorHandler.handle);
+            },
+            getSupportedLanguages: function() {
+                return $http['get']('/admin/api/events-supported-languages').error(HttpErrorHandler.handle);
             },
             getMessagesPreview: function(eventName, categoryId, messages) {
                 var queryString = angular.isDefined(categoryId) && categoryId !== "" ? '?categoryId='+categoryId : '';

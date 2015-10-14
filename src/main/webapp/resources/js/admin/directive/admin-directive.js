@@ -266,7 +266,7 @@
                 }
 
                 if($stateParams.eventName) {
-                    EventService.getAvailableLanguages($stateParams.eventName).success(function(result) {
+                    EventService.getSupportedLanguages($stateParams.eventName).success(function(result) {
                         $scope.selectedLanguages = _.map(result, function(r) {
                             return r.value;
                         });
@@ -589,60 +589,6 @@
                 }
             }
         }
-    }]);
-
-    directives.directive('basicConfigurationNeeded', ['$modal', 'ConfigurationService', '$q', '$window', function($modal, ConfigurationService, $q, $window) {
-        return {
-            restrict: 'A',
-            scope: true,
-            link: function() {
-                var m = $modal.open({
-                    size:'lg',
-                    templateUrl:'/resources/angular-templates/admin/partials/configuration/basic-settings.html',
-                    backdrop: 'static',
-                    controllerAs: 'ctrl',
-                    controller: function($scope) {
-                        var ctrl = this;
-                        var onlyBasic = function(list) {
-                            return _.filter(list, function(c) { return c.basic; });
-                        };
-                        ConfigurationService.loadAll().success(function(result) {
-                            ctrl.settings = result;
-                            ctrl.general = {
-                                settings: onlyBasic(result['GENERAL'])
-                            };
-                            ctrl.mail = {
-                                settings: _.filter(result['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
-                                type: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAILER_TYPE';}),
-                                maxEmailPerCycle: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';}),
-                                mailReplyTo: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';})
-                            };
-                            ctrl.payment = {
-                                settings: onlyBasic(result['PAYMENT'])
-                            };
-                        });
-                        ctrl.saveSettings = function(frm, settings, pluginSettings) {
-                            if(!frm.$valid) {
-                                return;
-                            }
-                            ctrl.loading = true;
-                            var promises = [ConfigurationService.bulkUpdate(settings)];
-                            if(angular.isDefined(pluginSettings)) {
-                                promises.push(ConfigurationService.bulkUpdatePlugins(pluginSettings));
-                            }
-                            $q.all(promises).then(function() {
-                                ctrl.loading = false;
-                                $scope.$close(true);
-                            }, function(e) {
-                                alert(e.data);
-                                $scope.$close(false);
-                            });
-                        };
-                    }
-                });
-                m.result.then(function(){ $window.location.reload(); });
-            }
-        };
     }]);
 
 })();

@@ -18,6 +18,10 @@
 
     <form name="settingsForm" novalidate data-ng-submit="systemConf.saveSettings(settingsForm)">
         <div data-ng-if="systemConf.general">
+            <div>
+                <label for="languages">Supported translations</label>
+                <select id="languages" class="form-control" multiple data-ng-model="systemConf.general.selectedLanguages" data-ng-options="lang.value as lang.displayLanguage for lang in systemConf.allLanguages" data-ng-change="systemConf.updateLocales()"></select>
+            </div>
             <div data-ng-repeat="setting in systemConf.general.settings">
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="systemConf.globalSettings" data-delete-handler="systemConf.delete(config)"></setting>
             </div>

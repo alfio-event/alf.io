@@ -34,7 +34,6 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.EventUtil;
-import alfio.util.OptionalWrapper;
 import alfio.util.ValidationResult;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -115,7 +114,7 @@ public class EventController {
             model.addAttribute("event", null);
 
             model.addAttribute("showAvailableLanguagesInPageTop", true);
-            model.addAttribute("availableLanguages", i18nManager.getAllLocales());
+            model.addAttribute("availableLanguages", i18nManager.getSupportedLanguages());
             return "/event/event-list";
         }
     }

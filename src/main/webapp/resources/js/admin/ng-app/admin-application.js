@@ -304,7 +304,7 @@
     var initScopeForEventEditing = function ($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state) {
         $scope.organizations = {};
 
-        EventService.getAllLanguages().success(function(result) {
+        EventService.getSupportedLanguages().success(function(result) {
             $scope.allLanguages = result;
             $scope.allLanguagesMapping = {};
             angular.forEach(result, function(r) {
@@ -1038,7 +1038,7 @@
     admin.controller('ComposeCustomMessage', function($scope, $stateParams, EventService, $modal, $state, $q) {
 
 
-        $q.all([EventService.getAvailableLanguages($stateParams.eventName),
+        $q.all([EventService.getSelectedLanguages($stateParams.eventName),
             EventService.getCategoriesContainingTickets($stateParams.eventName), EventService.getEvent($stateParams.eventName)])
         .then(function(results) {
                 $scope.messages = _.map(results[0].data, function(r) {

@@ -40,7 +40,8 @@
         .controller('EventConfigurationController', EventConfigurationController)
         .controller('CategoryConfigurationController', CategoryConfigurationController)
         .directive('ticketCategoryConfiguration', ticketCategoryConfiguration)
-        .service('ConfigurationService', ConfigurationService);
+        .service('ConfigurationService', ConfigurationService)
+        .directive('basicConfigurationNeeded', basicConfigurationNeeded);
 
     function ConfigurationService($http, HttpErrorHandler) {
         return {
@@ -93,7 +94,8 @@
                 var transformed = {};
                 transformed.settings = original;
                 transformed.general = {
-                    settings: original['GENERAL']
+                    settings: _.filter(original['GENERAL'], function(e) {return e.key !== 'SUPPORTED_LANGUAGES'}),
+                    supportedTranslations: _.find(original['GENERAL'], function(e) {return e.key === 'SUPPORTED_LANGUAGES'})
                 };
                 transformed.mail = {
                     settings: _.filter(original['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
@@ -132,14 +134,16 @@
 
     ConfigurationController.$inject = ['OrganizationService', 'EventService', '$q'];
 
-    function SystemConfigurationController(ConfigurationService, $rootScope) {
+    function SystemConfigurationController(ConfigurationService, EventService, $rootScope, $q) {
         var systemConf = this;
         systemConf.loading = true;
 
         var loadAll = function() {
             systemConf.loading = true;
-            ConfigurationService.loadAll().then(function(result) {
-                loadSettings(systemConf, result.data, ConfigurationService);
+            $q.all([EventService.getAllLanguages(), ConfigurationService.loadAll()]).then(function(results) {
+                systemConf.allLanguages = results[0].data;
+                loadSettings(systemConf, results[1].data, ConfigurationService);
+                systemConf.general.selectedLanguages = _.chain(systemConf.allLanguages).map('value').filter(function(x) {return parseInt(systemConf.general.supportedTranslations.value) & x;}).value();
             }, function() {
                 systemConf.loading = false;
             });
@@ -159,6 +163,10 @@
             });
         };
 
+        systemConf.updateLocales = function() {
+            updateLocales(systemConf);
+        };
+
         systemConf.delete = function(config) {
             return ConfigurationService.remove(config);
         };
@@ -168,7 +176,7 @@
         });
     }
 
-    SystemConfigurationController.$inject = ['ConfigurationService', '$rootScope', '$q'];
+    SystemConfigurationController.$inject = ['ConfigurationService', 'EventService', '$rootScope', '$q'];
 
     function OrganizationConfigurationController(ConfigurationService, OrganizationService, $stateParams, $q, $rootScope) {
         var organizationConf = this;
@@ -336,4 +344,75 @@
         });
     }
     CategoryConfigurationController.$inject = ['ConfigurationService', '$rootScope'];
+
+    function basicConfigurationNeeded($modal, ConfigurationService, EventService, $q, $window) {
+        return {
+            restrict: 'A',
+            scope: true,
+            link: function() {
+                var m = $modal.open({
+                    size:'lg',
+                    templateUrl:'/resources/angular-templates/admin/partials/configuration/basic-settings.html',
+                    backdrop: 'static',
+                    controllerAs: 'ctrl',
+                    controller: function($scope) {
+                        var ctrl = this;
+                        var onlyBasic = function(list) {
+                            return _.filter(list, function(c) { return c.basic; });
+                        };
+                        $q.all([EventService.getAllLanguages(),ConfigurationService.loadAll()]).then(function(results) {
+                            var settings = results[1].data;
+                            ctrl.allLanguages = results[0].data;
+                            ctrl.settings = settings;
+                            var generalBasic = onlyBasic(settings['GENERAL']);
+                            ctrl.general = {
+                                settings: _.filter(generalBasic, function(e) {return e.key !== 'SUPPORTED_LANGUAGES'}),
+                                supportedTranslations: _.find(generalBasic, function(e) {return e.key === 'SUPPORTED_LANGUAGES'})
+                            };
+                            ctrl.mail = {
+                                settings: _.filter(settings['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
+                                type: _.find(settings['MAIL'], function(e) {return e.configurationKey === 'MAILER_TYPE';}),
+                                maxEmailPerCycle: _.find(settings['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';}),
+                                mailReplyTo: _.find(settings['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';})
+                            };
+                            ctrl.payment = {
+                                settings: onlyBasic(settings['PAYMENT'])
+                            };
+                        });
+                        ctrl.saveSettings = function(frm, settings, pluginSettings) {
+                            if(!frm.$valid) {
+                                return;
+                            }
+                            ctrl.loading = true;
+                            var promises = [ConfigurationService.bulkUpdate(settings)];
+                            if(angular.isDefined(pluginSettings)) {
+                                promises.push(ConfigurationService.bulkUpdatePlugins(pluginSettings));
+                            }
+                            $q.all(promises).then(function() {
+                                ctrl.loading = false;
+                                $scope.$close(true);
+                            }, function(e) {
+                                alert(e.data);
+                                $scope.$close(false);
+                            });
+                        };
+                        ctrl.updateLocales = function() {
+                            updateLocales(ctrl);
+                        };
+                    }
+                });
+                m.result.then(function(){ $window.location.reload(); });
+            }
+        };
+    }
+
+    basicConfigurationNeeded.$inject = ['$modal', 'ConfigurationService', 'EventService', '$q', '$window'];
+
+    function updateLocales(controller) {
+        var locales = 0;
+        angular.forEach(controller.general.selectedLanguages, function(val) {
+            locales |= val;
+        });
+        controller.general.supportedTranslations.value = locales;
+    }
 })();

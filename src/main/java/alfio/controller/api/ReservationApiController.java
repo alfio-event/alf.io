@@ -77,7 +77,7 @@ public class ReservationApiController {
             model.addAttribute("validationResult", t.getLeft());
             model.addAttribute("countries", ticketHelper.getLocalizedCountries(requestLocale));
             model.addAttribute("event", t.getMiddle());
-            model.addAttribute("availableLanguages", i18nManager.getEventLocales(eventName).stream()
+            model.addAttribute("availableLanguages", i18nManager.getEventLanguages(eventName).stream()
                     .map(ContentLanguage.toLanguage(requestLocale)).collect(Collectors.toList()));
             String uuid = t.getRight().getUuid();
             model.addAttribute("urlSuffix", singleTicket ? "ticket/"+uuid+"/view": uuid);

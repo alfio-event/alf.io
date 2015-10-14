@@ -16,7 +16,9 @@
  */
 package alfio.manager.i18n;
 
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
+import alfio.model.system.Configuration;
 import alfio.repository.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -28,19 +30,27 @@ import java.util.List;
 public class I18nManager {
 
     private final EventRepository eventRepository;
+    private final ConfigurationManager configurationManager;
 
     @Autowired
-    public I18nManager(EventRepository eventRepository) {
+    public I18nManager(EventRepository eventRepository, ConfigurationManager configurationManager) {
         this.eventRepository = eventRepository;
+        this.configurationManager = configurationManager;
     }
 
-    public List<ContentLanguage> getAllLocales() {
+    public List<ContentLanguage> getAvailableLanguages() {
         return ContentLanguage.ALL_LANGUAGES;
     }
 
-    public List<ContentLanguage> getEventLocales(String eventName) {
+    public List<ContentLanguage> getSupportedLanguages() {
+        return ContentLanguage.findAllFor(configurationManager.getIntConfigValue(Configuration.supportedLanguages(), ContentLanguage.ENGLISH_IDENTIFIER));//default to English
+    }
+
+    public List<ContentLanguage> getEventLanguages(String eventName) {
+        List<ContentLanguage> system = getSupportedLanguages();
         return eventRepository.findOptionalByShortName(eventName)
             .map(event -> ContentLanguage.findAllFor(event.getLocales()))
+            .filter(system::contains)
             .orElse(Collections.emptyList());
     }
 }

@@ -20,7 +20,6 @@ import alfio.controller.decorator.EventDescriptor;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
-import alfio.model.Event;
 import alfio.model.system.Configuration.ConfigurationPathKey;
 import alfio.util.MustacheCustomTagInterceptor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -140,7 +139,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
 
                                 LocaleResolver resolver = RequestContextUtils.getLocaleResolver(request);
                                 Locale locale = resolver.resolveLocale(request);
-                                List<ContentLanguage> cl = i18nManager.getEventLocales(eventName);
+                                List<ContentLanguage> cl = i18nManager.getEventLanguages(eventName);
 
                                 request.setAttribute("ALFIO_EVENT_NAME", eventName);
 
@@ -169,7 +168,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
 
                     Optional.ofNullable(request.getAttribute("ALFIO_EVENT_NAME")).map(Object::toString).ifPresent(eventName -> {
 
-                        List<?> availableLanguages = i18nManager.getEventLocales(eventName);
+                        List<?> availableLanguages = i18nManager.getEventLanguages(eventName);
 
                         modelMap.put("showAvailableLanguagesInPageTop", availableLanguages.size() > 1);
                         modelMap.put("availableLanguages", availableLanguages);

@@ -207,6 +207,10 @@ public class Configuration implements Comparable<Configuration> {
         return new ConfigurationPathKey(system(), ConfigurationKeys.INIT_COMPLETED);
     }
 
+    public static ConfigurationPathKey supportedLanguages() {
+        return new ConfigurationPathKey(system(), ConfigurationKeys.SUPPORTED_LANGUAGES);
+    }
+
     public static ConfigurationPathKey baseUrl() {
         return new ConfigurationPathKey(system(), ConfigurationKeys.BASE_URL);
     }

@@ -28,7 +28,6 @@ import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.util.ValidationResult;
-import alfio.util.Validator;
 import com.opencsv.CSVReader;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
@@ -37,9 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
@@ -217,12 +214,17 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{eventName}/languages", method = GET)
     public List<ContentLanguage> getAvailableLocales(@PathVariable("eventName") String eventName) {
-        return i18nManager.getEventLocales(eventName);
+        return i18nManager.getEventLanguages(eventName);
     }
 
     @RequestMapping(value = "/events-all-languages", method = GET)
     public List<ContentLanguage> getAllLanguages() {
-        return i18nManager.getAllLocales();
+        return i18nManager.getAvailableLanguages();
+    }
+
+    @RequestMapping(value = "/events-supported-languages", method = GET)
+    public List<ContentLanguage> getSupportedLanguages() {
+        return i18nManager.getSupportedLanguages();
     }
 
     @RequestMapping(value = "/events/{eventName}/categories-containing-tickets", method = GET)
