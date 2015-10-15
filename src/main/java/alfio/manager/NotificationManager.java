@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.manager.support.EmailQueue;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.TextTemplateGenerator;
@@ -61,7 +60,6 @@ public class NotificationManager {
     private final MessageSource messageSource;
     private final EmailMessageRepository emailMessageRepository;
     private final TransactionTemplate tx;
-    private final EmailQueue messages;
     private final ConfigurationManager configurationManager;
     private final EventRepository eventRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
@@ -81,7 +79,6 @@ public class NotificationManager {
         this.configurationManager = configurationManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
-        this.messages = new EmailQueue();
         this.tx = new TransactionTemplate(transactionManager);
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(Mailer.Attachment.class, new AttachmentConverter());
@@ -107,7 +104,6 @@ public class NotificationManager {
         String recipient = ticket.getEmail();
         //TODO handle HTML
         tx.execute(status -> emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
-        messages.offer(new EmailMessage(-1, event.getId(), WAITING.name(), recipient, subject, text, null, checksum, ZonedDateTime.now(), null));
     }
 
     public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder) {
@@ -121,7 +117,6 @@ public class NotificationManager {
         String text = textBuilder.generate();
         String checksum = calculateChecksum(recipient, encodedAttachments, subject, text);
         emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
-        messages.offer(new EmailMessage(-1, event.getId(), WAITING.name(), recipient, subject, text, null, checksum, ZonedDateTime.now(), null));
     }
 
     public List<EmailMessage> loadAllMessagesForEvent(int eventId) {
@@ -133,7 +128,7 @@ public class NotificationManager {
     }
 
     void sendWaitingMessages() {
-        Set<EmailMessage> toBeSent = messages.poll(configurationManager.getIntConfigValue(Configuration.maxEmailPerCycle(), 10));
+        Set<EmailMessage> toBeSent = new HashSet<>(emailMessageRepository.loadWaitingForProcessing(configurationManager.getIntConfigValue(Configuration.maxEmailPerCycle(), 10)));
         toBeSent.forEach(m -> {
             try {
                 processMessage(m);
@@ -150,21 +145,25 @@ public class NotificationManager {
         log.debug("found {} expired messages", updated);
         if(updated > 0) {
             tx.execute(status -> {
-                emailMessageRepository.loadForRetry(owner).forEach(messages::offer);
+                emailMessageRepository.loadForProcessing(owner).forEach(this::processMessage);
                 return null;
             });
         }
     }
 
     private void processMessage(EmailMessage message) {
-        int result = tx.execute(status -> emailMessageRepository.updateStatus(message.getEventId(), message.getChecksum(), IN_PROCESS.name(), Arrays.asList(WAITING.name(), RETRY.name())));
-        if(result > 0) {
-            tx.execute(status -> {
-                sendMessage(message);
-                return null;
-            });
-        } else {
-            log.debug("no messages have been updated on DB for the following criteria: eventId: {}, checksum: {}", message.getEventId(), message.getChecksum());
+        try {
+            int result = tx.execute(status -> emailMessageRepository.updateStatus(message.getEventId(), message.getChecksum(), IN_PROCESS.name(), Arrays.asList(WAITING.name(), RETRY.name())));
+            if(result > 0) {
+                tx.execute(status -> {
+                    sendMessage(message);
+                    return null;
+                });
+            } else {
+                log.debug("no messages have been updated on DB for the following criteria: eventId: {}, checksum: {}", message.getEventId(), message.getChecksum());
+            }
+        } catch(Exception e) {
+            log.warn("could not send message: ",e);
         }
     }
 
