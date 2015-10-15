@@ -97,12 +97,14 @@
                     settings: _.filter(original['GENERAL'], function(e) {return e.key !== 'SUPPORTED_LANGUAGES'}),
                     supportedTranslations: _.find(original['GENERAL'], function(e) {return e.key === 'SUPPORTED_LANGUAGES'})
                 };
-                transformed.mail = {
-                    settings: _.filter(original['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
-                    type: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAILER_TYPE';}),
-                    maxEmailPerCycle: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';}),
-                    mailReplyTo: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';})
-                };
+                if(angular.isDefined(original['MAIL']) && original['MAIL'].length > 0) {
+                    transformed.mail = {
+                        settings: _.filter(original['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
+                        type: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAILER_TYPE';}),
+                        maxEmailPerCycle: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';}),
+                        mailReplyTo: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';})
+                    };
+                }
                 if(angular.isDefined(original['PAYMENT']) && original['PAYMENT'].length > 0) {
                     transformed.payment = {
                         settings: original['PAYMENT']
