@@ -19,16 +19,16 @@ package alfio.controller.api.admin;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.TicketReservationManager;
-import alfio.model.ContentLanguage;
+import alfio.model.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
-import alfio.model.Event;
-import alfio.model.TicketReservation;
 import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TicketCategoryDescriptionRepository;
+import alfio.repository.TicketFieldRepository;
 import alfio.util.ValidationResult;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
@@ -37,12 +37,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.util.OptionalWrapper.optionally;
@@ -62,18 +69,21 @@ public class EventApiController {
     private final I18nManager i18nManager;
     private final TicketReservationManager ticketReservationManager;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
+    private final TicketFieldRepository ticketFieldRepository;
 
     @Autowired
     public EventApiController(EventManager eventManager,
                               EventStatisticsManager eventStatisticsManager,
                               I18nManager i18nManager,
                               TicketReservationManager ticketReservationManager,
-                              TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository) {
+                              TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
+                              TicketFieldRepository ticketFieldRepository) {
         this.eventManager = eventManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.i18nManager = i18nManager;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
+        this.ticketFieldRepository = ticketFieldRepository;
     }
 
     @ExceptionHandler(Exception.class)
@@ -119,7 +129,7 @@ public class EventApiController {
             .or(validateEventPrices(eventModification, errors));
         AtomicInteger counter = new AtomicInteger();
         return base.or(eventModification.getTicketCategories().stream()
-            .map(c -> validateCategory(c, errors, "ticketCategories["+counter.getAndIncrement()+"]."))
+            .map(c -> validateCategory(c, errors, "ticketCategories[" + counter.getAndIncrement() + "]."))
             .reduce(ValidationResult::or)
             .orElse(ValidationResult.success()));
     }
@@ -160,6 +170,68 @@ public class EventApiController {
     public String unbindTickets(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId, Principal principal) {
         eventManager.unbindTickets(eventName, categoryId, principal.getName());
         return OK;
+    }
+
+    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "creation", "category", "event", "status", "originalPrice", "paidPrice","reservationID", "Name", "E-Mail", "locked", "Language");
+    private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
+
+    @RequestMapping("/events/{eventName}/export.csv")
+    public void downloadAllTicketsCSV(@PathVariable("eventName") String eventName, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
+        List<String> fields = Arrays.asList(Optional.ofNullable(request.getParameterValues("fields")).orElse(new String[] {}));
+        Event event = Optional.ofNullable(eventManager.getSingleEvent(eventName, principal.getName())).orElseThrow(IllegalArgumentException::new);
+        Map<Integer, TicketCategory> categoriesMap = eventManager.loadTicketCategories(event).stream().collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
+        ZoneId eventZoneId = event.getZoneId();
+
+        Predicate<String> contains = FIXED_FIELDS::contains;
+
+        response.setContentType("text/csv;charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-export.csv");
+
+        try(ServletOutputStream out = response.getOutputStream()) {
+
+            for (int marker : BOM_MARKERS) {//UGLY-MODE_ON: specify that the file is written in UTF-8 with BOM, thanks to alexr http://stackoverflow.com/a/4192897
+                out.write(marker);
+            }
+            CSVWriter writer = new CSVWriter(new OutputStreamWriter(out));
+            writer.writeNext(fields.toArray(new String[]{}));
+
+            eventManager.findAllConfirmedTickets(eventName, principal.getName()).stream().map(t -> {
+                List<String> line = new ArrayList<>();
+                if(fields.contains("ID")) {line.add(t.getUuid());}
+                if(fields.contains("creation")) {line.add(t.getCreation().withZoneSameInstant(eventZoneId).toString());}
+                if(fields.contains("category")) {line.add(categoriesMap.get(t.getCategoryId()).getName());}
+                if(fields.contains("event")) {line.add(eventName);}
+                if(fields.contains("status")) {line.add(t.getStatus().toString());}
+                if(fields.contains("originalPrice")) {line.add(t.getOriginalPrice().toString());}
+                if(fields.contains("paidPrice")) {line.add(t.getPaidPrice().toString());}
+                if(fields.contains("reservationID")) {line.add(t.getTicketsReservationId());}
+                if(fields.contains("Name")) {line.add(t.getFullName());}
+                if(fields.contains("E-Mail")) {line.add(t.getEmail());}
+                if(fields.contains("locked")) {line.add(String.valueOf(t.getLockedAssignment()));}
+                if(fields.contains("Language")) {line.add(String.valueOf(t.getUserLanguage()));}
+
+                //obviously not optimized
+                Map<String, String> additionalValues = ticketFieldRepository.findAllValuesForTicketId(t.getId());
+
+                fields.stream().filter(contains.negate()).forEachOrdered(field -> {
+                    line.add(additionalValues.getOrDefault(field, ""));
+                });
+
+                return line.toArray(new String[]{});
+            }).forEachOrdered(writer::writeNext);
+            writer.flush();
+            out.flush();
+        }
+
+
+    }
+
+    @RequestMapping("/events/{eventName}/fields")
+    public List<String> getAllFields(@PathVariable("eventName") String eventName) {
+        List<String> fields = new ArrayList<>();
+        fields.addAll(FIXED_FIELDS);
+        fields.addAll(ticketFieldRepository.findFieldsForEvent(eventName));
+        return fields;
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments")

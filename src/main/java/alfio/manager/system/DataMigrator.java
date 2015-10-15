@@ -94,7 +94,6 @@ public class DataMigrator {
                 .filter(e -> ZonedDateTime.now(e.getZoneId()).isBefore(e.getEnd()))
                 .forEach(this::migrateEventToCurrentVersion);
         fillReservationsLanguage();
-        fillTicketsGender();
         fillDefaultOptions();
     }
 
@@ -156,16 +155,6 @@ public class DataMigrator {
                     });
             return null;
         });
-    }
-
-    void fillTicketsGender() {
-        List<String> ticketIds = jdbc.queryForList("select uuid from ticket where status not in ('FREE','PENDING', 'PRE_RESERVED') and gender is null and tshirt_size is not null", new EmptySqlParameterSource(), String.class);
-        ticketIds.forEach(uuid -> transactionTemplate.execute(status -> {
-            Ticket ticket = ticketRepository.findByUUID(uuid);
-            String gender = ticket.getTshirtSize().endsWith("-F") ? "F" : "M";
-            jdbc.update("update ticket set gender = :gender where uuid = :uuid", new MapSqlParameterSource("uuid", uuid).addValue("gender", gender));
-            return null;
-        }));
     }
 
     private void fillDescriptions(Event event) {

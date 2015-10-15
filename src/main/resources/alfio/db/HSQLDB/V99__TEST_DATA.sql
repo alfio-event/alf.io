@@ -76,4 +76,82 @@ insert into special_price (code, price_cts, ticket_category_id, status) values
 insert into configuration (c_key, c_value, description) values
   ('STRIPE_SECRET_KEY', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'Stripe''s secret key'),
   ('STRIPE_PUBLIC_KEY', 'pk_test_gY3X0UiTgKCeStUG67i2kEFq', 'Stripe''s public key'),
-  ('BASE_URL', 'http://localhost:8080/', 'Base application url');
+  ('BASE_URL', 'http://localhost:8080/', 'Base application url'),
+  ('SUPPORTED_LANGUAGES', '7', 'supported languages');
+
+
+-- create fields configuration
+
+insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_maxlength)
+    (SELECT event.id, 'jobTitle', 0, 'input:text', false, 255  FROM event where short_name = 'eventname');
+insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_maxlength)
+    (SELECT event.id, 'company', 1, 'input:text', false, 255 FROM event where short_name = 'eventname');
+insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_maxlength)
+    (SELECT event.id, 'phoneNumber', 2, 'input:tel', false, 255 FROM event where short_name = 'eventname');
+insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_maxlength)
+    (SELECT event.id, 'address', 3, 'textarea', false, 450 FROM event where short_name = 'eventname');
+insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required)
+    (SELECT event.id, 'country', 4, 'country', false FROM event where short_name = 'eventname');
+insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_restricted_values)
+    (SELECT event.id, 'gender', 5, 'select', false, '["F", "M", "X"]' FROM event where short_name = 'eventname');
+insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_restricted_values)
+    (SELECT event.id, 'tShirtSize', 6, 'select', false, '["SMALL", "MEDIUM", "LARGE", "X-LARGE", "2X-LARGE"]' FROM event where short_name = 'eventname');
+insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_maxlength)
+    (SELECT event.id, 'notes', 7, 'textarea', false, 1024 FROM event where short_name = 'eventname');
+
+-- create translations for each fields
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'en', '{"label": "Job title"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'jobTitle'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'it', '{"label": "Ruolo"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'jobTitle'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'de', '{"label": "Berufsbezeichnung"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'jobTitle'  and short_name = 'eventname';
+
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'en', '{"label": "Company"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'company'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'it', '{"label": "Societ\u00E0"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'company'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'de', '{"label": "Firma"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'company'  and short_name = 'eventname';
+
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'en', '{"label": "Phone number"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'phoneNumber'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'it', '{"label": "Numero di telefono"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'phoneNumber'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'de', '{"label": "Telefonnummer"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'phoneNumber'  and short_name = 'eventname';
+
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'en', '{"label": "Address"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'address'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'it', '{"label": "Indirizzo"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'address'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'de', '{"label": "Adresse"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'address'  and short_name = 'eventname';
+
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'en', '{"label": "Country"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'country'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'it', '{"label": "Nazione"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'country'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'de', '{"label": "Land"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'country'  and short_name = 'eventname';
+
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'en', '{"label": "I am", "restrictedValues": {"F" : "a woman", "M" : "a man", "X" : "Other"}}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'gender'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'it', '{"label": "Sono", "restrictedValues": {"F" : "una donna", "M" : "un uomo", "X" : "Altro"}}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'gender'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'de', '{"label": "Ich bin", "restrictedValues": {"F" : "Frau", "M" : "Herr", "X" : "Andere"}}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'gender'  and short_name = 'eventname';
+
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'en', '{"label": "T-Shirt size", "restrictedValues": {"SMALL" : "Small", "MEDIUM" : "Medium", "LARGE" : "Large", "X-LARGE" : "X-Large", "2X-LARGE" : "2X-Large" }}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'tShirtSize'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'it', '{"label": "Misura T-Shirt", "restrictedValues": {"SMALL" : "Small", "MEDIUM" : "Medium", "LARGE" : "Large", "X-LARGE" : "X-Large", "2X-LARGE" : "2X-Large" }}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'tShirtSize'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'de', '{"label": "T-Shirt-Gr\u00F6\u00DFe", "restrictedValues": {"SMALL" : "Small", "MEDIUM" : "Medium", "LARGE" : "Large", "X-LARGE" : "X-Large", "2X-LARGE" : "2X-Large" }}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'tShirtSize'  and short_name = 'eventname';
+
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'en', '{"label": "Notes", "placeholder" : "Should you have any special need (such as but not limited to diet or accessibility requirements) please let us know"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'notes'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'it', '{"label": "Note", "placeholder" : "Gerne nehmen wir auf Ihre Bed\u00FCrfnisse R\u00FCcksicht, falls du aussergew\u00F6hnliche Essensgewohnheiten oder eingeschr\u00E4nkte Zutrittsm\u00F6glichkeiten hast, informiere uns bitte."}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'notes'  and short_name = 'eventname';
+insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
+    select id, 'de', '{"label": "Bemerkungen", "placeholder" : "Hai qualche esigenza particolare (ad esempio per quanto riguarda cibo o accessibilit\u00E0)? Per favore, faccelo sapere!"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'notes'  and short_name = 'eventname';

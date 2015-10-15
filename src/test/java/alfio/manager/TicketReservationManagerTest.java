@@ -71,7 +71,8 @@ public class TicketReservationManagerTest {{
         TicketReservationRepository ticketReservationRepository = mock(TicketReservationRepository.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager trm = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, null, null, null, notificationManager, messageSource, null, null, null, pluginManager, fileUploadManager);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager trm = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, null, null, null, notificationManager, messageSource, null, null, null, pluginManager, fileUploadManager, ticketFieldRepository);
 
         it.initializesWith(() -> {
             when(original.getUuid()).thenReturn(ticketId);
@@ -125,7 +126,8 @@ public class TicketReservationManagerTest {{
         MessageSource messageSource = it.usesMock(MessageSource.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager, null, pluginManager, fileUploadManager);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager, null, pluginManager, fileUploadManager, ticketFieldRepository);
         it.initializesWith(() -> reset(notificationManager, eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, configurationManager, promoCodeDiscountRepository, messageSource, transactionManager));
         it.should("send the reminder before event end", expect -> {
             Event event = it.usesMock(Event.class);
@@ -252,8 +254,9 @@ public class TicketReservationManagerTest {{
         WaitingQueueManager waitingQueueManager = it.usesMock(WaitingQueueManager.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
         TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository,
-            null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager, pluginManager, fileUploadManager);
+            null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager, pluginManager, fileUploadManager, ticketFieldRepository);
         String specialPriceCode = "SPECIAL-PRICE";
         String specialPriceSessionId = "session-id";
         int specialPriceId = -42;
@@ -324,8 +327,9 @@ public class TicketReservationManagerTest {{
         TicketCategory tc = it.usesMock(TicketCategory.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
         TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository,
-            null, null, null, null, null, null, null, null, null, null, pluginManager, fileUploadManager);
+            null, null, null, null, null, null, null, null, null, null, pluginManager, fileUploadManager, ticketFieldRepository);
         when(ticketCategoryRepository.getById(eq(ticketCategoryId), eq(eventId))).thenReturn(tc);
         TicketReservationWithOptionalCodeModification trm = it.usesMock(TicketReservationWithOptionalCodeModification.class);
 
@@ -380,7 +384,8 @@ public class TicketReservationManagerTest {{
         WaitingQueueManager waitingQueueManager = it.usesMock(WaitingQueueManager.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager, pluginManager, fileUploadManager);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager, pluginManager, fileUploadManager, ticketFieldRepository);
         it.should("do nothing if there are no reservations", expect -> {
             when(ticketReservationRepository.findExpiredReservation(eq(now))).thenReturn(Collections.emptyList());
             ticketReservationManager.cleanupExpiredReservations(now);
@@ -407,7 +412,8 @@ public class TicketReservationManagerTest {{
         TicketCategory category = it.usesMock(TicketCategory.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, pluginManager, null);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, pluginManager, null, ticketFieldRepository);
         it.should("count how many tickets are yet available for a category", expect -> {
             when(category.isBounded()).thenReturn(true);
             when(category.getId()).thenReturn(24);
@@ -432,8 +438,9 @@ public class TicketReservationManagerTest {{
         TicketReservationRepository ticketReservationRepository = it.usesMock(TicketReservationRepository.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
         TicketReservationManager ticketReservationManager = new TicketReservationManager(null, organizationRepository, ticketRepository, ticketReservationRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository,
-            null, null, null, null, null, notificationManager, messageSource, null, null, null, pluginManager, fileUploadManager);
+            null, null, null, null, null, notificationManager, messageSource, null, null, null, pluginManager, fileUploadManager, ticketFieldRepository);
         TicketReservation ticketReservation = mock(TicketReservation.class);
         Ticket ticket = mock(Ticket.class);
         Event event = mock(Event.class);
@@ -528,7 +535,8 @@ public class TicketReservationManagerTest {{
         PromoCodeDiscountRepository promoCodeDiscountRepository = mock(PromoCodeDiscountRepository.class);
         EventRepository eventRepository = it.usesMock(EventRepository.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager ticketReservationManager = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, null, configurationManager, paymentManager, promoCodeDiscountRepository, specialPriceRepository, null, notificationManager, messageSource, null, platformTransactionManager, waitingQueueManager, pluginManager, fileUploadManager);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, null, configurationManager, paymentManager, promoCodeDiscountRepository, specialPriceRepository, null, notificationManager, messageSource, null, platformTransactionManager, waitingQueueManager, pluginManager, fileUploadManager, ticketFieldRepository);
         Event event = mock(Event.class);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(5));
@@ -630,7 +638,8 @@ public class TicketReservationManagerTest {{
         String baseUrl = "http://my-website/";
         when(configurationManager.getRequiredValue(Configuration.baseUrl())).thenReturn(baseUrl);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager trm = new TicketReservationManager(eventRepository, null, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, null, null, null, null, null, null, null, null, null, fileUploadManager);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager trm = new TicketReservationManager(eventRepository, null, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, null, null, null, null, null, null, null, null, null, fileUploadManager, ticketFieldRepository);
         it.should("generate the reservationUrl from reservationId", expect -> {
             expect.that(trm.reservationUrl(reservationId)).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId + "?lang=en");
         });
@@ -659,7 +668,8 @@ public class TicketReservationManagerTest {{
         MessageSource messageSource = it.usesMock(MessageSource.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager, null, pluginManager, fileUploadManager);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager, null, pluginManager, fileUploadManager, ticketFieldRepository);
         it.initializesWith(() -> reset(notificationManager, eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, configurationManager, promoCodeDiscountRepository, messageSource, transactionManager));
         it.should("send the reminder if there weren't any notifications before", expect -> {
             Event event = it.usesMock(Event.class);

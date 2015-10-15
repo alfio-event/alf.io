@@ -77,7 +77,6 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.apache.commons.lang3.time.DateUtils.addDays;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
 
@@ -108,6 +107,7 @@ public class TicketReservationManager {
     private final WaitingQueueManager waitingQueueManager;
     private final PluginManager pluginManager;
     private final FileUploadManager fileUploadManager;
+    private final TicketFieldRepository ticketFieldRepository;
 
 
     public static class NotEnoughTicketsException extends RuntimeException {
@@ -147,7 +147,8 @@ public class TicketReservationManager {
                                     PlatformTransactionManager transactionManager,
                                     WaitingQueueManager waitingQueueManager,
                                     PluginManager pluginManager,
-                                    FileUploadManager fileUploadManager) {
+                                    FileUploadManager fileUploadManager,
+                                    TicketFieldRepository ticketFieldRepository) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -166,6 +167,7 @@ public class TicketReservationManager {
         this.pluginManager = pluginManager;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
         this.fileUploadManager = fileUploadManager;
+        this.ticketFieldRepository = ticketFieldRepository;
     }
     
     /**
@@ -766,15 +768,8 @@ public class TicketReservationManager {
         //
         Locale userLocale = Optional.ofNullable(StringUtils.trimToNull(updateTicketOwner.getUserLanguage())).map(Locale::forLanguageTag).orElse(locale);
 
-        ticketRepository.updateOptionalTicketInfo(ticket.getUuid(), updateTicketOwner.getJobTitle(),
-                updateTicketOwner.getCompany(),
-                updateTicketOwner.getPhoneNumber(),
-                updateTicketOwner.getAddress(),
-                updateTicketOwner.getCountry(),
-                updateTicketOwner.getTShirtSize(),
-                updateTicketOwner.getGender(),
-                updateTicketOwner.getNotes(),
-                userLocale.getLanguage());
+        ticketRepository.updateOptionalTicketInfo(ticket.getUuid(), userLocale.getLanguage());
+        ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket, event);
 
         Ticket newTicket = ticketRepository.findByUUID(ticket.getUuid());
         if (!StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) || !StringUtils.equalsIgnoreCase(newFullName, ticket.getFullName())) {
@@ -887,7 +882,7 @@ public class TicketReservationManager {
         requiresNewTransactionTemplate.execute(ts -> {
             Event event = eventAndTickets.getLeft();
             int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.assignmentReminderStart(event), 10);
-            List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !t.containsOptionalInfo()).collect(toList());
+            List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !ticketFieldRepository.hasOptionalData(t.getId())).collect(toList());
             Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, event.getZoneId(), daysBeforeStart).isPresent()).collect(toSet());
             tickets.stream()
                     .filter(t -> notYetNotifiedReservations.contains(t.getTicketsReservationId()))

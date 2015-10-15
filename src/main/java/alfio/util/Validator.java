@@ -18,6 +18,7 @@ package alfio.util;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
+import alfio.model.TicketFieldConfiguration;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import org.apache.commons.lang3.StringUtils;
@@ -26,6 +27,7 @@ import org.springframework.validation.ValidationUtils;
 
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -105,7 +107,7 @@ public final class Validator {
         return ValidationResult.success();
     }
 
-    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, Errors errors) {
+    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Errors errors) {
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "email", "error.email");
         String email = form.getEmail();
         if(!isEmailValid(email)) {
@@ -113,14 +115,38 @@ public final class Validator {
         }
 
         validateMaxLength(form.getFullName(), "fullName", "error.fullname", 255, errors);
-        validateMaxLength(form.getJobTitle(), "jobTitle", "error.jobtitle", 255, errors);
-        validateMaxLength(form.getCompany(), "company", "error.company", 255, errors);
-        validateMaxLength(form.getPhoneNumber(), "phoneNumber", "error.phonenumber", 255, errors);
-        validateMaxLength(form.getCountry(), "country", "error.country", 255, errors);
-        validateMaxLength(form.getTShirtSize(), "tShirtSize", "error.tshirtsize", 32, errors);
-        validateMaxLength(form.getNotes(), "notes", "error.notes", 1024, errors);
+
+
+
+        //
+        for(TicketFieldConfiguration fieldConf : additionalFieldsForEvent) {
+
+            boolean isField = form.getAdditional() !=null && form.getAdditional().containsKey(fieldConf.getName());
+
+            if(!isField) {
+                continue;
+            }
+
+            String formValue = form.getAdditional().get(fieldConf.getName());
+
+            if(fieldConf.isMaxLengthDefined()) {
+                validateMaxLength(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getMaxLength(), errors);
+            }
+
+            if(!fieldConf.getRestrictedValues().isEmpty()) {
+                validateRestrictedValue(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getRestrictedValues(), errors);
+            }
+
+            //TODO: complete checks: min length, mandatory
+        }
 
         return evaluateValidationResult(errors);
+    }
+
+    private static void validateRestrictedValue(String value, String fieldName, String errorCode, List<String> restrictedValues, Errors errors) {
+        if(StringUtils.isNotBlank(value) && !restrictedValues.contains(value)) {
+            errors.rejectValue(fieldName, errorCode);
+        }
     }
 
     private static boolean isEmailValid(String email) {
