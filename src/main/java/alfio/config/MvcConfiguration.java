@@ -20,6 +20,7 @@ import alfio.controller.decorator.EventDescriptor;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
+import alfio.model.Event;
 import alfio.model.system.Configuration.ConfigurationPathKey;
 import alfio.util.MustacheCustomTagInterceptor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -177,8 +178,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                     modelMap.putIfAbsent("event", null);
                     if(!StringUtils.startsWith(mv.getViewName(), "redirect:")) {
                         modelMap.putIfAbsent("pageTitle", "empty");
-                        EventDescriptor d = (EventDescriptor) modelMap.get("event");
-                        ConfigurationPathKey googleAnalyticsKey = d != null ? alfio.model.system.Configuration.googleAnalyticsKey(d.getEvent()) : alfio.model.system.Configuration.googleAnalyticsKey();
+                        Event event = modelMap.get("event") == null ? null : modelMap.get("event") instanceof Event ? (Event) modelMap.get("event") : ((EventDescriptor) modelMap.get("event")).getEvent();
+                        ConfigurationPathKey googleAnalyticsKey = event != null ? alfio.model.system.Configuration.googleAnalyticsKey(event) : alfio.model.system.Configuration.googleAnalyticsKey();
                         modelMap.putIfAbsent("analyticsEnabled", StringUtils.isNotBlank(configurationManager.getStringConfigValue(googleAnalyticsKey, "")));
                     }
                 });
