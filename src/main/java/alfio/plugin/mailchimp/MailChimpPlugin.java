@@ -26,6 +26,7 @@ import alfio.plugin.PluginDataStorageProvider.PluginDataStorage;
 import alfio.plugin.ReservationConfirmationPlugin;
 import alfio.plugin.TicketAssignmentPlugin;
 import alfio.plugin.WaitingQueueSubscriptionPlugin;
+import alfio.util.Json;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.squareup.okhttp.*;
@@ -44,7 +45,6 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
     private final String id = "alfio.mailchimp";
     private final PluginDataStorage pluginDataStorage;
     private final OkHttpClient httpClient = new OkHttpClient();
-    private final Gson gson = new GsonBuilder().create();
 
     public MailChimpPlugin(PluginDataStorageProvider pluginDataStorageProvider) {
         this.pluginDataStorage = pluginDataStorageProvider.getDataStorage(id);
@@ -129,7 +129,7 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
         Request request = new Request.Builder()
                 .url(address)
                 .header("Authorization", Credentials.basic("api", apiKey))
-                .post(RequestBody.create(MediaType.parse("application/json"), gson.toJson(content, Map.class)))
+                .post(RequestBody.create(MediaType.parse("application/json"), Json.GSON.toJson(content, Map.class)))
                 .build();
         try {
             Response response = httpClient.newCall(request).execute();

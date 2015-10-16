@@ -350,6 +350,24 @@
             $state.go('index');
         };
 
+        //----------
+
+        // TODO, change, HARDCODED
+        $scope.fieldTypes = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
+
+        $scope.addNewTicketField = function(event) {
+            if(!event.ticketFields) {
+                event.ticketFields = [];
+            }
+
+            event.ticketFields.push({required:false});
+        };
+
+        $scope.removeTicketField = function(fields, field) {
+            var index = fields.indexOf(field);
+            fields.splice( index, 1 )
+        };
+
     };
 
     admin.controller('CreateEventController', function($scope, $state, $rootScope,
@@ -749,6 +767,49 @@
 
         $scope.countExpired = function(categories) {
             return _.countBy(categories, 'expired')['true'] || '0';
+        };
+
+
+        $scope.openFieldSelectionModal = function() {
+            $modal.open({
+                size:'lg',
+                templateUrl:BASE_STATIC_URL + '/event/fragment/select-field-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                    $scope.selected = {};
+                    EventService.getFields(parentScope.event.shortName).then(function(fields) {
+                        $scope.fields = fields.data;
+                        angular.forEach(fields.data, function(v) {
+                            $scope.selected[v] = false;
+                        })
+                    });
+
+                    $scope.selectAll = function() {
+                        angular.forEach($scope.selected, function(v,k) {
+                            $scope.selected[k] = true;
+                        });
+                    };
+
+                    $scope.deselectAll = function() {
+                        angular.forEach($scope.selected, function(v,k) {
+                            $scope.selected[k] = false;
+                        });
+                    };
+
+                    $scope.download = function() {
+
+                        var queryString = "";
+
+                        angular.forEach($scope.selected, function(v,k) {
+                            if(v) {
+                                queryString+="fields="+k+"&";
+                            }
+                        });
+
+                        $window.open($window.location.pathname+"/api/events/"+parentScope.event.shortName+"/export.csv?"+queryString);
+                    };
+                }
+            });
         };
 
     });

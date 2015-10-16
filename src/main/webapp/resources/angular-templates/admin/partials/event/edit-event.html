@@ -35,6 +35,27 @@
             <div class="col-sm-1"><button type="button" class="btn btn-success" data-ng-disabled="!canAddCategory(event.ticketCategories)" data-ng-click="addCategory()"><i class="fa fa-plus"></i></button></div>
         </div>
         <br class="clearfix"/>
+
+
+        <div class="page-header">
+            <h3>Ticket form fields</h3>
+            <h5 class="text-muted">Here you can add/remove additional fields</h5>
+        </div>
+
+        <div data-ng-repeat="field in event.ticketFields">
+            <p>Field name: <input type="input" ng-model="field.name"></p>
+            <p>Field order: <input type="number" ng-model="field.order"></p>
+            <p>Field type: <select ng-model="field.type" ng-options="option for option in fieldTypes"></select></p>
+            <p data-ng-if="field.type == 'select'">Field restricted values: </p>
+            <p data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">Field min length: <input type="number" ng-model="field.minLength"></p>
+            <p data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">Field max length: <input type="number" ng-model="field.maxLength"></p>
+            <p><button type="button" ng-click="removeTicketField(event.ticketFields, field)">Remove field</button></p>
+        </div>
+
+        <div>
+            <div><button type="button" ng-click="addNewTicketField(event)">Add new field</button></div>
+        </div>
+
         <control-buttons data-form-obj="editEvent"></control-buttons>
     </form>
 </div>

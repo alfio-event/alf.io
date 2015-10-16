@@ -16,12 +16,11 @@
  */
 package alfio.model;
 
+import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 
-import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -44,7 +43,7 @@ public class FileBlobMetadata {
         this.name = name;
         this.contentSize = contentSize;
         this.contentType = contentType;
-        Map<String, String> parsed = new Gson().fromJson(attributes, new TypeToken<Map<String, String>>() {}.getType());
+        Map<String, String> parsed = Json.GSON.fromJson(attributes, new TypeToken<Map<String, String>>() {}.getType());
         this.attributes = Optional.ofNullable(parsed).orElse(Collections.emptyMap());
     }
 

@@ -23,9 +23,8 @@ import alfio.model.user.Organization;
 import alfio.model.user.User;
 import alfio.model.user.UserWithPassword;
 import alfio.util.ImageUtil;
+import alfio.util.Json;
 import alfio.util.ValidationResult;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -50,7 +49,7 @@ public class UsersApiController {
     private static final String OK = "OK";
     private static final String USER_WITH_PASSWORD_KEY = "USER_WITH_PASSWORD";
     private final UserManager userManager;
-    private final Gson gson = new GsonBuilder().create();
+
 
     @Autowired
     public UsersApiController(UserManager userManager) {
@@ -135,7 +134,7 @@ public class UsersApiController {
         info.put("password", userWithPassword.getPassword());
         info.put("baseUrl", baseUrl);
         //
-        response.getOutputStream().write(ImageUtil.createQRCode(gson.toJson(info)));
+        response.getOutputStream().write(ImageUtil.createQRCode(Json.GSON.toJson(info)));
     }
 
 

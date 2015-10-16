@@ -34,7 +34,6 @@ import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
@@ -42,7 +41,6 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
-import alfio.util.OptionalWrapper;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
 import alfio.util.ValidationResult;
@@ -161,6 +159,8 @@ public class ReservationController {
 
             SessionUtil.removeSpecialPriceData(request);
 
+
+
             model.addAttribute("reservationId", reservationId);
             model.addAttribute("reservation", reservation.get());
             model.addAttribute("confirmationEmailSent", confirmationEmailSent);
@@ -169,6 +169,10 @@ public class ReservationController {
             List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
 
             Event ev = event.get();
+
+            Locale locale = RequestContextUtils.getLocale(request);
+
+            model.addAttribute("ticketFieldConfiguration", ticketHelper.findTicketFieldConfigurationAndValue(ev.getId(), locale));
 
             model.addAttribute(
                     "ticketsByCategory",
@@ -179,7 +183,7 @@ public class ReservationController {
                             })
                             .collect(Collectors.toList()));
             model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
-            model.addAttribute("countries", ticketHelper.getLocalizedCountries(RequestContextUtils.getLocale(request)));
+            model.addAttribute("countries", ticketHelper.getLocalizedCountries(locale));
             model.addAttribute("pageTitle", "reservation-page-complete.header.title");
             model.addAttribute("event", event.get());
             model.asMap().putIfAbsent("validationResult", ValidationResult.success());

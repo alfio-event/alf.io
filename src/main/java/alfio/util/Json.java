@@ -14,18 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.form;
+package alfio.util;
 
-import lombok.Data;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-import java.util.Map;
+public class Json {
 
-@Data
-public class UpdateTicketOwnerForm {
-    private String email;
-    private String fullName;
-    private String userLanguage;
-
-
-    private Map<String, String> additional;
+    public static final Gson GSON = new GsonBuilder().create();
 }

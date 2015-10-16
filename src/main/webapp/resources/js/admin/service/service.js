@@ -162,7 +162,10 @@
             },
             getCategoriesContainingTickets: function(eventName) {
                 return $http['get']('/admin/api/events/'+eventName+'/categories-containing-tickets')
-            }
+            },
+            getFields : function(eventName) {
+                return $http['get']('/admin/api/events/'+eventName+'/fields');
+            },
         };
     });
 

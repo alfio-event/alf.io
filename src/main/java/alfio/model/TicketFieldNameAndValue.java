@@ -14,18 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.form;
+package alfio.model;
 
-import lombok.Data;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
-import java.util.Map;
+/**
+ */
+@Getter
+public class TicketFieldNameAndValue {
 
-@Data
-public class UpdateTicketOwnerForm {
-    private String email;
-    private String fullName;
-    private String userLanguage;
+    private final String name;
+    private final String value;
 
-
-    private Map<String, String> additional;
+    public TicketFieldNameAndValue(@Column("field_name") String name,
+                                   @Column("field_value") String value) {
+        this.name =name;
+        this.value = value;
+    }
 }

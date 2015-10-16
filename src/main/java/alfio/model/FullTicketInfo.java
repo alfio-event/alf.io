@@ -48,16 +48,7 @@ public class FullTicketInfo {
                           @Column("t_email_address") String email,
                           @Column("t_locked_assignment") boolean lockedAssignment,
                           //
-                          @Column("t_job_title") String jobTitle,
-                          @Column("t_company") String company,
-                          @Column("t_phone_number") String phoneNumber,
-                          @Column("t_address") String address,
-                          @Column("t_country") String country,
-                          @Column("t_tshirt_size") String tshirtSize,
-                          @Column("t_gender") String gender,
-                          @Column("t_notes") String notes,
                           @Column("t_user_language") String userLanguage,
-                          //
                           //
                           @Column("tr_id") String trId,
                           @Column("tr_validity") Date trValidity,
@@ -86,8 +77,7 @@ public class FullTicketInfo {
                           @Column("tc_bounded") boolean bounded) {
 
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, originalPriceInCents, paidPriceInCents,
-                ticketsReservationId, fullName, email, lockedAssignment, jobTitle, company, phoneNumber, address, country,
-                tshirtSize, gender, notes, userLanguage);
+                ticketsReservationId, fullName, email, lockedAssignment, userLanguage);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trEmail, trBillingAddress,
                 trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,

@@ -76,7 +76,7 @@
                             initListeners();
                         } else {
                             validationResult.validationErrors.forEach(function(error) {
-                                var element = frm.find('[name='+error.fieldName+']').parents('.form-group');
+                                var element = frm.find('[name='+(error.fieldName.replace('[', '\\[\\\'').replace(']','\\\'\\]'))+']').parents('.form-group');
                                 if(element.length > 0) {
                                     element.addClass('has-error');
                                 } else {

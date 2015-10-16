@@ -109,17 +109,8 @@ public interface TicketRepository {
     @Query("update ticket set locked_assignment = :lockedAssignment where id = :id and category_id = :categoryId")
     int toggleTicketLocking(@Bind("id") int ticketId, @Bind("categoryId") int categoryId, @Bind("lockedAssignment") boolean locked);
     
-    @Query("update ticket set job_title = :jobTitle, company = :company, phone_number = :phoneNumber, address = :address, country = :country, tshirt_size = :tShirtSize, gender = :gender, notes = :notes, user_language = :userLanguage where uuid = :ticketIdentifier")
-    int updateOptionalTicketInfo(@Bind("ticketIdentifier") String ticketIdentifier,
-                                 @Bind("jobTitle") String jobTitle,
-                                 @Bind("company") String company,
-                                 @Bind("phoneNumber") String phoneNumber,
-                                 @Bind("address") String address,
-                                 @Bind("country") String country,
-                                 @Bind("tShirtSize") String tShirtSize,
-                                 @Bind("gender") String gender,
-                                 @Bind("notes") String notes,
-                                 @Bind("userLanguage") String userLanguage);
+    @Query("update ticket set user_language = :userLanguage where uuid = :ticketIdentifier")
+    int updateOptionalTicketInfo(@Bind("ticketIdentifier") String ticketIdentifier, @Bind("userLanguage") String userLanguage);
 
     @Query("select * from ticket where id = :id and category_id = :categoryId")
     Ticket findById(@Bind("id") int ticketId, @Bind("categoryId") int categoryId);
@@ -136,9 +127,8 @@ public interface TicketRepository {
     @Query("select " +
             " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
             " t.original_price_cts t_original_price_cts, t.paid_price_cts t_paid_price_cts, t.tickets_reservation_id t_tickets_reservation_id," +
-            " t.full_name t_full_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment, t.job_title t_job_title, t.company t_company," +
-            " t.phone_number t_phone_number, t.address t_address, t.country t_country, t.tshirt_size t_tshirt_size, t.gender t_gender," +
-            " t.notes t_notes, t.user_language t_user_language," +
+            " t.full_name t_full_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment," +
+            " t.user_language t_user_language," +
             " tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address," +
             " tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language," +
             " tc.id tc_id, tc.inception tc_inception, tc.expiration tc_expiration, tc.max_tickets tc_max_tickets, tc.name tc_name, tc.price_cts tc_price_cts, tc.access_restricted tc_access_restricted, tc.tc_status tc_tc_status, tc.event_id tc_event_id, tc.bounded tc_bounded" +
