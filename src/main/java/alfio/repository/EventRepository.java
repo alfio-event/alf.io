@@ -79,4 +79,7 @@ public interface EventRepository {
     @Query("select count(*) from event where short_name = :shortName")
     Integer countByShortName(@Bind("shortName") String shortName);
 
+    @Query("select id from event where end_ts > :now")
+    List<Integer> findAllActiveIds(@Bind("now") ZonedDateTime now);
+
 }

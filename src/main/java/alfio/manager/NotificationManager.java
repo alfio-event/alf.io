@@ -33,6 +33,7 @@ import com.google.gson.*;
 import com.lowagie.text.DocumentException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.codec.Hex;
@@ -116,7 +117,13 @@ public class NotificationManager {
 
         String text = textBuilder.generate();
         String checksum = calculateChecksum(recipient, encodedAttachments, subject, text);
-        emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
+        //in order to minimize the database size, it is worth checking if there is already another message in the table
+        Optional<EmailMessage> existing = emailMessageRepository.findByEventIdAndChecksum(event.getId(), checksum);
+        if(!existing.isPresent()) {
+            emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
+        } else {
+            emailMessageRepository.updateStatus(event.getId(), WAITING.name(), existing.get().getId());
+        }
     }
 
     public List<EmailMessage> loadAllMessagesForEvent(int eventId) {
@@ -128,27 +135,24 @@ public class NotificationManager {
     }
 
     void sendWaitingMessages() {
-        Set<EmailMessage> toBeSent = new HashSet<>(emailMessageRepository.loadWaitingForProcessing(configurationManager.getIntConfigValue(Configuration.maxEmailPerCycle(), 10)));
-        toBeSent.forEach(m -> {
-            try {
-                processMessage(m);
-            } catch (Exception e) {
-                log.warn("cannot send message: ",e);
-            }
-        });
+        eventRepository.findAllActiveIds(ZonedDateTime.now(UTC))
+            .stream()
+            .flatMap(id -> emailMessageRepository.loadWaitingForProcessing(id).stream())
+            .distinct()
+            .forEach(this::processMessage);
     }
 
     void processNotSentEmail() {
         ZonedDateTime now = ZonedDateTime.now(UTC);
-        String owner = UUID.randomUUID().toString();
-        int updated = tx.execute(status -> emailMessageRepository.updateStatusForRetry(now, now.minusMinutes(10), owner));
-        log.debug("found {} expired messages", updated);
-        if(updated > 0) {
-            tx.execute(status -> {
-                emailMessageRepository.loadForProcessing(owner).forEach(this::processMessage);
-                return null;
+        ZonedDateTime expiration = now.minusMinutes(5);
+        eventRepository.findAllActiveIds(now).stream()
+            .map(id -> Pair.of(id, tx.execute(status -> emailMessageRepository.updateStatusForRetry(now, expiration))))
+            .filter(p -> p.getValue() > 0)
+            .forEach(p -> {
+                int eventId = p.getKey();
+                log.debug("found {} expired messages for event {}", p.getValue(), eventId);
+                emailMessageRepository.loadRetryForProcessing(eventId).forEach(this::processMessage);
             });
-        }
     }
 
     private void processMessage(EmailMessage message) {
@@ -169,9 +173,8 @@ public class NotificationManager {
 
     private void sendMessage(EmailMessage message) {
         Event event = eventRepository.findById(message.getEventId());
-        EmailMessage storedMessage = emailMessageRepository.findByEventIdAndChecksum(event.getId(), message.getChecksum(), IN_PROCESS.name());
-        mailer.send(event, message.getRecipient(), message.getSubject(), storedMessage.getMessage(), Optional.empty(), decodeAttachments(storedMessage.getAttachments()));
-        emailMessageRepository.updateStatusToSent(storedMessage.getEventId(), storedMessage.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
+        mailer.send(event, message.getRecipient(), message.getSubject(), message.getMessage(), Optional.empty(), decodeAttachments(message.getAttachments()));
+        emailMessageRepository.updateStatusToSent(message.getEventId(), message.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
     }
 
     private String encodeAttachments(Mailer.Attachment... files) {
