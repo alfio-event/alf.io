@@ -1,11 +1,12 @@
 <div class="page-header">
-    <h1>{{event.displayName}}</h1>
+    <h1>{{event.displayName}} <a class="btn btn-default" data-ui-sref="events.configuration({eventName: event.shortName})"><i class="fa fa-wrench"></i><span class="sr-only"> settings</span></a></h1>
     <h4 class="text-muted">{{event.shortDescription}}</h4>
     <span><a class="btn btn-primary" data-ng-href="{{ ('events/'+event.shortName+'/export/all-tickets.csv') | addTrailingSlash }} " target="_blank"><i class="fa fa-download"></i> download attendees' data</a></span>
     <span><a class="btn btn-success" data-ng-href="{{ ('events/'+event.shortName+'/export/badges.csv') | addTrailingSlash }}" target="_blank"><i class="fa fa-ticket"></i> download badges' data</a></span>
     <span><a class="btn btn-warning" data-ui-sref="compose-custom-message({eventName: event.shortName})"><i class="fa fa-envelope"></i> send a message to attendees</a></span>
     <waiting-queue-display-counter data-event="event"></waiting-queue-display-counter>
     <span><a class="btn btn-default" data-ui-sref="events.email-log({eventName:event.shortName})"><i class="fa fa-paper-plane-o"></i> view sent messages</a></span>
+    <span><a class="btn btn-default" data-ui-sref="events.plugin-log({eventName:event.shortName})"><i class="fa fa-plug"></i> view Plugins log</a></span>
 </div>
 <div class="page-header"><h2>Logistic info</h2></div>
 <div class="row">

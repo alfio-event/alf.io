@@ -52,7 +52,6 @@
                     <ul class="nav navbar-nav">
                         <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
                         <li data-ui-sref-active="active"><a data-ui-sref="configuration.system">Configuration</a></li>
-                        <li data-ui-sref-active="active"><a data-ui-sref="plugin-log">Plugin Log</a></li>
                         <li class="nav-divider"></li>
                         <li class="visible-xs"><span class="navbar-brand"><i class="fa fa-user"></i> {{username}}</span></li>
                     </ul>

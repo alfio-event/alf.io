@@ -26,12 +26,20 @@
                     templateUrl: '/resources/angular-templates/admin/partials/configuration/event.html',
                     controller: 'EventConfigurationController',
                     controllerAs: 'eventConf'
+                })
+                .state('events.configuration', {
+                    url: '/:eventName/configuration',
+                    templateUrl: '/resources/angular-templates/admin/partials/configuration/event.html',
+                    controller: 'EventConfigurationController',
+                    controllerAs: 'eventConf'
                 });
         }])
         .controller('ConfigurationController', ConfigurationController)
         .controller('SystemConfigurationController', SystemConfigurationController)
         .controller('OrganizationConfigurationController', OrganizationConfigurationController)
         .controller('EventConfigurationController', EventConfigurationController)
+        .controller('CategoryConfigurationController', CategoryConfigurationController)
+        .directive('ticketCategoryConfiguration', ticketCategoryConfiguration)
         .service('ConfigurationService', ConfigurationService);
 
     function ConfigurationService($http, HttpErrorHandler) {
@@ -39,10 +47,10 @@
             loadAll: function() {
                 return $http.get('/admin/api/configuration/load').error(HttpErrorHandler.handle);
             },
-            loadOrganization: function(organizationId) {
+            loadOrganizationConfig: function(organizationId) {
                 return $http.get('/admin/api/configuration/organizations/'+organizationId+'/load').error(HttpErrorHandler.handle);
             },
-            loadEvent: function(eventId) {
+            loadEventConfig: function(eventId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/load').error(HttpErrorHandler.handle)
             },
             loadCategory: function(eventId, categoryId) {
@@ -60,6 +68,9 @@
             updateEventConfig: function(organizationId, eventId, settings) {
                 return $http.post('/admin/api/configuration/organizations/'+organizationId+'/events/'+eventId+'/update', settings).error(HttpErrorHandler.handle);
             },
+            updateCategoryConfig: function(categoryId, eventId, settings) {
+                return $http.post('/admin/api/configuration/events/'+eventId+'/categories/'+categoryId+'/update', settings).error(HttpErrorHandler.handle);
+            },
             remove: function(conf) {
                 return $http['delete']('/admin/api/configuration/key/' + conf.configurationKey).error(HttpErrorHandler.handle);
             },
@@ -69,7 +80,10 @@
             removeEventConfig: function(conf, eventId) {
                 return $http['delete']('/admin/api/configuration/event/'+eventId+'/key/' + conf.configurationKey).error(HttpErrorHandler.handle);
             },
-            loadPlugins: function(eventId) {
+            removeCategoryConfig: function(conf, eventId, categoryId) {
+                return $http['delete']('/admin/api/configuration/event/'+eventId+'/category/'+categoryId+'/key/' + conf.configurationKey).error(HttpErrorHandler.handle);
+            },
+            loadPluginsConfig: function(eventId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/plugin/load').error(HttpErrorHandler.handle);
             },
             bulkUpdatePlugins: function(eventId, pluginConfigOptions) {
@@ -97,7 +111,7 @@
         };
     }
 
-    ConfigurationService.prototype.$inject = ['$http', 'HttpErrorHandler'];
+    ConfigurationService.$inject = ['$http', 'HttpErrorHandler'];
 
     function ConfigurationController(OrganizationService, EventService, $q) {
         var configCtrl = this;
@@ -116,7 +130,7 @@
         });
     }
 
-    ConfigurationController.prototype.$inject = ['OrganizationService', 'EventService', '$q'];
+    ConfigurationController.$inject = ['OrganizationService', 'EventService', '$q'];
 
     function SystemConfigurationController(ConfigurationService, $rootScope) {
         var systemConf = this;
@@ -154,7 +168,7 @@
         });
     }
 
-    SystemConfigurationController.prototype.$inject = ['ConfigurationService', '$rootScope', '$q'];
+    SystemConfigurationController.$inject = ['ConfigurationService', '$rootScope', '$q'];
 
     function OrganizationConfigurationController(ConfigurationService, OrganizationService, $stateParams, $q, $rootScope) {
         var organizationConf = this;
@@ -164,7 +178,7 @@
         };
         var load = function() {
             organizationConf.loading = true;
-            $q.all([OrganizationService.getOrganization(organizationConf.organizationId), ConfigurationService.loadOrganization(organizationConf.organizationId)])
+            $q.all([OrganizationService.getOrganization(organizationConf.organizationId), ConfigurationService.loadOrganizationConfig(organizationConf.organizationId)])
                 .then(function(result) {
                     organizationConf.organization = result[0].data;
                     loadSettings(organizationConf, result[1].data, ConfigurationService);
@@ -195,16 +209,37 @@
         });
     }
 
-    OrganizationConfigurationController.prototype.$inject = ['ConfigurationService', 'OrganizationService', '$stateParams', '$q', '$rootScope'];
+    OrganizationConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', '$stateParams', '$q', '$rootScope'];
 
-    function EventConfigurationController(ConfigurationService, EventService, $stateParams, $q, $rootScope) {
+    function EventConfigurationController(ConfigurationService, EventService, $q, $rootScope, $stateParams) {
         var eventConf = this;
-        eventConf.organizationId = $stateParams.organizationId;
-        eventConf.eventId = $stateParams.eventId;
+        var getData = function() {
+            if(angular.isDefined($stateParams.eventName)) {
+                var deferred = $q.defer();
+                EventService.getEvent($stateParams.eventName).then(function(result) {
+                    eventConf.organizationId = result.data.organization.id;
+                    var event = result.data.event;
+                    eventConf.eventName = event.shortName;
+                    eventConf.eventId = event.id;
+                    $q.all([ConfigurationService.loadEventConfig(eventConf.eventId), ConfigurationService.loadPluginsConfig(eventConf.eventId)]).then(function(result) {
+                        deferred.resolve([{data:event}].concat(result));
+                    }, function(e) {
+                        deferred.reject(e);
+                    });
+                }, function(e) {
+                    deferred.reject(e);
+                });
+                return deferred.promise;
+            } else {
+                eventConf.eventId = $stateParams.eventId;
+                eventConf.organizationId = $stateParams.organizationId;
+                return $q.all([EventService.getEventById($stateParams.eventId), ConfigurationService.loadEventConfig($stateParams.eventId), ConfigurationService.loadPluginsConfig($stateParams.eventId)])
+            }
+        };
+
         var load = function() {
             eventConf.loading = true;
-            $q.all([EventService.getEventById(eventConf.eventId), ConfigurationService.loadEvent(eventConf.eventId), ConfigurationService.loadPlugins(eventConf.eventId)])
-                .then(function(result) {
+            getData().then(function(result) {
                     eventConf.event = result[0].data;
                     loadSettings(eventConf, result[1].data, ConfigurationService);
                     eventConf.pluginSettings = result[2].data;
@@ -221,7 +256,7 @@
                 return;
             }
             eventConf.loading = true;
-            ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings).then(function() {
+            $q.all([ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings), ConfigurationService.bulkUpdatePlugins(eventConf.eventId, eventConf.pluginSettings)]).then(function() {
                 load();
             }, function(e) {
                 alert(e.data);
@@ -238,7 +273,7 @@
         });
     }
 
-    EventConfigurationController.prototype.$inject = ['ConfigurationService', 'OrganizationService', 'EventService', '$stateParams', '$q', '$rootScope'];
+    EventConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', 'EventService', '$q', '$rootScope', '$stateParams'];
 
     function loadSettings(container, settings, ConfigurationService) {
         container.hasResults = settings['GENERAL'].length > 0;
@@ -249,4 +284,56 @@
         }
         container.loading = false;
     }
+
+    function ticketCategoryConfiguration() {
+        return {
+            restrict: 'E',
+            scope: {
+                event: '=',
+                category: '=',
+                closeModal: '&'
+            },
+            bindToController: true,
+            controller: 'CategoryConfigurationController',
+            controllerAs: 'categoryConf',
+            templateUrl: '/resources/angular-templates/admin/partials/configuration/category.html'
+        };
+    }
+
+    function CategoryConfigurationController(ConfigurationService, $rootScope) {
+        var categoryConf = this;
+
+        var load = function() {
+            categoryConf.loading = true;
+            ConfigurationService.loadCategory(categoryConf.event.id, categoryConf.category.id).then(function(result) {
+                loadSettings(categoryConf, result.data, ConfigurationService);
+                categoryConf.loading = false;
+            }, function() {
+                categoryConf.loading = false;
+            });
+        };
+        load();
+
+        categoryConf.saveSettings = function(frm) {
+            if(!frm.$valid) {
+                return;
+            }
+            categoryConf.loading = true;
+            ConfigurationService.updateCategoryConfig(categoryConf.category.id, categoryConf.event.id, categoryConf.settings).then(function() {
+                load();
+            }, function(e) {
+                alert(e.data);
+                categoryConf.loading = false;
+            });
+        };
+
+        categoryConf.delete = function(config) {
+            return ConfigurationService.removeCategoryConfig(config, categoryConf.event.id, categoryConf.category.id);
+        };
+
+        $rootScope.$on('ReloadSettings', function() {
+            load();
+        });
+    }
+    CategoryConfigurationController.$inject = ['ConfigurationService', '$rootScope'];
 })();

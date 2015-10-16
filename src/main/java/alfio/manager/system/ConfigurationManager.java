@@ -19,6 +19,7 @@ package alfio.manager.system;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.modification.ConfigurationModification;
+import alfio.model.system.ComponentType;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeys;
@@ -38,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -51,6 +53,8 @@ public class ConfigurationManager {
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.ORGANIZATION);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> EVENT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.EVENT);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
+
+    private static final Predicate<ConfigurationModification> TO_BE_SAVED = c -> c.getId() > -1 || !StringUtils.isBlank(c.getValue()) || ConfigurationKeys.fromString(c.getKey()).getComponentType() == ComponentType.BOOLEAN;
 
 
     private final ConfigurationRepository configurationRepository;
@@ -142,19 +146,20 @@ public class ConfigurationManager {
     // begin SYSTEM related configuration methods
 
     public void saveAllSystemConfiguration(List<ConfigurationModification> list) {
-        list.forEach(c -> saveSystemConfiguration(ConfigurationKeys.fromValue(c.getKey()), c.getValue()));
+        list.forEach(c -> saveSystemConfiguration(ConfigurationKeys.fromString(c.getKey()), c.getValue()));
     }
 
     public void saveAllOrganizationConfiguration(int organizationId, List<ConfigurationModification> list, String username) {
         Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "Cannot update settings, user is not owner");
         list.stream()
-            .filter(c -> c.getId() > -1 || !StringUtils.isBlank(c.getValue()))
+            .filter(TO_BE_SAVED)
             .forEach(c -> {
+                String value = evaluateValue(c.getKey(), c.getValue());
                 Optional<Configuration> existing = configurationRepository.findByKeyAtOrganizationLevel(organizationId, c.getKey());
                 if (existing.isPresent()) {
-                    configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), c.getValue());
+                    configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), value);
                 } else {
-                    configurationRepository.insertOrganizationLevel(organizationId, c.getKey(), c.getValue(), ConfigurationKeys.fromValue(c.getKey()).getDescription());
+                    configurationRepository.insertOrganizationLevel(organizationId, c.getKey(), value, ConfigurationKeys.fromString(c.getKey()).getDescription());
                 }
             });
     }
@@ -168,15 +173,41 @@ public class ConfigurationManager {
             Validate.isTrue(userManager.isOwnerOfOrganization(user, event.getOrganizationId()), "Cannot update settings, user is not owner of event");
         }
         list.stream()
-            .filter(c -> c.getId() > -1 || !StringUtils.isBlank(c.getValue()))
+            .filter(TO_BE_SAVED)
             .forEach(c -> {
                 Optional<Configuration> existing = configurationRepository.findByKeyAtEventLevel(eventId, organizationId, c.getKey());
+                String value = evaluateValue(c.getKey(), c.getValue());
                 if (existing.isPresent()) {
-                    configurationRepository.updateEventLevel(eventId, organizationId, c.getKey(), c.getValue());
+                    configurationRepository.updateEventLevel(eventId, organizationId, c.getKey(), value);
                 } else {
-                    configurationRepository.insertEventLevel(organizationId, eventId, c.getKey(), c.getValue(), ConfigurationKeys.fromValue(c.getKey()).getDescription());
+                    configurationRepository.insertEventLevel(organizationId, eventId, c.getKey(), value, ConfigurationKeys.fromString(c.getKey()).getDescription());
                 }
             });
+    }
+
+    public void saveCategoryConfiguration(int categoryId, int eventId, List<ConfigurationModification> list, String username) {
+        User user = userManager.findUserByUsername(username);
+        Event event = eventRepository.findById(eventId);
+        Validate.notNull(event, "event does not exist");
+        Validate.isTrue(userManager.isOwnerOfOrganization(user, event.getOrganizationId()), "Cannot update settings, user is not owner of event");
+        list.stream()
+            .filter(TO_BE_SAVED)
+            .forEach(c -> {
+                Optional<Configuration> existing = configurationRepository.findByKeyAtCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey());
+                String value = evaluateValue(c.getKey(), c.getValue());
+                if (existing.isPresent()) {
+                    configurationRepository.updateCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey(), value);
+                } else {
+                    configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), eventId, categoryId, c.getKey(), value, ConfigurationKeys.fromString(c.getKey()).getDescription());
+                }
+            });
+    }
+
+    private String evaluateValue(String key, String value) {
+        if(ConfigurationKeys.fromString(key).isBooleanComponentType()) {
+            return StringUtils.defaultString(value, "false");
+        }
+        return value;
     }
 
     public void saveSystemConfiguration(ConfigurationKeys key, String value) {
@@ -214,7 +245,7 @@ public class ConfigurationManager {
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().collect(groupByCategory());
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().sorted().collect(groupByCategory());
         return groupByCategory(ORGANIZATION_CONFIGURATION, existing);
     }
 
@@ -225,7 +256,7 @@ public class ConfigurationManager {
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().collect(groupByCategory());
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().sorted().collect(groupByCategory());
         return groupByCategory(EVENT_CONFIGURATION, existing);
     }
 
@@ -236,14 +267,14 @@ public class ConfigurationManager {
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findCategoryConfiguration(organizationId, eventId, categoryId).stream().collect(groupByCategory());
-        return groupByCategory(EVENT_CONFIGURATION, existing);
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findCategoryConfiguration(organizationId, eventId, categoryId).stream().sorted().collect(groupByCategory());
+        return groupByCategory(CATEGORY_CONFIGURATION, existing);
     }
 
     private Map<ConfigurationKeys.SettingCategory, List<Configuration>> groupByCategory(Map<ConfigurationKeys.SettingCategory, List<Configuration>> all, Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing) {
         return all.entrySet().stream()
             .map(e -> {
-                Set<Configuration> entries = new LinkedHashSet<>();
+                Set<Configuration> entries = new TreeSet<>();
                 ConfigurationKeys.SettingCategory key = e.getKey();
                 entries.addAll(e.getValue());
                 if(existing.containsKey(key)) {
@@ -262,7 +293,7 @@ public class ConfigurationManager {
         }
         final List<Configuration> existing = configurationRepository.findSystemConfiguration()
                 .stream()
-                .filter(c -> !ConfigurationKeys.fromValue(c.getKey()).isInternal())
+                .filter(c -> !ConfigurationKeys.fromString(c.getKey()).isInternal())
                 .collect(Collectors.toList());
         final List<Configuration> missing = Arrays.stream(ConfigurationKeys.visible())
                 .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
@@ -270,7 +301,7 @@ public class ConfigurationManager {
                 .collect(Collectors.toList());
         List<Configuration> result = new LinkedList<>(existing);
         result.addAll(missing);
-        return result.stream().collect(groupByCategory());
+        return result.stream().sorted().collect(groupByCategory());
     }
 
     private static Collector<Configuration, ?, Map<ConfigurationKeys.SettingCategory, List<Configuration>>> groupByCategory() {
@@ -297,10 +328,18 @@ public class ConfigurationManager {
         configurationRepository.deleteEventLevelByKey(key, eventId);
     }
 
+    public void deleteCategoryLevelByKey(String key, int eventId, int categoryId, String username) {
+        Event event = eventRepository.findById(eventId);
+        Validate.notNull(event, "Wrong event id");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
+        configurationRepository.deleteCategoryLevelByKey(key, eventId, categoryId);
+    }
+
     private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> collectConfigurationKeysByCategory(ConfigurationPathLevel pathLevel) {
         return ConfigurationKeys.byPathLevel(pathLevel)
             .stream()
             .map(mapEmptyKeys(pathLevel))
+            .sorted()
             .collect(groupByCategory());
     }
 }

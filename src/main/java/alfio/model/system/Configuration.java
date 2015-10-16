@@ -22,11 +22,12 @@ import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 @Getter
-public class Configuration {
+public class Configuration implements Comparable<Configuration> {
 
     private final int id;
     private final String key;
@@ -55,6 +56,30 @@ public class Configuration {
         return configurationKey.getComponentType();
     }
 
+    @Override
+    public int compareTo(Configuration o) {
+        return new CompareToBuilder().append(configurationKey.ordinal(), o.configurationKey.ordinal()).toComparison();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (obj == this) {
+            return true;
+        }
+        if (obj.getClass() != getClass()) {
+            return false;
+        }
+        Configuration o = (Configuration) obj;
+        return new EqualsBuilder().append(configurationKey, o.configurationKey).append(configurationPathLevel, configurationPathLevel).isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder().append(configurationKey).append(configurationPathLevel).toHashCode();
+    }
 
     public interface ConfigurationPath {
         ConfigurationPathLevel pathLevel();
@@ -222,6 +247,10 @@ public class Configuration {
         return new ConfigurationPathKey(event(event), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
     }
 
+    public static ConfigurationPathKey maxAmountOfTicketsByReservation(int organizationId, int eventId, int ticketCategoryId) {
+        return new ConfigurationPathKey(ticketCategory(organizationId, eventId, ticketCategoryId), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
+    }
+
     public static ConfigurationPathKey assignmentReminderStart(Event event) {
         return new ConfigurationPathKey(event(event), ConfigurationKeys.ASSIGNMENT_REMINDER_START);
     }
@@ -286,6 +315,10 @@ public class Configuration {
         return new ConfigurationPathKey(system(), ConfigurationKeys.OFFLINE_REMINDER_HOURS);
     }
 
+    public static ConfigurationPathKey offlineReminderHours(Event event) {
+        return new ConfigurationPathKey(event(event), ConfigurationKeys.OFFLINE_REMINDER_HOURS);
+    }
+
     public static ConfigurationPathKey bankAccountNr(Event event) {
         return new ConfigurationPathKey(event(event), ConfigurationKeys.BANK_ACCOUNT_NR);
     }
@@ -316,8 +349,8 @@ public class Configuration {
         return new ConfigurationPathKey(system(), ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE);
     }
 
-    public static ConfigurationPathKey allowFreeTicketsCancellation(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION);
+    public static ConfigurationPathKey allowFreeTicketsCancellation(Event event, TicketCategory category) {
+        return new ConfigurationPathKey(ticketCategory(event.getOrganizationId(), event.getId(), category.getId()), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION);
     }
 
     public static ConfigurationPathKey enableWaitingQueue(Event event) {
@@ -336,25 +369,4 @@ public class Configuration {
         return new ConfigurationPathKey(event(event), ConfigurationKeys.WAITING_QUEUE_RESERVATION_TIMEOUT);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Configuration that = (Configuration) o;
-
-        return new EqualsBuilder()
-            .append(key, that.key)
-            .append(configurationKey, that.configurationKey)
-            .isEquals();
-    }
-
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-            .append(key)
-            .append(configurationKey)
-            .toHashCode();
-    }
 }

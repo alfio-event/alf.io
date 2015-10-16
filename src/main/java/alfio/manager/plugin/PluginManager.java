@@ -92,12 +92,18 @@ public class PluginManager implements ApplicationListener<ContextRefreshedEvent>
     }
 
     private boolean validateOwnership(int eventId, String username) {
-        Event event = eventRepository.findById(eventId);
+        return validateOwnership(eventRepository.findById(eventId), username);
+    }
+
+    private boolean validateOwnership(Event event, String username) {
         return userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId());
     }
 
-    public List<PluginLog> loadAllLogMessages() {
-        return pluginLogRepository.loadAll();
+    public List<PluginLog> loadAllLogMessages(String eventName, String username) {
+        Event event = eventRepository.findByShortName(eventName);
+        Validate.notNull(event, "invalid shortName");
+        Validate.isTrue(validateOwnership(event, username), "Not Authorized");
+        return pluginLogRepository.loadByEventId(event.getId());
     }
 
     private static <T extends Plugin> Stream<T> filterPlugins(List<Plugin> plugins, int eventId, Class<T> type) {

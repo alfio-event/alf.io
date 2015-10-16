@@ -6,8 +6,13 @@
     <span>Please try selecting an Event</span>
 </div>
 <div data-ng-if="organizationConf.hasResults">
+
+    <div>
+        <h1>Configuration for {{organizationConf.organization.name}}</h1>
+    </div>
+
     <div class="page-header">
-        <h1>General</h1>
+        <h2>General</h2>
         <span>General settings</span>
     </div>
 
@@ -19,7 +24,7 @@
         </div>
 
         <div class="page-header">
-            <h1>E-Mail</h1>
+            <h2>E-Mail</h2>
             <span>E-Mail settings</span>
         </div>
 
@@ -53,7 +58,7 @@
         </div>
 
         <div class="page-header">
-            <h1>Payment</h1>
+            <h2>Payment</h2>
             <span>Payment provider settings</span>
         </div>
 

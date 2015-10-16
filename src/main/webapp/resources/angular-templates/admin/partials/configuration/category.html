@@ -1,0 +1,75 @@
+<div class="text-center" data-ng-if="categoryConf.loading">
+    <i class="fa fa-cog fa-spin fa-3x"></i><span class="sr-only">Loading...</span>
+</div>
+<div class="alert alert-warning" data-ng-if="categoryConf.noResults">
+    <h1>You are not authorized to see Category configuration.</h1>
+</div>
+<div data-ng-if="categoryConf.hasResults">
+
+    <div>
+        <h3>Configuration for {{categoryConf.category.name}}</h3>
+    </div>
+
+    <div class="page-header">
+        <h4>General</h4>
+        <span>General settings</span>
+    </div>
+
+    <form name="settingsForm" novalidate data-ng-submit="categoryConf.saveSettings(settingsForm)">
+        <div data-ng-if="categoryConf.general">
+            <div data-ng-repeat="setting in categoryConf.general.settings">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="categoryConf.globalSettings" data-delete-handler="categoryConf.delete(config)"></setting>
+            </div>
+        </div>
+
+        <div class="page-header" data-ng-if="categoryConf.mail">
+            <h4>E-Mail</h4>
+            <span>E-Mail settings</span>
+        </div>
+
+        <div data-ng-if="categoryConf.mail">
+            <div data-ng-if="categoryConf.mail.type">
+                <div class="radio-inline">
+                    <label>
+                        <input type="radio" name="mailer.type" data-ng-model="categoryConf.mail.type.value" data-ng-value="'smtp'">
+                        SMTP
+                    </label>
+                </div>
+                <div class="radio-inline">
+                    <label>
+                        <input type="radio" name="mailer.type" data-ng-model="categoryConf.mail.type.value" data-ng-value="'mailgun'">
+                        Mailgun.com
+                    </label>
+                </div>
+                <div data-ng-repeat="setting in categoryConf.mail.settings | mailSettingsFilter:categoryConf.mail.type.value">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="categoryConf.delete(config)"></setting>
+                </div>
+                <div>
+                    <setting obj="categoryConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="categoryConf.delete(config)"></setting>
+                </div>
+                <div>
+                    <setting obj="categoryConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="categoryConf.delete(config)"></setting>
+                </div>
+            </div>
+            <div data-ng-repeat="setting in categoryConf.mail.settings" data-ng-if="!categoryConf.mail.type">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="categoryConf.delete(config)"></setting>
+            </div>
+        </div>
+
+        <div class="page-header" data-ng-if="categoryConf.payment">
+            <h4>Payment</h4>
+            <span>Payment provider settings</span>
+        </div>
+
+        <div data-ng-if="categoryConf.payment">
+            <div data-ng-repeat="setting in categoryConf.payment.settings">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="categoryConf.delete(config)"></setting>
+            </div>
+        </div>
+
+        <div class="pull-right wMarginBottom wMarginTop">
+            <button type="submit" class="btn btn-success" data-ng-disabled="categoryConf.loading">save</button>
+            <a class="btn btn-default" data-ng-click="categoryConf.closeModal()">close</a>
+        </div>
+    </form>
+</div>

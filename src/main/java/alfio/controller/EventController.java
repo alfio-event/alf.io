@@ -192,12 +192,11 @@ public class EventController {
                 .flatMap((code) -> optionally(() -> promoCodeRepository.findPromoCodeInEvent(event.getId(), code)));
 
         final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        final int maxTickets = configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event), 5);
         //hide access restricted ticket categories
         List<SaleableTicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
                 .filter((c) -> !c.isAccessRestricted() || (specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId()))
                 .map((m) -> new SaleableTicketCategory(m, ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(m.getId(), locale.getLanguage()).orElse(""),
-                    now, event, ticketReservationManager.countAvailableTickets(event, m), maxTickets, promoCodeDiscount))
+                    now, event, ticketReservationManager.countAvailableTickets(event, m), configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event.getOrganizationId(), event.getId(), m.getId()), 5), promoCodeDiscount))
                 .collect(Collectors.toList());
         //
 

@@ -117,7 +117,7 @@ public class TicketController {
         TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId(), event.getId());
         Organization organization = organizationRepository.getById(event.getOrganizationId());
 
-        boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event), false);
+        boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event, ticketCategory), false);
         Ticket ticket = data.getRight();
         model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view")))//
                 .addAttribute("reservation", data.getMiddle())//

@@ -77,6 +77,7 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.lang3.time.DateUtils.addDays;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
 
@@ -671,6 +672,10 @@ public class TicketReservationManager {
     public int maxAmountOfTickets(Event event) {
         return configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event), 5);
     }
+
+    public int maxAmountOfTicketsForCategory(int organizationId, int eventId, int ticketCategoryId) {
+        return configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(organizationId, eventId, ticketCategoryId), 5);
+    }
     
     public Optional<TicketReservation> findById(String reservationId) {
         return optionally(() -> ticketReservationRepository.findReservationById(reservationId));
@@ -851,6 +856,7 @@ public class TicketReservationManager {
                     return Triple.of(reservation, event, locale);
                 })
                 .filter(p -> p.getMiddle().isPresent())
+                .filter(p -> truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.offlineReminderHours(p.getMiddle().get()), 24)), Calendar.DATE).compareTo(p.getLeft().getValidity()) >= 0)
                 .map(p -> Triple.of(p.getLeft(), p.getMiddle().get(), p.getRight().get()))
                 .forEach(p -> {
                     TicketReservation reservation = p.getLeft();

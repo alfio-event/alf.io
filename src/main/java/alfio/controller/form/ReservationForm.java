@@ -30,6 +30,7 @@ import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.BindingResult;
 
 import javax.servlet.http.HttpServletRequest;
@@ -80,6 +81,16 @@ public class ReservationForm {
 
         if (selectionCount > maxAmountOfTicket) {
             bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM, new Object[] { maxAmountOfTicket }, null);
+            return Optional.empty();
+        }
+
+        Optional<Pair<TicketReservationModification, Integer>> error = selected().stream()
+            .map(r -> Pair.of(r, tickReservationManager.maxAmountOfTicketsForCategory(event.getOrganizationId(), event.getId(), r.getTicketCategoryId())))
+            .filter(p -> p.getKey().getAmount() > p.getValue())
+            .findAny();
+
+        if(error.isPresent()) {
+            bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM, new Object[] { error.get().getValue() }, null);
             return Optional.empty();
         }
 

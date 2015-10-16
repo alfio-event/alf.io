@@ -1,6 +1,6 @@
 <div class="container">
     <div class="page-header">
-        <h1>Plugin Log</h1>
+        <h1>Plugin Log for {{ctrl.event.displayName}}</h1>
         <small class="text-muted">Here you can monitor the activity of the active plugins</small>
     </div>
 
@@ -20,13 +20,13 @@
                         <input type="text" class="form-control" placeholder="Filter table" data-ng-model="ctrl.searchFilter">
                     </div>
                 </div>
+             </div>
         </div>
         <div class="clearfix"></div>
 
         <div class="table-responsive">
             <table class="table">
                 <thead>
-                    <th>event</th>
                     <th>Plugin ID</th>
                     <th>Message</th>
                     <th>Message type</th>
@@ -34,7 +34,6 @@
                 </thead>
                 <tbody>
                     <tr data-ng-repeat="entry in ctrl.logEntries | filter:ctrl.searchFilter" data-ng-class="{'text-success': entry.type === 'SUCCESS', 'text-danger': entry.type === 'ERROR', 'text-warning': entry.type === 'WARNING'}">
-                        <td data-ng-class-even="'active'">{{entry.eventName}}</td>
                         <td data-ng-class-even="'active'">{{entry.pluginId}}</td>
                         <td data-ng-class-even="'active'">{{entry.description}}</td>
                         <td data-ng-class-even="'active'">{{entry.type}}</td>
@@ -42,6 +41,9 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+        <div class="text-center">
+            <a class="btn btn-default" data-ui-sref="events.detail({eventName: ctrl.event.shortName})">back</a>
         </div>
     </div>
 </div>

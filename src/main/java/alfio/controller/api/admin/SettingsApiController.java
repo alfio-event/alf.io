@@ -60,7 +60,7 @@ public class SettingsApiController {
 
     @RequestMapping(value = "/configuration/update", method = POST)
     public boolean updateConfiguration(@RequestBody ConfigurationModification configuration) {
-        configurationManager.saveSystemConfiguration(ConfigurationKeys.fromValue(configuration.getKey()), configuration.getValue());
+        configurationManager.saveSystemConfiguration(ConfigurationKeys.fromString(configuration.getKey()), configuration.getValue());
         return true;
     }
 
@@ -96,6 +96,13 @@ public class SettingsApiController {
         return true;
     }
 
+    @RequestMapping(value = "/configuration/events/{eventId}/categories/{categoryId}/update", method = POST)
+    public boolean updateCategoryConfiguration(@PathVariable("categoryId") int categoryId, @PathVariable("eventId") int eventId,
+                                                    @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
+        configurationManager.saveCategoryConfiguration(categoryId, eventId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), principal.getName());
+        return true;
+    }
+
     @RequestMapping(value = "/configuration/events/{eventId}/categories/{categoryId}/load", method = GET)
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfiguration(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, Principal principal) {
         return configurationManager.loadCategoryConfig(eventId, categoryId, principal.getName());
@@ -113,7 +120,7 @@ public class SettingsApiController {
     }
 
     @RequestMapping(value = "/configuration/organization/{organizationId}/key/{key}", method = DELETE)
-    public boolean deleteKey(@PathVariable("organizationId") int organizationId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
+    public boolean deleteOrganizationLevelKey(@PathVariable("organizationId") int organizationId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
         configurationManager.deleteOrganizationLevelByKey(key.getValue(), organizationId, principal.getName());
         return true;
     }
@@ -121,6 +128,12 @@ public class SettingsApiController {
     @RequestMapping(value = "/configuration/event/{eventId}/key/{key}", method = DELETE)
     public boolean deleteEventLevelKey(@PathVariable("eventId") int eventId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
         configurationManager.deleteEventLevelByKey(key.getValue(), eventId, principal.getName());
+        return true;
+    }
+
+    @RequestMapping(value = "/configuration/event/{eventId}/category/{categoryId}/key/{key}", method = DELETE)
+    public boolean deleteCategoryLevelKey(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
+        configurationManager.deleteCategoryLevelByKey(key.getValue(), eventId, categoryId, principal.getName());
         return true;
     }
 
