@@ -10,63 +10,6 @@
 
     var directives = angular.module('adminDirectives', ['ui.bootstrap', 'adminServices']);
 
-    directives.directive("organizationsList", function() {
-        return {
-            scope: true,
-            templateUrl: '/resources/angular-templates/admin/partials/main/organizations.html',
-            controller: function($scope, $rootScope, OrganizationService) {
-                var loadOrganizations = function() {
-                    $scope.loading = true;
-                    OrganizationService.getAllOrganizations().success(function(result) {
-                        $scope.organizations = result;
-                        $scope.loading = false;
-                    });
-                };
-                $rootScope.$on('ReloadOrganizations', function(e) {
-                    loadOrganizations();
-                });
-                $scope.organizations = [];
-                loadOrganizations();
-            },
-            link: angular.noop
-        };
-    });
-    directives.directive("usersList", function() {
-        return {
-            scope: true,
-            templateUrl: '/resources/angular-templates/admin/partials/main/users.html',
-            controller: function($scope, $rootScope, UserService, $window) {
-                $scope.users = [];
-                var loadUsers = function() {
-                    $scope.loading = true;
-                    UserService.getAllUsers().success(function(result) {
-                        $scope.users = _.sortBy(result, 'username');
-                        $scope.loading=false;
-                    });
-                };
-                $rootScope.$on('ReloadUsers', function() {
-                    loadUsers();
-                });
-                loadUsers();
-                $scope.deleteUser = function(user) {
-                    if($window.confirm('The user '+user.username+' will be deleted. Are you sure?')) {
-                        UserService.deleteUser(user).success(function() {
-                            loadUsers();
-                        });
-                    }
-                };
-                $scope.resetPassword = function(user) {
-                    if($window.confirm('The password for the user '+ user.username+' will be reset. Are you sure?')) {
-                        UserService.resetPassword(user).success(function(reset) {
-                            UserService.showUserData(reset);
-                        })
-                    }
-                };
-            },
-            link: angular.noop
-        };
-    });
-
     directives.directive('eventsList', function() {
         return {
             scope: true,

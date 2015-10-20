@@ -8,7 +8,7 @@
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)'
     };
-    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration']);
+    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-users']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.otherwise("/");
@@ -16,42 +16,6 @@
             .state('index', {
                 url: "/",
                 templateUrl: BASE_TEMPLATE_URL + "/index.html"
-            })
-            .state('index.new-organization', {
-                url: "organizations/new",
-                views: {
-                    "newOrganization": {
-                        templateUrl: BASE_STATIC_URL + "/main/edit-organization.html",
-                        controller: 'EditOrganizationController'
-                    }
-                }
-            })
-            .state('index.edit-organization', {
-                url: "organizations/:organizationId/edit",
-                views: {
-                    "newOrganization": {
-                        templateUrl: BASE_STATIC_URL + "/main/edit-organization.html",
-                        controller: 'EditOrganizationController'
-                    }
-                }
-            })
-            .state('index.new-user', {
-                url: "users/new",
-                views: {
-                    "editUser": {
-                        templateUrl: BASE_STATIC_URL + "/main/edit-user.html",
-                        controller: 'EditUserController'
-                    }
-                }
-            })
-            .state('index.edit-user', {
-                url: "users/:userId/edit",
-                views: {
-                    "editUser": {
-                        templateUrl: BASE_STATIC_URL + "/main/edit-user.html",
-                        controller: 'EditUserController'
-                    }
-                }
             })
             .state('events', {
                 abstract: true,
@@ -195,81 +159,11 @@
         return deferred.promise;
     };
 
-    admin.controller('EditOrganizationController', function($scope, $state, $stateParams, $rootScope, $q, OrganizationService) {
-        var updateOrAction = OrganizationService.createOrganization;
-
-        if(angular.isDefined($stateParams.organizationId)) {
-            updateOrAction = OrganizationService.updateOrganization;
-            OrganizationService.getOrganization($stateParams.organizationId).success(function(result) {
-                $scope.organization = result;
-            });
-        }
-        $scope.organization = {};
-        $scope.save = function(form, organization) {
-            if(!form.$valid) {
-                return;
-            }
-            validationPerformer($q, OrganizationService.checkOrganization, organization, form).then(function() {
-                updateOrAction(organization).success(function() {
-                    $rootScope.$emit('ReloadOrganizations', {});
-                    $state.go('index');
-                });
-            }, angular.noop);
-        };
-        $scope.cancel = function() {
-            $state.go('index');
-        };
-    });
-
     admin.controller('MenuController', function($scope) {
         $scope.menuCollapsed = true;
         $scope.toggleCollapse = function(currentStatus) {
             $scope.menuCollapsed = !currentStatus;
         };
-    });
-
-    admin.controller('EditUserController', function($scope, $state, $stateParams, $rootScope, $q, OrganizationService, UserService) {
-        if(angular.isDefined($stateParams.userId)) {
-            UserService.loadUser($stateParams.userId).success(function(result) {
-                $scope.user = result;
-            });
-        }
-        var organizations = [];
-        $scope.user = {};
-        $scope.organizations = [];
-        OrganizationService.getAllOrganizations().success(function(result) {
-            organizations = result;
-            $scope.organizations = result;
-        });
-
-        $scope.save = function(form, user) {
-            if(!form.$valid) {
-                return;
-            }
-
-            var successFn = function() {
-                $rootScope.$emit('ReloadUsers', {});
-                $state.go('index');
-            };
-
-            validationPerformer($q, UserService.checkUser, user, form).then(function() {
-                UserService.editUser(user).success(function(user) {
-                    if(angular.isDefined(user.password)) {
-                        UserService.showUserData(user).then(function() {
-                            successFn();
-                        });
-                    } else {
-                        successFn();
-                    }
-
-                });
-            }, angular.noop);
-        };
-
-        $scope.cancel = function() {
-            $state.go('index');
-        };
-
     });
 
     var createCategory = function(sticky, $scope, expirationExtractor) {

@@ -24,69 +24,10 @@
         }]);
     }]);
 
-    baseServices.service("OrganizationService", function($http, HttpErrorHandler) {
-        return {
-            getAllOrganizations : function() {
-                return $http.get('/admin/api/organizations.json').error(HttpErrorHandler.handle);
-            },
-            getOrganization: function(id) {
-                return $http.get('/admin/api/organizations/'+id+'.json').error(HttpErrorHandler.handle);
-            },
-            createOrganization : function(organization) {
-                return $http['post']('/admin/api/organizations/new', organization).error(HttpErrorHandler.handle);
-            },
-            updateOrganization : function(organization) {
-                return $http['post']('/admin/api/organizations/update', organization).error(HttpErrorHandler.handle);
-            },
-            checkOrganization : function(organization) {
-                return $http['post']('/admin/api/organizations/check', organization).error(HttpErrorHandler.handle);
-            }
-        };
-    });
-
     baseServices.service('PaymentProxyService', function($http, HttpErrorHandler) {
         return {
             getAllProxies : function() {
                 return $http.get('/admin/api/paymentProxies.json').error(HttpErrorHandler.handle);
-            }
-        };
-    });
-
-    baseServices.service('UserService', function($http, $modal, $window, HttpErrorHandler) {
-        return {
-            getAllUsers : function() {
-                return $http.get('/admin/api/users.json').error(HttpErrorHandler.handle);
-            },
-            editUser : function(user) {
-                var url = angular.isDefined(user.id) ? '/admin/api/users/edit' : '/admin/api/users/new';
-                return $http['post'](url, user).error(HttpErrorHandler.handle);
-            },
-            checkUser : function(user) {
-                return $http['post']('/admin/api/users/check', user).error(HttpErrorHandler.handle);
-            },
-            loadUser: function(userId) {
-                return $http.get('/admin/api/users/'+userId+'.json').error(HttpErrorHandler.handle);
-            },
-            deleteUser: function(user) {
-                return $http['delete']('/admin/api/users/'+user.id).error(HttpErrorHandler.handle);
-            },
-            resetPassword: function(user) {
-                return $http['put']('/admin/api/users/'+user.id+'/reset-password').error(HttpErrorHandler.handle);
-            },
-
-            showUserData: function(user) {
-                return $modal.open({
-                    size:'sm',
-                    templateUrl:'/resources/angular-templates/admin/partials/event/fragment/show-user-data-modal.html',
-                    backdrop: 'static',
-                    controller: function($scope) {
-                        $scope.baseUrl = $window.location.origin;
-                        $scope.user = user;
-                        $scope.ok = function() {
-                            $scope.$close(true);
-                        };
-                    }
-                }).result;
             }
         };
     });
@@ -178,6 +119,29 @@
                 return $http.get('/admin/api/location/map.json?lat='+latitude+'&long='+longitude).error(HttpErrorHandler.handle);
             }
         };
+    });
+
+    baseServices.service('ValidationService', function() {
+        return {
+            validationPerformer: function($q, validator, data, form) {
+                var deferred = $q.defer();
+                validator(data).success(this.validationResultHandler(form, deferred)).error(function(error) {
+                    deferred.reject(error);
+                });
+                return deferred.promise;
+            },
+            validationResultHandler: function(form, deferred) {
+                return function(validationResult) {
+                    if(validationResult.errorCount > 0) {
+                        angular.forEach(validationResult.validationErrors, function(error) {
+                            form.$setError(error.fieldName, error.message);
+                        });
+                        deferred.reject('invalid form');
+                    }
+                    deferred.resolve();
+                };
+            }
+        }
     });
 
     baseServices.service("HttpErrorHandler", function($rootScope, $log) {

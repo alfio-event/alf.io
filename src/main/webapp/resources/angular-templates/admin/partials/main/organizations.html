@@ -1,7 +1,7 @@
 <div>
     <a data-ui-sref="index.new-organization">add new organization</a>
 </div>
-<div class="text-center text-muted" data-ng-if="loading">
+<div class="text-center text-muted" data-ng-if="orgList.loading">
     <div class="wMarginTop">
         <i class="fa fa-cog fa-spin fa-3x"></i>
     </div>
@@ -17,10 +17,10 @@
             </tr>
         </thead>
         <tbody>
-            <tr data-ng-if="!organizations || organizations.length == 0">
+            <tr data-ng-if="!orgList.organizations || orgList.organizations.length == 0">
                 <td colspan="4">no organizations have been found. <a data-ui-sref="index.new-organization">Insert a new one</a></td>
             </tr>
-            <tr data-ng-repeat="organization in organizations">
+            <tr data-ng-repeat="organization in orgList.organizations">
                 <td>{{organization.name}}</td>
                 <td class="hidden-xs"><div class="organization-description" data-tooltip="{{organization.description}}">{{organization.description}}</div></td>
                 <td>{{organization.email}}</td>
