@@ -284,6 +284,5 @@ release {
     git {
         requireBranch = ''
         pushToRemote = 'origin'
-        pushToCurrentBranch = true
     }
 }
