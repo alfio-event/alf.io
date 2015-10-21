@@ -25,6 +25,7 @@ import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.user.Organization;
+import alfio.model.user.Role;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
@@ -63,7 +64,7 @@ public class IntegrationTestUtil {
 
         organizationRepository.create(organizationName, "org", "email@example.com");
         Organization organization = organizationRepository.findByName(organizationName).get(0);
-        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com");
+        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR);
 
         LocalDateTime expiration = LocalDateTime.now().plusDays(5).plusHours(1);
 
@@ -84,6 +85,6 @@ public class IntegrationTestUtil {
 
     public static void initAdminUser(UserRepository userRepository, AuthorityRepository authorityRepository) {
         userRepository.create(UserManager.ADMIN_USERNAME, "", "The", "Administrator", "admin@localhost", true);
-        authorityRepository.create(UserManager.ADMIN_USERNAME, AuthorityRepository.ROLE_ADMIN);
+        authorityRepository.create(UserManager.ADMIN_USERNAME, Role.ADMIN.getRoleName());
     }
 }

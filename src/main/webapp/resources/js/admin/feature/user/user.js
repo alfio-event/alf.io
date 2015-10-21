@@ -92,12 +92,13 @@
                 self.user = result;
             });
         }
-        var organizations = [];
         self.user = {};
         self.organizations = [];
-        OrganizationService.getAllOrganizations().success(function(result) {
-            organizations = result;
-            self.organizations = result;
+        self.roles = [];
+
+        $q.all([OrganizationService.getAllOrganizations(), UserService.getAllRoles()]).then(function(results) {
+            self.organizations = results[0].data;
+            self.roles = results[1].data;
         });
 
         self.save = function(form, user) {
@@ -130,7 +131,7 @@
 
     }
 
-    EditUserController.$inject = ['$state', '$stateParams', '$rootScope', '$q', 'OrganizationService', 'UserService', 'ValidationService'];
+    EditUserController.$inject = ['$state', '$stateParams', '$rootScope', '$q', 'OrganizationService', 'UserService', 'ValidationService', '$q'];
 
     function OrganizationService($http, HttpErrorHandler) {
         return {
@@ -156,6 +157,9 @@
 
     function UserService($http, $modal, $window, HttpErrorHandler) {
         return {
+            getAllRoles: function() {
+                return $http.get('/admin/api/roles.json').error(HttpErrorHandler.handle);
+            },
             getAllUsers : function() {
                 return $http.get('/admin/api/users.json').error(HttpErrorHandler.handle);
             },

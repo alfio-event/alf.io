@@ -5,6 +5,11 @@
         <field-error data-form-obj="editUser" data-field-obj="editUser.organizationId"></field-error>
     </div>
     <div class="form-group">
+        <label for="role">Role</label>
+        <select data-ng-model="editUserCtrl.user.role" name="role" class="form-control" id="role" data-required data-ng-options="role for role in editUserCtrl.roles"></select>
+        <field-error data-form-obj="editUser" data-field-obj="editUser.role"></field-error>
+    </div>
+    <div class="form-group">
         <label for="username">Username</label>
         <input type="text" data-ng-model="editUserCtrl.user.username" name="username" id="username" class="form-control" required data-ng-minlength="2" />
         <field-error data-form-obj="editUser" data-field-obj="editUser.username" data-min-char="2"></field-error>

@@ -16,16 +16,21 @@
  */
 package alfio.model.user;
 
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
-@Getter
-public class Authority {
-    private final String username;
-    private final Role role;
+import java.util.Arrays;
 
-    public Authority(@Column("username") String username, @Column("role") String roleName) {
-        this.username = username;
-        this.role = Role.fromRoleName(roleName);
+@Getter
+public enum Role {
+    ADMIN("ROLE_ADMIN"), OWNER("ROLE_OWNER"), OPERATOR("ROLE_OPERATOR");
+
+    private final String roleName;
+
+    Role(String roleName) {
+        this.roleName = roleName;
+    }
+
+    public static Role fromRoleName(String roleName) {
+        return Arrays.stream(values()).filter(r -> r.getRoleName().equals(roleName)).findFirst().orElse(OPERATOR);
     }
 }

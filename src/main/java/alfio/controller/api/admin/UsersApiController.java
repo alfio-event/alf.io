@@ -20,12 +20,14 @@ import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.modification.UserModification;
 import alfio.model.user.Organization;
+import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.model.user.UserWithPassword;
 import alfio.util.ImageUtil;
 import alfio.util.Json;
 import alfio.util.ValidationResult;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -34,10 +36,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.security.Principal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
@@ -62,6 +61,11 @@ public class UsersApiController {
     public String unhandledException(Exception e) {
         log.error("unhandled exception", e);
         return e.getMessage();
+    }
+
+    @RequestMapping(value = "/roles", method = GET)
+    public Collection<Role> getAllRoles(Principal principal) {
+        return userManager.getAvailableRoles(principal.getName());
     }
 
     @RequestMapping(value = "/organizations", method = GET)
@@ -101,19 +105,21 @@ public class UsersApiController {
     @RequestMapping(value = "/users/check", method = POST)
     public ValidationResult validateUser(@RequestBody UserModification userModification) {
         return userManager.validateUser(userModification.getId(), userModification.getUsername(),
-                userModification.getOrganizationId(), userModification.getFirstName(),
+                userModification.getOrganizationId(), userModification.getRole(), userModification.getFirstName(),
                 userModification.getLastName(), userModification.getEmailAddress());
     }
 
     @RequestMapping(value = "/users/edit", method = POST)
-    public String editUser(@RequestBody UserModification userModification) {
-        userManager.editUser(userModification.getId(), userModification.getOrganizationId(), userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress());
+    public String editUser(@RequestBody UserModification userModification, Principal principal) {
+        userManager.editUser(userModification.getId(), userModification.getOrganizationId(), userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress(), Role.valueOf(userModification.getRole()), principal.getName());
         return OK;
     }
 
     @RequestMapping(value = "/users/new", method = POST)
-    public UserWithPassword insertUser(@RequestBody UserModification userModification, HttpSession session) {
-        UserWithPassword userWithPassword = userManager.insertUser(userModification.getOrganizationId(), userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress());
+    public UserWithPassword insertUser(@RequestBody UserModification userModification, HttpSession session, Principal principal) {
+        Role requested = Role.valueOf(userModification.getRole());
+        Validate.isTrue(userManager.getAvailableRoles(principal.getName()).stream().anyMatch(requested::equals), String.format("Requested role %s is not available for current user", userModification.getRole()));
+        UserWithPassword userWithPassword = userManager.insertUser(userModification.getOrganizationId(), userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress(), requested);
         storePasswordImage(session, userWithPassword);
         return userWithPassword;
     }
@@ -148,7 +154,7 @@ public class UsersApiController {
     public UserModification loadUser(@PathVariable("id") int userId) {
         User user = userManager.findUser(userId);
         List<Organization> userOrganizations = userManager.findUserOrganizations(user);
-        return new UserModification(user.getId(), userOrganizations.get(0).getId(), user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress());
+        return new UserModification(user.getId(), userOrganizations.get(0).getId(), userManager.getUserRole(user).name(), user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress());
     }
 
     @RequestMapping(value = "/users/{id}/reset-password", method = PUT)

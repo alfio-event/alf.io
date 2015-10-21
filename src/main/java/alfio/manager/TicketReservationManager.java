@@ -34,6 +34,7 @@ import alfio.model.modification.TicketWithStatistic;
 import alfio.model.system.Configuration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
+import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -795,7 +796,7 @@ public class TicketReservationManager {
     }
 
     private boolean isAdmin(Optional<UserDetails> userDetails) {
-        return userDetails.flatMap(u -> u.getAuthorities().stream().filter(a -> AuthorityRepository.ROLE_ADMIN.equals(a.getAuthority())).findFirst()).isPresent();
+        return userDetails.flatMap(u -> u.getAuthorities().stream().map(a -> Role.fromRoleName(a.getAuthority())).filter(Role.ADMIN::equals).findFirst()).isPresent();
     }
 
     private void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder, PartialTicketPDFGenerator pdfTemplateGenerator) {

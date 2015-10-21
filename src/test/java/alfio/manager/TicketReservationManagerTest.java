@@ -29,6 +29,7 @@ import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
+import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -88,7 +89,7 @@ public class TicketReservationManagerTest {{
             TicketReservation reservation = mock(TicketReservation.class);
             when(original.getTicketsReservationId()).thenReturn(ticketReservationId);
             when(ticketReservationRepository.findReservationById(eq(ticketReservationId))).thenReturn(reservation);
-            UserDetails userDetails = new User("user", "password", singletonList(new SimpleGrantedAuthority(AuthorityRepository.ROLE_ADMIN)));
+            UserDetails userDetails = new User("user", "password", singletonList(new SimpleGrantedAuthority(Role.ADMIN.getRoleName())));
             trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null,(b) -> null, (c) -> null, Optional.of(userDetails));
             verify(messageSource, never()).getMessage(eq("ticket-has-changed-owner-subject"), eq(new Object[] {"short-name"}), eq(Locale.ITALIAN));
         });
