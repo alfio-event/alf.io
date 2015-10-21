@@ -26,6 +26,7 @@ import alfio.model.user.UserWithPassword;
 import alfio.util.ImageUtil;
 import alfio.util.Json;
 import alfio.util.ValidationResult;
+import lombok.experimental.Delegate;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,7 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
@@ -64,8 +66,8 @@ public class UsersApiController {
     }
 
     @RequestMapping(value = "/roles", method = GET)
-    public Collection<Role> getAllRoles(Principal principal) {
-        return userManager.getAvailableRoles(principal.getName());
+    public Collection<RoleDescriptor> getAllRoles(Principal principal) {
+        return userManager.getAvailableRoles(principal.getName()).stream().map(RoleDescriptor::new).collect(Collectors.toList());
     }
 
     @RequestMapping(value = "/organizations", method = GET)
@@ -166,5 +168,21 @@ public class UsersApiController {
 
     private void storePasswordImage(HttpSession session, UserWithPassword userWithPassword) {
         session.setAttribute(USER_WITH_PASSWORD_KEY, userWithPassword);
+    }
+
+    static final class RoleDescriptor {
+        private final Role role;
+
+        RoleDescriptor(Role role) {
+            this.role = role;
+        }
+
+        public String getRole() {
+            return role.name();
+        }
+
+        public String getDescription() {
+            return role.getDescription();
+        }
     }
 }

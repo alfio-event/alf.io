@@ -6,7 +6,7 @@
     </div>
     <div class="form-group">
         <label for="role">Role</label>
-        <select data-ng-model="editUserCtrl.user.role" name="role" class="form-control" id="role" data-required data-ng-options="role for role in editUserCtrl.roles"></select>
+        <select data-ng-model="editUserCtrl.user.role" name="role" class="form-control" id="role" data-required data-ng-options="r.role as r.description for r in editUserCtrl.roles"></select>
         <field-error data-form-obj="editUser" data-field-obj="editUser.role"></field-error>
     </div>
     <div class="form-group">
