@@ -26,6 +26,9 @@ import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.util.Comparator;
+import java.util.Optional;
+
 @Getter
 public class Configuration implements Comparable<Configuration> {
 
@@ -193,188 +196,48 @@ public class Configuration implements Comparable<Configuration> {
         return new ConfigurationPathKey(organization(organizationId), configurationKey);
     }
 
-    public static ConfigurationPathKey getEventConfiguration(Event event, ConfigurationKeys configurationKey) {
+    public static ConfigurationPathKey getEventConfiguration(int organizationId, int eventId, ConfigurationKeys configurationKey) {
         Validate.isTrue(configurationKey.supports(ConfigurationPathLevel.EVENT));
-        return new ConfigurationPathKey(event(event), configurationKey);
+        return new ConfigurationPathKey(new EventConfigurationPath(organizationId, eventId), configurationKey);
     }
 
-    public static ConfigurationPathKey getTicketCategoryConfiguration(Event event, TicketCategory ticketCategory, ConfigurationKeys configurationKey) {
+    public static ConfigurationPathKey getTicketCategoryConfiguration(int organizationId, int eventId, int ticketCategoryId, ConfigurationKeys configurationKey) {
         Validate.isTrue(configurationKey.supports(ConfigurationPathLevel.TICKET_CATEGORY));
-        return new ConfigurationPathKey(ticketCategory(event.getOrganizationId(), event.getId(), ticketCategory.getId()), configurationKey);
+        return new ConfigurationPathKey(ticketCategory(organizationId, eventId, ticketCategoryId), configurationKey);
     }
 
-    public static ConfigurationPathKey initCompleted() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.INIT_COMPLETED);
+    public static ConfigurationPathKey from(int organizationId, ConfigurationKeys key) {
+        return from(Optional.of(organizationId), Optional.empty(), Optional.empty(), key);
     }
 
-    public static ConfigurationPathKey supportedLanguages() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.SUPPORTED_LANGUAGES);
+    public static ConfigurationPathKey from(int organizationId, int eventId, ConfigurationKeys key) {
+        return from(Optional.of(organizationId), Optional.of(eventId), Optional.empty(), key);
     }
 
-    public static ConfigurationPathKey baseUrl() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.BASE_URL);
+    public static ConfigurationPathKey from(int organizationId, int eventId, int ticketCategoryId, ConfigurationKeys key) {
+        return from(Optional.of(organizationId), Optional.of(eventId), Optional.of(ticketCategoryId), key);
     }
 
-    public static ConfigurationPathKey vatNr(int organizationId) {
-        return new ConfigurationPathKey(organization(organizationId), ConfigurationKeys.VAT_NR);
-    }
-
-    // --- google maps ---
-
-    public static ConfigurationPathKey mapsServerApiKey() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.MAPS_SERVER_API_KEY);
-    }
-
-    public static ConfigurationPathKey mapsClientApiKey() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.MAPS_CLIENT_API_KEY);
-    }
-
-    // --- end google maps ---
-
-    // --- stripe ---
-
-    public static ConfigurationPathKey stripeSecretKey() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.STRIPE_SECRET_KEY);
-    }
-
-    public static ConfigurationPathKey stripePublicKey() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.STRIPE_PUBLIC_KEY);
-    }
-
-    // --- end stripe ---
-
-    public static ConfigurationPathKey specialPriceCodeLength() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.SPECIAL_PRICE_CODE_LENGTH);
-    }
-
-    public static ConfigurationPathKey maxAmountOfTicketsByReservation(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
-    }
-
-    public static ConfigurationPathKey maxAmountOfTicketsByReservation(int organizationId, int eventId, int ticketCategoryId) {
-        return new ConfigurationPathKey(ticketCategory(organizationId, eventId, ticketCategoryId), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
-    }
-
-    public static ConfigurationPathKey assignmentReminderStart(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.ASSIGNMENT_REMINDER_START);
-    }
-
-    public static ConfigurationPathKey assignmentReminderInterval(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL);
-    }
-
-    public static ConfigurationPathKey reservationTimeout(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.RESERVATION_TIMEOUT);
-    }
-
-    public static ConfigurationPathKey mailerType() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.MAILER_TYPE);
-    }
-
-    public static ConfigurationPathKey maxEmailPerCycle() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.MAX_EMAIL_PER_CYCLE);
-    }
-
-    public static ConfigurationPathKey mailReplyTo(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.MAIL_REPLY_TO);
-    }
-
-    // --- smtp related ---
-
-    public static ConfigurationPathKey smtpHost() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.SMTP_HOST);
-    }
-
-    public static ConfigurationPathKey smtpPort() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.SMTP_PORT);
-    }
-
-    public static ConfigurationPathKey smtpProtocol() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.SMTP_PROTOCOL);
-    }
-
-    public static ConfigurationPathKey smtpUsername() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.SMTP_USERNAME);
-    }
-
-    public static ConfigurationPathKey smtpPassword() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.SMTP_PASSWORD);
-    }
-
-    public static ConfigurationPathKey smtpFromEmail(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.SMTP_FROM_EMAIL);
-    }
-
-    public static ConfigurationPathKey smtpProperties() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.SMTP_PROPERTIES);
-    }
-
-    // --- end smtp related ---
-
-    public static ConfigurationPathKey offlinePaymentDays(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.OFFLINE_PAYMENT_DAYS);
-    }
-
-    public static ConfigurationPathKey offlineReminderHours() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.OFFLINE_REMINDER_HOURS);
-    }
-
-    public static ConfigurationPathKey offlineReminderHours(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.OFFLINE_REMINDER_HOURS);
-    }
-
-    public static ConfigurationPathKey bankAccountNr(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.BANK_ACCOUNT_NR);
-    }
-
-    public static ConfigurationPathKey partialReservationIdLength() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.PARTIAL_RESERVATION_ID_LENGTH);
-    }
-
-    // --- mailgun related ---
-    public static ConfigurationPathKey mailgunKey() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.MAILGUN_KEY);
-    }
-
-    public static ConfigurationPathKey mailgunDomain() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.MAILGUN_DOMAIN);
-    }
-
-    public static ConfigurationPathKey mailgunFrom(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.MAILGUN_FROM);
-    }
-    // --- end mailgun related ---
-
-    public static ConfigurationPathKey googleAnalyticsKey() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.GOOGLE_ANALYTICS_KEY);
-    }
-
-    public static ConfigurationPathKey googleAnalyticsKey(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.GOOGLE_ANALYTICS_KEY);
-    }
-
-    public static ConfigurationPathKey googleAnalyticsAnonymousMode() {
-        return new ConfigurationPathKey(system(), ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE);
-    }
-
-    public static ConfigurationPathKey allowFreeTicketsCancellation(Event event, TicketCategory category) {
-        return new ConfigurationPathKey(ticketCategory(event.getOrganizationId(), event.getId(), category.getId()), ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION);
-    }
-
-    public static ConfigurationPathKey enableWaitingQueue(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.ENABLE_WAITING_QUEUE);
-    }
-
-    public static ConfigurationPathKey enablePreRegistration(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.ENABLE_PRE_REGISTRATION);
-    }
-
-    public static ConfigurationPathKey notifyForEachWaitingQueueSubscription(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.ENABLE_WAITING_QUEUE_NOTIFICATION);
-    }
-
-    public static ConfigurationPathKey waitingQueueReservationTimeout(Event event) {
-        return new ConfigurationPathKey(event(event), ConfigurationKeys.WAITING_QUEUE_RESERVATION_TIMEOUT);
+    private static ConfigurationPathKey from(Optional<Integer> organizationId, Optional<Integer> eventId, Optional<Integer> ticketCategoryId, ConfigurationKeys key) {
+        boolean organizationAvailable = organizationId.isPresent();
+        boolean eventAvailable = eventId.isPresent();
+        boolean categoryAvailable = ticketCategoryId.isPresent();
+        ConfigurationPathLevel mostSensible = key.getPathLevels()
+            .stream()
+            .sorted(Comparator.<ConfigurationPathLevel>naturalOrder().reversed())
+            .filter(path -> path == ConfigurationPathLevel.ORGANIZATION && organizationAvailable
+                || path == ConfigurationPathLevel.EVENT && organizationAvailable && eventAvailable
+                || path == ConfigurationPathLevel.TICKET_CATEGORY && organizationAvailable && eventAvailable && categoryAvailable)
+            .findFirst().orElseGet(() -> ConfigurationPathLevel.SYSTEM);
+        switch(mostSensible) {
+            case ORGANIZATION:
+                return getOrganizationConfiguration(organizationId.get(), key);
+            case EVENT:
+                return getEventConfiguration(organizationId.get(), eventId.get(), key);
+            case TICKET_CATEGORY:
+                return getTicketCategoryConfiguration(organizationId.get(), eventId.get(), ticketCategoryId.get(), key);
+        }
+        return getSystemConfiguration(key);
     }
 
 }

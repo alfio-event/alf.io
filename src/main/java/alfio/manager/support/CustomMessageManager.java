@@ -84,7 +84,7 @@ public class CustomMessageManager {
                     model.addAttribute("organizationName", organization.getName());
                     model.addAttribute("organizationEmail", organization.getEmail());
                     model.addAttribute("reservationURL", ticketReservationManager.reservationUrl(t.getTicketsReservationId(), event));
-                    model.addAttribute("reservationID", ticketReservationManager.getShortReservationID(t.getTicketsReservationId()));
+                    model.addAttribute("reservationID", ticketReservationManager.getShortReservationID(event, t.getTicketsReservationId()));
                     model.addAttribute("ticketURL", ticketReservationManager.ticketUpdateUrl(t.getTicketsReservationId(), event, t.getUuid()));
                     return Triple.of(t.getUserLanguage(), t.getEmail(), model);
                 })

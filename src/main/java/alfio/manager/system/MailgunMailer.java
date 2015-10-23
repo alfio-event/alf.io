@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
 
+import static alfio.model.system.ConfigurationKeys.*;
+
 @Log4j2
 @AllArgsConstructor
 class MailgunMailer implements Mailer {
@@ -40,14 +42,14 @@ class MailgunMailer implements Mailer {
             Optional<String> html, Attachment... attachments)
             throws IOException {
 
-        String from = event.getDisplayName() + " <" + configurationManager.getRequiredValue(Configuration.mailgunFrom(event)) +">";
+        String from = event.getDisplayName() + " <" + configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_FROM)) +">";
 
         if (ArrayUtils.isEmpty(attachments)) {
             FormEncodingBuilder builder = new FormEncodingBuilder()
                     .add("from", from).add("to", to).add("subject", subject)
                     .add("text", text);
 
-            String replyTo = configurationManager.getStringConfigValue(Configuration.mailReplyTo(event), "");
+            String replyTo = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAIL_REPLY_TO), "");
             if(StringUtils.isNotBlank(replyTo)) {
                 builder.add("h:Reply-To", replyTo);
             }
@@ -81,8 +83,8 @@ class MailgunMailer implements Mailer {
     public void send(Event event, String to, String subject, String text,
             Optional<String> html, Attachment... attachment) {
 
-        String apiKey = configurationManager.getRequiredValue(Configuration.mailgunKey());
-        String domain = configurationManager.getRequiredValue(Configuration.mailgunDomain());
+        String apiKey = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_KEY));
+        String domain = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_DOMAIN));
 
         try {
 

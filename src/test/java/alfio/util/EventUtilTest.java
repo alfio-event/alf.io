@@ -33,6 +33,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
+import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
+import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.*;
@@ -65,7 +67,7 @@ public class EventUtilTest {
             when(first.getUtcInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now().plusHours(2));
 
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enableWaitingQueue(event)), eq(false))).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
             expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE)).is(true);
         });
 
@@ -79,7 +81,7 @@ public class EventUtilTest {
             when(first.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(first.getUtcInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now().plusHours(2));
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enableWaitingQueue(event)), eq(false))).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
             expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE)).is(true);
         });
         it.should("display the waiting queue form if the only category is not expired and sold-out", expect -> {
@@ -89,7 +91,7 @@ public class EventUtilTest {
             when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));
             when(last.getUtcInception()).thenReturn(ZonedDateTime.now().minusDays(1));
             when(last.getAvailableTickets()).thenReturn(0);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enableWaitingQueue(event)), eq(false))).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
             expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE)).is(true);
         });
         it.should("not display the waiting queue form if there are yet available seats", expect -> {
@@ -99,7 +101,7 @@ public class EventUtilTest {
             when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));
             when(last.getUtcInception()).thenReturn(ZonedDateTime.now().minusDays(1));
             when(last.getAvailableTickets()).thenReturn(1);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enableWaitingQueue(event)), eq(false))).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
             expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_AVAILABLE)).is(false);
         });
         it.should("not display the waiting queue form if the last category is expired", expect -> {
@@ -112,7 +114,7 @@ public class EventUtilTest {
             when(first.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(first.getUtcInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now().minusDays(1).minusHours(1));
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enableWaitingQueue(event)), eq(false))).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
             expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE)).is(false);
         });
         it.should("not display the waiting queue form if the only category is not expired", expect -> {
@@ -122,7 +124,7 @@ public class EventUtilTest {
             when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(last.getUtcInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(last.getAvailableTickets()).thenReturn(0);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enableWaitingQueue(event)), eq(false))).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
             expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE)).is(false);
         });
         it.should("not display the waiting queue form if the category list is empty", expect -> {
@@ -132,7 +134,7 @@ public class EventUtilTest {
             when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(last.getUtcInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(last.getAvailableTickets()).thenReturn(0);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enableWaitingQueue(event)), eq(false))).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
             expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE)).is(false);
         });
         it.should("not display the waiting queue form if the waiting queue is disabled", expect -> {
@@ -141,7 +143,7 @@ public class EventUtilTest {
             when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now().minusDays(1));
             when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
             when(last.getUtcInception()).thenReturn(ZonedDateTime.now().minusDays(2));
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enableWaitingQueue(event)), eq(false))).thenReturn(false);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(false);
             expect.that(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE)).is(false);
         });
 
@@ -149,7 +151,7 @@ public class EventUtilTest {
 
         it.should("display the waiting queue form before sales start", expect -> {
             List<SaleableTicketCategory> categories = Collections.singletonList(last);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enablePreRegistration(event)), eq(false))).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(true);
             when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
             when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
             when(last.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(1));
@@ -160,7 +162,7 @@ public class EventUtilTest {
 
         it.should("display the waiting queue form before sales start (2 categories)", expect -> {
             List<SaleableTicketCategory> categories = asList(first, last);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enablePreRegistration(event)), eq(false))).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(true);
             when(first.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
             when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
             when(first.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(1));
@@ -176,7 +178,7 @@ public class EventUtilTest {
 
         it.should("not display the waiting queue form before sales start if pre-registration is not enabled", expect -> {
             List<SaleableTicketCategory> categories = Collections.singletonList(last);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enablePreRegistration(event)), eq(false))).thenReturn(false);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(false);
             when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
             when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
             when(last.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(1));
@@ -187,7 +189,7 @@ public class EventUtilTest {
 
         it.should("not display the waiting queue form after sales start", expect -> {
             List<SaleableTicketCategory> categories = Collections.singletonList(last);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enablePreRegistration(event)), eq(false))).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(true);
             when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
             when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
             when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));
@@ -198,7 +200,7 @@ public class EventUtilTest {
 
         it.should("not display the waiting queue form after sales start (two categories)", expect -> {
             List<SaleableTicketCategory> categories = asList(first, last);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.enablePreRegistration(event)), eq(false))).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(true);
             when(first.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
             when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
             when(first.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));

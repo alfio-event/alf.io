@@ -38,7 +38,6 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.apache.logging.log4j.Level;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DuplicateKeyException;
@@ -51,6 +50,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.EventUtil.determineAvailableSeats;
 
 @Component
@@ -118,7 +118,7 @@ public class WaitingQueueManager {
         model.put("organization", organization);
         notificationManager.sendSimpleEmail(event, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getDisplayName()}, userLanguage),
                 () -> templateManager.renderClassPathResource("/alfio/templates/waiting-queue-joined.ms", model, userLanguage, TemplateManager.TemplateOutput.TEXT));
-        if(configurationManager.getBooleanConfigValue(Configuration.notifyForEachWaitingQueueSubscription(event), false)) {
+        if(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE_NOTIFICATION), false)) {
             String adminTemplate = messageSource.getMessage("email-waiting-queue.subscribed.admin.text",
                     new Object[] {subscriptionType, event.getDisplayName()}, Locale.ENGLISH);
             notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-waiting-queue.subscribed.admin.subject",
@@ -139,7 +139,7 @@ public class WaitingQueueManager {
 
     private void validateSubscriptionType(Event event, WaitingQueueSubscription.Type type) {
         if(type == WaitingQueueSubscription.Type.PRE_SALES) {
-            Validate.isTrue(configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false), "PRE_SALES Waiting queue is not active");
+            Validate.isTrue(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false), "PRE_SALES Waiting queue is not active");
         } else {
             Validate.isTrue(eventStatisticsManager.noSeatsAvailable().test(event), "SOLD_OUT Waiting queue is not active");
         }
@@ -162,7 +162,7 @@ public class WaitingQueueManager {
             ticketRepository.revertToFree(eventId);
         } else if (waitingPeople > 0 && waitingTickets > 0) {
             return distributeAvailableSeats(event, waitingPeople, waitingTickets);
-        } else if(subscriptions.stream().anyMatch(WaitingQueueSubscription::isPreSales) && configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false)) {
+        } else if(subscriptions.stream().anyMatch(WaitingQueueSubscription::isPreSales) && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false)) {
             return handlePreReservation(event, waitingPeople, waitingTickets);
         }
         return Stream.empty();
@@ -219,7 +219,7 @@ public class WaitingQueueManager {
         log.debug("processing {} subscribers from waiting queue", availableSeats);
         Iterator<Ticket> tickets = ticketRepository.selectWaitingTicketsForUpdate(eventId, status.name(), availableSeats).iterator();
         Optional<TicketCategory> unboundedCategory = ticketCategoryRepository.findUnboundedOrderByExpirationDesc(eventId).stream().findFirst();
-        int expirationTimeout = configurationManager.getIntConfigValue(Configuration.waitingQueueReservationTimeout(event), 4);
+        int expirationTimeout = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), WAITING_QUEUE_RESERVATION_TIMEOUT), 4);
         ZonedDateTime expiration = ZonedDateTime.now(event.getZoneId()).plusHours(expirationTimeout).with(WorkingDaysAdjusters.defaultWorkingDays());
 
         if(!tickets.hasNext()) {

@@ -66,6 +66,9 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
+import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
+
 @Controller
 public class ReservationController {
 
@@ -130,7 +133,7 @@ public class ReservationController {
             boolean includeStripe = !orderSummary.getFree() && event.getAllowedPaymentProxies().contains(PaymentProxy.STRIPE);
             model.addAttribute("includeStripe", includeStripe);
             if (includeStripe) {
-                model.addAttribute("stripe_p_key", stripeManager.getPublicKey());
+                model.addAttribute("stripe_p_key", stripeManager.getPublicKey(event));
             }
             Map<String, Object> modelMap = model.asMap();
             modelMap.putIfAbsent("paymentForm", new PaymentForm());
@@ -179,7 +182,7 @@ public class ReservationController {
                     tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
                             .map((e) -> {
                                 TicketCategory category = eventManager.getTicketCategoryById(e.getKey(), event.get().getId());
-                                return Pair.of(category, TicketDecorator.decorate(e.getValue(), configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(ev, category), false), eventManager.checkTicketCancellationPrerequisites()));
+                                return Pair.of(category, TicketDecorator.decorate(e.getValue(), configurationManager.getBooleanConfigValue(Configuration.from(event.get().getOrganizationId(), event.get().getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false), eventManager.checkTicketCancellationPrerequisites()));
                             })
                             .collect(Collectors.toList()));
             model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
@@ -276,9 +279,9 @@ public class ReservationController {
             model.addAttribute("totalPrice", orderSummary.getTotalPrice());
             model.addAttribute("emailAddress", organizationRepository.getById(ev.getOrganizationId()).getEmail());
             model.addAttribute("reservation", ticketReservation);
-            model.addAttribute("paymentReason", ev.getShortName() + " " + ticketReservationManager.getShortReservationID(reservationId));
+            model.addAttribute("paymentReason", ev.getShortName() + " " + ticketReservationManager.getShortReservationID(ev, reservationId));
             model.addAttribute("pageTitle", "reservation-page-waiting.header.title");
-            model.addAttribute("bankAccount", configurationManager.getStringConfigValue(Configuration.bankAccountNr(ev)).orElse(""));
+            model.addAttribute("bankAccount", configurationManager.getStringConfigValue(Configuration.from(ev.getOrganizationId(), ev.getId(), BANK_ACCOUNT_NR)).orElse(""));
             model.addAttribute("expires", ZonedDateTime.ofInstant(ticketReservation.getValidity().toInstant(), ev.getZoneId()));
             model.addAttribute("event", ev);
             return "/event/reservation-waiting-for-payment";

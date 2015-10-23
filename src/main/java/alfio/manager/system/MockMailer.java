@@ -31,6 +31,9 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.ConfigurationKeys.MAIL_REPLY_TO;
+import static alfio.model.system.ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION;
+
 @Log4j2
 @Component
 @Profile(Initializer.PROFILE_DEV)
@@ -52,7 +55,7 @@ public class MockMailer implements Mailer {
             .stream().map(a -> "{filename:" +a.getFilename() + ", contentType: " + a.getContentType() + "}")
             .collect(Collectors.joining(", "));
 
-        log.info("Email: from: {}, replyTo: {}, to: {}, subject: {}, text: {}, html: {}, attachments: {}", event.getDisplayName(), configurationManager.getStringConfigValue(Configuration.mailReplyTo(event), ""), to, subject, text,
+        log.info("Email: from: {}, replyTo: {}, to: {}, subject: {}, text: {}, html: {}, attachments: {}", event.getDisplayName(), configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAIL_REPLY_TO), ""), to, subject, text,
             html.orElse("no html"), printedAttachments);
     }
 }

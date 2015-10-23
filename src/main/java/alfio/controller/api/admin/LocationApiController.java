@@ -21,6 +21,7 @@ import alfio.manager.location.LocationNotFound;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +66,7 @@ public class LocationApiController {
     }
 
     private Optional<String> getMapsClientApiKey() {
-        return configurationManager.getStringConfigValue(Configuration.mapsClientApiKey());
+        return configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.MAPS_CLIENT_API_KEY));
     }
 
     @RequestMapping(value = "/location/map", method = GET)

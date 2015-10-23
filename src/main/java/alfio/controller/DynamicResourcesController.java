@@ -17,6 +17,7 @@
 package alfio.controller;
 
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.ConfigurationPathKey;
 import alfio.repository.EventRepository;
@@ -31,6 +32,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.*;
+
+import static alfio.model.system.ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE;
+import static alfio.model.system.ConfigurationKeys.GOOGLE_ANALYTICS_KEY;
 
 @Controller
 public class DynamicResourcesController {
@@ -51,10 +55,12 @@ public class DynamicResourcesController {
     @RequestMapping("/resources/js/google-analytics")
     public void getGoogleAnalyticsScript(HttpSession session, HttpServletResponse response, @RequestParam("e") Integer eventId) throws IOException {
         response.setContentType("application/javascript");
-        ConfigurationPathKey pathKey = Optional.ofNullable(eventId).flatMap(id -> Optional.ofNullable(eventRepository.findById(id)).map(Configuration::googleAnalyticsKey)).orElseGet(Configuration::googleAnalyticsKey);
+        Optional<Event> ev = Optional.ofNullable(eventId).flatMap(id -> Optional.ofNullable(eventRepository.findById(id)));
+        ConfigurationPathKey pathKey = ev.map(e -> Configuration.from(e.getOrganizationId(), e.getId(), GOOGLE_ANALYTICS_KEY)).orElseGet(() -> Configuration.getSystemConfiguration(GOOGLE_ANALYTICS_KEY));
         final Optional<String> id = configurationManager.getStringConfigValue(pathKey);
         final String script;
-        if(id.isPresent() && configurationManager.getBooleanConfigValue(Configuration.googleAnalyticsAnonymousMode(), true)) {
+        ConfigurationPathKey anonymousPathKey = ev.map(e -> Configuration.from(e.getOrganizationId(), e.getId(), GOOGLE_ANALYTICS_ANONYMOUS_MODE)).orElseGet(() -> Configuration.getSystemConfiguration(GOOGLE_ANALYTICS_ANONYMOUS_MODE));
+        if(id.isPresent() && configurationManager.getBooleanConfigValue(anonymousPathKey, true)) {
             String trackingId = Optional.ofNullable(StringUtils.trimToNull((String)session.getAttribute("GA_TRACKING_ID"))).orElseGet(() -> UUID.randomUUID().toString());
             Map<String, Object> model = new HashMap<>();
             model.put("clientId", trackingId);

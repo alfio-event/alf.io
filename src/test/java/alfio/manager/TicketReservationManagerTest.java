@@ -27,11 +27,11 @@ import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.*;
-import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
@@ -48,6 +48,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
+import static alfio.model.system.ConfigurationKeys.*;
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -133,7 +134,7 @@ public class TicketReservationManagerTest {{
         it.should("send the reminder before event end", expect -> {
             Event event = it.usesMock(Event.class);
 
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
@@ -151,7 +152,7 @@ public class TicketReservationManagerTest {{
         it.should("not send the reminder after event end", expect -> {
             Event event = it.usesMock(Event.class);
 
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
@@ -169,7 +170,7 @@ public class TicketReservationManagerTest {{
         it.should("consider ZoneId while checking (valid)", expect -> {
             Event event = it.usesMock(Event.class);
 
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
@@ -186,7 +187,7 @@ public class TicketReservationManagerTest {{
 
         it.should("consider ZoneId while checking (expired)", expect -> {
             Event event = it.usesMock(Event.class);
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
@@ -205,7 +206,7 @@ public class TicketReservationManagerTest {{
     describe("offlinePaymentDeadline", it -> {
         ConfigurationManager configurationManager = mock(ConfigurationManager.class);
         Event event = mock(Event.class);
-        when(configurationManager.getIntConfigValue(eq(Configuration.offlinePaymentDays(event)), anyInt())).thenReturn(2);
+        when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_PAYMENT_DAYS)), anyInt())).thenReturn(2);
 
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
 
@@ -637,7 +638,7 @@ public class TicketReservationManagerTest {{
         when(ticket.getUserLanguage()).thenReturn("it");
         ConfigurationManager configurationManager = mock(ConfigurationManager.class);
         String baseUrl = "http://my-website/";
-        when(configurationManager.getRequiredValue(Configuration.baseUrl())).thenReturn(baseUrl);
+        when(configurationManager.getRequiredValue(Configuration.getSystemConfiguration(ConfigurationKeys.BASE_URL))).thenReturn(baseUrl);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
         TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
         TicketReservationManager trm = new TicketReservationManager(eventRepository, null, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, null, null, null, null, null, null, null, null, null, fileUploadManager, ticketFieldRepository);
@@ -675,7 +676,7 @@ public class TicketReservationManagerTest {{
         it.should("send the reminder if there weren't any notifications before", expect -> {
             Event event = it.usesMock(Event.class);
             when(event.getId()).thenReturn(eventId);
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             String reservationId = "abcd";
@@ -701,7 +702,7 @@ public class TicketReservationManagerTest {{
         it.should("not send the reminder if there was a notification before for the reservation", expect -> {
             Event event = it.usesMock(Event.class);
             when(event.getId()).thenReturn(eventId);
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.of(ZonedDateTime.now().minusDays(10)));
             String reservationId = "abcd";
@@ -725,7 +726,7 @@ public class TicketReservationManagerTest {{
         it.should("not send the reminder if there was a notification before", expect -> {
             Event event = it.usesMock(Event.class);
             when(event.getId()).thenReturn(eventId);
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             String reservationId = "abcd";
@@ -749,7 +750,7 @@ public class TicketReservationManagerTest {{
         it.should("not send the reminder if the ticket was already modified", expect -> {
             Event event = it.usesMock(Event.class);
             when(event.getId()).thenReturn(eventId);
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             String reservationId = "abcd";

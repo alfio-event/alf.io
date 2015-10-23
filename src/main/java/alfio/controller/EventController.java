@@ -30,6 +30,7 @@ import alfio.model.*;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
@@ -195,13 +196,13 @@ public class EventController {
         List<SaleableTicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
                 .filter((c) -> !c.isAccessRestricted() || (specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId()))
                 .map((m) -> new SaleableTicketCategory(m, ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(m.getId(), locale.getLanguage()).orElse(""),
-                    now, event, ticketReservationManager.countAvailableTickets(event, m), configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event.getOrganizationId(), event.getId(), m.getId()), 5), promoCodeDiscount))
+                    now, event, ticketReservationManager.countAvailableTickets(event, m), configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5), promoCodeDiscount))
                 .collect(Collectors.toList());
         //
 
 
         LocationDescriptor ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()),
-                configurationManager.getStringConfigValue(Configuration.mapsClientApiKey()));
+                configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAPS_CLIENT_API_KEY)));
         
         final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
                 promoCodeRepository.countByEventId(event.getId()) > 0;

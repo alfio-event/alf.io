@@ -66,6 +66,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.ConfigurationKeys.GOOGLE_ANALYTICS_KEY;
+
 @Configuration
 @ComponentScan(basePackages = {"alfio.controller", "alfio.config"})
 @EnableWebMvc
@@ -179,7 +181,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                     if(!StringUtils.startsWith(mv.getViewName(), "redirect:")) {
                         modelMap.putIfAbsent("pageTitle", "empty");
                         Event event = modelMap.get("event") == null ? null : modelMap.get("event") instanceof Event ? (Event) modelMap.get("event") : ((EventDescriptor) modelMap.get("event")).getEvent();
-                        ConfigurationPathKey googleAnalyticsKey = event != null ? alfio.model.system.Configuration.googleAnalyticsKey(event) : alfio.model.system.Configuration.googleAnalyticsKey();
+                        ConfigurationPathKey googleAnalyticsKey = Optional.ofNullable(event).map(e -> alfio.model.system.Configuration.from(e.getOrganizationId(), e.getId(), GOOGLE_ANALYTICS_KEY)).orElseGet(() -> alfio.model.system.Configuration.getSystemConfiguration(GOOGLE_ANALYTICS_KEY));
                         modelMap.putIfAbsent("analyticsEnabled", StringUtils.isNotBlank(configurationManager.getStringConfigValue(googleAnalyticsKey, "")));
                     }
                 });
