@@ -18,6 +18,7 @@ package alfio.model;
 
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 
 import java.util.Collections;
@@ -35,7 +36,7 @@ public class TicketFieldDescription {
     public TicketFieldDescription(@Column("ticket_field_configuration_id_fk") int ticketFieldConfigurationId,
                                   @Column("description") String description) {
         this.ticketFieldConfigurationId = ticketFieldConfigurationId;
-        this.description = Json.GSON.fromJson(description, Map.class);
+        this.description = Json.GSON.fromJson(description, new TypeToken<Map<String, Object>>(){}.getType());
     }
 
 
@@ -51,6 +52,7 @@ public class TicketFieldDescription {
         return description.get("placeholder").toString();
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, String> getRestrictedValuesDescription() {
         return (Map<String, String>) description.getOrDefault("restrictedValues", Collections.emptyMap());
     }

@@ -218,6 +218,10 @@ processResources << {
     gradleProperties.withWriter { properties.store( it, null )}
 }
 
+compileJava {
+    options.compilerArgs = ['-Xlint:all,-serial,-processing']
+}
+
 
 bootRun {
     def externalConfig = new File("./custom.jvmargs")

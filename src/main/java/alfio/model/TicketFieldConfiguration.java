@@ -18,6 +18,7 @@ package alfio.model;
 
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 
 import java.util.Collections;
@@ -53,7 +54,7 @@ public class TicketFieldConfiguration {
         this.maxLength = maxLength;
         this.minLength = minLength;
         this.required = required;
-        this.restrictedValues = restrictedValues == null ? Collections.emptyList() : Json.GSON.fromJson(restrictedValues, List.class);
+        this.restrictedValues = restrictedValues == null ? Collections.emptyList() : Json.GSON.fromJson(restrictedValues, new TypeToken<List<String>>(){}.getType());
     }
 
     public boolean isInputField() {
