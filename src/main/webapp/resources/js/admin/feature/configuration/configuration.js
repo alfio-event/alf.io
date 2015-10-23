@@ -286,9 +286,10 @@
     EventConfigurationController.$inject = ['ConfigurationService', 'EventService', '$q', '$rootScope', '$stateParams'];
 
     function loadSettings(container, settings, ConfigurationService) {
-        container.hasResults = settings['GENERAL'].length > 0;
-        container.noResults = settings['GENERAL'].length === 0;
-        if(settings['GENERAL'].length > 0) {
+        var general = settings['GENERAL'] || [];
+        container.hasResults = general.length > 0;
+        container.noResults = general.length === 0;
+        if(container.hasResults) {
             container.settings = settings;
             angular.extend(container, ConfigurationService.transformConfigurationObject(settings));
         }
