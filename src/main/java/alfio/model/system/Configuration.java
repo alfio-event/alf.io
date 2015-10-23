@@ -17,11 +17,9 @@
 package alfio.model.system;
 
 import alfio.model.Event;
-import alfio.model.TicketCategory;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -187,22 +185,18 @@ public class Configuration implements Comparable<Configuration> {
     //
 
     public static ConfigurationPathKey getSystemConfiguration(ConfigurationKeys configurationKey) {
-        Validate.isTrue(configurationKey.supports(ConfigurationPathLevel.SYSTEM));
         return new ConfigurationPathKey(system(), configurationKey);
     }
 
-    public static ConfigurationPathKey getOrganizationConfiguration(int organizationId, ConfigurationKeys configurationKey) {
-        Validate.isTrue(configurationKey.supports(ConfigurationPathLevel.ORGANIZATION));
+    private static ConfigurationPathKey getOrganizationConfiguration(int organizationId, ConfigurationKeys configurationKey) {
         return new ConfigurationPathKey(organization(organizationId), configurationKey);
     }
 
-    public static ConfigurationPathKey getEventConfiguration(int organizationId, int eventId, ConfigurationKeys configurationKey) {
-        Validate.isTrue(configurationKey.supports(ConfigurationPathLevel.EVENT));
+    private static ConfigurationPathKey getEventConfiguration(int organizationId, int eventId, ConfigurationKeys configurationKey) {
         return new ConfigurationPathKey(new EventConfigurationPath(organizationId, eventId), configurationKey);
     }
 
-    public static ConfigurationPathKey getTicketCategoryConfiguration(int organizationId, int eventId, int ticketCategoryId, ConfigurationKeys configurationKey) {
-        Validate.isTrue(configurationKey.supports(ConfigurationPathLevel.TICKET_CATEGORY));
+    private static ConfigurationPathKey getTicketCategoryConfiguration(int organizationId, int eventId, int ticketCategoryId, ConfigurationKeys configurationKey) {
         return new ConfigurationPathKey(ticketCategory(organizationId, eventId, ticketCategoryId), configurationKey);
     }
 
