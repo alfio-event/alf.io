@@ -45,7 +45,10 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
@@ -201,6 +204,24 @@ public class TicketReservationManagerTest {{
             trm.sendReminderForTicketAssignment();
             verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
         });
+
+        it.should("not send the reminder too early", expect -> {
+            Event event = it.usesMock(Event.class);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+            when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
+            when(reservation.getId()).thenReturn("abcd");
+            when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
+
+            when(eventRepository.findByReservationId("abcd")).thenReturn(event);
+            when(event.getZoneId()).thenReturn(ZoneId.of("UTC-8"));
+            when(event.getBegin()).thenReturn(ZonedDateTime.now(ZoneId.of("UTC-8")).plusMonths(3).plusDays(1));
+            when(eventRepository.findAll()).thenReturn(singletonList(event));
+            when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(singletonList("abcd"));
+            List<Event> events = trm.getNotifiableEventsStream().collect(Collectors.toList());
+            expect.that(events.size()).isEqualTo(0);
+            verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
+        });
     });
 
     describe("offlinePaymentDeadline", it -> {
@@ -213,7 +234,7 @@ public class TicketReservationManagerTest {{
         it.should("return the expire date as configured", expect -> {
             when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
             ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
-            expect.that(Period.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()).getDays()).is(2);
+            expect.that(ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate())).is(2L);
         });
 
         it.should("return the configured waiting time", expect -> {
@@ -224,7 +245,7 @@ public class TicketReservationManagerTest {{
         it.should("consider the event begin date when calculating the expiration date", expect -> {
             when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
             ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
-            expect.that(Period.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()).getDays()).is(1);
+            expect.that(ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate())).is(1L);
         });
 
         it.should("return the configured waiting time considering event start date", expect -> {

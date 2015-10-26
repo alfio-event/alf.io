@@ -427,7 +427,7 @@ public class TicketReservationManager {
     public static int getOfflinePaymentWaitingPeriod(Event event, ConfigurationManager configurationManager) {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         ZonedDateTime eventBegin = event.getBegin();
-        int daysToBegin = Period.between(now.toLocalDate(), eventBegin.toLocalDate()).getDays();
+        int daysToBegin = (int) ChronoUnit.DAYS.between(now.toLocalDate(), eventBegin.toLocalDate());
         Validate.isTrue(daysToBegin >= 0, "Cannot confirm an offline reservation after event start");
         int waitingPeriod = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_PAYMENT_DAYS), 5);
         return Math.min(daysToBegin, waitingPeriod);
@@ -905,11 +905,12 @@ public class TicketReservationManager {
         });
     }
 
-    private Stream<Event> getNotifiableEventsStream() {
+    Stream<Event> getNotifiableEventsStream() {
         return eventRepository.findAll().stream()
                 .filter(e -> {
                     int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.from(e.getOrganizationId(), e.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_START), 10);
-                    int days = Period.between(ZonedDateTime.now(e.getZoneId()).toLocalDate(), e.getBegin().toLocalDate()).getDays();
+                    //we don't want to define events SO far away, don't we?
+                    int days = (int) ChronoUnit.DAYS.between(ZonedDateTime.now(e.getZoneId()).toLocalDate(), e.getBegin().toLocalDate());
                     return days > 0 && days <= daysBeforeStart;
                 });
     }
