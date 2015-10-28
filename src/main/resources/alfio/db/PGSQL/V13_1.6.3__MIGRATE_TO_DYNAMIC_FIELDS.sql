@@ -20,25 +20,6 @@
 alter table ticket_field_description alter column description SET DATA TYPE text;
 alter table ticket_field_configuration alter column field_restricted_values SET DATA TYPE text;
 
-
--- for all the current events, add the fields descriptions
-insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_maxlength)
-    (SELECT event.id, 'jobTitle', 0, 'input:text', false, 255  FROM event);
-insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_maxlength)
-    (SELECT event.id, 'company', 1, 'input:text', false, 255 FROM event);
-insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_maxlength)
-    (SELECT event.id, 'phoneNumber', 2, 'input:tel', false, 255 FROM event);
-insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_maxlength)
-    (SELECT event.id, 'address', 3, 'textarea', false, 450 FROM event);
-insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required)
-    (SELECT event.id, 'country', 4, 'country', false FROM event);
-insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required)
-    (SELECT event.id, 'gender', 5, 'select', false FROM event);
-insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required)
-    (SELECT event.id, 'tShirtSize', 6, 'select', false FROM event);
-insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_maxlength)
-    (SELECT event.id, 'notes', 7, 'textarea', false, 1024 FROM event);
-
 -- port the currently existing events to the new structure, first the field definitions
 insert into ticket_field_configuration (event_id_fk, field_name, field_order, field_type, field_required, field_maxlength)
     (SELECT event.id, 'jobTitle', 0, 'input:text', false, 255  FROM event);
