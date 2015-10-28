@@ -39,6 +39,7 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.OptionalWrapper;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -229,8 +230,7 @@ public class ConfigurationManagerTest {
         modified.add(new ConfigurationModification(existing.getId(), existing.getKey(), "NEW-NUMBER"));
         configurationManager.saveAllOrganizationConfiguration(event.getOrganizationId(), modified, USERNAME);
         List<Configuration> organizationConfiguration = configurationRepository.findOrganizationConfiguration(event.getOrganizationId());
-        assertEquals(5, organizationConfiguration.size());
-        assertTrue(organizationConfiguration.stream().filter(o -> o.getComponentType() == ComponentType.BOOLEAN).count() == 4);
+        assertEquals(1, organizationConfiguration.size());
         Optional<Configuration> result = configurationRepository.findByKeyAtOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue());
         assertTrue(result.isPresent());
         Configuration configuration = result.get();
@@ -249,8 +249,7 @@ public class ConfigurationManagerTest {
         modified.add(new ConfigurationModification(-1, ConfigurationKeys.PARTIAL_RESERVATION_ID_LENGTH.getValue(), "9"));
         configurationManager.saveAllOrganizationConfiguration(event.getOrganizationId(), modified, USERNAME);
         List<Configuration> organizationConfiguration = configurationRepository.findOrganizationConfiguration(event.getOrganizationId());
-        assertEquals(6, organizationConfiguration.size());
-        assertTrue(organizationConfiguration.stream().filter(o -> o.getComponentType() == ComponentType.BOOLEAN).count() == 4);
+        assertEquals(2, organizationConfiguration.size());
         Optional<Configuration> result = configurationRepository.findByKeyAtOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue());
         assertTrue(result.isPresent());
         Configuration configuration = result.get();
@@ -280,6 +279,43 @@ public class ConfigurationManagerTest {
     public void testBasicConfigurationNeeded() {
         configurationRepository.deleteByKey(ConfigurationKeys.BASE_URL.getValue());
         assertTrue(configurationManager.isBasicConfigurationNeeded());
+    }
+
+    @Test
+    public void testSaveBooleanOptions() {
+        String ftcKey = ALLOW_FREE_TICKETS_CANCELLATION.getValue();
+        configurationRepository.insert(ftcKey, "false", "this should be updated to true");
+        ConfigurationModification ftc = new ConfigurationModification(configurationRepository.findByKey(ftcKey).getId(), ftcKey, "true");
+
+        String prKey = ENABLE_PRE_REGISTRATION.getValue();
+        configurationRepository.insert(prKey, "true", "this should be updated to false");
+        ConfigurationModification pr = new ConfigurationModification(configurationRepository.findByKey(prKey).getId(), prKey, "false");
+
+        ConfigurationModification newTrue = new ConfigurationModification(-1, ENABLE_WAITING_QUEUE.getValue(), "true");
+        ConfigurationModification newFalse = new ConfigurationModification(-1, ENABLE_WAITING_QUEUE_NOTIFICATION.getValue(), "false");
+        ConfigurationModification newNull = new ConfigurationModification(-1, GOOGLE_ANALYTICS_ANONYMOUS_MODE.getValue(), null);
+
+        configurationManager.saveAllSystemConfiguration(Arrays.asList(ftc, pr, newTrue, newFalse, newNull));
+
+        Configuration cFtc = configurationRepository.findByKey(ftcKey);
+        assertNotNull(ftc);
+        assertEquals("true", cFtc.getValue());
+
+        Configuration cPr = configurationRepository.findByKey(prKey);
+        assertNotNull(cPr);
+        assertEquals("false", cPr.getValue());
+
+        Configuration nTrue = configurationRepository.findByKey(ENABLE_WAITING_QUEUE.getValue());
+        assertNotNull(nTrue);
+        assertEquals("true", nTrue.getValue());
+
+        Configuration nFalse = configurationRepository.findByKey(ENABLE_WAITING_QUEUE_NOTIFICATION.getValue());
+        assertNotNull(nFalse);
+        assertEquals("false", nFalse.getValue());
+
+        Optional<Configuration> opt = OptionalWrapper.optionally(() -> configurationRepository.findByKey(GOOGLE_ANALYTICS_ANONYMOUS_MODE.getValue()));
+        assertFalse(opt.isPresent());
+
     }
 
 

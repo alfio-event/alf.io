@@ -55,7 +55,7 @@ public class ConfigurationManager {
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> EVENT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.EVENT);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
 
-    private static final Predicate<ConfigurationModification> TO_BE_SAVED = c -> c.getId() > -1 || !StringUtils.isBlank(c.getValue()) || ConfigurationKeys.fromString(c.getKey()).getComponentType() == ComponentType.BOOLEAN;
+    private static final Predicate<ConfigurationModification> TO_BE_SAVED = c -> c.getId() > -1 || !StringUtils.isBlank(c.getValue());
 
 
     private final ConfigurationRepository configurationRepository;
@@ -155,12 +155,14 @@ public class ConfigurationManager {
         list.stream()
             .filter(TO_BE_SAVED)
             .forEach(c -> {
-                String value = evaluateValue(c.getKey(), c.getValue());
+                Optional<String> value = evaluateValue(c.getKey(), c.getValue());
                 Optional<Configuration> existing = configurationRepository.findByKeyAtOrganizationLevel(organizationId, c.getKey());
-                if (existing.isPresent()) {
-                    configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), value);
+                if(!value.isPresent()) {
+                    configurationRepository.deleteOrganizationLevelByKey(c.getKey(), organizationId);
+                } else if (existing.isPresent()) {
+                    configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), value.get());
                 } else {
-                    configurationRepository.insertOrganizationLevel(organizationId, c.getKey(), value, ConfigurationKeys.fromString(c.getKey()).getDescription());
+                    configurationRepository.insertOrganizationLevel(organizationId, c.getKey(), value.get(), ConfigurationKeys.fromString(c.getKey()).getDescription());
                 }
             });
     }
@@ -177,11 +179,13 @@ public class ConfigurationManager {
             .filter(TO_BE_SAVED)
             .forEach(c -> {
                 Optional<Configuration> existing = configurationRepository.findByKeyAtEventLevel(eventId, organizationId, c.getKey());
-                String value = evaluateValue(c.getKey(), c.getValue());
-                if (existing.isPresent()) {
-                    configurationRepository.updateEventLevel(eventId, organizationId, c.getKey(), value);
+                Optional<String> value = evaluateValue(c.getKey(), c.getValue());
+                if(!value.isPresent()) {
+                    configurationRepository.deleteEventLevelByKey(c.getKey(), eventId);
+                } else if (existing.isPresent()) {
+                    configurationRepository.updateEventLevel(eventId, organizationId, c.getKey(), value.get());
                 } else {
-                    configurationRepository.insertEventLevel(organizationId, eventId, c.getKey(), value, ConfigurationKeys.fromString(c.getKey()).getDescription());
+                    configurationRepository.insertEventLevel(organizationId, eventId, c.getKey(), value.get(), ConfigurationKeys.fromString(c.getKey()).getDescription());
                 }
             });
     }
@@ -195,29 +199,48 @@ public class ConfigurationManager {
             .filter(TO_BE_SAVED)
             .forEach(c -> {
                 Optional<Configuration> existing = configurationRepository.findByKeyAtCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey());
-                String value = evaluateValue(c.getKey(), c.getValue());
-                if (existing.isPresent()) {
-                    configurationRepository.updateCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey(), value);
+                Optional<String> value = evaluateValue(c.getKey(), c.getValue());
+                if(!value.isPresent()) {
+                    configurationRepository.deleteCategoryLevelByKey(c.getKey(), eventId, categoryId);
+                } else if (existing.isPresent()) {
+                        configurationRepository.updateCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey(), value.get());
                 } else {
-                    configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), eventId, categoryId, c.getKey(), value, ConfigurationKeys.fromString(c.getKey()).getDescription());
+                    configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), eventId, categoryId, c.getKey(), value.get(), ConfigurationKeys.fromString(c.getKey()).getDescription());
                 }
             });
     }
 
-    private String evaluateValue(String key, String value) {
+    private Optional<String> evaluateValue(String key, String value) {
         if(ConfigurationKeys.fromString(key).isBooleanComponentType()) {
-            return StringUtils.defaultString(value, "false");
+            return Optional.ofNullable(StringUtils.trimToNull(value));
         }
-        return value;
+        return Optional.of(Objects.requireNonNull(value));
+    }
+
+    private Optional<Boolean> getThreeStateValue(String value) {
+        return Optional.ofNullable(StringUtils.trimToNull(value)).map(Boolean::parseBoolean);
     }
 
     public void saveSystemConfiguration(ConfigurationKeys key, String value) {
         Optional<Configuration> conf = optionally(() -> findByConfigurationPathAndKey(Configuration.system(), key));
-        Optional<String> valueOpt = Optional.ofNullable(value);
-        if(!conf.isPresent()) {
-            valueOpt.ifPresent(v -> configurationRepository.insert(key.getValue(), v, key.getDescription()));
+        if(key.isBooleanComponentType()) {
+            Optional<Boolean> state = getThreeStateValue(value);
+            if(conf.isPresent()) {
+                if(state.isPresent()) {
+                    configurationRepository.update(key.getValue(), value);
+                } else {
+                    configurationRepository.deleteByKey(key.getValue());
+                }
+            } else {
+                state.ifPresent(v -> configurationRepository.insert(key.getValue(), v.toString(), key.getDescription()));
+            }
         } else {
-            configurationRepository.update(key.getValue(), value);
+            Optional<String> valueOpt = Optional.ofNullable(value);
+            if(!conf.isPresent()) {
+                valueOpt.ifPresent(v -> configurationRepository.insert(key.getValue(), v, key.getDescription()));
+            } else {
+                configurationRepository.update(key.getValue(), value);
+            }
         }
     }
 

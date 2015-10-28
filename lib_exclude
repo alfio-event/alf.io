@@ -41,3 +41,6 @@
 /numeral/tests/**
 /numeral/*.js
 /numeral/min/languages/**
+/nz-toggle/*
+/nz-toggle/example/**
+/nz-toggle/src/**

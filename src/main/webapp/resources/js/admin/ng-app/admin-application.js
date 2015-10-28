@@ -8,7 +8,7 @@
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)'
     };
-    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-users']);
+    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'nzToggle', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-users']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.otherwise("/");

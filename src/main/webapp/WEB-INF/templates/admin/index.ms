@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-csp.css"/>
+    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.css"/>
     <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/lodash/lodash.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
@@ -23,6 +24,7 @@
     <script src="{{request.contextPath}}/resources/bower_components/ng-file-upload/ng-file-upload.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/Chart.js/Chart.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-chart.js/angular-chart.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
     <script src="{{request.contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/ng-app/admin-application.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/directive/admin-directive.js"></script>
