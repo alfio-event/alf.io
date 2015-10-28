@@ -254,13 +254,23 @@
                 event.ticketFields = [];
             }
 
-            event.ticketFields.push({required:false});
+            event.ticketFields.push({required:false, order: event.ticketFields.length+1});
         };
 
         $scope.removeTicketField = function(fields, field) {
             var index = fields.indexOf(field);
             fields.splice( index, 1 )
         };
+
+        $scope.isLanguageSelected = function(lang, selectedLanguages) {
+            return (selectedLanguages & lang) > 0;
+        };
+
+        $scope.addRestrictedValue = function(field) {
+            var arr = field.restrictedValues || [];
+            arr.push({});
+            field.restrictedValues = arr;
+        }
 
     };
 
