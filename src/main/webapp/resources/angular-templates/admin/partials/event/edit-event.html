@@ -42,13 +42,31 @@
             <h5 class="text-muted">Here you can add/remove additional fields</h5>
         </div>
 
-        <div data-ng-repeat="field in event.ticketFields">
+        <div data-ng-repeat="field in event.ticketFields | orderBy: 'order' ">
             <p>Field name: <input type="input" ng-model="field.name"></p>
             <p>Field order: <input type="number" ng-model="field.order"></p>
             <p>Field type: <select ng-model="field.type" ng-options="option for option in fieldTypes"></select></p>
-            <p data-ng-if="field.type == 'select'">Field restricted values: </p>
+            <div data-ng-if="field.type == 'select'">Field restricted values:
+                <ul>
+                    <li data-ng-repeat="restrictedValue in field.restrictedValues">
+                        <div>option value: <input ng-value="restrictedValue.value"> <button type="button" ng-click="field.restrictedValues.splice(field.restrictedValues.indexOf(restrictedValue), 1)">remove</button></div>
+                        <ul>
+                            <li ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">option text: {{lang.displayLanguage}} <input></li>
+                        </ul>
+                    </li>
+                </ul>
+                <div>
+                    <button type="button" data-ng-click="addRestrictedValue(field);">add value</button>
+                </div>
+            </div>
             <p data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">Field min length: <input type="number" ng-model="field.minLength"></p>
             <p data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">Field max length: <input type="number" ng-model="field.maxLength"></p>
+            <div>
+                Label for field:
+                <ul>
+                    <li ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">value: {{lang.displayLanguage}} <input></li>
+                </ul>
+            </div>
             <p><button type="button" ng-click="removeTicketField(event.ticketFields, field)">Remove field</button></p>
         </div>
 
