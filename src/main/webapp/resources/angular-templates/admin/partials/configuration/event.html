@@ -18,17 +18,17 @@
     <form name="settingsForm" novalidate data-ng-submit="eventConf.saveSettings(settingsForm)">
         <div data-ng-if="eventConf.general">
             <div data-ng-repeat="setting in eventConf.general.settings">
-                <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="eventConf.globalSettings" data-delete-handler="eventConf.delete(config)"></setting>
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="eventConf.globalSettings" data-delete-handler="eventConf.delete(config)" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
             </div>
         </div>
 
-        <div class="page-header">
+        <div class="page-header" data-ng-if="eventConf.mail">
             <h2>E-Mail</h2>
             <span>E-Mail settings</span>
         </div>
 
         <div data-ng-if="eventConf.mail">
-            <div data-ng-if="eventConf.mail.type">
+            <div data-ng-if="eventConf.mail.type" class="system-setting">
                 <div class="radio-inline">
                     <label>
                         <input type="radio" name="mailer.type" data-ng-model="eventConf.mail.type.value" data-ng-value="'smtp'">
@@ -41,28 +41,28 @@
                         Mailgun.com
                     </label>
                 </div>
-                <div data-ng-repeat="setting in eventConf.mail.settings | mailSettingsFilter:eventConf.mail.type.value">
+                <div data-ng-repeat="setting in eventConf.mail.settings | mailSettingsFilter:eventConf.mail.type.value" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
                     <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                 </div>
                 <div>
-                    <setting obj="eventConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                    <setting obj="eventConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" class="system-setting"></setting>
                 </div>
                 <div>
                     <setting obj="eventConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                 </div>
             </div>
-            <div data-ng-repeat="setting in eventConf.mail.settings" data-ng-if="!eventConf.mail.type">
+            <div data-ng-repeat="setting in eventConf.mail.settings" data-ng-if="!eventConf.mail.type" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
             </div>
         </div>
 
-        <div class="page-header">
+        <div class="page-header" data-ng-if="eventConf.payment">
             <h2>Payment</h2>
             <span>Payment provider settings</span>
         </div>
 
         <div data-ng-if="eventConf.payment">
-            <div data-ng-repeat="setting in eventConf.payment.settings">
+            <div data-ng-repeat="setting in eventConf.payment.settings" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
             </div>
         </div>

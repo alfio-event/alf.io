@@ -43,6 +43,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.ConfigurationPathLevel.EVENT;
+import static alfio.model.system.ConfigurationPathLevel.ORGANIZATION;
 import static alfio.util.OptionalWrapper.optionally;
 
 @Component
@@ -51,7 +53,7 @@ import static alfio.util.OptionalWrapper.optionally;
 public class ConfigurationManager {
 
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> SYSTEM_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.SYSTEM);
-    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.ORGANIZATION);
+    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ORGANIZATION);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> EVENT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.EVENT);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
 
@@ -264,13 +266,18 @@ public class ConfigurationManager {
             });
     }
 
+    private Predicate<Configuration> checkActualConfigurationLevel(boolean isAdmin, ConfigurationPathLevel level) {
+        return conf -> isAdmin || conf.getConfigurationKey().supports(level);
+    }
+
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadOrganizationConfig(int organizationId, String username) {
         User user = userManager.findUserByUsername(username);
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().sorted().collect(groupByCategory());
-        return groupByCategory(userManager.isAdmin(user) ? SYSTEM_CONFIGURATION : ORGANIZATION_CONFIGURATION, existing);
+        boolean isAdmin = userManager.isAdmin(user);
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().filter(checkActualConfigurationLevel(isAdmin, ORGANIZATION)).sorted().collect(groupByCategory());
+        return groupByCategory(isAdmin ? SYSTEM_CONFIGURATION : ORGANIZATION_CONFIGURATION, existing);
     }
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfig(int eventId, String username) {
@@ -280,8 +287,9 @@ public class ConfigurationManager {
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().sorted().collect(groupByCategory());
-        return groupByCategory(userManager.isAdmin(user) ? SYSTEM_CONFIGURATION : EVENT_CONFIGURATION, existing);
+        boolean isAdmin = userManager.isAdmin(user);
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().filter(checkActualConfigurationLevel(isAdmin, EVENT)).sorted().collect(groupByCategory());
+        return groupByCategory(isAdmin ? SYSTEM_CONFIGURATION : EVENT_CONFIGURATION, existing);
     }
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfig(int eventId, int categoryId, String username) {
