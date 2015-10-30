@@ -9,69 +9,71 @@
     <form role="form" name="editEvent" data-ng-submit="save(editEvent, event)" data-error-sensitive="editEventHeader,editPrices" novalidate>
         <edit-event-header data-target-obj="event" data-organizations="organizations" data-full-edit-mode="true" data-show-existing-errors="showExistingErrors" data-all-languages="allLanguages" data-all-languages-mapping="allLanguagesMapping"></edit-event-header>
 
-        <edit-prices data-target-obj="event" data-full-edit-mode="true" data-allowed-payment-proxies="allowedPaymentProxies" data-show-existing-errors="showExistingErrors"></edit-prices>
+        <div data-ng-if="isInternal(event)">
+            <edit-prices data-target-obj="event" data-full-edit-mode="true" data-allowed-payment-proxies="allowedPaymentProxies" data-show-existing-errors="showExistingErrors"></edit-prices>
 
-        <div class="page-header">
-            <h3>Categories</h3>
-            <h5 class="text-muted">Here you can define all the ticket categories for the event. Please note that at least one category is required in order to create the event.</h5>
-        </div>
-
-        <div class="row">
-            <div class="col-sm-12">
-                total:
-                <progressbar value="100">{{event.availableSeats}}</progressbar>
-                assigned:
-                <progress>
-                    <bar data-ng-repeat="category in event.ticketCategories | orderBy: ['inception', 'expiration', 'bounded']" value="calcBarValue(category, event.availableSeats)" type="{{evaluateBarType($index)}}">{{category.name}} ({{category.maxTickets}})</bar>
-                </progress>
+            <div class="page-header">
+                <h3>Categories</h3>
+                <h5 class="text-muted">Here you can define all the ticket categories for the event. Please note that at least one category is required in order to create the event.</h5>
             </div>
-        </div>
-        <div class="row category" data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories" data-ng-class="'category-' + evaluateBarType($index)">
-            <edit-category></edit-category>
-        </div>
 
-        <div class="row">
-            <div class="col-sm-11"><span class="text-right" data-ng-if="event.ticketCategories.length == 0">No ticket categories have been defined. Please add a new one by clicking here</span></div>
-            <div class="col-sm-1"><button type="button" class="btn btn-success" data-ng-disabled="!canAddCategory(event.ticketCategories)" data-ng-click="addCategory()"><i class="fa fa-plus"></i></button></div>
-        </div>
-        <br class="clearfix"/>
-
-
-        <div class="page-header">
-            <h3>Ticket form fields</h3>
-            <h5 class="text-muted">Here you can add/remove additional fields</h5>
-        </div>
-
-        <div data-ng-repeat="field in event.ticketFields | orderBy: 'order' ">
-            <p>Field name: <input type="input" ng-model="field.name"></p>
-            <p>Field order: <input type="number" ng-model="field.order"></p>
-            <p>Field type: <select ng-model="field.type" ng-options="option for option in fieldTypes"></select></p>
-            <div data-ng-if="field.type == 'select'">Field restricted values:
-                <ul>
-                    <li data-ng-repeat="restrictedValue in field.restrictedValues">
-                        <div>option value: <input ng-value="restrictedValue.value"> <button type="button" ng-click="field.restrictedValues.splice(field.restrictedValues.indexOf(restrictedValue), 1)">remove</button></div>
-                        <ul>
-                            <li ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">option text: {{lang.displayLanguage}} <input></li>
-                        </ul>
-                    </li>
-                </ul>
-                <div>
-                    <button type="button" data-ng-click="addRestrictedValue(field);">add value</button>
+            <div class="row">
+                <div class="col-sm-12">
+                    total:
+                    <progressbar value="100">{{event.availableSeats}}</progressbar>
+                    assigned:
+                    <progress>
+                        <bar data-ng-repeat="category in event.ticketCategories | orderBy: ['inception', 'expiration', 'bounded']" value="calcBarValue(category, event.availableSeats)" type="{{evaluateBarType($index)}}">{{category.name}} ({{category.maxTickets}})</bar>
+                    </progress>
                 </div>
             </div>
-            <p data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">Field min length: <input type="number" ng-model="field.minLength"></p>
-            <p data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">Field max length: <input type="number" ng-model="field.maxLength"></p>
-            <div>
-                Label for field:
-                <ul>
-                    <li ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">value: {{lang.displayLanguage}} <input></li>
-                </ul>
+            <div class="row category" data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories" data-ng-class="'category-' + evaluateBarType($index)">
+                <edit-category></edit-category>
             </div>
-            <p><button type="button" ng-click="removeTicketField(event.ticketFields, field)">Remove field</button></p>
-        </div>
 
-        <div>
-            <div><button type="button" ng-click="addNewTicketField(event)">Add new field</button></div>
+            <div class="row">
+                <div class="col-sm-11"><span class="text-right" data-ng-if="event.ticketCategories.length == 0">No ticket categories have been defined. Please add a new one by clicking here</span></div>
+                <div class="col-sm-1"><button type="button" class="btn btn-success" data-ng-disabled="!canAddCategory(event.ticketCategories)" data-ng-click="addCategory()"><i class="fa fa-plus"></i></button></div>
+            </div>
+            <br class="clearfix"/>
+
+
+            <div class="page-header">
+                <h3>Ticket form fields</h3>
+                <h5 class="text-muted">Here you can add/remove additional fields</h5>
+            </div>
+
+            <div data-ng-repeat="field in event.ticketFields | orderBy: 'order' ">
+                <p>Field name: <input type="input" ng-model="field.name"></p>
+                <p>Field order: <input type="number" ng-model="field.order"></p>
+                <p>Field type: <select ng-model="field.type" ng-options="option for option in fieldTypes"></select></p>
+                <div data-ng-if="field.type == 'select'">Field restricted values:
+                    <ul>
+                        <li data-ng-repeat="restrictedValue in field.restrictedValues">
+                            <div>option value: <input ng-value="restrictedValue.value"> <button type="button" ng-click="field.restrictedValues.splice(field.restrictedValues.indexOf(restrictedValue), 1)">remove</button></div>
+                            <ul>
+                                <li ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">option text: {{lang.displayLanguage}} <input></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <div>
+                        <button type="button" data-ng-click="addRestrictedValue(field);">add value</button>
+                    </div>
+                </div>
+                <p data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">Field min length: <input type="number" ng-model="field.minLength"></p>
+                <p data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">Field max length: <input type="number" ng-model="field.maxLength"></p>
+                <div>
+                    Label for field:
+                    <ul>
+                        <li ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">value: {{lang.displayLanguage}} <input></li>
+                    </ul>
+                </div>
+                <p><button type="button" ng-click="removeTicketField(event.ticketFields, field)">Remove field</button></p>
+            </div>
+
+            <div>
+                <div><button type="button" ng-click="addNewTicketField(event)">Add new field</button></div>
+            </div>
         </div>
 
         <control-buttons data-form-obj="editEvent"></control-buttons>

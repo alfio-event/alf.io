@@ -8,7 +8,7 @@
         <button class="btn btn-success" type="submit" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting">save</button>
         <button class="btn btn-default" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting" data-ng-click="toggleEditHeader(true)">cancel</button>
     </form>
-    <form name="pricesForm" role="form" data-ng-submit="saveEventPrices(pricesForm, eventPrices, event.organizationId)" novalidate class="force-show-errors" data-error-sensitive="editPrices">
+    <form name="pricesForm" role="form" data-ng-submit="saveEventPrices(pricesForm, eventPrices, event.organizationId)" novalidate class="force-show-errors" data-error-sensitive="editPrices" data-ng-if="isInternal(event)">
         <prices data-ng-if="!editPrices"></prices>
         <edit-prices data-ng-if="editPrices" data-show-price-warning="true" data-event-obj="event" data-show-existing-errors="true" data-target-obj="eventPrices" data-allowed-payment-proxies="allowedPaymentProxies"></edit-prices>
         <button class="btn btn-warning" data-ng-if="!editPrices" data-ng-click="toggleEditPrices(false)"><i class="fa fa-edit"></i> edit</button>
@@ -16,7 +16,7 @@
         <button class="btn btn-default" data-ng-if="editPrices" data-ng-disabled="pricesForm.$waiting" data-ng-click="toggleEditPrices(true)">cancel</button>
     </form>
 
-    <div class="page-header" data-ng-if="pendingReservations.length > 0">
+    <div class="page-header" data-ng-if="isInternal(event) && pendingReservations.length > 0">
         <h3>Payments to be confirmed</h3>
         <h5>There are reservations for which a payment has not yet confirmed.</h5>
         <a class="btn btn-warning" data-ui-sref="pending-reservations({eventName: event.shortName})">
@@ -24,7 +24,7 @@
         </a>
     </div>
 
-    <div data-ng-if="!event.free">
+    <div data-ng-if="isInternal(event) && !event.free">
         <div class="page-header">
             <h3>Promo codes</h3>
             <h5 class="text-muted">Manage/Handle the promo codes.</h5>
@@ -74,121 +74,124 @@
     </div>
     
 
-    <div class="page-header">
-        <h3>Categories</h3>
-        <h5 class="text-muted">Here the categories that have been defined for this event.</h5>
-        <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory(event)"><i class="fa fa-plus"></i> add category</button>
-    </div>
+    <div data-ng-if="isInternal(event)">
 
-    <div class="form-inline">
-        <label class="btn btn-sm btn-default" data-ng-model="selection.active" data-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.active, 'fa-square-o': !selection.active}"></i> Active <span class="badge">{{countActive(event.ticketCategories)}}</span></label>
-        <label class="btn btn-sm btn-default" data-ng-model="selection.expired" data-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.expired, 'fa-square-o': !selection.expired}"></i> Expired <span class="badge">{{countExpired(event.ticketCategories)}}</span></label>
-        <label><div class="input-group"><div class="input-group-addon"><i class="fa fa-search"></i></div><input type="text" class="form-control input-sm" data-ng-model="selection.freeText"></div></label>
-    </div>
-
-    <div data-ng-if="(event.ticketCategories | showSelectedCategories : selection).length === 0" class="alert alert-warning">
-        No categories matching the selected criteria have been found.
-    </div>
-
-    <div data-ng-repeat="ticketCategory in event.ticketCategories | orderBy: ['id'] | showSelectedCategories : selection" class="container wMarginBottom" data-ng-class="evaluateCategoryStatusClass($index, ticketCategory)">
         <div class="page-header">
-            <div class="alert alert-danger" data-ng-if="ticketCategory.containingOrphans" data-ng-form="moveTickets">
-                <div class="form-inline">
-                    <i class="fa fa-warning"></i> This category contains orphan (not sold) tickets. Move them to another category:
-                    <select class="form-control" data-ng-model="targetCategoryId" required data-ng-options="category.id as category.name for category in validCategories"></select>
-                    <button class="btn btn-warning" data-ng-click="moveOrphans(ticketCategory, targetCategoryId, event.id)">apply</button>
-                    <button data-ng-if="event.containsUnboundedCategories" class="btn btn-danger" data-ng-click="unbindTickets(event, ticketCategory)">Assign to dynamic categories</button>
-                </div>
-            </div>
-            <div class="alert alert-warning" data-ng-if="ticketCategory.containingStuckTickets">
-                <div class="container">
-                    <i class="fa fa-warning"></i> This category contains tickets that have been paid but not yet confirmed. This is usually due to a Database failure after a successful payment. Please fix them.
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-8">
-                    <div class="col-sm-5">
-                        <h4>{{::ticketCategory.name}} <a class="btn btn-default" data-ng-click="openConfiguration(event, ticketCategory)"><i class="fa fa-wrench"></i></a><span class="sr-only"> Configuration</span></h4>
-                    </div>
-                    <div class="col-sm-7">
-                        <div class="row">
-                            <div class="col-sm-4"><strong>Max tickets</strong></div>
-                            <div class="col-sm-8" data-ng-if="ticketCategory.bounded">{{::ticketCategory.maxTickets}}</div>
-                            <div class="col-sm-8" data-ng-if="!ticketCategory.bounded">dynamic</div>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-4"><strong>Initial sale date</strong></div>
-                            <div class="col-sm-8">{{::ticketCategory.formattedInception | formatDate}} </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-4"><strong>End sale date</strong></div>
-                            <div class="col-sm-8">{{::ticketCategory.formattedExpiration | formatDate}} </div>
-                        </div>
-                        <div class="row" data-ng-if="!event.freeOfCharge">
-                            <div class="col-sm-4"><strong>Final price</strong></div>
-                            <div class="col-sm-8">{{::ticketCategory.actualPrice | currency : (event.currency || "")}}</div>
-                        </div>
+            <h3>Categories</h3>
+            <h5 class="text-muted">Here the categories that have been defined for this event.</h5>
+            <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory(event)"><i class="fa fa-plus"></i> add category</button>
+        </div>
+
+        <div class="form-inline">
+            <label class="btn btn-sm btn-default" data-ng-model="selection.active" data-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.active, 'fa-square-o': !selection.active}"></i> Active <span class="badge">{{countActive(event.ticketCategories)}}</span></label>
+            <label class="btn btn-sm btn-default" data-ng-model="selection.expired" data-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.expired, 'fa-square-o': !selection.expired}"></i> Expired <span class="badge">{{countExpired(event.ticketCategories)}}</span></label>
+            <label><div class="input-group"><div class="input-group-addon"><i class="fa fa-search"></i></div><input type="text" class="form-control input-sm" data-ng-model="selection.freeText"></div></label>
+        </div>
+
+        <div data-ng-if="(event.ticketCategories | showSelectedCategories : selection).length === 0" class="alert alert-warning">
+            No categories matching the selected criteria have been found.
+        </div>
+
+        <div data-ng-repeat="ticketCategory in event.ticketCategories | orderBy: ['id'] | showSelectedCategories : selection" class="container wMarginBottom" data-ng-class="evaluateCategoryStatusClass($index, ticketCategory)">
+            <div class="page-header">
+                <div class="alert alert-danger" data-ng-if="ticketCategory.containingOrphans" data-ng-form="moveTickets">
+                    <div class="form-inline">
+                        <i class="fa fa-warning"></i> This category contains orphan (not sold) tickets. Move them to another category:
+                        <select class="form-control" data-ng-model="targetCategoryId" required data-ng-options="category.id as category.name for category in validCategories"></select>
+                        <button class="btn btn-warning" data-ng-click="moveOrphans(ticketCategory, targetCategoryId, event.id)">apply</button>
+                        <button data-ng-if="event.containsUnboundedCategories" class="btn btn-danger" data-ng-click="unbindTickets(event, ticketCategory)">Assign to dynamic categories</button>
                     </div>
                 </div>
-                <div class="col-sm-4">
-                    <ticket-status data-statistics-container="ticketCategory"></ticket-status>
+                <div class="alert alert-warning" data-ng-if="ticketCategory.containingStuckTickets">
+                    <div class="container">
+                        <i class="fa fa-warning"></i> This category contains tickets that have been paid but not yet confirmed. This is usually due to a Database failure after a successful payment. Please fix them.
+                    </div>
                 </div>
-            </div>
-        </div>
-        <div class="wMarginBottom">
-                <button class="btn btn-warning" data-ng-click="editCategory(ticketCategory, event)"><i class="fa fa-edit"></i> edit</button>
-                <button data-ng-if="ticketCategory.containingTickets" class="btn btn-default" data-ng-click="toggleTicketViewCollapse(ticketCategory)">
-                    <i class="fa fa-ticket"></i> <span data-ng-if="isTicketViewCollapsed(ticketCategory)">show</span><span data-ng-if="!isTicketViewCollapsed(ticketCategory)">hide</span> tickets
-                </button>
-                <button class="btn btn-default" data-ng-if="ticketCategory.accessRestricted" data-ng-click="toggleTokenViewCollapse(ticketCategory)">
-                    <i class="fa fa-qrcode"></i> <span data-ng-if="isTokenViewCollapsed(ticketCategory)">show</span><span data-ng-if="!isTokenViewCollapsed(ticketCategory)">hide</span> tokens
-                </button>
-                <button data-ng-if="ticketCategory.accessRestricted && !ticketCategory.expired" class="btn btn-warning" data-ui-sref="events.sendInvitations({eventName: event.shortName, categoryId: ticketCategory.id})"><i class="fa fa-envelope-o"></i> send invitations</button>
-        </div>
-        <div data-ng-if="ticketCategory.containingTickets">
-            <div class="wMarginBottom table-responsive" data-collapse="isTicketViewCollapsed(ticketCategory)">
-                <table class="table">
-                    <thead>
-                        <th>status</th>
-                        <th>id</th>
-                        <th>timestamp</th>
-                        <th>Owner's name</th>
-                        <th>Owner's e-mail</th>
-                        <th>Customer's name</th>
-                        <th>Customer's e-mail</th>
-                        <th>Payment Type</th>
-                        <th>transaction id</th>
-                        <th>transaction timestamp</th>
-                        <th></th>
-                    </thead>
-                    <tbody>
-                        <tr data-ng-repeat="ticket in ::ticketCategory.tickets | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
-                            <td data-ng-class-even="'active'"><i data-ng-class="evaluateTicketStatus(ticket.status)" data-tooltip="{{ticket.status | statusText}}"></i><br/></td>
-                            <td data-ng-class-even="'active'"><a href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketReservation.id}}/" target="_blank">{{::ticket.uuid}}</a></td>
-                            <td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
-                            <td data-ng-class-even="'active'">{{::ticket.fullName}}</td>
-                            <td data-ng-class-even="'active'">{{::ticket.email}}</td>
-                            <td data-ng-class-even="'active'">{{::ticket.ticketReservation.fullName}}</td>
-                            <td data-ng-class-even="'active'">{{::ticket.ticketReservation.email}}</td>
-                            <td data-ng-class-even="'active'">{{::ticket.ticketReservation.paymentMethod}}</td>
-                            <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
-                            <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
-                            <td data-ng-class-even="'active'"><button class="btn btn-warning" data-ng-click="toggleLocking(event, ticket, ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div data-ng-if="ticketCategory.accessRestricted">
-            <div class="wMarginBottom" data-collapse="isTokenViewCollapsed(ticketCategory)">
                 <div class="row">
-                    <div class="col-sm-2" data-ng-repeat="token in ::ticketCategory.tokenStatus | orderBy: ['status', 'code']"><i class="status-icon" data-ng-class="evaluateClass(token)" title="{{::token.status}}"></i> {{::token.code}}</div>
+                    <div class="col-sm-8">
+                        <div class="col-sm-5">
+                            <h4>{{::ticketCategory.name}} <a class="btn btn-default" data-ng-click="openConfiguration(event, ticketCategory)"><i class="fa fa-wrench"></i></a><span class="sr-only"> Configuration</span></h4>
+                        </div>
+                        <div class="col-sm-7">
+                            <div class="row">
+                                <div class="col-sm-4"><strong>Max tickets</strong></div>
+                                <div class="col-sm-8" data-ng-if="ticketCategory.bounded">{{::ticketCategory.maxTickets}}</div>
+                                <div class="col-sm-8" data-ng-if="!ticketCategory.bounded">dynamic</div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-4"><strong>Initial sale date</strong></div>
+                                <div class="col-sm-8">{{::ticketCategory.formattedInception | formatDate}} </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-4"><strong>End sale date</strong></div>
+                                <div class="col-sm-8">{{::ticketCategory.formattedExpiration | formatDate}} </div>
+                            </div>
+                            <div class="row" data-ng-if="!event.freeOfCharge">
+                                <div class="col-sm-4"><strong>Final price</strong></div>
+                                <div class="col-sm-8">{{::ticketCategory.actualPrice | currency : (event.currency || "")}}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <ticket-status data-statistics-container="ticketCategory"></ticket-status>
+                    </div>
+                </div>
+            </div>
+            <div class="wMarginBottom">
+                    <button class="btn btn-warning" data-ng-click="editCategory(ticketCategory, event)"><i class="fa fa-edit"></i> edit</button>
+                    <button data-ng-if="ticketCategory.containingTickets" class="btn btn-default" data-ng-click="toggleTicketViewCollapse(ticketCategory)">
+                        <i class="fa fa-ticket"></i> <span data-ng-if="isTicketViewCollapsed(ticketCategory)">show</span><span data-ng-if="!isTicketViewCollapsed(ticketCategory)">hide</span> tickets
+                    </button>
+                    <button class="btn btn-default" data-ng-if="ticketCategory.accessRestricted" data-ng-click="toggleTokenViewCollapse(ticketCategory)">
+                        <i class="fa fa-qrcode"></i> <span data-ng-if="isTokenViewCollapsed(ticketCategory)">show</span><span data-ng-if="!isTokenViewCollapsed(ticketCategory)">hide</span> tokens
+                    </button>
+                    <button data-ng-if="ticketCategory.accessRestricted && !ticketCategory.expired" class="btn btn-warning" data-ui-sref="events.sendInvitations({eventName: event.shortName, categoryId: ticketCategory.id})"><i class="fa fa-envelope-o"></i> send invitations</button>
+            </div>
+            <div data-ng-if="ticketCategory.containingTickets">
+                <div class="wMarginBottom table-responsive" data-collapse="isTicketViewCollapsed(ticketCategory)">
+                    <table class="table">
+                        <thead>
+                            <th>status</th>
+                            <th>id</th>
+                            <th>timestamp</th>
+                            <th>Owner's name</th>
+                            <th>Owner's e-mail</th>
+                            <th>Customer's name</th>
+                            <th>Customer's e-mail</th>
+                            <th>Payment Type</th>
+                            <th>transaction id</th>
+                            <th>transaction timestamp</th>
+                            <th></th>
+                        </thead>
+                        <tbody>
+                            <tr data-ng-repeat="ticket in ::ticketCategory.tickets | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
+                                <td data-ng-class-even="'active'"><i data-ng-class="evaluateTicketStatus(ticket.status)" data-tooltip="{{ticket.status | statusText}}"></i><br/></td>
+                                <td data-ng-class-even="'active'"><a href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketReservation.id}}/" target="_blank">{{::ticket.uuid}}</a></td>
+                                <td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
+                                <td data-ng-class-even="'active'">{{::ticket.fullName}}</td>
+                                <td data-ng-class-even="'active'">{{::ticket.email}}</td>
+                                <td data-ng-class-even="'active'">{{::ticket.ticketReservation.fullName}}</td>
+                                <td data-ng-class-even="'active'">{{::ticket.ticketReservation.email}}</td>
+                                <td data-ng-class-even="'active'">{{::ticket.ticketReservation.paymentMethod}}</td>
+                                <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
+                                <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
+                                <td data-ng-class-even="'active'"><button class="btn btn-warning" data-ng-click="toggleLocking(event, ticket, ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div data-ng-if="ticketCategory.accessRestricted">
+                <div class="wMarginBottom" data-collapse="isTokenViewCollapsed(ticketCategory)">
+                    <div class="row">
+                        <div class="col-sm-2" data-ng-repeat="token in ::ticketCategory.tokenStatus | orderBy: ['status', 'code']"><i class="status-icon" data-ng-class="evaluateClass(token)" title="{{::token.status}}"></i> {{::token.code}}</div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="clearfix"></div>
-    <div class="wMarginBottom">
-        <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory(event)"><i class="fa fa-plus"></i> add category</button>
+        <div class="clearfix"></div>
+        <div class="wMarginBottom">
+            <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory(event)"><i class="fa fa-plus"></i> add category</button>
+        </div>
     </div>
 </div>

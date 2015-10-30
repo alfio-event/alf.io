@@ -44,7 +44,11 @@ import java.util.stream.Collectors;
 @Getter
 @Log4j2
 public class Event {
+    public enum EventType {
+        INTERNAL, EXTERNAL
+    }
     private final int id;
+    private final EventType type;
     private final String shortName;
     private final String displayName;
     private final String websiteUrl;
@@ -69,6 +73,7 @@ public class Event {
 
 
     public Event(@Column("id") int id,
+                 @Column("type") EventType type,
                  @Column("short_name") String shortName,
                  @Column("display_name") String displayName,
                  @Column("location") String location,
@@ -90,6 +95,7 @@ public class Event {
                  @Column("private_key") String privateKey,
                  @Column("org_id") int organizationId,
                  @Column("locales") int locales) {
+        this.type = type;
         this.displayName = displayName;
         this.websiteUrl = websiteUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
@@ -113,7 +119,7 @@ public class Event {
         this.privateKey = privateKey;
         this.organizationId = organizationId;
         this.locales = locales;
-        this.allowedPaymentProxies = Arrays.stream(allowedPaymentProxies.split(","))
+        this.allowedPaymentProxies = Arrays.stream(Optional.ofNullable(allowedPaymentProxies).orElse("").split(","))
                 .filter(StringUtils::isNotBlank)
                 .map(PaymentProxy::valueOf)
                 .collect(Collectors.toList());

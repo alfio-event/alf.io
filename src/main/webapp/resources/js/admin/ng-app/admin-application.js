@@ -25,7 +25,18 @@
             .state('events.new', {
                 url: '/new',
                 templateUrl: BASE_STATIC_URL + "/event/edit-event.html",
-                controller: 'CreateEventController'
+                controller: 'CreateEventController',
+                data: {
+                    eventType: 'INTERNAL'
+                }
+            })
+            .state('events.newLink', {
+                url: '/new-external',
+                templateUrl: BASE_STATIC_URL + "/event/edit-event.html",
+                controller: 'CreateEventController',
+                data: {
+                    eventType: 'EXTERNAL'
+                }
             })
             .state('events.detail', {
                 url: '/:eventName',
@@ -198,6 +209,10 @@
     var initScopeForEventEditing = function ($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state) {
         $scope.organizations = {};
 
+        $scope.isInternal = function(event) {
+            return event.type === 'INTERNAL';
+        };
+
         EventService.getSupportedLanguages().success(function(result) {
             $scope.allLanguages = result;
             $scope.allLanguagesMapping = {};
@@ -279,6 +294,7 @@
                                                        EventService, LocationService) {
 
         $scope.event = {
+            type: $state.current.data.eventType,
             freeOfCharge: false,
             begin: {},
             end: {},
