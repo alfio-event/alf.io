@@ -33,6 +33,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -86,6 +87,12 @@ public class EventApiController {
         this.ticketFieldRepository = ticketFieldRepository;
     }
 
+    @ExceptionHandler(DataAccessException.class)
+    public String exception(DataAccessException e) {
+        log.warn("unhandled exception", e);
+        return "unexpected error. More info in the application log";
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String unhandledException(Exception e) {
@@ -125,8 +132,8 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/check", method = POST)
     public ValidationResult validateEvent(@RequestBody EventModification eventModification, Errors errors) {
-        ValidationResult base = validateEventHeader(eventModification, errors)
-            .or(validateEventPrices(eventModification, errors));
+        ValidationResult base = validateEventHeader(Optional.<Event>empty(), eventModification, errors)
+            .or(validateEventPrices(Optional.<Event>empty(), eventModification, errors));
         AtomicInteger counter = new AtomicInteger();
         return base.or(eventModification.getTicketCategories().stream()
             .map(c -> validateCategory(c, errors, "ticketCategories[" + counter.getAndIncrement() + "]."))
@@ -142,12 +149,14 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{id}/header/update", method = POST)
     public ValidationResult updateHeader(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
-        return validateEventHeader(eventModification, errors).ifSuccess(() -> eventManager.updateEventHeader(id, eventModification, principal.getName()));
+        Event event = eventManager.getSingleEventById(id, principal.getName());
+        return validateEventHeader(Optional.of(event), eventModification, errors).ifSuccess(() -> eventManager.updateEventHeader(event, eventModification, principal.getName()));
     }
 
     @RequestMapping(value = "/events/{id}/prices/update", method = POST)
     public ValidationResult updatePrices(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
-        return validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(id, eventModification, principal.getName()));
+        Event event = eventManager.getSingleEventById(id, principal.getName());
+        return validateEventPrices(Optional.of(event), eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(event, eventModification, principal.getName()));
     }
 
     @RequestMapping(value = "/events/{eventId}/categories/{categoryId}/update", method = POST)

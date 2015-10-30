@@ -16,6 +16,7 @@
  */
 package alfio.model.modification;
 
+import alfio.model.Event;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
@@ -33,7 +34,9 @@ import java.util.*;
 public class EventModification {
 
     private final Integer id;
+    private final Event.EventType eventType;
     private final String websiteUrl;
+    private final String externalUrl;
     private final String termsAndConditionsUrl;
     private final String imageUrl;
     private final String fileBlobId;
@@ -57,7 +60,9 @@ public class EventModification {
 
     @JsonCreator
     public EventModification(@JsonProperty("id") Integer id,
+                             @JsonProperty("type") Event.EventType eventType,
                              @JsonProperty("websiteUrl") String websiteUrl,
+                             @JsonProperty("external") String externalUrl,
                              @JsonProperty("termsAndConditionsUrl") String termsAndConditionsUrl,
                              @JsonProperty("imageUrl") String imageUrl,
                              @JsonProperty("fileBlobId") String fileBlobId,
@@ -79,7 +84,9 @@ public class EventModification {
                              @JsonProperty("geoLocation") LocationDescriptor locationDescriptor,
                              @JsonProperty("locales") int locales) {
         this.id = id;
+        this.eventType = eventType;
         this.websiteUrl = websiteUrl;
+        this.externalUrl = externalUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
         this.imageUrl = imageUrl;
         this.fileBlobId = fileBlobId;
@@ -108,5 +115,9 @@ public class EventModification {
 
     public LocationDescriptor getGeolocation() {
         return locationDescriptor;
+    }
+
+    public boolean isInternal() {
+        return eventType == Event.EventType.INTERNAL;
     }
 }

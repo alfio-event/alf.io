@@ -293,8 +293,9 @@
                                                        $q, OrganizationService, PaymentProxyService,
                                                        EventService, LocationService) {
 
+        var eventType = $state.current.data.eventType;
         $scope.event = {
-            type: $state.current.data.eventType,
+            type: eventType,
             freeOfCharge: false,
             begin: {},
             end: {},
@@ -302,7 +303,9 @@
         };
         initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state);
         $scope.event.ticketCategories = [];
-        createAndPushCategory(true, $scope);
+        if(eventType === 'INTERNAL') {
+            createAndPushCategory(true, $scope);
+        }
 
         $scope.save = function(form, event) {
             /*if(!form.$valid) {

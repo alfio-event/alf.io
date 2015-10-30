@@ -11,7 +11,13 @@
                 </a>
             </div>
             <div class="col-xs-12 col-sm-5 col-md-8">
+              {{#internal}}
               <a href="{{request.contextPath}}/event/{{shortName}}/" class="no-decoration">
+              {{/internal}}
+              {{^internal}}
+              <a href="{{externalUrl}}" target="_blank" class="no-decoration">
+              {{/internal}}
+
                   <h2>{{displayName}}</h2>
                   <h6>{{shortDescription}}</h6>
                   <div>

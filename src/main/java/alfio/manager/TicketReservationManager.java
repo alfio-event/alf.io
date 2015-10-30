@@ -1006,7 +1006,12 @@ public class TicketReservationManager {
 
     public List<Pair<TicketReservation, OrderSummary>> getPendingPayments(EventWithStatistics eventWithStatistics) {
         Event event = eventWithStatistics.getEvent();
-        List<String> reservationIds = ticketRepository.findPendingTicketsInCategories(eventWithStatistics.getTicketCategories().stream().map(TicketCategoryWithStatistic::getId).collect(toList()))
+
+        List<TicketCategoryWithStatistic> categories = eventWithStatistics.getTicketCategories();
+        if(categories.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<String> reservationIds = ticketRepository.findPendingTicketsInCategories(categories.stream().map(TicketCategoryWithStatistic::getId).collect(toList()))
                 .stream()
                 .map(Ticket::getTicketsReservationId)
                 .distinct()

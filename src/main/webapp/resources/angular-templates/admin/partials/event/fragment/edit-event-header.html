@@ -41,6 +41,13 @@
             <label for="websiteUrl">Website URL</label>
             <input type="url" data-ng-model="obj.websiteUrl" name="websiteUrl" id="websiteUrl" required class="form-control" />
             <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.websiteUrl" data-show-existing-errors="showExistingErrors"></field-error>
+
+            <div data-ng-if="!isInternal(event)">
+                <label for="externalUrl">External ticket reservation URL</label>
+                <input type="url" data-ng-model="obj.externalUrl" name="externalUrl" id="externalUrl" required class="form-control" />
+                <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.externalUrl" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
+
             <div data-ng-if="isInternal(obj)">
                 <label for="termsAndConditionsUrl">Terms and Conditions URL</label>
                 <input type="url" data-ng-model="obj.termsAndConditionsUrl" name="termsAndConditionsUrl" id="termsAndConditionsUrl" required class="form-control" />

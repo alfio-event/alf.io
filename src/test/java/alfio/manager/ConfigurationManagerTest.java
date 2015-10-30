@@ -115,7 +115,7 @@ public class ConfigurationManagerTest {
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false));
-        EventModification em = new EventModification(null, "url", "url", "url", null,
+        EventModification em = new EventModification(null, Event.EventType.INTERNAL, "url", "url", "url", null, null,
             "eventShortName", "displayName", organization.getId(),
             "muh location", desc,
             new DateTimeModification(LocalDate.now(), LocalTime.now()),

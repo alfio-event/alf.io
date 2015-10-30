@@ -178,14 +178,14 @@ public class EventManager {
         }));
     }
 
-    public void updateEventHeader(int eventId, EventModification em, String username) {
-        final Event original = eventRepository.findById(eventId);
+    public void updateEventHeader(Event original, EventModification em, String username) {
         checkOwnership(original, username, em.getOrganizationId());
+        int eventId = original.getId();
         final GeolocationResult geolocation = geolocate(em.getLocation());
         final ZoneId zoneId = geolocation.getZoneId();
         final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);
         final ZonedDateTime end = em.getEnd().toZonedDateTime(zoneId);
-        eventRepository.updateHeader(eventId, em.getDisplayName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(),
+        eventRepository.updateHeader(eventId, em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.getTermsAndConditionsUrl(),
             em.getImageUrl(), em.getFileBlobId(), em.getLocation(), geolocation.getLatitude(), geolocation.getLongitude(),
             begin, end, geolocation.getTimeZone(), em.getOrganizationId(), em.getLocales());
 
@@ -197,9 +197,9 @@ public class EventManager {
         }
     }
 
-    public void updateEventPrices(int eventId, EventModification em, String username) {
-        final Event original = eventRepository.findById(eventId);
+    public void updateEventPrices(Event original, EventModification em, String username) {
         checkOwnership(original, username, em.getOrganizationId());
+        int eventId = original.getId();
         final EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(original);
         int seatsDifference = em.getAvailableSeats() - original.getAvailableSeats();
         if(seatsDifference < 0) {
@@ -517,14 +517,14 @@ public class EventManager {
 
     private int insertEvent(EventModification em) {
         String paymentProxies = collectPaymentProxies(em);
-        int actualPrice = evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
-        BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
+        int actualPrice = em.isInternal() ? evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge()) : 0;
+        BigDecimal vat = !em.isInternal() || em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
         String privateKey = UUID.randomUUID().toString();
         final GeolocationResult result = geolocate(em.getLocation());
-        return eventRepository.insert(em.getShortName(), em.getDisplayName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(),
-                result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()), em.getEnd().toZonedDateTime(result.getZoneId()),
-                result.getTimeZone(), actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
-                privateKey, em.getOrganizationId(), em.getLocales()).getKey();
+        return eventRepository.insert(em.getShortName(), em.getEventType(), em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.isInternal() ? em.getTermsAndConditionsUrl() : "",
+            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()),
+            em.getEnd().toZonedDateTime(result.getZoneId()), result.getTimeZone(), actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isInternal() && em.isVatIncluded(),
+            vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales()).getKey();
     }
 
     private String collectPaymentProxies(EventModification em) {

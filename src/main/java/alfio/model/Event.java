@@ -52,6 +52,7 @@ public class Event {
     private final String shortName;
     private final String displayName;
     private final String websiteUrl;
+    private final String externalUrl;
     private final String termsAndConditionsUrl;
     private final String imageUrl;
     private final String fileBlobId;
@@ -83,6 +84,7 @@ public class Event {
                  @Column("end_ts") ZonedDateTime end,
                  @Column("time_zone") String timeZone,
                  @Column("website_url") String websiteUrl,
+                 @Column("external_url") String externalUrl,
                  @Column("file_blob_id") String fileBlobId,
                  @Column("website_t_c_url") String termsAndConditionsUrl,
                  @Column("image_url") String imageUrl,
@@ -95,9 +97,11 @@ public class Event {
                  @Column("private_key") String privateKey,
                  @Column("org_id") int organizationId,
                  @Column("locales") int locales) {
+
         this.type = type;
         this.displayName = displayName;
         this.websiteUrl = websiteUrl;
+        this.externalUrl = externalUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
         this.imageUrl = imageUrl;
         this.fileBlobId = fileBlobId;
@@ -246,6 +250,10 @@ public class Event {
             log.warn("was not able to generate iCal for event " + getShortName(), e);
             return Optional.empty();
         }
+    }
+
+    public boolean isInternal() {
+        return type == EventType.INTERNAL;
     }
 
 }

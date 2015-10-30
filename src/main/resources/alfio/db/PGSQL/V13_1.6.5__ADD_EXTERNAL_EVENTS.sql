@@ -16,3 +16,4 @@
 --
 
 alter table event add column type varchar(20) default 'INTERNAL' not null;
+alter table event add column external_url varchar(1024);
