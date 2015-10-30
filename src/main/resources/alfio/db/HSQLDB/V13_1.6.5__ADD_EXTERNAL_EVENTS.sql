@@ -15,4 +15,4 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-alter table event add column type varchar(20) not null default 'INTERNAL';
+alter table event add column type varchar(20) default 'INTERNAL' not null;
