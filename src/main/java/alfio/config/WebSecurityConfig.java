@@ -48,6 +48,7 @@ public class WebSecurityConfig {
     private static final String ADMIN = "ADMIN";
     private static final String OWNER = "OWNER";
     private static final String OPERATOR = "OPERATOR";
+    private static final String SPONSOR = "SPONSOR";
 
 
 
@@ -83,7 +84,9 @@ public class WebSecurityConfig {
             .authorizeRequests()
             .antMatchers(ADMIN_API + "/check-in/**").hasRole(OPERATOR)
             .antMatchers(HttpMethod.GET, ADMIN_API + "/events/**").hasRole(OPERATOR)
-            .antMatchers("/**").denyAll()
+            .antMatchers(ADMIN_API + "/**").denyAll()
+            .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
+            .antMatchers("/**").authenticated()
             .and().httpBasic();
         }
     }
@@ -129,6 +132,7 @@ public class WebSecurityConfig {
                 .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
+                .antMatchers("/api/attendees/sponsor-scan").denyAll()
                 .antMatchers("/**").permitAll()
                 .and()
                 .formLogin()

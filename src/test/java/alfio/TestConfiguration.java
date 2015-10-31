@@ -30,7 +30,7 @@ import java.util.Properties;
 @Configuration
 public class TestConfiguration {
     @Bean
-    public PropertyPlaceholderConfigurer propConfig() {
+    public static PropertyPlaceholderConfigurer propConfig() {
         Properties properties = new Properties();
         properties.put("alfio.version", "1.5-SNAPSHOT");
         properties.put("alfio.build-ts", ZonedDateTime.now(ZoneId.of("UTC")).minusDays(1).toString());

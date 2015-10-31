@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
 import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
+import static alfio.util.MonetaryUtil.addVAT;
 
 @UtilityClass
 public class EventUtil {
@@ -131,6 +132,13 @@ public class EventUtil {
 
     public static int determineAvailableSeats(TicketCategoryWithStatistic tc, EventWithStatistics e) {
         return tc.isBounded() ? tc.getNotSoldTickets() : e.getDynamicAllocation();
+    }
+
+    public static int getFinalPriceInCents(Event event, TicketCategory category) {
+        if(event.isVatIncluded()) {
+            return addVAT(category.getPriceInCents(), event.getVat());
+        }
+        return category.getPriceInCents();
     }
 
 
