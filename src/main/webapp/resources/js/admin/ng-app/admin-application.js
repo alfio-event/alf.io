@@ -293,7 +293,7 @@
                                                        $q, OrganizationService, PaymentProxyService,
                                                        EventService, LocationService) {
 
-        var eventType = $state.current.data.eventType;
+        var eventType = $state.$current.data.eventType;
         $scope.event = {
             type: eventType,
             freeOfCharge: false,
