@@ -50,9 +50,9 @@
                 <div data-ng-if="field.type == 'select'">Field restricted values:
                     <ul>
                         <li data-ng-repeat="restrictedValue in field.restrictedValues">
-                            <div>option value: <input ng-value="restrictedValue.value"> <button type="button" ng-click="field.restrictedValues.splice(field.restrictedValues.indexOf(restrictedValue), 1)">remove</button></div>
+                            <div>option value: <input ng-model="restrictedValue.value"> <button type="button" ng-click="field.restrictedValues.splice(field.restrictedValues.indexOf(restrictedValue), 1)">remove</button></div>
                             <ul>
-                                <li ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">option text: {{lang.displayLanguage}} <input></li>
+                                <li ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">option text {{lang.displayLanguage}}: <input ng-model="field.description[lang.locale].restrictedValues[restrictedValue.value]"></li>
                             </ul>
                         </li>
                     </ul>
@@ -63,9 +63,12 @@
                 <p data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">Field min length: <input type="number" ng-model="field.minLength"></p>
                 <p data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">Field max length: <input type="number" ng-model="field.maxLength"></p>
                 <div>
-                    Label for field:
+                    Field texts:
                     <ul>
-                        <li ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">value: {{lang.displayLanguage}} <input></li>
+                        <li ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">
+                            <div>Label {{lang.displayLanguage}}: <input ng-model="field.description[lang.locale].label" type="text" placeholder="label"></div>
+                            <div>Placeholder {{lang.displayLanguage}}: <input ng-model="field.description[lang.locale].placeholder" type="text" placeholder="placeholder"></div>
+                        </li>
                     </ul>
                 </div>
                 <p><button type="button" ng-click="removeTicketField(event.ticketFields, field)">Remove field</button></p>
