@@ -30,6 +30,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
+import alfio.util.Json;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -43,6 +44,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -79,6 +81,7 @@ public class EventManager {
     private final NamedParameterJdbcTemplate jdbc;
     private final ConfigurationManager configurationManager;
     private final PluginManager pluginManager;
+    private final TicketFieldRepository ticketFieldRepository;
 
     @Autowired
     public EventManager(UserManager userManager,
@@ -93,7 +96,8 @@ public class EventManager {
                         LocationManager locationManager,
                         NamedParameterJdbcTemplate jdbc,
                         ConfigurationManager configurationManager,
-                        PluginManager pluginManager) {
+                        PluginManager pluginManager,
+                        TicketFieldRepository ticketFieldRepository) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -107,6 +111,7 @@ public class EventManager {
         this.jdbc = jdbc;
         this.configurationManager = configurationManager;
         this.pluginManager = pluginManager;
+        this.ticketFieldRepository = ticketFieldRepository;
     }
 
     public Event getSingleEvent(String eventName, String username) {
@@ -154,6 +159,7 @@ public class EventManager {
         int eventId = insertEvent(em);
         Event event = eventRepository.findById(eventId);
         createOrUpdateEventDescription(eventId, em);
+        createAdditionalFields(eventId, em);
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(eventId, event);
         initPlugins(event);
@@ -176,6 +182,19 @@ public class EventManager {
                 eventDescriptionRepository.insert(eventId, locale, EventDescription.EventDescriptionType.DESCRIPTION, description);
             }
         }));
+    }
+
+    private void createAdditionalFields(int eventId, EventModification em) {
+        if (!CollectionUtils.isEmpty(em.getTicketFields())) {
+           em.getTicketFields().forEach(f -> {
+               List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValues()).orElseGet(Collections::emptyList).stream().map(EventModification.RestrictedValue::getValue).collect(Collectors.toList());
+               String serializedRestrictedValues = "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
+               int configurationId = ticketFieldRepository.insertConfiguration(eventId, f.getName(), f.getOrder(), f.getType(), serializedRestrictedValues, f.getMaxLength(), f.getMinLength(), f.isRequired()).getKey();
+               f.getDescription().forEach((locale, value) -> {
+                   ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value));
+               });
+           });
+        }
     }
 
     public void updateEventHeader(Event original, EventModification em, String username) {
