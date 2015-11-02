@@ -26,11 +26,11 @@
             <label for="location">Location</label>
             <textarea data-ng-model="obj.location" name="location" id="location" class="form-control" required data-ng-minlength="10" data-ng-change="updateLocation(obj.location)" data-ng-model-options="{ updateOn: 'blur'}"></textarea>
             <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.location" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
+
             <div data-ng-if="obj.type === 'INTERNAL'">
                 <label for="languages">Languages</label>
-                <select id="languages" class="form-control" multiple data-ng-model="selectedLanguages" data-ng-options="lang.value as lang.displayLanguage for lang in allLanguages" data-ng-change="updateLocales()"></select>
-
-                <div data-ng-repeat="langValue in selectedLanguages">
+                <select id="languages" class="form-control" multiple data-ng-model="selectedLanguages.langs" data-ng-options="lang.value as lang.displayLanguage for lang in allLanguages" data-ng-change="updateLocales()"></select>
+                <div data-ng-repeat="langValue in selectedLanguages.langs">
                     <label for="description">Event Description: {{allLanguagesMapping[langValue].displayLanguage}}</label>
                     <textarea data-ng-model="obj.description[allLanguagesMapping[langValue].locale]" name="description-{{allLanguagesMapping[langValue].locale}}" id="description" required class="form-control" data-ng-minlength="10" data-ng-maxlength="2048"></textarea>
                     <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader['description-'+allLanguagesMapping[langValue].locale]" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>

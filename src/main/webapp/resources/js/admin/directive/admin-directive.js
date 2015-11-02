@@ -208,23 +208,18 @@
                     };
                 }
 
-                if($stateParams.eventName) {
-                    EventService.getSupportedLanguages($stateParams.eventName).success(function(result) {
-                        $scope.selectedLanguages = _.map(result, function(r) {
-                            return r.value;
-                        });
+                $scope.selectedLanguages = {};
+
+                EventService.getSupportedLanguages().success(function(result) {
+                        $scope.selectedLanguages.langs = _.map(result, function(r) {
+                        return r.value;
                     });
-                } else {
-                    EventService.getAllLanguages().success(function(result) {
-                        $scope.selectedLanguages = _.map(result, function(r) {
-                            return r.value;
-                        });
-                    });
-                }
+                });
+
 
                 $scope.updateLocales = function() {
                     var locales = 0;
-                    angular.forEach($scope.selectedLanguages, function(val) {
+                    angular.forEach($scope.selectedLanguages.langs, function(val) {
                         locales = locales | val;
                     });
                     $scope.obj.locales = locales;
