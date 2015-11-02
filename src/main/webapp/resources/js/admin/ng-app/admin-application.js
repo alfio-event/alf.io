@@ -269,7 +269,7 @@
                 event.ticketFields = [];
             }
 
-            event.ticketFields.push({required:false, order: event.ticketFields.length+1});
+            event.ticketFields.push({required:false, order: event.ticketFields.length+1, type:'input:text', maxLength:255});
         };
 
         $scope.removeTicketField = function(fields, field) {

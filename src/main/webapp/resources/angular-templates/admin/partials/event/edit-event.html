@@ -43,39 +43,72 @@
                 <h5 class="text-muted">Here you can add/remove additional fields</h5>
             </div>
 
-            <div data-ng-repeat="field in event.ticketFields | orderBy: 'order' ">
-                <p>Field name: <input type="input" ng-model="field.name"></p>
-                <p>Field order: <input type="number" ng-model="field.order"></p>
-                <p>Field type: <select ng-model="field.type" ng-options="option for option in fieldTypes"></select></p>
-                <div data-ng-if="field.type == 'select'">Field restricted values:
-                    <ul>
-                        <li data-ng-repeat="restrictedValue in field.restrictedValues">
-                            <div>option value: <input ng-model="restrictedValue.value"> <button type="button" ng-click="field.restrictedValues.splice(field.restrictedValues.indexOf(restrictedValue), 1)">remove</button></div>
-                            <ul>
-                                <li ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">option text {{lang.displayLanguage}}: <input ng-model="field.description[lang.locale].restrictedValues[restrictedValue.value]"></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <div>
-                        <button type="button" data-ng-click="addRestrictedValue(field);">add value</button>
+            <div data-ng-repeat="field in event.ticketFields | orderBy: 'order' " class="category container">
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div>
+                            <label>Field name:</label>
+                            <input type="input" ng-model="field.name" class="form-control">
+                        </div>
+                        <div>
+                            <label>Order:</label>
+                            <input type="number" ng-model="field.order" class="form-control">
+                        </div>
+                        <div>
+                            <label>Type:</label>
+                            <select ng-model="field.type" ng-options="option for option in fieldTypes" class="form-control"></select>
+                        </div>
+                    </div>
+                    <div class="col-md-4" ng-if="field.type != 'country'">
+                        <div data-ng-if="field.type == 'select'">Field restricted values:
+                            <div data-ng-repeat="restrictedValue in field.restrictedValues">
+                                <div>option value:
+                                    <input ng-model="restrictedValue.value"> <button type="button" ng-click="field.restrictedValues.splice(field.restrictedValues.indexOf(restrictedValue), 1)">remove</button>
+                                </div>
+                                <div>
+                                    <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">
+                                        option text {{lang.displayLanguage}}:
+                                        <input ng-model="field.description[lang.locale].restrictedValues[restrictedValue.value]">
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <button type="button" data-ng-click="addRestrictedValue(field);">add value</button>
+                            </div>
+                        </div>
+                        <div data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
+                            <div>
+                                <label>Min length:</label>
+                                <input type="number" ng-model="field.minLength" class="form-control">
+                            </div>
+                            <div>
+                                <label>Max length:</label>
+                                <input type="number" ng-model="field.maxLength" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div>
+                            <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">
+                                <div>
+                                    <label>Label {{lang.displayLanguage}}:</label>
+                                    <input ng-model="field.description[lang.locale].label" type="text" placeholder="label" class="form-control"></div>
+                                <div>
+                                    <label>Placeholder {{lang.displayLanguage}}:</label>
+                                    <input ng-model="field.description[lang.locale].placeholder" type="text" placeholder="placeholder" class="form-control">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <p data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">Field min length: <input type="number" ng-model="field.minLength"></p>
-                <p data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">Field max length: <input type="number" ng-model="field.maxLength"></p>
-                <div>
-                    Field texts:
-                    <ul>
-                        <li ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">
-                            <div>Label {{lang.displayLanguage}}: <input ng-model="field.description[lang.locale].label" type="text" placeholder="label"></div>
-                            <div>Placeholder {{lang.displayLanguage}}: <input ng-model="field.description[lang.locale].placeholder" type="text" placeholder="placeholder"></div>
-                        </li>
-                    </ul>
+                <div class="row">
+                    <div class="col-md-12"><button type="button" ng-click="removeTicketField(event.ticketFields, field)" class="btn btn-default"><i class="fa fa-trash-o"></i></button></div>
                 </div>
-                <p><button type="button" ng-click="removeTicketField(event.ticketFields, field)">Remove field</button></p>
             </div>
 
-            <div>
-                <div><button type="button" ng-click="addNewTicketField(event)">Add new field</button></div>
+            <div class="row">
+                <div class="col-sm-offset-11 col-sm-1"><p><button type="button" class="btn btn-success" ng-click="addNewTicketField(event)"><i class="fa fa-plus"></i></button></p></div>
             </div>
         </div>
 
