@@ -91,9 +91,9 @@ insert into ticket_field_description(ticket_field_configuration_id_fk, field_loc
 insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
     select ticket_field_configuration.id, 'en', '{"label": "Notes", "placeholder" : "Should you have any special need (such as but not limited to diet or accessibility requirements) please let us know"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'notes';
 insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
-    select ticket_field_configuration.id, 'it', '{"label": "Note", "placeholder" : "Gerne nehmen wir auf Ihre Bed\u00FCrfnisse R\u00FCcksicht, falls du aussergew\u00F6hnliche Essensgewohnheiten oder eingeschr\u00E4nkte Zutrittsm\u00F6glichkeiten hast, informiere uns bitte."}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'notes';
+    select ticket_field_configuration.id, 'it', '{"label": "Note", "placeholder" : "Hai qualche esigenza particolare (ad esempio per quanto riguarda cibo o accessibilit\u00E0)? Per favore, faccelo sapere!"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'notes';
 insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
-    select ticket_field_configuration.id, 'de', '{"label": "Bemerkungen", "placeholder" : "Hai qualche esigenza particolare (ad esempio per quanto riguarda cibo o accessibilit\u00E0)? Per favore, faccelo sapere!"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'notes';
+    select ticket_field_configuration.id, 'de', '{"label": "Bemerkungen", "placeholder" : "Gerne nehmen wir auf Ihre Bed\u00FCrfnisse R\u00FCcksicht, falls du aussergew\u00F6hnliche Essensgewohnheiten oder eingeschr\u00E4nkte Zutrittsm\u00F6glichkeiten hast, informiere uns bitte."}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'notes';
 
 -- copy values from ticket to new fields
 
