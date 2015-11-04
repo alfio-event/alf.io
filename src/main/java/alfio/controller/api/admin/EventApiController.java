@@ -16,9 +16,13 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.controller.api.support.DescriptionsLoader;
+import alfio.controller.api.support.EventListItem;
+import alfio.controller.api.support.PublicEvent;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
@@ -66,25 +70,31 @@ public class EventApiController {
 
     private static final String OK = "OK";
     private final EventManager eventManager;
+    private final UserManager userManager;
     private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
     private final TicketReservationManager ticketReservationManager;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final TicketFieldRepository ticketFieldRepository;
+    private final DescriptionsLoader descriptionsLoader;
 
     @Autowired
     public EventApiController(EventManager eventManager,
+                              UserManager userManager,
                               EventStatisticsManager eventStatisticsManager,
                               I18nManager i18nManager,
                               TicketReservationManager ticketReservationManager,
                               TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
-                              TicketFieldRepository ticketFieldRepository) {
+                              TicketFieldRepository ticketFieldRepository,
+                              DescriptionsLoader descriptionsLoader) {
         this.eventManager = eventManager;
+        this.userManager = userManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.i18nManager = i18nManager;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
         this.ticketFieldRepository = ticketFieldRepository;
+        this.descriptionsLoader = descriptionsLoader;
     }
 
     @ExceptionHandler(DataAccessException.class)
@@ -107,6 +117,14 @@ public class EventApiController {
     @ResponseStatus(HttpStatus.OK)
     public List<PaymentProxy> getPaymentProxies() {
         return PaymentProxy.availableProxies();
+    }
+
+    @RequestMapping(value = "/events", method = GET, headers = "Authorization=Basic*")
+    public List<EventListItem> getAllEventsForExternal(Principal principal, HttpServletRequest request) {
+        return eventStatisticsManager.getAllEventsWithStatistics(principal.getName()).stream()
+            .sorted()
+            .map(s -> new EventListItem(s.getEvent(), request.getContextPath(), descriptionsLoader.eventDescriptions()))
+            .collect(Collectors.toList());
     }
 
     @RequestMapping(value = "/events", method = GET)
@@ -202,7 +220,7 @@ public class EventApiController {
                 out.write(marker);
             }
             CSVWriter writer = new CSVWriter(new OutputStreamWriter(out));
-            writer.writeNext(fields.toArray(new String[]{}));
+            writer.writeNext(fields.toArray(new String[fields.size()]));
 
             eventManager.findAllConfirmedTickets(eventName, principal.getName()).stream().map(t -> {
                 List<String> line = new ArrayList<>();
@@ -226,7 +244,7 @@ public class EventApiController {
                     line.add(additionalValues.getOrDefault(field, ""));
                 });
 
-                return line.toArray(new String[]{});
+                return line.toArray(new String[line.size()]);
             }).forEachOrdered(writer::writeNext);
             writer.flush();
             out.flush();

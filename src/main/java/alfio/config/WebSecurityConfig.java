@@ -83,7 +83,7 @@ public class WebSecurityConfig {
             .and().csrf().disable()
             .authorizeRequests()
             .antMatchers(ADMIN_API + "/check-in/**").hasRole(OPERATOR)
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/events/**").hasRole(OPERATOR)
+            .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SPONSOR)
             .antMatchers(ADMIN_API + "/**").denyAll()
             .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
             .antMatchers("/**").authenticated()
