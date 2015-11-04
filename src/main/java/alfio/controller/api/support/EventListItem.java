@@ -51,11 +51,15 @@ public class EventListItem {
         return event.getDisplayName();
     }
 
+    public String getKey() {
+        return event.getShortName();
+    }
+
     public List<PublicEventDescription> getDescriptions() {
         return eventDescriptions.stream().map(PublicEventDescription::fromEventDescription).collect(Collectors.toList());
     }
 
-    public boolean isSameDay() {
+    public boolean isOneDay() {
         return event.getSameDay();
     }
 
