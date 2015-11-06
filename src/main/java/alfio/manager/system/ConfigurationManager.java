@@ -19,7 +19,6 @@ package alfio.manager.system;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.modification.ConfigurationModification;
-import alfio.model.system.ComponentType;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeys;
@@ -31,6 +30,7 @@ import alfio.repository.system.ConfigurationRepository;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationPathLevel.EVENT;
 import static alfio.model.system.ConfigurationPathLevel.ORGANIZATION;
+import static alfio.model.system.ConfigurationPathLevel.SYSTEM;
 import static alfio.util.OptionalWrapper.optionally;
 
 @Component
@@ -87,12 +88,12 @@ public class ConfigurationManager {
             case EVENT: {
                 EventConfigurationPath o = from(path);
                 return selectPath(configurationRepository.findByEventAndKey(o.getOrganizationId(),
-                        o.getId(), key.getValue()));
+                    o.getId(), key.getValue()));
             }
             case TICKET_CATEGORY: {
                 TicketCategoryConfigurationPath o = from(path);
                 return selectPath(configurationRepository.findByTicketCategoryAndKey(o.getOrganizationId(),
-                        o.getEventId(), o.getId(), key.getValue()));
+                    o.getEventId(), o.getId(), key.getValue()));
             }
         }
         throw new IllegalStateException("Can't reach here");
@@ -106,8 +107,8 @@ public class ConfigurationManager {
      */
     private Configuration selectPath(List<Configuration> conf) {
         return conf.size() == 1 ? conf.get(0) : conf.stream()
-                .sorted(Comparator.comparing(Configuration::getConfigurationPathLevel).reversed())
-                .findFirst().orElse(null);
+            .sorted(Comparator.comparing(Configuration::getConfigurationPathLevel).reversed())
+            .findFirst().orElse(null);
     }
 
     //meh
@@ -119,8 +120,8 @@ public class ConfigurationManager {
     public int getIntConfigValue(ConfigurationPathKey pathKey, int defaultValue) {
         try {
             return Optional.ofNullable(findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()))
-                    .map(Configuration::getValue)
-                    .map(Integer::parseInt).orElse(defaultValue);
+                .map(Configuration::getValue)
+                .map(Integer::parseInt).orElse(defaultValue);
         } catch (NumberFormatException | EmptyResultDataAccessException e) {
             return defaultValue;
         }
@@ -128,22 +129,22 @@ public class ConfigurationManager {
 
     public boolean getBooleanConfigValue(ConfigurationPathKey pathKey, boolean defaultValue) {
         return getStringConfigValue(pathKey)
-                .map(Boolean::parseBoolean)
-                .orElse(defaultValue);
+            .map(Boolean::parseBoolean)
+            .orElse(defaultValue);
     }
 
 
     public String getStringConfigValue(ConfigurationPathKey pathKey, String defaultValue) {
         return getStringConfigValue(pathKey).orElse(defaultValue);
     }
-    
+
     public Optional<String> getStringConfigValue(ConfigurationPathKey pathKey) {
         return optionally(() -> findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())).map(Configuration::getValue);
     }
 
     public String getRequiredValue(ConfigurationPathKey pathKey) {
         return getStringConfigValue(pathKey)
-                .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + pathKey.getKey() + " not present"));
+            .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + pathKey.getKey() + " not present"));
     }
 
     // begin SYSTEM related configuration methods
@@ -205,7 +206,7 @@ public class ConfigurationManager {
                 if(!value.isPresent()) {
                     configurationRepository.deleteCategoryLevelByKey(c.getKey(), eventId, categoryId);
                 } else if (existing.isPresent()) {
-                        configurationRepository.updateCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey(), value.get());
+                    configurationRepository.updateCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey(), value.get());
                 } else {
                     configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), eventId, categoryId, c.getKey(), value.get(), ConfigurationKeys.fromString(c.getKey()).getDescription());
                 }
@@ -277,7 +278,7 @@ public class ConfigurationManager {
         }
         boolean isAdmin = userManager.isAdmin(user);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().filter(checkActualConfigurationLevel(isAdmin, ORGANIZATION)).sorted().collect(groupByCategory());
-        return groupByCategory(isAdmin ? SYSTEM_CONFIGURATION : ORGANIZATION_CONFIGURATION, existing);
+        return groupByCategory(isAdmin ? union(SYSTEM, ORGANIZATION) : ORGANIZATION_CONFIGURATION, existing);
     }
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfig(int eventId, String username) {
@@ -289,7 +290,21 @@ public class ConfigurationManager {
         }
         boolean isAdmin = userManager.isAdmin(user);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().filter(checkActualConfigurationLevel(isAdmin, EVENT)).sorted().collect(groupByCategory());
-        return groupByCategory(isAdmin ? SYSTEM_CONFIGURATION : EVENT_CONFIGURATION, existing);
+        return groupByCategory(isAdmin ? union(SYSTEM, EVENT) : EVENT_CONFIGURATION, existing);
+    }
+
+    static Map<ConfigurationKeys.SettingCategory, List<Configuration>> union(ConfigurationPathLevel... levels) {
+        List<Configuration> configurations = Arrays.stream(levels)
+            .sorted(ConfigurationPathLevel.COMPARATOR.reversed())
+            .flatMap(l -> ConfigurationKeys.byPathLevel(l).stream().map(mapEmptyKeys(l)))
+            .sorted((c1, c2) -> new CompareToBuilder().append(c2.getConfigurationPathLevel(), c1.getConfigurationPathLevel()).append(c1.getConfigurationKey(), c2.getConfigurationKey()).toComparison())
+            .collect(LinkedList::new, (List<Configuration> list, Configuration conf) -> {
+                int existing = (int)list.stream().filter(c -> c.getConfigurationKey() == conf.getConfigurationKey()).count();
+                if(existing == 0) {
+                    list.add(conf);
+                }
+            }, (l1, l2) -> {});
+        return configurations.stream().collect(groupByCategory());
     }
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfig(int eventId, int categoryId, String username) {

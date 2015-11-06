@@ -64,7 +64,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @Transactional
-public class ConfigurationManagerTest {
+public class ConfigurationManagerIntegrationTest {
 
     public static final String USERNAME = "test";
 
