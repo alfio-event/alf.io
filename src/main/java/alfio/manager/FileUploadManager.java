@@ -107,7 +107,7 @@ public class FileUploadManager {
 
     public void cleanupUnreferencedBlobFiles() {
         int deleted = repository.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), -1));
-        log.info("removed {} unused file_blob", deleted);
+        log.debug("removed {} unused file_blob", deleted);
     }
 
     private Map<String, String> getAttributes(UploadBase64FileModification file) {
