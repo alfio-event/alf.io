@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import biweekly.property.Organizer;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
@@ -231,7 +232,7 @@ public class Event {
     }
 
     @JsonIgnore
-    public Optional<byte[]> getIcal(String description) {
+    public Optional<byte[]> getIcal(String description, String organizerName, String organizerEmail) {
         ICalendar ical = new ICalendar();
         VEvent vEvent = new VEvent();
         vEvent.setSummary(getDisplayName());
@@ -240,6 +241,7 @@ public class Event {
         vEvent.setDateStart(Date.from(getBegin().toInstant()));
         vEvent.setDateEnd(Date.from(getEnd().toInstant()));
         vEvent.setUrl(getWebsiteUrl());
+        vEvent.setOrganizer(new Organizer(organizerName, organizerEmail));
         ical.addEvent(vEvent);
         StringWriter strWriter = new StringWriter();
         ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V1_0);

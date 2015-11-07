@@ -19,16 +19,16 @@ package alfio.manager;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.TextTemplateGenerator;
-import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.EmailMessage;
 import alfio.model.Event;
 import alfio.model.EventDescription;
 import alfio.model.Ticket;
-import alfio.model.system.Configuration;
+import alfio.model.user.Organization;
 import alfio.repository.EmailMessageRepository;
 import alfio.repository.EventDescriptionRepository;
 import alfio.repository.EventRepository;
+import alfio.repository.user.OrganizationRepository;
 import com.google.gson.*;
 import com.lowagie.text.DocumentException;
 import lombok.extern.log4j.Log4j2;
@@ -61,9 +61,9 @@ public class NotificationManager {
     private final MessageSource messageSource;
     private final EmailMessageRepository emailMessageRepository;
     private final TransactionTemplate tx;
-    private final ConfigurationManager configurationManager;
     private final EventRepository eventRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
+    private final OrganizationRepository organizationRepository;
     private final Gson gson;
 
     @Autowired
@@ -71,15 +71,15 @@ public class NotificationManager {
                                MessageSource messageSource,
                                PlatformTransactionManager transactionManager,
                                EmailMessageRepository emailMessageRepository,
-                               ConfigurationManager configurationManager,
                                EventRepository eventRepository,
-                               EventDescriptionRepository eventDescriptionRepository) {
+                               EventDescriptionRepository eventDescriptionRepository,
+                               OrganizationRepository organizationRepository) {
         this.messageSource = messageSource;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
-        this.configurationManager = configurationManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
+        this.organizationRepository = organizationRepository;
         this.tx = new TransactionTemplate(transactionManager);
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(Mailer.Attachment.class, new AttachmentConverter());
@@ -95,7 +95,8 @@ public class NotificationManager {
 
         String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
 
-        event.getIcal(description).map(ics -> new Mailer.Attachment("calendar.ics", ics, "text/calendar")).ifPresent(attachments::add);
+        Organization organization = organizationRepository.getById(event.getOrganizationId());
+        event.getIcal(description, organization.getName(), organization.getEmail()).map(ics -> new Mailer.Attachment("calendar.ics", ics, "text/calendar")).ifPresent(attachments::add);
 
 
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[attachments.size()]));
