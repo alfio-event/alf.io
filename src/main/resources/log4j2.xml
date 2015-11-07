@@ -8,13 +8,15 @@
             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
         </Console>
         <RollingFile name="file-log" fileName="${log-path}/alfio.log"
-                     filePattern="${log-path}/alfio-%d{yyyy-MM-dd}.log">
+                     filePattern="${log-path}/alfio-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout>
                 <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n</pattern>
             </PatternLayout>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="20 MB"/>
             </Policies>
+            <DefaultRolloverStrategy max="20"/>
         </RollingFile>
         <Async name="Async">
             <AppenderRef ref="file-log"/>
