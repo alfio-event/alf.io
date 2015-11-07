@@ -79,13 +79,6 @@ public class TicketHelper {
         this.ticketFieldRepository = ticketFieldRepository;
     }
 
-    public List<Pair<TicketFieldConfigurationAndDescription, String>> findTicketFieldConfigurationAndValue(int eventId, Locale locale) {
-        Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(locale, eventId);
-        return ticketFieldRepository.findAdditionalFieldsForEvent(eventId).stream()
-            .map(f -> Pair.of(new TicketFieldConfigurationAndDescription(f, descriptions.getOrDefault(f.getId(), TicketFieldDescription.MISSING_FIELD)), ""))
-            .collect(Collectors.toList());
-    }
-
     public List<Pair<TicketFieldConfigurationAndDescription, String>> findTicketFieldConfigurationAndValue(int eventId, int ticketId, Locale locale) {
         Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(locale, eventId);
         Map<String, TicketFieldValue> values = ticketFieldRepository.findAllByTicketIdGroupedByName(ticketId);

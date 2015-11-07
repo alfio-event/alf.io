@@ -177,14 +177,18 @@ public class ReservationController {
 
             Locale locale = RequestContextUtils.getLocale(request);
 
-            model.addAttribute("ticketFieldConfiguration", ticketHelper.findTicketFieldConfigurationAndValue(ev.getId(), locale));
+            //model.addAttribute("ticketFieldConfiguration", ticketHelper.findTicketFieldConfigurationAndValue(ev.getId(), locale));
 
             model.addAttribute(
                     "ticketsByCategory",
                     tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
                             .map((e) -> {
                                 TicketCategory category = eventManager.getTicketCategoryById(e.getKey(), event.get().getId());
-                                return Pair.of(category, TicketDecorator.decorate(e.getValue(), configurationManager.getBooleanConfigValue(Configuration.from(event.get().getOrganizationId(), event.get().getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false), eventManager.checkTicketCancellationPrerequisites()));
+                                List<TicketDecorator> decorators = TicketDecorator.decorate(e.getValue(),
+                                    configurationManager.getBooleanConfigValue(Configuration.from(event.get().getOrganizationId(), event.get().getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false),
+                                    eventManager.checkTicketCancellationPrerequisites(),
+                                    ticket -> ticketHelper.findTicketFieldConfigurationAndValue(ev.getId(), ticket.getId(), locale));
+                                return Pair.of(category, decorators);
                             })
                             .collect(Collectors.toList()));
             model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));

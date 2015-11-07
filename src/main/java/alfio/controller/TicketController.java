@@ -125,14 +125,13 @@ public class TicketController {
 
         boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticketCategory.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false);
         Ticket ticket = data.getRight();
-        model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view")))//
+        model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view", ticketHelper.findTicketFieldConfigurationAndValue(event.getId(), ticket.getId(), locale))))//
                 .addAttribute("reservation", data.getMiddle())//
                 .addAttribute("event", event)//
                 .addAttribute("ticketCategory", ticketCategory)//
                 .addAttribute("countries", ticketHelper.getLocalizedCountries(locale))
                 .addAttribute("organization", organization)//
-                .addAttribute("pageTitle", "show-ticket.header.title")
-                .addAttribute("ticketFieldConfiguration", ticketHelper.findTicketFieldConfigurationAndValue(ticket.getEventId(), locale));
+                .addAttribute("pageTitle", "show-ticket.header.title");
 
         return "/event/update-ticket";
     }
