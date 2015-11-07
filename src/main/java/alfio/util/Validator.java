@@ -123,7 +123,11 @@ public final class Validator {
         return ValidationResult.success();
     }
 
-    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Errors errors) {
+    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Optional<Errors> errorsOptional) {
+        if(!errorsOptional.isPresent()) {
+            return ValidationResult.success();//already validated
+        }
+        Errors errors = errorsOptional.get();
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "email", "error.email");
         String email = form.getEmail();
         if(!isEmailValid(email)) {

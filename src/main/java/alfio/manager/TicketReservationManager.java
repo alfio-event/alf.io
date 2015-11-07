@@ -278,7 +278,8 @@ public class TicketReservationManager {
                         break;
                     case OFFLINE:
                         transitionToOfflinePayment(event, reservationId, email, fullName, billingAddress);
-                        return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
+                        paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
+                        break;
                     case ON_SITE:
                         paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
                         break;

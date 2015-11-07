@@ -42,6 +42,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.validation.MapBindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletOutputStream;
@@ -270,12 +271,12 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)
-    public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal, BindingResult bindingResult,
+    public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal,
                                  Model model, HttpServletRequest request) {
         ticketReservationManager.confirmOfflinePayment(loadEvent(eventName, principal), reservationId);
         ticketReservationManager.findById(reservationId)
             .filter(TicketReservation::isDirectAssignmentRequested)
-            .ifPresent(reservation -> ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getUserLanguage(), bindingResult, request, model));
+            .ifPresent(reservation -> ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getUserLanguage(), Optional.empty(), request, model));
         return OK;
     }
 

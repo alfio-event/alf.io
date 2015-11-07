@@ -365,7 +365,7 @@ public class ReservationController {
         //
 
         if(directTicketAssignment) {
-            ticketHelper.directTicketAssignment(eventName, reservationId, paymentForm.getEmail(), paymentForm.getFullName(), locale.getLanguage(), bindingResult, request, model);
+            ticketHelper.directTicketAssignment(eventName, reservationId, paymentForm.getEmail(), paymentForm.getFullName(), locale.getLanguage(), Optional.of(bindingResult), request, model);
         }
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
@@ -399,7 +399,7 @@ public class ReservationController {
                                        HttpServletRequest request,
                                        Model model) throws Exception {
 
-        Optional<Triple<ValidationResult, Event, Ticket>> result = ticketHelper.assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, model);
+        Optional<Triple<ValidationResult, Event, Ticket>> result = ticketHelper.assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, Optional.of(bindingResult), request, model);
         return result.map(t -> "redirect:/event/"+t.getMiddle().getShortName()+"/reservation/"+t.getRight().getTicketsReservationId()+"/success").orElse("redirect:/");
     }
 

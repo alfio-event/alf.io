@@ -40,7 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -100,7 +100,7 @@ public class TicketHelper {
                                                                            String reservationId,
                                                                            String ticketIdentifier,
                                                                            UpdateTicketOwnerForm updateTicketOwner,
-                                                                           BindingResult bindingResult,
+                                                                           Optional<Errors> bindingResult,
                                                                            HttpServletRequest request,
                                                                            Consumer<Triple<ValidationResult, Event, Ticket>> reservationConsumer,
                                                                            Optional<UserDetails> userDetails) {
@@ -128,7 +128,7 @@ public class TicketHelper {
                                                                           String reservationId,
                                                                           String ticketIdentifier,
                                                                           UpdateTicketOwnerForm updateTicketOwner,
-                                                                          BindingResult bindingResult,
+                                                                          Optional<Errors> bindingResult,
                                                                           HttpServletRequest request,
                                                                           Model model) {
         return assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, t -> {
@@ -144,7 +144,7 @@ public class TicketHelper {
                                                                                     String email,
                                                                                     String fullName,
                                                                                     String userLanguage,
-                                                                                    BindingResult bindingResult,
+                                                                                    Optional<Errors> bindingResult,
                                                                                     HttpServletRequest request,
                                                                                     Model model) {
         List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
