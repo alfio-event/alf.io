@@ -141,9 +141,18 @@
         {{/event.allowedPaymentProxies}}
     {{/orderSummary.free}}
 
+    {{#expressCheckoutEnabled}}
     <div class="checkbox">
         <label>
-            <input type="checkbox" required name="termAndConditionsAccepted">
+            <input type="checkbox" name="expressCheckoutRequested" value="true">
+            {{#i18n}}reservation-page.express-checkout{{/i18n}}
+        </label>
+    </div>
+    {{/expressCheckoutEnabled}}
+
+    <div class="checkbox">
+        <label>
+            <input type="checkbox" required name="termAndConditionsAccepted" value="true">
             {{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termsAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
         </label>
     </div>

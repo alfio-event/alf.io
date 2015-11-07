@@ -60,7 +60,6 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
-import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -260,9 +259,9 @@ public class TicketReservationManager {
 
     public PaymentResult confirm(String gatewayToken, Event event, String reservationId,
                                  String email, String fullName, Locale userLanguage, String billingAddress,
-                                 TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method) {
+                                 TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method, boolean directTicketAssignment) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
-        if(!reservationReadyForPayment(reservationCost, paymentProxy, reservationId, email, fullName, userLanguage, billingAddress)) {
+        if(!initPaymentProcess(reservationCost, paymentProxy, reservationId, email, fullName, userLanguage, billingAddress)) {
             return PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION");
         }
         try {
@@ -289,7 +288,7 @@ public class TicketReservationManager {
             } else {
                 paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
             }
-            completeReservation(event.getId(), reservationId, email, fullName, userLanguage, billingAddress, specialPriceSessionId, paymentProxy);
+            completeReservation(event.getId(), reservationId, email, fullName, userLanguage, billingAddress, specialPriceSessionId, paymentProxy, directTicketAssignment);
             return paymentResult;
         } catch(Exception ex) {
             //it is guaranteed that in this case we're dealing with "local" error (e.g. database failure),
@@ -310,7 +309,7 @@ public class TicketReservationManager {
         return PaymentProxy.STRIPE;
     }
 
-    private boolean reservationReadyForPayment(TotalPrice reservationCost, PaymentProxy paymentProxy, String reservationId, String email, String fullName, Locale userLanguage, String billingAddress) {
+    private boolean initPaymentProcess(TotalPrice reservationCost, PaymentProxy paymentProxy, String reservationId, String email, String fullName, Locale userLanguage, String billingAddress) {
         if(reservationCost.getPriceWithVAT() > 0 && paymentProxy == PaymentProxy.STRIPE) {
             try {
                 transitionToInPayment(reservationId, email, fullName, userLanguage, billingAddress);
@@ -459,13 +458,13 @@ public class TicketReservationManager {
 
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress/userLanguage.
-     *  @param reservationId
+     * @param reservationId
      * @param email
      * @param fullName
      * @param billingAddress
      * @param specialPriceSessionId
      */
-    private void completeReservation(int eventId, String reservationId, String email, String fullName, Locale userLanguage, String billingAddress, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
+    private void completeReservation(int eventId, String reservationId, String email, String fullName, Locale userLanguage, String billingAddress, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy, boolean directAssignment) {
         if(paymentProxy != PaymentProxy.OFFLINE) {
             TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
             acquireTickets(ticketStatus, paymentProxy, reservationId, email, fullName, userLanguage.getLanguage(), billingAddress);
@@ -473,6 +472,7 @@ public class TicketReservationManager {
         }
         //cleanup unused special price codes...
         specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
+        ticketReservationRepository.updateDirectAssignmentFlag(reservationId, directAssignment);
     }
 
     private void acquireTickets(TicketStatus ticketStatus, PaymentProxy paymentProxy, String reservationId, String email, String fullName, String userLanguage, String billingAddress) {

@@ -269,7 +269,7 @@ public class DataMigratorIntegrationTest {
         TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.<SpecialPrice>empty());
         Date expiration = DateUtils.addDays(new Date(), 1);
         String reservationId = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(r), expiration, Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
-        ticketReservationManager.confirm("TOKEN", event, reservationId, "email@email.ch", "full name", Locale.ENGLISH, null, new TicketReservationManager.TotalPrice(1000, 10, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.ON_SITE));
+        ticketReservationManager.confirm("TOKEN", event, reservationId, "email@email.ch", "full name", Locale.ENGLISH, null, new TicketReservationManager.TotalPrice(1000, 10, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.ON_SITE), false);
         List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
         UpdateTicketOwnerForm first = new UpdateTicketOwnerForm();
         first.setEmail("email@email.ch");

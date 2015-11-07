@@ -63,6 +63,7 @@ public class FullTicketInfo {
                           @Column("tr_promo_code_id_fk") Integer trPromoCodeDiscountId,
                           @Column("tr_automatic") boolean trAutomatic,
                           @Column("tr_user_language") String resUserLanguage,
+                          @Column("tr_direct_assignment") boolean directAssignment,
                           //
                           //
                           @Column("tc_id") int tcId,
@@ -79,7 +80,7 @@ public class FullTicketInfo {
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, originalPriceInCents, paidPriceInCents,
                 ticketsReservationId, fullName, email, lockedAssignment, userLanguage);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trEmail, trBillingAddress,
-                trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage);
+                trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage, directAssignment);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,
                 tcPriceInCents, tcAccessRestricted, tcStatus, tcEventId, bounded);
 

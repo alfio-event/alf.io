@@ -95,8 +95,11 @@ public interface TicketFieldRepository {
     @Query("select * from TICKET_FIELD_CONFIGURATION where event_id_fk = :eventId order by field_order asc")
     List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventId") int eventId);
 
-    @Query("select count(*) TICKET_FIELD_CONFIGURATION where event_id_fk = :eventId")
+    @Query("select count(*) from TICKET_FIELD_CONFIGURATION where event_id_fk = :eventId")
     int countAdditionalFieldsForEvent(@Bind("eventId") int eventId);
+
+    @Query("select count(*) from TICKET_FIELD_CONFIGURATION where event_id_fk = :eventId and field_required = true")
+    Integer countRequiredAdditionalFieldsForEvent(@Bind("eventId") int eventId);
 
     default Map<Integer, TicketFieldDescription> findTranslationsFor(Locale locale, int eventId) {
         return findDescriptions(eventId, locale.getLanguage()).stream().collect(Collectors.toMap(TicketFieldDescription::getTicketFieldConfigurationId, Function.identity()));

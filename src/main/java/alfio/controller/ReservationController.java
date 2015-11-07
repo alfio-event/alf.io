@@ -37,8 +37,7 @@ import alfio.model.system.Configuration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
-import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketRepository;
+import alfio.repository.TicketFieldRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
@@ -83,6 +82,7 @@ public class ReservationController {
     private final ConfigurationManager configurationManager;
     private final NotificationManager notificationManager;
     private final TicketHelper ticketHelper;
+    private final TicketFieldRepository ticketFieldRepository;
 
     @Autowired
     public ReservationController(EventRepository eventRepository,
@@ -92,11 +92,10 @@ public class ReservationController {
                                  StripeManager stripeManager,
                                  TemplateManager templateManager,
                                  MessageSource messageSource,
-                                 TicketRepository ticketRepository,
-                                 TicketCategoryRepository ticketCategoryRepository,
                                  ConfigurationManager configurationManager,
                                  NotificationManager notificationManager,
-                                 TicketHelper ticketHelper) {
+                                 TicketHelper ticketHelper,
+                                 TicketFieldRepository ticketFieldRepository) {
         this.eventRepository = eventRepository;
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
@@ -107,6 +106,7 @@ public class ReservationController {
         this.configurationManager = configurationManager;
         this.notificationManager = notificationManager;
         this.ticketHelper = ticketHelper;
+        this.ticketFieldRepository = ticketFieldRepository;
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
@@ -130,6 +130,7 @@ public class ReservationController {
             model.addAttribute("pageTitle", "reservation-page.header.title");
             model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
             model.addAttribute("event", event);
+            model.addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary));
             boolean includeStripe = !orderSummary.getFree() && event.getAllowedPaymentProxies().contains(PaymentProxy.STRIPE);
             model.addAttribute("includeStripe", includeStripe);
             if (includeStripe) {
@@ -143,6 +144,7 @@ public class ReservationController {
             return redirectReservation(reservation, eventName, reservationId);
         }
     }
+
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/success", method = RequestMethod.GET)
     public String showConfirmationPage(@PathVariable("eventName") String eventName,
@@ -343,8 +345,10 @@ public class ReservationController {
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
             return redirectReservation(ticketReservation, eventName, reservationId);
         }
+        boolean directTicketAssignment = Optional.ofNullable(paymentForm.getExpressCheckoutRequested()).map(b -> Boolean.logicalAnd(b, isExpressCheckoutEnabled(event, ticketReservationManager.orderSummaryForReservationId(reservationId, event)))).orElse(false);
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getStripeToken(), event, reservationId, paymentForm.getEmail(),
-                paymentForm.getFullName(), locale, paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request), Optional.ofNullable(paymentForm.getPaymentMethod()));
+                paymentForm.getFullName(), locale, paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
+                Optional.ofNullable(paymentForm.getPaymentMethod()), directTicketAssignment);
 
         if(!status.isSuccessful()) {
             String errorMessageCode = status.getErrorCode().get();
@@ -359,6 +363,10 @@ public class ReservationController {
         sendReservationCompleteEmail(request, event,reservation);
         sendReservationCompleteEmailToOrganizer(request, event, reservation);
         //
+
+        if(directTicketAssignment) {
+            ticketHelper.directTicketAssignment(eventName, reservationId, paymentForm.getEmail(), paymentForm.getFullName(), locale.getLanguage(), bindingResult, request, model);
+        }
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
     }
@@ -391,12 +399,7 @@ public class ReservationController {
                                        HttpServletRequest request,
                                        Model model) throws Exception {
 
-        Optional<Triple<ValidationResult, Event, Ticket>> result = ticketHelper.assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, t -> {
-            model.addAttribute("value", t.getRight());
-            model.addAttribute("validationResult", t.getLeft());
-            model.addAttribute("countries", ticketHelper.getLocalizedCountries(RequestContextUtils.getLocale(request)));
-            model.addAttribute("event", t.getMiddle());
-        }, Optional.<UserDetails>empty());
+        Optional<Triple<ValidationResult, Event, Ticket>> result = ticketHelper.assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, model);
         return result.map(t -> "redirect:/event/"+t.getMiddle().getShortName()+"/reservation/"+t.getRight().getTicketsReservationId()+"/success").orElse("redirect:/");
     }
 
@@ -404,7 +407,7 @@ public class ReservationController {
         Locale locale = RequestContextUtils.getLocale(request);
         ticketReservationManager.sendConfirmationEmail(event, reservation, locale);
     }
-    
+
     private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         notificationManager.sendSimpleEmail(event, organization.getEmail(), "Reservation complete " + reservation.getId(), () -> {
@@ -413,4 +416,7 @@ public class ReservationController {
         });
     }
 
+    private boolean isExpressCheckoutEnabled(Event event, OrderSummary orderSummary) {
+        return orderSummary.getTicketAmount() == 1 && ticketFieldRepository.countRequiredAdditionalFieldsForEvent(event.getId()) == 0;
+    }
 }

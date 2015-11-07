@@ -80,4 +80,7 @@ public interface TicketReservationRepository {
 
     @Query("select * from tickets_reservation where id like :partialID")
     List<TicketReservation> findByPartialID(@Bind("partialID") String partialID);
+
+    @Query("update tickets_reservation set direct_assignment = :directAssignment where id = :reservationId")
+    int updateDirectAssignmentFlag(@Bind("reservationId") String reservationId, @Bind("directAssignment") boolean directAssignment);
 }

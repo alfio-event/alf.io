@@ -18,11 +18,11 @@ package alfio.controller.api.admin;
 
 import alfio.controller.api.support.DescriptionsLoader;
 import alfio.controller.api.support.EventListItem;
-import alfio.controller.api.support.PublicEvent;
+import alfio.controller.api.support.TicketHelper;
+import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.TicketReservationManager;
-import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
@@ -39,6 +39,8 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
@@ -70,31 +72,31 @@ public class EventApiController {
 
     private static final String OK = "OK";
     private final EventManager eventManager;
-    private final UserManager userManager;
     private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
     private final TicketReservationManager ticketReservationManager;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final TicketFieldRepository ticketFieldRepository;
     private final DescriptionsLoader descriptionsLoader;
+    private final TicketHelper ticketHelper;
 
     @Autowired
     public EventApiController(EventManager eventManager,
-                              UserManager userManager,
                               EventStatisticsManager eventStatisticsManager,
                               I18nManager i18nManager,
                               TicketReservationManager ticketReservationManager,
                               TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
                               TicketFieldRepository ticketFieldRepository,
-                              DescriptionsLoader descriptionsLoader) {
+                              DescriptionsLoader descriptionsLoader,
+                              TicketHelper ticketHelper) {
         this.eventManager = eventManager;
-        this.userManager = userManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.i18nManager = i18nManager;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
         this.ticketFieldRepository = ticketFieldRepository;
         this.descriptionsLoader = descriptionsLoader;
+        this.ticketHelper = ticketHelper;
     }
 
     @ExceptionHandler(DataAccessException.class)
@@ -268,8 +270,12 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)
-    public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+    public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal, BindingResult bindingResult,
+                                 Model model, HttpServletRequest request) {
         ticketReservationManager.confirmOfflinePayment(loadEvent(eventName, principal), reservationId);
+        ticketReservationManager.findById(reservationId)
+            .filter(TicketReservation::isDirectAssignmentRequested)
+            .ifPresent(reservation -> ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getUserLanguage(), bindingResult, request, model));
         return OK;
     }
 

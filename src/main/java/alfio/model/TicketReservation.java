@@ -46,6 +46,7 @@ public class TicketReservation {
     private final Integer promoCodeDiscountId;
     private final boolean automatic;
     private final String userLanguage;
+    private final boolean directAssignmentRequested;
 
     public TicketReservation(@Column("id") String id,
                              @Column("validity") Date validity,
@@ -59,7 +60,8 @@ public class TicketReservation {
                              @Column("offline_payment_reminder_sent") Boolean reminderSent,
                              @Column("promo_code_id_fk") Integer promoCodeDiscountId,
                              @Column("automatic") boolean automatic,
-                             @Column("user_language") String userLanguage) {
+                             @Column("user_language") String userLanguage,
+                             @Column("direct_assignment") boolean directAssignmentRequested) {
         this.id = id;
         this.validity = validity;
         this.status = status;
@@ -73,6 +75,7 @@ public class TicketReservation {
         this.promoCodeDiscountId = promoCodeDiscountId;
         this.automatic = automatic;
         this.userLanguage = userLanguage;
+        this.directAssignmentRequested = directAssignmentRequested;
     }
 
     public boolean isStuck() {

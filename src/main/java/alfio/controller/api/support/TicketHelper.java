@@ -39,6 +39,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
@@ -121,6 +122,42 @@ public class TicketHelper {
                 });
         triple.ifPresent(reservationConsumer);
         return triple;
+    }
+
+    public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
+                                                                          String reservationId,
+                                                                          String ticketIdentifier,
+                                                                          UpdateTicketOwnerForm updateTicketOwner,
+                                                                          BindingResult bindingResult,
+                                                                          HttpServletRequest request,
+                                                                          Model model) {
+        return assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, t -> {
+            model.addAttribute("value", t.getRight());
+            model.addAttribute("validationResult", t.getLeft());
+            model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
+            model.addAttribute("event", t.getMiddle());
+        }, Optional.<UserDetails>empty());
+    }
+
+    public Optional<Triple<ValidationResult, Event, Ticket>> directTicketAssignment(String eventName,
+                                                                                    String reservationId,
+                                                                                    String email,
+                                                                                    String fullName,
+                                                                                    String userLanguage,
+                                                                                    BindingResult bindingResult,
+                                                                                    HttpServletRequest request,
+                                                                                    Model model) {
+        List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
+        if(tickets.size() > 1) {
+            return Optional.empty();
+        }
+        String ticketUuid = tickets.get(0).getUuid();
+        UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
+        form.setAdditional(Collections.emptyMap());
+        form.setEmail(email);
+        form.setFullName(fullName);
+        form.setUserLanguage(userLanguage);
+        return assignTicket(eventName, reservationId, ticketUuid, form, bindingResult, request, model);
     }
 
     public List<Pair<String, String>> getLocalizedCountries(Locale locale) {

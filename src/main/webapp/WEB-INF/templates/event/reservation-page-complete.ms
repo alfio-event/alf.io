@@ -34,11 +34,7 @@
 </div>
 {{/ticketEmailSent}}
 
-{{#ticketsAreAllAssigned}}
-<p class="bg-info ticket-info">{{#i18n}}reservation-page-complete.info-update{{/i18n}}</p>
-{{/ticketsAreAllAssigned}}
 
-{{^ticketsAreAllAssigned}}
 <div class="alert alert-success">
     <div class="row">
         <div class="col-sm-12">
@@ -59,6 +55,9 @@
         </div>
     </div>
 </div>
+
+{{#ticketsAreAllAssigned}}
+<p class="bg-info ticket-info">{{#i18n}}reservation-page-complete.info-update{{/i18n}}</p>
 {{/ticketsAreAllAssigned}}
 
 <ul class="list-group">
