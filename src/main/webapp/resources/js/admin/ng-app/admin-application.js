@@ -154,7 +154,9 @@
         return function(validationResult) {
             if(validationResult.errorCount > 0) {
                 angular.forEach(validationResult.validationErrors, function(error) {
-                    form.$setError(error.fieldName, error.message);
+                    if(angular.isFunction(form.$setError)) {
+                        form.$setError(error.fieldName, error.message);
+                    }
                 });
                 deferred.reject('invalid form');
             }
@@ -368,6 +370,10 @@
                         loadData();
                     });
                 };
+            });
+
+            EventService.getAdditionalFields($stateParams.eventName).success(function(result) {
+                $scope.additionalFields = result;
             });
         };
         loadData();

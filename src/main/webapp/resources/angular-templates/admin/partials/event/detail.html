@@ -193,5 +193,70 @@
         <div class="wMarginBottom">
             <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory(event)"><i class="fa fa-plus"></i> add category</button>
         </div>
+
+        <!-- -->
+        <div class="page-header">
+            <h3>Additional Fields</h3>
+            <h5 class="text-muted">Here are the additional fields defined</h5>
+        </div>
+        <div>
+            <div data-ng-repeat="field in additionalFields | orderBy: 'order' " class="category container">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Field name</label>
+                            <div>{{field.name}}</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Order</label>
+                            <div>{{field.order}}</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <div>{{field.type}}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4" ng-if="field.type != 'country'">
+                        <div data-ng-if="field.type === 'select'">
+                            <div data-ng-repeat="restrictedValue in field.restrictedValues">
+                                <div class="form-group">
+                                    <label>Value</label>
+                                    <div>{{restrictedValue}}</div>
+                                </div>
+                                <div>
+                                    <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)" class="form-group">
+                                        <label>Text {{lang.displayLanguage}}</label>
+                                        <div>{{field.description[lang.locale].description.restrictedValues[restrictedValue]}}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
+                            <div class="form-group">
+                                <label>Min length</label>
+                                <div>{{field.minLength}}</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Max length</label>
+                                <div>{{field.maxLength}}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div>
+                            <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">
+                                <div class="form-group">
+                                    <label>Label {{lang.displayLanguage}}</label>
+                                    <div>{{field.description[lang.locale].description.label}}</div>
+                                <div class="form-group">
+                                    <label>Placeholder {{lang.displayLanguage}}</label>
+                                    <div>{{field.description[lang.locale].description.placeholder}}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

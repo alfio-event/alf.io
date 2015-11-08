@@ -107,6 +107,9 @@
             getFields : function(eventName) {
                 return $http['get']('/admin/api/events/'+eventName+'/fields');
             },
+            getAdditionalFields: function(eventName) {
+                return $http.get('/admin/api/events/'+eventName+'/additional-field');
+            },
         };
     });
 

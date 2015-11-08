@@ -31,9 +31,11 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.util.ValidationResult;
+import alfio.util.Validator;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -159,7 +161,22 @@ public class EventApiController {
         return base.or(eventModification.getTicketCategories().stream()
             .map(c -> validateCategory(c, errors, "ticketCategories[" + counter.getAndIncrement() + "]."))
             .reduce(ValidationResult::or)
-            .orElse(ValidationResult.success()));
+            .orElse(ValidationResult.success())).or(validateAdditionalTicketFields(eventModification.getTicketFields(), errors));
+    }
+
+    private ValidationResult validateAdditionalTicketFields(List<EventModification.AdditionalField> ticketFields, Errors errors) {
+        //meh
+        AtomicInteger cnt = new AtomicInteger();
+        return Optional.ofNullable(ticketFields).orElseGet(Collections::emptyList).stream().map(field -> {
+            String prefix = "ticketFields["+cnt.getAndIncrement()+"]";
+            if (StringUtils.isBlank(field.getName())) {
+                errors.rejectValue(prefix + ".name", "error.required");
+            }
+            //TODO: check label value is present for all the locales
+            //TODO: for select check option value+label
+
+            return Validator.evaluateValidationResult(errors);
+        }).reduce(ValidationResult::or).orElseGet(ValidationResult::success);
     }
 
     @RequestMapping(value = "/events/new", method = POST)
@@ -252,8 +269,6 @@ public class EventApiController {
             writer.flush();
             out.flush();
         }
-
-
     }
 
     @RequestMapping("/events/{eventName}/fields")
@@ -262,6 +277,14 @@ public class EventApiController {
         fields.addAll(FIXED_FIELDS);
         fields.addAll(ticketFieldRepository.findFieldsForEvent(eventName));
         return fields;
+    }
+
+    @RequestMapping("/events/{eventName}/additional-field")
+    public List<TicketFieldConfigurationAndAllDescriptions> getAllAdditionalField(@PathVariable("eventName") String eventName) {
+        final Map<Integer, List<TicketFieldDescription>> descById = ticketFieldRepository.findDescriptions(eventName).stream().collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
+        return ticketFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
+            .map(field -> new TicketFieldConfigurationAndAllDescriptions(field, descById.getOrDefault(field.getId(), Collections.emptyList())))
+            .collect(Collectors.toList());
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments")
