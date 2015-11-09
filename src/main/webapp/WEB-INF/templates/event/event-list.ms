@@ -18,7 +18,7 @@
               <a href="{{externalUrl}}" target="_blank" class="no-decoration">
               {{/internal}}
 
-                  <h2>{{displayName}}</h2>
+                  <h2>{{displayName}}{{^internal}} <small><i class="fa fa-external-link"></i></small>{{/internal}}</h2>
                   <h6>{{shortDescription}}</h6>
                   <div>
                       {{#sameDay}}
