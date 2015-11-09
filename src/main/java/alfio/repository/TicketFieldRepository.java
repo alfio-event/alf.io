@@ -102,7 +102,7 @@ public interface TicketFieldRepository {
     List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventShortName") String eventName);
 
     @Query("select count(*) from TICKET_FIELD_CONFIGURATION where event_id_fk = :eventId")
-    int countAdditionalFieldsForEvent(@Bind("eventId") int eventId);
+    Integer countAdditionalFieldsForEvent(@Bind("eventId") int eventId);
 
     @Query("select count(*) from TICKET_FIELD_CONFIGURATION where event_id_fk = :eventId and field_required = true")
     Integer countRequiredAdditionalFieldsForEvent(@Bind("eventId") int eventId);
