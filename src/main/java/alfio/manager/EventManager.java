@@ -599,6 +599,15 @@ public class EventManager {
         return CategoryEvaluator.ticketCancellationAvailabilityChecker(ticketCategoryRepository);
     }
 
+    public void updateTicketFieldDescriptions(Map<String, TicketFieldDescriptionModification> descriptions) {
+        descriptions.forEach((locale, value) -> {
+            String description = Json.GSON.toJson(value.getDescription());
+            if(0 == ticketFieldRepository.updateDescription(value.getTicketFieldConfigurationId(), locale, description)) {
+                ticketFieldRepository.insertDescription(value.getTicketFieldConfigurationId(), locale, description);
+            }
+        });
+    }
+
     @Data
     private static final class GeolocationResult {
         private final Pair<String, String> coordinates;

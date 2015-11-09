@@ -43,6 +43,9 @@ public interface TicketFieldRepository {
     @Query("insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description) values (:ticketConfigurationId, :locale, :description)")
     int insertDescription(@Bind("ticketConfigurationId") int ticketConfigurationId, @Bind("locale") String locale, @Bind("description") String description);
 
+    @Query("update ticket_field_description set description = :description where ticket_field_configuration_id_fk = :ticketConfigurationId and field_locale = :locale")
+    int updateDescription(@Bind("ticketConfigurationId") int ticketConfigurationId, @Bind("locale") String locale, @Bind("description") String description);
+
     @Query("update ticket_field_value set field_value = :value where ticket_id_fk = :ticketId and ticket_field_configuration_id_fk = :fieldConfigurationId")
     int updateValue(@Bind("ticketId") int ticketId, @Bind("fieldConfigurationId") int fieldConfigurationId, @Bind("value") String value);
 

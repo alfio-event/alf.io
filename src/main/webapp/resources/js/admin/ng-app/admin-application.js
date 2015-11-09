@@ -741,6 +741,14 @@
             });
         };
 
+        $scope.prepareFieldDescriptionEdit = function(baseObject, field) {
+            angular.copy(field, baseObject);
+        };
+
+        $scope.saveFieldDescription = function(description) {
+            EventService.saveFieldDescription($scope.event.shortName, description).then(loadData);
+        };
+
     });
 
     admin.controller('SendInvitationsController', function($scope, $stateParams, $state, EventService, $log) {

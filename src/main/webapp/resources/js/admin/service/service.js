@@ -110,6 +110,9 @@
             getAdditionalFields: function(eventName) {
                 return $http.get('/admin/api/events/'+eventName+'/additional-field');
             },
+            saveFieldDescription: function(eventName, fieldDescription) {
+                return $http.post('/admin/api/events/'+eventName+'/additional-field/descriptions', fieldDescription)
+            },
         };
     });
 

@@ -30,6 +30,7 @@ import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.repository.TicketFieldRepository;
+import alfio.util.Json;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.opencsv.CSVReader;
@@ -285,6 +286,11 @@ public class EventApiController {
         return ticketFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
             .map(field -> new TicketFieldConfigurationAndAllDescriptions(field, descById.getOrDefault(field.getId(), Collections.emptyList())))
             .collect(Collectors.toList());
+    }
+
+    @RequestMapping(value = "/events/{eventName}/additional-field/descriptions", method = POST)
+    public void saveAdditionalFieldDescriptions(@RequestBody Map<String, TicketFieldDescriptionModification> descriptions) {
+        eventManager.updateTicketFieldDescriptions(descriptions);
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments")

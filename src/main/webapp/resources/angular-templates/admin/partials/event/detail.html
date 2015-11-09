@@ -226,7 +226,8 @@
                                 <div>
                                     <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)" class="form-group">
                                         <label>Text {{lang.displayLanguage}}</label>
-                                        <div>{{field.description[lang.locale].description.restrictedValues[restrictedValue]}}</div>
+                                        <div ng-if="!edit">{{field.description[lang.locale].description.restrictedValues[restrictedValue]}}</div>
+                                        <input ng-if="edit" type="text" class="form-control" ng-model="toEdit.description[lang.locale].description.restrictedValues[restrictedValue]">
                                     </div>
                                 </div>
                             </div>
@@ -247,14 +248,23 @@
                             <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">
                                 <div class="form-group">
                                     <label>Label {{lang.displayLanguage}}</label>
-                                    <div>{{field.description[lang.locale].description.label}}</div>
+                                    <div ng-if="!edit">{{field.description[lang.locale].description.label}}</div>
+                                    <input ng-if="edit" type="text" class="form-control" ng-model="toEdit.description[lang.locale].description.label">
                                 <div class="form-group">
                                     <label>Placeholder {{lang.displayLanguage}}</label>
-                                    <div>{{field.description[lang.locale].description.placeholder}}</div>
+                                    <div ng-if="!edit">{{field.description[lang.locale].description.placeholder}}</div>
+                                    <input ng-if="edit" type="text" class="form-control" ng-model="toEdit.description[lang.locale].description.placeholder">
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+                <div class="col-md-12 text-right">
+                    <p>
+                        <button class="btn btn-warning" type="button" ng-click="toEdit = {};prepareFieldDescriptionEdit(toEdit, field);edit=true" ng-hide="edit"><i class="fa fa-wrench"></i></button>
+                        <button class="btn btn-success" type="button" ng-click="saveFieldDescription(toEdit.description);edit=false" ng-show="edit">Save</button>
+                        <button class="btn btn-default" type="button" ng-click="edit=false" ng-show="edit">Cancel</button>
+                    </p>
                 </div>
             </div>
         </div>
