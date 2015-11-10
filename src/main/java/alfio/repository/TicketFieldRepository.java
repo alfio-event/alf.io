@@ -115,6 +115,6 @@ public interface TicketFieldRepository {
     }
 
     default Map<String, String> findAllValuesForTicketId(int ticketId) {
-        return findNameAndValue(ticketId).stream().collect(Collectors.toMap(TicketFieldNameAndValue::getName, TicketFieldNameAndValue::getValue));
+        return findNameAndValue(ticketId).stream().filter(t -> t.getName() != null && t.getValue() != null).collect(Collectors.toMap(TicketFieldNameAndValue::getName, TicketFieldNameAndValue::getValue));
     }
 }
