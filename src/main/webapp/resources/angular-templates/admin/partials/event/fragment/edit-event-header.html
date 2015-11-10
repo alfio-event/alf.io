@@ -53,11 +53,7 @@
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.termsAndConditionsUrl" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
 
-            <label for="imageUrl">Image URL</label>
-            <input type="url" data-ng-model="obj.imageUrl" name="imageUrl" id="imageUrl" class="form-control" data-ng-pattern="/^https\:\/\/.*$/" />
-            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.imageUrl" data-required-pattern="'must be a https url'" data-show-existing-errors="showExistingErrors"></field-error>
-
-            <label for="imageFile">Or image file</label>
+            <label for="imageFile">Image</label>
             <div data-ng-if="imageBase64 || obj.fileBlobId || previousFileBlobId" class="wMarginBottom">
                 <div class="wMarginBottom" data-ng-if="imageBase64 || obj.fileBlobId">
                     <img data-ng-src="{{imageBase64 || ('/file/' + obj.fileBlobId)}}" class="img-responsive center-block">
