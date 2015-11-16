@@ -93,6 +93,9 @@
             getSupportedLanguages: function() {
                 return $http['get']('/admin/api/events-supported-languages').error(HttpErrorHandler.handle);
             },
+            getDynamicFieldTemplates: function() {
+                return $http['get']('/admin/api/event/additional-field/templates').error(HttpErrorHandler.handle);
+            },
             getMessagesPreview: function(eventName, categoryId, messages) {
                 var queryString = angular.isDefined(categoryId) && categoryId !== "" ? '?categoryId='+categoryId : '';
                 return $http['post']('/admin/api/events/'+eventName+'/messages/preview'+queryString, messages).error(HttpErrorHandler.handle);

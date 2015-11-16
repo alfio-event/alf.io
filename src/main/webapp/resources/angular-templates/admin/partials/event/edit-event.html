@@ -44,7 +44,6 @@
             </div>
 
             <div data-ng-repeat="field in event.ticketFields | orderBy: 'order' " class="category container">
-
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
@@ -112,10 +111,13 @@
             </div>
 
             <div class="row">
-                <div class="col-sm-offset-11 col-sm-1"><p><button type="button" class="btn btn-success" ng-click="addNewTicketField(event)"><i class="fa fa-plus"></i></button></p></div>
+                <div class="col-sm-11">
+                    <h4>Add from template <span data-ng-repeat="template in dynamicFieldTemplates" ><a class="btn btn-primary btn-xs" data-ng-click="addTicketFieldFromTemplate(event, template)">{{template.name}}</a> </span></h4>
+
+                </div>
+                <div class="col-sm-1"><p><button type="button" class="btn btn-success" ng-click="addNewTicketField(event)"><i class="fa fa-plus"></i></button></p></div>
             </div>
         </div>
-
         <control-buttons data-form-obj="editEvent"></control-buttons>
     </form>
 </div>

@@ -223,6 +223,10 @@
             });
         });
 
+        EventService.getDynamicFieldTemplates().success(function(result) {
+            $scope.dynamicFieldTemplates = result;
+        });
+
         OrganizationService.getAllOrganizations().success(function(result) {
             $scope.organizations = result;
         });
@@ -272,6 +276,23 @@
             }
 
             event.ticketFields.push({required:false, order: event.ticketFields.length+1, type:'input:text', maxLength:255});
+        };
+
+        $scope.addTicketFieldFromTemplate = function(event, template) {
+            if(!event.ticketFields) {
+                event.ticketFields = [];
+            }
+            var nameExists = angular.isDefined(_.find(event.ticketFields, function(f) { return f.name === template.name;}));
+            event.ticketFields.push({
+                required:false,
+                name: nameExists ? '' : template.name,
+                order: event.ticketFields.length+1,
+                type: template.type,
+                restrictedValues: _.map(template.restrictedValues, function(v) {return {value: v}}),
+                description: template.description,
+                maxLength: template.maxLength,
+                minLength: template.minLength
+            });
         };
 
         $scope.removeTicketField = function(fields, field) {

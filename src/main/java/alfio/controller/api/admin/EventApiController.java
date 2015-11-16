@@ -19,18 +19,17 @@ package alfio.controller.api.admin;
 import alfio.controller.api.support.DescriptionsLoader;
 import alfio.controller.api.support.EventListItem;
 import alfio.controller.api.support.TicketHelper;
-import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.TicketReservationManager;
-import alfio.model.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
+import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
+import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.repository.TicketFieldRepository;
-import alfio.util.Json;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.opencsv.CSVReader;
@@ -43,9 +42,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
-import org.springframework.validation.MapBindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletOutputStream;
@@ -64,9 +61,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.util.OptionalWrapper.optionally;
-import static alfio.util.Validator.validateCategory;
-import static alfio.util.Validator.validateEventHeader;
-import static alfio.util.Validator.validateEventPrices;
+import static alfio.util.Validator.*;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
@@ -83,6 +78,7 @@ public class EventApiController {
     private final TicketFieldRepository ticketFieldRepository;
     private final DescriptionsLoader descriptionsLoader;
     private final TicketHelper ticketHelper;
+    private final DynamicFieldTemplateRepository dynamicFieldTemplateRepository;
 
     @Autowired
     public EventApiController(EventManager eventManager,
@@ -92,7 +88,8 @@ public class EventApiController {
                               TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
                               TicketFieldRepository ticketFieldRepository,
                               DescriptionsLoader descriptionsLoader,
-                              TicketHelper ticketHelper) {
+                              TicketHelper ticketHelper,
+                              DynamicFieldTemplateRepository dynamicFieldTemplateRepository) {
         this.eventManager = eventManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.i18nManager = i18nManager;
@@ -101,6 +98,7 @@ public class EventApiController {
         this.ticketFieldRepository = ticketFieldRepository;
         this.descriptionsLoader = descriptionsLoader;
         this.ticketHelper = ticketHelper;
+        this.dynamicFieldTemplateRepository = dynamicFieldTemplateRepository;
     }
 
     @ExceptionHandler(DataAccessException.class)
@@ -286,6 +284,11 @@ public class EventApiController {
         return ticketFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
             .map(field -> new TicketFieldConfigurationAndAllDescriptions(field, descById.getOrDefault(field.getId(), Collections.emptyList())))
             .collect(Collectors.toList());
+    }
+
+    @RequestMapping(value = "/event/additional-field/templates", method = GET)
+    public List<DynamicFieldTemplate> loadTemplates() {
+        return dynamicFieldTemplateRepository.loadAll();
     }
 
     @RequestMapping(value = "/events/{eventName}/additional-field/descriptions", method = POST)
