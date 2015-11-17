@@ -24,6 +24,7 @@ import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Optional;
 
@@ -216,8 +217,7 @@ public class Configuration implements Comparable<Configuration> {
         boolean organizationAvailable = organizationId.isPresent();
         boolean eventAvailable = eventId.isPresent();
         boolean categoryAvailable = ticketCategoryId.isPresent();
-        ConfigurationPathLevel mostSensible = key.getPathLevels()
-            .stream()
+        ConfigurationPathLevel mostSensible = Arrays.stream(ConfigurationPathLevel.values())
             .sorted(Comparator.<ConfigurationPathLevel>naturalOrder().reversed())
             .filter(path -> path == ConfigurationPathLevel.ORGANIZATION && organizationAvailable
                 || path == ConfigurationPathLevel.EVENT && organizationAvailable && eventAvailable
