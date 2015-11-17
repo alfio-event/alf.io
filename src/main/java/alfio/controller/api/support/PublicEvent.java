@@ -46,9 +46,4 @@ public class PublicEvent extends EventListItem {
             .collect(toList());
     }
 
-    public String getTimeZone() {
-        return event.getTimeZone();
-    }
-
-
 }

@@ -83,11 +83,11 @@ public class PublicCategory {
     }
 
     public ZonedDateTime getInception() {
-        return category.getInception(event.getZoneId());
+        return getUtcInception().withZoneSameInstant(Clock.systemUTC().getZone());
     }
 
     public ZonedDateTime getExpiration() {
-        return category.getExpiration(event.getZoneId());
+        return getUtcExpiration().withZoneSameInstant(Clock.systemUTC().getZone());
     }
 
     public BigDecimal getFinalPrice() {

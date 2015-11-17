@@ -19,6 +19,7 @@ package alfio.controller.api.support;
 import alfio.model.Event;
 import alfio.model.EventDescription;
 
+import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -64,11 +65,11 @@ public class EventListItem {
     }
 
     public ZonedDateTime getBegin() {
-        return event.getBegin();
+        return event.getBegin().withZoneSameInstant(Clock.systemUTC().getZone());
     }
 
     public ZonedDateTime getEnd() {
-        return event.getEnd();
+        return event.getEnd().withZoneSameInstant(Clock.systemUTC().getZone());
     }
 
     public String getLocation() {
@@ -81,6 +82,10 @@ public class EventListItem {
 
     public String getLongitude() {
         return event.getLongitude();
+    }
+
+    public String getTimeZone() {
+        return event.getTimeZone();
     }
 
 }
