@@ -41,10 +41,10 @@ import alfio.repository.TicketRepository;
 import alfio.repository.plugin.PluginConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.IntegrationTestUtil;
 import alfio.util.TemplateManager;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -106,12 +106,7 @@ public class DataMigratorIntegrationTest {
 
     @BeforeClass
     public static void initEnv() {
-        System.setProperty("datasource.dialect", "HSQLDB");
-        System.setProperty("datasource.driver", "org.hsqldb.jdbcDriver");
-        System.setProperty("datasource.url", "jdbc:hsqldb:mem:alfio");
-        System.setProperty("datasource.username", "sa");
-        System.setProperty("datasource.password", "");
-        System.setProperty("datasource.validationQuery", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
+        IntegrationTestUtil.initSystemProperties();
     }
 
     private Pair<Event, String> initEvent(List<TicketCategoryModification> categories) {

@@ -22,8 +22,8 @@ import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
 import alfio.model.Event;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.IntegrationTestUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -53,13 +53,7 @@ public class EventRepositoryTest {
 
     @BeforeClass
     public static void initEnv() {
-        System.setProperty("datasource.dialect", "HSQLDB");
-        System.setProperty("datasource.driver", "org.hsqldb.jdbcDriver");
-        System.setProperty("datasource.url", "jdbc:hsqldb:mem:alfio");
-        System.setProperty("datasource.username", "sa");
-        System.setProperty("datasource.password", "");
-        System.setProperty("datasource.validationQuery", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
-        //System.setProperty("spring.profiles.active", Initializer.PROFILE_DEV);
+        IntegrationTestUtil.initSystemProperties();
     }
 
     @Autowired

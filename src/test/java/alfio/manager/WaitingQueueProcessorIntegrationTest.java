@@ -147,7 +147,12 @@ public class WaitingQueueProcessorIntegrationTest {
         List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
         TicketCategory bounded = ticketCategories.get(0);
         TicketCategory unbounded = ticketCategories.get(1);
-        List<Integer> reserved = ticketRepository.selectFreeTicketsForPreReservation(event.getId(), 20);
+        List<Integer> boundedReserved = ticketRepository.selectFreeTicketsForPreReservation(event.getId(), 20, ticketCategories.get(0).getId());
+        assertEquals(19, boundedReserved.size());
+        List<Integer> unboundedReserved = ticketRepository.selectNotAllocatedFreeTicketsForPreReservation(event.getId(), 20);
+        assertEquals(1, unboundedReserved.size());
+        List<Integer> reserved = new ArrayList<>(boundedReserved);
+        reserved.addAll(unboundedReserved);
         String reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(reservationId, DateUtils.addHours(new Date(), 1), null, Locale.ITALIAN.getLanguage());
         ticketRepository.reserveTickets(reservationId, reserved.subList(0, 19), bounded.getId(), Locale.ITALIAN.getLanguage());

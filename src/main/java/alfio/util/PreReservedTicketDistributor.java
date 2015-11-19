@@ -30,7 +30,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-public final class PreReservedTicketDistributor implements Collector<Pair<Integer, TicketCategoryWithStatistic>, List<Pair<Integer, Integer>>, List<Pair<Integer, Integer>>> {
+public final class PreReservedTicketDistributor implements Collector<Pair<Integer, TicketCategoryWithStatistic>, List<Pair<Integer, TicketCategoryWithStatistic>>, List<Pair<Integer, TicketCategoryWithStatistic>>> {
 
     private final AtomicInteger requestedTickets;
 
@@ -39,17 +39,17 @@ public final class PreReservedTicketDistributor implements Collector<Pair<Intege
     }
 
     @Override
-    public Supplier<List<Pair<Integer, Integer>>> supplier() {
+    public Supplier<List<Pair<Integer, TicketCategoryWithStatistic>>> supplier() {
         return ArrayList::new;
     }
 
     @Override
-    public BiConsumer<List<Pair<Integer, Integer>>, Pair<Integer, TicketCategoryWithStatistic>> accumulator() {
+    public BiConsumer<List<Pair<Integer, TicketCategoryWithStatistic>>, Pair<Integer, TicketCategoryWithStatistic>> accumulator() {
         return (accumulator, candidate) -> {
             int requested = requestedTickets.get();
             if (requested > 0) {
                 int capacity = Math.min(requested, candidate.getKey());
-                accumulator.add(Pair.of(capacity, candidate.getValue().getId()));
+                accumulator.add(Pair.of(capacity, candidate.getValue()));
                 requestedTickets.addAndGet(-capacity);
             }
         };
@@ -60,14 +60,15 @@ public final class PreReservedTicketDistributor implements Collector<Pair<Intege
      * @return the first parameter
      */
     @Override
-    public BinaryOperator<List<Pair<Integer, Integer>>> combiner() {
+    public BinaryOperator<List<Pair<Integer, TicketCategoryWithStatistic>>> combiner() {
         return (a, b) -> a;
     }
 
     @Override
-    public Function<List<Pair<Integer, Integer>>, List<Pair<Integer, Integer>>> finisher() {
+    public Function<List<Pair<Integer, TicketCategoryWithStatistic>>, List<Pair<Integer, TicketCategoryWithStatistic>>> finisher() {
         return Function.identity();
     }
+
 
     @Override
     public Set<Characteristics> characteristics() {

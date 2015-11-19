@@ -65,6 +65,7 @@ public class IntegrationTestUtil {
         organizationRepository.create(organizationName, "org", "email@example.com");
         Organization organization = organizationRepository.findByName(organizationName).get(0);
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR);
+        userManager.insertUser(organization.getId(), username+"_owner", "test", "test", "test@example.com", Role.OWNER);
 
         LocalDateTime expiration = LocalDateTime.now().plusDays(5).plusHours(1);
 

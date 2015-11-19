@@ -197,15 +197,25 @@ public class WaitingQueueManager {
     private void preReserveTickets(Event event, int ticketsNeeded, int eventId, int alreadyReserved) {
         final int toBeGenerated = Math.abs(alreadyReserved - ticketsNeeded);
         EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(event);
-        List<Pair<Integer, Integer>> collectedTickets = eventWithStatistics.getTicketCategories().stream()
+        List<Pair<Integer, TicketCategoryWithStatistic>> collectedTickets = eventWithStatistics.getTicketCategories().stream()
                 .filter(tc -> !tc.isAccessRestricted())
+                .sorted()
                 .map(tc -> Pair.of(determineAvailableSeats(tc, eventWithStatistics), tc))
                 .collect(new PreReservedTicketDistributor(toBeGenerated));
         MapSqlParameterSource[] candidates = collectedTickets.stream()
-                .flatMap(p -> ticketRepository.selectFreeTicketsForPreReservation(eventId, p.getKey()).stream())
+                .flatMap(p -> selectTicketsForPreReservation(eventId, p).stream())
                 .map(id -> new MapSqlParameterSource().addValue("id", id))
                 .toArray(MapSqlParameterSource[]::new);
         jdbc.batchUpdate(ticketRepository.preReserveTicket(), candidates);
+    }
+
+    private List<Integer> selectTicketsForPreReservation(int eventId, Pair<Integer, TicketCategoryWithStatistic> p) {
+        TicketCategoryWithStatistic category = p.getValue();
+        Integer amount = p.getKey();
+        if(category.isBounded()) {
+            return ticketRepository.selectFreeTicketsForPreReservation(eventId, amount, category.getId());
+        }
+        return ticketRepository.selectNotAllocatedFreeTicketsForPreReservation(eventId, amount);
     }
 
 
