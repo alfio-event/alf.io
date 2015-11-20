@@ -24,6 +24,7 @@ import ch.digitalfondue.npjt.QueryRepository;
 import ch.digitalfondue.npjt.QueryType;
 
 import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface TicketRepository {
@@ -102,6 +103,9 @@ public interface TicketRepository {
     
     @Query("select * from ticket where uuid = :uuid")
     Ticket findByUUID(@Bind("uuid") String uuid);
+
+    @Query("select * from ticket where uuid = :uuid for update")
+    Optional<Ticket> findByUUIDForUpdate(@Bind("uuid") String uuid);
 
     @Query("update ticket set email_address = :email, full_name = :fullName where uuid = :ticketIdentifier")
     int updateTicketOwner(@Bind("ticketIdentifier") String ticketIdentifier, @Bind("email") String email, @Bind("fullName") String fullName);
