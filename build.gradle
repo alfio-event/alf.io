@@ -222,6 +222,11 @@ compileJava {
     options.compilerArgs = ['-Xlint:all,-serial,-processing']
 }
 
+//propagate the system properties to the tests
+test {
+    systemProperties = System.getProperties()
+}
+
 
 bootRun {
     def externalConfig = new File("./custom.jvmargs")

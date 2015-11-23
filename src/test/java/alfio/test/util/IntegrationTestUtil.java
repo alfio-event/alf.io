@@ -44,13 +44,28 @@ public class IntegrationTestUtil {
 
     public static final int AVAILABLE_SEATS = 20;
 
+
+    private static final Map<String, Map<String, String>> DB_CONF = new HashMap<>();
+    static {
+        DB_CONF.put("HSQLDB", c("HSQLDB", "org.hsqldb.jdbcDriver", "jdbc:hsqldb:mem:alfio", "sa", "", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS"));
+        DB_CONF.put("PGSQL", c("PGSQL", "org.postgresql.Driver", "jdbc:postgresql://localhost:5432/alfio", "postgres", "password", "SELECT 1"));
+        DB_CONF.put("PGSQL-TRAVIS", c("PGSQL", "org.postgresql.Driver", "jdbc:postgresql://localhost:5432/alfio", "postgres", "", "SELECT 1"));
+    }
+
+    private static Map<String, String> c(String dialect, String driver, String url, String username, String password, String validationQuery) {
+        Map<String, String> c = new HashMap<>();
+        c.put("datasource.dialect", dialect);
+        c.put("datasource.driver", driver);
+        c.put("datasource.url", url);
+        c.put("datasource.username", username);
+        c.put("datasource.password", password);
+        c.put("datasource.validationQuery", validationQuery);
+        return c;
+    }
+
     public static void initSystemProperties() {
-        System.setProperty("datasource.dialect", "HSQLDB");
-        System.setProperty("datasource.driver", "org.hsqldb.jdbcDriver");
-        System.setProperty("datasource.url", "jdbc:hsqldb:mem:alfio");
-        System.setProperty("datasource.username", "sa");
-        System.setProperty("datasource.password", "");
-        System.setProperty("datasource.validationQuery", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
+        String dialect = System.getProperty("dbenv", "HSQLDB");
+        DB_CONF.get(dialect).forEach((prop, val) -> System.setProperty(prop, val));
     }
 
     public static Pair<Event, String> initEvent(List<TicketCategoryModification> categories,
