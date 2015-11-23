@@ -13,9 +13,5 @@ matrix:
           env: $PROFILE=-Ddbenv=PGSQL-TRAVIS
 script:
     - TERM=dumb ./gradlew build jacocoTestReport $PROFILE
-
-jdk:
-    - oraclejdk8
-
 after_success:
     ./gradlew coveralls

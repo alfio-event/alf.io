@@ -30,9 +30,12 @@ import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.IntegrationTestUtil;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -78,6 +81,14 @@ public class TicketReservationManagerIntegrationTest {
     private TicketReservationManager ticketReservationManager;
     @Autowired
     private SpecialPriceRepository specialPriceRepository;
+
+    @Autowired
+    private ConfigurationRepository configurationRepository;
+
+    @Before
+    public void ensureConfiguration() {
+        IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
+    }
 
     @Test
     public void testPriceIsOverridden() {

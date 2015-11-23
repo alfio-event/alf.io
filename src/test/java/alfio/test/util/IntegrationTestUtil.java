@@ -24,8 +24,10 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.support.LocationDescriptor;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
@@ -66,6 +68,14 @@ public class IntegrationTestUtil {
     public static void initSystemProperties() {
         String dialect = System.getProperty("dbenv", "HSQLDB");
         DB_CONF.get(dialect).forEach((prop, val) -> System.setProperty(prop, val));
+    }
+
+    public static void ensureMinimalConfiguration(ConfigurationRepository configurationRepository) {
+        configurationRepository.deleteByKey(ConfigurationKeys.BASE_URL.getValue());
+        configurationRepository.deleteByKey(ConfigurationKeys.SUPPORTED_LANGUAGES.getValue());
+
+        configurationRepository.insert(ConfigurationKeys.BASE_URL.getValue(), "http://localhost:8080", "");
+        configurationRepository.insert(ConfigurationKeys.SUPPORTED_LANGUAGES.getValue(), "7", "");
     }
 
     public static Pair<Event, String> initEvent(List<TicketCategoryModification> categories,
