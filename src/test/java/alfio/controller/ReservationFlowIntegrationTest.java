@@ -19,6 +19,7 @@ package alfio.controller;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.api.admin.EventApiController;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
 import alfio.manager.EventManager;
@@ -33,6 +34,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -56,9 +58,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -107,9 +109,13 @@ public class ReservationFlowIntegrationTest {
     @Autowired
     private ReservationController reservationController;
 
+    @Autowired
+    private EventApiController eventApiController;
+
 
 
     private Event event;
+    private String user;
 
     @BeforeClass
     public static void initEnv() {
@@ -126,10 +132,16 @@ public class ReservationFlowIntegrationTest {
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false));
-        event = initEvent(categories, organizationRepository, userManager, eventManager).getKey();
+        Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager);
+
+        event = eventAndUser.getKey();
+        user = eventAndUser.getValue() + "_owner";
     }
 
 
+    /**
+     * Test a complete offline payment flow
+     */
     @Test
     public void reservationFlowTest() {
 
@@ -155,6 +167,25 @@ public class ReservationFlowIntegrationTest {
         String successPage = payOffline(eventName, reservationIdentifier);
         Assert.assertEquals("redirect:/event/" + eventName + "/reservation/" + reservationIdentifier + "/success", successPage);
         //
+
+        //go to success page, payment is still pending
+        String confirmationPage = reservationController.showConfirmationPage(eventName, reservationIdentifier, false, false, new BindingAwareModelMap(), new MockHttpServletRequest());
+        Assert.assertTrue(confirmationPage.endsWith("/waitingPayment"));
+
+        //
+        validatePayment(eventName, reservationIdentifier);
+        //
+        
+        String confirmationPageSuccess = reservationController.showConfirmationPage(eventName, reservationIdentifier, false, false, new BindingAwareModelMap(), new MockHttpServletRequest());
+        Assert.assertEquals("/event/reservation-page-complete", confirmationPageSuccess);
+    }
+
+    private void validatePayment(String eventName, String reservationIdentifier) {
+        Principal principal = Mockito.mock(Principal.class);
+        Mockito.when(principal.getName()).thenReturn(user);
+        Assert.assertEquals(1, eventApiController.getPendingPayments(eventName, principal).size());
+        Assert.assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal, new BindingAwareModelMap(), new MockHttpServletRequest()));
+        Assert.assertEquals(0, eventApiController.getPendingPayments(eventName, principal).size());
     }
 
     private String payOffline(String eventName, String reservationIdentifier) {
