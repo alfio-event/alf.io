@@ -22,6 +22,8 @@ import alfio.config.Initializer;
 import alfio.controller.api.admin.EventApiController;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
+import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.controller.support.TicketDecorator;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.user.UserManager;
@@ -50,6 +52,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.support.BindingAwareModelMap;
@@ -110,6 +113,9 @@ public class ReservationFlowIntegrationTest {
     private ReservationController reservationController;
 
     @Autowired
+    private TicketController ticketController;
+
+    @Autowired
     private EventApiController eventApiController;
 
 
@@ -143,7 +149,7 @@ public class ReservationFlowIntegrationTest {
      * Test a complete offline payment flow
      */
     @Test
-    public void reservationFlowTest() {
+    public void reservationFlowTest() throws Exception{
 
         String eventName = event.getShortName();
 
@@ -175,9 +181,33 @@ public class ReservationFlowIntegrationTest {
         //
         validatePayment(eventName, reservationIdentifier);
         //
-        
-        String confirmationPageSuccess = reservationController.showConfirmationPage(eventName, reservationIdentifier, false, false, new BindingAwareModelMap(), new MockHttpServletRequest());
+
+        //
+        Model confirmationPageModel = new BindingAwareModelMap();
+        String confirmationPageSuccess = reservationController.showConfirmationPage(eventName, reservationIdentifier, false, false, confirmationPageModel, new MockHttpServletRequest());
         Assert.assertEquals("/event/reservation-page-complete", confirmationPageSuccess);
+        List<Pair<?, List<TicketDecorator>>> tickets = (List<Pair<?, List<TicketDecorator>>>) confirmationPageModel.asMap().get("ticketsByCategory");
+        Assert.assertEquals(1, tickets.size());
+        Assert.assertEquals(1, tickets.get(0).getRight().size());
+        TicketDecorator ticketDecorator = tickets.get(0).getRight().get(0);
+        //
+
+        String ticketIdentifier = ticketDecorator.getUuid();
+
+        //ticket is still not assigned, will redirect
+        Assert.assertTrue(ticketController.showTicket(eventName, reservationIdentifier, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()).startsWith("redirect:/event/"));
+        //
+
+        //assign ticket to person
+        UpdateTicketOwnerForm ticketOwnerForm = new UpdateTicketOwnerForm();
+        ticketOwnerForm.setFullName("Test McTest");
+        ticketOwnerForm.setEmail("testmctest@test.com");
+        ticketOwnerForm.setUserLanguage("en");
+        Assert.assertTrue(reservationController.assignTicketToPerson(eventName, reservationIdentifier, ticketIdentifier, ticketOwnerForm, Mockito.mock(BindingResult.class), new MockHttpServletRequest(), new BindingAwareModelMap()).endsWith("/success"));
+
+        //
+        Assert.assertEquals("/event/show-ticket", ticketController.showTicket(eventName, reservationIdentifier, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()));
+
     }
 
     private void validatePayment(String eventName, String reservationIdentifier) {
