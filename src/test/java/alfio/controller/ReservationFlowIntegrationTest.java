@@ -46,6 +46,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.support.BindingAwareModelMap;
 import org.springframework.web.context.request.ServletWebRequest;
@@ -55,6 +56,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -100,6 +102,9 @@ public class ReservationFlowIntegrationTest {
     @Autowired
     private EventController eventController;
 
+    @Autowired
+    private ReservationController reservationController;
+
 
 
     private Event event;
@@ -116,8 +121,8 @@ public class ReservationFlowIntegrationTest {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false));
         event = initEvent(categories, organizationRepository, userManager, eventManager).getKey();
     }
@@ -125,10 +130,13 @@ public class ReservationFlowIntegrationTest {
 
     @Test
     public void reservationFlowTest() {
+
+        ReservationForm reservationForm = new ReservationForm();
+
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setMethod("POST");
         ServletWebRequest servletWebRequest = new ServletWebRequest(request);
-        BindingResult bindingResult = Mockito.mock(BindingResult.class);
+        BindingResult bindingResult = new BeanPropertyBindingResult(reservationForm, "reservation");
         Model model = new BindingAwareModelMap();
         RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
 
@@ -139,7 +147,7 @@ public class ReservationFlowIntegrationTest {
         ticketReservation.setAmount(1);
         ticketReservation.setTicketCategoryId(eventStatisticsManager.loadTicketCategories(event).stream().findFirst().map(TicketCategory::getId).orElseThrow(IllegalStateException::new));
 
-        ReservationForm reservationForm = new ReservationForm();
+
         reservationForm.setReservation(Collections.singletonList(ticketReservation));
 
         String eventName = event.getShortName();
@@ -147,12 +155,21 @@ public class ReservationFlowIntegrationTest {
         String redirectResult = eventController.reserveTicket(eventName, reservationForm, bindingResult, model, servletWebRequest, redirectAttributes, Locale.ENGLISH);
 
 
+        String redirectStart = "redirect:/event/" + eventName + "/reservation/";
+
         // check reservation success
-        Assert.assertTrue(redirectResult.startsWith("redirect:/event/" + eventName + "/reservation/"));
+        Assert.assertTrue(redirectResult.startsWith(redirectStart));
         Assert.assertTrue(redirectResult.endsWith("/book"));
         //
 
 
+        String reservationIdentifier = redirectResult.substring(redirectStart.length()).replace("/book", "");
+
+
+        // check that the payment page is shown
+        String reservationPage = reservationController.showPaymentPage(eventName, reservationIdentifier, new BindingAwareModelMap(), new MockHttpServletRequest());
+        Assert.assertEquals("/event/reservation-page", reservationPage);
+        //
     }
 
 }
