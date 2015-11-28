@@ -33,6 +33,7 @@ import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -46,6 +47,7 @@ import static org.junit.Assert.assertNotNull;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @WebIntegrationTest("server.port:9000")
+@Transactional
 public class EventRepositoryTest {
 
     private static final String NEW_YORK_TZ = "America/New_York";
@@ -82,25 +84,6 @@ public class EventRepositoryTest {
 
         assertEquals("Begin date is not correct", beginEventDate, e.getBegin());
         assertEquals("End date is not correct", endEventDate, e.getEnd());
-
-        //since when debugging the toString method is used .... and it rely on the system TimeZone, we test it too
-        System.out.println(e.getBegin().toString());
-        System.out.println(e.getEnd().toString());
-    }
-
-    @Test
-    public void testSQLInsertedDatesRespectTheirTimeZone() throws Exception {
-        //these are the values of what we have inserted in the SQL insert script
-        TimeZone eventTimeZone = TimeZone.getTimeZone("America/New_York");
-        ZoneId eventZoneId = eventTimeZone.toZoneId();
-        ZonedDateTime beginEventDate = ZonedDateTime.of(2016,10,10,0,0,0,0,eventZoneId);
-        ZonedDateTime endEventDate = ZonedDateTime.of(2016, 10, 10, 23, 59, 0, 0, eventZoneId);
-
-        Event e = eventRepository.findById(0);
-        assertNotNull("Event not found in DB", e);
-
-        assertEquals("Begin date is not correct", e.getBegin(), beginEventDate);
-        assertEquals("End date is not correct", e.getEnd(), endEventDate);
 
         //since when debugging the toString method is used .... and it rely on the system TimeZone, we test it too
         System.out.println(e.getBegin().toString());

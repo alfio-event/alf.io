@@ -84,7 +84,7 @@ public class WaitingQueueManagerIntegrationTest {
         List<TicketCategoryModification> categories = getTicketCategoryModifications(false, AVAILABLE_SEATS, true, 10);
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        TicketCategory firstCategory = eventManager.loadTicketCategories(event).get(0);
+        TicketCategory firstCategory = eventManager.loadTicketCategories(event).stream().filter(t->t.getName().equals("defaultFirst")).findFirst().orElseThrow(IllegalStateException::new);
         configurationManager.saveCategoryConfiguration(firstCategory.getId(), event.getId(), Collections.singletonList(new ConfigurationModification(null, ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "1")), pair.getRight()+"_owner");
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_PRE_REGISTRATION, "true");
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
@@ -106,7 +106,7 @@ public class WaitingQueueManagerIntegrationTest {
         List<TicketCategoryModification> categories = getTicketCategoryModifications(true, 10, true, 10);
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        TicketCategory firstCategory = eventManager.loadTicketCategories(event).get(0);
+        TicketCategory firstCategory = eventManager.loadTicketCategories(event).stream().filter(t->t.getName().equals("defaultFirst")).findFirst().orElseThrow(IllegalStateException::new);
         configurationManager.saveCategoryConfiguration(firstCategory.getId(), event.getId(), Collections.singletonList(new ConfigurationModification(null, ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "1")), pair.getRight()+"_owner");
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_PRE_REGISTRATION, "true");
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
@@ -125,11 +125,11 @@ public class WaitingQueueManagerIntegrationTest {
 
     private List<TicketCategoryModification> getTicketCategoryModifications(boolean firstBounded, int firstSeats, boolean lastBounded, int lastSeats) {
         return Arrays.asList(
-            new TicketCategoryModification(null, "default", firstSeats,
+            new TicketCategoryModification(null, "defaultFirst", firstSeats,
                 new DateTimeModification(LocalDate.now(), LocalTime.now().plusMinutes(4)),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", firstBounded),
-            new TicketCategoryModification(null, "default", lastSeats,
+            new TicketCategoryModification(null, "defaultLast", lastSeats,
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", lastBounded));
