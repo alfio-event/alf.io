@@ -36,6 +36,8 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
+import com.opencsv.CSVParser;
+import com.opencsv.CSVReader;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Before;
@@ -47,6 +49,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -60,6 +63,8 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
@@ -207,7 +212,26 @@ public class ReservationFlowIntegrationTest {
 
         //
         Assert.assertEquals("/event/show-ticket", ticketController.showTicket(eventName, reservationIdentifier, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()));
+        //
+        checkCSV(eventName, ticketIdentifier);
+    }
 
+    private void checkCSV(String eventName, String ticketIdentifier) throws IOException {
+        //FIXME get all fields :D and put it in the request...
+        Principal principal = Mockito.mock(Principal.class);
+        Mockito.when(principal.getName()).thenReturn(user);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        List<String> fields = eventApiController.getAllFields(eventName);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("fields", fields.toArray(new String[]{}));
+        eventApiController.downloadAllTicketsCSV(eventName, request, response, principal);
+        CSVReader csvReader = new CSVReader(new StringReader(response.getContentAsString()));
+        List<String[]> csv = csvReader.readAll();
+        Assert.assertEquals(2, csv.size());
+        Assert.assertEquals(ticketIdentifier, csv.get(1)[0]);
+        Assert.assertEquals("default", csv.get(1)[2]);
+        Assert.assertEquals("ACQUIRED", csv.get(1)[4]);
+        Assert.assertEquals("Test McTest", csv.get(1)[8]);
     }
 
     private void validatePayment(String eventName, String reservationIdentifier) {
