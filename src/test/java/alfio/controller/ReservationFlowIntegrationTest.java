@@ -19,11 +19,13 @@ package alfio.controller;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.api.admin.CheckInApiController;
 import alfio.controller.api.admin.EventApiController;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TicketDecorator;
+import alfio.manager.CheckInManager;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.user.UserManager;
@@ -123,6 +125,9 @@ public class ReservationFlowIntegrationTest {
     @Autowired
     private EventApiController eventApiController;
 
+    @Autowired
+    private CheckInApiController checkInApiController;
+
 
 
     private Event event;
@@ -188,13 +193,7 @@ public class ReservationFlowIntegrationTest {
         //
 
         //
-        Model confirmationPageModel = new BindingAwareModelMap();
-        String confirmationPageSuccess = reservationController.showConfirmationPage(eventName, reservationIdentifier, false, false, confirmationPageModel, new MockHttpServletRequest());
-        Assert.assertEquals("/event/reservation-page-complete", confirmationPageSuccess);
-        List<Pair<?, List<TicketDecorator>>> tickets = (List<Pair<?, List<TicketDecorator>>>) confirmationPageModel.asMap().get("ticketsByCategory");
-        Assert.assertEquals(1, tickets.size());
-        Assert.assertEquals(1, tickets.get(0).getRight().size());
-        TicketDecorator ticketDecorator = tickets.get(0).getRight().get(0);
+        TicketDecorator ticketDecorator = checkReservationComplete(eventName, reservationIdentifier);
         //
 
         String ticketIdentifier = ticketDecorator.getUuid();
@@ -203,20 +202,65 @@ public class ReservationFlowIntegrationTest {
         Assert.assertTrue(ticketController.showTicket(eventName, reservationIdentifier, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()).startsWith("redirect:/event/"));
         //
 
+        String name1 = "Test McTest";
+
         //assign ticket to person
-        UpdateTicketOwnerForm ticketOwnerForm = new UpdateTicketOwnerForm();
-        ticketOwnerForm.setFullName("Test McTest");
-        ticketOwnerForm.setEmail("testmctest@test.com");
-        ticketOwnerForm.setUserLanguage("en");
-        Assert.assertTrue(reservationController.assignTicketToPerson(eventName, reservationIdentifier, ticketIdentifier, ticketOwnerForm, Mockito.mock(BindingResult.class), new MockHttpServletRequest(), new BindingAwareModelMap()).endsWith("/success"));
+        assignTicket(eventName, reservationIdentifier, ticketIdentifier, name1);
 
         //
         Assert.assertEquals("/event/show-ticket", ticketController.showTicket(eventName, reservationIdentifier, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()));
         //
-        checkCSV(eventName, ticketIdentifier);
+        checkCSV(eventName, ticketIdentifier, name1);
+
+        //update
+        String name2 = "Test OTest";
+        assignTicket(eventName, reservationIdentifier, ticketIdentifier, name2);
+        checkCSV(eventName, ticketIdentifier, name2);
+
+        //lock ticket
+        Principal principal = Mockito.mock(Principal.class);
+        Mockito.when(principal.getName()).thenReturn(user);
+        eventApiController.toggleTicketLocking(eventName, ticketDecorator.getCategoryId(), ticketDecorator.getId(), principal);
+
+        assignTicket(eventName, reservationIdentifier, ticketIdentifier, name1);
+        checkCSV(eventName, ticketIdentifier, name2);
+
+        //ticket has changed, update
+        ticketDecorator = checkReservationComplete(eventName, reservationIdentifier);
+
+        //--- check in sequence
+        String ticketCode = ticketDecorator.ticketCode(event.getPrivateKey());
+        CheckInManager.TicketAndCheckInResult ticketAndCheckInResult = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
+        Assert.assertEquals(CheckInManager.CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult.getResult().getStatus());
+        CheckInApiController.TicketCode tc = new CheckInApiController.TicketCode();
+        tc.setCode(ticketCode);
+        Assert.assertEquals(CheckInManager.CheckInStatus.SUCCESS, checkInApiController.checkIn(event.getId(), ticketIdentifier, tc).getResult().getStatus());
+
+
+        CheckInManager.TicketAndCheckInResult ticketAndCheckInResultOk = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
+        Assert.assertEquals(CheckInManager.CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
+
     }
 
-    private void checkCSV(String eventName, String ticketIdentifier) throws IOException {
+    private TicketDecorator checkReservationComplete(String eventName, String reservationIdentifier) {
+        Model confirmationPageModel = new BindingAwareModelMap();
+        String confirmationPageSuccess = reservationController.showConfirmationPage(eventName, reservationIdentifier, false, false, confirmationPageModel, new MockHttpServletRequest());
+        Assert.assertEquals("/event/reservation-page-complete", confirmationPageSuccess);
+        List<Pair<?, List<TicketDecorator>>> tickets = (List<Pair<?, List<TicketDecorator>>>) confirmationPageModel.asMap().get("ticketsByCategory");
+        Assert.assertEquals(1, tickets.size());
+        Assert.assertEquals(1, tickets.get(0).getRight().size());
+        return tickets.get(0).getRight().get(0);
+    }
+
+    private void assignTicket(String eventName, String reservationIdentifier, String ticketIdentifier, String fullName) throws Exception {
+        UpdateTicketOwnerForm ticketOwnerForm = new UpdateTicketOwnerForm();
+        ticketOwnerForm.setFullName(fullName);
+        ticketOwnerForm.setEmail("testmctest@test.com");
+        ticketOwnerForm.setUserLanguage("en");
+        Assert.assertTrue(reservationController.assignTicketToPerson(eventName, reservationIdentifier, ticketIdentifier, ticketOwnerForm, Mockito.mock(BindingResult.class), new MockHttpServletRequest(), new BindingAwareModelMap()).endsWith("/success"));
+    }
+
+    private void checkCSV(String eventName, String ticketIdentifier, String fullName) throws IOException {
         //FIXME get all fields :D and put it in the request...
         Principal principal = Mockito.mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(user);
@@ -231,7 +275,7 @@ public class ReservationFlowIntegrationTest {
         Assert.assertEquals(ticketIdentifier, csv.get(1)[0]);
         Assert.assertEquals("default", csv.get(1)[2]);
         Assert.assertEquals("ACQUIRED", csv.get(1)[4]);
-        Assert.assertEquals("Test McTest", csv.get(1)[8]);
+        Assert.assertEquals(fullName, csv.get(1)[8]);
     }
 
     private void validatePayment(String eventName, String reservationIdentifier) {
