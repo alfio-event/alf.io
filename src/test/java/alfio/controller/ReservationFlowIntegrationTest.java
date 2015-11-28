@@ -188,9 +188,14 @@ public class ReservationFlowIntegrationTest {
         String confirmationPage = reservationController.showConfirmationPage(eventName, reservationIdentifier, false, false, new BindingAwareModelMap(), new MockHttpServletRequest());
         Assert.assertTrue(confirmationPage.endsWith("/waitingPayment"));
 
+
+        Assert.assertEquals("/event/reservation-waiting-for-payment", reservationController.showWaitingPaymentPage(eventName, reservationIdentifier, new BindingAwareModelMap()));
+
         //
         validatePayment(eventName, reservationIdentifier);
         //
+
+        Assert.assertTrue(reservationController.showWaitingPaymentPage(eventName, reservationIdentifier, new BindingAwareModelMap()).endsWith("/success"));
 
         //
         TicketDecorator ticketDecorator = checkReservationComplete(eventName, reservationIdentifier);
