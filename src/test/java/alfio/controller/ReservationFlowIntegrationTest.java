@@ -19,8 +19,10 @@ package alfio.controller;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.api.ReservationApiController;
 import alfio.controller.api.admin.CheckInApiController;
 import alfio.controller.api.admin.EventApiController;
+import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
@@ -28,6 +30,7 @@ import alfio.controller.support.TicketDecorator;
 import alfio.manager.CheckInManager;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
+import alfio.manager.i18n.I18nManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
@@ -38,6 +41,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.TemplateManager;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVReader;
 import org.apache.commons.lang3.tuple.Pair;
@@ -128,6 +132,13 @@ public class ReservationFlowIntegrationTest {
     @Autowired
     private CheckInApiController checkInApiController;
 
+    @Autowired
+    private TicketHelper ticketHelper;
+    @Autowired
+    private I18nManager i18nManager;
+
+    private ReservationApiController reservationApiController;
+
 
 
     private Event event;
@@ -152,6 +163,11 @@ public class ReservationFlowIntegrationTest {
 
         event = eventAndUser.getKey();
         user = eventAndUser.getValue() + "_owner";
+
+
+        //
+        TemplateManager templateManager = Mockito.mock(TemplateManager.class);
+        reservationApiController = new ReservationApiController(ticketHelper, templateManager, i18nManager);
     }
 
 
@@ -216,6 +232,18 @@ public class ReservationFlowIntegrationTest {
         Assert.assertEquals("/event/show-ticket", ticketController.showTicket(eventName, reservationIdentifier, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()));
         //
         checkCSV(eventName, ticketIdentifier, name1);
+
+
+        // use api to update
+        UpdateTicketOwnerForm updateTicketOwnerForm = new UpdateTicketOwnerForm();
+        updateTicketOwnerForm.setFullName("Test Testson");
+        updateTicketOwnerForm.setEmail("testmctest@test.com");
+        updateTicketOwnerForm.setUserLanguage("en");
+        reservationApiController.assignTicketToPerson(eventName, reservationIdentifier, ticketIdentifier, true,
+            updateTicketOwnerForm, new BeanPropertyBindingResult(updateTicketOwnerForm, "updateTicketForm"), new MockHttpServletRequest(), new BindingAwareModelMap(),
+            null);
+        checkCSV(eventName, ticketIdentifier, "Test Testson");
+        //
 
         //update
         String name2 = "Test OTest";
