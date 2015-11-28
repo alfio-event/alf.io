@@ -19,6 +19,7 @@ package alfio.controller;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
@@ -28,6 +29,7 @@ import alfio.model.TicketCategory;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
@@ -131,32 +133,10 @@ public class ReservationFlowIntegrationTest {
     @Test
     public void reservationFlowTest() {
 
-        ReservationForm reservationForm = new ReservationForm();
-
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setMethod("POST");
-        ServletWebRequest servletWebRequest = new ServletWebRequest(request);
-        BindingResult bindingResult = new BeanPropertyBindingResult(reservationForm, "reservation");
-        Model model = new BindingAwareModelMap();
-        RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
-
-
-
-        TicketReservationModification ticketReservation = new TicketReservationModification();
-
-        ticketReservation.setAmount(1);
-        ticketReservation.setTicketCategoryId(eventStatisticsManager.loadTicketCategories(event).stream().findFirst().map(TicketCategory::getId).orElseThrow(IllegalStateException::new));
-
-
-        reservationForm.setReservation(Collections.singletonList(ticketReservation));
-
         String eventName = event.getShortName();
 
-        String redirectResult = eventController.reserveTicket(eventName, reservationForm, bindingResult, model, servletWebRequest, redirectAttributes, Locale.ENGLISH);
-
-
+        String redirectResult = reserveTicket(eventName);
         String redirectStart = "redirect:/event/" + eventName + "/reservation/";
-
         // check reservation success
         Assert.assertTrue(redirectResult.startsWith(redirectStart));
         Assert.assertTrue(redirectResult.endsWith("/book"));
@@ -170,6 +150,42 @@ public class ReservationFlowIntegrationTest {
         String reservationPage = reservationController.showPaymentPage(eventName, reservationIdentifier, new BindingAwareModelMap(), new MockHttpServletRequest());
         Assert.assertEquals("/event/reservation-page", reservationPage);
         //
+
+        // pay offline
+        String successPage = payOffline(eventName, reservationIdentifier);
+        Assert.assertEquals("redirect:/event/" + eventName + "/reservation/" + reservationIdentifier + "/success", successPage);
+        //
+    }
+
+    private String payOffline(String eventName, String reservationIdentifier) {
+        PaymentForm paymentForm = new PaymentForm();
+        paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
+        paymentForm.setEmail("test@test.com");
+        paymentForm.setBillingAddress("my billing address");
+        paymentForm.setFullName("full name");
+        paymentForm.setTermAndConditionsAccepted(true);
+        BindingResult bindingResult = new BeanPropertyBindingResult(paymentForm, "paymentForm");
+        Model model = new BindingAwareModelMap();
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
+        return reservationController.handleReservation(eventName, reservationIdentifier, paymentForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
+    }
+
+    private String reserveTicket(String eventName) {
+        ReservationForm reservationForm = new ReservationForm();
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setMethod("POST");
+        ServletWebRequest servletWebRequest = new ServletWebRequest(request);
+        BindingResult bindingResult = new BeanPropertyBindingResult(reservationForm, "reservation");
+        Model model = new BindingAwareModelMap();
+        RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
+        TicketReservationModification ticketReservation = new TicketReservationModification();
+        ticketReservation.setAmount(1);
+        ticketReservation.setTicketCategoryId(eventStatisticsManager.loadTicketCategories(event).stream().findFirst().map(TicketCategory::getId).orElseThrow(IllegalStateException::new));
+        reservationForm.setReservation(Collections.singletonList(ticketReservation));
+
+
+        return eventController.reserveTicket(eventName, reservationForm, bindingResult, model, servletWebRequest, redirectAttributes, Locale.ENGLISH);
     }
 
 }
