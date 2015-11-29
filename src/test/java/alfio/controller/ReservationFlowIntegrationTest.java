@@ -233,16 +233,23 @@ public class ReservationFlowIntegrationTest {
         TicketDecorator ticketDecorator = checkReservationComplete(eventName, reservationIdentifier);
         //
 
+
+
+
         String ticketIdentifier = ticketDecorator.getUuid();
+
 
         //ticket is still not assigned, will redirect
         Assert.assertTrue(ticketController.showTicket(eventName, reservationIdentifier, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()).startsWith("redirect:/event/"));
+        Assert.assertTrue(ticketController.showTicketForUpdate(eventName, reservationIdentifier, ticketIdentifier, new BindingAwareModelMap(), Locale.ENGLISH).startsWith("redirect:/event/"));
         //
 
         String name1 = "Test McTest";
 
         //assign ticket to person
         assignTicket(eventName, reservationIdentifier, ticketIdentifier, name1);
+
+        Assert.assertEquals("/event/update-ticket", ticketController.showTicketForUpdate(eventName, reservationIdentifier, ticketIdentifier, new BindingAwareModelMap(), Locale.ENGLISH));
 
         //
         Assert.assertEquals("/event/show-ticket", ticketController.showTicket(eventName, reservationIdentifier, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()));
