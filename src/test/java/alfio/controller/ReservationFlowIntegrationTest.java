@@ -172,12 +172,28 @@ public class ReservationFlowIntegrationTest {
 
 
     /**
-     * Test a complete offline payment flow
+     * Test a complete offline payment flow.
+     * Will not check in detail...
      */
     @Test
     public void reservationFlowTest() throws Exception{
 
         String eventName = event.getShortName();
+
+
+        // list events
+        String eventList = eventController.listEvents(new BindingAwareModelMap(), Locale.ENGLISH);
+        if(eventManager.getActiveEvents().size() == 1) {
+            Assert.assertTrue(eventName.startsWith("redirect:/"));
+        } else {
+            Assert.assertEquals("/event/event-list", eventList);
+        }
+        //
+
+        // show event
+        String showEvent = eventController.showEvent(eventName, new BindingAwareModelMap(), new MockHttpServletRequest(), Locale.ENGLISH);
+        Assert.assertEquals("/event/show-event", showEvent);
+        //
 
         String redirectResult = reserveTicket(eventName);
         String redirectStart = "redirect:/event/" + eventName + "/reservation/";
