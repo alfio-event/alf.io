@@ -184,7 +184,7 @@ public class ReservationFlowIntegrationTest {
         // list events
         String eventList = eventController.listEvents(new BindingAwareModelMap(), Locale.ENGLISH);
         if(eventManager.getActiveEvents().size() == 1) {
-            Assert.assertTrue(eventName.startsWith("redirect:/"));
+            Assert.assertTrue(eventList.startsWith("redirect:/"));
         } else {
             Assert.assertEquals("/event/event-list", eventList);
         }
