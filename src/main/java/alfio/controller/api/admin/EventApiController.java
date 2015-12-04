@@ -24,9 +24,11 @@ import alfio.manager.EventStatisticsManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
+import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.user.Organization;
 import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.repository.TicketFieldRepository;
@@ -79,6 +81,7 @@ public class EventApiController {
     private final DescriptionsLoader descriptionsLoader;
     private final TicketHelper ticketHelper;
     private final DynamicFieldTemplateRepository dynamicFieldTemplateRepository;
+    private final UserManager userManager;
 
     @Autowired
     public EventApiController(EventManager eventManager,
@@ -89,7 +92,8 @@ public class EventApiController {
                               TicketFieldRepository ticketFieldRepository,
                               DescriptionsLoader descriptionsLoader,
                               TicketHelper ticketHelper,
-                              DynamicFieldTemplateRepository dynamicFieldTemplateRepository) {
+                              DynamicFieldTemplateRepository dynamicFieldTemplateRepository,
+                              UserManager userManager) {
         this.eventManager = eventManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.i18nManager = i18nManager;
@@ -99,6 +103,7 @@ public class EventApiController {
         this.descriptionsLoader = descriptionsLoader;
         this.ticketHelper = ticketHelper;
         this.dynamicFieldTemplateRepository = dynamicFieldTemplateRepository;
+        this.userManager = userManager;
     }
 
     @ExceptionHandler(DataAccessException.class)
@@ -123,11 +128,13 @@ public class EventApiController {
         return PaymentProxy.availableProxies();
     }
 
-    @RequestMapping(value = "/events", method = GET, headers = "Authorization=Basic*")
+    @RequestMapping(value = "/events", method = GET, headers = "Authorization")
     public List<EventListItem> getAllEventsForExternal(Principal principal, HttpServletRequest request) {
-        return eventStatisticsManager.getAllEventsWithStatistics(principal.getName()).stream()
-            .sorted()
-            .map(s -> new EventListItem(s.getEvent(), request.getContextPath(), descriptionsLoader.eventDescriptions()))
+        List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).collect(Collectors.toList());
+        return eventManager.getActiveEvents().stream()
+            .filter(e -> userOrganizations.contains(e.getOrganizationId()))
+            .sorted((e1, e2) -> e1.getBegin().withZoneSameInstant(ZoneId.systemDefault()).compareTo(e2.getBegin().withZoneSameInstant(ZoneId.systemDefault())))
+            .map(s -> new EventListItem(s, request.getContextPath(), descriptionsLoader.eventDescriptions()))
             .collect(Collectors.toList());
     }
 
