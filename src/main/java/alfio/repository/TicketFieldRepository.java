@@ -61,7 +61,7 @@ public interface TicketFieldRepository {
     @Query("select ticket_field_description.* from ticket_field_description  inner join ticket_field_configuration on ticket_field_configuration_id_fk = id inner join event on event.id = event_id_fk  where short_name = :eventShortName")
     List<TicketFieldDescription> findDescriptions(@Bind("eventShortName") String eventShortName);
 
-    @Query("SELECT field_name FROM TICKET_FIELD_CONFIGURATION inner join event on event.id = event_id_fk  where short_name = :eventShortName order by field_order asc ")
+    @Query("SELECT field_name FROM ticket_field_configuration inner join event on event.id = event_id_fk  where short_name = :eventShortName order by field_order asc ")
     List<String> findFieldsForEvent(@Bind("eventShortName") String eventShortName);
 
     @Query("select field_name, field_value from ticket_field_value inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where ticket_id_fk = :ticketId")
@@ -98,16 +98,16 @@ public interface TicketFieldRepository {
     }
 
 
-    @Query("select * from TICKET_FIELD_CONFIGURATION where event_id_fk = :eventId order by field_order asc")
+    @Query("select * from ticket_field_configuration where event_id_fk = :eventId order by field_order asc")
     List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventId") int eventId);
 
-    @Query("select TICKET_FIELD_CONFIGURATION.* from TICKET_FIELD_CONFIGURATION inner join event on event.id = event_id_fk  where short_name = :eventShortName order by field_order asc")
+    @Query("select ticket_field_configuration.* from ticket_field_configuration inner join event on event.id = event_id_fk  where short_name = :eventShortName order by field_order asc")
     List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventShortName") String eventName);
 
-    @Query("select count(*) from TICKET_FIELD_CONFIGURATION where event_id_fk = :eventId")
+    @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId")
     Integer countAdditionalFieldsForEvent(@Bind("eventId") int eventId);
 
-    @Query("select count(*) from TICKET_FIELD_CONFIGURATION where event_id_fk = :eventId and field_required = true")
+    @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId and field_required = true")
     Integer countRequiredAdditionalFieldsForEvent(@Bind("eventId") int eventId);
 
     default Map<Integer, TicketFieldDescription> findTranslationsFor(Locale locale, int eventId) {
