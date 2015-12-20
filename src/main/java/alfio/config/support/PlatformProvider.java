@@ -29,7 +29,7 @@ import static java.util.Optional.ofNullable;
  * <p>
  * Supported:
  * - Openshift : pgsql only
- * - Cloud Foundry: pgsql (elephantdb)
+ * - Cloud Foundry: mysql (injected)
  * - Heroku
  * - local use with system properties
  */
@@ -85,25 +85,22 @@ public enum PlatformProvider {
      * Cloud Foundry configuration.
      * see https://docs.cloudfoundry.org/buildpacks/java/spring-service-bindings.html
      * <p>
-     * We assume that the "ElephantSQL" has already been bound to the application.
+     * When we identify running on CF, we set the driver classname and dialect to MYSQL.
      * Anyway, since we use Spring, the Cloud Foundry engine should replace the "DataSource" bean with the right one.
      */
-    CLOUD_FOUNDRY {
+    MYSQL {
         @Override
         public String getDriveClassName(Environment env) {
-            return POSTGRESQL_DRIVER;
+            return MYSQL_DRIVER;
         }
 
         @Override
-        public String getUrl(Environment env) {
-            return env.getRequiredProperty("vcap.services.elephantsql.credentials.uri");
-        }
+        public String getUrl(Environment env) { return ""; }
 
         @Override
         public String getUsername(Environment env) {
             return "";
         }
-
 
         @Override
         public String getPassword(Environment env) {
@@ -117,17 +114,16 @@ public enum PlatformProvider {
 
         @Override
         public String getDialect(Environment env) {
-            return PGSQL;
+            return MYSQL_DIALECT;
         }
 
         @Override
         public boolean isHosting(Environment env) {
-            return ofNullable(env.getProperty("VCAP_APPLICATION")).isPresent();
+            return ofNullable(env.getProperty("VCAP_SERVICES")).isPresent();
         }
     },
 
     HEROKU {
-
         @Override
         public String getDriveClassName(Environment env) {
             return POSTGRESQL_DRIVER;
@@ -218,6 +214,9 @@ public enum PlatformProvider {
 
     private static final String POSTGRESQL_DRIVER = "org.postgresql.Driver";
     public static final String PGSQL = "PGSQL";
+
+    private static final String MYSQL_DRIVER = "com.mysql.jdbc.Driver";
+    public static final String MYSQL_DIALECT = "MYSQL";
 
 
     public String getDriveClassName(Environment env) {
