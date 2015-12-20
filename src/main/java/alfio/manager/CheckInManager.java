@@ -22,19 +22,21 @@ import alfio.model.Ticket;
 import alfio.model.Ticket.TicketStatus;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
+import alfio.util.MonetaryUtil;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 import static alfio.manager.CheckInManager.CheckInStatus.*;
-import static alfio.manager.CheckInManager.CheckInStatus.OK_READY_TO_BE_CHECKED_IN;
 import static alfio.util.OptionalWrapper.optionally;
 
 @Component
@@ -65,6 +67,13 @@ public class CheckInManager {
         ticketRepository.updateTicketStatusWithUUID(uuid, TicketStatus.ACQUIRED.toString());
     }
 
+    public TicketAndCheckInResult confirmOnSitePayment(String eventName, String ticketIdentifier, Optional<String> ticketCode) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .flatMap(e -> confirmOnSitePayment(ticketIdentifier).map((String s) -> Pair.of(s, e)))
+            .map(p -> checkIn(p.getRight().getId(), ticketIdentifier, ticketCode))
+            .orElseGet(() -> new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.TICKET_NOT_FOUND, "")));
+    }
+
     public Optional<String> confirmOnSitePayment(String ticketIdentifier) {
         Optional<String> uuid = findAndLockTicket(ticketIdentifier)
             .filter(t -> t.getStatus() == TicketStatus.TO_BE_PAID)
@@ -74,11 +83,15 @@ public class CheckInManager {
         return uuid;
     }
 
+    public TicketAndCheckInResult checkIn(String shortName, String ticketIdentifier, Optional<String> ticketCode) {
+        return eventRepository.findOptionalByShortName(shortName).map(e -> checkIn(e.getId(), ticketIdentifier, ticketCode)).orElseGet(() -> new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.EVENT_NOT_FOUND, "event not found")));
+    }
+
     public TicketAndCheckInResult checkIn(int eventId, String ticketIdentifier, Optional<String> ticketCode) {
         TicketAndCheckInResult descriptor = extractStatus(eventId, ticketRepository.findByUUIDForUpdate(ticketIdentifier), ticketIdentifier, ticketCode);
         if(descriptor.getResult().getStatus() == OK_READY_TO_BE_CHECKED_IN) {
             checkIn(ticketIdentifier);
-            return new TicketAndCheckInResult(descriptor.getTicket(), new CheckInResult(SUCCESS, "success"));
+            return new TicketAndCheckInResult(descriptor.getTicket(), new DefaultCheckInResult(SUCCESS, "success"));
         }
         return descriptor;
     }
@@ -105,22 +118,29 @@ public class CheckInManager {
     }
 
     public TicketAndCheckInResult evaluateTicketStatus(int eventId, String ticketIdentifier, Optional<String> ticketCode) {
-        return extractStatus(eventId, optionally(() -> ticketRepository.findByUUID(ticketIdentifier)), ticketIdentifier, ticketCode);
+        return extractStatus(optionally(() -> eventRepository.findById(eventId)), optionally(() -> ticketRepository.findByUUID(ticketIdentifier)), ticketIdentifier, ticketCode);
+    }
+
+    public TicketAndCheckInResult evaluateTicketStatus(String eventName, String ticketIdentifier, Optional<String> ticketCode) {
+        return extractStatus(eventRepository.findOptionalByShortName(eventName), optionally(() -> ticketRepository.findByUUID(ticketIdentifier)), ticketIdentifier, ticketCode);
     }
 
     private TicketAndCheckInResult extractStatus(int eventId, Optional<Ticket> maybeTicket, String ticketIdentifier, Optional<String> ticketCode) {
-        Optional<Event> maybeEvent = optionally(() -> eventRepository.findById(eventId));
+        return extractStatus(optionally(() -> eventRepository.findById(eventId)), maybeTicket, ticketIdentifier, ticketCode);
+    }
+
+    private TicketAndCheckInResult extractStatus(Optional<Event> maybeEvent, Optional<Ticket> maybeTicket, String ticketIdentifier, Optional<String> ticketCode) {
 
         if (!maybeEvent.isPresent()) {
-            return new TicketAndCheckInResult(null, new CheckInResult(EVENT_NOT_FOUND, "Event with id " + eventId + " not found"));
+            return new TicketAndCheckInResult(null, new DefaultCheckInResult(EVENT_NOT_FOUND, "Event not found"));
         }
 
         if (!maybeTicket.isPresent()) {
-            return new TicketAndCheckInResult(null, new CheckInResult(TICKET_NOT_FOUND, "Ticket with uuid " + ticketIdentifier + " not found"));
+            return new TicketAndCheckInResult(null, new DefaultCheckInResult(TICKET_NOT_FOUND, "Ticket with uuid " + ticketIdentifier + " not found"));
         }
 
         if(!ticketCode.filter(StringUtils::isNotEmpty).isPresent()) {
-            return new TicketAndCheckInResult(null, new CheckInResult(EMPTY_TICKET_CODE, "Missing ticket code"));
+            return new TicketAndCheckInResult(null, new DefaultCheckInResult(EMPTY_TICKET_CODE, "Missing ticket code"));
         }
 
         Ticket ticket = maybeTicket.get();
@@ -131,24 +151,24 @@ public class CheckInManager {
         log.trace("true code    is {}", ticket.ticketCode(event.getPrivateKey()));
 
         if (!code.equals(ticket.ticketCode(event.getPrivateKey()))) {
-            return new TicketAndCheckInResult(null, new CheckInResult(INVALID_TICKET_CODE, "Ticket qr code does not match"));
+            return new TicketAndCheckInResult(null, new DefaultCheckInResult(INVALID_TICKET_CODE, "Ticket qr code does not match"));
         }
 
         final TicketStatus ticketStatus = ticket.getStatus();
 
         if (ticketStatus == TicketStatus.TO_BE_PAID) {
-            return new TicketAndCheckInResult(ticket, new CheckInResult(MUST_PAY, "Must pay for ticket")); //TODO: must say how much
+            return new TicketAndCheckInResult(ticket, new OnSitePaymentResult(MUST_PAY, "Must pay for ticket", MonetaryUtil.addVAT(ticket.getOriginalPrice(), event.getVat()), event.getCurrency()));
         }
 
         if (ticketStatus == TicketStatus.CHECKED_IN) {
-            return new TicketAndCheckInResult(ticket, new CheckInResult(ALREADY_CHECK_IN, "Error: already checked in"));
+            return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(ALREADY_CHECK_IN, "Error: already checked in"));
         }
 
         if (ticket.getStatus() != TicketStatus.ACQUIRED) {
-            return new TicketAndCheckInResult(ticket, new CheckInResult(INVALID_TICKET_STATE, "Invalid ticket state, expected ACQUIRED state, received " + ticket.getStatus()));
+            return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(INVALID_TICKET_STATE, "Invalid ticket state, expected ACQUIRED state, received " + ticket.getStatus()));
         }
 
-        return new TicketAndCheckInResult(ticket, new CheckInResult(OK_READY_TO_BE_CHECKED_IN, "Ready to be checked in"));
+        return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(OK_READY_TO_BE_CHECKED_IN, "Ready to be checked in"));
     }
 
     @Data
@@ -158,8 +178,21 @@ public class CheckInManager {
     }
 
     @Data
-    public static class CheckInResult {
+    public static class DefaultCheckInResult implements CheckInResult {
         private final CheckInStatus status;
         private final String message;
     }
+
+    @Data
+    public static class OnSitePaymentResult implements CheckInResult {
+        private final CheckInStatus status;
+        private final String message;
+        private final BigDecimal dueAmount;
+        private final String currency;
+    }
+
+    public interface CheckInResult {
+        CheckInStatus getStatus();
+    }
+
 }
