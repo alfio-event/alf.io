@@ -29,6 +29,7 @@ The following profiles are supported
 
  * dev
  * dev-pgsql
+ * dev-mysql
  * docker-test
 
 You can get a list of all supported Gradle tasks by running

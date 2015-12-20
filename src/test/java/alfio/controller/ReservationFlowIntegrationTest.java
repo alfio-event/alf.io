@@ -195,6 +195,10 @@ public class ReservationFlowIntegrationTest {
         Assert.assertEquals("/event/show-event", showEvent);
         //
 
+        // check calendar
+        checkCalendar(eventName);
+        //
+
         String redirectResult = reserveTicket(eventName);
         String redirectStart = "redirect:/event/" + eventName + "/reservation/";
         // check reservation success
@@ -296,6 +300,16 @@ public class ReservationFlowIntegrationTest {
         CheckInManager.TicketAndCheckInResult ticketAndCheckInResultOk = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
         Assert.assertEquals(CheckInManager.CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
 
+    }
+
+    private void checkCalendar(String eventName) throws IOException {
+        MockHttpServletResponse resIcal = new MockHttpServletResponse();
+        eventController.calendar(eventName, "en", null, resIcal);
+        Assert.assertEquals("text/calendar", resIcal.getContentType());
+
+        MockHttpServletResponse resGoogleCal = new MockHttpServletResponse();
+        eventController.calendar(eventName, "en", "google", resGoogleCal);
+        Assert.assertTrue(resGoogleCal.getRedirectedUrl().startsWith("https://www.google.com/calendar/event"));
     }
 
     private TicketDecorator checkReservationComplete(String eventName, String reservationIdentifier) {
