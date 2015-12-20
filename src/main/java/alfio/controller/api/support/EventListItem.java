@@ -20,12 +20,20 @@ import alfio.model.Event;
 import alfio.model.EventDescription;
 
 import java.time.Clock;
-import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class EventListItem {
 
+    public static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder()
+        .parseCaseInsensitive()
+        .append(DateTimeFormatter.ISO_LOCAL_DATE)
+        .appendLiteral('T')
+        .append(DateTimeFormatter.ISO_LOCAL_TIME)
+        .appendLiteral('Z')
+        .toFormatter();
     protected final Event event;
     protected final String requestContextPath;
     protected final List<EventDescription> eventDescriptions;
@@ -64,12 +72,12 @@ public class EventListItem {
         return event.getSameDay();
     }
 
-    public ZonedDateTime getBegin() {
-        return event.getBegin().withZoneSameInstant(Clock.systemUTC().getZone());
+    public String getBegin() {
+        return event.getBegin().withZoneSameInstant(Clock.systemUTC().getZone()).format(FORMATTER);
     }
 
-    public ZonedDateTime getEnd() {
-        return event.getEnd().withZoneSameInstant(Clock.systemUTC().getZone());
+    public String getEnd() {
+        return event.getEnd().withZoneSameInstant(Clock.systemUTC().getZone()).format(FORMATTER);
     }
 
     public String getLocation() {
