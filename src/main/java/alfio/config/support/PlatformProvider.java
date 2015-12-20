@@ -88,7 +88,7 @@ public enum PlatformProvider {
      * When we identify running on CF, we set the driver classname and dialect to MYSQL.
      * Anyway, since we use Spring, the Cloud Foundry engine should replace the "DataSource" bean with the right one.
      */
-    MYSQL {
+    CF_MYSQL {
         @Override
         public String getDriveClassName(Environment env) {
             return MYSQL_DRIVER;
@@ -119,7 +119,17 @@ public enum PlatformProvider {
 
         @Override
         public boolean isHosting(Environment env) {
-            return ofNullable(env.getProperty("VCAP_SERVICES")).isPresent();
+            //check if json object for mysql is returned
+            //example payload
+            //{
+            //"staging_env_json": {},
+            //"running_env_json": {},
+            //"system_env_json": {
+            //    "VCAP_SERVICES": {
+            //        "p-mysql": [
+            //        {
+            //            "name": "alfio-db",
+            return ofNullable(env.getProperty("VCAP_SERVICES")).map(props -> props.indexOf("mysql://") >= 0).orElse(false);
         }
     },
 
