@@ -50,6 +50,13 @@ public final class ValidationResult {
         return failed(Arrays.asList(errors));
     }
 
+    public static ValidationResult of(List<ValidationError> errors) {
+        if(errors.size() > 0) {
+            return failed(errors);
+        }
+        return success();
+    }
+
     public ValidationResult ifSuccess(Operation operation) {
         if(errorCount == 0) {
             operation.doIt();

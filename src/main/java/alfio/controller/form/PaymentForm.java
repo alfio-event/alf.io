@@ -39,6 +39,7 @@ public class PaymentForm {
     private Boolean cancelReservation;
     private Boolean termAndConditionsAccepted;
     private PaymentProxy paymentMethod;
+    private Boolean expressCheckoutRequested;
 
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
             String value, int maxLength) {

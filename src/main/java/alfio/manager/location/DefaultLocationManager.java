@@ -19,6 +19,7 @@ package alfio.manager.location;
 import alfio.config.Initializer;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import com.google.maps.GeoApiContext;
 import com.google.maps.GeocodingApi;
 import com.google.maps.TimeZoneApi;
@@ -58,7 +59,7 @@ public class DefaultLocationManager implements LocationManager {
     private GeoApiContext getApiContext() {
         GeoApiContext ctx = CTX.get();
         if(ctx == null) {
-            ctx = new GeoApiContext().setApiKey(configurationManager.getRequiredValue(Configuration.mapsServerApiKey()));
+            ctx = new GeoApiContext().setApiKey(configurationManager.getRequiredValue(Configuration.getSystemConfiguration(ConfigurationKeys.MAPS_SERVER_API_KEY)));
             CTX.compareAndSet(null, ctx);
         }
         return CTX.get();

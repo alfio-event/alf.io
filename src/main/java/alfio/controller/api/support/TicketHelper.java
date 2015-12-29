@@ -22,36 +22,35 @@ import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-import org.springframework.validation.BindingResult;
+import org.springframework.ui.Model;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Log4j2
 @Component
 public class TicketHelper {
 
@@ -61,6 +60,7 @@ public class TicketHelper {
     private final TicketRepository ticketRepository;
     private final TemplateManager templateManager;
     private final FileUploadManager fileUploadManager;
+    private final TicketFieldRepository ticketFieldRepository;
 
     @Autowired
     public TicketHelper(TicketReservationManager ticketReservationManager,
@@ -68,23 +68,36 @@ public class TicketHelper {
                         TicketCategoryRepository ticketCategoryRepository,
                         TicketRepository ticketRepository,
                         TemplateManager templateManager,
-                        FileUploadManager fileUploadManager) {
+                        FileUploadManager fileUploadManager,
+                        TicketFieldRepository ticketFieldRepository) {
         this.ticketReservationManager = ticketReservationManager;
         this.organizationRepository = organizationRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.ticketRepository = ticketRepository;
         this.templateManager = templateManager;
         this.fileUploadManager = fileUploadManager;
+        this.ticketFieldRepository = ticketFieldRepository;
+    }
+
+    public List<Pair<TicketFieldConfigurationAndDescription, String>> findTicketFieldConfigurationAndValue(int eventId, int ticketId, Locale locale) {
+        Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(locale, eventId);
+        Map<String, TicketFieldValue> values = ticketFieldRepository.findAllByTicketIdGroupedByName(ticketId);
+        Function<TicketFieldConfiguration, String> extractor = (f) -> Optional.ofNullable(values.get(f.getName())).map(TicketFieldValue::getValue).orElse("");
+        return ticketFieldRepository.findAdditionalFieldsForEvent(eventId)
+            .stream()
+            .map(f-> Pair.of(new TicketFieldConfigurationAndDescription(f, descriptions.getOrDefault(f.getId(), TicketFieldDescription.MISSING_FIELD)), extractor.apply(f)))
+            .collect(Collectors.toList());
     }
 
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
                                                                            String reservationId,
                                                                            String ticketIdentifier,
                                                                            UpdateTicketOwnerForm updateTicketOwner,
-                                                                           BindingResult bindingResult,
+                                                                           Optional<Errors> bindingResult,
                                                                            HttpServletRequest request,
                                                                            Consumer<Triple<ValidationResult, Event, Ticket>> reservationConsumer,
                                                                            Optional<UserDetails> userDetails) {
+
         Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.fetchComplete(eventName, reservationId, ticketIdentifier)
                 .map(result -> {
                     Ticket t = result.getRight();
@@ -95,12 +108,49 @@ public class TicketHelper {
                     }
                     final Event event = result.getLeft();
                     final TicketReservation ticketReservation = result.getMiddle();
-                    ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, bindingResult)
+                    List<TicketFieldConfiguration> fieldConf = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
+                    ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult)
                             .ifSuccess(() -> updateTicketOwner(updateTicketOwner, request, t, event, ticketReservation, userDetails));
                     return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
                 });
         triple.ifPresent(reservationConsumer);
         return triple;
+    }
+
+    public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
+                                                                          String reservationId,
+                                                                          String ticketIdentifier,
+                                                                          UpdateTicketOwnerForm updateTicketOwner,
+                                                                          Optional<Errors> bindingResult,
+                                                                          HttpServletRequest request,
+                                                                          Model model) {
+        return assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, t -> {
+            model.addAttribute("value", t.getRight());
+            model.addAttribute("validationResult", t.getLeft());
+            model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
+            model.addAttribute("event", t.getMiddle());
+        }, Optional.<UserDetails>empty());
+    }
+
+    public Optional<Triple<ValidationResult, Event, Ticket>> directTicketAssignment(String eventName,
+                                                                                    String reservationId,
+                                                                                    String email,
+                                                                                    String fullName,
+                                                                                    String userLanguage,
+                                                                                    Optional<Errors> bindingResult,
+                                                                                    HttpServletRequest request,
+                                                                                    Model model) {
+        List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
+        if(tickets.size() > 1) {
+            return Optional.empty();
+        }
+        String ticketUuid = tickets.get(0).getUuid();
+        UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
+        form.setAdditional(Collections.emptyMap());
+        form.setEmail(email);
+        form.setFullName(fullName);
+        form.setUserLanguage(userLanguage);
+        return assignTicket(eventName, reservationId, ticketUuid, form, bindingResult, request, model);
     }
 
     public List<Pair<String, String>> getLocalizedCountries(Locale locale) {

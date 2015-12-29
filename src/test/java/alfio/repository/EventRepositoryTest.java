@@ -22,8 +22,8 @@ import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
 import alfio.model.Event;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.IntegrationTestUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,6 +33,7 @@ import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -46,6 +47,7 @@ import static org.junit.Assert.assertNotNull;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @WebIntegrationTest("server.port:9000")
+@Transactional
 public class EventRepositoryTest {
 
     private static final String NEW_YORK_TZ = "America/New_York";
@@ -53,13 +55,7 @@ public class EventRepositoryTest {
 
     @BeforeClass
     public static void initEnv() {
-        System.setProperty("datasource.dialect", "HSQLDB");
-        System.setProperty("datasource.driver", "org.hsqldb.jdbcDriver");
-        System.setProperty("datasource.url", "jdbc:hsqldb:mem:alfio");
-        System.setProperty("datasource.username", "sa");
-        System.setProperty("datasource.password", "");
-        System.setProperty("datasource.validationQuery", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
-        //System.setProperty("spring.profiles.active", Initializer.PROFILE_DEV);
+        IntegrationTestUtil.initSystemProperties();
     }
 
     @Autowired
@@ -82,31 +78,12 @@ public class EventRepositoryTest {
 
         int orgId = organizationRepository.findByName(ORG_NAME).stream().findFirst().orElseThrow(IllegalStateException::new).getId();
 
-        AffectedRowCountAndKey<Integer> pair = eventRepository.insert("unittest", "display Name", "http://localhost:8080/", "http://localhost:8080", "http://localhost:8080", null, "Lugano", "9", "8", beginEventDate, endEventDate, NEW_YORK_TZ, 0, "CHF", 4, true, new BigDecimal(1), "", "", orgId, 7);
+        AffectedRowCountAndKey<Integer> pair = eventRepository.insert("unittest", Event.EventType.INTERNAL, "display Name", "http://localhost:8080/", "http://localhost:8080", "http://localhost:8080", null, null, "Lugano", "9", "8", beginEventDate, endEventDate, NEW_YORK_TZ, 0, "CHF", 4, true, new BigDecimal(1), "", "", orgId, 7);
         Event e = eventRepository.findById(pair.getKey());
         assertNotNull("Event not found in DB", e);
 
         assertEquals("Begin date is not correct", beginEventDate, e.getBegin());
         assertEquals("End date is not correct", endEventDate, e.getEnd());
-
-        //since when debugging the toString method is used .... and it rely on the system TimeZone, we test it too
-        System.out.println(e.getBegin().toString());
-        System.out.println(e.getEnd().toString());
-    }
-
-    @Test
-    public void testSQLInsertedDatesRespectTheirTimeZone() throws Exception {
-        //these are the values of what we have inserted in the SQL insert script
-        TimeZone eventTimeZone = TimeZone.getTimeZone("America/New_York");
-        ZoneId eventZoneId = eventTimeZone.toZoneId();
-        ZonedDateTime beginEventDate = ZonedDateTime.of(2015,10,10,0,0,0,0,eventZoneId);
-        ZonedDateTime endEventDate = ZonedDateTime.of(2015, 10, 10, 23, 59, 0, 0, eventZoneId);
-
-        Event e = eventRepository.findById(0);
-        assertNotNull("Event not found in DB", e);
-
-        assertEquals("Begin date is not correct", e.getBegin(), beginEventDate);
-        assertEquals("End date is not correct", e.getEnd(), endEventDate);
 
         //since when debugging the toString method is used .... and it rely on the system TimeZone, we test it too
         System.out.println(e.getBegin().toString());

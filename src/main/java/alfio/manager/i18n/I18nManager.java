@@ -16,31 +16,45 @@
  */
 package alfio.manager.i18n;
 
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class I18nManager {
 
     private final EventRepository eventRepository;
+    private final ConfigurationManager configurationManager;
 
     @Autowired
-    public I18nManager(EventRepository eventRepository) {
+    public I18nManager(EventRepository eventRepository, ConfigurationManager configurationManager) {
         this.eventRepository = eventRepository;
+        this.configurationManager = configurationManager;
     }
 
-    public List<ContentLanguage> getAllLocales() {
+    public List<ContentLanguage> getAvailableLanguages() {
         return ContentLanguage.ALL_LANGUAGES;
     }
 
-    public List<ContentLanguage> getEventLocales(String eventName) {
+    public List<ContentLanguage> getSupportedLanguages() {
+        return ContentLanguage.findAllFor(configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.SUPPORTED_LANGUAGES), ContentLanguage.ENGLISH_IDENTIFIER));//default to English
+    }
+
+    public List<ContentLanguage> getEventLanguages(String eventName) {
+        List<ContentLanguage> system = getSupportedLanguages();
         return eventRepository.findOptionalByShortName(eventName)
             .map(event -> ContentLanguage.findAllFor(event.getLocales()))
-            .orElse(Collections.emptyList());
+            .orElse(Collections.emptyList())
+            .stream()
+            .filter(system::contains)
+            .collect(Collectors.toList());
     }
 }

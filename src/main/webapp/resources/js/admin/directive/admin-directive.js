@@ -10,63 +10,6 @@
 
     var directives = angular.module('adminDirectives', ['ui.bootstrap', 'adminServices']);
 
-    directives.directive("organizationsList", function() {
-        return {
-            scope: true,
-            templateUrl: '/resources/angular-templates/admin/partials/main/organizations.html',
-            controller: function($scope, $rootScope, OrganizationService) {
-                var loadOrganizations = function() {
-                    $scope.loading = true;
-                    OrganizationService.getAllOrganizations().success(function(result) {
-                        $scope.organizations = result;
-                        $scope.loading = false;
-                    });
-                };
-                $rootScope.$on('ReloadOrganizations', function(e) {
-                    loadOrganizations();
-                });
-                $scope.organizations = [];
-                loadOrganizations();
-            },
-            link: angular.noop
-        };
-    });
-    directives.directive("usersList", function() {
-        return {
-            scope: true,
-            templateUrl: '/resources/angular-templates/admin/partials/main/users.html',
-            controller: function($scope, $rootScope, UserService, $window) {
-                $scope.users = [];
-                var loadUsers = function() {
-                    $scope.loading = true;
-                    UserService.getAllUsers().success(function(result) {
-                        $scope.users = _.sortBy(result, 'username');
-                        $scope.loading=false;
-                    });
-                };
-                $rootScope.$on('ReloadUsers', function() {
-                    loadUsers();
-                });
-                loadUsers();
-                $scope.deleteUser = function(user) {
-                    if($window.confirm('The user '+user.username+' will be deleted. Are you sure?')) {
-                        UserService.deleteUser(user).success(function() {
-                            loadUsers();
-                        });
-                    }
-                };
-                $scope.resetPassword = function(user) {
-                    if($window.confirm('The password for the user '+ user.username+' will be reset. Are you sure?')) {
-                        UserService.resetPassword(user).success(function(reset) {
-                            UserService.showUserData(reset);
-                        })
-                    }
-                };
-            },
-            link: angular.noop
-        };
-    });
-
     directives.directive('eventsList', function() {
         return {
             scope: true,
@@ -250,7 +193,7 @@
             controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, EventUtilsService, EventService) {
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',
-                        'description', 'websiteUrl', 'termsAndConditionsUrl', 'imageUrl', 'fileBlobId', 'formattedBegin',
+                        'description', 'websiteUrl', 'externalUrl', 'termsAndConditionsUrl', 'imageUrl', 'fileBlobId', 'formattedBegin','type',
                         'formattedEnd', 'geolocation', 'locales']);
                     angular.extend($scope.obj, source);
                     var beginDateTime = moment(source['formattedBegin']);
@@ -265,23 +208,18 @@
                     };
                 }
 
-                if($stateParams.eventName) {
-                    EventService.getAvailableLanguages($stateParams.eventName).success(function(result) {
-                        $scope.selectedLanguages = _.map(result, function(r) {
-                            return r.value;
-                        });
+                $scope.selectedLanguages = {};
+
+                EventService.getSupportedLanguages().success(function(result) {
+                        $scope.selectedLanguages.langs = _.map(result, function(r) {
+                        return r.value;
                     });
-                } else {
-                    EventService.getAllLanguages().success(function(result) {
-                        $scope.selectedLanguages = _.map(result, function(r) {
-                            return r.value;
-                        });
-                    });
-                }
+                });
+
 
                 $scope.updateLocales = function() {
                     var locales = 0;
-                    angular.forEach($scope.selectedLanguages, function(val) {
+                    angular.forEach($scope.selectedLanguages.langs, function(val) {
                         locales = locales | val;
                     });
                     $scope.obj.locales = locales;
@@ -589,60 +527,6 @@
                 }
             }
         }
-    }]);
-
-    directives.directive('basicConfigurationNeeded', ['$modal', 'ConfigurationService', '$q', '$window', function($modal, ConfigurationService, $q, $window) {
-        return {
-            restrict: 'A',
-            scope: true,
-            link: function() {
-                var m = $modal.open({
-                    size:'lg',
-                    templateUrl:'/resources/angular-templates/admin/partials/configuration/basic-settings.html',
-                    backdrop: 'static',
-                    controllerAs: 'ctrl',
-                    controller: function($scope) {
-                        var ctrl = this;
-                        var onlyBasic = function(list) {
-                            return _.filter(list, function(c) { return c.basic; });
-                        };
-                        ConfigurationService.loadAll().success(function(result) {
-                            ctrl.settings = result;
-                            ctrl.general = {
-                                settings: onlyBasic(result['GENERAL'])
-                            };
-                            ctrl.mail = {
-                                settings: _.filter(result['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
-                                type: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAILER_TYPE';}),
-                                maxEmailPerCycle: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';}),
-                                mailReplyTo: _.find(result['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';})
-                            };
-                            ctrl.payment = {
-                                settings: onlyBasic(result['PAYMENT'])
-                            };
-                        });
-                        ctrl.saveSettings = function(frm, settings, pluginSettings) {
-                            if(!frm.$valid) {
-                                return;
-                            }
-                            ctrl.loading = true;
-                            var promises = [ConfigurationService.bulkUpdate(settings)];
-                            if(angular.isDefined(pluginSettings)) {
-                                promises.push(ConfigurationService.bulkUpdatePlugins(pluginSettings));
-                            }
-                            $q.all(promises).then(function() {
-                                ctrl.loading = false;
-                                $scope.$close(true);
-                            }, function(e) {
-                                alert(e.data);
-                                $scope.$close(false);
-                            });
-                        };
-                    }
-                });
-                m.result.then(function(){ $window.location.reload(); });
-            }
-        };
     }]);
 
 })();

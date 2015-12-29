@@ -26,13 +26,12 @@ import java.util.List;
 @QueryRepository
 public interface AuthorityRepository {
 
-    String ROLE_ADMIN     = "ROLE_ADMIN";
-    String ROLE_OWNER     = "ROLE_OWNER";
-    String ROLE_OPERATOR  = "ROLE_OPERATOR";
-
     @Query("SELECT * from authority where username = :username")
     List<Authority> findGrantedAuthorities(@Bind("username") String username);
 
     @Query("INSERT INTO authority(username, role) VALUES (:username, :role)")
     int create(@Bind("username") String username, @Bind("role") String role);
+
+    @Query("DELETE from authority where username = :username")
+    int revokeAll(@Bind("username") String username);
 }

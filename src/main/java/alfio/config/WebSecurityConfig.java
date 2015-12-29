@@ -48,6 +48,7 @@ public class WebSecurityConfig {
     private static final String ADMIN = "ADMIN";
     private static final String OWNER = "OWNER";
     private static final String OPERATOR = "OPERATOR";
+    private static final String SPONSOR = "SPONSOR";
 
 
 
@@ -82,8 +83,10 @@ public class WebSecurityConfig {
             .and().csrf().disable()
             .authorizeRequests()
             .antMatchers(ADMIN_API + "/check-in/**").hasRole(OPERATOR)
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/events/**").hasRole(OPERATOR)
-            .antMatchers("/**").denyAll()
+            .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SPONSOR)
+            .antMatchers(ADMIN_API + "/**").denyAll()
+            .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
+            .antMatchers("/**").authenticated()
             .and().httpBasic();
         }
     }
@@ -122,13 +125,14 @@ public class WebSecurityConfig {
             configurer.csrfTokenRepository(getCsrfTokenRepository())
                 .and()
                 .authorizeRequests()
-                .antMatchers(ADMIN_API + "/configuration/organizations/**").hasAnyRole(ADMIN, OWNER)
-                .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/users/**", ADMIN_API + "/configuration/**").hasRole(ADMIN)
+                .antMatchers(ADMIN_API + "/configuration/**", ADMIN_API + "/users/**").hasAnyRole(ADMIN, OWNER)
+                .antMatchers(ADMIN_API + "/organizations/new").hasRole(ADMIN)
                 .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
                 .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
                 .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
+                .antMatchers("/api/attendees/sponsor-scan").denyAll()
                 .antMatchers("/**").permitAll()
                 .and()
                 .formLogin()

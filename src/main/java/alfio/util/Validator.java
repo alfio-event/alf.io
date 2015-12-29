@@ -18,6 +18,8 @@ package alfio.util;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
+import alfio.model.Event;
+import alfio.model.TicketFieldConfiguration;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import org.apache.commons.lang3.StringUtils;
@@ -26,6 +28,8 @@ import org.springframework.validation.ValidationUtils;
 
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -36,16 +40,21 @@ public final class Validator {
     private Validator() {
     }
 
-    public static ValidationResult validateEventHeader(EventModification ev, Errors errors) {
+    public static ValidationResult validateEventHeader(Optional<Event> event, EventModification ev, Errors errors) {
 
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "shortName", "error.shortname");
         if(ev.getOrganizationId() < 0) {
             errors.rejectValue("organizationId", "error.organizationId");
         }
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "location", "error.location");
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "description", "error.description");
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "websiteUrl", "error.websiteurl");
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "termsAndConditionsUrl", "error.termsandconditionsurl");
+
+        if(isInternal(event, ev)) {
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "description", "error.description");
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "termsAndConditionsUrl", "error.termsandconditionsurl");
+        } else {
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "externalUrl", "error.externalurl");
+        }
 
         if(ev.getFileBlobId() == null) {
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "imageUrl", "error.imageurl");
@@ -56,7 +65,16 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
-    public static ValidationResult validateEventPrices(EventModification ev, Errors errors) {
+    private static boolean isInternal(Optional<Event> event, EventModification ev) {
+        return event.map(Event::getType).orElse(ev.getEventType()) == Event.EventType.INTERNAL;
+    }
+
+    public static ValidationResult validateEventPrices(Optional<Event> event, EventModification ev, Errors errors) {
+
+        if(!isInternal(event, ev)) {
+            return ValidationResult.success();
+        }
+
         if(!ev.isFreeOfCharge()) {
             if(isCollectionEmpty(ev.getAllowedPaymentProxies())) {
                 errors.rejectValue("allowedPaymentProxies", "error.allowedpaymentproxies");
@@ -105,7 +123,11 @@ public final class Validator {
         return ValidationResult.success();
     }
 
-    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, Errors errors) {
+    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Optional<Errors> errorsOptional) {
+        if(!errorsOptional.isPresent()) {
+            return ValidationResult.success();//already validated
+        }
+        Errors errors = errorsOptional.get();
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "email", "error.email");
         String email = form.getEmail();
         if(!isEmailValid(email)) {
@@ -113,14 +135,38 @@ public final class Validator {
         }
 
         validateMaxLength(form.getFullName(), "fullName", "error.fullname", 255, errors);
-        validateMaxLength(form.getJobTitle(), "jobTitle", "error.jobtitle", 255, errors);
-        validateMaxLength(form.getCompany(), "company", "error.company", 255, errors);
-        validateMaxLength(form.getPhoneNumber(), "phoneNumber", "error.phonenumber", 255, errors);
-        validateMaxLength(form.getCountry(), "country", "error.country", 255, errors);
-        validateMaxLength(form.getTShirtSize(), "tShirtSize", "error.tshirtsize", 32, errors);
-        validateMaxLength(form.getNotes(), "notes", "error.notes", 1024, errors);
+
+
+
+        //
+        for(TicketFieldConfiguration fieldConf : additionalFieldsForEvent) {
+
+            boolean isField = form.getAdditional() !=null && form.getAdditional().containsKey(fieldConf.getName());
+
+            if(!isField) {
+                continue;
+            }
+
+            String formValue = form.getAdditional().get(fieldConf.getName());
+
+            if(fieldConf.isMaxLengthDefined()) {
+                validateMaxLength(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getMaxLength(), errors);
+            }
+
+            if(!fieldConf.getRestrictedValues().isEmpty()) {
+                validateRestrictedValue(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getRestrictedValues(), errors);
+            }
+
+            //TODO: complete checks: min length, mandatory
+        }
 
         return evaluateValidationResult(errors);
+    }
+
+    private static void validateRestrictedValue(String value, String fieldName, String errorCode, List<String> restrictedValues, Errors errors) {
+        if(StringUtils.isNotBlank(value) && !restrictedValues.contains(value)) {
+            errors.rejectValue(fieldName, errorCode);
+        }
     }
 
     private static boolean isEmailValid(String email) {

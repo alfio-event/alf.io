@@ -16,6 +16,7 @@
  */
 package alfio.model.modification;
 
+import alfio.model.Event;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
@@ -33,7 +34,9 @@ import java.util.*;
 public class EventModification {
 
     private final Integer id;
+    private final Event.EventType eventType;
     private final String websiteUrl;
+    private final String externalUrl;
     private final String termsAndConditionsUrl;
     private final String imageUrl;
     private final String fileBlobId;
@@ -55,9 +58,13 @@ public class EventModification {
     private final LocationDescriptor locationDescriptor;
     private final int locales;
 
+    private final List<AdditionalField> ticketFields;
+
     @JsonCreator
     public EventModification(@JsonProperty("id") Integer id,
+                             @JsonProperty("type") Event.EventType eventType,
                              @JsonProperty("websiteUrl") String websiteUrl,
+                             @JsonProperty("external") String externalUrl,
                              @JsonProperty("termsAndConditionsUrl") String termsAndConditionsUrl,
                              @JsonProperty("imageUrl") String imageUrl,
                              @JsonProperty("fileBlobId") String fileBlobId,
@@ -77,9 +84,12 @@ public class EventModification {
                              @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories,
                              @JsonProperty("freeOfCharge") boolean freeOfCharge,
                              @JsonProperty("geoLocation") LocationDescriptor locationDescriptor,
-                             @JsonProperty("locales") int locales) {
+                             @JsonProperty("locales") int locales,
+                             @JsonProperty("ticketFields") List<AdditionalField> ticketFields) {
         this.id = id;
+        this.eventType = eventType;
         this.websiteUrl = websiteUrl;
+        this.externalUrl = externalUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
         this.imageUrl = imageUrl;
         this.fileBlobId = fileBlobId;
@@ -100,6 +110,7 @@ public class EventModification {
         this.ticketCategories = ticketCategories;
         this.freeOfCharge = freeOfCharge;
         this.locales = locales;
+        this.ticketFields = ticketFields;
     }
 
     public int getPriceInCents() {
@@ -108,5 +119,70 @@ public class EventModification {
 
     public LocationDescriptor getGeolocation() {
         return locationDescriptor;
+    }
+
+    public boolean isInternal() {
+        return eventType == Event.EventType.INTERNAL;
+    }
+
+
+    @Getter
+    public static class AdditionalField {
+        private final int order;
+        private final String name;
+        private final String type;
+        private final boolean required;
+
+        private final Integer minLength;
+        private final Integer maxLength;
+        private final List<RestrictedValue> restrictedValues;
+
+        // locale -> description
+        private final Map<String, Description> description;
+
+
+        public AdditionalField(@JsonProperty("order") int order,
+                               @JsonProperty("name") String name,
+                               @JsonProperty("type") String type,
+                               @JsonProperty("required") boolean required,
+                               @JsonProperty("minLength") Integer minLength,
+                               @JsonProperty("maxLength") Integer maxLength,
+                               @JsonProperty("restrictedValues") List<RestrictedValue> restrictedValues,
+                               @JsonProperty("description") Map<String, Description> description) {
+            this.order = order;
+            this.name = name;
+            this.type = type;
+            this.required = required;
+            this.minLength = minLength;
+            this.maxLength = maxLength;
+            this.restrictedValues = restrictedValues;
+            this.description = description;
+        }
+    }
+
+    @Getter
+    public static class Description {
+        private final String label;
+        private final String placeholder;
+
+        //restricted value -> description
+        private final Map<String, String> restrictedValues;
+
+        public Description(@JsonProperty("label") String label,
+                           @JsonProperty("placeholder") String placeholder,
+                           @JsonProperty("restrictedValues") Map<String, String> restrictedValues) {
+            this.label = label;
+            this.placeholder = placeholder;
+            this.restrictedValues = restrictedValues;
+        }
+    }
+
+    @Getter
+    public static class RestrictedValue {
+        private final String value;
+
+        public RestrictedValue(@JsonProperty("value") String value) {
+            this.value = value;
+        }
     }
 }

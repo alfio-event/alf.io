@@ -19,7 +19,6 @@ package alfio.manager.system;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.modification.ConfigurationModification;
-import alfio.model.system.ComponentType;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeys;
@@ -31,6 +30,7 @@ import alfio.repository.system.ConfigurationRepository;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -43,6 +43,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.ConfigurationPathLevel.EVENT;
+import static alfio.model.system.ConfigurationPathLevel.ORGANIZATION;
+import static alfio.model.system.ConfigurationPathLevel.SYSTEM;
 import static alfio.util.OptionalWrapper.optionally;
 
 @Component
@@ -50,11 +53,12 @@ import static alfio.util.OptionalWrapper.optionally;
 @Log4j2
 public class ConfigurationManager {
 
-    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.ORGANIZATION);
+    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> SYSTEM_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.SYSTEM);
+    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ORGANIZATION);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> EVENT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.EVENT);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
 
-    private static final Predicate<ConfigurationModification> TO_BE_SAVED = c -> c.getId() > -1 || !StringUtils.isBlank(c.getValue()) || ConfigurationKeys.fromString(c.getKey()).getComponentType() == ComponentType.BOOLEAN;
+    private static final Predicate<ConfigurationModification> TO_BE_SAVED = c -> Optional.ofNullable(c.getId()).orElse(-1) > -1 || !StringUtils.isBlank(c.getValue());
 
 
     private final ConfigurationRepository configurationRepository;
@@ -84,12 +88,12 @@ public class ConfigurationManager {
             case EVENT: {
                 EventConfigurationPath o = from(path);
                 return selectPath(configurationRepository.findByEventAndKey(o.getOrganizationId(),
-                        o.getId(), key.getValue()));
+                    o.getId(), key.getValue()));
             }
             case TICKET_CATEGORY: {
                 TicketCategoryConfigurationPath o = from(path);
                 return selectPath(configurationRepository.findByTicketCategoryAndKey(o.getOrganizationId(),
-                        o.getEventId(), o.getId(), key.getValue()));
+                    o.getEventId(), o.getId(), key.getValue()));
             }
         }
         throw new IllegalStateException("Can't reach here");
@@ -103,8 +107,8 @@ public class ConfigurationManager {
      */
     private Configuration selectPath(List<Configuration> conf) {
         return conf.size() == 1 ? conf.get(0) : conf.stream()
-                .sorted(Comparator.comparing(Configuration::getConfigurationPathLevel).reversed())
-                .findFirst().orElse(null);
+            .sorted(Comparator.comparing(Configuration::getConfigurationPathLevel).reversed())
+            .findFirst().orElse(null);
     }
 
     //meh
@@ -116,8 +120,8 @@ public class ConfigurationManager {
     public int getIntConfigValue(ConfigurationPathKey pathKey, int defaultValue) {
         try {
             return Optional.ofNullable(findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()))
-                    .map(Configuration::getValue)
-                    .map(Integer::parseInt).orElse(defaultValue);
+                .map(Configuration::getValue)
+                .map(Integer::parseInt).orElse(defaultValue);
         } catch (NumberFormatException | EmptyResultDataAccessException e) {
             return defaultValue;
         }
@@ -125,22 +129,22 @@ public class ConfigurationManager {
 
     public boolean getBooleanConfigValue(ConfigurationPathKey pathKey, boolean defaultValue) {
         return getStringConfigValue(pathKey)
-                .map(Boolean::parseBoolean)
-                .orElse(defaultValue);
+            .map(Boolean::parseBoolean)
+            .orElse(defaultValue);
     }
 
 
     public String getStringConfigValue(ConfigurationPathKey pathKey, String defaultValue) {
         return getStringConfigValue(pathKey).orElse(defaultValue);
     }
-    
+
     public Optional<String> getStringConfigValue(ConfigurationPathKey pathKey) {
         return optionally(() -> findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())).map(Configuration::getValue);
     }
 
     public String getRequiredValue(ConfigurationPathKey pathKey) {
         return getStringConfigValue(pathKey)
-                .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + pathKey.getKey() + " not present"));
+            .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + pathKey.getKey() + " not present"));
     }
 
     // begin SYSTEM related configuration methods
@@ -154,12 +158,14 @@ public class ConfigurationManager {
         list.stream()
             .filter(TO_BE_SAVED)
             .forEach(c -> {
-                String value = evaluateValue(c.getKey(), c.getValue());
+                Optional<String> value = evaluateValue(c.getKey(), c.getValue());
                 Optional<Configuration> existing = configurationRepository.findByKeyAtOrganizationLevel(organizationId, c.getKey());
-                if (existing.isPresent()) {
-                    configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), value);
+                if(!value.isPresent()) {
+                    configurationRepository.deleteOrganizationLevelByKey(c.getKey(), organizationId);
+                } else if (existing.isPresent()) {
+                    configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), value.get());
                 } else {
-                    configurationRepository.insertOrganizationLevel(organizationId, c.getKey(), value, ConfigurationKeys.fromString(c.getKey()).getDescription());
+                    configurationRepository.insertOrganizationLevel(organizationId, c.getKey(), value.get(), ConfigurationKeys.fromString(c.getKey()).getDescription());
                 }
             });
     }
@@ -176,11 +182,13 @@ public class ConfigurationManager {
             .filter(TO_BE_SAVED)
             .forEach(c -> {
                 Optional<Configuration> existing = configurationRepository.findByKeyAtEventLevel(eventId, organizationId, c.getKey());
-                String value = evaluateValue(c.getKey(), c.getValue());
-                if (existing.isPresent()) {
-                    configurationRepository.updateEventLevel(eventId, organizationId, c.getKey(), value);
+                Optional<String> value = evaluateValue(c.getKey(), c.getValue());
+                if(!value.isPresent()) {
+                    configurationRepository.deleteEventLevelByKey(c.getKey(), eventId);
+                } else if (existing.isPresent()) {
+                    configurationRepository.updateEventLevel(eventId, organizationId, c.getKey(), value.get());
                 } else {
-                    configurationRepository.insertEventLevel(organizationId, eventId, c.getKey(), value, ConfigurationKeys.fromString(c.getKey()).getDescription());
+                    configurationRepository.insertEventLevel(organizationId, eventId, c.getKey(), value.get(), ConfigurationKeys.fromString(c.getKey()).getDescription());
                 }
             });
     }
@@ -194,29 +202,48 @@ public class ConfigurationManager {
             .filter(TO_BE_SAVED)
             .forEach(c -> {
                 Optional<Configuration> existing = configurationRepository.findByKeyAtCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey());
-                String value = evaluateValue(c.getKey(), c.getValue());
-                if (existing.isPresent()) {
-                    configurationRepository.updateCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey(), value);
+                Optional<String> value = evaluateValue(c.getKey(), c.getValue());
+                if(!value.isPresent()) {
+                    configurationRepository.deleteCategoryLevelByKey(c.getKey(), eventId, categoryId);
+                } else if (existing.isPresent()) {
+                    configurationRepository.updateCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey(), value.get());
                 } else {
-                    configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), eventId, categoryId, c.getKey(), value, ConfigurationKeys.fromString(c.getKey()).getDescription());
+                    configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), eventId, categoryId, c.getKey(), value.get(), ConfigurationKeys.fromString(c.getKey()).getDescription());
                 }
             });
     }
 
-    private String evaluateValue(String key, String value) {
+    private Optional<String> evaluateValue(String key, String value) {
         if(ConfigurationKeys.fromString(key).isBooleanComponentType()) {
-            return StringUtils.defaultString(value, "false");
+            return Optional.ofNullable(StringUtils.trimToNull(value));
         }
-        return value;
+        return Optional.of(Objects.requireNonNull(value));
+    }
+
+    private Optional<Boolean> getThreeStateValue(String value) {
+        return Optional.ofNullable(StringUtils.trimToNull(value)).map(Boolean::parseBoolean);
     }
 
     public void saveSystemConfiguration(ConfigurationKeys key, String value) {
         Optional<Configuration> conf = optionally(() -> findByConfigurationPathAndKey(Configuration.system(), key));
-        Optional<String> valueOpt = Optional.ofNullable(value);
-        if(!conf.isPresent()) {
-            valueOpt.ifPresent(v -> configurationRepository.insert(key.getValue(), v, key.getDescription()));
+        if(key.isBooleanComponentType()) {
+            Optional<Boolean> state = getThreeStateValue(value);
+            if(conf.isPresent()) {
+                if(state.isPresent()) {
+                    configurationRepository.update(key.getValue(), value);
+                } else {
+                    configurationRepository.deleteByKey(key.getValue());
+                }
+            } else {
+                state.ifPresent(v -> configurationRepository.insert(key.getValue(), v.toString(), key.getDescription()));
+            }
         } else {
-            configurationRepository.update(key.getValue(), value);
+            Optional<String> valueOpt = Optional.ofNullable(value);
+            if(!conf.isPresent()) {
+                valueOpt.ifPresent(v -> configurationRepository.insert(key.getValue(), v, key.getDescription()));
+            } else {
+                configurationRepository.update(key.getValue(), value);
+            }
         }
     }
 
@@ -240,13 +267,18 @@ public class ConfigurationManager {
             });
     }
 
+    private Predicate<Configuration> checkActualConfigurationLevel(boolean isAdmin, ConfigurationPathLevel level) {
+        return conf -> isAdmin || conf.getConfigurationKey().supports(level);
+    }
+
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadOrganizationConfig(int organizationId, String username) {
         User user = userManager.findUserByUsername(username);
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().sorted().collect(groupByCategory());
-        return groupByCategory(ORGANIZATION_CONFIGURATION, existing);
+        boolean isAdmin = userManager.isAdmin(user);
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().filter(checkActualConfigurationLevel(isAdmin, ORGANIZATION)).sorted().collect(groupByCategory());
+        return groupByCategory(isAdmin ? union(SYSTEM, ORGANIZATION) : ORGANIZATION_CONFIGURATION, existing);
     }
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfig(int eventId, String username) {
@@ -256,8 +288,23 @@ public class ConfigurationManager {
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().sorted().collect(groupByCategory());
-        return groupByCategory(EVENT_CONFIGURATION, existing);
+        boolean isAdmin = userManager.isAdmin(user);
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().filter(checkActualConfigurationLevel(isAdmin, EVENT)).sorted().collect(groupByCategory());
+        return groupByCategory(isAdmin ? union(SYSTEM, EVENT) : EVENT_CONFIGURATION, existing);
+    }
+
+    static Map<ConfigurationKeys.SettingCategory, List<Configuration>> union(ConfigurationPathLevel... levels) {
+        List<Configuration> configurations = Arrays.stream(levels)
+            .sorted(ConfigurationPathLevel.COMPARATOR.reversed())
+            .flatMap(l -> ConfigurationKeys.byPathLevel(l).stream().map(mapEmptyKeys(l)))
+            .sorted((c1, c2) -> new CompareToBuilder().append(c2.getConfigurationPathLevel(), c1.getConfigurationPathLevel()).append(c1.getConfigurationKey(), c2.getConfigurationKey()).toComparison())
+            .collect(LinkedList::new, (List<Configuration> list, Configuration conf) -> {
+                int existing = (int)list.stream().filter(c -> c.getConfigurationKey() == conf.getConfigurationKey()).count();
+                if(existing == 0) {
+                    list.add(conf);
+                }
+            }, (l1, l2) -> {});
+        return configurations.stream().collect(groupByCategory());
     }
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfig(int eventId, int categoryId, String username) {

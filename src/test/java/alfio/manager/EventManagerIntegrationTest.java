@@ -234,10 +234,10 @@ public class EventManagerIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), null, null, null, null, null, null, event.getOrganizationId(), null, null,
+        EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
-                event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7);
-        eventManager.updateEventPrices(event.getId(), update, pair.getValue());
+                event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null);
+        eventManager.updateEventPrices(event, update, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
@@ -254,10 +254,10 @@ public class EventManagerIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", true));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), null, null, null, null, null, null, event.getOrganizationId(), null, null,
+        EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
-                event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7);
-        eventManager.updateEventPrices(event.getId(), update, pair.getValue());
+                event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null);
+        eventManager.updateEventPrices(event, update, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
@@ -274,10 +274,10 @@ public class EventManagerIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), null, null, null, null, null, null, event.getOrganizationId(), null, null,
+        EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
-                event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7);
-        eventManager.updateEventPrices(event.getId(), update, pair.getValue());
+                event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null);
+        eventManager.updateEventPrices(event, update, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
@@ -294,10 +294,10 @@ public class EventManagerIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", true));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), null, null, null, null, null, null, event.getOrganizationId(), null, null,
+        EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
-                event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7);
-        eventManager.updateEventPrices(event.getId(), update, pair.getValue());
+                event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null);
+        eventManager.updateEventPrices(event, update, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
@@ -364,7 +364,7 @@ public class EventManagerIntegrationTest {
         desc.put("it", "muh description new");
         desc.put("de", "muh description new");
 
-        EventModification em = new EventModification(event.getId(), "http://example.com/new", "http://example.com/tc", "https://example.com/img.png", null, event.getShortName(), "new display name",
+        EventModification em = new EventModification(event.getId(), Event.EventType.INTERNAL, "http://example.com/new", null, "http://example.com/tc", "https://example.com/img.png", null, event.getShortName(), "new display name",
             event.getOrganizationId(), event.getLocation(), desc,
             DateTimeModification.fromZonedDateTime(event.getBegin()),
             DateTimeModification.fromZonedDateTime(event.getEnd().plusDays(42)),
@@ -377,9 +377,10 @@ public class EventManagerIntegrationTest {
             Collections.emptyList(),
             false,
             null,
-            7);
+            7,
+            null);
 
-        eventManager.updateEventHeader(event.getId(), em, username);
+        eventManager.updateEventHeader(event, em, username);
 
         Event updatedEvent = eventRepository.findById(event.getId());
 

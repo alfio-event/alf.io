@@ -51,15 +51,6 @@ public class Ticket {
     private final String fullName;
     private final String email;
     private final boolean lockedAssignment;
-    //
-    private final String jobTitle;
-    private final String company;
-    private final String phoneNumber;
-    private final String address;
-    private final String country;
-    private final String tshirtSize;
-    private final String gender;
-    private final String notes;
     private final String userLanguage;
     
     public Ticket(@Column("id") int id,
@@ -74,22 +65,13 @@ public class Ticket {
                   @Column("full_name") String fullName,
                   @Column("email_address") String email,
                   @Column("locked_assignment") boolean lockedAssignment,
-                  //
-                  @Column("job_title") String jobTitle,
-                  @Column("company") String company,
-                  @Column("phone_number") String phoneNumber,
-                  @Column("address") String address,
-                  @Column("country") String country,
-                  @Column("tshirt_size") String tshirtSize,
-                  @Column("gender") String gender,
-                  @Column("notes") String notes,
                   @Column("user_language") String userLanguage) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
         this.categoryId = categoryId;
         this.eventId = eventId;
-        this.notes = notes;
+
         this.userLanguage = userLanguage;
         this.status = TicketStatus.valueOf(status);
         this.originalPriceInCents = originalPriceInCents;
@@ -98,14 +80,6 @@ public class Ticket {
         this.fullName = Optional.ofNullable(fullName).orElse("");
         this.email = Optional.ofNullable(email).orElse("");
         this.lockedAssignment = lockedAssignment;
-        //
-        this.jobTitle = jobTitle;
-        this.company = company;
-        this.phoneNumber = phoneNumber;
-        this.address = address;
-        this.country = country;
-        this.tshirtSize = tshirtSize;
-        this.gender = gender;
     }
     
     public boolean getAssigned() {
@@ -153,10 +127,5 @@ public class Ticket {
         } catch(InvalidKeyException | NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    public boolean containsOptionalInfo() {
-        return Arrays.asList(jobTitle, company, phoneNumber, address, country, tshirtSize, gender).stream()
-                .anyMatch(StringUtils::isNotBlank);
     }
 }

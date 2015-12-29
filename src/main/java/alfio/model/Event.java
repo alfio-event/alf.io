@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import biweekly.property.Organizer;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
@@ -44,10 +45,15 @@ import java.util.stream.Collectors;
 @Getter
 @Log4j2
 public class Event {
+    public enum EventType {
+        INTERNAL, EXTERNAL
+    }
     private final int id;
+    private final EventType type;
     private final String shortName;
     private final String displayName;
     private final String websiteUrl;
+    private final String externalUrl;
     private final String termsAndConditionsUrl;
     private final String imageUrl;
     private final String fileBlobId;
@@ -69,6 +75,7 @@ public class Event {
 
 
     public Event(@Column("id") int id,
+                 @Column("type") EventType type,
                  @Column("short_name") String shortName,
                  @Column("display_name") String displayName,
                  @Column("location") String location,
@@ -78,6 +85,7 @@ public class Event {
                  @Column("end_ts") ZonedDateTime end,
                  @Column("time_zone") String timeZone,
                  @Column("website_url") String websiteUrl,
+                 @Column("external_url") String externalUrl,
                  @Column("file_blob_id") String fileBlobId,
                  @Column("website_t_c_url") String termsAndConditionsUrl,
                  @Column("image_url") String imageUrl,
@@ -90,8 +98,11 @@ public class Event {
                  @Column("private_key") String privateKey,
                  @Column("org_id") int organizationId,
                  @Column("locales") int locales) {
+
+        this.type = type;
         this.displayName = displayName;
         this.websiteUrl = websiteUrl;
+        this.externalUrl = externalUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
         this.imageUrl = imageUrl;
         this.fileBlobId = fileBlobId;
@@ -113,7 +124,7 @@ public class Event {
         this.privateKey = privateKey;
         this.organizationId = organizationId;
         this.locales = locales;
-        this.allowedPaymentProxies = Arrays.stream(allowedPaymentProxies.split(","))
+        this.allowedPaymentProxies = Arrays.stream(Optional.ofNullable(allowedPaymentProxies).orElse("").split(","))
                 .filter(StringUtils::isNotBlank)
                 .map(PaymentProxy::valueOf)
                 .collect(Collectors.toList());
@@ -221,7 +232,7 @@ public class Event {
     }
 
     @JsonIgnore
-    public Optional<byte[]> getIcal(String description) {
+    public Optional<byte[]> getIcal(String description, String organizerName, String organizerEmail) {
         ICalendar ical = new ICalendar();
         VEvent vEvent = new VEvent();
         vEvent.setSummary(getDisplayName());
@@ -230,6 +241,7 @@ public class Event {
         vEvent.setDateStart(Date.from(getBegin().toInstant()));
         vEvent.setDateEnd(Date.from(getEnd().toInstant()));
         vEvent.setUrl(getWebsiteUrl());
+        vEvent.setOrganizer(new Organizer(organizerName, organizerEmail));
         ical.addEvent(vEvent);
         StringWriter strWriter = new StringWriter();
         ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V1_0);
@@ -240,6 +252,10 @@ public class Event {
             log.warn("was not able to generate iCal for event " + getShortName(), e);
             return Optional.empty();
         }
+    }
+
+    public boolean isInternal() {
+        return type == EventType.INTERNAL;
     }
 
 }

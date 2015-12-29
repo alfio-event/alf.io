@@ -29,6 +29,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import static alfio.model.system.ConfigurationKeys.MAILER_TYPE;
+
 @Component
 @Profile(Initializer.PROFILE_LIVE)
 public class DefaultMailer implements Mailer {
@@ -50,7 +52,7 @@ public class DefaultMailer implements Mailer {
     public void send(Event event, String to, String subject, String text,
             Optional<String> html, Attachment... attachments) {
 
-        String mailerType = configurationManager.getStringConfigValue(Configuration.mailerType(event), "smtp").toLowerCase(Locale.ENGLISH);
+        String mailerType = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILER_TYPE), "smtp").toLowerCase(Locale.ENGLISH);
 
         mailers.getOrDefault(mailerType, defaultMailer)
                 .send(event, to, subject, text, html, attachments);

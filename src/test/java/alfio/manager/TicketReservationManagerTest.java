@@ -27,10 +27,11 @@ import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
+import alfio.model.user.Role;
 import alfio.repository.*;
-import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
@@ -44,9 +45,13 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
+import static alfio.model.system.ConfigurationKeys.*;
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -71,7 +76,8 @@ public class TicketReservationManagerTest {{
         TicketReservationRepository ticketReservationRepository = mock(TicketReservationRepository.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager trm = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, null, null, null, notificationManager, messageSource, null, null, null, pluginManager, fileUploadManager);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager trm = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, null, null, null, notificationManager, messageSource, null, null, null, pluginManager, fileUploadManager, ticketFieldRepository);
 
         it.initializesWith(() -> {
             when(original.getUuid()).thenReturn(ticketId);
@@ -87,7 +93,7 @@ public class TicketReservationManagerTest {{
             TicketReservation reservation = mock(TicketReservation.class);
             when(original.getTicketsReservationId()).thenReturn(ticketReservationId);
             when(ticketReservationRepository.findReservationById(eq(ticketReservationId))).thenReturn(reservation);
-            UserDetails userDetails = new User("user", "password", singletonList(new SimpleGrantedAuthority(AuthorityRepository.ROLE_ADMIN)));
+            UserDetails userDetails = new User("user", "password", singletonList(new SimpleGrantedAuthority(Role.ADMIN.getRoleName())));
             trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null,(b) -> null, (c) -> null, Optional.of(userDetails));
             verify(messageSource, never()).getMessage(eq("ticket-has-changed-owner-subject"), eq(new Object[] {"short-name"}), eq(Locale.ITALIAN));
         });
@@ -125,12 +131,13 @@ public class TicketReservationManagerTest {{
         MessageSource messageSource = it.usesMock(MessageSource.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager, null, pluginManager, fileUploadManager);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager, null, pluginManager, fileUploadManager, ticketFieldRepository);
         it.initializesWith(() -> reset(notificationManager, eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, configurationManager, promoCodeDiscountRepository, messageSource, transactionManager));
         it.should("send the reminder before event end", expect -> {
             Event event = it.usesMock(Event.class);
 
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
@@ -148,7 +155,7 @@ public class TicketReservationManagerTest {{
         it.should("not send the reminder after event end", expect -> {
             Event event = it.usesMock(Event.class);
 
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
@@ -166,7 +173,7 @@ public class TicketReservationManagerTest {{
         it.should("consider ZoneId while checking (valid)", expect -> {
             Event event = it.usesMock(Event.class);
 
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
@@ -183,7 +190,7 @@ public class TicketReservationManagerTest {{
 
         it.should("consider ZoneId while checking (expired)", expect -> {
             Event event = it.usesMock(Event.class);
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             when(reservation.getId()).thenReturn("abcd");
@@ -197,19 +204,37 @@ public class TicketReservationManagerTest {{
             trm.sendReminderForTicketAssignment();
             verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
         });
+
+        it.should("not send the reminder too early", expect -> {
+            Event event = it.usesMock(Event.class);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
+            when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+            when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
+            when(reservation.getId()).thenReturn("abcd");
+            when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
+
+            when(eventRepository.findByReservationId("abcd")).thenReturn(event);
+            when(event.getZoneId()).thenReturn(ZoneId.of("UTC-8"));
+            when(event.getBegin()).thenReturn(ZonedDateTime.now(ZoneId.of("UTC-8")).plusMonths(3).plusDays(1));
+            when(eventRepository.findAll()).thenReturn(singletonList(event));
+            when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(singletonList("abcd"));
+            List<Event> events = trm.getNotifiableEventsStream().collect(Collectors.toList());
+            expect.that(events.size()).isEqualTo(0);
+            verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
+        });
     });
 
     describe("offlinePaymentDeadline", it -> {
         ConfigurationManager configurationManager = mock(ConfigurationManager.class);
         Event event = mock(Event.class);
-        when(configurationManager.getIntConfigValue(eq(Configuration.offlinePaymentDays(event)), anyInt())).thenReturn(2);
+        when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_PAYMENT_DAYS)), anyInt())).thenReturn(2);
 
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
 
         it.should("return the expire date as configured", expect -> {
             when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
             ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
-            expect.that(Period.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()).getDays()).is(2);
+            expect.that(ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate())).is(2L);
         });
 
         it.should("return the configured waiting time", expect -> {
@@ -220,7 +245,7 @@ public class TicketReservationManagerTest {{
         it.should("consider the event begin date when calculating the expiration date", expect -> {
             when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
             ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
-            expect.that(Period.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()).getDays()).is(1);
+            expect.that(ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate())).is(1L);
         });
 
         it.should("return the configured waiting time considering event start date", expect -> {
@@ -252,8 +277,9 @@ public class TicketReservationManagerTest {{
         WaitingQueueManager waitingQueueManager = it.usesMock(WaitingQueueManager.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
         TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository,
-            null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager, pluginManager, fileUploadManager);
+            null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager, pluginManager, fileUploadManager, ticketFieldRepository);
         String specialPriceCode = "SPECIAL-PRICE";
         String specialPriceSessionId = "session-id";
         int specialPriceId = -42;
@@ -324,8 +350,9 @@ public class TicketReservationManagerTest {{
         TicketCategory tc = it.usesMock(TicketCategory.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
         TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository,
-            null, null, null, null, null, null, null, null, null, null, pluginManager, fileUploadManager);
+            null, null, null, null, null, null, null, null, null, null, pluginManager, fileUploadManager, ticketFieldRepository);
         when(ticketCategoryRepository.getById(eq(ticketCategoryId), eq(eventId))).thenReturn(tc);
         TicketReservationWithOptionalCodeModification trm = it.usesMock(TicketReservationWithOptionalCodeModification.class);
 
@@ -380,7 +407,8 @@ public class TicketReservationManagerTest {{
         WaitingQueueManager waitingQueueManager = it.usesMock(WaitingQueueManager.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager, pluginManager, fileUploadManager);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, null, null, null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager, pluginManager, fileUploadManager, ticketFieldRepository);
         it.should("do nothing if there are no reservations", expect -> {
             when(ticketReservationRepository.findExpiredReservation(eq(now))).thenReturn(Collections.emptyList());
             ticketReservationManager.cleanupExpiredReservations(now);
@@ -407,7 +435,8 @@ public class TicketReservationManagerTest {{
         TicketCategory category = it.usesMock(TicketCategory.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, pluginManager, null);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, pluginManager, null, ticketFieldRepository);
         it.should("count how many tickets are yet available for a category", expect -> {
             when(category.isBounded()).thenReturn(true);
             when(category.getId()).thenReturn(24);
@@ -432,8 +461,9 @@ public class TicketReservationManagerTest {{
         TicketReservationRepository ticketReservationRepository = it.usesMock(TicketReservationRepository.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
         TicketReservationManager ticketReservationManager = new TicketReservationManager(null, organizationRepository, ticketRepository, ticketReservationRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository,
-            null, null, null, null, null, notificationManager, messageSource, null, null, null, pluginManager, fileUploadManager);
+            null, null, null, null, null, notificationManager, messageSource, null, null, null, pluginManager, fileUploadManager, ticketFieldRepository);
         TicketReservation ticketReservation = mock(TicketReservation.class);
         Ticket ticket = mock(Ticket.class);
         Event event = mock(Event.class);
@@ -528,7 +558,8 @@ public class TicketReservationManagerTest {{
         PromoCodeDiscountRepository promoCodeDiscountRepository = mock(PromoCodeDiscountRepository.class);
         EventRepository eventRepository = it.usesMock(EventRepository.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager ticketReservationManager = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, null, configurationManager, paymentManager, promoCodeDiscountRepository, specialPriceRepository, null, notificationManager, messageSource, null, platformTransactionManager, waitingQueueManager, pluginManager, fileUploadManager);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager ticketReservationManager = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, null, configurationManager, paymentManager, promoCodeDiscountRepository, specialPriceRepository, null, notificationManager, messageSource, null, platformTransactionManager, waitingQueueManager, pluginManager, fileUploadManager, ticketFieldRepository);
         Event event = mock(Event.class);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(5));
@@ -539,7 +570,7 @@ public class TicketReservationManagerTest {{
             when(ticketRepository.updateTicketsStatusWithReservationId(eq(reservationId), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
             when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), isNull(ZonedDateTime.class), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
             when(paymentManager.processPayment(eq(reservationId), eq(gatewayToken), anyInt(), eq(event), anyString(), anyString(), anyString())).thenReturn(PaymentResult.successful(transactionId));
-            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.STRIPE));
+            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.STRIPE), false);
             expect.that(result.isSuccessful()).is(true);
             expect.that(result.getGatewayTransactionId()).is(Optional.of(transactionId));
             verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()));
@@ -554,7 +585,7 @@ public class TicketReservationManagerTest {{
             when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), isNull(ZonedDateTime.class), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
             when(ticketReservationRepository.updateTicketStatus(eq(reservationId), eq(TicketReservationStatus.PENDING.toString()))).thenReturn(1);
             when(paymentManager.processPayment(eq(reservationId), eq(gatewayToken), anyInt(), eq(event), anyString(), anyString(), anyString())).thenReturn(PaymentResult.unsuccessful("error-code"));
-            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.STRIPE));
+            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.STRIPE), false);
             expect.that(result.isSuccessful()).is(false);
             expect.that(result.getGatewayTransactionId()).is(Optional.empty());
             expect.that(result.getErrorCode()).is(Optional.of("error-code"));
@@ -567,7 +598,7 @@ public class TicketReservationManagerTest {{
             when(ticketRepository.updateTicketsStatusWithReservationId(eq(reservationId), eq(TicketStatus.TO_BE_PAID.toString()))).thenReturn(1);
             when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()))).thenReturn(1);
             when(paymentManager.processPayment(eq(reservationId), eq(gatewayToken), anyInt(), eq(event), anyString(), anyString(), anyString())).thenReturn(PaymentResult.unsuccessful("error-code"));
-            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.ON_SITE));
+            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.ON_SITE), false);
             expect.that(result.isSuccessful()).is(true);
             expect.that(result.getGatewayTransactionId()).is(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
             verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()));
@@ -579,7 +610,7 @@ public class TicketReservationManagerTest {{
 
         it.should("handle the OFFLINE payment method", expect -> {
             when(ticketReservationRepository.postponePayment(eq(reservationId), any(Date.class), anyString(), anyString(), anyString())).thenReturn(1);
-            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.OFFLINE));
+            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.OFFLINE), false);
             expect.that(result.isSuccessful()).is(true);
             expect.that(result.getGatewayTransactionId()).is(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
             verify(waitingQueueManager, never()).fireReservationConfirmed(eq(reservationId));
@@ -628,9 +659,10 @@ public class TicketReservationManagerTest {{
         when(ticket.getUserLanguage()).thenReturn("it");
         ConfigurationManager configurationManager = mock(ConfigurationManager.class);
         String baseUrl = "http://my-website/";
-        when(configurationManager.getRequiredValue(Configuration.baseUrl(event))).thenReturn(baseUrl);
+        when(configurationManager.getRequiredValue(Configuration.getSystemConfiguration(ConfigurationKeys.BASE_URL))).thenReturn(baseUrl);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager trm = new TicketReservationManager(eventRepository, null, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, null, null, null, null, null, null, null, null, null, fileUploadManager);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager trm = new TicketReservationManager(eventRepository, null, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, null, null, null, null, null, null, null, null, null, fileUploadManager, ticketFieldRepository);
         it.should("generate the reservationUrl from reservationId", expect -> {
             expect.that(trm.reservationUrl(reservationId)).is(baseUrl + "event/" + shortName + "/reservation/" + reservationId + "?lang=en");
         });
@@ -659,12 +691,13 @@ public class TicketReservationManagerTest {{
         MessageSource messageSource = it.usesMock(MessageSource.class);
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
-        TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager, null, pluginManager, fileUploadManager);
+        TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        TicketReservationManager trm = new TicketReservationManager(eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, null, null, configurationManager, null, promoCodeDiscountRepository, null, null, notificationManager, messageSource, null, transactionManager, null, pluginManager, fileUploadManager, ticketFieldRepository);
         it.initializesWith(() -> reset(notificationManager, eventRepository, organizationRepository, ticketRepository, ticketReservationRepository, configurationManager, promoCodeDiscountRepository, messageSource, transactionManager));
         it.should("send the reminder if there weren't any notifications before", expect -> {
             Event event = it.usesMock(Event.class);
             when(event.getId()).thenReturn(eventId);
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             String reservationId = "abcd";
@@ -690,7 +723,7 @@ public class TicketReservationManagerTest {{
         it.should("not send the reminder if there was a notification before for the reservation", expect -> {
             Event event = it.usesMock(Event.class);
             when(event.getId()).thenReturn(eventId);
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.of(ZonedDateTime.now().minusDays(10)));
             String reservationId = "abcd";
@@ -714,7 +747,7 @@ public class TicketReservationManagerTest {{
         it.should("not send the reminder if there was a notification before", expect -> {
             Event event = it.usesMock(Event.class);
             when(event.getId()).thenReturn(eventId);
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             String reservationId = "abcd";
@@ -738,7 +771,7 @@ public class TicketReservationManagerTest {{
         it.should("not send the reminder if the ticket was already modified", expect -> {
             Event event = it.usesMock(Event.class);
             when(event.getId()).thenReturn(eventId);
-            when(configurationManager.getIntConfigValue(eq(Configuration.assignmentReminderStart(event)), anyInt())).thenReturn(10);
+            when(configurationManager.getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
             when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
             when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
             String reservationId = "abcd";

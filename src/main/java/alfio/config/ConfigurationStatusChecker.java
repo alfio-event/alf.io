@@ -20,6 +20,8 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.DataMigrator;
 import alfio.manager.user.UserManager;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
+import alfio.model.user.Role;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.PasswordGenerator;
@@ -62,11 +64,11 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
-        boolean initCompleted = configurationManager.getBooleanConfigValue(Configuration.initCompleted(), false);
+        boolean initCompleted = configurationManager.getBooleanConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.INIT_COMPLETED), false);
         if (!initCompleted) {
             String adminPassword = PasswordGenerator.generateRandomPassword();
             userRepository.create(UserManager.ADMIN_USERNAME, passwordEncoder.encode(adminPassword), "The", "Administrator", "admin@localhost", true);
-            authorityRepository.create(UserManager.ADMIN_USERNAME, AuthorityRepository.ROLE_ADMIN);
+            authorityRepository.create(UserManager.ADMIN_USERNAME, Role.ADMIN.getRoleName());
             log.info("*******************************************************");
             log.info("   This is the first time you're running alf.io");
             log.info("   here the generated admin credentials:");

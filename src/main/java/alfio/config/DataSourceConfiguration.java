@@ -255,6 +255,9 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
             case "HSQLDB":
                 quartzDriverDelegateClass = "org.quartz.impl.jdbcjobstore.HSQLDBDelegate";
                 break;
+            case "MYSQL":
+                quartzDriverDelegateClass = "org.quartz.impl.jdbcjobstore.StdJDBCDelegate";
+                break;
             default:
                 throw new IllegalArgumentException("Unsupported dialect: " + dialect);
         }

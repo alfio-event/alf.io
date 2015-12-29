@@ -16,6 +16,21 @@
  */
 package alfio.model.system;
 
-public enum ConfigurationPathLevel {
-    SYSTEM, ORGANIZATION, EVENT, TICKET_CATEGORY
+import java.util.Comparator;
+
+public enum ConfigurationPathLevel implements Comparable<ConfigurationPathLevel> {
+    SYSTEM(0), ORGANIZATION(1), EVENT(2), TICKET_CATEGORY(3);
+
+    private final int priority;
+
+    ConfigurationPathLevel(int priority) {
+        this.priority = priority;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public static Comparator<ConfigurationPathLevel> COMPARATOR = (l1, l2) -> l1.priority - l2.priority;
+
 }

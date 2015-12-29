@@ -1,12 +1,14 @@
 <div class="page-header">
-    <h1>{{event.displayName}} <a class="btn btn-default" data-ui-sref="events.configuration({eventName: event.shortName})"><i class="fa fa-wrench"></i><span class="sr-only"> settings</span></a></h1>
+    <h1>{{event.displayName}} <a class="btn btn-default" data-ng-if="isInternal(event)" data-ui-sref="events.configuration({eventName: event.shortName})"><i class="fa fa-wrench"></i><span class="sr-only"> settings</span></a></h1>
     <h4 class="text-muted">{{event.shortDescription}}</h4>
-    <span><a class="btn btn-primary" data-ng-href="{{ ('events/'+event.shortName+'/export/all-tickets.csv') | addTrailingSlash }} " target="_blank"><i class="fa fa-download"></i> download attendees' data</a></span>
-    <span><a class="btn btn-success" data-ng-href="{{ ('events/'+event.shortName+'/export/badges.csv') | addTrailingSlash }}" target="_blank"><i class="fa fa-ticket"></i> download badges' data</a></span>
-    <span><a class="btn btn-warning" data-ui-sref="compose-custom-message({eventName: event.shortName})"><i class="fa fa-envelope"></i> send a message to attendees</a></span>
-    <waiting-queue-display-counter data-event="event"></waiting-queue-display-counter>
-    <span><a class="btn btn-default" data-ui-sref="events.email-log({eventName:event.shortName})"><i class="fa fa-paper-plane-o"></i> view sent messages</a></span>
-    <span><a class="btn btn-default" data-ui-sref="events.plugin-log({eventName:event.shortName})"><i class="fa fa-plug"></i> view Plugins log</a></span>
+    <div data-ng-if="isInternal(event)">
+        <span><button class="btn btn-primary" type="button" data-ng-click="openFieldSelectionModal()" ><i class="fa fa-download"></i> download attendees' data</button></span>
+        <!--<span><a class="btn btn-success" data-ng-href="{{ ('events/'+event.shortName+'/export/badges.csv') | addTrailingSlash }}" target="_blank"><i class="fa fa-ticket"></i> download badges' data</a></span>-->
+        <span><a class="btn btn-warning" data-ui-sref="compose-custom-message({eventName: event.shortName})"><i class="fa fa-envelope"></i> send a message to attendees</a></span>
+        <waiting-queue-display-counter data-event="event"></waiting-queue-display-counter>
+        <span><a class="btn btn-default" data-ui-sref="events.email-log({eventName:event.shortName})"><i class="fa fa-paper-plane-o"></i> view sent messages</a></span>
+        <span><a class="btn btn-default" data-ui-sref="events.plugin-log({eventName:event.shortName})"><i class="fa fa-plug"></i> view Plugins log</a></span>
+    </div>
 </div>
 <div class="page-header"><h2>Logistic info</h2></div>
 <div class="row">
@@ -14,13 +16,18 @@
         <div class="form-group">
             <label>Owner Organization</label>
             <p class="form-control-static">{{organization.name}} &lt;{{organization.email}}&gt;</p>
-
             <label>Website URL</label>
             <p class="form-control-static"><a href="{{event.websiteUrl}}" target="_blank">{{event.websiteUrl}}</a></p>
 
-            <label>Terms and conditions URL</label>
-            <p class="form-control-static"><a href="{{event.termsAndConditionsUrl}}" target="_blank">{{event.termsAndConditionsUrl}}</a></p>
+            <div data-ng-if="!isInternal(event)">
+                <label>External URL</label>
+                <p class="form-control-static"><a href="{{event.externalUrl}}" target="_blank">{{event.externalUrl}}</a></p>
+            </div>
 
+            <div data-ng-if="isInternal(event)">
+                <label>Terms and conditions URL</label>
+                <p class="form-control-static"><a href="{{event.termsAndConditionsUrl}}" target="_blank">{{event.termsAndConditionsUrl}}</a></p>
+            </div>
 
             <label data-ng-if="event.fileBlobIdIsPresent">Event image</label>
             <p data-ng-if="event.fileBlobIdIsPresent"><img data-ng-src="/file/{{event.fileBlobId}}" class="img-responsive"></p>
@@ -31,16 +38,18 @@
             <label>Location</label>
             <p class="form-control-static">{{event.location}}</p>
 
-            <label>Languages</label>
-            <p class="form-control-static" data-ng-repeat="cl in event.contentLanguages">
-                - {{cl.displayLanguage}}
-            </p>
+            <div data-ng-if="isInternal(event)">
+                <label>Languages</label>
+                <p class="form-control-static" data-ng-repeat="cl in event.contentLanguages">
+                    - {{cl.displayLanguage}}
+                </p>
 
-            <label>Description</label>
-            <div></div>
-            <div data-ng-repeat="cl in event.contentLanguages">
-                <p class="form-control-static">- {{cl.displayLanguage}}:</p>
-                <pre class="white form-control-static">{{event.description[cl.locale]}}</pre>
+                <label>Description</label>
+                <div></div>
+                <div data-ng-repeat="cl in event.contentLanguages">
+                    <p class="form-control-static">- {{cl.displayLanguage}}:</p>
+                    <pre class="white form-control-static">{{event.description[cl.locale]}}</pre>
+                </div>
             </div>
 
             <label>Start Date/Time</label>

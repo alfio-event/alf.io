@@ -1,28 +1,36 @@
-<form role="form" name="editUser" data-ng-submit="save(editUser, user)" data-error-sensitive novalidate>
+<form role="form" name="editUser" data-ng-submit="save(editUser, editUserCtrl.user)" data-error-sensitive novalidate>
     <div class="form-group">
         <label for="organizationId">Organization</label>
-        <select data-ng-model="user.organizationId" data-grab-focus name="organizationId" class="form-control" id="organizationId" data-required data-ng-options="organization.id as organization.name for organization in organizations"></select>
+        <select data-ng-model="editUserCtrl.user.organizationId" data-grab-focus name="organizationId" class="form-control" id="organizationId" data-required data-ng-options="organization.id as organization.name for organization in editUserCtrl.organizations"></select>
         <field-error data-form-obj="editUser" data-field-obj="editUser.organizationId"></field-error>
     </div>
     <div class="form-group">
+        <label for="role">Role</label>
+        <select data-ng-model="editUserCtrl.user.role" name="role" class="form-control" id="role" data-required data-ng-options="r.role as r.description for r in editUserCtrl.roles"></select>
+        <field-error data-form-obj="editUser" data-field-obj="editUser.role"></field-error>
+    </div>
+    <div class="form-group">
         <label for="username">Username</label>
-        <input type="text" data-ng-model="user.username" name="username" id="username" class="form-control" required data-ng-minlength="2" />
+        <input type="text" data-ng-model="editUserCtrl.user.username" name="username" id="username" class="form-control" required data-ng-minlength="2" />
         <field-error data-form-obj="editUser" data-field-obj="editUser.username" data-min-char="2"></field-error>
     </div>
     <div class="form-group">
         <label for="firstName">First name</label>
-        <input type="text" data-ng-model="user.firstName" name="firstName" id="firstName" class="form-control" required data-ng-minlength="2" />
+        <input type="text" data-ng-model="editUserCtrl.user.firstName" name="firstName" id="firstName" class="form-control" required data-ng-minlength="2" />
         <field-error data-form-obj="editUser" data-field-obj="editUser.firstName" data-min-char="2"></field-error>
     </div>
     <div class="form-group">
         <label for="lastName">Last name</label>
-        <input type="text" data-ng-model="user.lastName" name="lastName" id="lastName" class="form-control" required data-ng-minlength="2" />
+        <input type="text" data-ng-model="editUserCtrl.user.lastName" name="lastName" id="lastName" class="form-control" required data-ng-minlength="2" />
         <field-error data-form-obj="editUser" data-field-obj="editUser.lastName" data-min-char="2"></field-error>
     </div>
     <div class="form-group">
         <label for="emailAddress">E-mail</label>
-        <input type="email" data-ng-model="user.emailAddress" name="emailAddress" class="form-control" id="emailAddress" required />
+        <input type="email" data-ng-model="editUserCtrl.user.emailAddress" name="emailAddress" class="form-control" id="emailAddress" required />
         <field-error data-form-obj="editUser" data-field-obj="editUser.emailAddress"></field-error>
     </div>
-    <control-buttons data-form-obj="editUser"></control-buttons>
+    <div>
+        <button type="submit" class="btn btn-success" data-ng-disabled="editUser.$waiting" data-ng-click="editUserCtrl.save(editUser, editUserCtrl.user)">Save</button>
+        <button type="button" class="btn btn-default" data-ng-disabled="editUser.$waiting" data-ng-click="editUserCtrl.cancel()">Cancel</button>
+    </div>
 </form>

@@ -17,7 +17,9 @@
 package alfio.controller.support;
 
 import alfio.model.Ticket;
+import alfio.model.TicketFieldConfigurationAndDescription;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
 import java.util.function.Function;
@@ -30,16 +32,18 @@ public class TicketDecorator {
     private final boolean freeCancellationEnabled;
     private final boolean conditionsMet;
     private final String urlSuffix;
+    private final List<Pair<TicketFieldConfigurationAndDescription, String>> ticketFieldConfiguration;
 
-    public TicketDecorator(Ticket ticket, boolean freeCancellationEnabled, boolean conditionsMet) {
-        this(ticket, freeCancellationEnabled, conditionsMet, ticket.getUuid());
+    public TicketDecorator(Ticket ticket, boolean freeCancellationEnabled, boolean conditionsMet, List<Pair<TicketFieldConfigurationAndDescription, String>> ticketFieldConfiguration) {
+        this(ticket, freeCancellationEnabled, conditionsMet, ticket.getUuid(), ticketFieldConfiguration);
     }
 
-    public TicketDecorator(Ticket ticket, boolean freeCancellationEnabled, boolean conditionsMet, String urlSuffix) {
+    public TicketDecorator(Ticket ticket, boolean freeCancellationEnabled, boolean conditionsMet, String urlSuffix, List<Pair<TicketFieldConfigurationAndDescription, String>> ticketFieldConfiguration) {
         this.ticket = ticket;
         this.freeCancellationEnabled = freeCancellationEnabled;
         this.conditionsMet = conditionsMet;
         this.urlSuffix = urlSuffix;
+        this.ticketFieldConfiguration = ticketFieldConfiguration;
     }
 
     public String getUrlSuffix() {
@@ -58,7 +62,11 @@ public class TicketDecorator {
         return isFree() && freeCancellationEnabled && conditionsMet;
     }
 
-    public static List<TicketDecorator> decorate(List<Ticket> tickets, boolean freeCancellationEnabled, Function<Ticket, Boolean> categoryEvaluator) {
-        return tickets.stream().map(t -> new TicketDecorator(t, freeCancellationEnabled, categoryEvaluator.apply(t))).collect(Collectors.toList());
+    public List<Pair<TicketFieldConfigurationAndDescription, String>> getTicketFieldConfiguration() {
+        return ticketFieldConfiguration;
+    }
+
+    public static List<TicketDecorator> decorate(List<Ticket> tickets, boolean freeCancellationEnabled, Function<Ticket, Boolean> categoryEvaluator, Function<Ticket, List<Pair<TicketFieldConfigurationAndDescription, String>>> fieldsLoader) {
+        return tickets.stream().map(t -> new TicketDecorator(t, freeCancellationEnabled, categoryEvaluator.apply(t), fieldsLoader.apply(t))).collect(Collectors.toList());
     }
 }

@@ -22,10 +22,10 @@ import lombok.Getter;
 @Getter
 public class Authority {
     private final String username;
-    private final String role;
+    private final Role role;
 
-    public Authority(@Column("username") String username, @Column("role") String role) {
+    public Authority(@Column("username") String username, @Column("role") String roleName) {
         this.username = username;
-        this.role = role;
+        this.role = Role.fromRoleName(roleName);
     }
 }

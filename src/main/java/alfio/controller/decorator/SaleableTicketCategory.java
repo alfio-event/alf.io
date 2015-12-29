@@ -19,6 +19,7 @@ package alfio.controller.decorator;
 import alfio.model.Event;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.TicketCategory;
+import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
 import lombok.experimental.Delegate;
 
@@ -109,10 +110,7 @@ public class SaleableTicketCategory {
     }
 
     private int getFinalPriceInCents() {
-        if(event.isVatIncluded()) {
-            return addVAT(ticketCategory.getPriceInCents(), event.getVat());
-        }
-        return ticketCategory.getPriceInCents();
+        return EventUtil.getFinalPriceInCents(event, ticketCategory);
     }
 
     public int[] getAmountOfTickets() {

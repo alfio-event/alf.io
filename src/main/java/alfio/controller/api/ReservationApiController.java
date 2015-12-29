@@ -71,13 +71,14 @@ public class ReservationApiController {
                 .filter(UserDetails.class::isInstance)
                 .map(UserDetails.class::cast);
 
-        Optional<Triple<ValidationResult, Event, Ticket>> assignmentResult = ticketHelper.assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, t -> {
+        Optional<Triple<ValidationResult, Event, Ticket>> assignmentResult = ticketHelper.assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, Optional.of(bindingResult), request, t -> {
             Locale requestLocale = RequestContextUtils.getLocale(request);
+            model.addAttribute("ticketFieldConfiguration", ticketHelper.findTicketFieldConfigurationAndValue(t.getMiddle().getId(), t.getRight().getId(), requestLocale));
             model.addAttribute("value", t.getRight());
             model.addAttribute("validationResult", t.getLeft());
             model.addAttribute("countries", ticketHelper.getLocalizedCountries(requestLocale));
             model.addAttribute("event", t.getMiddle());
-            model.addAttribute("availableLanguages", i18nManager.getEventLocales(eventName).stream()
+            model.addAttribute("availableLanguages", i18nManager.getEventLanguages(eventName).stream()
                     .map(ContentLanguage.toLanguage(requestLocale)).collect(Collectors.toList()));
             String uuid = t.getRight().getUuid();
             model.addAttribute("urlSuffix", singleTicket ? "ticket/"+uuid+"/view": uuid);

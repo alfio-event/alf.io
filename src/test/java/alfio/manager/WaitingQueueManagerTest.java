@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
@@ -105,7 +106,7 @@ public class WaitingQueueManagerTest {{
 
             when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(1);
             when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
-            when(configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false)).thenReturn(true);
+            when(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false)).thenReturn(true);
             Ticket ticket = it.usesMock(Ticket.class);
             when(ticketRepository.selectWaitingTicketsForUpdate(eventId, Ticket.TicketStatus.PRE_RESERVED.name(), 1)).thenReturn(Collections.singletonList(ticket));
             WaitingQueueSubscription subscription = it.usesMock(WaitingQueueSubscription.class);

@@ -45,40 +45,40 @@ public class PreReservedTicketDistributorTest {{
         List<Pair<Integer, TicketCategoryWithStatistic>> data = Arrays.asList(Pair.of(cat1Capacity, cat1), Pair.of(cat2Capacity, cat2), Pair.of(cat3Capacity, cat3));
 
         it.should("include all the categories (42 tickets requested)", expect -> {
-            List<Pair<Integer, Integer>> pairs = data.stream().collect(new PreReservedTicketDistributor(42));
+            List<Pair<Integer, TicketCategoryWithStatistic>> pairs = data.stream().collect(new PreReservedTicketDistributor(42));
             expect.that(pairs.size()).is(3);
-            expect.that(pairs.get(0)).is(Pair.of(cat1Capacity, 1));
-            expect.that(pairs.get(1)).is(Pair.of(cat2Capacity, 2));
-            expect.that(pairs.get(2)).is(Pair.of(cat3Capacity, 3));
+            expect.that(pairs.get(0)).is(Pair.of(cat1Capacity, cat1));
+            expect.that(pairs.get(1)).is(Pair.of(cat2Capacity, cat2));
+            expect.that(pairs.get(2)).is(Pair.of(cat3Capacity, cat3));
         });
 
         it.should("include all the categories (43 tickets requested)", expect -> {
-            List<Pair<Integer, Integer>> pairs = data.stream().collect(new PreReservedTicketDistributor(43));
+            List<Pair<Integer, TicketCategoryWithStatistic>> pairs = data.stream().collect(new PreReservedTicketDistributor(43));
             expect.that(pairs.size()).is(3);
-            expect.that(pairs.get(0)).is(Pair.of(cat1Capacity, 1));
-            expect.that(pairs.get(1)).is(Pair.of(cat2Capacity, 2));
-            expect.that(pairs.get(2)).is(Pair.of(cat3Capacity, 3));
+            expect.that(pairs.get(0)).is(Pair.of(cat1Capacity, cat1));
+            expect.that(pairs.get(1)).is(Pair.of(cat2Capacity, cat2));
+            expect.that(pairs.get(2)).is(Pair.of(cat3Capacity, cat3));
         });
 
         it.should("include only the first category (1 ticket requested)", expect -> {
-            List<Pair<Integer, Integer>> pairs = data.stream().collect(new PreReservedTicketDistributor(1));
+            List<Pair<Integer, TicketCategoryWithStatistic>> pairs = data.stream().collect(new PreReservedTicketDistributor(1));
             expect.that(pairs.size()).is(1);
-            expect.that(pairs.get(0)).is(Pair.of(1, 1));
+            expect.that(pairs.get(0)).is(Pair.of(1, cat1));
         });
 
         it.should("include only the first two categories (20 tickets requested)", expect -> {
-            List<Pair<Integer, Integer>> pairs = data.stream().collect(new PreReservedTicketDistributor(20));
+            List<Pair<Integer, TicketCategoryWithStatistic>> pairs = data.stream().collect(new PreReservedTicketDistributor(20));
             expect.that(pairs.size()).is(2);
-            expect.that(pairs.get(0)).is(Pair.of(cat1Capacity, 1));
-            expect.that(pairs.get(1)).is(Pair.of(10, 2));
+            expect.that(pairs.get(0)).is(Pair.of(cat1Capacity, cat1));
+            expect.that(pairs.get(1)).is(Pair.of(10, cat2));
         });
 
         it.should("include all the categories (23 tickets requested)", expect -> {
-            List<Pair<Integer, Integer>> pairs = data.stream().collect(new PreReservedTicketDistributor(23));
+            List<Pair<Integer, TicketCategoryWithStatistic>> pairs = data.stream().collect(new PreReservedTicketDistributor(23));
             expect.that(pairs.size()).is(3);
-            expect.that(pairs.get(0)).is(Pair.of(cat1Capacity, 1));
-            expect.that(pairs.get(1)).is(Pair.of(cat2Capacity, 2));
-            expect.that(pairs.get(2)).is(Pair.of(1, 3));
+            expect.that(pairs.get(0)).is(Pair.of(cat1Capacity, cat1));
+            expect.that(pairs.get(1)).is(Pair.of(cat2Capacity, cat2));
+            expect.that(pairs.get(2)).is(Pair.of(1, cat3));
         });
 
     });

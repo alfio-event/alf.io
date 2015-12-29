@@ -8,7 +8,7 @@
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)'
     };
-    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration']);
+    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'nzToggle', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-users']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.otherwise("/");
@@ -16,42 +16,6 @@
             .state('index', {
                 url: "/",
                 templateUrl: BASE_TEMPLATE_URL + "/index.html"
-            })
-            .state('index.new-organization', {
-                url: "organizations/new",
-                views: {
-                    "newOrganization": {
-                        templateUrl: BASE_STATIC_URL + "/main/edit-organization.html",
-                        controller: 'EditOrganizationController'
-                    }
-                }
-            })
-            .state('index.edit-organization', {
-                url: "organizations/:organizationId/edit",
-                views: {
-                    "newOrganization": {
-                        templateUrl: BASE_STATIC_URL + "/main/edit-organization.html",
-                        controller: 'EditOrganizationController'
-                    }
-                }
-            })
-            .state('index.new-user', {
-                url: "users/new",
-                views: {
-                    "editUser": {
-                        templateUrl: BASE_STATIC_URL + "/main/edit-user.html",
-                        controller: 'EditUserController'
-                    }
-                }
-            })
-            .state('index.edit-user', {
-                url: "users/:userId/edit",
-                views: {
-                    "editUser": {
-                        templateUrl: BASE_STATIC_URL + "/main/edit-user.html",
-                        controller: 'EditUserController'
-                    }
-                }
             })
             .state('events', {
                 abstract: true,
@@ -61,7 +25,18 @@
             .state('events.new', {
                 url: '/new',
                 templateUrl: BASE_STATIC_URL + "/event/edit-event.html",
-                controller: 'CreateEventController'
+                controller: 'CreateEventController',
+                data: {
+                    eventType: 'INTERNAL'
+                }
+            })
+            .state('events.newLink', {
+                url: '/new-external',
+                templateUrl: BASE_STATIC_URL + "/event/edit-event.html",
+                controller: 'CreateEventController',
+                data: {
+                    eventType: 'EXTERNAL'
+                }
             })
             .state('events.detail', {
                 url: '/:eventName',
@@ -179,7 +154,9 @@
         return function(validationResult) {
             if(validationResult.errorCount > 0) {
                 angular.forEach(validationResult.validationErrors, function(error) {
-                    form.$setError(error.fieldName, error.message);
+                    if(angular.isFunction(form.$setError)) {
+                        form.$setError(error.fieldName, error.message);
+                    }
                 });
                 deferred.reject('invalid form');
             }
@@ -195,81 +172,11 @@
         return deferred.promise;
     };
 
-    admin.controller('EditOrganizationController', function($scope, $state, $stateParams, $rootScope, $q, OrganizationService) {
-        var updateOrAction = OrganizationService.createOrganization;
-
-        if(angular.isDefined($stateParams.organizationId)) {
-            updateOrAction = OrganizationService.updateOrganization;
-            OrganizationService.getOrganization($stateParams.organizationId).success(function(result) {
-                $scope.organization = result;
-            });
-        }
-        $scope.organization = {};
-        $scope.save = function(form, organization) {
-            if(!form.$valid) {
-                return;
-            }
-            validationPerformer($q, OrganizationService.checkOrganization, organization, form).then(function() {
-                updateOrAction(organization).success(function() {
-                    $rootScope.$emit('ReloadOrganizations', {});
-                    $state.go('index');
-                });
-            }, angular.noop);
-        };
-        $scope.cancel = function() {
-            $state.go('index');
-        };
-    });
-
     admin.controller('MenuController', function($scope) {
         $scope.menuCollapsed = true;
         $scope.toggleCollapse = function(currentStatus) {
             $scope.menuCollapsed = !currentStatus;
         };
-    });
-
-    admin.controller('EditUserController', function($scope, $state, $stateParams, $rootScope, $q, OrganizationService, UserService) {
-        if(angular.isDefined($stateParams.userId)) {
-            UserService.loadUser($stateParams.userId).success(function(result) {
-                $scope.user = result;
-            });
-        }
-        var organizations = [];
-        $scope.user = {};
-        $scope.organizations = [];
-        OrganizationService.getAllOrganizations().success(function(result) {
-            organizations = result;
-            $scope.organizations = result;
-        });
-
-        $scope.save = function(form, user) {
-            if(!form.$valid) {
-                return;
-            }
-
-            var successFn = function() {
-                $rootScope.$emit('ReloadUsers', {});
-                $state.go('index');
-            };
-
-            validationPerformer($q, UserService.checkUser, user, form).then(function() {
-                UserService.editUser(user).success(function(user) {
-                    if(angular.isDefined(user.password)) {
-                        UserService.showUserData(user).then(function() {
-                            successFn();
-                        });
-                    } else {
-                        successFn();
-                    }
-
-                });
-            }, angular.noop);
-        };
-
-        $scope.cancel = function() {
-            $state.go('index');
-        };
-
     });
 
     var createCategory = function(sticky, $scope, expirationExtractor) {
@@ -304,12 +211,20 @@
     var initScopeForEventEditing = function ($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state) {
         $scope.organizations = {};
 
-        EventService.getAllLanguages().success(function(result) {
+        $scope.isInternal = function(event) {
+            return event.type === 'INTERNAL';
+        };
+
+        EventService.getSupportedLanguages().success(function(result) {
             $scope.allLanguages = result;
             $scope.allLanguagesMapping = {};
             angular.forEach(result, function(r) {
                 $scope.allLanguagesMapping[r.value] = r;
             });
+        });
+
+        EventService.getDynamicFieldTemplates().success(function(result) {
+            $scope.dynamicFieldTemplates = result;
         });
 
         OrganizationService.getAllOrganizations().success(function(result) {
@@ -350,13 +265,60 @@
             $state.go('index');
         };
 
+        //----------
+
+        // TODO, change, HARDCODED
+        $scope.fieldTypes = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
+
+        $scope.addNewTicketField = function(event) {
+            if(!event.ticketFields) {
+                event.ticketFields = [];
+            }
+
+            event.ticketFields.push({required:false, order: event.ticketFields.length+1, type:'input:text', maxLength:255});
+        };
+
+        $scope.addTicketFieldFromTemplate = function(event, template) {
+            if(!event.ticketFields) {
+                event.ticketFields = [];
+            }
+            var nameExists = angular.isDefined(_.find(event.ticketFields, function(f) { return f.name === template.name;}));
+            event.ticketFields.push({
+                required:false,
+                name: nameExists ? '' : template.name,
+                order: event.ticketFields.length+1,
+                type: template.type,
+                restrictedValues: _.map(template.restrictedValues, function(v) {return {value: v}}),
+                description: template.description,
+                maxLength: template.maxLength,
+                minLength: template.minLength
+            });
+        };
+
+        $scope.removeTicketField = function(fields, field) {
+            var index = fields.indexOf(field);
+            fields.splice( index, 1 )
+        };
+
+        $scope.isLanguageSelected = function(lang, selectedLanguages) {
+            return (selectedLanguages & lang) > 0;
+        };
+
+        $scope.addRestrictedValue = function(field) {
+            var arr = field.restrictedValues || [];
+            arr.push({});
+            field.restrictedValues = arr;
+        }
+
     };
 
     admin.controller('CreateEventController', function($scope, $state, $rootScope,
                                                        $q, OrganizationService, PaymentProxyService,
                                                        EventService, LocationService) {
 
+        var eventType = $state.$current.data.eventType;
         $scope.event = {
+            type: eventType,
             freeOfCharge: false,
             begin: {},
             end: {},
@@ -364,7 +326,9 @@
         };
         initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state);
         $scope.event.ticketCategories = [];
-        createAndPushCategory(true, $scope);
+        if(eventType === 'INTERNAL') {
+            createAndPushCategory(true, $scope);
+        }
 
         $scope.save = function(form, event) {
             /*if(!form.$valid) {
@@ -427,6 +391,10 @@
                         loadData();
                     });
                 };
+            });
+
+            EventService.getAdditionalFields($stateParams.eventName).success(function(result) {
+                $scope.additionalFields = result;
             });
         };
         loadData();
@@ -751,6 +719,57 @@
             return _.countBy(categories, 'expired')['true'] || '0';
         };
 
+
+        $scope.openFieldSelectionModal = function() {
+            $modal.open({
+                size:'lg',
+                templateUrl:BASE_STATIC_URL + '/event/fragment/select-field-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                    $scope.selected = {};
+                    EventService.getFields(parentScope.event.shortName).then(function(fields) {
+                        $scope.fields = fields.data;
+                        angular.forEach(fields.data, function(v) {
+                            $scope.selected[v] = false;
+                        })
+                    });
+
+                    $scope.selectAll = function() {
+                        angular.forEach($scope.selected, function(v,k) {
+                            $scope.selected[k] = true;
+                        });
+                    };
+
+                    $scope.deselectAll = function() {
+                        angular.forEach($scope.selected, function(v,k) {
+                            $scope.selected[k] = false;
+                        });
+                    };
+
+                    $scope.download = function() {
+
+                        var queryString = "";
+
+                        angular.forEach($scope.selected, function(v,k) {
+                            if(v) {
+                                queryString+="fields="+k+"&";
+                            }
+                        });
+
+                        $window.open($window.location.pathname+"/api/events/"+parentScope.event.shortName+"/export.csv?"+queryString);
+                    };
+                }
+            });
+        };
+
+        $scope.prepareFieldDescriptionEdit = function(baseObject, field) {
+            angular.copy(field, baseObject);
+        };
+
+        $scope.saveFieldDescription = function(description) {
+            EventService.saveFieldDescription($scope.event.shortName, description).then(loadData);
+        };
+
     });
 
     admin.controller('SendInvitationsController', function($scope, $stateParams, $state, EventService, $log) {
@@ -1038,7 +1057,7 @@
     admin.controller('ComposeCustomMessage', function($scope, $stateParams, EventService, $modal, $state, $q) {
 
 
-        $q.all([EventService.getAvailableLanguages($stateParams.eventName),
+        $q.all([EventService.getSelectedLanguages($stateParams.eventName),
             EventService.getCategoriesContainingTickets($stateParams.eventName), EventService.getEvent($stateParams.eventName)])
         .then(function(results) {
                 $scope.messages = _.map(results[0].data, function(r) {

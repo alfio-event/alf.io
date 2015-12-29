@@ -24,7 +24,11 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.support.LocationDescriptor;
+import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
+import alfio.model.user.Role;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
@@ -34,22 +38,43 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class IntegrationTestUtil {
 
     public static final int AVAILABLE_SEATS = 20;
 
+
+    private static final Map<String, Map<String, String>> DB_CONF = new HashMap<>();
+    static {
+        DB_CONF.put("HSQLDB", c("HSQLDB", "org.hsqldb.jdbcDriver", "jdbc:hsqldb:mem:alfio", "sa", "", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS"));
+        DB_CONF.put("PGSQL", c("PGSQL", "org.postgresql.Driver", "jdbc:postgresql://localhost:5432/alfio", "postgres", "password", "SELECT 1"));
+        DB_CONF.put("PGSQL-TRAVIS", c("PGSQL", "org.postgresql.Driver", "jdbc:postgresql://localhost:5432/alfio", "postgres", "", "SELECT 1"));
+        DB_CONF.put("MYSQL", c("MYSQL", "com.mysql.jdbc.Driver", "jdbc:mysql://localhost:3306/alfio", "root", "", "SELECT 1"));
+    }
+
+    private static Map<String, String> c(String dialect, String driver, String url, String username, String password, String validationQuery) {
+        Map<String, String> c = new HashMap<>();
+        c.put("datasource.dialect", dialect);
+        c.put("datasource.driver", driver);
+        c.put("datasource.url", url);
+        c.put("datasource.username", username);
+        c.put("datasource.password", password);
+        c.put("datasource.validationQuery", validationQuery);
+        return c;
+    }
+
     public static void initSystemProperties() {
-        System.setProperty("datasource.dialect", "HSQLDB");
-        System.setProperty("datasource.driver", "org.hsqldb.jdbcDriver");
-        System.setProperty("datasource.url", "jdbc:hsqldb:mem:alfio");
-        System.setProperty("datasource.username", "sa");
-        System.setProperty("datasource.password", "");
-        System.setProperty("datasource.validationQuery", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
+        String dialect = System.getProperty("dbenv", "HSQLDB");
+        DB_CONF.get(dialect).forEach((prop, val) -> System.setProperty(prop, val));
+    }
+
+    public static void ensureMinimalConfiguration(ConfigurationRepository configurationRepository) {
+        configurationRepository.deleteByKey(ConfigurationKeys.BASE_URL.getValue());
+        configurationRepository.deleteByKey(ConfigurationKeys.SUPPORTED_LANGUAGES.getValue());
+
+        configurationRepository.insert(ConfigurationKeys.BASE_URL.getValue(), "http://localhost:8080", "");
+        configurationRepository.insert(ConfigurationKeys.SUPPORTED_LANGUAGES.getValue(), "7", "");
     }
 
     public static Pair<Event, String> initEvent(List<TicketCategoryModification> categories,
@@ -63,7 +88,8 @@ public class IntegrationTestUtil {
 
         organizationRepository.create(organizationName, "org", "email@example.com");
         Organization organization = organizationRepository.findByName(organizationName).get(0);
-        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com");
+        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR);
+        userManager.insertUser(organization.getId(), username+"_owner", "test", "test", "test@example.com", Role.OWNER);
 
         LocalDateTime expiration = LocalDateTime.now().plusDays(5).plusHours(1);
 
@@ -72,18 +98,18 @@ public class IntegrationTestUtil {
         desc.put("it", "muh description");
         desc.put("de", "muh description");
 
-        EventModification em = new EventModification(null, "url", "url", "url", null,
+        EventModification em = new EventModification(null, Event.EventType.INTERNAL, "url", "url", "url", "url", null,
                 eventName, "event display name", organization.getId(),
                 "muh location", desc,
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
-                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, null, categories, false, new LocationDescriptor("","","",""), 7);
+                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Arrays.asList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null);
         eventManager.createEvent(em);
         return Pair.of(eventManager.getSingleEvent(eventName, username), username);
     }
 
     public static void initAdminUser(UserRepository userRepository, AuthorityRepository authorityRepository) {
         userRepository.create(UserManager.ADMIN_USERNAME, "", "The", "Administrator", "admin@localhost", true);
-        authorityRepository.create(UserManager.ADMIN_USERNAME, AuthorityRepository.ROLE_ADMIN);
+        authorityRepository.create(UserManager.ADMIN_USERNAME, Role.ADMIN.getRoleName());
     }
 }

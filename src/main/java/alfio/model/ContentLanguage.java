@@ -16,16 +16,21 @@
  */
 package alfio.model;
 
+import lombok.EqualsAndHashCode;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@EqualsAndHashCode
 public class ContentLanguage {
 
+    public static final int ENGLISH_IDENTIFIER = 0b0010;
     public static final ContentLanguage ITALIAN = new ContentLanguage(Locale.ITALIAN, 0b0001, Locale.ITALIAN);
-    public static final ContentLanguage ENGLISH = new ContentLanguage(Locale.ENGLISH, 0b0010, Locale.ENGLISH);
+    public static final ContentLanguage ENGLISH = new ContentLanguage(Locale.ENGLISH, ENGLISH_IDENTIFIER, Locale.ENGLISH);
     public static final ContentLanguage GERMAN = new ContentLanguage(Locale.GERMAN,   0b0100, Locale.GERMAN);
     public static final ContentLanguage DUTCH = new ContentLanguage(new Locale("nl"), 0b1000, new Locale("nl"));
 

@@ -34,6 +34,9 @@ import java.sql.Date;
 import java.time.ZonedDateTime;
 import java.util.*;
 
+import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
+import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
+
 @Log4j2
 @Component
 @Transactional
@@ -74,8 +77,8 @@ public class WaitingQueueSubscriptionProcessor {
     }
 
     private boolean isWaitingListFormEnabled(Event event) {
-        return configurationManager.getBooleanConfigValue(Configuration.enableWaitingQueue(event), false)
-                || configurationManager.getBooleanConfigValue(Configuration.enablePreRegistration(event), false);
+        return configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE), false)
+                || configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false);
     }
 
     void distributeAvailableSeats(Event event) {

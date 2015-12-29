@@ -16,24 +16,24 @@
  */
 package alfio.manager;
 
-import alfio.manager.support.EmailQueue;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.TextTemplateGenerator;
-import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.EmailMessage;
 import alfio.model.Event;
 import alfio.model.EventDescription;
 import alfio.model.Ticket;
-import alfio.model.system.Configuration;
+import alfio.model.user.Organization;
 import alfio.repository.EmailMessageRepository;
 import alfio.repository.EventDescriptionRepository;
 import alfio.repository.EventRepository;
+import alfio.repository.user.OrganizationRepository;
 import com.google.gson.*;
 import com.lowagie.text.DocumentException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.codec.Hex;
@@ -61,10 +61,9 @@ public class NotificationManager {
     private final MessageSource messageSource;
     private final EmailMessageRepository emailMessageRepository;
     private final TransactionTemplate tx;
-    private final EmailQueue messages;
-    private final ConfigurationManager configurationManager;
     private final EventRepository eventRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
+    private final OrganizationRepository organizationRepository;
     private final Gson gson;
 
     @Autowired
@@ -72,16 +71,15 @@ public class NotificationManager {
                                MessageSource messageSource,
                                PlatformTransactionManager transactionManager,
                                EmailMessageRepository emailMessageRepository,
-                               ConfigurationManager configurationManager,
                                EventRepository eventRepository,
-                               EventDescriptionRepository eventDescriptionRepository) {
+                               EventDescriptionRepository eventDescriptionRepository,
+                               OrganizationRepository organizationRepository) {
         this.messageSource = messageSource;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
-        this.configurationManager = configurationManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
-        this.messages = new EmailQueue();
+        this.organizationRepository = organizationRepository;
         this.tx = new TransactionTemplate(transactionManager);
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(Mailer.Attachment.class, new AttachmentConverter());
@@ -97,7 +95,8 @@ public class NotificationManager {
 
         String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
 
-        event.getIcal(description).map(ics -> new Mailer.Attachment("calendar.ics", ics, "text/calendar")).ifPresent(attachments::add);
+        Organization organization = organizationRepository.getById(event.getOrganizationId());
+        event.getIcal(description, organization.getName(), organization.getEmail()).map(ics -> new Mailer.Attachment("calendar.ics", ics, "text/calendar")).ifPresent(attachments::add);
 
 
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[attachments.size()]));
@@ -107,7 +106,6 @@ public class NotificationManager {
         String recipient = ticket.getEmail();
         //TODO handle HTML
         tx.execute(status -> emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
-        messages.offer(new EmailMessage(-1, event.getId(), WAITING.name(), recipient, subject, text, null, checksum, ZonedDateTime.now(), null));
     }
 
     public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder) {
@@ -120,8 +118,13 @@ public class NotificationManager {
 
         String text = textBuilder.generate();
         String checksum = calculateChecksum(recipient, encodedAttachments, subject, text);
-        emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
-        messages.offer(new EmailMessage(-1, event.getId(), WAITING.name(), recipient, subject, text, null, checksum, ZonedDateTime.now(), null));
+        //in order to minimize the database size, it is worth checking if there is already another message in the table
+        Optional<EmailMessage> existing = emailMessageRepository.findByEventIdAndChecksum(event.getId(), checksum);
+        if(!existing.isPresent()) {
+            emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
+        } else {
+            emailMessageRepository.updateStatus(event.getId(), WAITING.name(), existing.get().getId());
+        }
     }
 
     public List<EmailMessage> loadAllMessagesForEvent(int eventId) {
@@ -133,46 +136,46 @@ public class NotificationManager {
     }
 
     void sendWaitingMessages() {
-        Set<EmailMessage> toBeSent = messages.poll(configurationManager.getIntConfigValue(Configuration.maxEmailPerCycle(), 10));
-        toBeSent.forEach(m -> {
-            try {
-                processMessage(m);
-            } catch (Exception e) {
-                log.warn("cannot send message: ",e);
-            }
-        });
+        eventRepository.findAllActiveIds(ZonedDateTime.now(UTC))
+            .stream()
+            .flatMap(id -> emailMessageRepository.loadWaitingForProcessing(id).stream())
+            .distinct()
+            .forEach(this::processMessage);
     }
 
     void processNotSentEmail() {
         ZonedDateTime now = ZonedDateTime.now(UTC);
-        String owner = UUID.randomUUID().toString();
-        int updated = tx.execute(status -> emailMessageRepository.updateStatusForRetry(now, now.minusMinutes(10), owner));
-        log.debug("found {} expired messages", updated);
-        if(updated > 0) {
-            tx.execute(status -> {
-                emailMessageRepository.loadForRetry(owner).forEach(messages::offer);
-                return null;
+        ZonedDateTime expiration = now.minusMinutes(5);
+        eventRepository.findAllActiveIds(now).stream()
+            .map(id -> Pair.of(id, tx.execute(status -> emailMessageRepository.updateStatusForRetry(now, expiration))))
+            .filter(p -> p.getValue() > 0)
+            .forEach(p -> {
+                int eventId = p.getKey();
+                log.debug("found {} expired messages for event {}", p.getValue(), eventId);
+                emailMessageRepository.loadRetryForProcessing(eventId).forEach(this::processMessage);
             });
-        }
     }
 
     private void processMessage(EmailMessage message) {
-        int result = tx.execute(status -> emailMessageRepository.updateStatus(message.getEventId(), message.getChecksum(), IN_PROCESS.name(), Arrays.asList(WAITING.name(), RETRY.name())));
-        if(result > 0) {
-            tx.execute(status -> {
-                sendMessage(message);
-                return null;
-            });
-        } else {
-            log.debug("no messages have been updated on DB for the following criteria: eventId: {}, checksum: {}", message.getEventId(), message.getChecksum());
+        try {
+            int result = tx.execute(status -> emailMessageRepository.updateStatus(message.getEventId(), message.getChecksum(), IN_PROCESS.name(), Arrays.asList(WAITING.name(), RETRY.name())));
+            if(result > 0) {
+                tx.execute(status -> {
+                    sendMessage(message);
+                    return null;
+                });
+            } else {
+                log.debug("no messages have been updated on DB for the following criteria: eventId: {}, checksum: {}", message.getEventId(), message.getChecksum());
+            }
+        } catch(Exception e) {
+            log.warn("could not send message: ",e);
         }
     }
 
     private void sendMessage(EmailMessage message) {
         Event event = eventRepository.findById(message.getEventId());
-        EmailMessage storedMessage = emailMessageRepository.findByEventIdAndChecksum(event.getId(), message.getChecksum(), IN_PROCESS.name());
-        mailer.send(event, message.getRecipient(), message.getSubject(), storedMessage.getMessage(), Optional.empty(), decodeAttachments(storedMessage.getAttachments()));
-        emailMessageRepository.updateStatusToSent(storedMessage.getEventId(), storedMessage.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
+        mailer.send(event, message.getRecipient(), message.getSubject(), message.getMessage(), Optional.empty(), decodeAttachments(message.getAttachments()));
+        emailMessageRepository.updateStatusToSent(message.getEventId(), message.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
     }
 
     private String encodeAttachments(Mailer.Attachment... files) {

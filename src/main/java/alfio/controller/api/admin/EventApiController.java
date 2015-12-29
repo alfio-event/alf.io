@@ -16,42 +16,54 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.controller.api.support.DescriptionsLoader;
+import alfio.controller.api.support.EventListItem;
+import alfio.controller.api.support.TicketHelper;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.TicketReservationManager;
-import alfio.model.ContentLanguage;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
-import alfio.model.Event;
-import alfio.model.TicketReservation;
+import alfio.manager.user.UserManager;
+import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.user.Organization;
+import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
+import alfio.repository.TicketFieldRepository;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.util.OptionalWrapper.optionally;
-import static alfio.util.Validator.validateCategory;
-import static alfio.util.Validator.validateEventHeader;
-import static alfio.util.Validator.validateEventPrices;
+import static alfio.util.Validator.*;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
@@ -65,18 +77,39 @@ public class EventApiController {
     private final I18nManager i18nManager;
     private final TicketReservationManager ticketReservationManager;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
+    private final TicketFieldRepository ticketFieldRepository;
+    private final DescriptionsLoader descriptionsLoader;
+    private final TicketHelper ticketHelper;
+    private final DynamicFieldTemplateRepository dynamicFieldTemplateRepository;
+    private final UserManager userManager;
 
     @Autowired
     public EventApiController(EventManager eventManager,
                               EventStatisticsManager eventStatisticsManager,
                               I18nManager i18nManager,
                               TicketReservationManager ticketReservationManager,
-                              TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository) {
+                              TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
+                              TicketFieldRepository ticketFieldRepository,
+                              DescriptionsLoader descriptionsLoader,
+                              TicketHelper ticketHelper,
+                              DynamicFieldTemplateRepository dynamicFieldTemplateRepository,
+                              UserManager userManager) {
         this.eventManager = eventManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.i18nManager = i18nManager;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
+        this.ticketFieldRepository = ticketFieldRepository;
+        this.descriptionsLoader = descriptionsLoader;
+        this.ticketHelper = ticketHelper;
+        this.dynamicFieldTemplateRepository = dynamicFieldTemplateRepository;
+        this.userManager = userManager;
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public String exception(DataAccessException e) {
+        log.warn("unhandled exception", e);
+        return "unexpected error. More info in the application log";
     }
 
     @ExceptionHandler(Exception.class)
@@ -93,6 +126,16 @@ public class EventApiController {
     @ResponseStatus(HttpStatus.OK)
     public List<PaymentProxy> getPaymentProxies() {
         return PaymentProxy.availableProxies();
+    }
+
+    @RequestMapping(value = "/events", method = GET, headers = "Authorization")
+    public List<EventListItem> getAllEventsForExternal(Principal principal, HttpServletRequest request) {
+        List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).collect(Collectors.toList());
+        return eventManager.getActiveEvents().stream()
+            .filter(e -> userOrganizations.contains(e.getOrganizationId()))
+            .sorted((e1, e2) -> e1.getBegin().withZoneSameInstant(ZoneId.systemDefault()).compareTo(e2.getBegin().withZoneSameInstant(ZoneId.systemDefault())))
+            .map(s -> new EventListItem(s, request.getContextPath(), descriptionsLoader.eventDescriptions()))
+            .collect(Collectors.toList());
     }
 
     @RequestMapping(value = "/events", method = GET)
@@ -118,13 +161,28 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/check", method = POST)
     public ValidationResult validateEvent(@RequestBody EventModification eventModification, Errors errors) {
-        ValidationResult base = validateEventHeader(eventModification, errors)
-            .or(validateEventPrices(eventModification, errors));
+        ValidationResult base = validateEventHeader(Optional.<Event>empty(), eventModification, errors)
+            .or(validateEventPrices(Optional.<Event>empty(), eventModification, errors));
         AtomicInteger counter = new AtomicInteger();
         return base.or(eventModification.getTicketCategories().stream()
-            .map(c -> validateCategory(c, errors, "ticketCategories["+counter.getAndIncrement()+"]."))
+            .map(c -> validateCategory(c, errors, "ticketCategories[" + counter.getAndIncrement() + "]."))
             .reduce(ValidationResult::or)
-            .orElse(ValidationResult.success()));
+            .orElse(ValidationResult.success())).or(validateAdditionalTicketFields(eventModification.getTicketFields(), errors));
+    }
+
+    private ValidationResult validateAdditionalTicketFields(List<EventModification.AdditionalField> ticketFields, Errors errors) {
+        //meh
+        AtomicInteger cnt = new AtomicInteger();
+        return Optional.ofNullable(ticketFields).orElseGet(Collections::emptyList).stream().map(field -> {
+            String prefix = "ticketFields["+cnt.getAndIncrement()+"]";
+            if (StringUtils.isBlank(field.getName())) {
+                errors.rejectValue(prefix + ".name", "error.required");
+            }
+            //TODO: check label value is present for all the locales
+            //TODO: for select check option value+label
+
+            return Validator.evaluateValidationResult(errors);
+        }).reduce(ValidationResult::or).orElseGet(ValidationResult::success);
     }
 
     @RequestMapping(value = "/events/new", method = POST)
@@ -135,12 +193,14 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{id}/header/update", method = POST)
     public ValidationResult updateHeader(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
-        return validateEventHeader(eventModification, errors).ifSuccess(() -> eventManager.updateEventHeader(id, eventModification, principal.getName()));
+        Event event = eventManager.getSingleEventById(id, principal.getName());
+        return validateEventHeader(Optional.of(event), eventModification, errors).ifSuccess(() -> eventManager.updateEventHeader(event, eventModification, principal.getName()));
     }
 
     @RequestMapping(value = "/events/{id}/prices/update", method = POST)
     public ValidationResult updatePrices(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
-        return validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(id, eventModification, principal.getName()));
+        Event event = eventManager.getSingleEventById(id, principal.getName());
+        return validateEventPrices(Optional.of(event), eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(event, eventModification, principal.getName()));
     }
 
     @RequestMapping(value = "/events/{eventId}/categories/{categoryId}/update", method = POST)
@@ -165,6 +225,84 @@ public class EventApiController {
         return OK;
     }
 
+    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "creation", "category", "event", "status", "originalPrice", "paidPrice","reservationID", "Name", "E-Mail", "locked", "Language");
+    private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
+
+    @RequestMapping("/events/{eventName}/export.csv")
+    public void downloadAllTicketsCSV(@PathVariable("eventName") String eventName, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
+        List<String> fields = Arrays.asList(Optional.ofNullable(request.getParameterValues("fields")).orElse(new String[] {}));
+        Event event = Optional.ofNullable(eventManager.getSingleEvent(eventName, principal.getName())).orElseThrow(IllegalArgumentException::new);
+        Map<Integer, TicketCategory> categoriesMap = eventManager.loadTicketCategories(event).stream().collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
+        ZoneId eventZoneId = event.getZoneId();
+
+        Predicate<String> contains = FIXED_FIELDS::contains;
+
+        response.setContentType("text/csv;charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-export.csv");
+
+        try(ServletOutputStream out = response.getOutputStream()) {
+
+            for (int marker : BOM_MARKERS) {//UGLY-MODE_ON: specify that the file is written in UTF-8 with BOM, thanks to alexr http://stackoverflow.com/a/4192897
+                out.write(marker);
+            }
+            CSVWriter writer = new CSVWriter(new OutputStreamWriter(out));
+            writer.writeNext(fields.toArray(new String[fields.size()]));
+
+            eventManager.findAllConfirmedTickets(eventName, principal.getName()).stream().map(t -> {
+                List<String> line = new ArrayList<>();
+                if(fields.contains("ID")) {line.add(t.getUuid());}
+                if(fields.contains("creation")) {line.add(t.getCreation().withZoneSameInstant(eventZoneId).toString());}
+                if(fields.contains("category")) {line.add(categoriesMap.get(t.getCategoryId()).getName());}
+                if(fields.contains("event")) {line.add(eventName);}
+                if(fields.contains("status")) {line.add(t.getStatus().toString());}
+                if(fields.contains("originalPrice")) {line.add(t.getOriginalPrice().toString());}
+                if(fields.contains("paidPrice")) {line.add(t.getPaidPrice().toString());}
+                if(fields.contains("reservationID")) {line.add(t.getTicketsReservationId());}
+                if(fields.contains("Name")) {line.add(t.getFullName());}
+                if(fields.contains("E-Mail")) {line.add(t.getEmail());}
+                if(fields.contains("locked")) {line.add(String.valueOf(t.getLockedAssignment()));}
+                if(fields.contains("Language")) {line.add(String.valueOf(t.getUserLanguage()));}
+
+                //obviously not optimized
+                Map<String, String> additionalValues = ticketFieldRepository.findAllValuesForTicketId(t.getId());
+
+                fields.stream().filter(contains.negate()).forEachOrdered(field -> {
+                    line.add(additionalValues.getOrDefault(field, ""));
+                });
+
+                return line.toArray(new String[line.size()]);
+            }).forEachOrdered(writer::writeNext);
+            writer.flush();
+            out.flush();
+        }
+    }
+
+    @RequestMapping("/events/{eventName}/fields")
+    public List<String> getAllFields(@PathVariable("eventName") String eventName) {
+        List<String> fields = new ArrayList<>();
+        fields.addAll(FIXED_FIELDS);
+        fields.addAll(ticketFieldRepository.findFieldsForEvent(eventName));
+        return fields;
+    }
+
+    @RequestMapping("/events/{eventName}/additional-field")
+    public List<TicketFieldConfigurationAndAllDescriptions> getAllAdditionalField(@PathVariable("eventName") String eventName) {
+        final Map<Integer, List<TicketFieldDescription>> descById = ticketFieldRepository.findDescriptions(eventName).stream().collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
+        return ticketFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
+            .map(field -> new TicketFieldConfigurationAndAllDescriptions(field, descById.getOrDefault(field.getId(), Collections.emptyList())))
+            .collect(Collectors.toList());
+    }
+
+    @RequestMapping(value = "/event/additional-field/templates", method = GET)
+    public List<DynamicFieldTemplate> loadTemplates() {
+        return dynamicFieldTemplateRepository.loadAll();
+    }
+
+    @RequestMapping(value = "/events/{eventName}/additional-field/descriptions", method = POST)
+    public void saveAdditionalFieldDescriptions(@RequestBody Map<String, TicketFieldDescriptionModification> descriptions) {
+        eventManager.updateTicketFieldDescriptions(descriptions);
+    }
+
     @RequestMapping(value = "/events/{eventName}/pending-payments")
     public List<SerializablePair<TicketReservation, OrderSummary>> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {
         return ticketReservationManager.getPendingPayments(eventStatisticsManager.getSingleEventWithStatistics(eventName, principal.getName())).stream()
@@ -172,8 +310,12 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)
-    public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+    public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal,
+                                 Model model, HttpServletRequest request) {
         ticketReservationManager.confirmOfflinePayment(loadEvent(eventName, principal), reservationId);
+        ticketReservationManager.findById(reservationId)
+            .filter(TicketReservation::isDirectAssignmentRequested)
+            .ifPresent(reservation -> ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getUserLanguage(), Optional.empty(), request, model));
         return OK;
     }
 
@@ -217,12 +359,17 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{eventName}/languages", method = GET)
     public List<ContentLanguage> getAvailableLocales(@PathVariable("eventName") String eventName) {
-        return i18nManager.getEventLocales(eventName);
+        return i18nManager.getEventLanguages(eventName);
     }
 
     @RequestMapping(value = "/events-all-languages", method = GET)
     public List<ContentLanguage> getAllLanguages() {
-        return i18nManager.getAllLocales();
+        return i18nManager.getAvailableLanguages();
+    }
+
+    @RequestMapping(value = "/events-supported-languages", method = GET)
+    public List<ContentLanguage> getSupportedLanguages() {
+        return i18nManager.getSupportedLanguages();
     }
 
     @RequestMapping(value = "/events/{eventName}/categories-containing-tickets", method = GET)

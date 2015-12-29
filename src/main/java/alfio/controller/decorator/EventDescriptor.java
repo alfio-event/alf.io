@@ -17,6 +17,7 @@
 package alfio.controller.decorator;
 
 import alfio.model.Event;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.StringUtils;
 
@@ -42,5 +43,10 @@ public class EventDescriptor {
 
     public boolean getVatIncluded() {
         return event.isVatIncluded();
+    }
+
+    @JsonIgnore
+    public Event getEvent() {
+        return event;
     }
 }

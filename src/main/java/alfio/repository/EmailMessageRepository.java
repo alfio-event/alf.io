@@ -28,8 +28,14 @@ import java.util.Optional;
 @QueryRepository
 public interface EmailMessageRepository {
 
-    @Query("select * from email_message where event_id = :eventId and checksum = :checksum and status = :expectedStatus limit 1")
-    EmailMessage findByEventIdAndChecksum(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("expectedStatus") String expectedStatus);
+    /**
+     * This method returns a lightweight instance of EmailMessage. The property "Attachments" is always null.
+     * @param eventId
+     * @param checksum
+     * @return
+     */
+    @Query("select id, event_id, status, recipient, subject, message, null as attachments, checksum, request_ts, sent_ts from email_message where event_id = :eventId and checksum = :checksum limit 1")
+    Optional<EmailMessage> findByEventIdAndChecksum(@Bind("eventId") int eventId, @Bind("checksum") String checksum);
 
     @Query("insert into email_message (event_id, status, recipient, subject, message, attachments, checksum, request_ts) values(:eventId, 'WAITING', :recipient, :subject, :message, :attachments, :checksum, :timestamp)")
     int insert(@Bind("eventId") int eventId,
@@ -41,22 +47,28 @@ public interface EmailMessageRepository {
                @Bind("timestamp") ZonedDateTime requestTimestamp);
 
 
-    @Query("update email_message set status = :status, owner = null where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
+    @Query("update email_message set status = :status where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatus(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("status") String status, @Bind("expectedStatuses") List<String> expectedStatuses);
 
-    @Query("update email_message set status = 'RETRY', owner = :owner, request_ts = :requestTs where status in ('WAITING', 'ERROR', 'RETRY') and request_ts > :expiration")
-    int updateStatusForRetry(@Bind("requestTs") ZonedDateTime now, @Bind("expiration") ZonedDateTime expiration, @Bind("owner") String owner);
+    @Query("update email_message set status = :status where id = :messageId and event_id = :eventId")
+    int updateStatus(@Bind("eventId") int eventId, @Bind("status") String status, @Bind("messageId") int messageId);
 
-    @Query("select id, event_id, status, recipient, subject, message, null as attachments, checksum, request_ts, sent_ts from email_message where owner = :owner and status = 'RETRY'")
-    List<EmailMessage> loadForRetry(@Bind("owner") String owner);
+    @Query("update email_message set status = 'RETRY', request_ts = :requestTs where status in ('WAITING', 'ERROR', 'RETRY') and request_ts > :expiration")
+    int updateStatusForRetry(@Bind("requestTs") ZonedDateTime now, @Bind("expiration") ZonedDateTime expiration);
 
-    @Query("update email_message set status = 'SENT', owner = null, sent_ts = :sentTimestamp where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
+    @Query("select id, event_id, status, recipient, subject, message, attachments, checksum, request_ts, sent_ts from email_message where event_id = :eventId and status = 'WAITING' for update")
+    List<EmailMessage> loadWaitingForProcessing(@Bind("eventId") int eventId);
+
+    @Query("select id, event_id, status, recipient, subject, message, attachments, checksum, request_ts, sent_ts from email_message where event_id = :eventId and status = 'RETRY' for update")
+    List<EmailMessage> loadRetryForProcessing(@Bind("eventId") int eventId);
+
+    @Query("update email_message set status = 'SENT', sent_ts = :sentTimestamp where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatusToSent(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("sentTimestamp") ZonedDateTime sentTimestamp, @Bind("expectedStatuses") List<String> expectedStatuses);
 
     @Query("select * from email_message where event_id = :eventId")
     List<EmailMessage> findByEventId(@Bind("eventId") int eventId);
 
-    @Query("select * from email_message where event_id = :eventId and id = :messageId")
+    @Query("select * from email_message where id = :messageId and event_id = :eventId")
     Optional<EmailMessage> findByEventIdAndMessageId(@Bind("eventId") int eventId, @Bind("messageId") int messageId);
 
 }

@@ -16,6 +16,7 @@
  */
 package alfio.controller;
 
+import alfio.controller.api.support.TicketHelper;
 import alfio.controller.support.TemplateProcessor;
 import alfio.controller.support.TicketDecorator;
 import alfio.manager.EventManager;
@@ -55,6 +56,8 @@ import java.io.OutputStream;
 import java.util.Locale;
 import java.util.Optional;
 
+import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
+
 @Controller
 public class TicketController {
 
@@ -66,6 +69,7 @@ public class TicketController {
     private final EventManager eventManager;
     private final ConfigurationManager configurationManager;
     private final FileUploadManager fileUploadManager;
+    private final TicketHelper ticketHelper;
 
     @Autowired
     public TicketController(OrganizationRepository organizationRepository,
@@ -75,7 +79,8 @@ public class TicketController {
                             NotificationManager notificationManager,
                             EventManager eventManager,
                             ConfigurationManager configurationManager,
-                            FileUploadManager fileUploadManager) {
+                            FileUploadManager fileUploadManager,
+                            TicketHelper ticketHelper) {
         this.organizationRepository = organizationRepository;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -84,6 +89,7 @@ public class TicketController {
         this.eventManager = eventManager;
         this.configurationManager = configurationManager;
         this.fileUploadManager = fileUploadManager;
+        this.ticketHelper = ticketHelper;
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.GET)
@@ -106,7 +112,7 @@ public class TicketController {
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/update", method = RequestMethod.GET)
     public String showTicketForUpdate(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
-            @PathVariable("ticketIdentifier") String ticketIdentifier, Model model) {
+            @PathVariable("ticketIdentifier") String ticketIdentifier, Model model, Locale locale) {
 
         Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
         if(!oData.isPresent()) {
@@ -117,12 +123,13 @@ public class TicketController {
         TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId(), event.getId());
         Organization organization = organizationRepository.getById(event.getOrganizationId());
 
-        boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.allowFreeTicketsCancellation(event, ticketCategory), false);
+        boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticketCategory.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false);
         Ticket ticket = data.getRight();
-        model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view")))//
+        model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view", ticketHelper.findTicketFieldConfigurationAndValue(event.getId(), ticket.getId(), locale))))//
                 .addAttribute("reservation", data.getMiddle())//
                 .addAttribute("event", event)//
                 .addAttribute("ticketCategory", ticketCategory)//
+                .addAttribute("countries", ticketHelper.getLocalizedCountries(locale))
                 .addAttribute("organization", organization)//
                 .addAttribute("pageTitle", "show-ticket.header.title");
 

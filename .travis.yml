@@ -1,13 +1,19 @@
 language: java
+before_script:
+  - psql -c 'create database alfio;' -U postgres
+  - mysql -u root -e 'CREATE DATABASE alfio CHARACTER SET utf8 COLLATE utf8_bin;'
 sudo: false
 install:
     - TERM=dumb ./gradlew -q assemble
-
+matrix:
+    include:
+        - jdk: oraclejdk8
+          env: $PROFILE=-Ddbenv=HSQLDB
+        - jdk: oraclejdk8
+          env: $PROFILE=-Ddbenv=PGSQL-TRAVIS
+        - jdk: oraclejdk8
+          env: $PROFILE=-Ddbenv=MYSQL
 script:
-    - TERM=dumb ./gradlew build jacocoTestReport
-
-jdk:
-    - oraclejdk8
-
+    - TERM=dumb ./gradlew build jacocoTestReport $PROFILE
 after_success:
     ./gradlew coveralls

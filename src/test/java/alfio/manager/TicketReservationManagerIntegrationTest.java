@@ -30,9 +30,12 @@ import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.IntegrationTestUtil;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -78,6 +81,14 @@ public class TicketReservationManagerIntegrationTest {
     private TicketReservationManager ticketReservationManager;
     @Autowired
     private SpecialPriceRepository specialPriceRepository;
+
+    @Autowired
+    private ConfigurationRepository configurationRepository;
+
+    @Before
+    public void ensureConfiguration() {
+        IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
+    }
 
     @Test
     public void testPriceIsOverridden() {
@@ -142,7 +153,7 @@ public class TicketReservationManagerIntegrationTest {
         assertEquals(0, ticketReservationManager.getPendingPayments(event).size());
 
         PaymentResult confirm = ticketReservationManager.confirm(null, event.getEvent(), reservationId, "email@example.com", "full name", Locale.ENGLISH, "billing address",
-            totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
+            totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false);
 
 
         assertTrue(confirm.isSuccessful());
@@ -162,10 +173,10 @@ public class TicketReservationManagerIntegrationTest {
         trForDelete.setAmount(1);
         trForDelete.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification modForDelete = new TicketReservationWithOptionalCodeModification(trForDelete, Optional.<SpecialPrice>empty());
-        String reservationId2 = ticketReservationManager.createTicketReservation(event.getId(), Arrays.asList(modForDelete), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
+        String reservationId2 = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(modForDelete), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
 
         PaymentResult confirm2 = ticketReservationManager.confirm(null, event.getEvent(), reservationId2, "email@example.com", "full name", Locale.ENGLISH, "billing address",
-            totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
+            totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false);
 
         assertTrue(ticketReservationManager.findById(reservationId2).isPresent());
 

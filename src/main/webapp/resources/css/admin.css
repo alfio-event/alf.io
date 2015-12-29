@@ -173,3 +173,7 @@ td.cell-wrap {
 .ngf-hide {
     display:none !important
 }
+
+.system-setting {
+    color: red;
+}

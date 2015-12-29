@@ -25,6 +25,7 @@ public class UserModification {
 
     private final Integer id;
     private final int organizationId;
+    private final String role;
     private final String username;
     private final String firstName;
     private final String lastName;
@@ -33,12 +34,14 @@ public class UserModification {
     @JsonCreator
     public UserModification(@JsonProperty("id") Integer id,
                             @JsonProperty("organizationId") int organizationId,
+                            @JsonProperty("role") String role,
                             @JsonProperty("username") String username,
                             @JsonProperty("firstName") String firstName,
                             @JsonProperty("lastName") String lastName,
                             @JsonProperty("emailAddress") String emailAddress) {
         this.id = id;
         this.organizationId = organizationId;
+        this.role = role;
         this.username = username;
         this.firstName = firstName;
         this.lastName = lastName;

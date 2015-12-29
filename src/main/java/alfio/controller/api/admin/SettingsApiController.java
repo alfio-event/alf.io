@@ -66,8 +66,7 @@ public class SettingsApiController {
 
     @RequestMapping(value = "/configuration/update-bulk", method = POST)
     public boolean updateConfiguration(@RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input) {
-        Objects.requireNonNull(input);
-        List<ConfigurationModification> list = input.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        List<ConfigurationModification> list = Objects.requireNonNull(input).values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         configurationManager.saveAllSystemConfiguration(list);
         return true;
     }

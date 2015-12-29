@@ -30,11 +30,12 @@ import alfio.model.*;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
+import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.EventUtil;
-import alfio.util.OptionalWrapper;
 import alfio.util.ValidationResult;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -115,7 +116,7 @@ public class EventController {
             model.addAttribute("event", null);
 
             model.addAttribute("showAvailableLanguagesInPageTop", true);
-            model.addAttribute("availableLanguages", i18nManager.getAllLocales());
+            model.addAttribute("availableLanguages", i18nManager.getSupportedLanguages());
             return "/event/event-list";
         }
     }
@@ -196,13 +197,13 @@ public class EventController {
         List<SaleableTicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
                 .filter((c) -> !c.isAccessRestricted() || (specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId()))
                 .map((m) -> new SaleableTicketCategory(m, ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(m.getId(), locale.getLanguage()).orElse(""),
-                    now, event, ticketReservationManager.countAvailableTickets(event, m), configurationManager.getIntConfigValue(Configuration.maxAmountOfTicketsByReservation(event.getOrganizationId(), event.getId(), m.getId()), 5), promoCodeDiscount))
+                    now, event, ticketReservationManager.countAvailableTickets(event, m), configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5), promoCodeDiscount))
                 .collect(Collectors.toList());
         //
 
 
         LocationDescriptor ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()),
-                configurationManager.getStringConfigValue(Configuration.mapsClientApiKey()));
+                configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAPS_CLIENT_API_KEY)));
         
         final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
                 promoCodeRepository.countByEventId(event.getId()) > 0;
@@ -248,7 +249,8 @@ public class EventController {
         if("google".equals(calendarType)) {
             response.sendRedirect(ev.getGoogleCalendarUrl(description));
         } else {
-            Optional<byte[]> ical = ev.getIcal(description);
+            Organization organization = organizationRepository.getById(ev.getOrganizationId());
+            Optional<byte[]> ical = ev.getIcal(description, organization.getName(), organization.getEmail());
             //meh, checked exceptions don't work well with Function & co :(
             if(ical.isPresent()) {
                 response.setContentType("text/calendar");

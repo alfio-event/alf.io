@@ -1,5 +1,39 @@
 # Change Log
 
+## [1.6](https://github.com/exteso/alf.io/tree/1.6) (2015-11-22)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.5.2...1.6)
+
+**Implemented enhancements:**
+
+- REST APIs [\#86](https://github.com/exteso/alf.io/issues/86)
+- Create link to external events [\#85](https://github.com/exteso/alf.io/issues/85)
+- GUI support for multitenancy [\#62](https://github.com/exteso/alf.io/issues/62)
+- support generic input/textarea field when assigning a ticket [\#46](https://github.com/exteso/alf.io/issues/46)
+- lock the ticket during check-in process [\#89](https://github.com/exteso/alf.io/issues/89)
+- Add "express checkout" option [\#55](https://github.com/exteso/alf.io/issues/55)
+
+**Fixed bugs:**
+
+- PostSQL error [\#82](https://github.com/exteso/alf.io/issues/82)
+- Cant load scan page video source [\#79](https://github.com/exteso/alf.io/issues/79)
+
+
+## [1.5.2](https://github.com/exteso/alf.io/tree/1.5.2) (2015-10-20)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.5.1...1.5.2)
+
+**Closed issues:**
+
+- Language doesn't transfer when switching page. [\#80](https://github.com/exteso/alf.io/issues/80)
+- Add new language [\#78](https://github.com/exteso/alf.io/issues/78)
+- Cant insert address [\#76](https://github.com/exteso/alf.io/issues/76)
+
+**Merged pull requests:**
+
+- Add dutch language [\#83](https://github.com/exteso/alf.io/pull/83) ([mg-1999](https://github.com/mg-1999))
+
+## [1.5.1](https://github.com/exteso/alf.io/tree/1.5.1) (2015-09-22)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.5...1.5.1)
+
 ## [1.5](https://github.com/exteso/alf.io/tree/1.5) (2015-09-16)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.4.1...1.5)
 
@@ -15,11 +49,6 @@
 - support waiting queue [\#39](https://github.com/exteso/alf.io/issues/39)
 - support multi language event and ticket category description [\#38](https://github.com/exteso/alf.io/issues/38)
 - Add event name [\#35](https://github.com/exteso/alf.io/issues/35)
-- add mailchimp integration [\#36](https://github.com/exteso/alf.io/issues/36)
-- Export ticket details [\#42](https://github.com/exteso/alf.io/issues/42)
-- add quartz scheduler for cluster aware job [\#73](https://github.com/exteso/alf.io/issues/73)
-- Cookie-law compliance [\#67](https://github.com/exteso/alf.io/issues/67)
-- support multi tenancy [\#56](https://github.com/exteso/alf.io/issues/56)
 
 **Closed issues:**
 
@@ -28,7 +57,20 @@
 - Bug creating new organizations [\#70](https://github.com/exteso/alf.io/issues/70)
 - Error while doing the environment setup [\#57](https://github.com/exteso/alf.io/issues/57)
 - Create settings.properties [\#52](https://github.com/exteso/alf.io/issues/52)
+- Export ticket details [\#42](https://github.com/exteso/alf.io/issues/42)
+- add quartz scheduler for cluster aware job [\#73](https://github.com/exteso/alf.io/issues/73)
+- translations [\#68](https://github.com/exteso/alf.io/issues/68)
+- Cookie-law compliance [\#67](https://github.com/exteso/alf.io/issues/67)
 - GUI UX/UI redesign [\#66](https://github.com/exteso/alf.io/issues/66)
+- support multi tenancy [\#56](https://github.com/exteso/alf.io/issues/56)
+- add mailchimp integration [\#36](https://github.com/exteso/alf.io/issues/36)
+
+**Merged pull requests:**
+
+- Improved translations [\#75](https://github.com/exteso/alf.io/pull/75) ([patbaumgartner](https://github.com/patbaumgartner))
+- Ajusted translation from SIE to DU, translated  new text blocks [\#69](https://github.com/exteso/alf.io/pull/69) ([patbaumgartner](https://github.com/patbaumgartner))
+- German translation [\#64](https://github.com/exteso/alf.io/pull/64) ([patbaumgartner](https://github.com/patbaumgartner))
+- 1.3 maintenance [\#49](https://github.com/exteso/alf.io/pull/49) ([apolci](https://github.com/apolci))
 
 ## [1.4.1](https://github.com/exteso/alf.io/tree/1.4.1) (2015-04-07)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.4...1.4.1)
@@ -78,7 +120,11 @@
 
 - export attendees' data [\#37](https://github.com/exteso/alf.io/issues/37)
 - send invitation e-mail with reserved code [\#34](https://github.com/exteso/alf.io/issues/34)
-- Update category name doesn't work [\#32](https://github.com/exteso/alf.io/issues/32)
+- REST API for checkin app [\#25](https://github.com/exteso/alf.io/issues/25)
+
+**Merged pull requests:**
+
+- Added gradle support. [\#33](https://github.com/exteso/alf.io/pull/33) ([aalmiray](https://github.com/aalmiray))
 
 ## [alfio-1.3-beta1](https://github.com/exteso/alf.io/tree/alfio-1.3-beta1) (2015-01-18)
 [Full Changelog](https://github.com/exteso/alf.io/compare/alfio-1.2...alfio-1.3-beta1)
@@ -86,6 +132,10 @@
 **Fixed bugs:**
 
 - Validation is not triggered on page load [\#10](https://github.com/exteso/alf.io/issues/10)
+
+**Closed issues:**
+
+- Update category name doesn't work [\#32](https://github.com/exteso/alf.io/issues/32)
 
 ## [alfio-1.2](https://github.com/exteso/alf.io/tree/alfio-1.2) (2015-01-13)
 [Full Changelog](https://github.com/exteso/alf.io/compare/alfio-1.1...alfio-1.2)
@@ -117,6 +167,7 @@
 - complete CSP headers [\#28](https://github.com/exteso/alf.io/issues/28)
 - split process URLs [\#27](https://github.com/exteso/alf.io/issues/27)
 - Support asynchronous payment flows [\#23](https://github.com/exteso/alf.io/issues/23)
+- Generate accessible ticket PDF [\#2](https://github.com/exteso/alf.io/issues/2)
 
 ## [alfio-1.0](https://github.com/exteso/alf.io/tree/alfio-1.0) (2014-12-14)
 [Full Changelog](https://github.com/exteso/alf.io/compare/v1.0-pre-rename-v5...alfio-1.0)
@@ -134,6 +185,7 @@
 **Closed issues:**
 
 - check the .sql creation script and add the missing index [\#20](https://github.com/exteso/alf.io/issues/20)
+- Create admin area [\#1](https://github.com/exteso/alf.io/issues/1)
 
 ## [v1.0-pre-rename-v5](https://github.com/exteso/alf.io/tree/v1.0-pre-rename-v5) (2014-11-14)
 [Full Changelog](https://github.com/exteso/alf.io/compare/v1.0-pre-rename-v4...v1.0-pre-rename-v5)
@@ -148,6 +200,17 @@
 [Full Changelog](https://github.com/exteso/alf.io/compare/v1.0-pre-rename...v1.0-pre-rename-v2)
 
 ## [v1.0-pre-rename](https://github.com/exteso/alf.io/tree/v1.0-pre-rename) (2014-11-09)
+**Implemented enhancements:**
+
+- allow free event creation [\#5](https://github.com/exteso/alf.io/issues/5)
+
+**Closed issues:**
+
+- Handle correctly the timezone of a event [\#8](https://github.com/exteso/alf.io/issues/8)
+- https handling [\#7](https://github.com/exteso/alf.io/issues/7)
+- configure payment methods [\#4](https://github.com/exteso/alf.io/issues/4)
+- integrate stripe.com [\#3](https://github.com/exteso/alf.io/issues/3)
+
 
 
 \* *This Change Log was automatically generated by [github_changelog_generator](https://github.com/skywinder/Github-Changelog-Generator)*

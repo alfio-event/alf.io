@@ -26,9 +26,11 @@ import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.modification.*;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
+import alfio.util.Json;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -42,6 +44,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -78,6 +81,7 @@ public class EventManager {
     private final NamedParameterJdbcTemplate jdbc;
     private final ConfigurationManager configurationManager;
     private final PluginManager pluginManager;
+    private final TicketFieldRepository ticketFieldRepository;
 
     @Autowired
     public EventManager(UserManager userManager,
@@ -92,7 +96,8 @@ public class EventManager {
                         LocationManager locationManager,
                         NamedParameterJdbcTemplate jdbc,
                         ConfigurationManager configurationManager,
-                        PluginManager pluginManager) {
+                        PluginManager pluginManager,
+                        TicketFieldRepository ticketFieldRepository) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -106,6 +111,7 @@ public class EventManager {
         this.jdbc = jdbc;
         this.configurationManager = configurationManager;
         this.pluginManager = pluginManager;
+        this.ticketFieldRepository = ticketFieldRepository;
     }
 
     public Event getSingleEvent(String eventName, String username) {
@@ -153,6 +159,7 @@ public class EventManager {
         int eventId = insertEvent(em);
         Event event = eventRepository.findById(eventId);
         createOrUpdateEventDescription(eventId, em);
+        createAdditionalFields(eventId, em);
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(eventId, event);
         initPlugins(event);
@@ -177,14 +184,27 @@ public class EventManager {
         }));
     }
 
-    public void updateEventHeader(int eventId, EventModification em, String username) {
-        final Event original = eventRepository.findById(eventId);
+    private void createAdditionalFields(int eventId, EventModification em) {
+        if (!CollectionUtils.isEmpty(em.getTicketFields())) {
+           em.getTicketFields().forEach(f -> {
+               List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValues()).orElseGet(Collections::emptyList).stream().map(EventModification.RestrictedValue::getValue).collect(Collectors.toList());
+               String serializedRestrictedValues = "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
+               int configurationId = ticketFieldRepository.insertConfiguration(eventId, f.getName(), f.getOrder(), f.getType(), serializedRestrictedValues, f.getMaxLength(), f.getMinLength(), f.isRequired()).getKey();
+               f.getDescription().forEach((locale, value) -> {
+                   ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value));
+               });
+           });
+        }
+    }
+
+    public void updateEventHeader(Event original, EventModification em, String username) {
         checkOwnership(original, username, em.getOrganizationId());
+        int eventId = original.getId();
         final GeolocationResult geolocation = geolocate(em.getLocation());
         final ZoneId zoneId = geolocation.getZoneId();
         final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);
         final ZonedDateTime end = em.getEnd().toZonedDateTime(zoneId);
-        eventRepository.updateHeader(eventId, em.getDisplayName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(),
+        eventRepository.updateHeader(eventId, em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.getTermsAndConditionsUrl(),
             em.getImageUrl(), em.getFileBlobId(), em.getLocation(), geolocation.getLatitude(), geolocation.getLongitude(),
             begin, end, geolocation.getTimeZone(), em.getOrganizationId(), em.getLocales());
 
@@ -196,9 +216,9 @@ public class EventManager {
         }
     }
 
-    public void updateEventPrices(int eventId, EventModification em, String username) {
-        final Event original = eventRepository.findById(eventId);
+    public void updateEventPrices(Event original, EventModification em, String username) {
         checkOwnership(original, username, em.getOrganizationId());
+        int eventId = original.getId();
         final EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(original);
         int seatsDifference = em.getAvailableSeats() - original.getAvailableSeats();
         if(seatsDifference < 0) {
@@ -516,14 +536,14 @@ public class EventManager {
 
     private int insertEvent(EventModification em) {
         String paymentProxies = collectPaymentProxies(em);
-        int actualPrice = evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge());
-        BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
+        int actualPrice = em.isInternal() ? evaluatePrice(em.getPriceInCents(), em.getVat(), em.isVatIncluded(), em.isFreeOfCharge()) : 0;
+        BigDecimal vat = !em.isInternal() || em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVat();
         String privateKey = UUID.randomUUID().toString();
         final GeolocationResult result = geolocate(em.getLocation());
-        return eventRepository.insert(em.getShortName(), em.getDisplayName(), em.getWebsiteUrl(), em.getTermsAndConditionsUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(),
-                result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()), em.getEnd().toZonedDateTime(result.getZoneId()),
-                result.getTimeZone(), actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies,
-                privateKey, em.getOrganizationId(), em.getLocales()).getKey();
+        return eventRepository.insert(em.getShortName(), em.getEventType(), em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.isInternal() ? em.getTermsAndConditionsUrl() : "",
+            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()),
+            em.getEnd().toZonedDateTime(result.getZoneId()), result.getTimeZone(), actualPrice, em.getCurrency(), em.getAvailableSeats(), em.isInternal() && em.isVatIncluded(),
+            vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales()).getKey();
     }
 
     private String collectPaymentProxies(EventModification em) {
@@ -560,7 +580,7 @@ public class EventManager {
     }
 
     public String getEventUrl(Event event) {
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.baseUrl(event)), "/") + "/event/" + event.getShortName() + "/";
+        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/") + "/event/" + event.getShortName() + "/";
     }
 
     public List<Ticket> findAllConfirmedTickets(String eventName, String username) {
@@ -577,6 +597,15 @@ public class EventManager {
 
     public Function<Ticket, Boolean> checkTicketCancellationPrerequisites() {
         return CategoryEvaluator.ticketCancellationAvailabilityChecker(ticketCategoryRepository);
+    }
+
+    public void updateTicketFieldDescriptions(Map<String, TicketFieldDescriptionModification> descriptions) {
+        descriptions.forEach((locale, value) -> {
+            String description = Json.GSON.toJson(value.getDescription());
+            if(0 == ticketFieldRepository.updateDescription(value.getTicketFieldConfigurationId(), locale, description)) {
+                ticketFieldRepository.insertDescription(value.getTicketFieldConfigurationId(), locale, description);
+            }
+        });
     }
 
     @Data

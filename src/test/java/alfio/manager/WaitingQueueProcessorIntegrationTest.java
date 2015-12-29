@@ -31,9 +31,11 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.WaitingQueueRepository;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.test.util.IntegrationTestUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -92,8 +94,12 @@ public class WaitingQueueProcessorIntegrationTest {
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
 
+    @Autowired
+    private ConfigurationRepository configurationRepository;
+
     @Before
     public void setup() {
+        IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_PRE_REGISTRATION, "true");
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
         initAdminUser(userRepository, authorityRepository);
@@ -145,9 +151,14 @@ public class WaitingQueueProcessorIntegrationTest {
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
         List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
-        TicketCategory bounded = ticketCategories.get(0);
-        TicketCategory unbounded = ticketCategories.get(1);
-        List<Integer> reserved = ticketRepository.selectFreeTicketsForPreReservation(event.getId(), 20);
+        TicketCategory bounded = ticketCategories.stream().filter(t->t.getName().equals("default")).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory unbounded = ticketCategories.stream().filter(t->t.getName().equals("unbounded")).findFirst().orElseThrow(IllegalStateException::new);
+        List<Integer> boundedReserved = ticketRepository.selectFreeTicketsForPreReservation(event.getId(), 20, bounded.getId());
+        assertEquals(19, boundedReserved.size());
+        List<Integer> unboundedReserved = ticketRepository.selectNotAllocatedFreeTicketsForPreReservation(event.getId(), 20);
+        assertEquals(1, unboundedReserved.size());
+        List<Integer> reserved = new ArrayList<>(boundedReserved);
+        reserved.addAll(unboundedReserved);
         String reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(reservationId, DateUtils.addHours(new Date(), 1), null, Locale.ITALIAN.getLanguage());
         ticketRepository.reserveTickets(reservationId, reserved.subList(0, 19), bounded.getId(), Locale.ITALIAN.getLanguage());

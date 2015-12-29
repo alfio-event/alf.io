@@ -18,10 +18,10 @@ package alfio.repository;
 
 import alfio.model.TicketCategory;
 import ch.digitalfondue.npjt.*;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface TicketCategoryRepository {
@@ -40,6 +40,9 @@ public interface TicketCategoryRepository {
 
     @Query("select * from ticket_category where id = :id and event_id = :eventId and tc_status = 'ACTIVE'")
     TicketCategory getById(@Bind("id") int id, @Bind("eventId") int eventId);
+
+    @Query("select * from ticket_category where id = :id and tc_status = 'ACTIVE'")
+    Optional<TicketCategory> getById(@Bind("id") int id);
 
     @Query("select count(*) from ticket_category where event_id = :eventId and tc_status = 'ACTIVE' and bounded = false")
     Integer countUnboundedCategoriesByEventId(@Bind("eventId") int eventId);
