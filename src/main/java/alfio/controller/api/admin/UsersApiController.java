@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.config.WebSecurityConfig;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.modification.UserModification;
@@ -26,11 +27,12 @@ import alfio.model.user.UserWithPassword;
 import alfio.util.ImageUtil;
 import alfio.util.Json;
 import alfio.util.ValidationResult;
-import lombok.experimental.Delegate;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -68,6 +70,22 @@ public class UsersApiController {
     @RequestMapping(value = "/roles", method = GET)
     public Collection<RoleDescriptor> getAllRoles(Principal principal) {
         return userManager.getAvailableRoles(principal.getName()).stream().map(RoleDescriptor::new).collect(Collectors.toList());
+    }
+
+    /**
+     * This endpoint is intended only for external use. If a user is registered as "sponsor", then the answer will be "SPONSOR", otherwise "OPERATOR".
+     * @return "SPONSOR" or "OPERATOR", depending on current user's privileges.
+     */
+    @RequestMapping(value = "/user-type", method = GET)
+    public String getLoggedUserType() {
+        return SecurityContextHolder.getContext()
+            .getAuthentication()
+            .getAuthorities()
+            .stream()
+            .map(GrantedAuthority::getAuthority)
+            .filter(WebSecurityConfig.SPONSOR::equals)
+            .findFirst()
+            .orElse(WebSecurityConfig.OPERATOR);
     }
 
     @RequestMapping(value = "/organizations", method = GET)
