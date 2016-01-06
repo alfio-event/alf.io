@@ -28,6 +28,7 @@ import alfio.util.ImageUtil;
 import alfio.util.Json;
 import alfio.util.ValidationResult;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -83,6 +84,7 @@ public class UsersApiController {
             .getAuthorities()
             .stream()
             .map(GrantedAuthority::getAuthority)
+            .map(s -> StringUtils.substringAfter(s, "ROLE_"))
             .filter(WebSecurityConfig.SPONSOR::equals)
             .findFirst()
             .orElse(WebSecurityConfig.OPERATOR);
