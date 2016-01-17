@@ -16,6 +16,10 @@
  */
 package alfio.manager;
 
+import alfio.manager.support.CheckInStatus;
+import alfio.manager.support.DefaultCheckInResult;
+import alfio.manager.support.OnSitePaymentResult;
+import alfio.manager.support.TicketAndCheckInResult;
 import alfio.model.Event;
 import alfio.model.FullTicketInfo;
 import alfio.model.Ticket;
@@ -23,7 +27,6 @@ import alfio.model.Ticket.TicketStatus;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
 import alfio.util.MonetaryUtil;
-import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -32,11 +35,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-import static alfio.manager.CheckInManager.CheckInStatus.*;
+import static alfio.manager.support.CheckInStatus.*;
 import static alfio.util.OptionalWrapper.optionally;
 
 @Component
@@ -44,9 +46,6 @@ import static alfio.util.OptionalWrapper.optionally;
 @Log4j2
 public class CheckInManager {
 
-    public enum CheckInStatus {
-        EVENT_NOT_FOUND, TICKET_NOT_FOUND, EMPTY_TICKET_CODE, INVALID_TICKET_CODE, INVALID_TICKET_STATE, ALREADY_CHECK_IN, MUST_PAY, OK_READY_TO_BE_CHECKED_IN, SUCCESS
-    }
     private final TicketRepository ticketRepository;
     private final EventRepository eventRepository;
 
@@ -169,30 +168,6 @@ public class CheckInManager {
         }
 
         return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(OK_READY_TO_BE_CHECKED_IN, "Ready to be checked in"));
-    }
-
-    @Data
-    public static class TicketAndCheckInResult {
-        private final Ticket ticket;
-        private final CheckInResult result;
-    }
-
-    @Data
-    public static class DefaultCheckInResult implements CheckInResult {
-        private final CheckInStatus status;
-        private final String message;
-    }
-
-    @Data
-    public static class OnSitePaymentResult implements CheckInResult {
-        private final CheckInStatus status;
-        private final String message;
-        private final BigDecimal dueAmount;
-        private final String currency;
-    }
-
-    public interface CheckInResult {
-        CheckInStatus getStatus();
     }
 
 }

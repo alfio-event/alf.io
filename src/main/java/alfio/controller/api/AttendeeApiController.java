@@ -17,6 +17,10 @@
 package alfio.controller.api;
 
 import alfio.manager.AttendeeManager;
+import alfio.manager.support.TicketAndCheckInResult;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -24,7 +28,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.ZonedDateTime;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/attendees")
@@ -52,8 +56,20 @@ public class AttendeeApiController {
 
 
     @RequestMapping(value = "/sponsor-scan", method = RequestMethod.POST)
-    public ResponseEntity<ZonedDateTime> scanBadge(@RequestParam("eventId") int eventId, @RequestParam("ticketIdentifier") String ticketIdentifier) {
-        return attendeeManager.registerSponsorScan(eventId, ticketIdentifier).map(z -> new ResponseEntity<>(z, HttpStatus.CONFLICT)).orElseGet(() -> new ResponseEntity<>(HttpStatus.OK));
+    public ResponseEntity<TicketAndCheckInResult> scanBadge(@RequestBody SponsorScanRequest request, Principal principal) {
+        return new ResponseEntity<>(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, principal.getName()), HttpStatus.OK);
+    }
+
+    @Getter
+    public static class SponsorScanRequest {
+        private final String eventName;
+        private final String ticketIdentifier;
+
+        @JsonCreator
+        public SponsorScanRequest(@JsonProperty("eventName") String eventName, @JsonProperty("ticketIdentifier") String ticketIdentifier) {
+            this.eventName = eventName;
+            this.ticketIdentifier = ticketIdentifier;
+        }
     }
 
 }

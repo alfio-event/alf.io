@@ -17,7 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.CheckInManager;
-import alfio.manager.CheckInManager.TicketAndCheckInResult;
+import alfio.manager.support.TicketAndCheckInResult;
 import alfio.model.FullTicketInfo;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
