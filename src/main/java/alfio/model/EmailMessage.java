@@ -41,6 +41,7 @@ public class EmailMessage implements Comparable<EmailMessage> {
     private final String checksum;
     private final ZonedDateTime requestTimestamp;
     private final ZonedDateTime sentTimestamp;
+    private final int attempts;
 
     public EmailMessage(@Column("id") int id,
                         @Column("event_id") int eventId,
@@ -51,7 +52,8 @@ public class EmailMessage implements Comparable<EmailMessage> {
                         @Column("attachments") String attachments,
                         @Column("checksum") String checksum,
                         @Column("request_ts") ZonedDateTime requestTimestamp,
-                        @Column("sent_ts") ZonedDateTime sentTimestamp) {
+                        @Column("sent_ts") ZonedDateTime sentTimestamp,
+                        @Column("attempts") int attempts) {
         this.id = id;
         this.eventId = eventId;
         this.requestTimestamp = requestTimestamp;
@@ -62,6 +64,7 @@ public class EmailMessage implements Comparable<EmailMessage> {
         this.message = message;
         this.attachments = attachments;
         this.checksum = checksum;
+        this.attempts = attempts;
     }
 
     @Override
