@@ -33,7 +33,7 @@ import com.google.gson.*;
 import com.lowagie.text.DocumentException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.codec.Hex;
@@ -136,9 +136,10 @@ public class NotificationManager {
     }
 
     void sendWaitingMessages() {
+        Date now = new Date();
         eventRepository.findAllActiveIds(ZonedDateTime.now(UTC))
             .stream()
-            .flatMap(id -> emailMessageRepository.loadIdsWaitingForProcessing(id).stream())
+            .flatMap(id -> emailMessageRepository.loadIdsWaitingForProcessing(id, now).stream())
             .distinct()
             .forEach(this::processMessage);
     }
@@ -163,7 +164,7 @@ public class NotificationManager {
                 log.debug("no messages have been updated on DB for the following criteria: eventId: {}, checksum: {}", message.getEventId(), message.getChecksum());
             }
         } catch(Exception e) {
-            tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(message.getId(), RETRY.name(), message.getAttempts() + 1, Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
+            tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(message.getId(), RETRY.name(), DateUtils.addMinutes(new Date(), message.getAttempts() + 1), message.getAttempts() + 1, Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
             log.warn("could not send message: ",e);
         }
     }

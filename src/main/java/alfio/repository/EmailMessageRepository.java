@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,10 +57,12 @@ public interface EmailMessageRepository {
     @Query("update email_message set status = :status, attempts = :attempts where id = :messageId and status in (:expectedStatuses) ")
     int updateStatusAndAttempts(@Bind("messageId") int messageId, @Bind("status") String status, @Bind("attempts") int attempts, @Bind("expectedStatuses") List<String> expectedStatuses);
 
+    @Query("update email_message set status = :status, attempts = :attempts, request_ts = :nextDate where id = :messageId and status in (:expectedStatuses) ")
+    int updateStatusAndAttempts(@Bind("messageId") int messageId, @Bind("status") String status, @Bind("nextDate") Date date, @Bind("attempts") int attempts, @Bind("expectedStatuses") List<String> expectedStatuses);
 
-    //FIXME add date as a filtering condition
-    @Query("select id from email_message where event_id = :eventId and (status = 'WAITING' or status = 'RETRY') for update")
-    List<Integer> loadIdsWaitingForProcessing(@Bind("eventId") int eventId);
+
+    @Query("select id from email_message where event_id = :eventId and (status = 'WAITING' or status = 'RETRY') and request_ts <= :date for update")
+    List<Integer> loadIdsWaitingForProcessing(@Bind("eventId") int eventId, @Bind("date") Date date);
 
     @Query("update email_message set status = 'SENT', sent_ts = :sentTimestamp where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatusToSent(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("sentTimestamp") ZonedDateTime sentTimestamp, @Bind("expectedStatuses") List<String> expectedStatuses);
