@@ -16,3 +16,8 @@
 --
 
 alter table email_message add column attempts integer DEFAULT 0 NOT null;
+
+-- remove old job
+delete from qrtz_simple_triggers where trigger_name = 'EnqueueNotSentEmail';
+delete from qrtz_triggers where trigger_name = 'EnqueueNotSentEmail';
+delete from qrtz_job_details where job_name = 'EnqueueNotSentEmail';
