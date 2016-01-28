@@ -4,6 +4,10 @@
      <exclude-subsystems>
         <subsystem name="logging" />
         <subsystem name="weld" />
+
+         <subsystem name="bean-validation" />
+         <subsystem name="security" />
+         <subsystem name="security-manager" />
          <subsystem name="jaxrs" />
          <subsystem name="jdr" />
          <subsystem name="pojo" />
@@ -12,7 +16,8 @@
          <subsystem name="ejb3" />
          <subsystem name="webservices" />
          <subsystem name="jpa" />
-         <subsystem name="ee" />
-    </exclude-subsystems>
+         <subsystem name="request-controller" />
+         <subsystem name="resource-adapters" />
+     </exclude-subsystems>
   </deployment>
 </jboss-deployment-structure>

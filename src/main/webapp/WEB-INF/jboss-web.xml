@@ -1,0 +1,4 @@
+<jboss-web version="8.0" xmlns="http://www.jboss.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.jboss.org/j2ee/schema/jboss-web_8_0.xsd" >
+    <default-encoding>UTF-8</default-encoding>
+</jboss-web>
