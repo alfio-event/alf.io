@@ -3,6 +3,11 @@
      <exclude-subsystems>
         <subsystem name="logging" />
         <subsystem name="weld" />
+         <subsystem name="jaxrs" />
+         <subsystem name="jdr" />
+         <subsystem name="pojo" />
+         <subsystem name="sar" />
+         <subsystem name="jsf" />
     </exclude-subsystems>
   </deployment>
 </jboss-deployment-structure>
