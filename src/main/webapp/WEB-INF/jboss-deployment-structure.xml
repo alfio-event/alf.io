@@ -12,6 +12,9 @@
          <subsystem name="ejb3" />
          <subsystem name="webservices" />
          <subsystem name="jpa" />
+         <subsystem name="ee" />
+         <subsystem name="request-controller" />
+         <subsystem name="resource-adapters" />
     </exclude-subsystems>
   </deployment>
 </jboss-deployment-structure>
