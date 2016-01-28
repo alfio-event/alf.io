@@ -1,5 +1,6 @@
 <jboss-deployment-structure>
   <deployment>
+
      <exclude-subsystems>
         <subsystem name="logging" />
         <subsystem name="weld" />
@@ -8,6 +9,9 @@
          <subsystem name="pojo" />
          <subsystem name="sar" />
          <subsystem name="jsf" />
+         <subsystem name="ejb3" />
+         <subsystem name="webservices" />
+         <subsystem name="jpa" />
     </exclude-subsystems>
   </deployment>
 </jboss-deployment-structure>
