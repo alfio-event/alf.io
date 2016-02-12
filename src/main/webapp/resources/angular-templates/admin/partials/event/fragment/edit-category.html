@@ -15,7 +15,7 @@
                         Fixed
                     </label>
                 </div>
-                <div class="radio-inline">
+                <div class="radio-inline" data-ng-if="!ticketCategory.tokenGenerationRequested">
                     <label>
                         <input type="radio" name="{{buildPrefix($index, 'bounded')}}" data-ng-model="ticketCategory.bounded" data-ng-value="false" required="">
                         Dynamic
@@ -35,7 +35,7 @@
                 </div>
                 <div class="radio-inline" data-ng-if="ticketCategory.bounded">
                     <label>
-                        <input type="radio" name="{{buildPrefix($index, 'tokenGenerationRequested')}}" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="true" required="">
+                        <input type="radio" name="{{buildPrefix($index, 'tokenGenerationRequested')}}" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-click="ticketCategory.bounded = true" data-ng-value="true" required="">
                         Restricted
                     </label>
                 </div>
