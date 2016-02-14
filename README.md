@@ -43,7 +43,7 @@ please be aware that since this file could contain sensitive information (such a
 
 
 ## Docker images
-Alf.io is also offered has a 3 tier application using 3 docker images:
+Alf.io is also offered as a 3 tier application using 3 docker images:
 
  * postgres --> docker official image for PostgreSQL database
  * exteso/alfio-web --> application runtime. Docker image is generate from this project (see below). 
