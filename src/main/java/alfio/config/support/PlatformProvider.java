@@ -29,7 +29,7 @@ import static java.util.Optional.ofNullable;
  * <p>
  * Supported:
  * - Openshift : pgsql only
- * - Cloud Foundry: mysql (injected)
+ * - Cloud Foundry: postgres, mysql (injected)
  * - Heroku
  * - local use with system properties
  */
@@ -84,14 +84,14 @@ public enum PlatformProvider {
     /**
      * Cloud Foundry configuration.
      * see https://docs.cloudfoundry.org/buildpacks/java/spring-service-bindings.html
-     * <p>
-     * When we identify running on CF, we set the driver classname and dialect to MYSQL.
+     * We assume that either the "MySql" service or "ElephantSql" have already been bound to the application.
      * Anyway, since we use Spring, the Cloud Foundry engine should replace the "DataSource" bean with the right one.
      */
-    CF_MYSQL {
+    CLOUD_FOUNDRY {
+
         @Override
         public String getDriveClassName(Environment env) {
-            return MYSQL_DRIVER;
+            return isMySql(env) ? MYSQL_DRIVER : POSTGRESQL_DRIVER;
         }
 
         @Override
@@ -114,12 +114,12 @@ public enum PlatformProvider {
 
         @Override
         public String getDialect(Environment env) {
-            return MYSQL_DIALECT;
+            return isMySql(env) ? MYSQL : PGSQL;
         }
 
         @Override
         public boolean isHosting(Environment env) {
-            //check if json object for mysql is returned
+            //check if json object for services is returned
             //example payload
             //{
             //"staging_env_json": {},
@@ -129,7 +129,11 @@ public enum PlatformProvider {
             //        "p-mysql": [
             //        {
             //            "name": "alfio-db",
-            return ofNullable(env.getProperty("VCAP_SERVICES")).map(props -> props.indexOf("mysql://") >= 0).orElse(false);
+            return env.getProperty("VCAP_SERVICES") != null;
+        }
+
+        private boolean isMySql(Environment env) {
+            return ofNullable(env.getProperty("VCAP_SERVICES")).map(props -> props.contains("mysql://")).orElse(false);
         }
     },
 
@@ -226,7 +230,7 @@ public enum PlatformProvider {
     public static final String PGSQL = "PGSQL";
 
     private static final String MYSQL_DRIVER = "com.mysql.jdbc.Driver";
-    public static final String MYSQL_DIALECT = "MYSQL";
+    public static final String MYSQL = "MYSQL";
 
 
     public String getDriveClassName(Environment env) {
