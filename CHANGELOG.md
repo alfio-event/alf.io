@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.7.1](https://github.com/exteso/alf.io/tree/1.7.1) (2016-02-16)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.7...1.7.1)
+
+**Fixed bugs:**
+
+- regression: cloud foundry support is broken [\#101](https://github.com/exteso/alf.io/issues/101)
+
 ## [1.7](https://github.com/exteso/alf.io/tree/1.7) (2016-02-13)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.6.2...1.7)
 
