@@ -39,7 +39,7 @@ public class DataSourceConfigurationTest {{
         });
         it.should("select CLOUD_FOUNDRY environment", expect -> {
             when(environment.getProperty("VCAP_SERVICES")).thenReturn("cloud foundry");
-            expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.CF_MYSQL);
+            expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.CLOUD_FOUNDRY);
         });
         it.should("select HEROKU environment", expect -> {
             when(environment.getProperty("DYNO")).thenReturn("heroku");
