@@ -26,7 +26,10 @@ import alfio.manager.EventStatisticsManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.*;
+import alfio.model.Event;
+import alfio.model.EventDescription;
+import alfio.model.PromoCodeDiscount;
+import alfio.model.SpecialPrice;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
@@ -102,7 +105,7 @@ public class EventController {
         this.eventStatisticsManager = eventStatisticsManager;
     }
 
-    @RequestMapping(value = {"/"}, method = RequestMethod.GET)
+    @RequestMapping(value = {"/"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public String listEvents(Model model, Locale locale) {
         List<Event> events = eventManager.getActiveEvents();
         if(events.size() == 1) {
@@ -174,7 +177,7 @@ public class EventController {
         return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
     }
 
-    @RequestMapping(value = "/event/{eventName}", method = RequestMethod.GET)
+    @RequestMapping(value = "/event/{eventName}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public String showEvent(@PathVariable("eventName") String eventName,
                             Model model, HttpServletRequest request, Locale locale) {
 
@@ -233,7 +236,7 @@ public class EventController {
         return "/event/show-event";
     }
 
-    @RequestMapping(value = "/event/{eventName}/calendar/locale/{locale}", method = RequestMethod.GET)
+    @RequestMapping(value = "/event/{eventName}/calendar/locale/{locale}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public void calendar(@PathVariable("eventName") String eventName, @PathVariable("locale") String locale, @RequestParam(value = "type", required = false) String calendarType, HttpServletResponse response) throws IOException {
         Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
         if (!event.isPresent()) {
@@ -263,7 +266,7 @@ public class EventController {
     }
     
     
-    @RequestMapping(value = "/event/{eventName}/reserve-tickets", method = { RequestMethod.POST, RequestMethod.GET })
+    @RequestMapping(value = "/event/{eventName}/reserve-tickets", method = { RequestMethod.POST, RequestMethod.GET, RequestMethod.HEAD })
     public String reserveTicket(@PathVariable("eventName") String eventName,
             @ModelAttribute ReservationForm reservation, BindingResult bindingResult, Model model,
             ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale) {
