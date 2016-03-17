@@ -44,6 +44,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -105,7 +106,12 @@ public class EventController {
         this.eventStatisticsManager = eventStatisticsManager;
     }
 
-    @RequestMapping(value = {"/"}, method = {RequestMethod.GET, RequestMethod.HEAD})
+    @RequestMapping(value = "/", method = RequestMethod.HEAD)
+    public ResponseEntity<String> replyToProxy() {
+        return ResponseEntity.ok("Up and running!");
+    }
+
+    @RequestMapping(value = {"/"}, method = RequestMethod.GET)
     public String listEvents(Model model, Locale locale) {
         List<Event> events = eventManager.getActiveEvents();
         if(events.size() == 1) {
