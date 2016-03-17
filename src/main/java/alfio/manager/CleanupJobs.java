@@ -44,7 +44,7 @@ public class CleanupJobs {
 
     /* The vacuum will be scheduled for 00:00.00 GMT */
     @Scheduled(cron = "0 0 0 * * *", zone = "GMT")
-    public void vacuumQuartTables() {
+    public void vacuumQuartzTables() {
         if(PlatformProvider.PGSQL.equals(platform.getDialect(environment))) {
             log.info("vacuuming quartz tables");
             vacuumQuartzTables.vacuumQuartzTables();
