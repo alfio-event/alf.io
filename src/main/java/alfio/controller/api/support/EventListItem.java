@@ -18,25 +18,17 @@ package alfio.controller.api.support;
 
 import alfio.model.Event;
 import alfio.model.EventDescription;
+import alfio.util.EventUtil;
 
 import java.time.Clock;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class EventListItem {
 
-    public static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder()
-        .parseCaseInsensitive()
-        .append(DateTimeFormatter.ISO_LOCAL_DATE)
-        .appendLiteral('T')
-        .append(DateTimeFormatter.ISO_LOCAL_TIME)
-        .appendLiteral('Z')
-        .toFormatter();
     protected final Event event;
-    protected final String requestContextPath;
-    protected final List<EventDescription> eventDescriptions;
+    private final String requestContextPath;
+    private final List<EventDescription> eventDescriptions;
 
     public EventListItem(Event event, String requestContextPath, DataLoader<Event, EventDescription> eventDescriptionsLoader) {
         this.event = event;
@@ -73,11 +65,11 @@ public class EventListItem {
     }
 
     public String getBegin() {
-        return event.getBegin().withZoneSameInstant(Clock.systemUTC().getZone()).format(FORMATTER);
+        return event.getBegin().withZoneSameInstant(Clock.systemUTC().getZone()).format(EventUtil.JSON_DATETIME_FORMATTER);
     }
 
     public String getEnd() {
-        return event.getEnd().withZoneSameInstant(Clock.systemUTC().getZone()).format(FORMATTER);
+        return event.getEnd().withZoneSameInstant(Clock.systemUTC().getZone()).format(EventUtil.JSON_DATETIME_FORMATTER);
     }
 
     public String getLocation() {

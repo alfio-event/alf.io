@@ -29,6 +29,8 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -37,9 +39,27 @@ import java.util.stream.Stream;
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
 import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
 import static alfio.util.MonetaryUtil.addVAT;
+import static java.time.temporal.ChronoField.*;
 
 @UtilityClass
 public class EventUtil {
+
+    private static final DateTimeFormatter JSON_TIME_FORMATTER = new DateTimeFormatterBuilder()
+        .appendValue(HOUR_OF_DAY, 2)
+        .appendLiteral(':')
+        .appendValue(MINUTE_OF_HOUR, 2)
+        .optionalStart()
+        .appendLiteral(':')
+        .appendValue(SECOND_OF_MINUTE, 2)
+        .toFormatter(Locale.ROOT);
+
+    public static final DateTimeFormatter JSON_DATETIME_FORMATTER = new DateTimeFormatterBuilder()
+        .parseCaseInsensitive()
+        .append(DateTimeFormatter.ISO_LOCAL_DATE)
+        .appendLiteral('T')
+        .append(JSON_TIME_FORMATTER)
+        .appendLiteral('Z')
+        .toFormatter(Locale.ROOT);
 
     private static final Predicate<List<SaleableTicketCategory>> IS_EMPTY = List::isEmpty;
 

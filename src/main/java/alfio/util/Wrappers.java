@@ -19,7 +19,9 @@ package alfio.util;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
 
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @UtilityClass
 @Log4j2
@@ -30,6 +32,14 @@ public class Wrappers {
             consumer.accept(input);
         } catch(Exception ex) {
             log.error("Unexpected exception", ex);
+        }
+    }
+
+    public static <T> Optional<T> safeSupplier(Supplier<T> supplier) {
+        try {
+            return Optional.ofNullable(supplier.get());
+        } catch (Exception e) {
+            return Optional.empty();
         }
     }
 }

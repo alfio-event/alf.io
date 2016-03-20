@@ -17,11 +17,15 @@
 package alfio.controller.api;
 
 import alfio.manager.AttendeeManager;
+import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
+import alfio.util.EventUtil;
+import alfio.util.Wrappers;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -29,12 +33,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/attendees")
 @Log4j2
 public class AttendeeApiController {
 
+    private static final ZonedDateTime DEFAULT = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC);
     private final AttendeeManager attendeeManager;
 
     @Autowired
@@ -45,7 +56,7 @@ public class AttendeeApiController {
     @ExceptionHandler({DataIntegrityViolationException.class, IllegalArgumentException.class})
     public ResponseEntity<String> handleDataIntegrityException(Exception e) {
         log.warn("bad input detected", e);
-        return new ResponseEntity<>("the requested resource already exists", HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>("bad input parameters", HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(RuntimeException.class)
@@ -57,7 +68,21 @@ public class AttendeeApiController {
 
     @RequestMapping(value = "/sponsor-scan", method = RequestMethod.POST)
     public ResponseEntity<TicketAndCheckInResult> scanBadge(@RequestBody SponsorScanRequest request, Principal principal) {
-        return new ResponseEntity<>(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, principal.getName()), HttpStatus.OK);
+        return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, principal.getName()));
+    }
+
+    @RequestMapping(value = "/{eventKey}/sponsor-scan/mine", method = RequestMethod.GET)
+    public ResponseEntity<List<SponsorAttendeeData>> getScannedBadges(@PathVariable("eventKey") String eventShortName, @RequestParam(value = "from", required = false) String from, Principal principal) {
+
+        ZonedDateTime start = Optional.ofNullable(StringUtils.trimToNull(from))
+            .map(EventUtil.JSON_DATETIME_FORMATTER::parse)
+            .flatMap(d -> Wrappers.safeSupplier(() -> ZonedDateTime.of(LocalDateTime.from(d), ZoneOffset.UTC)))
+            .orElse(DEFAULT);
+        return attendeeManager.retrieveScannedAttendees(eventShortName, principal.getName(), start).map(ResponseEntity::ok).orElse(notFound());
+    }
+
+    private static <T> ResponseEntity<T> notFound() {
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @Getter
