@@ -18,18 +18,24 @@ package alfio.manager;
 
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.DefaultCheckInResult;
+import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.model.Event;
+import alfio.model.SponsorScan;
 import alfio.model.Ticket;
 import alfio.repository.EventRepository;
 import alfio.repository.SponsorScanRepository;
+import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.UserRepository;
+import alfio.util.EventUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static alfio.util.OptionalWrapper.optionally;
 
@@ -40,16 +46,19 @@ public class AttendeeManager {
     private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final TicketFieldRepository ticketFieldRepository;
 
     @Autowired
     public AttendeeManager(SponsorScanRepository sponsorScanRepository,
                            EventRepository eventRepository,
                            TicketRepository ticketRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           TicketFieldRepository ticketFieldRepository) {
         this.sponsorScanRepository = sponsorScanRepository;
         this.eventRepository = eventRepository;
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
+        this.ticketFieldRepository = ticketFieldRepository;
     }
 
     public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String username) {
@@ -72,6 +81,21 @@ public class AttendeeManager {
             sponsorScanRepository.insert(userId, ZonedDateTime.now(event.getZoneId()), event.getId(), ticket.getId());
         }
         return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(CheckInStatus.SUCCESS, "success"));
+    }
+
+    public Optional<List<SponsorAttendeeData>> retrieveScannedAttendees(String eventShortName, String username, ZonedDateTime start) {
+        int userId = userRepository.getByUsername(username).getId();
+        Optional<Event> maybeEvent = eventRepository.findOptionalByShortName(eventShortName);
+        return maybeEvent.map(event -> loadAttendeesData(event, userId, start));
+    }
+
+    private List<SponsorAttendeeData> loadAttendeesData(Event event, int userId, ZonedDateTime start) {
+        return sponsorScanRepository.loadSponsorData(event.getId(), userId, start).stream()
+            .map(scan -> {
+                Ticket ticket = scan.getTicket();
+                SponsorScan sponsorScan = scan.getSponsorScan();
+                return new SponsorAttendeeData(ticket.getUuid(), sponsorScan.getTimestamp().format(EventUtil.JSON_DATETIME_FORMATTER), ticket.getFullName(), ticket.getEmail(), ticketFieldRepository.findNameAndValue(ticket.getId()));
+            }).collect(Collectors.toList());
     }
 
 }
