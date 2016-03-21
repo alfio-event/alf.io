@@ -21,7 +21,6 @@ import alfio.manager.support.DefaultCheckInResult;
 import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.model.Event;
-import alfio.model.SponsorScan;
 import alfio.model.Ticket;
 import alfio.repository.EventRepository;
 import alfio.repository.SponsorScanRepository;
@@ -93,8 +92,7 @@ public class AttendeeManager {
         return sponsorScanRepository.loadSponsorData(event.getId(), userId, start).stream()
             .map(scan -> {
                 Ticket ticket = scan.getTicket();
-                SponsorScan sponsorScan = scan.getSponsorScan();
-                return new SponsorAttendeeData(ticket.getUuid(), sponsorScan.getTimestamp().format(EventUtil.JSON_DATETIME_FORMATTER), ticket.getFullName(), ticket.getEmail(), ticketFieldRepository.findNameAndValue(ticket.getId()));
+                return new SponsorAttendeeData(ticket.getUuid(), scan.getSponsorScan().getTimestamp().format(EventUtil.JSON_DATETIME_FORMATTER), ticket.getFullName(), ticket.getEmail());
             }).collect(Collectors.toList());
     }
 
