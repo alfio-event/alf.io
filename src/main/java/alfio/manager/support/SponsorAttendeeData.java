@@ -16,10 +16,7 @@
  */
 package alfio.manager.support;
 
-import alfio.model.TicketFieldNameAndValue;
 import lombok.Data;
-
-import java.util.List;
 
 @Data
 public class SponsorAttendeeData {
@@ -39,10 +36,5 @@ public class SponsorAttendeeData {
      * Attendee's e-mail
      */
     private final String email;
-
-    /**
-     * Additional (optional) info, if any, as specified on ticket assignment form
-     */
-    private final List<TicketFieldNameAndValue> optionalData;
 }
 
