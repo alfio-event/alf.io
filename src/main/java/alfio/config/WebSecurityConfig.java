@@ -133,7 +133,7 @@ public class WebSecurityConfig {
                 .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
-                .antMatchers("/api/attendees/sponsor-scan").denyAll()
+                .antMatchers("/api/attendees/**").denyAll()
                 .antMatchers("/**").permitAll()
                 .and()
                 .formLogin()
