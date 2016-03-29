@@ -27,12 +27,9 @@ import alfio.plugin.ReservationConfirmationPlugin;
 import alfio.plugin.TicketAssignmentPlugin;
 import alfio.plugin.WaitingQueueSubscriptionPlugin;
 import alfio.util.Json;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.squareup.okhttp.*;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.*;
 
 public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAssignmentPlugin, WaitingQueueSubscriptionPlugin {
@@ -41,7 +38,7 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
     private static final String API_KEY = "apiKey";
     private static final String LIST_ID = "listId";
     private static final String LIST_ADDRESS = "https://%s.api.mailchimp.com/3.0/lists/%s/members/";
-    public static final String FAILURE_MSG = "cannot add user {email: %s, name:%s, language: %s} to the list (%s)";
+    private static final String FAILURE_MSG = "cannot add user {email: %s, name:%s, language: %s} to the list (%s)";
     private final String id = "alfio.mailchimp";
     private final PluginDataStorage pluginDataStorage;
     private final OkHttpClient httpClient = new OkHttpClient();
