@@ -39,6 +39,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/attendees")
@@ -69,6 +70,14 @@ public class AttendeeApiController {
     @RequestMapping(value = "/sponsor-scan", method = RequestMethod.POST)
     public ResponseEntity<TicketAndCheckInResult> scanBadge(@RequestBody SponsorScanRequest request, Principal principal) {
         return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, principal.getName()));
+    }
+
+    @RequestMapping(value = "/sponsor-scan/bulk", method = RequestMethod.POST)
+    public ResponseEntity<List<TicketAndCheckInResult>> scanBadges(@RequestBody List<SponsorScanRequest> requests, Principal principal) {
+        String username = principal.getName();
+        return ResponseEntity.ok(requests.stream()
+            .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, username))
+            .collect(Collectors.toList()));
     }
 
     @RequestMapping(value = "/{eventKey}/sponsor-scan/mine", method = RequestMethod.GET)
