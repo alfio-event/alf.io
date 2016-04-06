@@ -19,6 +19,7 @@ package alfio.controller.api;
 import alfio.manager.AttendeeManager;
 import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
+import alfio.repository.SponsorScanRepository;
 import alfio.util.EventUtil;
 import alfio.util.Wrappers;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -33,7 +34,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -46,7 +46,6 @@ import java.util.stream.Collectors;
 @Log4j2
 public class AttendeeApiController {
 
-    private static final ZonedDateTime DEFAULT = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC);
     private final AttendeeManager attendeeManager;
 
     @Autowired
@@ -86,7 +85,7 @@ public class AttendeeApiController {
         ZonedDateTime start = Optional.ofNullable(StringUtils.trimToNull(from))
             .map(EventUtil.JSON_DATETIME_FORMATTER::parse)
             .flatMap(d -> Wrappers.safeSupplier(() -> ZonedDateTime.of(LocalDateTime.from(d), ZoneOffset.UTC)))
-            .orElse(DEFAULT);
+            .orElse(SponsorScanRepository.DEFAULT_TIMESTAMP);
         return attendeeManager.retrieveScannedAttendees(eventShortName, principal.getName(), start).map(ResponseEntity::ok).orElse(notFound());
     }
 

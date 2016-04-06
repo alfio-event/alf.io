@@ -21,12 +21,16 @@ import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @QueryRepository
 public interface SponsorScanRepository {
+
+    ZonedDateTime DEFAULT_TIMESTAMP = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC);
 
     @Query("select creation from sponsor_scan where user_id = :userId and event_id = :eventId and ticket_id = :ticketId")
     Optional<ZonedDateTime> getRegistrationTimestamp(@Bind("userId") int userId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);

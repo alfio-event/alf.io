@@ -3,9 +3,9 @@
     <h4 class="text-muted">{{event.shortDescription}}</h4>
     <div data-ng-if="isInternal(event)">
         <span><button class="btn btn-primary" type="button" data-ng-click="openFieldSelectionModal()" ><i class="fa fa-download"></i> download attendees' data</button></span>
-        <!--<span><a class="btn btn-success" data-ng-href="{{ ('events/'+event.shortName+'/export/badges.csv') | addTrailingSlash }}" target="_blank"><i class="fa fa-ticket"></i> download badges' data</a></span>-->
         <span><a class="btn btn-warning" data-ui-sref="compose-custom-message({eventName: event.shortName})"><i class="fa fa-envelope"></i> send a message to attendees</a></span>
         <waiting-queue-display-counter data-event="event"></waiting-queue-display-counter>
+        <span><a class="btn btn-warning" data-ng-click="downloadSponsorsScan()" ><i class="fa fa-download"></i> download sponsors scan</a></span>
         <span><a class="btn btn-default" data-ui-sref="events.email-log({eventName:event.shortName})"><i class="fa fa-paper-plane-o"></i> view sent messages</a></span>
         <span><a class="btn btn-default" data-ui-sref="events.plugin-log({eventName:event.shortName})"><i class="fa fa-plug"></i> view Plugins log</a></span>
     </div>

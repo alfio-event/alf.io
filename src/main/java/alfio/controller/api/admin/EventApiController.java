@@ -29,9 +29,8 @@ import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
-import alfio.repository.DynamicFieldTemplateRepository;
-import alfio.repository.TicketCategoryDescriptionRepository;
-import alfio.repository.TicketFieldRepository;
+import alfio.model.user.Role;
+import alfio.repository.*;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.opencsv.CSVReader;
@@ -39,6 +38,7 @@ import com.opencsv.CSVWriter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -82,6 +82,8 @@ public class EventApiController {
     private final TicketHelper ticketHelper;
     private final DynamicFieldTemplateRepository dynamicFieldTemplateRepository;
     private final UserManager userManager;
+    private final SponsorScanRepository sponsorScanRepository;
+    private final TicketRepository ticketRepository;
 
     @Autowired
     public EventApiController(EventManager eventManager,
@@ -93,7 +95,9 @@ public class EventApiController {
                               DescriptionsLoader descriptionsLoader,
                               TicketHelper ticketHelper,
                               DynamicFieldTemplateRepository dynamicFieldTemplateRepository,
-                              UserManager userManager) {
+                              UserManager userManager,
+                              SponsorScanRepository sponsorScanRepository,
+                              TicketRepository ticketRepository) {
         this.eventManager = eventManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.i18nManager = i18nManager;
@@ -104,6 +108,8 @@ public class EventApiController {
         this.ticketHelper = ticketHelper;
         this.dynamicFieldTemplateRepository = dynamicFieldTemplateRepository;
         this.userManager = userManager;
+        this.sponsorScanRepository = sponsorScanRepository;
+        this.ticketRepository = ticketRepository;
     }
 
     @ExceptionHandler(DataAccessException.class)
@@ -231,7 +237,7 @@ public class EventApiController {
     @RequestMapping("/events/{eventName}/export.csv")
     public void downloadAllTicketsCSV(@PathVariable("eventName") String eventName, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
         List<String> fields = Arrays.asList(Optional.ofNullable(request.getParameterValues("fields")).orElse(new String[] {}));
-        Event event = Optional.ofNullable(eventManager.getSingleEvent(eventName, principal.getName())).orElseThrow(IllegalArgumentException::new);
+        Event event = loadEvent(eventName, principal);
         Map<Integer, TicketCategory> categoriesMap = eventManager.loadTicketCategories(event).stream().collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
         ZoneId eventZoneId = event.getZoneId();
 
@@ -272,6 +278,52 @@ public class EventApiController {
 
                 return line.toArray(new String[line.size()]);
             }).forEachOrdered(writer::writeNext);
+            writer.flush();
+            out.flush();
+        }
+    }
+
+    @RequestMapping("/events/{eventName}/sponsor-scan/export.csv")
+    public void downloadSponsorScanExport(@PathVariable("eventName") String eventName, HttpServletResponse response, Principal principal) throws IOException {
+        Event event = loadEvent(eventName, principal);
+        List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
+
+        response.setContentType("text/csv;charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-sponsor-scan.csv");
+
+        try(ServletOutputStream out = response.getOutputStream()) {
+            for (int marker : BOM_MARKERS) {
+                out.write(marker);
+            }
+            CSVWriter writer = new CSVWriter(new OutputStreamWriter(out));
+            List<String> header = new ArrayList<>();
+            header.add("Username");
+            header.add("Timestamp");
+            header.add("Full name");
+            header.add("Email");
+            header.addAll(fields.stream().map(TicketFieldConfiguration::getName).collect(Collectors.toList()));
+            writer.writeNext(header.toArray(new String[header.size()]));
+            userManager.findAllUsers(principal.getName()).stream()
+                .map(u -> Pair.of(u, userManager.getUserRole(u)))
+                .filter(p -> p.getRight() == Role.SPONSOR)
+                .flatMap(p -> sponsorScanRepository.loadSponsorData(event.getId(), p.getKey().getId(), SponsorScanRepository.DEFAULT_TIMESTAMP)
+                    .stream()
+                    .map(v -> Pair.of(v, ticketFieldRepository.findAllValuesForTicketId(v.getTicket().getId()))))
+                .map(p -> {
+                    DetailedScanData data = p.getLeft();
+                    Map<String, String> descriptions = p.getRight();
+                    return Pair.of(data, fields.stream().map(x -> descriptions.getOrDefault(x, "")).collect(Collectors.toList()));
+                }).map(p -> {
+                    List<String> line = new ArrayList<>();
+                    Ticket ticket = p.getLeft().getTicket();
+                    SponsorScan sponsorScan = p.getLeft().getSponsorScan();
+                    line.add(userManager.findUser(sponsorScan.getUserId()).getUsername());
+                    line.add(sponsorScan.getTimestamp().toString());
+                    line.add(ticket.getFullName());
+                    line.add(ticket.getEmail());
+                    line.addAll(p.getRight());
+                    return line.toArray(new String[line.size()]);
+                }).forEachOrdered(writer::writeNext);
             writer.flush();
             out.flush();
         }
