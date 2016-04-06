@@ -762,6 +762,10 @@
             });
         };
 
+        $scope.downloadSponsorsScan = function() {
+            $window.open($window.location.pathname+"/api/events/"+parentScope.event.shortName+"/sponsor-scan/export.csv");
+        };
+
         $scope.prepareFieldDescriptionEdit = function(baseObject, field) {
             angular.copy(field, baseObject);
         };
