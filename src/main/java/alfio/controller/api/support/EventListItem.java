@@ -88,4 +88,8 @@ public class EventListItem {
         return event.getTimeZone();
     }
 
+    public int getApiVersion() {
+        return 17;
+    }
+
 }
