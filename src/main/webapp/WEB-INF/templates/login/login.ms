@@ -13,7 +13,7 @@
     <div class="container">
         <div class="row">
             <div class="col-sm-10 col-sm-push-1 col-xs-12 col-md-6 col-md-push-3">
-                <form role="form" name="loginForm" action="{{request.contextPath}}/authentication" method="post">
+                <form role="form" name="loginForm" action="{{request.contextPath}}/authenticate" method="post">
                     <input name="_csrf" type="hidden" value="{{_csrf.token}}" />
                     <div class="page-header">
                         <h2>Authentication requested</h2>

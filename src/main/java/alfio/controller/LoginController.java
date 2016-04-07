@@ -22,18 +22,25 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.security.Principal;
+
 @Controller
 public class LoginController {
 
+    private static final String REDIRECT_ADMIN = "redirect:/admin/";
+
     @RequestMapping(value="/authentication", method = RequestMethod.GET)
-    public String getLoginPage(@RequestParam(value="failed", required = false) String failed, Model model) {
+    public String getLoginPage(@RequestParam(value="failed", required = false) String failed, Model model, Principal principal) {
+        if(principal != null) {
+            return REDIRECT_ADMIN;
+        }
         model.addAttribute("failed", failed != null);
         return "/login/login";
     }
 
-    @RequestMapping(value="/authentication", method = RequestMethod.POST)
+    @RequestMapping(value="/authenticate", method = RequestMethod.POST)
     public String doLogin() {
-        return "redirect:/admin/";
+        return REDIRECT_ADMIN;
     }
 
 }
