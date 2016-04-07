@@ -138,7 +138,7 @@ public class WebSecurityConfig {
                 .and()
                 .formLogin()
                 .loginPage("/authentication")
-                .loginProcessingUrl("/authentication")
+                .loginProcessingUrl("/authenticate")
                 .failureUrl("/authentication?failed");
         }
     }
