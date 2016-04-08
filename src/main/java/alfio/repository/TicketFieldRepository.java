@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 @QueryRepository
 public interface TicketFieldRepository {
 
-    @Query("select count(*) from ticket_field_value where ticket_id_fk = :ticketId")
-    Integer optionalDataCount(@Bind("ticketId") int id);
+    @Query("select count(*) from ticket_field_value where ticket_id_fk = :ticketId and field_value is not null and field_value <> ''")
+    Integer countFilledOptionalData(@Bind("ticketId") int id);
 
     @Query("select ticket_id_fk, ticket_field_configuration_id_fk, field_name, field_value from ticket_field_value inner join ticket_field_configuration on id = ticket_field_configuration_id_fk where ticket_id_fk = :ticketId")
     List<TicketFieldValue> findAllByTicketId(@Bind("ticketId") int id);
@@ -94,7 +94,7 @@ public interface TicketFieldRepository {
     }
 
     default boolean hasOptionalData(int ticketId) {
-        return optionalDataCount(ticketId) > 0;
+        return countFilledOptionalData(ticketId) > 0;
     }
 
 
