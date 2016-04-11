@@ -20,10 +20,7 @@ import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.Mailer;
-import alfio.model.EmailMessage;
-import alfio.model.Event;
-import alfio.model.EventDescription;
-import alfio.model.Ticket;
+import alfio.model.*;
 import alfio.model.user.Organization;
 import alfio.repository.EmailMessageRepository;
 import alfio.repository.EventDescriptionRepository;
@@ -127,7 +124,7 @@ public class NotificationManager {
         }
     }
 
-    public List<EmailMessage> loadAllMessagesForEvent(int eventId) {
+    public List<LightweightMailMessage> loadAllMessagesForEvent(int eventId) {
         return emailMessageRepository.findByEventId(eventId);
     }
 
