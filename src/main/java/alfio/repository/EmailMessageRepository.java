@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.model.EmailMessage;
+import alfio.model.LightweightMailMessage;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -67,8 +68,8 @@ public interface EmailMessageRepository {
     @Query("update email_message set status = 'SENT', sent_ts = :sentTimestamp where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatusToSent(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("sentTimestamp") ZonedDateTime sentTimestamp, @Bind("expectedStatuses") List<String> expectedStatuses);
 
-    @Query("select * from email_message where event_id = :eventId")
-    List<EmailMessage> findByEventId(@Bind("eventId") int eventId);
+    @Query("select id, event_id, status, recipient, subject, message, checksum, request_ts, sent_ts, attempts from email_message where event_id = :eventId")
+    List<LightweightMailMessage> findByEventId(@Bind("eventId") int eventId);
 
     @Query("select * from email_message where id = :id")
     EmailMessage findById(@Bind("id") int id);
