@@ -20,8 +20,9 @@ import alfio.manager.EventManager;
 import alfio.manager.NotificationManager;
 import alfio.model.EmailMessage;
 import alfio.model.Event;
-import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,21 +53,22 @@ public class EmailMessageApiController {
         Event event = eventManager.getSingleEvent(eventName, principal.getName());
         ZoneId zoneId = event.getZoneId();
         return notificationManager.loadAllMessagesForEvent(event.getId()).stream()
-            .map(m -> new LightweightEmailMessage(m, zoneId))
+            .map(m -> new LightweightEmailMessage(m, zoneId, true))
             .collect(Collectors.toList());
     }
 
     @RequestMapping("/{messageId}")
     public LightweightEmailMessage loadEmailMessage(@PathVariable("eventName") String eventName, @PathVariable("messageId") int messageId, Principal principal) {
         Event event = eventManager.getSingleEvent(eventName, principal.getName());
-        return notificationManager.loadSingleMessageForEvent(event.getId(), messageId).map(m -> new LightweightEmailMessage(m, event.getZoneId())).orElseThrow(IllegalArgumentException::new);
+        return notificationManager.loadSingleMessageForEvent(event.getId(), messageId).map(m -> new LightweightEmailMessage(m, event.getZoneId(), false)).orElseThrow(IllegalArgumentException::new);
     }
 
-    @Data
-    public static final class LightweightEmailMessage {
-        @Delegate(excludes = DelegateExclusions.class)
+    @AllArgsConstructor
+    private static final class LightweightEmailMessage {
+        @Delegate(excludes = LightweightExclusions.class)
         private final EmailMessage src;
         private final ZoneId eventZoneId;
+        private final boolean list;
 
         public String getAttachments() {
             return null;
@@ -80,14 +82,19 @@ public class EmailMessageApiController {
             return Optional.ofNullable(src.getSentTimestamp()).map(t -> t.withZoneSameInstant(eventZoneId)).orElse(null);
         }
 
-        private ZonedDateTime safeConvertTimestamp(ZonedDateTime timestamp) {
-            return Optional.ofNullable(timestamp).map(t -> t.withZoneSameInstant(eventZoneId)).orElse(null);
+        public String getMessage() {
+            if(list) {
+                return StringUtils.abbreviate(src.getMessage(), 128);//the most important information are stored in the first ~100 chars
+            }
+            return src.getMessage();
         }
+
     }
 
-    public interface DelegateExclusions {
+    private interface LightweightExclusions {
         String getAttachments();
         ZonedDateTime getRequestTimestamp();
         ZonedDateTime getSentTimestamp();
+        String getMessage();
     }
 }
