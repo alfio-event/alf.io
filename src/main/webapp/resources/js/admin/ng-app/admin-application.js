@@ -671,6 +671,30 @@
                 PromoCodeService.disable($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
             }
         };
+
+
+        //FIXME
+        $scope.changeDate = function(promocode) {
+
+            var eventId = $scope.event.id;
+
+            $modal.open({
+                size: 'lg',
+                templateUrl: BASE_STATIC_URL + '/event/fragment/edit-date-promo-code-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                    $scope.cancel = function() {$scope.$dismiss('canceled');};
+                    var start = moment(promocode.formattedStart);
+                    var end = moment(promocode.formattedEnd);
+                    $scope.promocode = {start: {date: start.format('YYYY-MM-DD'), time: start.format('HH:mm')}, end: {date: end.format('YYYY-MM-DD'), time: end.format('HH:mm')}};
+                    $scope.update = function(toUpdate) {
+                        PromoCodeService.update(eventId, promocode.promoCode, toUpdate).then(function() {
+                            $scope.$close(true);
+                        }).then(loadData);
+                    };
+                }
+            });
+        };
         
         $scope.addPromoCode = function(event) {
             $modal.open({

@@ -68,6 +68,7 @@
                 <div class="col-sm-4">
                     <button data-ng-show="promocode.useCount === 0" class="btn btn-warning" data-ng-click="deletePromocode(promocode)"><i class="fa fa-remove"></i> Delete</button>
                     <button data-ng-hide="promocode.expired" class="btn btn-warning" data-ng-click="disablePromocode(promocode)"><i class="fa fa-remove"></i> Disable</button>
+                    <button class="btn btn-warning" ng-click="changeDate(promocode)"><i class="fa fa-calendar"></i> Change date</button>
                 </div>
             </div>
         </div>
