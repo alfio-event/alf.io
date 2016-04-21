@@ -1,26 +1,17 @@
 # Change Log
 
 ## [1.7.2](https://github.com/exteso/alf.io/tree/1.7.2) (2016-04-21)
-[Full Changelog](https://github.com/exteso/alf.io/compare/1.7.2-RC1...1.7.2)
-
-**Implemented enhancements:**
-
-- Add possibility to update validity date for promo code [\#103](https://github.com/exteso/alf.io/issues/103)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.7.1...1.7.2)
 
 **Fixed bugs:**
 
 - Login issues on Heroku [\#116](https://github.com/exteso/alf.io/issues/116)
-
-## [1.7.2-RC1](https://github.com/exteso/alf.io/tree/1.7.2-RC1) (2016-04-08)
-[Full Changelog](https://github.com/exteso/alf.io/compare/1.7.1...1.7.2-RC1)
+- MySql - invalid statement (syntax error) [\#108](https://github.com/exteso/alf.io/issues/108)
+- New API for sponsors [\#107](https://github.com/exteso/alf.io/issues/107)
 
 **Implemented enhancements:**
 
 - New API for sponsors [\#107](https://github.com/exteso/alf.io/issues/107)
-
-**Fixed bugs:**
-
-- MySql - invalid statement \(syntax error\) [\#108](https://github.com/exteso/alf.io/issues/108)
 
 **Closed issues:**
 
