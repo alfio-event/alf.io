@@ -573,6 +573,10 @@ public class EventManager {
     public void deletePromoCode(int promoCodeId) {
         promoCodeRepository.deletePromoCode(promoCodeId);
     }
+
+    public void updatePromoCode(String promoCodeName, int eventId, ZonedDateTime start, ZonedDateTime end) {
+        promoCodeRepository.update(eventId, promoCodeName, start, end);
+    }
     
     public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInEvent(int eventId) {
         ZoneId zoneId = eventRepository.findById(eventId).getZoneId();

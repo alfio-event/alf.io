@@ -227,8 +227,11 @@
                 countUse : function(eventId, promoCode) {
                     return $http.get('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)+ '/count-use');
                 },
-                disable : function(eventId, promoCode) {
+                disable: function(eventId, promoCode) {
                     return $http['post']('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)+ '/disable');
+                },
+                update: function(eventId, promoCode, toUpdate) {
+                    return $http.post('/admin/api/events/' + eventId + '/promo-code/'+ encodeURIComponent(promoCode), toUpdate);
                 }
         };
     });
