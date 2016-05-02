@@ -20,6 +20,10 @@ plugins {
 apply plugin: 'war'
 apply plugin: 'spring-boot'
 
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.13' 
+}
+
 //as pointed out by @facundofarias, we should check minimum javac version in order to avoid problems with type inference mechanism during compilation
 task validate {
     //check JDK version
