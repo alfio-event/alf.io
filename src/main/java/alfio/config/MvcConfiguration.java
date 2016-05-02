@@ -204,7 +204,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                 // http://www.html5rocks.com/en/tutorials/security/content-security-policy/
                 // lockdown policy
                 response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
-                        + " script-src 'self' https://ajax.googleapis.com/ https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/;"//
+                        + " script-src 'self' https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/;"//
                         + " style-src 'self';"//
                         + " img-src 'self' https: data:;"//
                         + " child-src 'self';"//webworker
