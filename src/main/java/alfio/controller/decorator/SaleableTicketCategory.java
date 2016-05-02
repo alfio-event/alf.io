@@ -30,7 +30,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import static alfio.util.MonetaryUtil.addVAT;
 import static alfio.util.MonetaryUtil.formatCents;
 import static java.lang.Math.max;
 import static java.lang.Math.min;

@@ -26,7 +26,6 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -64,8 +63,7 @@ public class SpecialPriceApiController {
                                                           Principal principal) throws IOException {
 
         Validate.isTrue(StringUtils.isNotEmpty(eventName));
-        try(InputStreamReader isr = new InputStreamReader(file.getInputStream())) {
-            CSVReader reader = new CSVReader(isr);
+        try(InputStreamReader isr = new InputStreamReader(file.getInputStream()); CSVReader reader = new CSVReader(isr)) {
             List<SendCodeModification> content = reader.readAll().stream()
                     .map(line -> {
                         Validate.isTrue(line.length >= 4);

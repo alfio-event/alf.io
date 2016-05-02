@@ -18,7 +18,6 @@ package alfio.controller.api.admin;
 
 import alfio.manager.FileUploadManager;
 import alfio.model.modification.UploadBase64FileModification;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,7 +27,6 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @RestController
 @RequestMapping("/admin/api")
-@Log4j2
 public class FileUploadApiController {
 
     private final FileUploadManager fileUploadManager;

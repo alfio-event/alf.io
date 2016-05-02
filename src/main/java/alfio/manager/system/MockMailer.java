@@ -19,9 +19,7 @@ package alfio.manager.system;
 import alfio.config.Initializer;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -32,7 +30,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.MAIL_REPLY_TO;
-import static alfio.model.system.ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION;
 
 @Log4j2
 @Component

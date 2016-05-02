@@ -61,8 +61,6 @@ public class EventUtil {
         .appendLiteral('Z')
         .toFormatter(Locale.ROOT);
 
-    private static final Predicate<List<SaleableTicketCategory>> IS_EMPTY = List::isEmpty;
-
     public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<Event> noTicketsAvailable) {
         Optional<SaleableTicketCategory> lastCategoryOptional = findLastCategory(categories);
         if(!lastCategoryOptional.isPresent()) {

@@ -22,7 +22,6 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
-import java.util.List;
 
 @QueryRepository
 public interface TransactionRepository {

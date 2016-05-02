@@ -21,7 +21,6 @@ import alfio.model.EventDescription;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.experimental.Delegate;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import java.time.ZoneId;

@@ -21,10 +21,8 @@ import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import alfio.repository.WaitingQueueRepository;
 import alfio.util.TemplateManager;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
@@ -37,7 +35,6 @@ import java.util.*;
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
 import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
 
-@Log4j2
 @Component
 @Transactional
 public class WaitingQueueSubscriptionProcessor {

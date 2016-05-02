@@ -32,7 +32,6 @@ import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -50,7 +49,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Log4j2
 @Component
 public class TicketHelper {
 

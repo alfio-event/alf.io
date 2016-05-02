@@ -22,7 +22,6 @@ import alfio.manager.TicketReservationManager;
 import alfio.model.Event;
 import alfio.model.SpecialPrice;
 import alfio.model.TicketCategory;
-import alfio.model.TicketCategoryDescription;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.repository.TicketCategoryDescriptionRepository;
@@ -33,7 +32,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.BindingResult;
 
-import javax.servlet.http.HttpServletRequest;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;

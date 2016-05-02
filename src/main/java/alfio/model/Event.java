@@ -244,8 +244,7 @@ public class Event {
         vEvent.setOrganizer(new Organizer(organizerName, organizerEmail));
         ical.addEvent(vEvent);
         StringWriter strWriter = new StringWriter();
-        ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V1_0);
-        try {
+        try (ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V1_0)) {
             writer.write(ical);
             return Optional.of(strWriter.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {

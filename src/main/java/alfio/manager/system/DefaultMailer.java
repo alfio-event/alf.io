@@ -19,7 +19,6 @@ package alfio.manager.system;
 import alfio.config.Initializer;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;

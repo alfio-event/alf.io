@@ -25,7 +25,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
-import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.ConfigurationRepository;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -53,7 +52,6 @@ import static alfio.util.OptionalWrapper.optionally;
 @Log4j2
 public class ConfigurationManager {
 
-    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> SYSTEM_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.SYSTEM);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ORGANIZATION);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> EVENT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.EVENT);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
@@ -64,17 +62,14 @@ public class ConfigurationManager {
     private final ConfigurationRepository configurationRepository;
     private final UserManager userManager;
     private final EventRepository eventRepository;
-    private final TicketCategoryRepository ticketCategoryRepository;
 
     @Autowired
     public ConfigurationManager(ConfigurationRepository configurationRepository,
                                 UserManager userManager,
-                                EventRepository eventRepository,
-                                TicketCategoryRepository ticketCategoryRepository) {
+                                EventRepository eventRepository) {
         this.configurationRepository = configurationRepository;
         this.userManager = userManager;
         this.eventRepository = eventRepository;
-        this.ticketCategoryRepository = ticketCategoryRepository;
     }
 
     //TODO: refactor, not the most beautiful code, find a better solution...

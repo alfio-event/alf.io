@@ -16,7 +16,6 @@
  */
 package alfio.model.system;
 
-import alfio.model.Event;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -160,10 +159,6 @@ public class Configuration implements Comparable<Configuration> {
 
     private static ConfigurationPath organization(int id) {
         return new OrganizationConfigurationPath(id);
-    }
-
-    private static ConfigurationPath event(Event event) {
-        return new EventConfigurationPath(event.getOrganizationId(), event.getId());
     }
 
     private static ConfigurationPath ticketCategory(int organizationId, int eventId, int id) {
