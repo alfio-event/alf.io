@@ -135,10 +135,10 @@ dependencies {
     compile "org.springframework.security:spring-security-web:$springSecurityConfigVersion"
     compile "org.springframework.security:spring-security-config:$springSecurityConfigVersion"
     compile "ch.digitalfondue.npjt-extra:npjt-extra:1.1.1"
-    compile "com.samskivert:jmustache:1.11"
+    compile "com.samskivert:jmustache:1.12"
     compile "com.github.sps.mustache:mustache-spring-view:1.3"
     compile "javax.mail:mail:1.5.0-b01"
-    compile "org.quartz-scheduler:quartz:2.2.1"
+    compile "org.quartz-scheduler:quartz:2.2.3"
     compile("org.xhtmlrenderer:flying-saucer-pdf:9.0.9") {
         exclude(module: 'bcmail-jdk14')
         exclude(module: 'bcprov-jdk14')
@@ -160,7 +160,7 @@ dependencies {
     compile "com.squareup.okhttp:okhttp:2.4.0"
     compile "com.opencsv:opencsv:3.4"
     compile 'commons-codec:commons-codec:1.10'
-    compile 'net.sf.biweekly:biweekly:0.4.2'
+    compile 'net.sf.biweekly:biweekly:0.4.5'
 
     testCompile "org.springframework:spring-test:$springVersion"
     testCompile "com.insightfullogic:lambda-behave:0.3"
