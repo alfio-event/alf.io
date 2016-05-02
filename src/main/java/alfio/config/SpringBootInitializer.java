@@ -75,7 +75,7 @@ public class SpringBootInitializer {
     public EmbeddedServletContainerCustomizer embeddedServletContainerCustomizer() {
         return (container) -> {
             container.addInitializers(SERVLET_CONTEXT_INITIALIZER);
-            container.setRegisterJspServlet(false);
+            //container.setRegisterJspServlet(false);
             Map<String, String> mimeMappings = new HashMap<>();
             mimeMappings.put("eot", "application/vnd.ms-fontobject");
             mimeMappings.put("otf", "font/opentype");

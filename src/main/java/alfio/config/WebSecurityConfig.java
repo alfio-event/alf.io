@@ -24,9 +24,9 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
-import org.springframework.security.config.annotation.web.servlet.configuration.EnableWebMvcSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
@@ -39,7 +39,7 @@ import javax.sql.DataSource;
 import java.util.regex.Pattern;
 
 @Configuration
-@EnableWebMvcSecurity
+@EnableWebSecurity
 public class WebSecurityConfig {
 
     public static final String ADMIN_API = "/admin/api";
@@ -118,6 +118,7 @@ public class WebSecurityConfig {
                     .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher("X-Requested-With", "XMLHttpRequest"))
                     .and()
                     .headers().cacheControl().disable()
+                    .and()
                     .csrf();
             if(environment.acceptsProfiles(Initializer.PROFILE_DEBUG_CSP)) {
                 Pattern whiteList = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
