@@ -17,7 +17,6 @@
 package alfio.util;
 
 import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.Level;
 
 @Log4j2
 public class DefaultExceptionHandler implements Thread.UncaughtExceptionHandler {

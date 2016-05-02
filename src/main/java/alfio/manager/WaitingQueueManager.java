@@ -29,7 +29,6 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
 import alfio.repository.user.OrganizationRepository;
-import alfio.util.EventUtil;
 import alfio.util.PreReservedTicketDistributor;
 import alfio.util.TemplateManager;
 import alfio.util.WorkingDaysAdjusters;

@@ -20,7 +20,6 @@ import alfio.model.FileBlobMetadata;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.repository.FileUploadRepository;
 import alfio.util.Json;
-import com.google.gson.Gson;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;

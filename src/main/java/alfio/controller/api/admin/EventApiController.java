@@ -83,7 +83,6 @@ public class EventApiController {
     private final DynamicFieldTemplateRepository dynamicFieldTemplateRepository;
     private final UserManager userManager;
     private final SponsorScanRepository sponsorScanRepository;
-    private final TicketRepository ticketRepository;
 
     @Autowired
     public EventApiController(EventManager eventManager,
@@ -96,8 +95,7 @@ public class EventApiController {
                               TicketHelper ticketHelper,
                               DynamicFieldTemplateRepository dynamicFieldTemplateRepository,
                               UserManager userManager,
-                              SponsorScanRepository sponsorScanRepository,
-                              TicketRepository ticketRepository) {
+                              SponsorScanRepository sponsorScanRepository) {
         this.eventManager = eventManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.i18nManager = i18nManager;
@@ -109,7 +107,6 @@ public class EventApiController {
         this.dynamicFieldTemplateRepository = dynamicFieldTemplateRepository;
         this.userManager = userManager;
         this.sponsorScanRepository = sponsorScanRepository;
-        this.ticketRepository = ticketRepository;
     }
 
     @ExceptionHandler(DataAccessException.class)
@@ -246,12 +243,12 @@ public class EventApiController {
         response.setContentType("text/csv;charset=UTF-8");
         response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-export.csv");
 
-        try(ServletOutputStream out = response.getOutputStream()) {
+        try(ServletOutputStream out = response.getOutputStream(); CSVWriter writer = new CSVWriter(new OutputStreamWriter(out))) {
 
             for (int marker : BOM_MARKERS) {//UGLY-MODE_ON: specify that the file is written in UTF-8 with BOM, thanks to alexr http://stackoverflow.com/a/4192897
                 out.write(marker);
             }
-            CSVWriter writer = new CSVWriter(new OutputStreamWriter(out));
+            
             writer.writeNext(fields.toArray(new String[fields.size()]));
 
             eventManager.findAllConfirmedTickets(eventName, principal.getName()).stream().map(t -> {
@@ -291,11 +288,11 @@ public class EventApiController {
         response.setContentType("text/csv;charset=UTF-8");
         response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-sponsor-scan.csv");
 
-        try(ServletOutputStream out = response.getOutputStream()) {
+        try(ServletOutputStream out = response.getOutputStream(); CSVWriter writer = new CSVWriter(new OutputStreamWriter(out))) {
             for (int marker : BOM_MARKERS) {
                 out.write(marker);
             }
-            CSVWriter writer = new CSVWriter(new OutputStreamWriter(out));
+            
             List<String> header = new ArrayList<>();
             header.add("Username");
             header.add("Timestamp");
@@ -382,8 +379,7 @@ public class EventApiController {
                                                                   Principal principal,
                                                                   @RequestBody UploadBase64FileModification file) throws IOException {
 
-        try(InputStreamReader isr = new InputStreamReader(file.getInputStream())) {
-            CSVReader reader = new CSVReader(isr);
+        try(InputStreamReader isr = new InputStreamReader(file.getInputStream()); CSVReader reader = new CSVReader(isr)) {
             Event event = loadEvent(eventName, principal);
             return reader.readAll().stream()
                     .map(line -> {

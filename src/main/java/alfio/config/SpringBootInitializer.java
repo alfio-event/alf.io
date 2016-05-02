@@ -17,7 +17,6 @@
 package alfio.config;
 
 import alfio.filter.RedirectToHttpsFilter;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 import org.springframework.boot.context.embedded.ErrorPage;
@@ -39,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext;
 
-@Log4j2
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration.class,
         org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
         org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
@@ -77,7 +75,7 @@ public class SpringBootInitializer {
     public EmbeddedServletContainerCustomizer embeddedServletContainerCustomizer() {
         return (container) -> {
             container.addInitializers(SERVLET_CONTEXT_INITIALIZER);
-            container.setRegisterJspServlet(false);
+            //container.setRegisterJspServlet(false);
             Map<String, String> mimeMappings = new HashMap<>();
             mimeMappings.put("eot", "application/vnd.ms-fontobject");
             mimeMappings.put("otf", "font/opentype");

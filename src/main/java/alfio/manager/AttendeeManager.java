@@ -24,7 +24,6 @@ import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.repository.EventRepository;
 import alfio.repository.SponsorScanRepository;
-import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.EventUtil;
@@ -45,19 +44,16 @@ public class AttendeeManager {
     private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
-    private final TicketFieldRepository ticketFieldRepository;
 
     @Autowired
     public AttendeeManager(SponsorScanRepository sponsorScanRepository,
                            EventRepository eventRepository,
                            TicketRepository ticketRepository,
-                           UserRepository userRepository,
-                           TicketFieldRepository ticketFieldRepository) {
+                           UserRepository userRepository) {
         this.sponsorScanRepository = sponsorScanRepository;
         this.eventRepository = eventRepository;
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
-        this.ticketFieldRepository = ticketFieldRepository;
     }
 
     public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String username) {

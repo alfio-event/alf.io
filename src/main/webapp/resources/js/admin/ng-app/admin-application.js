@@ -172,11 +172,16 @@
         return deferred.promise;
     };
 
-    admin.controller('MenuController', function($scope) {
+    admin.controller('MenuController', function($scope, $http, $window) {
         $scope.menuCollapsed = true;
         $scope.toggleCollapse = function(currentStatus) {
             $scope.menuCollapsed = !currentStatus;
         };
+        $scope.doLogout = function() {
+            $http.post("/logout").then(function() {
+                $window.location.href = "/";
+            });
+        }
     });
 
     var createCategory = function(sticky, $scope, expirationExtractor) {

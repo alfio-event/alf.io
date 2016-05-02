@@ -20,7 +20,6 @@ import alfio.util.DefaultExceptionHandler;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
-import org.apache.logging.log4j.Level;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;

@@ -19,7 +19,6 @@ package alfio.controller.api.admin;
 import alfio.manager.EventManager;
 import alfio.manager.WaitingQueueManager;
 import alfio.model.WaitingQueueSubscription;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,7 +35,6 @@ import static alfio.util.OptionalWrapper.optionally;
 
 @RestController
 @RequestMapping("/admin/api/event/{eventName}/waiting-queue")
-@Log4j2
 public class AdminWaitingQueueApiController {
 
     private final WaitingQueueManager waitingQueueManager;

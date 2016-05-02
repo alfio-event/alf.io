@@ -18,7 +18,6 @@ package alfio.repository.user;
 
 import alfio.model.user.User;
 import ch.digitalfondue.npjt.*;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
 import java.util.Optional;

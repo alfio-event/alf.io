@@ -17,7 +17,6 @@
 package alfio.manager.system;
 
 import alfio.model.Event;
-import alfio.model.Ticket;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.EventMigration;
 import alfio.repository.EventRepository;
@@ -42,9 +41,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
