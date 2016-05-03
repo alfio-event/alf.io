@@ -180,15 +180,15 @@ dependencies {
 
 sourceSets {
     main {
-        compileClasspath += [configurations.compileOnly]
+        compileClasspath += configurations.compileOnly
     }
     test {
-        compileClasspath += [configurations.testCompileOnly]
+        compileClasspath += configurations.testCompileOnly
     }
 }
 
 javadoc {
-    classpath += [configurations.compileOnly]
+    classpath += configurations.compileOnly
 }
 
 idea {
@@ -214,10 +214,11 @@ license {
 }
 
 
+import org.apache.tools.ant.filters.ReplaceTokens
+
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import org.apache.tools.ant.filters.ReplaceTokens
 
 processResources << {
 
