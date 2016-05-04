@@ -19,7 +19,6 @@ package alfio.test.util;
 import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
-import alfio.model.EventDescription;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
