@@ -36,6 +36,9 @@ public interface PluginConfigurationRepository {
 
     @Query("select * from plugin_configuration where plugin_id = :pluginId and event_id = :eventId and conf_name = :name")
     Optional<PluginConfigOption> loadSingleOption(@Bind("pluginId") String pluginId, @Bind("eventId") int eventId, @Bind("name") String name);
+    
+    @Query("delete from plugin_configuration where plugin_id = :pluginId")
+    int delete(@Bind("pluginId") String pluginId);
 
     @Query("insert into plugin_configuration(plugin_id, event_id, conf_name, conf_value, conf_description, conf_type) values (:pluginId, :eventId, :name, :value, :description, :type)")
     int insert(@Bind("pluginId") String pluginId, @Bind("eventId") int eventId, @Bind("name") String name, @Bind("value") String value, @Bind("description") String description, @Bind("type") ComponentType type);
