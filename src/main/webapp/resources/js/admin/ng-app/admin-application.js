@@ -8,6 +8,10 @@
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)'
     };
+    
+    //
+    var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
+    
     var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'nzToggle', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-users']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
@@ -272,8 +276,8 @@
 
         //----------
 
-        // TODO, change, HARDCODED
-        $scope.fieldTypes = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
+        // 
+        $scope.fieldTypes = FIELD_TYPES;
 
         $scope.addNewTicketField = function(event) {
             if(!event.ticketFields) {
@@ -801,6 +805,46 @@
 
         $scope.saveFieldDescription = function(description) {
             EventService.saveFieldDescription($scope.event.shortName, description).then(loadData);
+        };
+        
+        
+        $scope.addField = function(event) {
+        	$modal.open({
+                size:'lg',
+                templateUrl:BASE_STATIC_URL + '/event/fragment/add-field-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                	$scope.event = event;
+                	$scope.field = {};
+                	$scope.fieldTypes = FIELD_TYPES;
+                	
+                	//
+                	EventService.getSupportedLanguages().success(function(result) {
+                        $scope.allLanguages = result;
+                        $scope.allLanguagesMapping = {};
+                        angular.forEach(result, function(r) {
+                            $scope.allLanguagesMapping[r.value] = r;
+                        });
+                    });
+                	
+                	//
+                	
+                	$scope.addRestrictedValue = function() {
+                		var field = $scope.field;
+                        var arr = field.restrictedValues || [];
+                        arr.push({});
+                        field.restrictedValues = arr;
+                    };
+                    $scope.isLanguageSelected = function(lang, selectedLanguages) {
+                        return (selectedLanguages & lang) > 0;
+                    };
+                    
+                    $scope.addField = function(field) {
+                    	//FIXME;
+                    };
+                    
+                    
+                }});
         };
 
     });
