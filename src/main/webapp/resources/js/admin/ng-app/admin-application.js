@@ -839,11 +839,13 @@
                         return (selectedLanguages & lang) > 0;
                     };
                     
-                    $scope.addField = function(field) {
-                    	//FIXME;
+                    $scope.addField = function(form, field) {
+                    	EventService.addField($stateParams.eventName, field).then(function(result) {
+                    		return loadData();
+                    	}).then(function() {
+                    		$scope.$close(true);
+                    	});
                     };
-                    
-                    
                 }});
         };
 

@@ -3,7 +3,7 @@
 </div>
 <div class="modal-body">
 
-<form name="addField" ng-submit="addField(field)">
+<form name="addFieldForm" ng-submit="addField(addFieldForm, field)">
 
 <div class="row">
     <div class="col-md-4">
@@ -13,7 +13,9 @@
         </div>
         <div class="form-group">
             <label>Type</label>
-            <select ng-model="field.type" ng-options="option for option in fieldTypes" class="form-control" required></select>
+            <select ng-model="field.type" ng-options="option for option in fieldTypes" class="form-control" required>
+            	<option></option>
+            </select>
         </div>
     </div>
     <div class="col-md-4" ng-if="field.type != 'country'">

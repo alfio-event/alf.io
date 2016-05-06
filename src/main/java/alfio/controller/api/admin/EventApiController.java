@@ -215,7 +215,7 @@ public class EventApiController {
     public ValidationResult createCategory(@PathVariable("eventId") int eventId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
         return validateCategory(category, errors).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
     }
-
+    
     @RequestMapping(value = "/events/reallocate", method = PUT)
     public String reallocateTickets(@RequestBody TicketAllocationModification form) {
         eventManager.reallocateTickets(form.getSrcCategoryId(), form.getTargetCategoryId(), form.getEventId());
@@ -350,6 +350,12 @@ public class EventApiController {
     @RequestMapping(value = "/events/{eventName}/additional-field/descriptions", method = POST)
     public void saveAdditionalFieldDescriptions(@RequestBody Map<String, TicketFieldDescriptionModification> descriptions) {
         eventManager.updateTicketFieldDescriptions(descriptions);
+    }
+    
+    @RequestMapping(value = "/events/{eventName}/additional-field/new", method = POST)
+    public void addAdditionalField(@PathVariable("eventName") String eventName, @RequestBody EventModification.AdditionalField field, Principal principal) {
+    	Event event = eventManager.getSingleEvent(eventName, principal.getName());
+    	eventManager.addAdditionalField(event.getId(), field);
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments")

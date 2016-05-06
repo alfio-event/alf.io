@@ -25,6 +25,7 @@ import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.modification.*;
+import alfio.model.modification.EventModification.AdditionalField;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
@@ -187,15 +188,19 @@ public class EventManager {
     private void createAdditionalFields(int eventId, EventModification em) {
         if (!CollectionUtils.isEmpty(em.getTicketFields())) {
            em.getTicketFields().forEach(f -> {
-               List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValues()).orElseGet(Collections::emptyList).stream().map(EventModification.RestrictedValue::getValue).collect(Collectors.toList());
-               String serializedRestrictedValues = "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
-               int configurationId = ticketFieldRepository.insertConfiguration(eventId, f.getName(), f.getOrder(), f.getType(), serializedRestrictedValues, f.getMaxLength(), f.getMinLength(), f.isRequired()).getKey();
-               f.getDescription().forEach((locale, value) -> {
-                   ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value));
-               });
+               insertAdditionalField(eventId, f, f.getOrder());
            });
         }
     }
+
+	private void insertAdditionalField(int eventId, AdditionalField f, int order) {
+		List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValues()).orElseGet(Collections::emptyList).stream().map(EventModification.RestrictedValue::getValue).collect(Collectors.toList());
+		   String serializedRestrictedValues = "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
+		   int configurationId = ticketFieldRepository.insertConfiguration(eventId, f.getName(), order, f.getType(), serializedRestrictedValues, f.getMaxLength(), f.getMinLength(), f.isRequired()).getKey();
+		   f.getDescription().forEach((locale, value) -> {
+		       ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value));
+		   });
+	}
 
     public void updateEventHeader(Event original, EventModification em, String username) {
         checkOwnership(original, username, em.getOrganizationId());
@@ -619,6 +624,11 @@ public class EventManager {
             }
         });
     }
+    
+	public void addAdditionalField(int eventId, AdditionalField field) {
+		int order = ticketFieldRepository.countAdditionalFieldsForEvent(eventId);
+		insertAdditionalField(eventId, field, order);
+	}
 
     @Data
     private static final class GeolocationResult {
@@ -641,4 +651,6 @@ public class EventManager {
             return tz.toZoneId();
         }
     }
+
+
 }
