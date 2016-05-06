@@ -825,6 +825,26 @@
         };
         
         
+        $scope.fieldUp = function(index) {
+        	var targetId = $scope.additionalFields[index].id;
+        	var prevTargetId = $scope.additionalFields[index-1].id;
+        	EventService.swapFieldPosition($stateParams.eventName, targetId, prevTargetId).then(function(result) {
+        		return EventService.getAdditionalFields($stateParams.eventName);
+        	}).then(function (result) {
+        		$scope.additionalFields = result.data;
+        	});
+        };
+        
+        $scope.fieldDown = function(index) {
+        	var targetId = $scope.additionalFields[index].id;
+        	var nextTargetId = $scope.additionalFields[index+1].id;
+        	EventService.swapFieldPosition($stateParams.eventName, targetId, nextTargetId).then(function(result) {
+        		return EventService.getAdditionalFields($stateParams.eventName);
+        	}).then(function (result) {
+        		$scope.additionalFields = result.data;
+        	});
+        }
+        
         $scope.addField = function(event) {
         	$modal.open({
                 size:'lg',
