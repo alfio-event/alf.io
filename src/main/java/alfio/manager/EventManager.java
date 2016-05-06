@@ -45,6 +45,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
@@ -635,6 +636,15 @@ public class EventManager {
 		ticketFieldRepository.deleteDescription(ticketFieldConfigurationId);
 		ticketFieldRepository.deleteField(ticketFieldConfigurationId);
 	}
+	
+	public void swapAdditionalFieldPosition(int eventId, int id1, int id2) {
+		TicketFieldConfiguration field1 = ticketFieldRepository.findById(id1);
+		TicketFieldConfiguration field2 = ticketFieldRepository.findById(id2);
+		Assert.isTrue(eventId == field1.getEventId());
+		Assert.isTrue(eventId == field2.getEventId());
+		ticketFieldRepository.updateFieldOrder(id1, field2.getOrder());
+		ticketFieldRepository.updateFieldOrder(id2, field1.getOrder());
+	}
 
     @Data
     private static final class GeolocationResult {
@@ -657,6 +667,5 @@ public class EventManager {
             return tz.toZoneId();
         }
     }
-
 
 }

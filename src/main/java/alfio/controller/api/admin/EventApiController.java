@@ -358,6 +358,12 @@ public class EventApiController {
     	eventManager.addAdditionalField(event.getId(), field);
     }
     
+    @RequestMapping(value = "/events/{eventName}/additional-field/swap-position/{id1}/{id2}", method = POST)
+    public void swapAdditionalFieldPosition(@PathVariable("eventName") String eventName, @PathVariable("id1") int id1, @PathVariable("id2") int id2, Principal principal) {
+    	Event event = eventManager.getSingleEvent(eventName, principal.getName());
+    	eventManager.swapAdditionalFieldPosition(event.getId(), id1, id2);
+    }
+    
     @RequestMapping(value = "/events/{eventName}/additional-field/{id}", method = DELETE)
     public void deleteAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id) {
     	eventManager.deleteAdditionalField(id);

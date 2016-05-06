@@ -100,6 +100,12 @@ public interface TicketFieldRepository {
 
     @Query("select * from ticket_field_configuration where event_id_fk = :eventId order by field_order asc")
     List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventId") int eventId);
+    
+    @Query("select * from ticket_field_configuration where id = :id")
+    TicketFieldConfiguration findById(@Bind("id") int id);
+    
+    @Query("update ticket_field_configuration set field_order = :order where id = :id")
+    int updateFieldOrder(@Bind("id") int id, @Bind("order") int order);
 
     @Query("select ticket_field_configuration.* from ticket_field_configuration inner join event on event.id = event_id_fk  where short_name = :eventShortName order by field_order asc")
     List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventShortName") String eventName);
