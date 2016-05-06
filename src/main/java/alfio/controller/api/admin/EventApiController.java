@@ -30,7 +30,10 @@ import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
-import alfio.repository.*;
+import alfio.repository.DynamicFieldTemplateRepository;
+import alfio.repository.SponsorScanRepository;
+import alfio.repository.TicketCategoryDescriptionRepository;
+import alfio.repository.TicketFieldRepository;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.opencsv.CSVReader;
@@ -309,7 +312,7 @@ public class EventApiController {
                 .map(p -> {
                     DetailedScanData data = p.getLeft();
                     Map<String, String> descriptions = p.getRight();
-                    return Pair.of(data, fields.stream().map(x -> descriptions.getOrDefault(x, "")).collect(Collectors.toList()));
+                    return Pair.of(data, fields.stream().map(x -> descriptions.getOrDefault(x.getName(), "")).collect(Collectors.toList()));
                 }).map(p -> {
                     List<String> line = new ArrayList<>();
                     Ticket ticket = p.getLeft().getTicket();
