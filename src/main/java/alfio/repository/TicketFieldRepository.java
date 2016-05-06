@@ -117,4 +117,15 @@ public interface TicketFieldRepository {
     default Map<String, String> findAllValuesForTicketId(int ticketId) {
         return findNameAndValue(ticketId).stream().filter(t -> t.getName() != null && t.getValue() != null).collect(Collectors.toMap(TicketFieldNameAndValue::getName, TicketFieldNameAndValue::getValue));
     }
+
+    // required for deleting a field
+    
+    @Query("delete from ticket_field_value where ticket_field_configuration_id_fk = :fieldConfigurationId")
+	int deleteValues(@Bind("fieldConfigurationId") int ticketFieldConfigurationId);
+    
+    @Query("delete from ticket_field_description where ticket_field_configuration_id_fk = :fieldConfigurationId")
+	int deleteDescription(@Bind("fieldConfigurationId") int ticketFieldConfigurationId);
+
+    @Query("delete from ticket_field_configuration where id = :fieldConfigurationId")
+	int deleteField(@Bind("fieldConfigurationId") int ticketFieldConfigurationId);
 }

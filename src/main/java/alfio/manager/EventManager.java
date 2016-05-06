@@ -629,6 +629,12 @@ public class EventManager {
 		int order = ticketFieldRepository.countAdditionalFieldsForEvent(eventId);
 		insertAdditionalField(eventId, field, order);
 	}
+	
+	public void deleteAdditionalField(int ticketFieldConfigurationId) {
+		ticketFieldRepository.deleteValues(ticketFieldConfigurationId);
+		ticketFieldRepository.deleteDescription(ticketFieldConfigurationId);
+		ticketFieldRepository.deleteField(ticketFieldConfigurationId);
+	}
 
     @Data
     private static final class GeolocationResult {

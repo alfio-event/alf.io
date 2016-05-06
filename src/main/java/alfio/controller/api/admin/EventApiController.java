@@ -357,6 +357,11 @@ public class EventApiController {
     	Event event = eventManager.getSingleEvent(eventName, principal.getName());
     	eventManager.addAdditionalField(event.getId(), field);
     }
+    
+    @RequestMapping(value = "/events/{eventName}/additional-field/{id}", method = DELETE)
+    public void deleteAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id) {
+    	eventManager.deleteAdditionalField(id);
+    }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments")
     public List<SerializablePair<TicketReservation, OrderSummary>> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {

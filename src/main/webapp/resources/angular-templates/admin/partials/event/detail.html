@@ -262,6 +262,7 @@
                 </div>
                 <div class="col-md-12 text-right">
                     <p>
+                    	<button class="btn btn-danger" type="button" ng-click="deleteFieldModal(field)"><i class="fa fa-trash"></i></button>
                         <button class="btn btn-warning" type="button" ng-click="toEdit = {};prepareFieldDescriptionEdit(toEdit, field);edit=true" ng-hide="edit"><i class="fa fa-wrench"></i></button>
                         <button class="btn btn-success" type="button" ng-click="saveFieldDescription(toEdit.description);edit=false" ng-show="edit">Save</button>
                         <button class="btn btn-default" type="button" ng-click="edit=false" ng-show="edit">Cancel</button>

@@ -807,11 +807,28 @@
             EventService.saveFieldDescription($scope.event.shortName, description).then(loadData);
         };
         
+        $scope.deleteFieldModal = function(field) {
+        	$modal.open({
+        		size: 'lg',
+        		templateUrl: BASE_STATIC_URL + '/event/fragment/delete-field-modal.html',
+        		controller: function($scope) {
+        			$scope.field = field;
+        			$scope.deleteField = function(id) {
+        				EventService.deleteField($stateParams.eventName, id).then(function() {
+        					return loadData();
+                    	}).then(function() {
+                    		$scope.$close(true);
+                    	});
+        			}
+        		}
+        	});
+        };
+        
         
         $scope.addField = function(event) {
         	$modal.open({
                 size:'lg',
-                templateUrl:BASE_STATIC_URL + '/event/fragment/add-field-modal.html',
+                templateUrl: BASE_STATIC_URL + '/event/fragment/add-field-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
                 	$scope.event = event;
