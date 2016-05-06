@@ -855,6 +855,20 @@
                 	$scope.field = {};
                 	$scope.fieldTypes = FIELD_TYPES;
                 	
+                	
+                	EventService.getDynamicFieldTemplates().success(function(result) {
+                        $scope.dynamicFieldTemplates = result;
+                    });
+                	
+                	$scope.addFromTemplate = function(template) {
+                		$scope.field.name = template.name;
+                		$scope.field.type = template.type;
+                		$scope.field.restrictedValues = _.map(template.restrictedValues, function(v) {return {value: v}});
+                		$scope.field.description = template.description;
+                		$scope.field.maxLength = template.maxLength;
+                		$scope.field.minLength = template.minLength;
+                	}
+
                 	//
                 	EventService.getSupportedLanguages().success(function(result) {
                         $scope.allLanguages = result;

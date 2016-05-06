@@ -112,6 +112,9 @@ public interface TicketFieldRepository {
 
     @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId")
     Integer countAdditionalFieldsForEvent(@Bind("eventId") int eventId);
+    
+    @Query("select max(field_order) from ticket_field_configuration where event_id_fk = :eventId")
+    Integer findMaxOrderValue(@Bind("eventId") int eventId);
 
     @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId and field_required = true")
     Integer countRequiredAdditionalFieldsForEvent(@Bind("eventId") int eventId);

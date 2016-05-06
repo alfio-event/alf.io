@@ -58,11 +58,15 @@
                     <input ng-model="field.description[lang.locale].label" type="text" placeholder="label" class="form-control" required></div>
                 <div class="form-group">
                     <label>Placeholder {{lang.displayLanguage}}</label>
-                    <input ng-model="field.description[lang.locale].placeholder" type="text" placeholder="placeholder" class="form-control" required>
+                    <input ng-model="field.description[lang.locale].placeholder" type="text" placeholder="placeholder" class="form-control">
                 </div>
             </div>
         </div>
     </div>
+    
+	<div class="col-sm-11">
+		<h4>Add from template <span data-ng-repeat="template in dynamicFieldTemplates" ><a class="btn btn-primary btn-xs" data-ng-click="addFromTemplate(template)">{{template.name}}</a> </span></h4>
+	</div>
 </div>
 
 <div class="modal-footer">

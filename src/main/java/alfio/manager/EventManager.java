@@ -627,8 +627,8 @@ public class EventManager {
     }
     
 	public void addAdditionalField(int eventId, AdditionalField field) {
-		int order = ticketFieldRepository.countAdditionalFieldsForEvent(eventId);
-		insertAdditionalField(eventId, field, order);
+		Integer order = ticketFieldRepository.findMaxOrderValue(eventId);
+		insertAdditionalField(eventId, field, order == null ? 0 : order + 1);
 	}
 	
 	public void deleteAdditionalField(int ticketFieldConfigurationId) {
