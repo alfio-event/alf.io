@@ -296,6 +296,10 @@ public class ReservationFlowIntegrationTest {
 
         TicketAndCheckInResult ticketAndCheckInResultOk = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
         Assert.assertEquals(CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
+        
+        //
+        
+        eventManager.deleteEvent(event.getId());
 
     }
 

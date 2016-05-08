@@ -84,6 +84,7 @@ public class EventManager {
     private final ConfigurationManager configurationManager;
     private final PluginManager pluginManager;
     private final TicketFieldRepository ticketFieldRepository;
+    private final EventDeleterRepository eventDeleterRepository;
 
     @Autowired
     public EventManager(UserManager userManager,
@@ -99,7 +100,8 @@ public class EventManager {
                         NamedParameterJdbcTemplate jdbc,
                         ConfigurationManager configurationManager,
                         PluginManager pluginManager,
-                        TicketFieldRepository ticketFieldRepository) {
+                        TicketFieldRepository ticketFieldRepository,
+                        EventDeleterRepository eventDeleterRepository) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -114,6 +116,7 @@ public class EventManager {
         this.configurationManager = configurationManager;
         this.pluginManager = pluginManager;
         this.ticketFieldRepository = ticketFieldRepository;
+        this.eventDeleterRepository = eventDeleterRepository;
     }
 
     public Event getSingleEvent(String eventName, String username) {
@@ -644,6 +647,36 @@ public class EventManager {
 		Assert.isTrue(eventId == field2.getEventId());
 		ticketFieldRepository.updateFieldOrder(id1, field2.getOrder());
 		ticketFieldRepository.updateFieldOrder(id2, field1.getOrder());
+	}
+	
+	public void deleteEvent(int eventId) {
+		eventDeleterRepository.deleteWaitingQueue(eventId);
+		
+		eventDeleterRepository.deletePluginLog(eventId);
+		eventDeleterRepository.deletePluginConfiguration(eventId);
+		
+		eventDeleterRepository.deleteConfigurationEvent(eventId);
+		eventDeleterRepository.deleteConfigurationTicketCategory(eventId);
+		
+		eventDeleterRepository.deleteEmailMessage(eventId);
+		
+		eventDeleterRepository.deleteTicketFieldValue(eventId);
+		eventDeleterRepository.deleteFieldDescription(eventId);
+		eventDeleterRepository.deleteTicketFieldConfiguration(eventId);
+		
+		
+		eventDeleterRepository.deleteEventMigration(eventId);
+		eventDeleterRepository.deleteSponsorScan(eventId);
+		eventDeleterRepository.deleteTicket(eventId);
+		eventDeleterRepository.resetTicketReservation(eventId);
+		
+		eventDeleterRepository.deletePromoCode(eventId);
+		eventDeleterRepository.deleteTicketCategoryText(eventId);
+		eventDeleterRepository.deleteTicketCategory(eventId);
+		eventDeleterRepository.deleteEventDescription(eventId);
+		
+		eventDeleterRepository.deleteEvent(eventId);
+		
 	}
 
     @Data
