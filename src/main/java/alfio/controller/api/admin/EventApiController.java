@@ -218,7 +218,7 @@ public class EventApiController {
     public ValidationResult createCategory(@PathVariable("eventId") int eventId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
         return validateCategory(category, errors).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
     }
-
+    
     @RequestMapping(value = "/events/reallocate", method = PUT)
     public String reallocateTickets(@RequestBody TicketAllocationModification form) {
         eventManager.reallocateTickets(form.getSrcCategoryId(), form.getTargetCategoryId(), form.getEventId());
@@ -353,6 +353,23 @@ public class EventApiController {
     @RequestMapping(value = "/events/{eventName}/additional-field/descriptions", method = POST)
     public void saveAdditionalFieldDescriptions(@RequestBody Map<String, TicketFieldDescriptionModification> descriptions) {
         eventManager.updateTicketFieldDescriptions(descriptions);
+    }
+    
+    @RequestMapping(value = "/events/{eventName}/additional-field/new", method = POST)
+    public void addAdditionalField(@PathVariable("eventName") String eventName, @RequestBody EventModification.AdditionalField field, Principal principal) {
+    	Event event = eventManager.getSingleEvent(eventName, principal.getName());
+    	eventManager.addAdditionalField(event.getId(), field);
+    }
+    
+    @RequestMapping(value = "/events/{eventName}/additional-field/swap-position/{id1}/{id2}", method = POST)
+    public void swapAdditionalFieldPosition(@PathVariable("eventName") String eventName, @PathVariable("id1") int id1, @PathVariable("id2") int id2, Principal principal) {
+    	Event event = eventManager.getSingleEvent(eventName, principal.getName());
+    	eventManager.swapAdditionalFieldPosition(event.getId(), id1, id2);
+    }
+    
+    @RequestMapping(value = "/events/{eventName}/additional-field/{id}", method = DELETE)
+    public void deleteAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id) {
+    	eventManager.deleteAdditionalField(id);
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments")

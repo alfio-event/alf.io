@@ -262,6 +262,9 @@
                 </div>
                 <div class="col-md-12 text-right">
                     <p>
+                    	<button class="btn btn-default" ng-click="fieldUp($index)" ng-hide="edit || $first"><i class="fa fa-arrow-up"></i></button>
+                    	<button class="btn btn-default" ng-click="fieldDown($index)" ng-hide="edit || $last"><i class="fa fa-arrow-down"></i></button>
+                    	<button class="btn btn-danger" type="button" ng-click="deleteFieldModal(field)" ng-hide="edit"><i class="fa fa-trash"></i></button>
                         <button class="btn btn-warning" type="button" ng-click="toEdit = {};prepareFieldDescriptionEdit(toEdit, field);edit=true" ng-hide="edit"><i class="fa fa-wrench"></i></button>
                         <button class="btn btn-success" type="button" ng-click="saveFieldDescription(toEdit.description);edit=false" ng-show="edit">Save</button>
                         <button class="btn btn-default" type="button" ng-click="edit=false" ng-show="edit">Cancel</button>
@@ -270,4 +273,9 @@
             </div>
         </div>
     </div>
+    <div class="clearfix"></div>
+	<div class="wMarginBottom">
+		<button type="button" class="btn btn-success" data-ng-click="addField(event)"><i class="fa fa-plus"></i> add additional field</button>
+	</div>
+    
 </div>

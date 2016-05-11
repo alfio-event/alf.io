@@ -8,6 +8,10 @@
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)'
     };
+    
+    //
+    var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
+    
     var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'nzToggle', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-users']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
@@ -272,8 +276,8 @@
 
         //----------
 
-        // TODO, change, HARDCODED
-        $scope.fieldTypes = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
+        // 
+        $scope.fieldTypes = FIELD_TYPES;
 
         $scope.addNewTicketField = function(event) {
             if(!event.ticketFields) {
@@ -801,6 +805,99 @@
 
         $scope.saveFieldDescription = function(description) {
             EventService.saveFieldDescription($scope.event.shortName, description).then(loadData);
+        };
+        
+        $scope.deleteFieldModal = function(field) {
+        	$modal.open({
+        		size: 'lg',
+        		templateUrl: BASE_STATIC_URL + '/event/fragment/delete-field-modal.html',
+        		controller: function($scope) {
+        			$scope.field = field;
+        			$scope.deleteField = function(id) {
+        				EventService.deleteField($stateParams.eventName, id).then(function() {
+        					return loadData();
+                    	}).then(function() {
+                    		$scope.$close(true);
+                    	});
+        			}
+        		}
+        	});
+        };
+        
+        
+        $scope.fieldUp = function(index) {
+        	var targetId = $scope.additionalFields[index].id;
+        	var prevTargetId = $scope.additionalFields[index-1].id;
+        	EventService.swapFieldPosition($stateParams.eventName, targetId, prevTargetId).then(function(result) {
+        		return EventService.getAdditionalFields($stateParams.eventName);
+        	}).then(function (result) {
+        		$scope.additionalFields = result.data;
+        	});
+        };
+        
+        $scope.fieldDown = function(index) {
+        	var targetId = $scope.additionalFields[index].id;
+        	var nextTargetId = $scope.additionalFields[index+1].id;
+        	EventService.swapFieldPosition($stateParams.eventName, targetId, nextTargetId).then(function(result) {
+        		return EventService.getAdditionalFields($stateParams.eventName);
+        	}).then(function (result) {
+        		$scope.additionalFields = result.data;
+        	});
+        }
+        
+        $scope.addField = function(event) {
+        	$modal.open({
+                size:'lg',
+                templateUrl: BASE_STATIC_URL + '/event/fragment/add-field-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                	$scope.event = event;
+                	$scope.field = {};
+                	$scope.fieldTypes = FIELD_TYPES;
+                	
+                	
+                	EventService.getDynamicFieldTemplates().success(function(result) {
+                        $scope.dynamicFieldTemplates = result;
+                    });
+                	
+                	$scope.addFromTemplate = function(template) {
+                		$scope.field.name = template.name;
+                		$scope.field.type = template.type;
+                		$scope.field.restrictedValues = _.map(template.restrictedValues, function(v) {return {value: v}});
+                		$scope.field.description = template.description;
+                		$scope.field.maxLength = template.maxLength;
+                		$scope.field.minLength = template.minLength;
+                	}
+
+                	//
+                	EventService.getSupportedLanguages().success(function(result) {
+                        $scope.allLanguages = result;
+                        $scope.allLanguagesMapping = {};
+                        angular.forEach(result, function(r) {
+                            $scope.allLanguagesMapping[r.value] = r;
+                        });
+                    });
+                	
+                	//
+                	
+                	$scope.addRestrictedValue = function() {
+                		var field = $scope.field;
+                        var arr = field.restrictedValues || [];
+                        arr.push({});
+                        field.restrictedValues = arr;
+                    };
+                    $scope.isLanguageSelected = function(lang, selectedLanguages) {
+                        return (selectedLanguages & lang) > 0;
+                    };
+                    
+                    $scope.addField = function(form, field) {
+                    	EventService.addField($stateParams.eventName, field).then(function(result) {
+                    		return loadData();
+                    	}).then(function() {
+                    		$scope.$close(true);
+                    	});
+                    };
+                }});
         };
 
     });

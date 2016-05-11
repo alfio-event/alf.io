@@ -100,12 +100,21 @@ public interface TicketFieldRepository {
 
     @Query("select * from ticket_field_configuration where event_id_fk = :eventId order by field_order asc")
     List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventId") int eventId);
+    
+    @Query("select * from ticket_field_configuration where id = :id")
+    TicketFieldConfiguration findById(@Bind("id") int id);
+    
+    @Query("update ticket_field_configuration set field_order = :order where id = :id")
+    int updateFieldOrder(@Bind("id") int id, @Bind("order") int order);
 
     @Query("select ticket_field_configuration.* from ticket_field_configuration inner join event on event.id = event_id_fk  where short_name = :eventShortName order by field_order asc")
     List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventShortName") String eventName);
 
     @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId")
     Integer countAdditionalFieldsForEvent(@Bind("eventId") int eventId);
+    
+    @Query("select max(field_order) from ticket_field_configuration where event_id_fk = :eventId")
+    Integer findMaxOrderValue(@Bind("eventId") int eventId);
 
     @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId and field_required = true")
     Integer countRequiredAdditionalFieldsForEvent(@Bind("eventId") int eventId);
@@ -117,4 +126,15 @@ public interface TicketFieldRepository {
     default Map<String, String> findAllValuesForTicketId(int ticketId) {
         return findNameAndValue(ticketId).stream().filter(t -> t.getName() != null && t.getValue() != null).collect(Collectors.toMap(TicketFieldNameAndValue::getName, TicketFieldNameAndValue::getValue));
     }
+
+    // required for deleting a field
+    
+    @Query("delete from ticket_field_value where ticket_field_configuration_id_fk = :fieldConfigurationId")
+	int deleteValues(@Bind("fieldConfigurationId") int ticketFieldConfigurationId);
+    
+    @Query("delete from ticket_field_description where ticket_field_configuration_id_fk = :fieldConfigurationId")
+	int deleteDescription(@Bind("fieldConfigurationId") int ticketFieldConfigurationId);
+
+    @Query("delete from ticket_field_configuration where id = :fieldConfigurationId")
+	int deleteField(@Bind("fieldConfigurationId") int ticketFieldConfigurationId);
 }

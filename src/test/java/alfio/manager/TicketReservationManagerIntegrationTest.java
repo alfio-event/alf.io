@@ -28,7 +28,6 @@ import alfio.model.Ticket;
 import alfio.model.TicketReservation;
 import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
-import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -79,8 +78,6 @@ public class TicketReservationManagerIntegrationTest {
     private TicketRepository ticketRepository;
     @Autowired
     private TicketReservationManager ticketReservationManager;
-    @Autowired
-    private SpecialPriceRepository specialPriceRepository;
 
     @Autowired
     private ConfigurationRepository configurationRepository;
@@ -175,7 +172,7 @@ public class TicketReservationManagerIntegrationTest {
         TicketReservationWithOptionalCodeModification modForDelete = new TicketReservationWithOptionalCodeModification(trForDelete, Optional.<SpecialPrice>empty());
         String reservationId2 = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(modForDelete), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
 
-        PaymentResult confirm2 = ticketReservationManager.confirm(null, event.getEvent(), reservationId2, "email@example.com", "full name", Locale.ENGLISH, "billing address",
+        ticketReservationManager.confirm(null, event.getEvent(), reservationId2, "email@example.com", "full name", Locale.ENGLISH, "billing address",
             totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false);
 
         assertTrue(ticketReservationManager.findById(reservationId2).isPresent());

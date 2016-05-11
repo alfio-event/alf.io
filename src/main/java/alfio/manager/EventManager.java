@@ -25,6 +25,7 @@ import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.modification.*;
+import alfio.model.modification.EventModification.AdditionalField;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
@@ -44,6 +45,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
@@ -82,6 +84,7 @@ public class EventManager {
     private final ConfigurationManager configurationManager;
     private final PluginManager pluginManager;
     private final TicketFieldRepository ticketFieldRepository;
+    private final EventDeleterRepository eventDeleterRepository;
 
     @Autowired
     public EventManager(UserManager userManager,
@@ -97,7 +100,8 @@ public class EventManager {
                         NamedParameterJdbcTemplate jdbc,
                         ConfigurationManager configurationManager,
                         PluginManager pluginManager,
-                        TicketFieldRepository ticketFieldRepository) {
+                        TicketFieldRepository ticketFieldRepository,
+                        EventDeleterRepository eventDeleterRepository) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -112,6 +116,7 @@ public class EventManager {
         this.configurationManager = configurationManager;
         this.pluginManager = pluginManager;
         this.ticketFieldRepository = ticketFieldRepository;
+        this.eventDeleterRepository = eventDeleterRepository;
     }
 
     public Event getSingleEvent(String eventName, String username) {
@@ -187,15 +192,19 @@ public class EventManager {
     private void createAdditionalFields(int eventId, EventModification em) {
         if (!CollectionUtils.isEmpty(em.getTicketFields())) {
            em.getTicketFields().forEach(f -> {
-               List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValues()).orElseGet(Collections::emptyList).stream().map(EventModification.RestrictedValue::getValue).collect(Collectors.toList());
-               String serializedRestrictedValues = "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
-               int configurationId = ticketFieldRepository.insertConfiguration(eventId, f.getName(), f.getOrder(), f.getType(), serializedRestrictedValues, f.getMaxLength(), f.getMinLength(), f.isRequired()).getKey();
-               f.getDescription().forEach((locale, value) -> {
-                   ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value));
-               });
+               insertAdditionalField(eventId, f, f.getOrder());
            });
         }
     }
+
+	private void insertAdditionalField(int eventId, AdditionalField f, int order) {
+		List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValues()).orElseGet(Collections::emptyList).stream().map(EventModification.RestrictedValue::getValue).collect(Collectors.toList());
+		   String serializedRestrictedValues = "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
+		   int configurationId = ticketFieldRepository.insertConfiguration(eventId, f.getName(), order, f.getType(), serializedRestrictedValues, f.getMaxLength(), f.getMinLength(), f.isRequired()).getKey();
+		   f.getDescription().forEach((locale, value) -> {
+		       ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value));
+		   });
+	}
 
     public void updateEventHeader(Event original, EventModification em, String username) {
         checkOwnership(original, username, em.getOrganizationId());
@@ -619,6 +628,56 @@ public class EventManager {
             }
         });
     }
+    
+	public void addAdditionalField(int eventId, AdditionalField field) {
+		Integer order = ticketFieldRepository.findMaxOrderValue(eventId);
+		insertAdditionalField(eventId, field, order == null ? 0 : order + 1);
+	}
+	
+	public void deleteAdditionalField(int ticketFieldConfigurationId) {
+		ticketFieldRepository.deleteValues(ticketFieldConfigurationId);
+		ticketFieldRepository.deleteDescription(ticketFieldConfigurationId);
+		ticketFieldRepository.deleteField(ticketFieldConfigurationId);
+	}
+	
+	public void swapAdditionalFieldPosition(int eventId, int id1, int id2) {
+		TicketFieldConfiguration field1 = ticketFieldRepository.findById(id1);
+		TicketFieldConfiguration field2 = ticketFieldRepository.findById(id2);
+		Assert.isTrue(eventId == field1.getEventId());
+		Assert.isTrue(eventId == field2.getEventId());
+		ticketFieldRepository.updateFieldOrder(id1, field2.getOrder());
+		ticketFieldRepository.updateFieldOrder(id2, field1.getOrder());
+	}
+	
+	public void deleteEvent(int eventId) {
+		eventDeleterRepository.deleteWaitingQueue(eventId);
+		
+		eventDeleterRepository.deletePluginLog(eventId);
+		eventDeleterRepository.deletePluginConfiguration(eventId);
+		
+		eventDeleterRepository.deleteConfigurationEvent(eventId);
+		eventDeleterRepository.deleteConfigurationTicketCategory(eventId);
+		
+		eventDeleterRepository.deleteEmailMessage(eventId);
+		
+		eventDeleterRepository.deleteTicketFieldValue(eventId);
+		eventDeleterRepository.deleteFieldDescription(eventId);
+		eventDeleterRepository.deleteTicketFieldConfiguration(eventId);
+		
+		
+		eventDeleterRepository.deleteEventMigration(eventId);
+		eventDeleterRepository.deleteSponsorScan(eventId);
+		eventDeleterRepository.deleteTicket(eventId);
+		eventDeleterRepository.resetTicketReservation(eventId);
+		
+		eventDeleterRepository.deletePromoCode(eventId);
+		eventDeleterRepository.deleteTicketCategoryText(eventId);
+		eventDeleterRepository.deleteTicketCategory(eventId);
+		eventDeleterRepository.deleteEventDescription(eventId);
+		
+		eventDeleterRepository.deleteEvent(eventId);
+		
+	}
 
     @Data
     private static final class GeolocationResult {
@@ -641,4 +700,5 @@ public class EventManager {
             return tz.toZoneId();
         }
     }
+
 }

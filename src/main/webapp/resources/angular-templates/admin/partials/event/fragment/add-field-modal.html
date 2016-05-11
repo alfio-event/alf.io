@@ -1,0 +1,81 @@
+<div class="modal-header">
+    <h3>Add field</h3>
+</div>
+<div class="modal-body">
+
+<form name="addFieldForm" ng-submit="addField(addFieldForm, field)">
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="form-group">
+            <label>Field name</label>
+            <input type="input" ng-model="field.name" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label>Type</label>
+            <select ng-model="field.type" ng-options="option for option in fieldTypes" class="form-control" required>
+            	<option></option>
+            </select>
+        </div>
+    </div>
+    <div class="col-md-4" ng-if="field.type != 'country'">
+        <div data-ng-if="field.type === 'select'">
+            <div data-ng-repeat="restrictedValue in field.restrictedValues">
+                <div class="form-group">
+                    <label>Value</label>
+                    <input ng-model="restrictedValue.value" class="form-control" required>
+                </div>
+                <div>
+                    <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)" class="form-group">
+                        <label>Text {{lang.displayLanguage}}</label>
+                        <input ng-model="field.description[lang.locale].restrictedValues[restrictedValue.value]" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="button" ng-click="field.restrictedValues.splice(field.restrictedValues.indexOf(restrictedValue), 1)" class="btn btn-default">Remove</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <button type="button" data-ng-click="addRestrictedValue();" class="btn btn-success">Add value</button>
+            </div>
+        </div>
+        <div data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
+            <div class="form-group">
+                <label>Min length</label>
+                <input type="number" ng-model="field.minLength" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Max length</label>
+                <input type="number" ng-model="field.maxLength" class="form-control">
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div>
+            <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">
+                <div class="form-group">
+                    <label>Label {{lang.displayLanguage}}</label>
+                    <input ng-model="field.description[lang.locale].label" type="text" placeholder="label" class="form-control" required></div>
+                <div class="form-group">
+                    <label>Placeholder {{lang.displayLanguage}}</label>
+                    <input ng-model="field.description[lang.locale].placeholder" type="text" placeholder="placeholder" class="form-control">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+	<div class="col-sm-11">
+		<h4>Add from template <span data-ng-repeat="template in dynamicFieldTemplates" ><a class="btn btn-primary btn-xs" data-ng-click="addFromTemplate(template)">{{template.name}}</a> </span></h4>
+	</div>
+</div>
+
+<div class="modal-footer">
+        <div>
+            <button type="submit" class="btn btn-primary" data-ng-disabled="addField.$waiting" data-ng-click="ok(field)">Save</button>
+            <button type="button" class="btn btn-default" data-ng-click="$close(true)">Cancel</button>
+        </div>
+    </div>
+
+</form>
+
+</div>

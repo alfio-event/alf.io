@@ -28,7 +28,6 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.support.LocationDescriptor;
-import alfio.model.system.ComponentType;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
@@ -36,7 +35,6 @@ import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.ConfigurationRepository;
-import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.OptionalWrapper;
@@ -55,7 +53,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.*;
 import static org.junit.Assert.*;
@@ -87,9 +84,6 @@ public class ConfigurationManagerIntegrationTest {
 
     @Autowired
     private OrganizationRepository organizationRepository;
-
-    @Autowired
-    private AuthorityRepository authorityRepository;
 
     @Autowired
     private UserManager userManager;

@@ -42,13 +42,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.LocalDate;
-import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
@@ -434,7 +432,6 @@ public class TicketReservationManagerTest {{
         when(event.getId()).thenReturn(42);
         TicketCategory category = it.usesMock(TicketCategory.class);
         PluginManager pluginManager = mock(PluginManager.class);
-        FileUploadManager fileUploadManager = mock(FileUploadManager.class);
         TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
         TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, pluginManager, null, ticketFieldRepository);
         it.should("count how many tickets are yet available for a category", expect -> {
