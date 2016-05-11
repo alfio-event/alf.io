@@ -35,7 +35,7 @@ task validate {
     if (javaVersion == JavaVersion.VERSION_1_8) {
         def currentVersion = System.getProperty("java.version")
         def matcher = java.util.regex.Pattern.compile("1(\\.\\d+){2}_(\\d+)").matcher(currentVersion)
-        if (!matcher.matches()) {
+        if (!matcher.find()) {
             throw new GradleException(currentVersion + " is not a recognized java version. Please report this issue.")
         }
         def buildNumber = Integer.parseInt(matcher.group(2))
