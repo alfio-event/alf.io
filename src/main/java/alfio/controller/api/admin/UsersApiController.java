@@ -27,6 +27,8 @@ import alfio.model.user.UserWithPassword;
 import alfio.util.ImageUtil;
 import alfio.util.Json;
 import alfio.util.ValidationResult;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -137,6 +139,12 @@ public class UsersApiController {
         return OK;
     }
 
+    @RequestMapping(value = "/users/update-password", method = POST)
+    public ValidationResult updatePassword(@RequestBody PasswordModification passwordModification, Principal principal) {
+        return userManager.validateNewPassword(principal.getName(), passwordModification.oldPassword, passwordModification.newPassword, passwordModification.newPasswordConfirm)
+            .ifSuccess(() -> userManager.updatePassword(principal.getName(), passwordModification.newPassword));
+    }
+
     @RequestMapping(value = "/users/new", method = POST)
     public UserWithPassword insertUser(@RequestBody UserModification userModification, HttpSession session, Principal principal) {
         Role requested = Role.valueOf(userModification.getRole());
@@ -179,6 +187,13 @@ public class UsersApiController {
         return new UserModification(user.getId(), userOrganizations.get(0).getId(), userManager.getUserRole(user).name(), user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress());
     }
 
+    @RequestMapping(value = "/users/current", method = GET)
+    public UserModification loadCurrentUser(Principal principal) {
+        User user = userManager.findUserByUsername(principal.getName());
+        List<Organization> userOrganizations = userManager.findUserOrganizations(user);
+        return new UserModification(user.getId(), userOrganizations.get(0).getId(), userManager.getUserRole(user).name(), user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress());
+    }
+
     @RequestMapping(value = "/users/{id}/reset-password", method = PUT)
     public UserWithPassword resetPassword(@PathVariable("id") int userId, HttpSession session) {
         UserWithPassword userWithPassword = userManager.resetPassword(userId);
@@ -190,7 +205,7 @@ public class UsersApiController {
         session.setAttribute(USER_WITH_PASSWORD_KEY, userWithPassword);
     }
 
-    static final class RoleDescriptor {
+    private static final class RoleDescriptor {
         private final Role role;
 
         RoleDescriptor(Role role) {
@@ -203,6 +218,22 @@ public class UsersApiController {
 
         public String getDescription() {
             return role.getDescription();
+        }
+    }
+
+    private static final class PasswordModification {
+
+        private final String oldPassword;
+        private final String newPassword;
+        private final String newPasswordConfirm;
+
+        @JsonCreator
+        private PasswordModification(@JsonProperty("oldPassword") String oldPassword,
+                                     @JsonProperty("newPassword") String newPassword,
+                                     @JsonProperty("newPasswordConfirm") String newPasswordConfirm) {
+            this.oldPassword = oldPassword;
+            this.newPassword = newPassword;
+            this.newPasswordConfirm = newPasswordConfirm;
         }
     }
 }

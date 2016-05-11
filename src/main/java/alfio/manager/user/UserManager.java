@@ -169,13 +169,18 @@ public class UserManager {
 
     @Transactional
     public void editUser(int id, int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, String currentUsername) {
-        int userOrganizationResult = userOrganizationRepository.updateUserOrganization(id, organizationId);
-        Assert.isTrue(userOrganizationResult == 1, "unexpected error during organization update");
+        boolean admin = ADMIN_USERNAME.equals(username) && Role.ADMIN == role;
+        if(!admin) {
+            int userOrganizationResult = userOrganizationRepository.updateUserOrganization(id, organizationId);
+            Assert.isTrue(userOrganizationResult == 1, "unexpected error during organization update");
+        }
         int userResult = userRepository.update(id, username, firstName, lastName, emailAddress);
         Assert.isTrue(userResult == 1, "unexpected error during user update");
-        Assert.isTrue(getAvailableRoles(currentUsername).contains(role), "cannot assign role "+role);
-        authorityRepository.revokeAll(username);
-        authorityRepository.create(username, role.getRoleName());
+        if(!admin) {
+            Assert.isTrue(getAvailableRoles(currentUsername).contains(role), "cannot assign role "+role);
+            authorityRepository.revokeAll(username);
+            authorityRepository.create(username, role.getRoleName());
+        }
     }
 
     @Transactional
@@ -194,6 +199,14 @@ public class UserManager {
         String password = PasswordGenerator.generateRandomPassword();
         Validate.isTrue(userRepository.resetPassword(userId, passwordEncoder.encode(password)) == 1, "error during password reset");
         return new UserWithPassword(user, password, UUID.randomUUID().toString());
+    }
+
+    @Transactional
+    public boolean updatePassword(String username, String newPassword) {
+        User user = userRepository.findByUsername(username).stream().findFirst().orElseThrow(IllegalStateException::new);
+        Validate.isTrue(PasswordGenerator.isValid(newPassword), "invalid password");
+        //Validate.isTrue(userRepository.resetPassword(user.getId(), passwordEncoder.encode(newPassword)) == 1, "error during password update");
+        return true;
     }
 
     @Transactional
@@ -217,6 +230,27 @@ public class UserManager {
             .filter(p -> StringUtils.isEmpty(p.getKey()))
             .map(p -> new ValidationResult.ValidationError(p.getKey(), p.getValue() + " is required"))
             .collect(toList()));
+    }
+
+    public ValidationResult validateNewPassword(String username, String oldPassword, String newPassword, String newPasswordConfirm) {
+        return userRepository.findByUsername(username)
+            .stream()
+            .findFirst()
+            .map(u -> {
+                List<ValidationResult.ValidationError> errors = new ArrayList<>();
+                Optional<String> password = userRepository.findPasswordByUsername(username);
+                if(!password.filter(p -> passwordEncoder.matches(oldPassword, p)).isPresent()) {
+                    errors.add(new ValidationResult.ValidationError("old-password-invalid", "wrong password"));
+                }
+                if(!PasswordGenerator.isValid(newPassword)) {
+                    errors.add(new ValidationResult.ValidationError("new-password-invalid", "new password is not strong enough"));
+                }
+                if(!StringUtils.equals(newPassword, newPasswordConfirm)) {
+                    errors.add(new ValidationResult.ValidationError("new-password-does-not-match", "new password has not been confirmed"));
+                }
+                return ValidationResult.of(errors);
+            })
+            .orElseGet(ValidationResult::failed);
     }
 
 

@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.function.IntConsumer;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 public final class PasswordGenerator {
@@ -31,6 +32,7 @@ public final class PasswordGenerator {
     private static final boolean DEV_MODE;
     private static final int MAX_LENGTH = 14;
     private static final int MIN_LENGTH = 10;
+    private static final Pattern VALIDATION_PATTERN;
 
     static {
         List<Character> chars = new LinkedList<>();
@@ -56,6 +58,7 @@ public final class PasswordGenerator {
         DEV_MODE = Arrays.stream(Optional.ofNullable(System.getProperty("spring.profiles.active")).map(p -> p.split(",")).orElse(new String[0]))
             .map(StringUtils::trim)
             .anyMatch(Initializer.PROFILE_DEV::equals);
+        VALIDATION_PATTERN = Pattern.compile("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\\p{Punct})(?=\\S+$).{"+MIN_LENGTH+",}$");//source: http://stackoverflow.com/a/3802238
     }
 
     private PasswordGenerator() {
@@ -68,5 +71,9 @@ public final class PasswordGenerator {
         Random r = new Random();
         int length = MIN_LENGTH + r.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
         return RandomStringUtils.random(length, PASSWORD_CHARACTERS);
+    }
+
+    public static boolean isValid(String password) {
+        return StringUtils.isNotBlank(password) && VALIDATION_PATTERN.matcher(password).matches();
     }
 }

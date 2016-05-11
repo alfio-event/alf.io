@@ -43,9 +43,23 @@
                         }
                     }
                 })
+                .state('edit-current-user', {
+                    url: "/profile/edit",
+                    templateUrl: "/resources/angular-templates/admin/partials/main/edit-current-user.html",
+                    controller: 'EditCurrentUserController',
+                    controllerAs: 'editCurrentUserCtrl',
+                    resolve: {
+                        user: ['UserService', function (UserService) {
+                            return UserService.loadCurrentUser().then(function(resp) {
+                                return resp.data;
+                            });
+                        }]
+                    }
+                })
         }])
         .controller('EditOrganizationController', EditOrganizationController)
         .controller('EditUserController', EditUserController)
+        .controller('EditCurrentUserController', EditCurrentUserController)
         .controller('OrganizationListController', OrganizationListController)
         .controller('UsersListController', UsersListController)
         .service('OrganizationService', OrganizationService)
@@ -133,6 +147,56 @@
 
     EditUserController.$inject = ['$state', '$stateParams', '$rootScope', '$q', 'OrganizationService', 'UserService', 'ValidationService', '$q'];
 
+    function EditCurrentUserController($state, user, UserService, ValidationService) {
+        var self = this;
+        self.user = user;
+        self.original = user;
+
+        self.saveUserInfo = function() {
+            if(self.editUser.$valid) {
+                self.loading = true;
+                var promise = UserService.checkUser(self.user).then(function() {
+                    return UserService.editUser(self.user).then(function() {
+                        self.original = angular.copy(self.user);
+                        self.loading = false;
+                    });
+                });
+                promise.then(function() {}, function(err) {
+                    self.loading = false;
+                    self.error = true;
+                });
+            }
+        };
+
+        self.doReset = function() {
+            self.user = angular.copy(self.original);
+            self.passwordContainer = {};
+            self.changePasswordErrors = {};
+        };
+
+        self.updatePassword = function() {
+            if(self.changePassword.$valid) {
+                self.loading = true;
+                UserService.updatePassword(self.passwordContainer).then(function(result) {
+                    var validationResult = result.data;
+                    if(validationResult.success) {
+                        self.passwordContainer = {};
+                        self.changePasswordErrors = {};
+                        alert('succeeded');
+                    } else {
+                        angular.forEach(validationResult.validationErrors, function(e) {
+                            self.changePassword.$setValidity(e.fieldName, false);
+                        });
+                    }
+                    self.loading = false;
+                });
+            }
+        };
+
+    }
+
+    EditCurrentUserController.$inject = ['$state', 'user', 'UserService', 'ValidationService'];
+
     function OrganizationService($http, HttpErrorHandler) {
         return {
             getAllOrganizations : function() {
@@ -172,6 +236,12 @@
             },
             loadUser: function(userId) {
                 return $http.get('/admin/api/users/'+userId+'.json').error(HttpErrorHandler.handle);
+            },
+            loadCurrentUser: function() {
+                return $http.get('/admin/api/users/current.json').error(HttpErrorHandler.handle);
+            },
+            updatePassword: function(passwordContainer) {
+                return $http.post('/admin/api/users/update-password.json', passwordContainer).error(HttpErrorHandler.handle);
             },
             deleteUser: function(user) {
                 return $http['delete']('/admin/api/users/'+user.id).error(HttpErrorHandler.handle);

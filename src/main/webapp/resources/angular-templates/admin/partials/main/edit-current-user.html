@@ -1,0 +1,73 @@
+<div class="container wMarginBottom30px">
+    <div class="page-header">
+        <h2>Edit your account: {{editCurrentUserCtrl.user.username}}</h2>
+        <span>Review and edit your account details</span>
+    </div>
+    <form role="form" name="editCurrentUserCtrl.editUser" data-error-sensitive data-ng-submit="editCurrentUserCtrl.saveUserInfo()">
+        <div class="page-header">
+            <h4>Personal information</h4>
+        </div>
+        <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input class="form-control" name="name" id="firstName" data-ng-model="editCurrentUserCtrl.user.firstName" required data-ng-minlength="2">
+        </div>
+        <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input class="form-control" name="lastName" id="lastName" data-ng-model="editCurrentUserCtrl.user.lastName" required data-ng-minlength="2">
+            <field-error data-form-obj="editUser" data-field-obj="editCurrentUserCtrl.user.lastName"></field-error>
+        </div>
+        <div class="form-group">
+            <label for="emailAddress">Email Address</label>
+            <input type="email" class="form-control" name="emailAddress" id="emailAddress" data-ng-model="editCurrentUserCtrl.user.emailAddress" required>
+        </div>
+        <div class="form-group pull-right" data-ng-if="!editCurrentUserCtrl.loading">
+            <button class="btn btn-success">Update</button>
+            <button class="btn btn-default" data-ng-click="editCurrentUserCtrl.doReset()">Cancel</button>
+        </div>
+        <div class="text-center" data-ng-if="editCurrentUserCtrl.loading">
+            <i class="fa fa-cog fa-2x fa-spin"></i> loading...
+        </div>
+    </form>
+    <div class="clearfix"></div>
+    <div class="page-header">
+        <h4>Change Password</h4>
+    </div>
+    <form role="form" name="editCurrentUserCtrl.changePassword" data-error-sensitive data-ng-submit="editCurrentUserCtrl.updatePassword()">
+        <div class="form-group">
+            <label for="oldPassword">Current Password</label>
+            <input class="form-control" name="oldPassword" id="oldPassword" data-ng-model="editCurrentUserCtrl.passwordContainer.oldPassword" required>
+        </div>
+        <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <input type="password" class="form-control" name="newPassword" id="newPassword" data-ng-model="editCurrentUserCtrl.passwordContainer.newPassword" required>
+        </div>
+        <div class="form-group">
+            <label for="newPasswordConfirm">Confirm new Password</label>
+            <input type="password" class="form-control" name="newPasswordConfirm" id="newPasswordConfirm" data-ng-model="editCurrentUserCtrl.passwordContainer.newPasswordConfirm" required>
+        </div>
+        <div class="text-center" data-ng-if="editCurrentUserCtrl.loading">
+            <i class="fa fa-cog fa-2x fa-spin"></i> loading...
+        </div>
+        <div class="form-group pull-right" data-ng-if="!editCurrentUserCtrl.loading">
+            <button class="btn btn-success">Update</button>
+            <button type="reset" class="btn btn-default">Cancel</button>
+        </div>
+
+        <div data-ng-messages="editCurrentUserCtrl.changePassword.$error" class="text-danger" data-ng-messages-multiple>
+            <div data-ng-message="new-password-invalid">
+                <span>The new password doesn't match the required format. It must be <strong>at least</strong> 8 characters and it must: </span>
+                <ul>
+                    <li>contain <strong>at least</strong> an uppercase letter <code>A-Z</code></li>
+                    <li>contain <strong>at least</strong> a lowercase letter <code>a-z</code></li>
+                    <li>contain  <strong>at least</strong> a punctuation character <code>!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~}</code></li>
+                    <li><strong>not</strong> contain spaces</li>
+                </ul>
+            </div>
+            <div data-ng-message="new-password-does-not-match">"New password" and "Confirm new password" don't match</div>
+            <div data-ng-message="old-password-invalid">Current password is not valid</div>
+            <div data-ng-message="pattern">The value should match the following pattern: {{requiredPattern}}</div>
+        </div>
+
+    </form>
+
+</div>
