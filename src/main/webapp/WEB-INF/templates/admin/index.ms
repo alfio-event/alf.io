@@ -56,21 +56,20 @@
                         <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
                         <li data-ui-sref-active="active"><a data-ui-sref="configuration.system">Configuration</a></li>
                         <li class="nav-divider"></li>
-                        <li class="visible-xs"><a href="#" data-ui-sref="edit-current-user"><i class="fa fa-user"></i> {{username}}</a></li>
-                        <li class="visible-xs"><a href="">Change Password</a></li>
+                        <li class="visible-xs"><a href="#" data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-user"></i> {{username}}</a></li>
                         <li class="visible-xs"><a href="" data-ng-click="doLogout()">Logout</a></li>
                     </ul>
                 </div>
             </div>
             <div class="navbar-right hidden-xs">
-                <span class="navbar-text"><a href="#" data-ui-sref="edit-current-user"><i class="fa fa-user"></i> {{username}}</a></span>
+                <span class="navbar-text"><a href="#" title="click to update account details" data-ui-sref="edit-current-user"><i class="fa fa-user"></i> {{username}}</a></span>
                 <span class="navbar-text"><a href="" data-ng-click="doLogout()">Logout</a></span>
             </div>
         </div>
     </div>
     <div data-ui-view></div>
     <footer>
-        <div class="text-center"><span class="text-muted">Powered by <a href="http://alf.io">Alf.io</a> v.{{alfioVersion}}</span></div>
+        <div class="text-center"><span class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{alfioVersion}}</span></div>
     </footer>
 </body>
 </html>

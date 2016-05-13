@@ -86,13 +86,7 @@ public class UserManager {
 
     public Collection<Role> getAvailableRoles(String username) {
         User user = findUserByUsername(username);
-        if(isAdmin(user)) {
-            return EnumSet.of(Role.OWNER, Role.OPERATOR, Role.SPONSOR);
-        }
-        if(isOwner(user)) {
-            return EnumSet.of(Role.OPERATOR);
-        }
-        return Collections.emptySet();
+        return isAdmin(user) || isOwner(user) ? EnumSet.of(Role.OWNER, Role.OPERATOR, Role.SPONSOR) : Collections.emptySet();
     }
 
     /**
@@ -205,7 +199,7 @@ public class UserManager {
     public boolean updatePassword(String username, String newPassword) {
         User user = userRepository.findByUsername(username).stream().findFirst().orElseThrow(IllegalStateException::new);
         Validate.isTrue(PasswordGenerator.isValid(newPassword), "invalid password");
-        //Validate.isTrue(userRepository.resetPassword(user.getId(), passwordEncoder.encode(newPassword)) == 1, "error during password update");
+        Validate.isTrue(userRepository.resetPassword(user.getId(), passwordEncoder.encode(newPassword)) == 1, "error during password update");
         return true;
     }
 
