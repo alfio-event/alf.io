@@ -49,19 +49,22 @@ public enum PlatformProvider {
 
         @Override
         public String getUrl(Environment env) {
+            if(isCloudFoundry(env)) {
+                return "";
+            }
             URI uri = resolveURI(env, "ELEPHANTSQL_URI");
             return String.format("%s://%s:%s%s", "jdbc:postgresql", uri.getHost(), uri.getPort(), uri.getPath());
         }
 
         @Override
         public String getUsername(Environment env) {
-            return resolveURI(env, "ELEPHANTSQL_URI").getUserInfo().split(":")[0];
+            return isCloudFoundry(env) ? "" : resolveURI(env, "ELEPHANTSQL_URI").getUserInfo().split(":")[0];
         }
 
 
         @Override
         public String getPassword(Environment env) {
-            return resolveURI(env, "ELEPHANTSQL_URI").getUserInfo().split(":")[1];
+            return isCloudFoundry(env) ? "" : resolveURI(env, "ELEPHANTSQL_URI").getUserInfo().split(":")[1];
         }
 
         @Override
@@ -316,5 +319,9 @@ public enum PlatformProvider {
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    static boolean isCloudFoundry(Environment env) {
+        return env.getProperty("VCAP_SERVICES") != null;
     }
 }
