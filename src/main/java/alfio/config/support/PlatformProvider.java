@@ -16,6 +16,7 @@
  */
 package alfio.config.support;
 
+import org.apache.tomcat.jdbc.pool.PoolProperties;
 import org.springframework.core.env.Environment;
 
 import java.net.URI;
@@ -29,12 +30,60 @@ import static java.util.Optional.ofNullable;
  * <p>
  * Supported:
  * - Openshift : pgsql only
+ * - ElephantDB: runs on Openshift and Cloud Foundry
  * - Cloud Foundry: postgres, mysql (injected)
  * - Heroku
  * - local use with system properties
  */
 public enum PlatformProvider {
     DEFAULT,
+
+    //see
+    // https://developers.openshift.com/external-services/elephantsql.html
+    // http://docs.run.pivotal.io/marketplace/services/elephantsql.html
+    ELEPHANTSQL {
+        @Override
+        public String getDriveClassName(Environment env) {
+            return POSTGRESQL_DRIVER;
+        }
+
+        @Override
+        public String getUrl(Environment env) {
+            URI uri = resolveURI(env, "ELEPHANTSQL_URI");
+            return String.format("%s://%s:%s%s", "jdbc:postgresql", uri.getHost(), uri.getPort(), uri.getPath());
+        }
+
+        @Override
+        public String getUsername(Environment env) {
+            return resolveURI(env, "ELEPHANTSQL_URI").getUserInfo().split(":")[0];
+        }
+
+
+        @Override
+        public String getPassword(Environment env) {
+            return resolveURI(env, "ELEPHANTSQL_URI").getUserInfo().split(":")[1];
+        }
+
+        @Override
+        public String getValidationQuery(Environment env) {
+            return "SELECT 1";
+        }
+
+        @Override
+        public String getDialect(Environment env) {
+            return PGSQL;
+        }
+
+        @Override
+        public boolean isHosting(Environment env) {
+            return ofNullable(env.getProperty("ELEPHANTSQL_URI")).isPresent() || ofNullable(env.getProperty("VCAP_SERVICES")).filter(s -> s.contains("elephantsql")).isPresent();
+        }
+
+        @Override
+        public int getMaxConnections(Environment env) {
+            return ofNullable(env.getProperty("ELEPHANTSQL_MAX_CONNS")).map(Integer::parseInt).orElseGet(() -> super.getMaxConnections(env));
+        }
+    },
 
     /**
      * See https://developers.openshift.com/en/managing-environment-variables.html
@@ -176,11 +225,7 @@ public enum PlatformProvider {
         }
 
         private URI resolveURI(Environment env) {
-            try {
-                return new URI(env.getRequiredProperty("DATABASE_URL"));
-            } catch (URISyntaxException e) {
-                throw new IllegalArgumentException(e);
-            }
+            return resolveURI(env, "DATABASE_URL");
         }
 
     },
@@ -257,7 +302,19 @@ public enum PlatformProvider {
         return env.getRequiredProperty("datasource.dialect");
     }
 
+    public int getMaxConnections(Environment env) {
+        return PoolProperties.DEFAULT_MAX_ACTIVE;
+    }
+
     public boolean isHosting(Environment env) {
         return true;
+    }
+
+    static URI resolveURI(Environment env, String propertyName) {
+        try {
+            return new URI(env.getRequiredProperty(propertyName));
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 }
