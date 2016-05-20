@@ -26,6 +26,11 @@ import java.util.List;
 
 @Getter
 public class TicketFieldConfiguration {
+
+    public enum Context {
+        ATTENDEE, ADDITIONAL_SERVICE
+    }
+
     private final int id;
     private final int eventId;
     private final String name;
@@ -35,6 +40,7 @@ public class TicketFieldConfiguration {
     private final Integer minLength;
     private final boolean required;
     private final List<String> restrictedValues;
+    private final Context context;
 
 
     public TicketFieldConfiguration(@Column("id") int id,
@@ -45,7 +51,8 @@ public class TicketFieldConfiguration {
                                     @Column("field_maxlength") Integer maxLength,
                                     @Column("field_minlength") Integer minLength,
                                     @Column("field_required") boolean required,
-                                    @Column("field_restricted_values") String restrictedValues) {
+                                    @Column("field_restricted_values") String restrictedValues,
+                                    @Column("context") Context context) {
         this.id = id;
         this.eventId = eventId;
         this.name = name;
@@ -55,6 +62,7 @@ public class TicketFieldConfiguration {
         this.minLength = minLength;
         this.required = required;
         this.restrictedValues = restrictedValues == null ? Collections.emptyList() : Json.GSON.fromJson(restrictedValues, new TypeToken<List<String>>(){}.getType());
+        this.context = context;
     }
 
     public boolean isInputField() {

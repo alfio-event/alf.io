@@ -200,7 +200,7 @@ public class EventManager {
 	private void insertAdditionalField(int eventId, AdditionalField f, int order) {
 		List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValues()).orElseGet(Collections::emptyList).stream().map(EventModification.RestrictedValue::getValue).collect(Collectors.toList());
 		   String serializedRestrictedValues = "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
-		   int configurationId = ticketFieldRepository.insertConfiguration(eventId, f.getName(), order, f.getType(), serializedRestrictedValues, f.getMaxLength(), f.getMinLength(), f.isRequired()).getKey();
+		   int configurationId = ticketFieldRepository.insertConfiguration(eventId, f.getName(), order, f.getType(), serializedRestrictedValues, f.getMaxLength(), f.getMinLength(), f.isRequired(), TicketFieldConfiguration.Context.ATTENDEE).getKey();
 		   f.getDescription().forEach((locale, value) -> {
 		       ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value));
 		   });
