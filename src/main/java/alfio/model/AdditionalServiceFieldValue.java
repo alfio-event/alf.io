@@ -19,17 +19,21 @@ package alfio.model;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
-/**
- */
 @Getter
-public class TicketFieldNameAndValue {
+public class AdditionalServiceFieldValue {
 
+    private final int additionalServiceId;
+    private final int ticketFieldConfigurationId;
     private final String name;
     private final String value;
 
-    public TicketFieldNameAndValue(@Column("field_name") String name,
-                                   @Column("field_value") String value) {
-        this.name =name;
+    public AdditionalServiceFieldValue(@Column("additional_service_id_fk") int additionalServiceId,
+                                       @Column("ticket_field_configuration_id_fk") int ticketFieldConfigurationId,
+                                       @Column("field_name") String name,
+                                       @Column("field_value") String value) {
+        this.additionalServiceId = additionalServiceId;
+        this.ticketFieldConfigurationId = ticketFieldConfigurationId;
+        this.name = name;
         this.value = value;
     }
 }

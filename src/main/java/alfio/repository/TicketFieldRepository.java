@@ -65,7 +65,7 @@ public interface TicketFieldRepository {
     List<String> findFieldsForEvent(@Bind("eventShortName") String eventShortName);
 
     @Query("select field_name, field_value from ticket_field_value inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where ticket_id_fk = :ticketId and context = 'ATTENDEE'")
-    List<TicketFieldNameAndValue> findNameAndValue(@Bind("ticketId") int ticketId);
+    List<FieldNameAndValue> findNameAndValue(@Bind("ticketId") int ticketId);
 
     default void updateOrInsert(Map<String, String> values, Ticket ticket, Event event) {
         int ticketId = ticket.getId();
@@ -107,7 +107,7 @@ public interface TicketFieldRepository {
     @Query("update ticket_field_configuration set field_order = :order where id = :id")
     int updateFieldOrder(@Bind("id") int id, @Bind("order") int order);
 
-    @Query("select ticket_field_configuration.* from ticket_field_configuration inner join event on event.id = event_id_fk  where short_name = :eventShortName order by field_order asc")
+    @Query("select ticket_field_configuration.* from ticket_field_configuration inner join event on event.id = event_id_fk  where short_name = :eventShortName and ticket_field_configuration.context = 'ATTENDEE' order by field_order asc")
     List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventShortName") String eventName);
 
     @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId and context = 'ATTENDEE'")
@@ -124,7 +124,7 @@ public interface TicketFieldRepository {
     }
 
     default Map<String, String> findAllValuesForTicketId(int ticketId) {
-        return findNameAndValue(ticketId).stream().filter(t -> t.getName() != null && t.getValue() != null).collect(Collectors.toMap(TicketFieldNameAndValue::getName, TicketFieldNameAndValue::getValue));
+        return findNameAndValue(ticketId).stream().filter(t -> t.getName() != null && t.getValue() != null).collect(Collectors.toMap(FieldNameAndValue::getName, FieldNameAndValue::getValue));
     }
 
     // required for deleting a field
