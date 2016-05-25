@@ -114,7 +114,7 @@ public class ConfigurationManagerIntegrationTest {
             "muh location", desc,
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
-            BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7, null);
+            BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7, null, null);
         eventManager.createEvent(em);
 
         event = eventManager.getSingleEvent("eventShortName", "test");

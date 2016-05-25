@@ -26,7 +26,10 @@ import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.user.UserManager;
-import alfio.model.*;
+import alfio.model.Event;
+import alfio.model.SpecialPrice;
+import alfio.model.Ticket;
+import alfio.model.TicketReservation;
 import alfio.model.modification.*;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.plugin.PluginConfigOption;
@@ -132,7 +135,7 @@ public class DataMigratorIntegrationTest {
                 "muh location", desc,
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now().plusHours(1)),
-                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, null, categories, false, new LocationDescriptor("","","",""), 7, null);
+                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, null, categories, false, new LocationDescriptor("","","",""), 7, null, null);
         eventManager.createEvent(em);
         return Pair.of(eventManager.getSingleEvent(eventName, username), username);
     }

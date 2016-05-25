@@ -24,10 +24,12 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
-
 import java.math.BigDecimal;
-
-import java.util.*;
+import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 
 @Getter
@@ -59,6 +61,7 @@ public class EventModification {
     private final int locales;
 
     private final List<AdditionalField> ticketFields;
+    private final List<AdditionalService> additionalServices;
 
     @JsonCreator
     public EventModification(@JsonProperty("id") Integer id,
@@ -85,7 +88,8 @@ public class EventModification {
                              @JsonProperty("freeOfCharge") boolean freeOfCharge,
                              @JsonProperty("geoLocation") LocationDescriptor locationDescriptor,
                              @JsonProperty("locales") int locales,
-                             @JsonProperty("ticketFields") List<AdditionalField> ticketFields) {
+                             @JsonProperty("ticketFields") List<AdditionalField> ticketFields,
+                             @JsonProperty("additionalServices") List<AdditionalService> additionalServices) {
         this.id = id;
         this.eventType = eventType;
         this.websiteUrl = websiteUrl;
@@ -106,7 +110,8 @@ public class EventModification {
         this.vat = vat;
         this.vatIncluded = vatIncluded;
         this.locationDescriptor = locationDescriptor;
-        this.allowedPaymentProxies = Optional.ofNullable(allowedPaymentProxies).orElse(Collections.<PaymentProxy>emptyList());
+        this.additionalServices = additionalServices;
+        this.allowedPaymentProxies = Optional.ofNullable(allowedPaymentProxies).orElse(Collections.emptyList());
         this.ticketCategories = ticketCategories;
         this.freeOfCharge = freeOfCharge;
         this.locales = locales;
@@ -141,6 +146,7 @@ public class EventModification {
         private final Map<String, Description> description;
 
 
+        @JsonCreator
         public AdditionalField(@JsonProperty("order") int order,
                                @JsonProperty("name") String name,
                                @JsonProperty("type") String type,
@@ -168,6 +174,7 @@ public class EventModification {
         //restricted value -> description
         private final Map<String, String> restrictedValues;
 
+        @JsonCreator
         public Description(@JsonProperty("label") String label,
                            @JsonProperty("placeholder") String placeholder,
                            @JsonProperty("restrictedValues") Map<String, String> restrictedValues) {
@@ -180,9 +187,46 @@ public class EventModification {
     @Getter
     public static class RestrictedValue {
         private final String value;
-
+        @JsonCreator
         public RestrictedValue(@JsonProperty("value") String value) {
             this.value = value;
+        }
+    }
+
+    @Getter
+    public static class AdditionalService {
+        private final int priceInCents;
+        private final boolean fixPrice;
+        private final int ordinal;
+        private final int availableQuantity;
+        private final int maxQtyPerOrder;
+        private final ZonedDateTime utcInception;
+        private final ZonedDateTime utcExpiration;
+        private final BigDecimal vat;
+        private final alfio.model.AdditionalService.VatType vatType;
+        private final List<AdditionalField> additionalServiceFields;
+
+        public AdditionalService(@JsonProperty("priceInCents") int priceInCents,
+                                 @JsonProperty("fixPrice") boolean fixPrice,
+                                 @JsonProperty("ordinal") int ordinal,
+                                 @JsonProperty("availableQuantity") int availableQuantity,
+                                 @JsonProperty("maxQtyPerOrder") int maxQtyPerOrder,
+                                 @JsonProperty("inception") ZonedDateTime utcInception,
+                                 @JsonProperty("expiration") ZonedDateTime utcExpiration,
+                                 @JsonProperty("vat") BigDecimal vat,
+                                 @JsonProperty("vatType") alfio.model.AdditionalService.VatType vatType,
+                                 @JsonProperty("additionalServiceFields") List<AdditionalField> additionalServiceFields) {
+
+            this.priceInCents = priceInCents;
+            this.fixPrice = fixPrice;
+            this.ordinal = ordinal;
+            this.availableQuantity = availableQuantity;
+            this.maxQtyPerOrder = maxQtyPerOrder;
+            this.utcInception = utcInception;
+            this.utcExpiration = utcExpiration;
+            this.vat = vat;
+            this.vatType = vatType;
+            this.additionalServiceFields = additionalServiceFields;
         }
     }
 }

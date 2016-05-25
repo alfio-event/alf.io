@@ -65,7 +65,7 @@ public class IntegrationTestUtil {
 
     public static void initSystemProperties() {
         String dialect = System.getProperty("dbenv", "HSQLDB");
-        DB_CONF.get(dialect).forEach((prop, val) -> System.setProperty(prop, val));
+        DB_CONF.get(dialect).forEach(System::setProperty);
     }
 
     public static void ensureMinimalConfiguration(ConfigurationRepository configurationRepository) {
@@ -102,7 +102,7 @@ public class IntegrationTestUtil {
                 "muh location", desc,
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
-                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Arrays.asList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null);
+                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, null);
         eventManager.createEvent(em);
         return Pair.of(eventManager.getSingleEvent(eventName, username), username);
     }
