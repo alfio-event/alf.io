@@ -662,9 +662,15 @@ public class EventManager {
 		
 		eventDeleterRepository.deleteTicketFieldValue(eventId);
 		eventDeleterRepository.deleteFieldDescription(eventId);
+
+        eventDeleterRepository.deleteAdditionalServiceFieldValue(eventId);
+        eventDeleterRepository.deleteAdditionalServiceDescriptions(eventId);
+        eventDeleterRepository.deleteAdditionalServiceItems(eventId);
+
 		eventDeleterRepository.deleteTicketFieldConfiguration(eventId);
-		
-		
+
+        eventDeleterRepository.deleteAdditionalServices(eventId);
+
 		eventDeleterRepository.deleteEventMigration(eventId);
 		eventDeleterRepository.deleteSponsorScan(eventId);
 		eventDeleterRepository.deleteTicket(eventId);
