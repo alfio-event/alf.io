@@ -18,8 +18,10 @@ package alfio.util;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
+import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.TicketFieldConfiguration;
+import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import org.apache.commons.lang3.StringUtils;
@@ -191,5 +193,53 @@ public final class Validator {
             errors.rejectValue("userLanguage", "error.userLanguage");
         }
         return evaluateValidationResult(errors);
+    }
+
+    public static ValidationResult validateAdditionalService(EventModification.AdditionalService additionalService, Errors errors) {
+        return validateAdditionalService(additionalService, null, errors);
+    }
+
+    public static ValidationResult validateAdditionalService(EventModification.AdditionalService additionalService, EventModification eventModification, Errors errors) {
+        if(additionalService.isFixPrice() && !Optional.ofNullable(additionalService.getPrice()).filter(p -> p.compareTo(BigDecimal.ZERO) >= 0).isPresent()) {
+            errors.rejectValue("price", "error.price");
+        }
+
+        List<EventModification.AdditionalServiceDescription> descriptions = additionalService.getDescription();
+        List<EventModification.AdditionalServiceDescription> titles = additionalService.getTitle();
+        if(descriptions == null || titles == null || titles.size() != descriptions.size()) {
+            errors.rejectValue("title", "error.title");
+            errors.rejectValue("description", "error.description");
+        } else {
+            if(!validateDescriptionList(titles) || !containsAllRequiredTranslations(eventModification, titles)) {
+                errors.rejectValue("title", "error.title");
+            }
+            if(!validateDescriptionList(descriptions) || !containsAllRequiredTranslations(eventModification, descriptions)) {
+                errors.rejectValue("description", "error.description");
+            }
+        }
+
+        DateTimeModification inception = additionalService.getInception();
+        DateTimeModification expiration = additionalService.getExpiration();
+        if(inception == null || expiration == null || expiration.isBefore(inception)) {
+            errors.rejectValue("inception", "error.inception");
+            errors.rejectValue("expiration", "error.expiration");
+        } else if(eventModification != null && expiration.isAfter(eventModification.getEnd())) {
+            errors.rejectValue("expiration", "error.expiration");
+        }
+
+        return evaluateValidationResult(errors);
+
+    }
+
+    private static boolean containsAllRequiredTranslations(EventModification eventModification, List<EventModification.AdditionalServiceDescription> descriptions) {
+        Optional<EventModification> optional = Optional.ofNullable(eventModification);
+        return !optional.isPresent() ||
+            optional.map(e -> ContentLanguage.findAllFor(e.getLocales()))
+                .filter(l -> l.stream().allMatch(l1 -> descriptions.stream().anyMatch(d -> d.getLocale().equals(l1.getLanguage()))))
+                .isPresent();
+    }
+
+    private static boolean validateDescriptionList(List<EventModification.AdditionalServiceDescription> descriptions) {
+        return descriptions.stream().allMatch(t -> StringUtils.isNotBlank(t.getValue()));
     }
 }

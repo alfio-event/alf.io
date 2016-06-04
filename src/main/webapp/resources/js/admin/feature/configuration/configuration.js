@@ -348,12 +348,12 @@
     }
     CategoryConfigurationController.$inject = ['ConfigurationService', '$rootScope'];
 
-    function basicConfigurationNeeded($modal, ConfigurationService, EventService, $q, $window) {
+    function basicConfigurationNeeded($uibModal, ConfigurationService, EventService, $q, $window) {
         return {
             restrict: 'A',
             scope: true,
             link: function() {
-                var m = $modal.open({
+                var m = $uibModal.open({
                     size:'lg',
                     templateUrl:'/resources/angular-templates/admin/partials/configuration/basic-settings.html',
                     backdrop: 'static',
@@ -409,7 +409,7 @@
         };
     }
 
-    basicConfigurationNeeded.$inject = ['$modal', 'ConfigurationService', 'EventService', '$q', '$window'];
+    basicConfigurationNeeded.$inject = ['$uibModal', 'ConfigurationService', 'EventService', '$q', '$window'];
 
     function updateLocales(controller) {
         var locales = 0;

@@ -35,6 +35,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/util/file-upload.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/user/user.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/additional-service/additional-service.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>

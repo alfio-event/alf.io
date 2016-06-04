@@ -118,6 +118,11 @@
                 <div class="col-sm-1"><p><button type="button" class="btn btn-success" ng-click="addNewTicketField(event)"><i class="fa fa-plus"></i></button></p></div>
             </div>
         </div>
+
+        <div class="wMarginBottom">
+            <additional-services data-selected-languages="event.locales" data-available-languages="allLanguages" data-on-modification="setAdditionalServices(event, additionalServices)"></additional-services>
+        </div>
+
         <control-buttons data-form-obj="editEvent"></control-buttons>
     </form>
 </div>

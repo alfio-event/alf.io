@@ -219,7 +219,7 @@
 
     OrganizationService.$inject = ['$http', 'HttpErrorHandler'];
 
-    function UserService($http, $modal, $window, HttpErrorHandler) {
+    function UserService($http, $uibModal, $window, HttpErrorHandler) {
         return {
             getAllRoles: function() {
                 return $http.get('/admin/api/roles.json').error(HttpErrorHandler.handle);
@@ -251,7 +251,7 @@
             },
 
             showUserData: function(user) {
-                return $modal.open({
+                return $uibModal.open({
                     size:'sm',
                     templateUrl:'/resources/angular-templates/admin/partials/event/fragment/show-user-data-modal.html',
                     backdrop: 'static',
@@ -267,7 +267,7 @@
         };
     }
 
-    UserService.$inject = ['$http', '$modal', '$window', 'HttpErrorHandler'];
+    UserService.$inject = ['$http', '$uibModal', '$window', 'HttpErrorHandler'];
 
     function organizationList() {
         return {

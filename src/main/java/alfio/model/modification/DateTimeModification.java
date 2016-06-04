@@ -40,6 +40,10 @@ public class DateTimeModification {
         return toLocalDateTime().isBefore(other.toLocalDateTime());
     }
 
+    public boolean isAfter(DateTimeModification other) {
+        return toLocalDateTime().isAfter(other.toLocalDateTime());
+    }
+
     private LocalDateTime toLocalDateTime() {
         return LocalDateTime.of(date, time);
     }

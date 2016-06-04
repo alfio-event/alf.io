@@ -25,7 +25,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -195,38 +194,59 @@ public class EventModification {
 
     @Getter
     public static class AdditionalService {
-        private final int priceInCents;
+        private final BigDecimal price;
         private final boolean fixPrice;
         private final int ordinal;
         private final int availableQuantity;
         private final int maxQtyPerOrder;
-        private final ZonedDateTime utcInception;
-        private final ZonedDateTime utcExpiration;
+        private final DateTimeModification inception;
+        private final DateTimeModification expiration;
         private final BigDecimal vat;
         private final alfio.model.AdditionalService.VatType vatType;
         private final List<AdditionalField> additionalServiceFields;
+        private final List<AdditionalServiceDescription> title;
+        private final List<AdditionalServiceDescription> description;
 
-        public AdditionalService(@JsonProperty("priceInCents") int priceInCents,
+        public AdditionalService(@JsonProperty("price") BigDecimal price,
                                  @JsonProperty("fixPrice") boolean fixPrice,
                                  @JsonProperty("ordinal") int ordinal,
                                  @JsonProperty("availableQuantity") int availableQuantity,
                                  @JsonProperty("maxQtyPerOrder") int maxQtyPerOrder,
-                                 @JsonProperty("inception") ZonedDateTime utcInception,
-                                 @JsonProperty("expiration") ZonedDateTime utcExpiration,
+                                 @JsonProperty("inception") DateTimeModification inception,
+                                 @JsonProperty("expiration") DateTimeModification expiration,
                                  @JsonProperty("vat") BigDecimal vat,
                                  @JsonProperty("vatType") alfio.model.AdditionalService.VatType vatType,
-                                 @JsonProperty("additionalServiceFields") List<AdditionalField> additionalServiceFields) {
+                                 @JsonProperty("additionalServiceFields") List<AdditionalField> additionalServiceFields,
+                                 @JsonProperty("title") List<AdditionalServiceDescription> title,
+                                 @JsonProperty("description") List<AdditionalServiceDescription> description) {
 
-            this.priceInCents = priceInCents;
+            this.price = price;
             this.fixPrice = fixPrice;
             this.ordinal = ordinal;
             this.availableQuantity = availableQuantity;
             this.maxQtyPerOrder = maxQtyPerOrder;
-            this.utcInception = utcInception;
-            this.utcExpiration = utcExpiration;
+            this.inception = inception;
+            this.expiration = expiration;
             this.vat = vat;
             this.vatType = vatType;
             this.additionalServiceFields = additionalServiceFields;
+            this.title = title;
+            this.description = description;
+        }
+    }
+
+    @Getter
+    public static class AdditionalServiceDescription {
+        private final String locale;
+        private final String value;
+        private final alfio.model.AdditionalServiceDescription.AdditionalServiceDescriptionType type;
+
+        public AdditionalServiceDescription(@JsonProperty("locale") String locale,
+                                            @JsonProperty("value") String value,
+                                            @JsonProperty("type") alfio.model.AdditionalServiceDescription.AdditionalServiceDescriptionType type) {
+            this.locale = locale;
+            this.value = value;
+            this.type = type;
         }
     }
 }

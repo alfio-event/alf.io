@@ -1,0 +1,26 @@
+<div class="page-header">
+    <h3>Donation options</h3>
+    <span>here you can add one or more "donation" option.</span>
+</div>
+<div class="row">
+    <div class="col-xs-12" data-ng-repeat="item in asCtrl.displayList">
+        <div class="row">
+            <div class="col-xs-4" data-ng-repeat="pair in item.zippedTitleAndDescriptions">
+                <p><strong title="{{pair[0].value}} ({{pair[0].locale}})">{{pair[0].value}}</strong></p>
+                <p><small title="{{pair[1].value}} ({{pair[1].locale}})">{{pair[1].value}}</small></p>
+            </div>
+            <div class="col-xs-12">
+                <span>from: {{item.inception.date}} {{item.inception.time}}</span>
+                <span>to: {{item.expiration.date}} {{item.expiration.time}}</span>
+            </div>
+            <div class="col-xs-12">
+                <span data-ng-if="item.fixPrice">Price: {{item.price}} {{asCtrl.currency}}</span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xs-12"><button type="button" class="btn btn-success pull-right" data-ng-click="asCtrl.edit()"><i class="fa fa-plus"></i> Add new</button></div>
+</div>
+
+<edit-additional-service data-ng-if="asCtrl.editActive" data-editing-item="asCtrl.editingItem" data-available-languages="asCtrl.availableLanguages" data-selected-languages="asCtrl.selectedLanguages" data-on-edit-complete="asCtrl.onEditComplete(item)" data-on-dismiss="asCtrl.onDismiss()"></edit-additional-service>

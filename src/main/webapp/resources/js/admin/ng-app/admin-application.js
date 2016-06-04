@@ -12,7 +12,7 @@
     //
     var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
     
-    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'nzToggle', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-users']);
+    var admin = angular.module('adminApplication', ['ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'nzToggle', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-users', 'alfio-additional-services']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.otherwise("/");
@@ -135,9 +135,9 @@
 
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-    admin.run(function($rootScope, $modal, $window, $state) {
+    admin.run(function($rootScope, $uibModal, $window, $state) {
         $rootScope.$on('ErrorNotAuthorized', function() {
-            $modal.open({
+            $uibModal.open({
                 size:'sm',
                 templateUrl:'/resources/angular-templates/admin/partials/error/not-authorized.html'
             }).result.then(angular.noop, function() {
@@ -145,7 +145,7 @@
             });
         });
         $rootScope.$on('ErrorNotLoggedIn', function() {
-            $modal.open({
+            $uibModal.open({
                 size:'sm',
                 templateUrl:'/resources/angular-templates/admin/partials/error/not-logged-in.html'
             }).result.then(angular.noop, function() {
@@ -334,7 +334,14 @@
             locales: 7
         };
         initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state);
+
         $scope.event.ticketCategories = [];
+        $scope.event.additionalServices = [];
+
+        $scope.setAdditionalServices = function(event, additionalServices) {
+            event.additionalServices = additionalServices;
+        };
+
         if(eventType === 'INTERNAL') {
             createAndPushCategory(true, $scope);
         }
@@ -364,7 +371,7 @@
                                                         $log,
                                                         $q,
                                                         $window,
-                                                        $modal) {
+                                                        $uibModal) {
         var loadData = function() {
             $scope.loading = true;
             EventService.getEvent($stateParams.eventName).success(function(result) {
@@ -547,7 +554,7 @@
         var parentScope = $scope;
 
         var openCategoryDialog = function(category, event) {
-            var editCategory = $modal.open({
+            var editCategory = $uibModal.open({
                 size:'lg',
                 templateUrl:BASE_STATIC_URL + '/event/fragment/edit-category-modal.html',
                 backdrop: 'static',
@@ -581,7 +588,7 @@
         };
 
         $scope.openConfiguration = function(event, category) {
-            $modal.open({
+            $uibModal.open({
                 size:'lg',
                 templateUrl:BASE_STATIC_URL + '/event/fragment/category-configuration-modal.html',
                 backdrop: 'static',
@@ -590,7 +597,7 @@
                     $scope.ticketCategory = category;
                     $scope.event = event;
                     $scope.editMode = true;
-                    $scope.modal = $modal;
+                    $scope.modal = $uibModal;
                     $scope.cancel = function() {
                         $scope.$dismiss('canceled');
                     };
@@ -687,7 +694,7 @@
 
             var eventId = $scope.event.id;
 
-            $modal.open({
+            $uibModal.open({
                 size: 'lg',
                 templateUrl: BASE_STATIC_URL + '/event/fragment/edit-date-promo-code-modal.html',
                 backdrop: 'static',
@@ -706,7 +713,7 @@
         };
         
         $scope.addPromoCode = function(event) {
-            $modal.open({
+            $uibModal.open({
                 size:'lg',
                 templateUrl:BASE_STATIC_URL + '/event/fragment/edit-promo-code-modal.html',
                 backdrop: 'static',
@@ -754,7 +761,7 @@
 
 
         $scope.openFieldSelectionModal = function() {
-            $modal.open({
+            $uibModal.open({
                 size:'lg',
                 templateUrl:BASE_STATIC_URL + '/event/fragment/select-field-modal.html',
                 backdrop: 'static',
@@ -808,7 +815,7 @@
         };
         
         $scope.deleteFieldModal = function(field) {
-        	$modal.open({
+        	$uibModal.open({
         		size: 'lg',
         		templateUrl: BASE_STATIC_URL + '/event/fragment/delete-field-modal.html',
         		controller: function($scope) {
@@ -846,7 +853,7 @@
         }
         
         $scope.addField = function(event) {
-        	$modal.open({
+        	$uibModal.open({
                 size:'lg',
                 templateUrl: BASE_STATIC_URL + '/event/fragment/add-field-modal.html',
                 backdrop: 'static',
@@ -1184,7 +1191,7 @@
         };
     });
 
-    admin.controller('ComposeCustomMessage', function($scope, $stateParams, EventService, $modal, $state, $q) {
+    admin.controller('ComposeCustomMessage', function($scope, $stateParams, EventService, $uibModal, $state, $q) {
 
 
         $q.all([EventService.getSelectedLanguages($stateParams.eventName),
@@ -1226,7 +1233,7 @@
                 return;
             }
             EventService.getMessagesPreview(eventName, categoryId, messages).success(function(result) {
-                var preview = $modal.open({
+                var preview = $uibModal.open({
                     size:'lg',
                     templateUrl:BASE_STATIC_URL + '/custom-message/preview.html',
                     backdrop: 'static',

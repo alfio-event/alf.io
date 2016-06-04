@@ -17,9 +17,13 @@
 package alfio.controller;
 
 import lombok.extern.log4j.Log4j2;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -38,4 +42,12 @@ public class ControllerExceptionHandler {
         log.warn("Request method {} not allowed for request {}", request.getMethod(), request.getRequestURI());
         return "/event/500-internal-server-error";
     }
+
+    @ExceptionHandler(HttpMessageConversionException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public String badRequest(HttpMessageConversionException e) {
+        return "bad request";
+    }
+
 }
