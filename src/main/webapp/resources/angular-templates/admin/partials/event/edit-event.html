@@ -20,11 +20,11 @@
             <div class="row">
                 <div class="col-sm-12">
                     total:
-                    <progressbar value="100">{{event.availableSeats}}</progressbar>
+                    <uib-progressbar value="100">{{event.availableSeats}}</uib-progressbar>
                     assigned:
-                    <progress>
-                        <bar data-ng-repeat="category in event.ticketCategories | orderBy: ['inception', 'expiration', 'bounded']" value="calcBarValue(category, event.availableSeats)" type="{{evaluateBarType($index)}}">{{category.name}} ({{category.maxTickets}})</bar>
-                    </progress>
+                    <uib-progress>
+                        <uib-bar data-ng-repeat="category in event.ticketCategories | orderBy: ['inception', 'expiration', 'bounded']" value="calcBarValue(category, event.availableSeats)" type="{{evaluateBarType($index)}}">{{category.name}} ({{category.maxTickets}})</uib-bar>
+                    </uib-progress>
                 </div>
             </div>
             <div class="row category" data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories" data-ng-class="'category-' + evaluateBarType($index)">

@@ -52,7 +52,7 @@
                 <a class="navbar-brand logo" data-ui-sref="index">{{#i18n}}admin.title{{/i18n}}</a>
             </div>
             <div class="navbar-left">
-                <div class="collapse navbar-collapse" data-collapse="menuCollapsed">
+                <div class="collapse navbar-collapse" data-uib-collapse="menuCollapsed">
                     <ul class="nav navbar-nav">
                         <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
                         <li data-ui-sref-active="active"><a data-ui-sref="configuration.system">Configuration</a></li>
