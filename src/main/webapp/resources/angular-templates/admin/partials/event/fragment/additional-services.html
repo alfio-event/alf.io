@@ -14,13 +14,18 @@
                 <span>to: {{item.expiration.date}} {{item.expiration.time}}</span>
             </div>
             <div class="col-xs-12">
+                <span data-ng-if="!item.fixPrice">User-defined price</span>
                 <span data-ng-if="item.fixPrice">Price: {{item.price}} {{asCtrl.currency}}</span>
+            </div>
+            <div class="col-xs-2 col-xs-push-10">
+                <a class="btn btn-danger" title="delete" data-ng-click="asCtrl.delete(item)"><i class="fa fa-trash"></i></a>
+                <a class="btn btn-warning" title="edit" data-ng-click="asCtrl.edit(item)"><i class="fa fa-edit"></i></a>
             </div>
         </div>
     </div>
 </div>
 <div class="row">
-    <div class="col-xs-12"><button type="button" class="btn btn-success pull-right" data-ng-click="asCtrl.edit()"><i class="fa fa-plus"></i> Add new</button></div>
+    <div class="col-xs-12"><button type="button" class="btn btn-success pull-right" data-ng-click="asCtrl.edit()" data-ng-if="!asCtrl.editActive"><i class="fa fa-plus"></i> Add new</button></div>
 </div>
 
 <edit-additional-service data-ng-if="asCtrl.editActive" data-editing-item="asCtrl.editingItem" data-available-languages="asCtrl.availableLanguages" data-selected-languages="asCtrl.selectedLanguages" data-on-edit-complete="asCtrl.onEditComplete(item)" data-on-dismiss="asCtrl.onDismiss()"></edit-additional-service>

@@ -49,9 +49,9 @@
         };
 
         self.onEditComplete = function(item) {
-            self.list.push(item);
-            self.displayList = buildDisplayList(self.list);
-            self.onModification({'additionalServices': self.list});
+            if(!_.find(self.list, function(i) { return i === item })) {
+                self.list.push(item);
+            }
             editComplete();
         };
 
@@ -59,15 +59,23 @@
             editComplete();
         };
 
+        self.delete = function(item) {
+            self.list = _.filter(self.list, function(i) {
+                return i !== item;
+            });
+            editComplete();
+        };
+
         var buildDisplayList = function(list) {
             return _.map(list, function(item) {
-                var i2 = angular.copy(item);
-                i2.zippedTitleAndDescriptions = _.zip(i2.title, i2.description);
-                return i2;
+                item.zippedTitleAndDescriptions = _.zip(item.title, item.description);
+                return item;
             });
         };
 
         var editComplete = function() {
+            self.displayList = buildDisplayList(self.list);
+            self.onModification({'additionalServices': self.list});
             self.editingItem = undefined;
             self.editActive = false;
         };

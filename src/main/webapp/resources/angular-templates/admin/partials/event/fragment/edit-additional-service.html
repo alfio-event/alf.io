@@ -47,7 +47,7 @@
                     </div>
                     <div class="col-sm-4" data-ng-if="ctrl.item.fixPrice">
                         <label>
-                            Price: <input class="form-control" data-ng-model="ctrl.item.price" required> {{ctrl.event.currency}}
+                            Price: <input class="form-control" data-ng-model="ctrl.item.price" required>
                         </label>
                         <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.price" data-show-existing-errors="ctrl.showExistingErrors"></field-error>
                     </div>
@@ -55,7 +55,7 @@
                         <label>
                             VAT Type:
                             <select class="form-control" data-ng-model="ctrl.item.vatType" required>
-                                <option data-ng-repeat="type in ctrl.vatTypes" data-ng-value="type.key">{{type.value}}</option>
+                                <option data-ng-repeat="type in ctrl.vatTypes" data-ng-selected="{{ctrl.item.vatType === type.key}}" data-ng-value="type.key">{{type.value}}</option>
                             </select>
                         </label>
                         <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.vatType" data-show-existing-errors="ctrl.showExistingErrors"></field-error>
