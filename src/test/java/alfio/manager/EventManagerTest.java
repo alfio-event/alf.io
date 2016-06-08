@@ -18,7 +18,10 @@ package alfio.manager;
 
 import alfio.manager.plugin.PluginManager;
 import alfio.manager.user.UserManager;
-import alfio.model.*;
+import alfio.model.Event;
+import alfio.model.SpecialPrice;
+import alfio.model.Ticket;
+import alfio.model.TicketCategory;
 import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketWithStatistic;
 import alfio.model.user.Organization;
@@ -57,7 +60,7 @@ public class EventManagerTest {{
         TicketCategory updated = mock(TicketCategory.class);
         TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
         NamedParameterJdbcTemplate jdbc = it.usesMock(NamedParameterJdbcTemplate.class);
-        EventManager eventManager = new EventManager(null, null, null, null, null, null, ticketRepository, null, null, null, jdbc, null, pluginManager, null, null);
+        EventManager eventManager = new EventManager(null, null, null, null, null, null, ticketRepository, null, null, null, jdbc, null, pluginManager, null, null, null);
         when(original.getId()).thenReturn(20);
         when(updated.getId()).thenReturn(30);
         when(original.getPriceInCents()).thenReturn(1000);
@@ -94,7 +97,7 @@ public class EventManagerTest {{
 
     describe("handlePriceChange", it -> {
         TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
-        EventManager eventManager = new EventManager(null, null, null, null, null, null, ticketRepository, null, null, null, null, null, pluginManager, null, null);
+        EventManager eventManager = new EventManager(null, null, null, null, null, null, ticketRepository, null, null, null, null, null, pluginManager, null, null, null);
         TicketCategory original = mock(TicketCategory.class);
         TicketCategory updated = mock(TicketCategory.class);
 
@@ -130,7 +133,7 @@ public class EventManagerTest {{
     describe("handleTokenModification", it -> {
         SpecialPriceRepository specialPriceRepository = it.usesMock(SpecialPriceRepository.class);
         NamedParameterJdbcTemplate jdbc = it.usesMock(NamedParameterJdbcTemplate.class);
-        EventManager eventManager = new EventManager(null, null, null, null, null, null, null, specialPriceRepository, null, null, jdbc, null, pluginManager, null, null);
+        EventManager eventManager = new EventManager(null, null, null, null, null, null, null, specialPriceRepository, null, null, jdbc, null, pluginManager, null, null, null);
         TicketCategory original = mock(TicketCategory.class);
         TicketCategory updated = mock(TicketCategory.class);
 
@@ -193,7 +196,7 @@ public class EventManagerTest {{
         int eventId = 0;
         TicketCategoryRepository ticketCategoryRepository = it.usesMock(TicketCategoryRepository.class);
         TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository = it.usesMock(TicketCategoryDescriptionRepository.class);
-        EventManager eventManager = new EventManager(null, null, null, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, null, pluginManager, null, null);
+        EventManager eventManager = new EventManager(null, null, null, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, null, pluginManager, null, null, null);
         Event event = mock(Event.class);
         int availableSeats = 20;
         when(event.getAvailableSeats()).thenReturn(availableSeats);
@@ -247,7 +250,7 @@ public class EventManagerTest {{
         TicketCategoryWithStatistic tc = new TicketCategoryWithStatistic(ticketCategory, Collections.<TicketWithStatistic>emptyList(), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), categoryPriceCalculator(event), desc);
         when(esm.loadTicketCategoryWithStats(eq(categoryId), eq(event))).thenReturn(tc);
 
-        EventManager eventManager = new EventManager(userManager, eventRepository, eventDescriptionRepository, esm, ticketCategoryRepository, ticketCategoryDescriptionRepository, ticketRepository, specialPriceRepository, null, null, null, null, pluginManager, null, null);
+        EventManager eventManager = new EventManager(userManager, eventRepository, eventDescriptionRepository, esm, ticketCategoryRepository, ticketCategoryDescriptionRepository, ticketRepository, specialPriceRepository, null, null, null, null, pluginManager, null, null, null);
         when(event.getId()).thenReturn(eventId);
         when(event.getOrganizationId()).thenReturn(organizationId);
         Organization organization = mock(Organization.class);

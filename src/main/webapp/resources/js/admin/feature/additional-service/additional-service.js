@@ -50,6 +50,7 @@
 
         self.onEditComplete = function(item) {
             if(!_.find(self.list, function(i) { return i === item })) {
+                item.ordinal = self.list.length;
                 self.list.push(item);
             }
             editComplete();

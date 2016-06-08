@@ -32,6 +32,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.util.Json;
+import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -85,6 +86,7 @@ public class EventManager {
     private final PluginManager pluginManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final EventDeleterRepository eventDeleterRepository;
+    private final AdditionalServiceRepository additionalServiceRepository;
 
     @Autowired
     public EventManager(UserManager userManager,
@@ -101,7 +103,8 @@ public class EventManager {
                         ConfigurationManager configurationManager,
                         PluginManager pluginManager,
                         TicketFieldRepository ticketFieldRepository,
-                        EventDeleterRepository eventDeleterRepository) {
+                        EventDeleterRepository eventDeleterRepository,
+                        AdditionalServiceRepository additionalServiceRepository) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -117,6 +120,7 @@ public class EventManager {
         this.pluginManager = pluginManager;
         this.ticketFieldRepository = ticketFieldRepository;
         this.eventDeleterRepository = eventDeleterRepository;
+        this.additionalServiceRepository = additionalServiceRepository;
     }
 
     public Event getSingleEvent(String eventName, String username) {
@@ -167,7 +171,13 @@ public class EventManager {
         createAdditionalFields(eventId, em);
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(eventId, event);
+        createAllAdditionalServices(eventId, em.getAdditionalServices(), event.getZoneId());
         initPlugins(event);
+    }
+
+    private void createAllAdditionalServices(int eventId, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId) {
+        Optional.ofNullable(additionalServices)
+            .ifPresent(list -> list.forEach(as -> additionalServiceRepository.insert(eventId, Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0), as.isFixPrice(), as.getOrdinal(), as.getAvailableQuantity(), as.getMaxQtyPerOrder(), as.getInception().toZonedDateTime(zoneId), as.getExpiration().toZonedDateTime(zoneId), as.getVat(), as.getVatType())));
     }
 
     private void initPlugins(Event event) {
