@@ -114,7 +114,7 @@ public class ReservationForm {
                                          Locale locale) {
         TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
         SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(tc.getId(), locale.getLanguage()).orElse(""), now, event, tickReservationManager
-                .countAvailableTickets(event, tc), maxAmountOfTicket, Optional.empty());
+                .countAvailableTickets(event, tc), maxAmountOfTicket, null);
 
         if (!ticketCategory.getSaleable()) {
             bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE);

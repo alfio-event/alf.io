@@ -54,6 +54,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -87,6 +88,7 @@ public class EventManager {
     private final TicketFieldRepository ticketFieldRepository;
     private final EventDeleterRepository eventDeleterRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
+    private final AdditionalServiceDescriptionRepository additionalServiceDescriptionRepository;
 
     @Autowired
     public EventManager(UserManager userManager,
@@ -104,7 +106,7 @@ public class EventManager {
                         PluginManager pluginManager,
                         TicketFieldRepository ticketFieldRepository,
                         EventDeleterRepository eventDeleterRepository,
-                        AdditionalServiceRepository additionalServiceRepository) {
+                        AdditionalServiceRepository additionalServiceRepository, AdditionalServiceDescriptionRepository additionalServiceDescriptionRepository) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -121,6 +123,7 @@ public class EventManager {
         this.ticketFieldRepository = ticketFieldRepository;
         this.eventDeleterRepository = eventDeleterRepository;
         this.additionalServiceRepository = additionalServiceRepository;
+        this.additionalServiceDescriptionRepository = additionalServiceDescriptionRepository;
     }
 
     public Event getSingleEvent(String eventName, String username) {
@@ -177,7 +180,15 @@ public class EventManager {
 
     private void createAllAdditionalServices(int eventId, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId) {
         Optional.ofNullable(additionalServices)
-            .ifPresent(list -> list.forEach(as -> additionalServiceRepository.insert(eventId, Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0), as.isFixPrice(), as.getOrdinal(), as.getAvailableQuantity(), as.getMaxQtyPerOrder(), as.getInception().toZonedDateTime(zoneId), as.getExpiration().toZonedDateTime(zoneId), as.getVat(), as.getVatType())));
+            .ifPresent(list -> list.forEach(as -> {
+                AffectedRowCountAndKey<Integer> service = additionalServiceRepository.insert(eventId, Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0), as.isFixPrice(), as.getOrdinal(), as.getAvailableQuantity(), as.getMaxQtyPerOrder(), as.getInception().toZonedDateTime(zoneId), as.getExpiration().toZonedDateTime(zoneId), as.getVat(), as.getVatType());
+                as.getTitle().forEach(insertAdditionalServiceDescription(service.getKey()));
+                as.getDescription().forEach(insertAdditionalServiceDescription(service.getKey()));
+            }));
+    }
+
+    private Consumer<EventModification.AdditionalServiceDescription> insertAdditionalServiceDescription(int serviceId) {
+        return t -> additionalServiceDescriptionRepository.insert(serviceId, t.getLocale(), t.getType(), t.getValue());
     }
 
     private void initPlugins(Event event) {

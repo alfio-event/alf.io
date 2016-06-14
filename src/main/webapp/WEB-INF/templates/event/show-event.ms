@@ -85,6 +85,13 @@
         {{> /event/ticket-category.ms }}
     {{/ticketCategories}}
     </ul>
+    {{#showAdditionalServices}}
+    <ul class="list-group">
+        {{#enabledAdditionalServices}}
+            {{> /event/additional-service.ms }}
+        {{/enabledAdditionalServices}}
+    </ul>
+    {{/showAdditionalServices}}
     {{#showNoCategoriesWarning}}
         <div class="alert alert-warning">
             <h3>{{#i18n}}show-event.sold-out.header{{/i18n}}</h3>

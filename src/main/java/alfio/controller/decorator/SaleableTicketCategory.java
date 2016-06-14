@@ -20,19 +20,14 @@ import alfio.model.Event;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.TicketCategory;
 import alfio.util.EventUtil;
-import alfio.util.MonetaryUtil;
 import lombok.experimental.Delegate;
 
-import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
-import java.util.stream.IntStream;
 
 import static alfio.util.MonetaryUtil.formatCents;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
 
 public class SaleableTicketCategory {
 
@@ -46,7 +41,7 @@ public class SaleableTicketCategory {
     private final boolean inSale;
     private final int availableTickets;
     private final int maxTickets;
-    private final Optional<PromoCodeDiscount> promoCodeDiscount;
+    private final PromoCodeDiscount promoCodeDiscount;
 
     public SaleableTicketCategory(TicketCategory ticketCategory,
                                   String description,
@@ -54,7 +49,7 @@ public class SaleableTicketCategory {
                                   Event event,
                                   int availableTickets,
                                   int maxTickets,
-                                  Optional<PromoCodeDiscount> promoCodeDiscount) {
+                                  PromoCodeDiscount promoCodeDiscount) {
         this.ticketCategory = ticketCategory;
         this.description = description;
         this.now = now;
@@ -113,7 +108,7 @@ public class SaleableTicketCategory {
     }
 
     public int[] getAmountOfTickets() {
-        return generateRangeOfTicketQuantity(maxTickets, availableTickets);
+        return DecoratorUtil.generateRangeOfTicketQuantity(maxTickets, availableTickets);
     }
 
     public int getAvailableTickets() {
@@ -121,30 +116,15 @@ public class SaleableTicketCategory {
     }
 
     public String getDiscountedPrice() {
-        return promoCodeDiscount.map(d -> formatCents(calcDiscount(d))).orElseGet(this::getFinalPrice);
+        return Optional.ofNullable(promoCodeDiscount).map(d -> formatCents(DecoratorUtil.calcDiscount(d, getFinalPriceInCents()))).orElseGet(this::getFinalPrice);
     }
 
     public boolean getSupportsDiscount() {
-        return promoCodeDiscount.isPresent() && getSaleable();
-    }
-
-    static int[] generateRangeOfTicketQuantity(int maxTickets, int availableTickets) {
-        final int maximumSaleableTickets = max(0, min(maxTickets, availableTickets));
-        return IntStream.rangeClosed(0, maximumSaleableTickets).toArray();
-    }
-
-    private int calcDiscount(PromoCodeDiscount d) {
-        int discount;
-        if(d.getFixedAmount()) {
-            discount = d.getDiscountAmount();
-        } else {
-            discount = MonetaryUtil.calcPercentage(getFinalPriceInCents(), new BigDecimal(d.getDiscountAmount()));
-        }
-        return getFinalPriceInCents() - discount;
+        return promoCodeDiscount != null && getSaleable();
     }
 
     public PromoCodeDiscount getPromoCodeDiscount() {
-        return promoCodeDiscount.orElseThrow(IllegalStateException::new);
+        return promoCodeDiscount;
     }
 
 

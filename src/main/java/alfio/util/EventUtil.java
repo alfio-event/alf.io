@@ -18,6 +18,7 @@ package alfio.util;
 
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
@@ -157,6 +158,26 @@ public class EventUtil {
             return addVAT(category.getPriceInCents(), event.getVat());
         }
         return category.getPriceInCents();
+    }
+
+    public static int getFinalPriceInCents(Event event, AdditionalService additionalService) {
+        if(!additionalService.isFixPrice()) {
+            return 0;
+        }
+        switch(additionalService.getVatType()) {
+            case NONE:
+            case CUSTOM_EXCLUDED:
+                return additionalService.getPriceInCents();
+            case INHERITED:
+                if(event.isVatIncluded()) {
+                    return addVAT(additionalService.getPriceInCents(), event.getVat());
+                }
+                return additionalService.getPriceInCents();
+            case CUSTOM_INCLUDED:
+                return addVAT(additionalService.getPriceInCents(), additionalService.getVat());
+            default:
+                return additionalService.getPriceInCents();
+        }
     }
 
 

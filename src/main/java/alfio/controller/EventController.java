@@ -18,6 +18,7 @@ package alfio.controller;
 
 
 import alfio.controller.decorator.EventDescriptor;
+import alfio.controller.decorator.SaleableAdditionalService;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.support.SessionUtil;
@@ -26,10 +27,7 @@ import alfio.manager.EventStatisticsManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
-import alfio.model.EventDescription;
-import alfio.model.PromoCodeDiscount;
-import alfio.model.SpecialPrice;
+import alfio.model.*;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
@@ -78,6 +76,8 @@ public class EventController {
     private final EventManager eventManager;
     private final TicketReservationManager ticketReservationManager;
     private final EventStatisticsManager eventStatisticsManager;
+    private final AdditionalServiceRepository additionalServiceRepository;
+    private final AdditionalServiceDescriptionRepository additionalServiceDescriptionRepository;
 
     @Autowired
     public EventController(ConfigurationManager configurationManager,
@@ -91,7 +91,9 @@ public class EventController {
                            PromoCodeDiscountRepository promoCodeRepository,
                            EventManager eventManager,
                            TicketReservationManager ticketReservationManager,
-                           EventStatisticsManager eventStatisticsManager) {
+                           EventStatisticsManager eventStatisticsManager,
+                           AdditionalServiceRepository additionalServiceRepository,
+                           AdditionalServiceDescriptionRepository additionalServiceDescriptionRepository) {
         this.configurationManager = configurationManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -104,6 +106,8 @@ public class EventController {
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
         this.eventStatisticsManager = eventStatisticsManager;
+        this.additionalServiceRepository = additionalServiceRepository;
+        this.additionalServiceDescriptionRepository = additionalServiceDescriptionRepository;
     }
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -187,59 +191,57 @@ public class EventController {
     public String showEvent(@PathVariable("eventName") String eventName,
                             Model model, HttpServletRequest request, Locale locale) {
 
+        return eventRepository.findOptionalByShortName(eventName).map(event -> {
+            Optional<String> maybeSpecialCode = SessionUtil.retrieveSpecialPriceCode(request);
+            Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
 
-        Optional<Event> maybeEvent = eventRepository.findOptionalByShortName(eventName);
-        
-        if(!maybeEvent.isPresent()) {
-            return REDIRECT + "/";
-        }
-        
-        Event event = maybeEvent.get();
-        Optional<String> maybeSpecialCode = SessionUtil.retrieveSpecialPriceCode(request);
-        Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
-
-        Optional<PromoCodeDiscount> promoCodeDiscount = SessionUtil.retrievePromotionCodeDiscount(request)
+            Optional<PromoCodeDiscount> promoCodeDiscount = SessionUtil.retrievePromotionCodeDiscount(request)
                 .flatMap((code) -> optionally(() -> promoCodeRepository.findPromoCodeInEvent(event.getId(), code)));
 
-        final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        //hide access restricted ticket categories
-        List<SaleableTicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
-                .filter((c) -> !c.isAccessRestricted() || (specialCode.isPresent() && specialCode.get().getTicketCategoryId() == c.getId()))
+            final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+            //hide access restricted ticket categories
+            List<SaleableTicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
+                .filter((c) -> !c.isAccessRestricted() || (specialCode.filter(sc -> sc.getTicketCategoryId() == c.getId()).isPresent()))
                 .map((m) -> new SaleableTicketCategory(m, ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(m.getId(), locale.getLanguage()).orElse(""),
-                    now, event, ticketReservationManager.countAvailableTickets(event, m), configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5), promoCodeDiscount))
+                    now, event, ticketReservationManager.countAvailableTickets(event, m), configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5), promoCodeDiscount.orElse(null)))
                 .collect(Collectors.toList());
-        //
+            //
 
-
-        LocationDescriptor ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()),
+            LocationDescriptor ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()),
                 configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAPS_CLIENT_API_KEY)));
-        
-        final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
+
+            final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
                 promoCodeRepository.countByEventId(event.getId()) > 0;
 
-        String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
+            String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
 
-        final EventDescriptor eventDescriptor = new EventDescriptor(event, eventDescription);
-        List<SaleableTicketCategory> expiredCategories = ticketCategories.stream().filter(SaleableTicketCategory::getExpired).collect(Collectors.toList());
-        List<SaleableTicketCategory> validCategories = ticketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
-        model.addAttribute("event", eventDescriptor)//
-            .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
-            .addAttribute("ticketCategories", validCategories)//
-            .addAttribute("expiredCategories", expiredCategories)//
-            .addAttribute("containsExpiredCategories", !expiredCategories.isEmpty())//
-            .addAttribute("showNoCategoriesWarning", validCategories.isEmpty())
-            .addAttribute("hasAccessPromotions", hasAccessPromotions)
-            .addAttribute("promoCode", specialCode.map(SpecialPrice::getCode).orElse(null))
-            .addAttribute("locationDescriptor", ld)
-            .addAttribute("pageTitle", "show-event.header.title")
-            .addAttribute("hasPromoCodeDiscount", promoCodeDiscount.isPresent())
-            .addAttribute("promoCodeDiscount", promoCodeDiscount.orElse(null))
-            .addAttribute("displayWaitingQueueForm", EventUtil.displayWaitingQueueForm(event, ticketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable()))
-            .addAttribute("preSales", EventUtil.isPreSales(event, ticketCategories))
-            .addAttribute("userLanguage", locale.getLanguage())
-            .addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable));
-        model.asMap().putIfAbsent("hasErrors", false);//
-        return "/event/show-event";
+            final EventDescriptor eventDescriptor = new EventDescriptor(event, eventDescription);
+            List<SaleableTicketCategory> expiredCategories = ticketCategories.stream().filter(SaleableTicketCategory::getExpired).collect(Collectors.toList());
+            List<SaleableTicketCategory> validCategories = ticketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
+            List<SaleableAdditionalService> additionalServices = additionalServiceRepository.loadAllForEvent(event.getId()).stream().map((as) -> getSaleableAdditionalService(event, locale, as, promoCodeDiscount.orElse(null))).collect(Collectors.toList());
+
+            model.addAttribute("event", eventDescriptor)//
+                .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
+                .addAttribute("ticketCategories", validCategories)//
+                .addAttribute("expiredCategories", expiredCategories)//
+                .addAttribute("containsExpiredCategories", !expiredCategories.isEmpty())//
+                .addAttribute("showNoCategoriesWarning", validCategories.isEmpty())
+                .addAttribute("hasAccessPromotions", hasAccessPromotions)
+                .addAttribute("promoCode", specialCode.map(SpecialPrice::getCode).orElse(null))
+                .addAttribute("locationDescriptor", ld)
+                .addAttribute("pageTitle", "show-event.header.title")
+                .addAttribute("hasPromoCodeDiscount", promoCodeDiscount.isPresent())
+                .addAttribute("promoCodeDiscount", promoCodeDiscount.orElse(null))
+                .addAttribute("displayWaitingQueueForm", EventUtil.displayWaitingQueueForm(event, ticketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable()))
+                .addAttribute("preSales", EventUtil.isPreSales(event, ticketCategories))
+                .addAttribute("userLanguage", locale.getLanguage())
+                .addAttribute("showAdditionalServices", !additionalServices.isEmpty())
+                .addAttribute("enabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isNotExpired).collect(Collectors.toList()))
+                .addAttribute("disabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isExpired).collect(Collectors.toList()))
+                .addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable) && additionalServices.stream().noneMatch(SaleableAdditionalService::getSaleable));
+            model.asMap().putIfAbsent("hasErrors", false);//
+            return "/event/show-event";
+        }).orElse(REDIRECT + "/");
     }
 
     @RequestMapping(value = "/event/{eventName}/calendar/locale/{locale}", method = {RequestMethod.GET, RequestMethod.HEAD})
@@ -318,6 +320,10 @@ public class EventController {
             SessionUtil.removeSpecialPriceData(request.getRequest());
             return redirectToEvent;
         }
+    }
+
+    private SaleableAdditionalService getSaleableAdditionalService(Event event, Locale locale, AdditionalService as, PromoCodeDiscount promoCodeDiscount) {
+        return new SaleableAdditionalService(event, as, additionalServiceDescriptionRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceDescription.AdditionalServiceDescriptionType.TITLE).getValue(), additionalServiceDescriptionRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceDescription.AdditionalServiceDescriptionType.DESCRIPTION).getValue(), promoCodeDiscount);
     }
 
 }

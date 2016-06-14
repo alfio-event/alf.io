@@ -29,5 +29,11 @@ public interface AdditionalServiceDescriptionRepository {
     @Query("select additional_service_id_fk, locale, type, value from additional_service_description where additional_service_id_fk = :additionalServiceId")
     List<AdditionalServiceDescription> findAllByAdditionalServiceId(@Bind("additionalServiceId") int additionalServiceId);
 
+    @Query("select additional_service_id_fk, locale, type, value from additional_service_description where additional_service_id_fk = :additionalServiceId and locale = :locale and type = :type")
+    AdditionalServiceDescription findByLocaleAndType(@Bind("additionalServiceId") int additionalServiceId, @Bind("locale") String locale, @Bind("type") AdditionalServiceDescription.AdditionalServiceDescriptionType type);
+
+    @Query("insert into additional_service_description(additional_service_id_fk, locale, type, value) values(:additionalServiceId, :locale, :type, :value)")
+    int insert(@Bind("additionalServiceId") int additionalServiceId, @Bind("locale") String locale, @Bind("type") AdditionalServiceDescription.AdditionalServiceDescriptionType type, @Bind("value") String value);
+
 
 }

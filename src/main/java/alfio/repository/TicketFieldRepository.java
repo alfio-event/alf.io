@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @QueryRepository
 public interface TicketFieldRepository extends FieldRepository {
 
-    @Query("select count(*) from ticket_field_value where ticket_id_fk = :ticketId and field_value is not null and field_value <> '' and context = 'ATTENDEE'")
+    @Query("select count(*) from ticket_field_value where ticket_id_fk = :ticketId and field_value is not null and field_value <> ''")
     Integer countFilledOptionalData(@Bind("ticketId") int id);
 
     @Query("select a.ticket_id_fk, a.ticket_field_configuration_id_fk, b.field_name, a.field_value from ticket_field_value a, ticket_field_configuration b where a.ticket_id_fk = :ticketId and a.ticket_field_configuration_id_fk = b.id and b.context = 'ATTENDEE'")
