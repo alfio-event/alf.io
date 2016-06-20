@@ -414,7 +414,7 @@
             }
             return 'category-' + $rootScope.evaluateBarType(index);
         };
-
+        
         $scope.evaluateClass = function(token) {
             switch(token.status) {
                 case 'WAITING':
@@ -543,6 +543,30 @@
                 });
             }, errorHandler);
         };
+        
+        
+        $scope.openDeleteWarning = function(event) {
+        	$modal.open({
+        		size:'lg',
+        		templateUrl: BASE_STATIC_URL + '/event/fragment/delete-event-modal.html',
+        		backdrop: 'static',
+        		controller: function($scope) {
+        			$scope.cancel = function() {
+                        $scope.$dismiss('canceled');
+                    };
+                    
+                    $scope.deleteEvent = function() {
+                    	EventService.deleteEvent(event.id).then(function() {
+                    		$scope.$dismiss('canceled');
+                    		$state.go('index');
+                    	});
+                    };
+                    
+                    $scope.event = event;
+        		}
+        	})
+        };
+        
 
         var parentScope = $scope;
 
