@@ -90,9 +90,9 @@
 
                 scope.endModelObj['date'] = endDate.format('YYYY-MM-DD');
                 scope.endModelObj['time'] = endDate.format('HH:mm');
-
-                element.on('apply.daterangepicker', function(ev, picker) {
-                    if(angular.isDefined(picker)) {
+                
+                function updateDates(picker, override) {
+                	if(angular.isDefined(picker)) {
                         scope.$apply(function() {
                             var start = picker.startDate;
                             var end = picker.endDate;
@@ -100,9 +100,20 @@
                             scope.startModelObj['time'] = start.format('HH:mm');
                             scope.endModelObj['date'] = end.format('YYYY-MM-DD');
                             scope.endModelObj['time'] = end.format('HH:mm');
+                            if(override) {
+                            	element.val(start.format(dateFormat) + ' / ' + end.format(dateFormat))
+                            }
                             ctrl.$setViewValue(element.val());
                         });
                     }
+                }
+
+                element.on('apply.daterangepicker', function(ev, picker) {
+                	updateDates(picker);
+                });
+                
+                element.on('hide.daterangepicker', function(ev, picker) {
+                	updateDates(picker, true);
                 });
             }
         };
