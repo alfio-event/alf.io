@@ -649,7 +649,10 @@ public class EventManager {
 		ticketFieldRepository.updateFieldOrder(id2, field1.getOrder());
 	}
 	
-	public void deleteEvent(int eventId) {
+	public void deleteEvent(int eventId, String username) {
+		final Event event = eventRepository.findById(eventId);
+		checkOwnership(event, username, event.getOrganizationId());
+		
 		eventDeleterRepository.deleteWaitingQueue(eventId);
 		
 		eventDeleterRepository.deletePluginLog(eventId);

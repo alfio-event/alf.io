@@ -159,6 +159,11 @@ public class EventApiController {
         out.put("organization", eventManager.loadOrganizer(event.getEvent(), username));
         return out;
     }
+    
+    @RequestMapping(value ="/events/{eventId}", method = DELETE)
+    public void deleteEvent(@PathVariable("eventId") int eventId, Principal principal) {
+    	eventManager.deleteEvent(eventId, principal.getName());
+    }
 
     @RequestMapping(value = "/events/id/{eventId}", method = GET)
     public Event getSingleEventById(@PathVariable("eventId") int eventId, Principal principal) {
