@@ -19,8 +19,11 @@ package alfio.manager;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.TextTemplateGenerator;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.EmailMessageRepository;
 import alfio.repository.EventDescriptionRepository;
@@ -61,6 +64,7 @@ public class NotificationManager {
     private final EventRepository eventRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final OrganizationRepository organizationRepository;
+    private final ConfigurationManager configurationManager;
     private final Gson gson;
 
     @Autowired
@@ -70,7 +74,8 @@ public class NotificationManager {
                                EmailMessageRepository emailMessageRepository,
                                EventRepository eventRepository,
                                EventDescriptionRepository eventDescriptionRepository,
-                               OrganizationRepository organizationRepository) {
+                               OrganizationRepository organizationRepository,
+                               ConfigurationManager configurationManager) {
         this.messageSource = messageSource;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
@@ -78,6 +83,7 @@ public class NotificationManager {
         this.eventDescriptionRepository = eventDescriptionRepository;
         this.organizationRepository = organizationRepository;
         this.tx = new TransactionTemplate(transactionManager);
+        this.configurationManager = configurationManager;
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(Mailer.Attachment.class, new AttachmentConverter());
         this.gson = builder.create();
@@ -143,7 +149,9 @@ public class NotificationManager {
 
     private void processMessage(int messageId) {
         EmailMessage message = emailMessageRepository.findById(messageId);
-        if(message.getAttempts() >= 10) { //FIXME move to conf
+        int eventId = message.getEventId();
+        int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
+        if(message.getAttempts() >= configurationManager.getIntConfigValue(Configuration.from(organizationId, eventId, ConfigurationKeys.MAIL_ATTEMPTS_COUNT), 10)) {
             tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(messageId, ERROR.name(), message.getAttempts(), Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
             log.warn("Message with id " + messageId + " will be discarded");
             return;
