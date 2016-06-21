@@ -1,5 +1,8 @@
 <div class="page-header">
-    <h1>{{event.displayName}} <a class="btn btn-default" data-ng-if="isInternal(event)" data-ui-sref="events.configuration({eventName: event.shortName})"><i class="fa fa-wrench"></i><span class="sr-only"> settings</span></a></h1>
+    <h1>{{event.displayName}} 
+    	<a class="btn btn-default" data-ng-if="isInternal(event)" data-ui-sref="events.configuration({eventName: event.shortName})"><i class="fa fa-wrench"></i><span class="sr-only"> settings</span></a>
+    	<button type="button" ng-click="openDeleteWarning(event)" class="btn btn-danger" ng-if="isInternal(event)"><i class="fa fa-trash"></i> Delete</button>
+	</h1>
     <h4 class="text-muted">{{event.shortDescription}}</h4>
     <div data-ng-if="isInternal(event)">
         <span><button class="btn btn-primary" type="button" data-ng-click="openFieldSelectionModal()" ><i class="fa fa-download"></i> download attendees' data</button></span>

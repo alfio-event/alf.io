@@ -299,7 +299,7 @@ public class ReservationFlowIntegrationTest {
         
         //
         
-        eventManager.deleteEvent(event.getId());
+        eventManager.deleteEvent(event.getId(), principal.getName());
 
     }
 

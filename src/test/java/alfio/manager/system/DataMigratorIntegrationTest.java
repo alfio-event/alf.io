@@ -145,7 +145,8 @@ public class DataMigratorIntegrationTest {
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Event event = initEvent(categories).getKey();
+        Pair<Event, String> eventUsername = initEvent(categories); 
+        Event event = eventUsername.getKey();
 
         try {
 	        eventRepository.updatePrices(1000, "CHF", 40, false, BigDecimal.ONE, "STRIPE", event.getId());
@@ -162,7 +163,7 @@ public class DataMigratorIntegrationTest {
 	        assertEquals(40, tickets.size());
 	        assertTrue(tickets.stream().allMatch(t -> t.getCategoryId() == null));
         } finally {
-        	eventManager.deleteEvent(event.getId());
+        	eventManager.deleteEvent(event.getId(), eventUsername.getValue());
         }
     }
 
@@ -173,7 +174,8 @@ public class DataMigratorIntegrationTest {
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Event event = initEvent(categories).getKey();
+        Pair<Event, String> eventUsername = initEvent(categories); 
+        Event event = eventUsername.getKey();
 
         try {
 	        eventMigrationRepository.insertMigrationData(event.getId(), "1.4", ZonedDateTime.now(ZoneId.of("UTC")).minusDays(1), EventMigration.Status.COMPLETE.toString());
@@ -190,7 +192,7 @@ public class DataMigratorIntegrationTest {
 	        assertEquals(40, tickets.size());
 	        assertTrue(tickets.stream().allMatch(t -> t.getCategoryId() == null));
         } finally {
-        	eventManager.deleteEvent(event.getId());
+        	eventManager.deleteEvent(event.getId(), eventUsername.getValue());
         }
     }
 
@@ -201,7 +203,8 @@ public class DataMigratorIntegrationTest {
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Event event = initEvent(categories).getKey();
+        Pair<Event, String> eventUsername = initEvent(categories); 
+        Event event = eventUsername.getKey();
         
         try {
 	        ZonedDateTime migrationTs = ZonedDateTime.now(ZoneId.of("UTC"));
@@ -219,7 +222,7 @@ public class DataMigratorIntegrationTest {
 	        assertEquals(AVAILABLE_SEATS, tickets.size());//<-- the migration has not been done
 	        assertTrue(tickets.stream().allMatch(t -> t.getCategoryId() == null));
         } finally {
-        	eventManager.deleteEvent(event.getId());
+        	eventManager.deleteEvent(event.getId(), eventUsername.getValue());
         }
     }
 
@@ -230,7 +233,8 @@ public class DataMigratorIntegrationTest {
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Event event = initEvent(categories, null).getKey();
+        Pair<Event, String> eventUsername = initEvent(categories, null); 
+        Event event = eventUsername.getKey();
 
         try {
 	        dataMigrator.migrateEventsToCurrentVersion();
@@ -244,7 +248,7 @@ public class DataMigratorIntegrationTest {
 	        assertEquals(event.getShortName(), withDescription.getShortName());
 	        assertEquals(event.getShortName(), withDescription.getDisplayName());
         } finally {
-        	eventManager.deleteEvent(event.getId());
+        	eventManager.deleteEvent(event.getId(), eventUsername.getValue());
         }
     }
 
@@ -255,7 +259,8 @@ public class DataMigratorIntegrationTest {
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Event event = initEvent(categories).getKey();
+        Pair<Event, String> eventUsername = initEvent(categories); 
+        Event event = eventUsername.getKey();
         try {
 	        TicketReservationModification trm = new TicketReservationModification();
 	        trm.setAmount(1);
@@ -267,7 +272,7 @@ public class DataMigratorIntegrationTest {
 	        TicketReservation ticketReservation = ticketReservationManager.findById(reservationId).get();
 	        assertEquals("en", ticketReservation.getUserLanguage());
         } finally {
-        	eventManager.deleteEvent(event.getId());
+        	eventManager.deleteEvent(event.getId(), eventUsername.getValue());
         }
     }
 
@@ -278,7 +283,8 @@ public class DataMigratorIntegrationTest {
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Event event = initEvent(categories).getKey();
+        Pair<Event, String> eventUsername = initEvent(categories); 
+        Event event = eventUsername.getKey();
         try {
 	        TicketReservationModification trm = new TicketReservationModification();
 	        trm.setAmount(2);
@@ -304,7 +310,7 @@ public class DataMigratorIntegrationTest {
 	        //dataMigrator.fillTicketsGender();
 	        //ticketRepository.findTicketsInReservation(reservationId).forEach(t -> assertEquals("F", t.getGender()));
         } finally {
-        	eventManager.deleteEvent(event.getId());
+        	eventManager.deleteEvent(event.getId(), eventUsername.getValue());
         }
     }
 
@@ -314,7 +320,8 @@ public class DataMigratorIntegrationTest {
 				"default", AVAILABLE_SEATS, new DateTimeModification(LocalDate.now(), LocalTime.now()),
 				new DateTimeModification(LocalDate.now(), LocalTime.now()), DESCRIPTION, BigDecimal.TEN, false, "",
 				false));
-    	Event event = initEvent(categories).getKey();
+    	Pair<Event, String> eventUsername = initEvent(categories); 
+        Event event = eventUsername.getKey();
 		try {
 			
 			pluginConfigurationRepository.delete("my-plugin");
@@ -327,7 +334,7 @@ public class DataMigratorIntegrationTest {
 			assertEquals(event.getId(), options.get(0).getEventId());
 		} finally {
 			pluginConfigurationRepository.delete("my-plugin");
-			eventManager.deleteEvent(event.getId());
+			eventManager.deleteEvent(event.getId(), eventUsername.getValue());
 		}
     }
 }
