@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.model.Event;
+import alfio.util.OptionalWrapper;
 import ch.digitalfondue.npjt.*;
 
 import java.math.BigDecimal;
@@ -70,11 +71,15 @@ public interface EventRepository {
                      @Bind("available_seats") int available_seats, @Bind("vat_included") boolean vat_included,
                      @Bind("vat") BigDecimal vat, @Bind("paymentProxies") String allowedPaymentProxies, @Bind("eventId") int eventId);
 
-    /**
-     * TODO check: This one is kinda ugly.
-     * */
-    @Query("select * from event where id = (select event_id from ticket where tickets_reservation_id = :reservationId limit 1)")
-    Event findByReservationId(@Bind("reservationId") String reservationId);
+    @Query("select a.* from event a, ticket b where b.tickets_reservation_id = :reservationId and b.event_id = a.id limit 1")
+    Event findByTicketReservationId(@Bind("reservationId") String reservationId);
+
+    @Query("select a.* from event a, additional_service_item b where b.tickets_reservation_uuid = :reservationId and b.event_id_fk = a.id limit 1")
+    Event findByAdditionalServiceReservationId(@Bind("reservationId") String reservationId);
+
+    default Event findByReservationId(String reservationId) {
+        return OptionalWrapper.optionally(() -> findByTicketReservationId(reservationId)).orElseGet(() -> findByAdditionalServiceReservationId(reservationId));
+    }
 
     @Query("update event set display_name = short_name where id = :eventId and display_name is null")
     int fillDisplayNameIfRequired(@Bind("eventId") int eventId);

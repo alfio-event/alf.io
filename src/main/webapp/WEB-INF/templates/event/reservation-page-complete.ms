@@ -13,12 +13,14 @@
 <div class="wMarginBottom"></div>
 
 <h1>
-    {{#ticketsAreAllAssigned}}
-        {{#i18n}}reservation-page-complete.your-tickets [{{event.displayName}}]{{/i18n}}
-    {{/ticketsAreAllAssigned}}
-    {{^ticketsAreAllAssigned}}
-        {{#i18n}}reservation-page-complete.assign-your-tickets [{{event.displayName}}]{{/i18n}}
-    {{/ticketsAreAllAssigned}}
+    {{^additionalServicesOnly}}
+        {{#ticketsAreAllAssigned}}
+            {{#i18n}}reservation-page-complete.your-tickets [{{event.displayName}}]{{/i18n}}
+        {{/ticketsAreAllAssigned}}
+        {{^ticketsAreAllAssigned}}
+            {{#i18n}}reservation-page-complete.assign-your-tickets [{{event.displayName}}]{{/i18n}}
+        {{/ticketsAreAllAssigned}}
+    {{/additionalServicesOnly}}
 </h1>
 
 {{#confirmationEmailSent}}
@@ -36,11 +38,20 @@
 
 
 <div class="alert alert-success">
+    {{#additionalServicesOnly}}
+    <div class="row">
+        <div class="col-sm-12">
+            <h3>{{#i18n}}reservation-page-complete.thanks-for-your-support{{/i18n}}</h3>
+        </div>
+    </div>
+    {{/additionalServicesOnly}}
+    {{^additionalServicesOnly}}
     <div class="row">
         <div class="col-sm-12">
             <h3>{{#i18n}}reservation-page-complete.info-assign [{{event.displayName}}]{{/i18n}}</h3>
         </div>
     </div>
+    {{/additionalServicesOnly}}
     <div class="row">
         <div class="col-sm-12">
             {{#i18n}}reservation-page-complete.info-assign-email [{{reservation.email}}]{{/i18n}}
@@ -56,9 +67,11 @@
     </div>
 </div>
 
-{{#ticketsAreAllAssigned}}
-<p class="bg-info ticket-info">{{#i18n}}reservation-page-complete.info-update{{/i18n}}</p>
-{{/ticketsAreAllAssigned}}
+{{^additionalServicesOnly}}
+    {{#ticketsAreAllAssigned}}
+    <p class="bg-info ticket-info">{{#i18n}}reservation-page-complete.info-update{{/i18n}}</p>
+    {{/ticketsAreAllAssigned}}
+{{/additionalServicesOnly}}
 
 <ul class="list-group">
 {{#ticketsByCategory}}

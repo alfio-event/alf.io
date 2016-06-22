@@ -28,10 +28,7 @@ import alfio.manager.TicketReservationManager;
 import alfio.manager.support.OrderSummary;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.system.Configuration;
 import alfio.model.transaction.PaymentProxy;
@@ -66,6 +63,7 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
 import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
+import static java.util.stream.Collectors.toList;
 
 @Controller
 public class ReservationController {
@@ -112,36 +110,35 @@ public class ReservationController {
     public String showPaymentPage(@PathVariable("eventName") String eventName,
                                   @PathVariable("reservationId") String reservationId,
                                   Model model,
-                                  HttpServletRequest request) {
+                                  Locale locale) {
 
-        Optional<Event> optionalEvent = eventRepository.findOptionalByShortName(eventName);
-        if (!optionalEvent.isPresent()) {
-            return "redirect:/";
-        }
+        return eventRepository.findOptionalByShortName(eventName)
+            .map(event -> ticketReservationManager.findById(reservationId)
+                .map(reservation -> {
 
-        Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
-        if(reservation.isPresent() && reservation.get().getStatus() == TicketReservationStatus.PENDING) {
-            Event event = optionalEvent.get();
-            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
-            model.addAttribute("orderSummary", orderSummary);
-            model.addAttribute("reservationId", reservationId);
-            model.addAttribute("reservation", reservation.get());
-            model.addAttribute("pageTitle", "reservation-page.header.title");
-            model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
-            model.addAttribute("event", event);
-            model.addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary));
-            boolean includeStripe = !orderSummary.getFree() && event.getAllowedPaymentProxies().contains(PaymentProxy.STRIPE);
-            model.addAttribute("includeStripe", includeStripe);
-            if (includeStripe) {
-                model.addAttribute("stripe_p_key", stripeManager.getPublicKey(event));
-            }
-            Map<String, Object> modelMap = model.asMap();
-            modelMap.putIfAbsent("paymentForm", new PaymentForm());
-            modelMap.putIfAbsent("hasErrors", false);
-            return "/event/reservation-page";
-        } else {
-            return redirectReservation(reservation, eventName, reservationId);
-        }
+                    if(reservation.getStatus() != TicketReservationStatus.PENDING) {
+                        return redirectReservation(Optional.of(reservation), eventName, reservationId);
+                    }
+
+                    OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
+                    model.addAttribute("orderSummary", orderSummary);
+                    model.addAttribute("reservationId", reservationId);
+                    model.addAttribute("reservation", reservation);
+                    model.addAttribute("pageTitle", "reservation-page.header.title");
+                    model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
+                    model.addAttribute("event", event);
+                    model.addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary));
+                    boolean includeStripe = !orderSummary.getFree() && event.getAllowedPaymentProxies().contains(PaymentProxy.STRIPE);
+                    model.addAttribute("includeStripe", includeStripe);
+                    if (includeStripe) {
+                        model.addAttribute("stripe_p_key", stripeManager.getPublicKey(event));
+                    }
+                    Map<String, Object> modelMap = model.asMap();
+                    modelMap.putIfAbsent("paymentForm", new PaymentForm());
+                    modelMap.putIfAbsent("hasErrors", false);
+                    return "/event/reservation-page";
+                }).orElseGet(() -> redirectReservation(Optional.empty(), eventName, reservationId)))
+            .orElse("redirect:/");
     }
 
 
@@ -151,54 +148,47 @@ public class ReservationController {
                                        @RequestParam(value = "confirmation-email-sent", required = false, defaultValue = "false") boolean confirmationEmailSent,
                                        @RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
                                        Model model,
+                                       Locale locale,
                                        HttpServletRequest request) {
 
-        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
-        if (!event.isPresent()) {
-            return "redirect:/";
-        }
+        return eventRepository.findOptionalByShortName(eventName).map(ev -> {
+            Optional<TicketReservation> tr = ticketReservationManager.findById(reservationId);
+            return tr.filter(r -> r.getStatus() == TicketReservationStatus.COMPLETE)
+                .map(reservation -> {
+                    SessionUtil.removeSpecialPriceData(request);
+                    model.addAttribute("reservationId", reservationId);
+                    model.addAttribute("reservation", reservation);
+                    model.addAttribute("confirmationEmailSent", confirmationEmailSent);
+                    model.addAttribute("ticketEmailSent", ticketEmailSent);
 
-        Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
-        if (reservation.isPresent() && reservation.get().getStatus() == TicketReservationStatus.COMPLETE) {
+                    List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
+                    List<Triple<AdditionalService, List<AdditionalServiceDescription>, AdditionalServiceItem>> additionalServices = ticketReservationManager.findAdditionalServicesInReservation(reservationId)
+                        .stream()
+                        .map(t -> Triple.of(t.getLeft(), t.getMiddle().stream().filter(d -> d.getLocale().equals(locale.getLanguage())).collect(toList()), t.getRight()))
+                        .collect(Collectors.toList());
 
-            SessionUtil.removeSpecialPriceData(request);
-
-
-
-            model.addAttribute("reservationId", reservationId);
-            model.addAttribute("reservation", reservation.get());
-            model.addAttribute("confirmationEmailSent", confirmationEmailSent);
-            model.addAttribute("ticketEmailSent", ticketEmailSent);
-
-            List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
-
-            Event ev = event.get();
-
-            Locale locale = RequestContextUtils.getLocale(request);
-
-            //model.addAttribute("ticketFieldConfiguration", ticketHelper.findTicketFieldConfigurationAndValue(ev.getId(), locale));
-
-            model.addAttribute(
-                    "ticketsByCategory",
-                    tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
+                    model.addAttribute(
+                        "ticketsByCategory",
+                        tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
                             .map((e) -> {
-                                TicketCategory category = eventManager.getTicketCategoryById(e.getKey(), event.get().getId());
+                                TicketCategory category = eventManager.getTicketCategoryById(e.getKey(), ev.getId());
                                 List<TicketDecorator> decorators = TicketDecorator.decorate(e.getValue(),
-                                    configurationManager.getBooleanConfigValue(Configuration.from(event.get().getOrganizationId(), event.get().getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false),
+                                    configurationManager.getBooleanConfigValue(Configuration.from(ev.getOrganizationId(), ev.getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false),
                                     eventManager.checkTicketCancellationPrerequisites(),
                                     ticket -> ticketHelper.findTicketFieldConfigurationAndValue(ev.getId(), ticket.getId(), locale));
                                 return Pair.of(category, decorators);
                             })
-                            .collect(Collectors.toList()));
-            model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
-            model.addAttribute("countries", ticketHelper.getLocalizedCountries(locale));
-            model.addAttribute("pageTitle", "reservation-page-complete.header.title");
-            model.addAttribute("event", event.get());
-            model.asMap().putIfAbsent("validationResult", ValidationResult.success());
-            return "/event/reservation-page-complete";
-        } else {
-            return redirectReservation(reservation, eventName, reservationId);
-        }
+                            .collect(toList()));
+                    model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
+                    model.addAttribute("additionalServicesOnly", tickets.isEmpty() && !additionalServices.isEmpty());
+                    model.addAttribute("additionalServices", additionalServices);
+                    model.addAttribute("countries", ticketHelper.getLocalizedCountries(locale));
+                    model.addAttribute("pageTitle", "reservation-page-complete.header.title");
+                    model.addAttribute("event", ev);
+                    model.asMap().putIfAbsent("validationResult", ValidationResult.success());
+                    return "/event/reservation-page-complete";
+                }).orElseGet(() -> redirectReservation(tr, eventName, reservationId));
+        }).orElse("redirect:/");
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/failure", method = RequestMethod.GET)
@@ -268,7 +258,7 @@ public class ReservationController {
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/waitingPayment", method = RequestMethod.GET)
     public String showWaitingPaymentPage(@PathVariable("eventName") String eventName,
                                    @PathVariable("reservationId") String reservationId,
-                                   Model model) {
+                                   Model model, Locale locale) {
 
         Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
         if (!event.isPresent()) {
@@ -280,7 +270,7 @@ public class ReservationController {
         if(reservation.isPresent() && status == TicketReservationStatus.OFFLINE_PAYMENT) {
             Event ev = event.get();
             TicketReservation ticketReservation = reservation.get();
-            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, ev);
+            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, ev, locale);
             model.addAttribute("totalPrice", orderSummary.getTotalPrice());
             model.addAttribute("emailAddress", organizationRepository.getById(ev.getOrganizationId()).getEmail());
             model.addAttribute("reservation", ticketReservation);
@@ -348,7 +338,7 @@ public class ReservationController {
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
             return redirectReservation(ticketReservation, eventName, reservationId);
         }
-        boolean directTicketAssignment = Optional.ofNullable(paymentForm.getExpressCheckoutRequested()).map(b -> Boolean.logicalAnd(b, isExpressCheckoutEnabled(event, ticketReservationManager.orderSummaryForReservationId(reservationId, event)))).orElse(false);
+        boolean directTicketAssignment = Optional.ofNullable(paymentForm.getExpressCheckoutRequested()).map(b -> Boolean.logicalAnd(b, isExpressCheckoutEnabled(event, ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale)))).orElse(false);
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getStripeToken(), event, reservationId, paymentForm.getEmail(),
                 paymentForm.getFullName(), locale, paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                 Optional.ofNullable(paymentForm.getPaymentMethod()), directTicketAssignment);

@@ -101,9 +101,9 @@ public class WaitingQueueSubscriptionProcessor {
 
     private String createReservation(int eventId, TicketReservationWithOptionalCodeModification reservation, ZonedDateTime expiration, Locale locale) {
         return ticketReservationManager.createTicketReservation(eventId,
-                Collections.singletonList(reservation), Date.from(expiration.toInstant()),
-                Optional.<String>empty(),
-                Optional.<String>empty(),
+                Collections.singletonList(reservation), Collections.emptyList(), Date.from(expiration.toInstant()),
+                Optional.empty(),
+                Optional.empty(),
                 locale, true);
     }
 

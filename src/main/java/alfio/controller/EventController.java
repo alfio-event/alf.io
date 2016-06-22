@@ -28,7 +28,6 @@ import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
-import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -279,47 +278,47 @@ public class EventController {
             @ModelAttribute ReservationForm reservation, BindingResult bindingResult, Model model,
             ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale) {
 
-        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
-        if (!event.isPresent()) {
-            return "redirect:/";
-        }
-        
-        final String redirectToEvent = "redirect:/event/" + eventName + "/";
+        return eventRepository.findOptionalByShortName(eventName).map(event -> {
 
-        if (request.getHttpMethod() == HttpMethod.GET) {
-            return redirectToEvent;
-        }
+            final String redirectToEvent = "redirect:/event/" + eventName + "/";
 
-        Optional<List<TicketReservationWithOptionalCodeModification>> selected = reservation.validate(bindingResult, ticketReservationManager, ticketCategoryDescriptionRepository, eventManager, event.get(), locale);
+            if (request.getHttpMethod() == HttpMethod.GET) {
+                return redirectToEvent;
+            }
 
-        if (bindingResult.hasErrors()) {
-            addToFlash(bindingResult, redirectAttributes);
-            return redirectToEvent;
-        }
+            return reservation.validate(bindingResult, ticketReservationManager, ticketCategoryDescriptionRepository, eventManager, event, locale)
+                .map(selected -> {
 
-        Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event.get()));
+                    Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
 
-        try {
-            String reservationId = ticketReservationManager.createTicketReservation(event.get().getId(),
-                    selected.get(), expiration, 
-                    SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()),
-                    SessionUtil.retrievePromotionCodeDiscount(request.getRequest()),
-                    locale, false);
-            return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/book";
-        } catch (TicketReservationManager.NotEnoughTicketsException nete) {
-            bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
-            addToFlash(bindingResult, redirectAttributes);
-            return redirectToEvent;
-        } catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
-            bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
-            addToFlash(bindingResult, redirectAttributes);
-            return redirectToEvent;
-        } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
-            bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
-            addToFlash(bindingResult, redirectAttributes);
-            SessionUtil.removeSpecialPriceData(request.getRequest());
-            return redirectToEvent;
-        }
+                    try {
+                        String reservationId = ticketReservationManager.createTicketReservation(event.getId(),
+                                selected.getLeft(), selected.getRight(), expiration,
+                                SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()),
+                                SessionUtil.retrievePromotionCodeDiscount(request.getRequest()),
+                                locale, false);
+                        return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/book";
+                    } catch (TicketReservationManager.NotEnoughTicketsException nete) {
+                        bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
+                        addToFlash(bindingResult, redirectAttributes);
+                        return redirectToEvent;
+                    } catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
+                        bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
+                        addToFlash(bindingResult, redirectAttributes);
+                        return redirectToEvent;
+                    } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
+                        bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
+                        addToFlash(bindingResult, redirectAttributes);
+                        SessionUtil.removeSpecialPriceData(request.getRequest());
+                        return redirectToEvent;
+                    }
+                }).orElseGet(() -> {
+                    addToFlash(bindingResult, redirectAttributes);
+                    return redirectToEvent;
+                });
+
+        }).orElse("redirect:/");
+
     }
 
     private SaleableAdditionalService getSaleableAdditionalService(Event event, Locale locale, AdditionalService as, PromoCodeDiscount promoCodeDiscount) {

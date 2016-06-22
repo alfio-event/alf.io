@@ -267,7 +267,7 @@ public class DataMigratorIntegrationTest {
 	        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
 	        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
 	        Date expiration = DateUtils.addDays(new Date(), 1);
-	        String reservationId = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(r), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+	        String reservationId = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 	        dataMigrator.fillReservationsLanguage();
 	        TicketReservation ticketReservation = ticketReservationManager.findById(reservationId).get();
 	        assertEquals("en", ticketReservation.getUserLanguage());
@@ -291,7 +291,7 @@ public class DataMigratorIntegrationTest {
 	        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
 	        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
 	        Date expiration = DateUtils.addDays(new Date(), 1);
-	        String reservationId = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(r), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+	        String reservationId = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 	        ticketReservationManager.confirm("TOKEN", event, reservationId, "email@email.ch", "full name", Locale.ENGLISH, null, new TicketReservationManager.TotalPrice(1000, 10, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE), false);
 	        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
 	        UpdateTicketOwnerForm first = new UpdateTicketOwnerForm();

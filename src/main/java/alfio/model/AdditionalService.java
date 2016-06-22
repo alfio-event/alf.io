@@ -38,7 +38,7 @@ public class AdditionalService {
 
     private final int id;
     private final int eventId;
-    private final int priceInCents;
+    private final Integer priceInCents;
     private final boolean fixPrice;
     private final int ordinal;
     private final int availableQuantity;
@@ -50,7 +50,7 @@ public class AdditionalService {
 
     public AdditionalService(@Column("id") int id,
                              @Column("event_id_fk") int eventId,
-                             @Column("price_cts") int priceInCents,
+                             @Column("price_cts") Integer priceInCents,
                              @Column("fix_price") boolean fixPrice,
                              @Column("ordinal") int ordinal,
                              @Column("available_qty") int availableQuantity,

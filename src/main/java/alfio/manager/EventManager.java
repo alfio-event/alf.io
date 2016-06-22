@@ -167,6 +167,10 @@ public class EventManager {
         return eventRepository.findById(ticketCategory.getEventId());
     }
 
+    public Event findEventByAdditionalService(AdditionalService additionalService) {
+        return eventRepository.findById(additionalService.getEventId());
+    }
+
     public void createEvent(EventModification em) {
         int eventId = insertEvent(em);
         Event event = eventRepository.findById(eventId);
@@ -585,6 +589,10 @@ public class EventManager {
 
     public TicketCategory getTicketCategoryById(int id, int eventId) {
         return ticketCategoryRepository.getById(id, eventId);
+    }
+
+    public AdditionalService getAdditionalServiceById(int id, int eventId) {
+        return additionalServiceRepository.getById(id, eventId);
     }
 
     public boolean toggleTicketLocking(String eventName, int categoryId, int ticketId, String username) {

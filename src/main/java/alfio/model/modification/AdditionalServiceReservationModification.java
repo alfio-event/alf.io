@@ -14,20 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager.support;
+package alfio.model.modification;
 
 import lombok.Data;
 
-@Data
-public class SummaryRow {
-    private final String name;
-    private final String price;
-    private final int amount;
-    private final String subTotal;
-    private final int originalSubTotal;
-    private final SummaryType type;
+import java.math.BigDecimal;
 
-    public enum SummaryType {
-        TICKET, PROMOTION_CODE, ADDITIONAL_SERVICE
-    }
+@Data
+public class AdditionalServiceReservationModification {
+    private Integer additionalServiceId;
+    private BigDecimal amount;
 }
