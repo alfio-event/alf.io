@@ -15,13 +15,11 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-SET foreign_key_checks = 0;
-
 -- drop old constraints
 alter table ticket_field_configuration drop index unique_ticket_field_configuration;
 
--- cannot add new constraints, as mysql does not support partial indexes.
-SET foreign_key_checks = 1;
+-- recreate foreign key constraint, dropped by java migration
+alter table ticket_field_configuration add FOREIGN KEY event_id_fk (event_id_fk) REFERENCES event(id);
 
 create table additional_service_field_value(
     additional_service_id_fk int not null,
