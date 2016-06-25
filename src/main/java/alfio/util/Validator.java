@@ -201,30 +201,30 @@ public final class Validator {
 
     public static ValidationResult validateAdditionalService(EventModification.AdditionalService additionalService, EventModification eventModification, Errors errors) {
         if(additionalService.isFixPrice() && !Optional.ofNullable(additionalService.getPrice()).filter(p -> p.compareTo(BigDecimal.ZERO) >= 0).isPresent()) {
-            errors.rejectValue("price", "error.price");
+            errors.rejectValue("additionalServices", "error.price");
         }
 
         List<EventModification.AdditionalServiceDescription> descriptions = additionalService.getDescription();
         List<EventModification.AdditionalServiceDescription> titles = additionalService.getTitle();
         if(descriptions == null || titles == null || titles.size() != descriptions.size()) {
-            errors.rejectValue("title", "error.title");
-            errors.rejectValue("description", "error.description");
+            errors.rejectValue("additionalServices", "error.title");
+            errors.rejectValue("additionalServices", "error.description");
         } else {
             if(!validateDescriptionList(titles) || !containsAllRequiredTranslations(eventModification, titles)) {
-                errors.rejectValue("title", "error.title");
+                errors.rejectValue("additionalServices", "error.title");
             }
             if(!validateDescriptionList(descriptions) || !containsAllRequiredTranslations(eventModification, descriptions)) {
-                errors.rejectValue("description", "error.description");
+                errors.rejectValue("additionalServices", "error.description");
             }
         }
 
         DateTimeModification inception = additionalService.getInception();
         DateTimeModification expiration = additionalService.getExpiration();
         if(inception == null || expiration == null || expiration.isBefore(inception)) {
-            errors.rejectValue("inception", "error.inception");
-            errors.rejectValue("expiration", "error.expiration");
+            errors.rejectValue("additionalServices", "error.inception");
+            errors.rejectValue("additionalServices", "error.expiration");
         } else if(eventModification != null && expiration.isAfter(eventModification.getEnd())) {
-            errors.rejectValue("expiration", "error.expiration");
+            errors.rejectValue("additionalServices", "error.expiration");
         }
 
         return evaluateValidationResult(errors);

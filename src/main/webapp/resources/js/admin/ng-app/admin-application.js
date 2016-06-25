@@ -227,9 +227,14 @@
         EventService.getSupportedLanguages().success(function(result) {
             $scope.allLanguages = result;
             $scope.allLanguagesMapping = {};
+            var locales = 0;
             angular.forEach(result, function(r) {
                 $scope.allLanguagesMapping[r.value] = r;
+                locales |= r.value;
             });
+            if($scope.event && !angular.isDefined($scope.event.locales)) {
+                $scope.event.locales = locales;
+            }
         });
 
         EventService.getDynamicFieldTemplates().success(function(result) {
@@ -330,8 +335,7 @@
             type: eventType,
             freeOfCharge: false,
             begin: {},
-            end: {},
-            locales: 7
+            end: {}
         };
         initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state);
 
