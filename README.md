@@ -65,10 +65,12 @@ Alf.io is also offered as a 3 tier application using 3 docker images:
  ```
  ./gradlew distribution
  ```
- * Enter directory:
+
+ * Enter the directory:
  ```
  cd build/dockerize
  ```
+
  * Create docker image:
  ```
  docker build -t exteso/alfio-web .
