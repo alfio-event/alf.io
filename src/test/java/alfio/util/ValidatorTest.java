@@ -43,8 +43,9 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ValidatorTest {
 
-    public static final DateTimeModification VALID_EXPIRATION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusHours(1L));
-    public static final DateTimeModification VALID_INCEPTION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().minusDays(1L));
+    private static final DateTimeModification VALID_EXPIRATION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusHours(1L));
+    private static final DateTimeModification VALID_INCEPTION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().minusDays(1L));
+
     @Mock
     private EventModification eventModification;
     private Errors errors;
