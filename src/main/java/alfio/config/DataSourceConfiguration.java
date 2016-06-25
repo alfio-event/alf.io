@@ -85,7 +85,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
                                     .filter(p -> p.isHosting(environment))
                                     .findFirst()
                                     .orElse(PlatformProvider.DEFAULT);
-        log.info("Detected {} cloud provider", current);
+        log.info("Detected cloud provider: {}, database: {}", current, current.getDialect(environment));
         return current;
     }
 
