@@ -12,14 +12,14 @@ You should have installed Java version 8 (either [Oracle's](http://www.oracle.co
 
 ## Run on your machine
 
-## Gradle Build
+### Gradle Build
 
 This build includes a copy of the Gradle wrapper. You don't have to have Gradle installed on your system in order to build
 the project. Simply execute the wrapper along with the appropriate task, for example
 
 >./gradlew clean
 
-### Running with multiple profiles
+#### Running with multiple profiles
 
 You must specify a project property at the command line, such as
 
@@ -41,7 +41,12 @@ You can configure additional System properties (if you need them) by creating th
 
 please be aware that since this file could contain sensitive information (such as Google Maps private API key) it will be automatically ignored by git
 
+## Developing alf.io
+Importing the Gradle project into Intellij and Eclipse both work.
 
+**Note**: this project uses [Project Lombok](https://projectlombok.org/). You will need to install the corresponding Lombok plugin for integration into your IDE.
+
+**Note:** Intellij has trouble recognizing the Spring Bean context in this project and shows "errors" in the `@Autowired` annotation on constructors. These do not block compilation and can be ignored. If you find a way to eliminate the warnings, please [let us know](https://groups.google.com/d/msg/alfio/F6BPMOwsX48/Idd6X6z4BAAJ)!
 ## Docker images
 Alf.io is also offered as a 3 tier application using 3 docker images:
 
