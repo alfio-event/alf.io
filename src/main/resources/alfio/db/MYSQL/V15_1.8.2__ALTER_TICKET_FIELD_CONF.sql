@@ -15,13 +15,13 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-alter table ticket_field_configuration add column additional_service_id_fk integer;
-alter table ticket_field_configuration add FOREIGN KEY (additional_service_id_fk) REFERENCES ADDITIONAL_SERVICE(ID);
+SET foreign_key_checks = 0;
 
 -- drop old constraints
-alter table ticket_field_configuration drop index "unique_ticket_field_configuration";
--- add new constraints
-alter table ticket_field_configuration add constraint "unique_ticket_field_configuration" unique(event_id_fk, field_name, additional_service_id_fk, context);
+alter table ticket_field_configuration drop index unique_ticket_field_configuration;
+
+-- cannot add new constraints, as mysql does not support partial indexes.
+SET foreign_key_checks = 1;
 
 create table additional_service_field_value(
     additional_service_id_fk int not null,
