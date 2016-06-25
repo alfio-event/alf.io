@@ -241,6 +241,11 @@ compileJava {
 //propagate the system properties to the tests
 test {
     systemProperties = System.getProperties()
+    testLogging {
+        events "failed"
+        exceptionFormat "full"
+        info.events = ["failed"]
+    }
 }
 
 
