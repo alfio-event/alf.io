@@ -9,13 +9,13 @@ install:
 matrix:
     include:
         - jdk: oraclejdk8
-          env: $PROFILE=-Ddbenv=HSQLDB
+          env: PROFILE="-Ddbenv=HSQLDB"
         - jdk: oraclejdk8
-          env: $PROFILE=-Ddbenv=PGSQL-TRAVIS
+          env: PROFILE="-Ddbenv=PGSQL-TRAVIS"
         - jdk: oraclejdk8
-          env: $PROFILE=-Ddbenv=MYSQL
+          env: PROFILE="-Ddbenv=MYSQL"
         - jdk: oraclejdk8
-          env: $PROFILE=-Ddbenv=MYSQL
+          env: PROFILE="-Ddbenv=MYSQL -Dmariadb"
           addons:
               mariadb: 10.1
 script:
