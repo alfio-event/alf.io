@@ -2,6 +2,7 @@ language: java
 before_script:
   - psql -c 'create database alfio;' -U postgres
   - mysql -u root -e 'CREATE DATABASE alfio CHARACTER SET utf8 COLLATE utf8_bin;'
+  - mysql -u root -e 'select VERSION()'
 sudo: false
 install:
     - TERM=dumb ./gradlew -q assemble
@@ -13,6 +14,10 @@ matrix:
           env: $PROFILE=-Ddbenv=PGSQL-TRAVIS
         - jdk: oraclejdk8
           env: $PROFILE=-Ddbenv=MYSQL
+        - jdk: oraclejdk8
+          env: $PROFILE=-Ddbenv=MYSQL
+          addons:
+              mariadb: 10.1
 script:
     - TERM=dumb ./gradlew build jacocoTestReport $PROFILE
 after_success:
