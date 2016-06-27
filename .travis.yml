@@ -3,9 +3,9 @@ services:
   - mysql
 before_script:
   - psql -c 'create database alfio;' -U postgres
-  - mysql -u root -e 'CREATE DATABASE alfio CHARACTER SET utf8 COLLATE utf8_bin;'
-  - mysql -u root -e 'select VERSION()'
-  - mysql -u root -e 'select @@sql_mode'
+  - mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE alfio CHARACTER SET utf8 COLLATE utf8_bin;'
+  - mysql -u root -h 127.0.0.1 -e 'select VERSION()'
+  - mysql -u root -h 127.0.0.1 -e 'select @@sql_mode'
 dist: trusty
 sudo: required
 install:
