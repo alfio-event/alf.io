@@ -1,11 +1,9 @@
 language: java
-services:
-  - mysql
 before_script:
   - psql -c 'create database alfio;' -U postgres
-  - mysql -u root -h 127.0.0.1 -e 'CREATE DATABASE alfio CHARACTER SET utf8 COLLATE utf8_bin;'
-  - mysql -u root -h 127.0.0.1 -e 'select VERSION()'
-  - mysql -u root -h 127.0.0.1 -e 'select @@sql_mode'
+  - mysql -u root -e 'CREATE DATABASE alfio CHARACTER SET utf8 COLLATE utf8_bin;'
+  - mysql -u root -e 'select VERSION()'
+  - mysql -u root -e 'select @@sql_mode'
 dist: trusty
 sudo: required
 install:
@@ -14,14 +12,37 @@ matrix:
     include:
         - jdk: oraclejdk8
           env: PROFILE="-Ddbenv=HSQLDB"
+          addons:
+              apt:
+                  packages:
+                      - mysql-server
+                      - mysql-client-core
+                      - mysql-client
         - jdk: oraclejdk8
           env: PROFILE="-Ddbenv=PGSQL-TRAVIS -Dpgsql9.1"
+          addons:
+              apt:
+                  packages:
+                      - mysql-server
+                      - mysql-client-core
+                      - mysql-client
         - jdk: oraclejdk8
           env: PROFILE="-Ddbenv=PGSQL-TRAVIS -Dpgsql9.4"
           addons:
               postgresql: "9.4"
+              apt:
+                  packages:
+                      - mysql-server
+                      - mysql-client-core
+                      - mysql-client
         - jdk: oraclejdk8
           env: PROFILE="-Ddbenv=MYSQL -Dmysql5.5"
+          addons:
+              apt:
+                  packages:
+                      - mysql-server
+                      - mysql-client-core
+                      - mysql-client
         - jdk: oraclejdk8
           env: PROFILE="-Ddbenv=MYSQL -Dmysql5.6"
           addons:
