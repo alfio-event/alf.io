@@ -4,23 +4,56 @@ before_script:
   - mysql -u root -e 'CREATE DATABASE alfio CHARACTER SET utf8 COLLATE utf8_bin;'
   - mysql -u root -e 'select VERSION()'
   - mysql -u root -e 'select @@sql_mode'
-sudo: false
+dist: trusty
+sudo: required
 install:
     - TERM=dumb ./gradlew -q assemble
 matrix:
     include:
         - jdk: oraclejdk8
           env: PROFILE="-Ddbenv=HSQLDB"
+          addons:
+              apt:
+                  packages:
+                      - mysql-server
+                      - mysql-client-core-5.5
+                      - mysql-client
         - jdk: oraclejdk8
           env: PROFILE="-Ddbenv=PGSQL-TRAVIS -Dpgsql9.1"
+          addons:
+              postgresql: "9.1"
+              apt:
+                  packages:
+                      - mysql-server
+                      - mysql-client-core-5.5
+                      - mysql-client
         - jdk: oraclejdk8
           env: PROFILE="-Ddbenv=PGSQL-TRAVIS -Dpgsql9.4"
           addons:
               postgresql: "9.4"
+              apt:
+                  packages:
+                      - mysql-server
+                      - mysql-client-core-5.5
+                      - mysql-client
         - jdk: oraclejdk8
-          env: PROFILE="-Ddbenv=MYSQL"
+          env: PROFILE="-Ddbenv=MYSQL -Dmysql5.5"
+          addons:
+              apt:
+                  packages:
+                      - mysql-server
+                      - mysql-client-core-5.5
+                      - mysql-client
         - jdk: oraclejdk8
-          env: PROFILE="-Ddbenv=MYSQL -Dmariadb"
+          env: PROFILE="-Ddbenv=MYSQL -Dmysql5.6"
+          addons:
+              apt:
+                  packages:
+                      - mysql-server-5.6
+                      - mysql-client-core-5.6
+                      - mysql-client-5.6    
+        - jdk: oraclejdk8
+          env: PROFILE="-Ddbenv=MYSQL -Dmariadb10.1"
           addons:
               mariadb: 10.1
 script:
