@@ -1,10 +1,12 @@
 language: java
 before_script:
   - psql -c 'create database alfio;' -U postgres
+  - psql -c 'SELECT version();' -U postgres
   - mysql -u root -e 'CREATE DATABASE alfio CHARACTER SET utf8 COLLATE utf8_bin;'
   - mysql -u root -e 'select VERSION()'
   - mysql -u root -e 'select @@sql_mode'
-sudo: false
+dist: trusty
+sudo: required
 install:
     - TERM=dumb ./gradlew -q assemble
 matrix:
@@ -18,9 +20,17 @@ matrix:
           addons:
               postgresql: "9.4"
         - jdk: oraclejdk8
-          env: PROFILE="-Ddbenv=MYSQL"
+          env: PROFILE="-Ddbenv=MYSQL -Dmysql5.5"
         - jdk: oraclejdk8
-          env: PROFILE="-Ddbenv=MYSQL -Dmariadb"
+          env: PROFILE="-Ddbenv=MYSQL -Dmysql5.6"
+          addons:
+              apt:
+                  packages:
+                      - mysql-server-5.6
+                      - mysql-client-core-5.6
+                      - mysql-client-5.6    
+        - jdk: oraclejdk8
+          env: PROFILE="-Ddbenv=MYSQL -Dmariadb10.1"
           addons:
               mariadb: 10.1
 script:
