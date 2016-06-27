@@ -15,7 +15,7 @@
 
 <div class="row wMarginBottom">
     <div class="col-xs-12 event-description">
-        <div class="preformatted">{{event.description}}</div>
+        <div>{{#commonmark}}{{event.description}}{{/commonmark}}</div>
     </div>
 </div>
 

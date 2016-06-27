@@ -301,6 +301,9 @@
             },
             validateShortName: function(shortName) {
                 return $http['post']('/admin/api/utils/short-name/validate', null, {params: {shortName: shortName}}).error(HttpErrorHandler.handle);
+            },
+            renderCommonMark: function(text) {
+            	return $http.get('/admin/api/utils/render-commonmark', {params: {text: text}});
             }
         };
     }]);

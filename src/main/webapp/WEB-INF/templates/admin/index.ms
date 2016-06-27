@@ -17,6 +17,7 @@
     <script src="{{request.contextPath}}/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/numeral/min/numeral.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular/angular.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/angular-sanitize/angular-sanitize.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-messages/angular-messages.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
