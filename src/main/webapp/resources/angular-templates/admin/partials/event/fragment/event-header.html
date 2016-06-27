@@ -47,7 +47,7 @@
                 <label>Description</label>
                 <div></div>
                 <div data-ng-repeat="cl in event.contentLanguages">
-                    <p class="form-control-static">- {{cl.displayLanguage}}:</p>
+                    <p class="form-control-static">- {{cl.displayLanguage}}: <display-commonmark-preview text="event.description[cl.locale]"></display-commonmark-preview></p>
                     <pre class="white form-control-static">{{event.description[cl.locale]}}</pre>
                 </div>
             </div>

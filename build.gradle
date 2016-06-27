@@ -157,6 +157,7 @@ dependencies {
     compile "com.opencsv:opencsv:3.4"
     compile 'commons-codec:commons-codec:1.10'
     compile 'net.sf.biweekly:biweekly:0.4.2'
+    compile 'com.atlassian.commonmark:commonmark:0.5.1'
 
     testCompile "org.springframework:spring-test:$springVersion"
     testCompile "com.insightfullogic:lambda-behave:0.3"

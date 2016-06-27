@@ -66,7 +66,7 @@
         <div class="col-sm-12 col-md-5">
             <div data-ng-repeat="(lang, language) in allLanguagesMapping">
                 <div data-ng-if="isLanguagePresent(event.locales, language.value)">
-                    <label for="{{buildPrefix($index, 'description.'+lang)}}">Description: {{language.displayLanguage}}</label>
+                    <label for="{{buildPrefix($index, 'description.'+lang)}}">Description: {{language.displayLanguage}} <display-commonmark-preview text="ticketCategory.description[language.locale]"></display-commonmark-preview></label>
                     <textarea data-ng-model="ticketCategory.description[language.locale]" name="{{buildPrefix($index, 'description.'+lang)}}" id="{{buildPrefix($index, 'description.'+lang)}}" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
                 </div>
             </div>

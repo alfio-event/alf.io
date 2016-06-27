@@ -17,6 +17,8 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.EventNameManager;
+import alfio.util.MustacheCustomTagInterceptor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -50,6 +52,11 @@ public class UtilsApiController {
             response.setStatus(HttpServletResponse.SC_CONFLICT);
         }
         return unique;
+    }
+    
+    @RequestMapping(value = "/render-commonmark") 
+    public String renderCommonmark(@RequestParam("text") String input) {
+    	return MustacheCustomTagInterceptor.renderToCommonmark(input);
     }
 
 }

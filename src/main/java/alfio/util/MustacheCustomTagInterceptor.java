@@ -19,6 +19,9 @@ package alfio.util;
 import alfio.model.transaction.PaymentProxy;
 import com.samskivert.mustache.Mustache;
 import org.apache.commons.lang3.tuple.Pair;
+import org.commonmark.html.HtmlRenderer;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.ModelAndView;
@@ -129,6 +132,21 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
             }
         };
     };
+    
+    
+    private static final Parser COMMONMARK_PARSER = Parser.builder().build();
+    private static final HtmlRenderer COMMONMARK_RENDERER = HtmlRenderer.builder().build();
+    
+    public static String renderToCommonmark(String input) {
+    	Node document = COMMONMARK_PARSER.parse(input);
+    	return COMMONMARK_RENDERER.render(document);
+    }
+    
+    private static final Mustache.Lambda RENDER_TO_COMMON_MARK = (frag, out) -> {
+    	String content = frag.execute();
+    	out.write(renderToCommonmark(content));
+    	
+    };
 
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
@@ -139,6 +157,7 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
             modelAndView.addObject("field-has-error", HAS_ERROR.apply(modelAndView));
             modelAndView.addObject("field-error", FIELD_ERROR.apply(modelAndView));
             modelAndView.addObject("is-payment-method", IS_PAYMENT_METHOD);
+            modelAndView.addObject("commonmark", RENDER_TO_COMMON_MARK);
         }
 
         super.postHandle(request, response, handler, modelAndView);
