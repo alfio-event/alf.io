@@ -1,7 +1,6 @@
 language: java
 before_script:
   - psql -c 'create database alfio;' -U postgres
-  - psql -c 'SELECT version();' -U postgres
   - mysql -u root -e 'CREATE DATABASE alfio CHARACTER SET utf8 COLLATE utf8_bin;'
   - mysql -u root -e 'select VERSION()'
   - mysql -u root -e 'select @@sql_mode'
