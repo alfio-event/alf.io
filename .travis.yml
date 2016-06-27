@@ -16,15 +16,16 @@ matrix:
               apt:
                   packages:
                       - mysql-server
-                      - mysql-client-core
+                      - mysql-client-core-5.5
                       - mysql-client
         - jdk: oraclejdk8
           env: PROFILE="-Ddbenv=PGSQL-TRAVIS -Dpgsql9.1"
           addons:
+              postgresql: "9.1"
               apt:
                   packages:
                       - mysql-server
-                      - mysql-client-core
+                      - mysql-client-core-5.5
                       - mysql-client
         - jdk: oraclejdk8
           env: PROFILE="-Ddbenv=PGSQL-TRAVIS -Dpgsql9.4"
@@ -33,7 +34,7 @@ matrix:
               apt:
                   packages:
                       - mysql-server
-                      - mysql-client-core
+                      - mysql-client-core-5.5
                       - mysql-client
         - jdk: oraclejdk8
           env: PROFILE="-Ddbenv=MYSQL -Dmysql5.5"
@@ -41,7 +42,7 @@ matrix:
               apt:
                   packages:
                       - mysql-server
-                      - mysql-client-core
+                      - mysql-client-core-5.5
                       - mysql-client
         - jdk: oraclejdk8
           env: PROFILE="-Ddbenv=MYSQL -Dmysql5.6"
