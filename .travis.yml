@@ -1,4 +1,6 @@
 language: java
+services:
+  - mysql
 before_script:
   - psql -c 'create database alfio;' -U postgres
   - mysql -u root -e 'CREATE DATABASE alfio CHARACTER SET utf8 COLLATE utf8_bin;'
