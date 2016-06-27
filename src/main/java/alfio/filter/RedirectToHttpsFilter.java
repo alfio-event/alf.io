@@ -16,16 +16,13 @@
  */
 package alfio.filter;
 
-import alfio.config.Initializer;
 import org.springframework.core.env.Environment;
 import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import static java.util.Optional.ofNullable;
 import static org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext;
 
 public class RedirectToHttpsFilter implements Filter {
@@ -42,16 +39,16 @@ public class RedirectToHttpsFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
             ServletException {
 
-        HttpServletRequest req = (HttpServletRequest) request;
-
-        // redirecting if the request is not over https: note: this will work _only_ with the default port for https
-        if (environment.acceptsProfiles("!" + Initializer.PROFILE_HTTP) && !isOverHttps(req)) {
-            HttpServletResponse resp = (HttpServletResponse) response;
-            resp.sendRedirect(req.getRequestURL()
-                    .append(ofNullable(req.getQueryString()).map((x) -> "?" + x).orElse("")).toString()
-                    .replaceFirst("http", "https"));
-            return;
-        }
+//        HttpServletRequest req = (HttpServletRequest) request;
+//
+//        // redirecting if the request is not over https: note: this will work _only_ with the default port for https
+//        if (environment.acceptsProfiles("!" + Initializer.PROFILE_HTTP) && !isOverHttps(req)) {
+//            HttpServletResponse resp = (HttpServletResponse) response;
+//            resp.sendRedirect(req.getRequestURL()
+//                    .append(ofNullable(req.getQueryString()).map((x) -> "?" + x).orElse("")).toString()
+//                    .replaceFirst("http", "https"));
+//            return;
+//        }
 
         //
         chain.doFilter(request, response);

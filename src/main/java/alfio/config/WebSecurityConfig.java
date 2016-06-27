@@ -112,6 +112,11 @@ public class WebSecurityConfig {
 
         @Override
         protected void configure(HttpSecurity http) throws Exception {
+
+            if(environment.acceptsProfiles("!"+Initializer.PROFILE_DEV)) {
+                http.requiresChannel().anyRequest().requiresSecure();
+            }
+
             CsrfConfigurer<HttpSecurity> configurer =
                 http.exceptionHandling()
                     .accessDeniedPage("/session-expired")
