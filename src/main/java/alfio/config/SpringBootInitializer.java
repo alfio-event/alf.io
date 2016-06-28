@@ -16,7 +16,6 @@
  */
 package alfio.config;
 
-import alfio.filter.RedirectToHttpsFilter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 import org.springframework.boot.context.embedded.ErrorPage;
@@ -64,11 +63,6 @@ public class SpringBootInitializer {
         cef.setEncoding("UTF-8");
         cef.setForceEncoding(true);
         return cef;
-    }
-
-    @Bean
-    public Filter redirectToHttpsFilter() {
-        return new RedirectToHttpsFilter();
     }
 
     @Bean

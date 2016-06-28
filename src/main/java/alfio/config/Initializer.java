@@ -16,12 +16,9 @@
  */
 package alfio.config;
 
-import alfio.filter.RedirectToHttpsFilter;
 import alfio.util.DefaultExceptionHandler;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.reflect.MethodUtils;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
@@ -62,19 +59,6 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
         characterEncodingFilter.setAsyncSupported(true);
         characterEncodingFilter.addMappingForUrlPatterns(null, false, "/*");
 
-        Dynamic redirectFilter = servletContext.addFilter("RedirectToHttpsFilter", RedirectToHttpsFilter.class);
-        redirectFilter.setAsyncSupported(true);
-        redirectFilter.addMappingForUrlPatterns(null, false, "/*");
-
-        if (System.getProperty("startDBManager") != null) {
-            Class<?> cls;
-            try {
-                cls = ClassUtils.getClass("org.hsqldb.util.DatabaseManagerSwing");
-                MethodUtils.invokeStaticMethod(cls, "main", new Object[] { new String[] { "--url", "jdbc:hsqldb:mem:alfio", "--noexit" } });
-            } catch (ReflectiveOperationException e) {
-                log.warn("error starting db manager", e);
-            }
-        }
     }
 
     @Override
