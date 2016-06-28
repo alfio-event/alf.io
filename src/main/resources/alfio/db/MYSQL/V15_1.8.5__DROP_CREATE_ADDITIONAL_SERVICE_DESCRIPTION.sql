@@ -27,5 +27,5 @@ create table additional_service_description (
     value varchar(2048) not null
 );
 
-alter table additional_service_description add FOREIGN KEY additional_service_id_fk (additional_service_id_fk) REFERENCES additional_service(id);
+alter table additional_service_description add FOREIGN KEY asd_as_id_fk (additional_service_id_fk) REFERENCES additional_service(id);
 alter table additional_service_description add constraint unique_asd unique(additional_service_id_fk, locale, type);

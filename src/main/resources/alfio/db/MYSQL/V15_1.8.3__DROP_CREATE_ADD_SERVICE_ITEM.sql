@@ -29,5 +29,5 @@ create table additional_service_item (
     status varchar(20),
     event_id_fk integer not null
 ) ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
-alter table additional_service_item add FOREIGN KEY additional_service_id_fk (additional_service_id_fk) REFERENCES additional_service(id);
-alter table additional_service_item add FOREIGN KEY event_id_fk (event_id_fk) REFERENCES event(id);
+alter table additional_service_item add FOREIGN KEY asi_as_fk (additional_service_id_fk) REFERENCES additional_service(id);
+alter table additional_service_item add FOREIGN KEY asi_event_id_fk (event_id_fk) REFERENCES event(id);
