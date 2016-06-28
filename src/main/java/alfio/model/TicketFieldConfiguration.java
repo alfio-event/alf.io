@@ -54,7 +54,7 @@ public class TicketFieldConfiguration {
                                     @Column("field_required") boolean required,
                                     @Column("field_restricted_values") String restrictedValues,
                                     @Column("context") Context context,
-                                    @Column("additional_service_id_fk") Integer additionalServiceId) {
+                                    @Column("additional_service_id") Integer additionalServiceId) {
         this.id = id;
         this.eventId = eventId;
         this.name = name;

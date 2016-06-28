@@ -204,8 +204,8 @@ public final class Validator {
             errors.rejectValue("additionalServices", "error.price");
         }
 
-        List<EventModification.AdditionalServiceDescription> descriptions = additionalService.getDescription();
-        List<EventModification.AdditionalServiceDescription> titles = additionalService.getTitle();
+        List<EventModification.AdditionalServiceText> descriptions = additionalService.getDescription();
+        List<EventModification.AdditionalServiceText> titles = additionalService.getTitle();
         if(descriptions == null || titles == null || titles.size() != descriptions.size()) {
             errors.rejectValue("additionalServices", "error.title");
             errors.rejectValue("additionalServices", "error.description");
@@ -231,7 +231,7 @@ public final class Validator {
 
     }
 
-    private static boolean containsAllRequiredTranslations(EventModification eventModification, List<EventModification.AdditionalServiceDescription> descriptions) {
+    private static boolean containsAllRequiredTranslations(EventModification eventModification, List<EventModification.AdditionalServiceText> descriptions) {
         Optional<EventModification> optional = Optional.ofNullable(eventModification);
         return !optional.isPresent() ||
             optional.map(e -> ContentLanguage.findAllFor(e.getLocales()))
@@ -239,7 +239,7 @@ public final class Validator {
                 .isPresent();
     }
 
-    private static boolean validateDescriptionList(List<EventModification.AdditionalServiceDescription> descriptions) {
+    private static boolean validateDescriptionList(List<EventModification.AdditionalServiceText> descriptions) {
         return descriptions.stream().allMatch(t -> StringUtils.isNotBlank(t.getValue()));
     }
 }

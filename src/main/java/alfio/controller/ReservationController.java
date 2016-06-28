@@ -162,7 +162,7 @@ public class ReservationController {
                     model.addAttribute("ticketEmailSent", ticketEmailSent);
 
                     List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
-                    List<Triple<AdditionalService, List<AdditionalServiceDescription>, AdditionalServiceItem>> additionalServices = ticketReservationManager.findAdditionalServicesInReservation(reservationId)
+                    List<Triple<AdditionalService, List<AdditionalServiceText>, AdditionalServiceItem>> additionalServices = ticketReservationManager.findAdditionalServicesInReservation(reservationId)
                         .stream()
                         .map(t -> Triple.of(t.getLeft(), t.getMiddle().stream().filter(d -> d.getLocale().equals(locale.getLanguage())).collect(toList()), t.getRight()))
                         .collect(Collectors.toList());

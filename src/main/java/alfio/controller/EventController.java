@@ -76,7 +76,7 @@ public class EventController {
     private final TicketReservationManager ticketReservationManager;
     private final EventStatisticsManager eventStatisticsManager;
     private final AdditionalServiceRepository additionalServiceRepository;
-    private final AdditionalServiceDescriptionRepository additionalServiceDescriptionRepository;
+    private final AdditionalServiceTextRepository additionalServiceTextRepository;
 
     @Autowired
     public EventController(ConfigurationManager configurationManager,
@@ -92,7 +92,7 @@ public class EventController {
                            TicketReservationManager ticketReservationManager,
                            EventStatisticsManager eventStatisticsManager,
                            AdditionalServiceRepository additionalServiceRepository,
-                           AdditionalServiceDescriptionRepository additionalServiceDescriptionRepository) {
+                           AdditionalServiceTextRepository additionalServiceTextRepository) {
         this.configurationManager = configurationManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -106,7 +106,7 @@ public class EventController {
         this.ticketReservationManager = ticketReservationManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.additionalServiceRepository = additionalServiceRepository;
-        this.additionalServiceDescriptionRepository = additionalServiceDescriptionRepository;
+        this.additionalServiceTextRepository = additionalServiceTextRepository;
     }
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -322,7 +322,7 @@ public class EventController {
     }
 
     private SaleableAdditionalService getSaleableAdditionalService(Event event, Locale locale, AdditionalService as, PromoCodeDiscount promoCodeDiscount) {
-        return new SaleableAdditionalService(event, as, additionalServiceDescriptionRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceDescription.AdditionalServiceDescriptionType.TITLE).getValue(), additionalServiceDescriptionRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceDescription.AdditionalServiceDescriptionType.DESCRIPTION).getValue(), promoCodeDiscount);
+        return new SaleableAdditionalService(event, as, additionalServiceTextRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.AdditionalServiceDescriptionType.TITLE).getValue(), additionalServiceTextRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.AdditionalServiceDescriptionType.DESCRIPTION).getValue(), promoCodeDiscount);
     }
 
 }

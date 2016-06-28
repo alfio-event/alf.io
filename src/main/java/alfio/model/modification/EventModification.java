@@ -25,10 +25,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.ZoneId;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Getter
@@ -194,6 +193,7 @@ public class EventModification {
 
     @Getter
     public static class AdditionalService {
+        private final Integer id;
         private final BigDecimal price;
         private final boolean fixPrice;
         private final int ordinal;
@@ -204,10 +204,12 @@ public class EventModification {
         private final BigDecimal vat;
         private final alfio.model.AdditionalService.VatType vatType;
         private final List<AdditionalField> additionalServiceFields;
-        private final List<AdditionalServiceDescription> title;
-        private final List<AdditionalServiceDescription> description;
+        private final List<AdditionalServiceText> title;
+        private final List<AdditionalServiceText> description;
 
-        public AdditionalService(@JsonProperty("price") BigDecimal price,
+        @JsonCreator
+        public AdditionalService(@JsonProperty("id") Integer id,
+                                 @JsonProperty("price") BigDecimal price,
                                  @JsonProperty("fixPrice") boolean fixPrice,
                                  @JsonProperty("ordinal") int ordinal,
                                  @JsonProperty("availableQuantity") int availableQuantity,
@@ -217,9 +219,9 @@ public class EventModification {
                                  @JsonProperty("vat") BigDecimal vat,
                                  @JsonProperty("vatType") alfio.model.AdditionalService.VatType vatType,
                                  @JsonProperty("additionalServiceFields") List<AdditionalField> additionalServiceFields,
-                                 @JsonProperty("title") List<AdditionalServiceDescription> title,
-                                 @JsonProperty("description") List<AdditionalServiceDescription> description) {
-
+                                 @JsonProperty("title") List<AdditionalServiceText> title,
+                                 @JsonProperty("description") List<AdditionalServiceText> description) {
+            this.id = id;
             this.price = price;
             this.fixPrice = fixPrice;
             this.ordinal = ordinal;
@@ -233,20 +235,70 @@ public class EventModification {
             this.title = title;
             this.description = description;
         }
+
+        public static Builder from(alfio.model.AdditionalService src) {
+            return new Builder(src);
+        }
+
+        public static class Builder {
+
+            private final alfio.model.AdditionalService src;
+            private ZoneId zoneId;
+            private List<AdditionalField> additionalServiceFields = new ArrayList<>();
+            private List<AdditionalServiceText> title = new ArrayList<>();
+            private List<AdditionalServiceText> description = new ArrayList<>();
+
+            private Builder(alfio.model.AdditionalService src) {
+                this.src = src;
+            }
+
+            public Builder withZoneId(ZoneId zoneId) {
+                this.zoneId = zoneId;
+                return this;
+            }
+
+            public Builder withAdditionalFields(List<AdditionalField> additionalServiceFields) {
+                this.additionalServiceFields = additionalServiceFields;
+                return this;
+            }
+
+            public Builder withText(List<alfio.model.AdditionalServiceText> text) {
+                Map<Boolean, List<AdditionalServiceText>> byType = text.stream()
+                    .map(AdditionalServiceText::from)
+                    .collect(Collectors.partitioningBy(ast -> ast.getType() == alfio.model.AdditionalServiceText.AdditionalServiceDescriptionType.TITLE));
+                this.title = byType.getOrDefault(true, this.title);
+                this.description = byType.getOrDefault(false, this.description);
+                return this;
+            }
+
+            public AdditionalService build() {
+                return new AdditionalService(src.getId(), Optional.ofNullable(src.getPriceInCents()).map(MonetaryUtil::centsToUnit).orElse(BigDecimal.ZERO),
+                    src.isFixPrice(), src.getOrdinal(), src.getAvailableQuantity(), src.getMaxQtyPerOrder(), DateTimeModification.fromZonedDateTime(src.getInception(zoneId)),
+                    DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description);
+            }
+
+        }
     }
 
     @Getter
-    public static class AdditionalServiceDescription {
+    public static class AdditionalServiceText {
+        private final Integer id;
         private final String locale;
         private final String value;
-        private final alfio.model.AdditionalServiceDescription.AdditionalServiceDescriptionType type;
+        private final alfio.model.AdditionalServiceText.AdditionalServiceDescriptionType type;
 
-        public AdditionalServiceDescription(@JsonProperty("locale") String locale,
-                                            @JsonProperty("value") String value,
-                                            @JsonProperty("type") alfio.model.AdditionalServiceDescription.AdditionalServiceDescriptionType type) {
+        public AdditionalServiceText(@JsonProperty("id") Integer id,
+                                     @JsonProperty("locale") String locale,
+                                     @JsonProperty("value") String value,
+                                     @JsonProperty("type") alfio.model.AdditionalServiceText.AdditionalServiceDescriptionType type) {
+            this.id = id;
             this.locale = locale;
             this.value = value;
             this.type = type;
+        }
+
+        public static AdditionalServiceText from(alfio.model.AdditionalServiceText src) {
+            return new AdditionalServiceText(src.getId(), src.getLocale(), src.getValue(), src.getType());
         }
     }
 }

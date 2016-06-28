@@ -110,7 +110,7 @@ public class TicketReservationManager {
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
-    private final AdditionalServiceDescriptionRepository additionalServiceDescriptionRepository;
+    private final AdditionalServiceTextRepository additionalServiceTextRepository;
 
 
     public static class NotEnoughTicketsException extends RuntimeException {
@@ -154,7 +154,7 @@ public class TicketReservationManager {
                                     TicketFieldRepository ticketFieldRepository,
                                     AdditionalServiceRepository additionalServiceRepository,
                                     AdditionalServiceItemRepository additionalServiceItemRepository,
-                                    AdditionalServiceDescriptionRepository additionalServiceDescriptionRepository) {
+                                    AdditionalServiceTextRepository additionalServiceTextRepository) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -176,7 +176,7 @@ public class TicketReservationManager {
         this.ticketFieldRepository = ticketFieldRepository;
         this.additionalServiceRepository = additionalServiceRepository;
         this.additionalServiceItemRepository = additionalServiceItemRepository;
-        this.additionalServiceDescriptionRepository = additionalServiceDescriptionRepository;
+        this.additionalServiceTextRepository = additionalServiceTextRepository;
     }
     
     /**
@@ -695,7 +695,7 @@ public class TicketReservationManager {
         });
         summary.addAll(collectAdditionalServiceItems(reservationId, event)
             .flatMap(entry -> {
-                AdditionalServiceDescription title = additionalServiceDescriptionRepository.findByLocaleAndType(entry.getKey().getId(), locale.getLanguage(), AdditionalServiceDescription.AdditionalServiceDescriptionType.TITLE);
+                AdditionalServiceText title = additionalServiceTextRepository.findByLocaleAndType(entry.getKey().getId(), locale.getLanguage(), AdditionalServiceText.AdditionalServiceDescriptionType.TITLE);
                 return entry.getValue().stream().map(item -> new SummaryRow(title.getValue(), MonetaryUtil.formatCents(item.getPaidPriceInCents()), 1, MonetaryUtil.formatCents(item.getPaidPriceInCents()), item.getPaidPriceInCents(), SummaryRow.SummaryType.ADDITIONAL_SERVICE));
             }).collect(Collectors.toList()));
         return summary;
@@ -811,9 +811,9 @@ public class TicketReservationManager {
         return ticketRepository.findTicketsInReservation(reservationId);
     }
 
-    public List<Triple<AdditionalService, List<AdditionalServiceDescription>, AdditionalServiceItem>> findAdditionalServicesInReservation(String reservationId) {
+    public List<Triple<AdditionalService, List<AdditionalServiceText>, AdditionalServiceItem>> findAdditionalServicesInReservation(String reservationId) {
         return additionalServiceItemRepository.findByReservationUuid(reservationId).stream()
-            .map(asi -> Triple.of(additionalServiceRepository.getById(asi.getAdditionalServiceId(), asi.getEventId()), additionalServiceDescriptionRepository.findAllByAdditionalServiceId(asi.getAdditionalServiceId()), asi))
+            .map(asi -> Triple.of(additionalServiceRepository.getById(asi.getAdditionalServiceId(), asi.getEventId()), additionalServiceTextRepository.findAllByAdditionalServiceId(asi.getAdditionalServiceId()), asi))
             .collect(Collectors.toList());
     }
 

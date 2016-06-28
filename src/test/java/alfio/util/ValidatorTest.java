@@ -17,7 +17,7 @@
 package alfio.util;
 
 import alfio.model.AdditionalService;
-import alfio.model.AdditionalServiceDescription;
+import alfio.model.AdditionalServiceText;
 import alfio.model.ContentLanguage;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
@@ -49,8 +49,8 @@ public class ValidatorTest {
     @Mock
     private EventModification eventModification;
     private Errors errors;
-    private EventModification.AdditionalServiceDescription title = new EventModification.AdditionalServiceDescription("it", "titolo", AdditionalServiceDescription.AdditionalServiceDescriptionType.TITLE);
-    private EventModification.AdditionalServiceDescription description = new EventModification.AdditionalServiceDescription("it", "descrizione", AdditionalServiceDescription.AdditionalServiceDescriptionType.DESCRIPTION);
+    private EventModification.AdditionalServiceText title = new EventModification.AdditionalServiceText(0, "it", "titolo", AdditionalServiceText.AdditionalServiceDescriptionType.TITLE);
+    private EventModification.AdditionalServiceText description = new EventModification.AdditionalServiceText(0, "it", "descrizione", AdditionalServiceText.AdditionalServiceDescriptionType.DESCRIPTION);
 
     @Before
     public void init() {
@@ -59,15 +59,15 @@ public class ValidatorTest {
 
     @Test
     public void testValidationSuccess() {
-        EventModification.AdditionalService valid1 = new EventModification.AdditionalService(BigDecimal.ZERO, false, 0, -1, 1, VALID_INCEPTION, VALID_EXPIRATION, null, AdditionalService.VatType.NONE, Collections.emptyList(), singletonList(title), singletonList(description));
-        EventModification.AdditionalService valid2 = new EventModification.AdditionalService(BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description));
+        EventModification.AdditionalService valid1 = new EventModification.AdditionalService(0, BigDecimal.ZERO, false, 0, -1, 1, VALID_INCEPTION, VALID_EXPIRATION, null, AdditionalService.VatType.NONE, Collections.emptyList(), singletonList(title), singletonList(description));
+        EventModification.AdditionalService valid2 = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description));
         assertTrue(Stream.of(valid1, valid2).map(as -> Validator.validateAdditionalService(as, errors)).allMatch(ValidationResult::isSuccess));
         assertFalse(errors.hasFieldErrors());
     }
 
     @Test
     public void testValidationErrorExpirationBeforeInception() {
-        EventModification.AdditionalService invalid = new EventModification.AdditionalService(BigDecimal.ZERO, false, 0, -1, 1, VALID_EXPIRATION, VALID_INCEPTION, null, AdditionalService.VatType.NONE, Collections.emptyList(), singletonList(title), singletonList(description));
+        EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ZERO, false, 0, -1, 1, VALID_EXPIRATION, VALID_INCEPTION, null, AdditionalService.VatType.NONE, Collections.emptyList(), singletonList(title), singletonList(description));
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
         assertNotNull(errors.getFieldError("additionalServices"));
@@ -75,7 +75,7 @@ public class ValidatorTest {
 
     @Test
     public void testValidationErrorInceptionNull() {
-        EventModification.AdditionalService invalid = new EventModification.AdditionalService(BigDecimal.ONE, true, 1, 100, 1, null, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description));
+        EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, null, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description));
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
         assertNotNull(errors.getFieldError("additionalServices"));
@@ -83,7 +83,7 @@ public class ValidatorTest {
 
     @Test
     public void testValidationExpirationNull() {
-        EventModification.AdditionalService invalid = new EventModification.AdditionalService(BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, null, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description));
+        EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, null, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description));
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
         assertNotNull(errors.getFieldError("additionalServices"));
@@ -91,7 +91,7 @@ public class ValidatorTest {
 
     @Test
     public void testValidationInceptionExpirationNull() {
-        EventModification.AdditionalService invalid = new EventModification.AdditionalService(BigDecimal.ONE, true, 1, 100, 1, null, null, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description));
+        EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, null, null, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description));
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
         assertNotNull(errors.getFieldError("additionalServices"));
@@ -99,8 +99,8 @@ public class ValidatorTest {
 
     @Test
     public void testValidationFailedDescriptionsDontMatchTitles() {
-        EventModification.AdditionalService invalid = new EventModification.AdditionalService(BigDecimal.ZERO, false, 0, -1, 1, VALID_INCEPTION, VALID_EXPIRATION, null, AdditionalService.VatType.NONE, Collections.emptyList(), emptyList(), singletonList(description));
-        EventModification.AdditionalService valid = new EventModification.AdditionalService(BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description));
+        EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ZERO, false, 0, -1, 1, VALID_INCEPTION, VALID_EXPIRATION, null, AdditionalService.VatType.NONE, Collections.emptyList(), emptyList(), singletonList(description));
+        EventModification.AdditionalService valid = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description));
         assertTrue(Validator.validateAdditionalService(valid, errors).isSuccess());
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
@@ -110,8 +110,8 @@ public class ValidatorTest {
     @Test
     public void testValidationFailedDescription() {
         when(eventModification.getLocales()).thenReturn(ContentLanguage.ENGLISH.getValue());
-        EventModification.AdditionalService invalid1 = new EventModification.AdditionalService(BigDecimal.ZERO, false, 0, -1, 1, VALID_INCEPTION, VALID_EXPIRATION, null, AdditionalService.VatType.NONE, Collections.emptyList(), emptyList(), singletonList(description));//English is required here
-        EventModification.AdditionalService invalid2 = new EventModification.AdditionalService(BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(new EventModification.AdditionalServiceDescription("en", "", AdditionalServiceDescription.AdditionalServiceDescriptionType.DESCRIPTION)));
+        EventModification.AdditionalService invalid1 = new EventModification.AdditionalService(0, BigDecimal.ZERO, false, 0, -1, 1, VALID_INCEPTION, VALID_EXPIRATION, null, AdditionalService.VatType.NONE, Collections.emptyList(), emptyList(), singletonList(description));//English is required here
+        EventModification.AdditionalService invalid2 = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(new EventModification.AdditionalServiceText(0, "en", "", AdditionalServiceText.AdditionalServiceDescriptionType.DESCRIPTION)));
         assertFalse(Validator.validateAdditionalService(invalid1, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
         assertNotNull(errors.getFieldError("additionalServices"));

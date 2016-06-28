@@ -88,7 +88,7 @@ public class EventManager {
     private final TicketFieldRepository ticketFieldRepository;
     private final EventDeleterRepository eventDeleterRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
-    private final AdditionalServiceDescriptionRepository additionalServiceDescriptionRepository;
+    private final AdditionalServiceTextRepository additionalServiceTextRepository;
 
     @Autowired
     public EventManager(UserManager userManager,
@@ -106,7 +106,7 @@ public class EventManager {
                         PluginManager pluginManager,
                         TicketFieldRepository ticketFieldRepository,
                         EventDeleterRepository eventDeleterRepository,
-                        AdditionalServiceRepository additionalServiceRepository, AdditionalServiceDescriptionRepository additionalServiceDescriptionRepository) {
+                        AdditionalServiceRepository additionalServiceRepository, AdditionalServiceTextRepository additionalServiceTextRepository) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -123,7 +123,7 @@ public class EventManager {
         this.ticketFieldRepository = ticketFieldRepository;
         this.eventDeleterRepository = eventDeleterRepository;
         this.additionalServiceRepository = additionalServiceRepository;
-        this.additionalServiceDescriptionRepository = additionalServiceDescriptionRepository;
+        this.additionalServiceTextRepository = additionalServiceTextRepository;
     }
 
     public Event getSingleEvent(String eventName, String username) {
@@ -191,8 +191,8 @@ public class EventManager {
             }));
     }
 
-    private Consumer<EventModification.AdditionalServiceDescription> insertAdditionalServiceDescription(int serviceId) {
-        return t -> additionalServiceDescriptionRepository.insert(serviceId, t.getLocale(), t.getType(), t.getValue());
+    private Consumer<EventModification.AdditionalServiceText> insertAdditionalServiceDescription(int serviceId) {
+        return t -> additionalServiceTextRepository.insert(serviceId, t.getLocale(), t.getType(), t.getValue());
     }
 
     private void initPlugins(Event event) {

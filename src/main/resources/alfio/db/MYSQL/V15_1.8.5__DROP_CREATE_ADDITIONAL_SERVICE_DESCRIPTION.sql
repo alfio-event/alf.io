@@ -15,8 +15,17 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-alter table ticket_field_configuration add column additional_service_id integer not null DEFAULT -1;
-alter table ticket_field_configuration drop constraint "unique_ticket_field_configuration";
-update ticket_field_configuration set additional_service_id = additional_service_id_fk where additional_service_id_fk is not null;
-alter table ticket_field_configuration drop COLUMN additional_service_id_fk;
-alter table ticket_field_configuration add constraint unique_ticket_field_configuration unique(event_id_fk, field_name, additional_service_id, context);
+drop table additional_service_description;
+delete from additional_service_item;
+delete from additional_service;
+
+create table additional_service_description (
+    id integer AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    additional_service_id_fk integer not null,
+    locale varchar(8) not null,
+    type varchar(16) not null,
+    value varchar(2048) not null
+);
+
+alter table additional_service_description add FOREIGN KEY additional_service_id_fk (additional_service_id_fk) REFERENCES additional_service(id);
+alter table additional_service_description add constraint unique_asd unique(additional_service_id_fk, locale, type);
