@@ -19,7 +19,6 @@
               {{/internal}}
 
                   <h2>{{displayName}}{{^internal}} <small><i class="fa fa-external-link"></i></small>{{/internal}}</h2>
-                  <h6>{{shortDescription}}</h6>
                   <div>
                       {{#sameDay}}
                           {{#i18n}}event-days.same-day
