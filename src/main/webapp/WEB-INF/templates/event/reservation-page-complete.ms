@@ -77,13 +77,13 @@
 {{#ticketsByCategory}}
     {{#value}}
     <li class="list-group-item">
-            <div class="wMarginBottom">
-                <h3><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.ticket-nr{{/i18n}}<span class="ticket-counter"></span></h3>
-            </div>
-            {{#i18n}}reservation-page-complete.ticket-type{{/i18n}} <strong>{{key.name}}</strong>
-            <div id="ticket-detail-{{uuid}}" data-collapse-enabled="true" class="collapsible-container">
+        <div class="wMarginBottom">
+            <h3><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.ticket-nr{{/i18n}}<span class="ticket-counter"></span></h3>
+        </div>
+        {{#i18n}}reservation-page-complete.ticket-type{{/i18n}} <strong>{{key.name}}</strong>
+        <div id="ticket-detail-{{uuid}}" {{#collapseEnabled}}data-collapse-enabled="true" class="collapsible-container"{{/collapseEnabled}}>
                 {{> /event/assign-ticket-form}}
-            </div>
+        </div>
     </li>
     {{/value}}
 {{/ticketsByCategory}}

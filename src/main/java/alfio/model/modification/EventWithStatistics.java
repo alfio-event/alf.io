@@ -18,27 +18,31 @@ package alfio.model.modification;
 
 import alfio.model.Event;
 import alfio.model.EventDescription;
+import alfio.model.EventHiddenFieldContainer;
+import alfio.model.PriceContainer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Getter
-public class EventWithStatistics implements StatisticsContainer, Comparable<EventWithStatistics> {
+public class EventWithStatistics implements StatisticsContainer, Comparable<EventWithStatistics>, PriceContainer {
 
     public static final DateTimeFormatter JSON_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm");
     public static final Predicate<TicketCategoryWithStatistic> IS_BOUNDED = TicketCategoryWithStatistic::isBounded;
 
-    @Delegate
+    @Delegate(excludes = {EventHiddenFieldContainer.class, PriceContainer.class})
     @JsonIgnore
     private final Event event;
     private final List<TicketCategoryWithStatistic> ticketCategories;
@@ -46,16 +50,19 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
     private final int soldTickets;
     private final int checkedInTickets;
     private final int allocatedTickets;
+    private final int releasedTickets;
     private final boolean containsUnboundedCategories;
 
     public EventWithStatistics(Event event,
                                List<EventDescription> eventDescriptions,
-                               List<TicketCategoryWithStatistic> ticketCategories) {
+                               List<TicketCategoryWithStatistic> ticketCategories,
+                               int releasedTickets) {
         this.event = event;
         this.ticketCategories = ticketCategories;
         this.soldTickets = countSoldTickets(ticketCategories);
         this.checkedInTickets = countCheckedInTickets(ticketCategories);
         this.allocatedTickets = ticketCategories.stream().filter(IS_BOUNDED).mapToInt(TicketCategoryWithStatistic::getMaxTickets).sum();
+        this.releasedTickets = releasedTickets;
         this.containsUnboundedCategories = ticketCategories.stream().anyMatch(IS_BOUNDED.negate());
         this.description = eventDescriptions.stream().collect(Collectors.toMap(EventDescription::getLocale, EventDescription::getDescription));
     }
@@ -96,13 +103,17 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
     public int getDynamicAllocation() {
         if(containsUnboundedCategories) {
             List<TicketCategoryWithStatistic> unboundedCategories = ticketCategories.stream().filter(IS_BOUNDED.negate()).collect(Collectors.toList());
-            return countNotAllocatedTickets() - countSoldTickets(unboundedCategories) - countCheckedInTickets(unboundedCategories);
+            return countNotAllocatedTickets() - countSoldTickets(unboundedCategories) - countCheckedInTickets(unboundedCategories) - countPendingTickets(unboundedCategories) - releasedTickets;
         }
         return 0;
     }
 
     private int countNotAllocatedTickets() {
         return event.getAvailableSeats() - allocatedTickets;
+    }
+
+    private int countPendingTickets(List<TicketCategoryWithStatistic> unboundedCategories) {
+        return unboundedCategories.stream().mapToInt(TicketCategoryWithStatistic::getPendingTickets).sum();
     }
 
     @Override
@@ -130,5 +141,35 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
 
     private static int countSoldTickets(List<TicketCategoryWithStatistic> ticketCategories) {
         return ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getSoldTickets).sum();
+    }
+
+    @Override
+    @JsonIgnore
+    public int getSrcPriceCts() {
+        return event.getSrcPriceCts();
+    }
+
+    @Override
+    public String getCurrencyCode() {
+        return getCurrency();
+    }
+
+    @Override
+    @JsonIgnore
+    public Optional<BigDecimal> getOptionalVatPercentage() {
+        return getVatStatus() != VatStatus.NONE ? Optional.ofNullable(event.getVat()) : Optional.empty();
+    }
+
+    public BigDecimal getVatPercentage() {
+        return getVatPercentageOrZero();
+    }
+
+    public BigDecimal getVat() {
+        return getVAT();
+    }
+
+    @Override
+    public VatStatus getVatStatus() {
+        return event.getVatStatus();
     }
 }

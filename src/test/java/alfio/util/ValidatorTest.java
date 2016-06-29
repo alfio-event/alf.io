@@ -49,8 +49,8 @@ public class ValidatorTest {
     @Mock
     private EventModification eventModification;
     private Errors errors;
-    private EventModification.AdditionalServiceText title = new EventModification.AdditionalServiceText(0, "it", "titolo", AdditionalServiceText.AdditionalServiceDescriptionType.TITLE);
-    private EventModification.AdditionalServiceText description = new EventModification.AdditionalServiceText(0, "it", "descrizione", AdditionalServiceText.AdditionalServiceDescriptionType.DESCRIPTION);
+    private EventModification.AdditionalServiceText title = new EventModification.AdditionalServiceText(0, "it", "titolo", AdditionalServiceText.TextType.TITLE);
+    private EventModification.AdditionalServiceText description = new EventModification.AdditionalServiceText(0, "it", "descrizione", AdditionalServiceText.TextType.DESCRIPTION);
 
     @Before
     public void init() {
@@ -111,7 +111,7 @@ public class ValidatorTest {
     public void testValidationFailedDescription() {
         when(eventModification.getLocales()).thenReturn(ContentLanguage.ENGLISH.getValue());
         EventModification.AdditionalService invalid1 = new EventModification.AdditionalService(0, BigDecimal.ZERO, false, 0, -1, 1, VALID_INCEPTION, VALID_EXPIRATION, null, AdditionalService.VatType.NONE, Collections.emptyList(), emptyList(), singletonList(description));//English is required here
-        EventModification.AdditionalService invalid2 = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(new EventModification.AdditionalServiceText(0, "en", "", AdditionalServiceText.AdditionalServiceDescriptionType.DESCRIPTION)));
+        EventModification.AdditionalService invalid2 = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(new EventModification.AdditionalServiceText(0, "en", "", AdditionalServiceText.TextType.DESCRIPTION)));
         assertFalse(Validator.validateAdditionalService(invalid1, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
         assertNotNull(errors.getFieldError("additionalServices"));

@@ -42,6 +42,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.ConfigurationKeys.PARTIAL_RESERVATION_ID_LENGTH;
 import static alfio.model.system.ConfigurationPathLevel.EVENT;
 import static alfio.model.system.ConfigurationPathLevel.ORGANIZATION;
 import static alfio.model.system.ConfigurationPathLevel.SYSTEM;
@@ -155,7 +156,7 @@ public class ConfigurationManager {
             .forEach(c -> {
                 Optional<String> value = evaluateValue(c.getKey(), c.getValue());
                 Optional<Configuration> existing = configurationRepository.findByKeyAtOrganizationLevel(organizationId, c.getKey());
-                if(!value.isPresent()) {
+                if (!value.isPresent()) {
                     configurationRepository.deleteOrganizationLevelByKey(c.getKey(), organizationId);
                 } else if (existing.isPresent()) {
                     configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), value.get());
@@ -294,11 +295,12 @@ public class ConfigurationManager {
             .flatMap(l -> ConfigurationKeys.byPathLevel(l).stream().map(mapEmptyKeys(l)))
             .sorted((c1, c2) -> new CompareToBuilder().append(c2.getConfigurationPathLevel(), c1.getConfigurationPathLevel()).append(c1.getConfigurationKey(), c2.getConfigurationKey()).toComparison())
             .collect(LinkedList::new, (List<Configuration> list, Configuration conf) -> {
-                int existing = (int)list.stream().filter(c -> c.getConfigurationKey() == conf.getConfigurationKey()).count();
-                if(existing == 0) {
+                int existing = (int) list.stream().filter(c -> c.getConfigurationKey() == conf.getConfigurationKey()).count();
+                if (existing == 0) {
                     list.add(conf);
                 }
-            }, (l1, l2) -> {});
+            }, (l1, l2) -> {
+            });
         return configurations.stream().collect(groupByCategory());
     }
 
@@ -383,5 +385,9 @@ public class ConfigurationManager {
             .map(mapEmptyKeys(pathLevel))
             .sorted()
             .collect(groupByCategory());
+    }
+
+    public String getShortReservationID(Event event, String reservationId) {
+        return StringUtils.substring(reservationId, 0, getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), PARTIAL_RESERVATION_ID_LENGTH), 8)).toUpperCase();
     }
 }

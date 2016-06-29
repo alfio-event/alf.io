@@ -53,6 +53,15 @@
                 <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
                 <label for="fullName">{{#i18n}}common.full-name{{/i18n}} </label><input type="text" id="fullName" class="form-control" name="fullName" required="required" aria-required="true">
                 <label for="email">{{#i18n}}common.email{{/i18n}}</label><input type="email" id="email" class="form-control" name="email"  required="required" aria-required="true">
+                {{#displayCategorySelectionForWaitingQueue}}
+                    <label for="selectedCategory">{{#i18n}}reservation-page.category{{/i18n}}</label>
+                    <select name="selectedCategory" id="selectedCategory" class="form-control" required="required" aria-required="true">
+                        <option value=""></option>
+                        {{#unboundedCategories}}
+                            <option value="{{id}}">{{name}}</option>
+                        {{/unboundedCategories}}
+                    </select>
+                {{/displayCategorySelectionForWaitingQueue}}
                 <label for="userLanguage">{{#i18n}}reservation-page-complete.language{{/i18n}}</label>
                 <select name="userLanguage" id="userLanguage" value="{{userLanguage}}" id="waiting-queue-language" class="form-control" required="required" aria-required="true">
                     <option value=""></option>

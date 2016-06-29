@@ -6,7 +6,8 @@
     var PAYMENT_PROXY_DESCRIPTIONS = {
         'STRIPE': 'Credit card payments',
         'ON_SITE': 'On site (cash) payment',
-        'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)'
+        'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)',
+        'PAYPAL' : 'Paypal'
     };
     
     //
@@ -42,40 +43,79 @@
                     eventType: 'EXTERNAL'
                 }
             })
-            .state('events.detail', {
+            .state('events.single', {
+                abstract: true,
                 url: '/:eventName',
+                templateUrl: BASE_STATIC_URL + '/event/fragment/event-detail-container.html',
+                resolve: {
+                    'getEvent': function($stateParams, EventService) {
+                        return EventService.getEvent($stateParams.eventName);
+                    }
+                },
+                controllerAs: 'ctrl',
+                controller: function(getEvent, $state) {
+                    $state.current.data['event'] = getEvent.data.event;
+                },
+                data: {
+                    displayEventData: true,
+                    view: 'EVENT'
+                }
+            })
+            .state('events.single.detail', {
+                url: '/detail',
                 templateUrl: BASE_STATIC_URL + '/event/detail.html',
-                controller: 'EventDetailController'
+                controller: 'EventDetailController',
+                data: {
+                    view: 'EVENT_DETAIL'
+                }
             })
-            .state('events.checkIn', {
-                url: '/:eventName/check-in',
+            .state('events.single.checkIn', {
+                url: '/check-in',
                 templateUrl: BASE_STATIC_URL + '/event/check-in.html',
-                controller: 'EventCheckInController'
+                controller: 'EventCheckInController',
+                data: {
+                    view: 'CHECK_IN'
+                }
             })
-            .state('events.checkInScan', {
-                url: '/:eventName/check-in/scan',
+            .state('events.single.checkInScan', {
+                url: '/check-in/scan',
                 templateUrl: BASE_STATIC_URL + '/event/check-in-scan.html',
-                controller: 'EventCheckInScanController'
+                controller: 'EventCheckInScanController',
+                data: {
+                    view: 'CHECK_IN_SCAN'
+                }
             })
-            .state('events.sendInvitations', {
-                url: '/:eventName/c/:categoryId/send-invitation',
+            .state('events.single.sendInvitations', {
+                url: '/c/:categoryId/send-invitation',
                 templateUrl: BASE_STATIC_URL + '/event/fragment/send-reserved-codes.html',
-                controller: 'SendInvitationsController'
+                controller: 'SendInvitationsController',
+                data: {
+                    view: 'SEND_INVITATIONS'
+                }
             })
-            .state('pending-reservations', {
-                url: '/pending-reservations/:eventName/',
+            .state('events.single.pending-reservations', {
+                url: '/pending-reservations/',
                 templateUrl: BASE_STATIC_URL + '/pending-reservations/index.html',
-                controller: 'PendingReservationsController'
+                controller: 'PendingReservationsController',
+                data: {
+                    view: 'PENDING_RESERVATIONS'
+                }
             })
-            .state('compose-custom-message', {
-                url: '/compose-custom-message/:eventName',
+            .state('events.single.compose-custom-message', {
+                url: '/compose-custom-message',
                 templateUrl: BASE_STATIC_URL + '/custom-message/index.html',
-                controller: 'ComposeCustomMessage'
+                controller: 'ComposeCustomMessage',
+                data: {
+                    view: 'CUSTOM_MESSAGE'
+                }
             })
-            .state('events.show-waiting-queue', {
-                url: '/:eventName/waiting-queue',
+            .state('events.single.show-waiting-queue', {
+                url: '/waiting-queue',
                 templateUrl: BASE_STATIC_URL + '/waiting-queue/index.html',
-                controller: 'ShowWaitingQueue as ctrl'
+                controller: 'ShowWaitingQueue as ctrl',
+                data: {
+                    view: 'WAITING_QUEUE'
+                }
             });
 
         var printLabel = function(val) {
@@ -89,29 +129,29 @@
             return printLabel(val);
         };
         Chart.defaults.global.colours = [
-            { // yellow
-                fillColor: "rgba(253,180,92,0.2)",
-                strokeColor: "rgba(253,180,92,1)",
-                pointColor: "rgba(253,180,92,1)",
+            { // green, checked in
+                fillColor: "rgba(92,184,92,1)",
+                strokeColor: "rgba(92,184,92,1)",
+                pointColor: "rgba(92,184,92,1)",
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(253,180,92,0.8)"
+                pointHighlightStroke: "rgba(92,184,92,0.8)"
             },
-            { // green
-                fillColor: "rgba(70,191,189,0.2)",
-                strokeColor: "rgba(70,191,189,1)",
-                pointColor: "rgba(70,191,189,1)",
+            { // yellow, sold
+                fillColor: "rgba(240,173,78,1)",
+                strokeColor: "rgba(240,173,78,1)",
+                pointColor: "rgba(240,173,78,1)",
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(70,191,189,0.8)"
+                pointHighlightStroke: "rgba(240,173,78,0.8)"
             },
-            { // blue
-                fillColor: "rgba(151,187,205,0.2)",
-                strokeColor: "rgba(151,187,205,1)",
-                pointColor: "rgba(151,187,205,1)",
+            { // blue, still available
+                fillColor: "rgba(91,192,222,1)",
+                strokeColor: "rgba(91,192,222,1)",
+                pointColor: "rgba(91,192,222,1)",
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(151,187,205,0.8)"
+                pointHighlightStroke: "rgba(91,192,222,0.8)"
             },
             { // light grey
                 fillColor: "rgba(220,220,220,0.2)",
@@ -122,12 +162,12 @@
                 pointHighlightStroke: "rgba(220,220,220,0.8)"
             },
             { // purple
-                fillColor: "rgba(158,31,255,0.2)",
-                strokeColor: "rgba(158,31,255,1)",
-                pointColor: "rgba(158,31,255,0.2)",
+                fillColor: "rgba(66,139,202,1)",
+                strokeColor: "rgba(66,139,202,1)",
+                pointColor: "rgba(66,139,202,1)",
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(158,31,255,0.8)"
+                pointHighlightStroke: "rgba(66,139,202,0.8)"
             }
 
         ];
@@ -145,12 +185,7 @@
             });
         });
         $rootScope.$on('ErrorNotLoggedIn', function() {
-            $uibModal.open({
-                size:'sm',
-                templateUrl:'/resources/angular-templates/admin/partials/error/not-logged-in.html'
-            }).result.then(angular.noop, function() {
-                $window.location.reload();
-            });
+            $window.location.reload();
         });
     });
 
@@ -176,17 +211,18 @@
         return deferred.promise;
     };
 
-    admin.controller('MenuController', function($scope, $http, $window) {
-        $scope.menuCollapsed = true;
-        $scope.toggleCollapse = function(currentStatus) {
-            $scope.menuCollapsed = !currentStatus;
+    admin.controller('MenuController', ['$scope', '$http', '$window', 'UtilsService', function($scope, $http, $window, UtilsService) {
+        var ctrl = this;
+        ctrl.menuCollapsed = true;
+        ctrl.toggleCollapse = function(currentStatus) {
+            ctrl.menuCollapsed = !currentStatus;
         };
-        $scope.doLogout = function() {
-            $http.post("/logout").then(function() {
-                $window.location.href = "/";
+        ctrl.doLogout = function() {
+            UtilsService.logout().then(function() {
+                $window.location.reload();
             });
-        }
-    });
+        };
+    }]);
 
     var createCategory = function(sticky, $scope, expirationExtractor) {
         var lastCategory = _.last($scope.event.ticketCategories);
@@ -245,15 +281,19 @@
             $scope.organizations = result;
         });
 
-        PaymentProxyService.getAllProxies().success(function(result) {
-            $scope.allowedPaymentProxies = _.map(result, function(p) {
-                return {
-                    id: p,
-                    description: PAYMENT_PROXY_DESCRIPTIONS[p] || 'Unknown provider ('+p+')  Please check configuration'
-                };
-            });
+        $scope.$watch('event.organizationId', function(newVal) {
+            if(newVal) {
+                PaymentProxyService.getAllProxies(newVal).success(function(result) {
+                    $scope.allowedPaymentProxies = _.map(result, function(p) {
+                        return {
+                            id: p.paymentProxy,
+                            description: PAYMENT_PROXY_DESCRIPTIONS[p.paymentProxy] || 'Unknown provider ('+p.paymentProxy+')  Please check configuration',
+                            enabled: p.status === 'ACTIVE'
+                        };
+                    });
+                });
+            }
         });
-
         $scope.addCategory = function() {
             createAndPushCategory(false, $scope);
         };
@@ -378,12 +418,26 @@
                                                         $uibModal) {
         var loadData = function() {
             $scope.loading = true;
-            EventService.getEvent($stateParams.eventName).success(function(result) {
+
+            EventService.getEvent($state.params.eventName).success(function(result) {
+                if($scope.event) {
+                    //for sidebar
+                    $rootScope.$emit('EventUpdated');
+                }
                 $scope.event = result.event;
                 $scope.organization = result.organization;
                 $scope.validCategories = _.filter(result.event.ticketCategories, function(tc) {
                     return !tc.expired && tc.bounded;
                 });
+
+
+                //
+                $scope.ticketCategoriesById = {};
+                angular.forEach(result.event.ticketCategories, function(v) {
+                    $scope.ticketCategoriesById[v.id] = v;
+                });
+                //
+
                 $scope.loading = false;
                 $scope.loadingMap = true;
                 LocationService.getMapUrl(result.event.latitude, result.event.longitude).success(function(mapUrl) {
@@ -393,8 +447,8 @@
                     };
                     $scope.loadingMap = false;
                 });
-                
-                
+
+
                 PromoCodeService.list(result.event.id).success(function(list) {
                     $scope.promocodes = list;
                     angular.forEach($scope.promocodes, function(v) {
@@ -411,10 +465,10 @@
                         loadData();
                     });
                 };
-            });
 
-            EventService.getAdditionalFields($stateParams.eventName).success(function(result) {
-                $scope.additionalFields = result;
+                EventService.getAdditionalFields($stateParams.eventName).success(function(result) {
+                    $scope.additionalFields = result;
+                });
             });
         };
         loadData();
@@ -443,6 +497,10 @@
             active: true,
             expired: false,
             freeText: ''
+        };
+
+        $scope.getActualCapacity = function(category, event) {
+            return category.bounded ? category.maxTickets : event.dynamicAllocation;
         };
 
         $scope.isTokenViewCollapsed = function(category) {
@@ -555,29 +613,13 @@
             }, errorHandler);
         };
         
-        
+
         $scope.openDeleteWarning = function(event) {
-        	$modal.open({
-        		size:'lg',
-        		templateUrl: BASE_STATIC_URL + '/event/fragment/delete-event-modal.html',
-        		backdrop: 'static',
-        		controller: function($scope) {
-        			$scope.cancel = function() {
-                        $scope.$dismiss('canceled');
-                    };
-                    
-                    $scope.deleteEvent = function() {
-                    	EventService.deleteEvent(event.id).then(function() {
-                    		$scope.$dismiss('canceled');
-                    		$state.go('index');
-                    	});
-                    };
-                    
-                    $scope.event = event;
-        		}
-        	})
+            EventService.deleteEvent(event.id).then(function(result) {
+                $state.go('index');
+            });
         };
-        
+
 
         var parentScope = $scope;
 
@@ -600,6 +642,7 @@
                         }
                         EventService.saveTicketCategory(event, category).then(function(result) {
                             validationErrorHandler(result, form, form).then(function() {
+                                loadData();
                                 $scope.$close(true);
                             });
                         }, errorHandler);
@@ -739,20 +782,30 @@
                 }
             });
         };
-        
+
+
+        //
         $scope.addPromoCode = function(event) {
             $uibModal.open({
                 size:'lg',
                 templateUrl:BASE_STATIC_URL + '/event/fragment/edit-promo-code-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
-                    
+
                     $scope.event = event;
                     
                     var now = moment();
                     var eventBegin = moment(event.formattedBegin);
+
+                    $scope.validCategories = _.filter(event.ticketCategories, function(tc) {
+                        return !tc.expired;
+                    });
                     
-                    $scope.promocode = {discountType :'PERCENTAGE', start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')}, end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}};
+                    $scope.promocode = {discountType :'PERCENTAGE', start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')}, end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}, categories:[]};
+
+                    $scope.addCategory = function addCategory(index, value) {
+                        $scope.promocode.categories[index] = value;
+                    };
                     
                     $scope.$watch('promocode.promoCode', function(newVal) {
                         if(newVal) {
@@ -768,6 +821,9 @@
                             return;
                         }
                         $scope.$close(true);
+
+
+                        promocode.categories = _.filter(promocode.categories, function(i) {return i != null;});
                         
                         PromoCodeService.add(event.id, promocode).then(function(result) {
                             validationErrorHandler(result, form, form.promocode).then(function() {
@@ -789,45 +845,7 @@
 
 
         $scope.openFieldSelectionModal = function() {
-            $uibModal.open({
-                size:'lg',
-                templateUrl:BASE_STATIC_URL + '/event/fragment/select-field-modal.html',
-                backdrop: 'static',
-                controller: function($scope) {
-                    $scope.selected = {};
-                    EventService.getFields(parentScope.event.shortName).then(function(fields) {
-                        $scope.fields = fields.data;
-                        angular.forEach(fields.data, function(v) {
-                            $scope.selected[v] = false;
-                        })
-                    });
-
-                    $scope.selectAll = function() {
-                        angular.forEach($scope.selected, function(v,k) {
-                            $scope.selected[k] = true;
-                        });
-                    };
-
-                    $scope.deselectAll = function() {
-                        angular.forEach($scope.selected, function(v,k) {
-                            $scope.selected[k] = false;
-                        });
-                    };
-
-                    $scope.download = function() {
-
-                        var queryString = "";
-
-                        angular.forEach($scope.selected, function(v,k) {
-                            if(v) {
-                                queryString+="fields="+k+"&";
-                            }
-                        });
-
-                        $window.open($window.location.pathname+"/api/events/"+parentScope.event.shortName+"/export.csv?"+queryString);
-                    };
-                }
-            });
+            EventService.exportAttendees(parentScope.event);
         };
 
         $scope.downloadSponsorsScan = function() {
@@ -935,6 +953,19 @@
                 }});
         };
 
+        var unbind = $rootScope.$on('SidebarCategoryFilterUpdated', function(e, categoryFilter) {
+            if(categoryFilter) {
+                $scope.selection.freeText = categoryFilter.freeText;
+            }
+        });
+        
+        $scope.updateSelectionText = function() {
+            $rootScope.$emit('CategoryFilterUpdated', $scope.selection);
+        };
+
+        $scope.$on('$destroy', unbind);
+
+
     });
 
     admin.controller('SendInvitationsController', function($scope, $stateParams, $state, EventService, $log) {
@@ -944,7 +975,7 @@
         $scope.sendCodes = function(data) {
             EventService.sendCodesByEmail($stateParams.eventName, $stateParams.categoryId, data).success(function() {
                 alert('Codes have been successfully sent');
-                $state.go('events.detail', {eventName: $stateParams.eventName});
+                $state.go('events.single.detail', {eventName: $stateParams.eventName});
             }).error(function(e) {
                 alert(e.data);
             });
@@ -975,7 +1006,7 @@
         }
 
         $scope.goToScanPage = function() {
-            $state.go('events.checkInScan', $stateParams);
+            $state.go('events.single.checkInScan', $stateParams);
         };
 
         EventService.getEvent($stateParams.eventName).success(function(result) {
@@ -1011,7 +1042,7 @@
         var canReadCamera = MediaStreamTrack.getSources !== undefined;
 
         $scope.goToScanPage = function() {
-            $state.go('events.checkInScan', $stateParams);
+            $state.go('events.single.checkInScan', $stateParams);
         };
 
         $scope.canReadCamera = canReadCamera;
@@ -1182,6 +1213,11 @@
     });
 
     admin.controller('PendingReservationsController', function($scope, EventService, $stateParams, $log, $window) {
+
+        EventService.getEvent($stateParams.eventName).then(function(result) {
+            $scope.event = result.data.event;
+        });
+
         var getPendingPayments = function() {
             EventService.getPendingPayments($stateParams.eventName).success(function(data) {
                 $scope.pendingReservations = data;
@@ -1245,7 +1281,7 @@
         });
 
         $scope.cancel = function() {
-            $state.go('events.detail', {eventName: $stateParams.eventName});
+            $state.go('events.single.detail', {eventName: $stateParams.eventName});
         };
 
 
@@ -1310,16 +1346,6 @@
     }]);
 
     admin.run(function($rootScope, PriceCalculator) {
-        var calculateNetPrice = function(event) {
-            if(isNaN(event.regularPrice) || isNaN(event.vat)) {
-                return numeral(0.0);
-            }
-            if(!event.vatIncluded) {
-                return numeral(event.regularPrice);
-            }
-            return numeral(event.regularPrice).divide(numeral(1).add(numeral(event.vat).divide(100)));
-        };
-
         $rootScope.evaluateBarType = function(index) {
             var barClasses = ['danger', 'warning', 'info', 'success'];
             if(index < barClasses.length) {

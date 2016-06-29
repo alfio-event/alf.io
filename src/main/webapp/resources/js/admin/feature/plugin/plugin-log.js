@@ -4,8 +4,8 @@
     angular.module('alfio-plugins', ['adminServices'])
         .config(['$stateProvider', function($stateProvider) {
             $stateProvider
-                .state('events.plugin-log', {
-                    url: '/:eventName/plugin-log',
+                .state('events.single.plugin-log', {
+                    url: '/plugin-log',
                     templateUrl: '/resources/angular-templates/admin/partials/plugin/log.html',
                     controller: PluginLogController,
                     controllerAs: 'ctrl'

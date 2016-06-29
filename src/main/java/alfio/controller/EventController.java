@@ -54,6 +54,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.controller.support.SessionUtil.addToFlash;
@@ -202,7 +203,8 @@ public class EventController {
             List<SaleableTicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
                 .filter((c) -> !c.isAccessRestricted() || (specialCode.filter(sc -> sc.getTicketCategoryId() == c.getId()).isPresent()))
                 .map((m) -> new SaleableTicketCategory(m, ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(m.getId(), locale.getLanguage()).orElse(""),
-                    now, event, ticketReservationManager.countAvailableTickets(event, m), configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5), promoCodeDiscount.orElse(null)))
+                    now, event, ticketReservationManager.countAvailableTickets(event, m), configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5),
+                    promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null)))
                 .collect(Collectors.toList());
             //
 
@@ -218,7 +220,7 @@ public class EventController {
             List<SaleableTicketCategory> expiredCategories = ticketCategories.stream().filter(SaleableTicketCategory::getExpired).collect(Collectors.toList());
             List<SaleableTicketCategory> validCategories = ticketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
             List<SaleableAdditionalService> additionalServices = additionalServiceRepository.loadAllForEvent(event.getId()).stream().map((as) -> getSaleableAdditionalService(event, locale, as, promoCodeDiscount.orElse(null))).collect(Collectors.toList());
-
+            Predicate<SaleableTicketCategory> waitingQueueTargetCategory = tc -> !tc.getExpired() && !tc.isBounded();
             model.addAttribute("event", eventDescriptor)//
                 .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
                 .addAttribute("ticketCategories", validCategories)//
@@ -232,12 +234,14 @@ public class EventController {
                 .addAttribute("hasPromoCodeDiscount", promoCodeDiscount.isPresent())
                 .addAttribute("promoCodeDiscount", promoCodeDiscount.orElse(null))
                 .addAttribute("displayWaitingQueueForm", EventUtil.displayWaitingQueueForm(event, ticketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable()))
+                .addAttribute("displayCategorySelectionForWaitingQueue", ticketCategories.stream().filter(waitingQueueTargetCategory).count() > 1)
+                .addAttribute("unboundedCategories", ticketCategories.stream().filter(waitingQueueTargetCategory).collect(Collectors.toList()))
                 .addAttribute("preSales", EventUtil.isPreSales(event, ticketCategories))
                 .addAttribute("userLanguage", locale.getLanguage())
                 .addAttribute("showAdditionalServices", !additionalServices.isEmpty())
                 .addAttribute("enabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isNotExpired).collect(Collectors.toList()))
                 .addAttribute("disabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isExpired).collect(Collectors.toList()))
-                .addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable) && additionalServices.stream().noneMatch(SaleableAdditionalService::getSaleable));
+                .addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable));
             model.asMap().putIfAbsent("hasErrors", false);//
             return "/event/show-event";
         }).orElse(REDIRECT + "/");
@@ -286,13 +290,13 @@ public class EventController {
                 return redirectToEvent;
             }
 
-            return reservation.validate(bindingResult, ticketReservationManager, ticketCategoryDescriptionRepository, eventManager, event, locale)
+            return reservation.validate(bindingResult, ticketReservationManager, ticketCategoryDescriptionRepository, additionalServiceRepository, eventManager, event, locale)
                 .map(selected -> {
 
                     Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
 
                     try {
-                        String reservationId = ticketReservationManager.createTicketReservation(event.getId(),
+                        String reservationId = ticketReservationManager.createTicketReservation(event,
                                 selected.getLeft(), selected.getRight(), expiration,
                                 SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()),
                                 SessionUtil.retrievePromotionCodeDiscount(request.getRequest()),
@@ -322,7 +326,11 @@ public class EventController {
     }
 
     private SaleableAdditionalService getSaleableAdditionalService(Event event, Locale locale, AdditionalService as, PromoCodeDiscount promoCodeDiscount) {
-        return new SaleableAdditionalService(event, as, additionalServiceTextRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.AdditionalServiceDescriptionType.TITLE).getValue(), additionalServiceTextRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.AdditionalServiceDescriptionType.DESCRIPTION).getValue(), promoCodeDiscount);
+        return new SaleableAdditionalService(event, as, additionalServiceTextRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE).getValue(), additionalServiceTextRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.DESCRIPTION).getValue(), promoCodeDiscount);
+    }
+
+    private static boolean shouldApplyDiscount(PromoCodeDiscount promoCodeDiscount, TicketCategory ticketCategory) {
+        return promoCodeDiscount.getCategories().isEmpty() || promoCodeDiscount.getCategories().contains(ticketCategory.getId());
     }
 
 }

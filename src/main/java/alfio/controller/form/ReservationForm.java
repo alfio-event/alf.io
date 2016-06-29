@@ -27,6 +27,7 @@ import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.repository.AdditionalServiceRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
@@ -67,7 +68,7 @@ public class ReservationForm {
         return ofNullable(additionalService)
             .orElse(emptyList())
             .stream()
-            .filter(e -> e != null && e.getAmount() != null && e.getAdditionalServiceId() != null && e.getAmount().compareTo(BigDecimal.ZERO) > 0)
+            .filter(e -> e != null && e.getQuantity() != null && e.getAdditionalServiceId() != null && e.getQuantity() > 0)
             .collect(toList());
     }
 
@@ -75,18 +76,21 @@ public class ReservationForm {
         return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
     }
 
-    private int additionalServicesSelectionCount() {
-        return (int) selectedAdditionalServices().stream().count();
+    private int additionalServicesSelectionCount(AdditionalServiceRepository additionalServiceRepository, int eventId) {
+        return (int) selectedAdditionalServices().stream()
+            .filter(as -> as.getAdditionalServiceId() != null && (additionalServiceRepository.getById(as.getAdditionalServiceId(), eventId).isFixPrice() || Optional.ofNullable(as.getAmount()).filter(a -> a.compareTo(BigDecimal.ZERO) > 0).isPresent()))
+            .count();
     }
 
     public Optional<Pair<List<TicketReservationWithOptionalCodeModification>, List<ASReservationWithOptionalCodeModification>>> validate(BindingResult bindingResult,
                                                                                                                                          TicketReservationManager tickReservationManager,
                                                                                                                                          TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
+                                                                                                                                         AdditionalServiceRepository additionalServiceRepository,
                                                                                                                                          EventManager eventManager,
                                                                                                                                          Event event,
                                                                                                                                          Locale locale) {
         int selectionCount = ticketSelectionCount();
-        int additionalServicesCount = additionalServicesSelectionCount();
+        int additionalServicesCount = additionalServicesSelectionCount(additionalServiceRepository, event.getId());
 
         if (selectionCount + additionalServicesCount <= 0) {
             bindingResult.reject(ErrorsCode.STEP_1_SELECT_AT_LEAST_ONE);
@@ -113,19 +117,19 @@ public class ReservationForm {
         final List<TicketReservationModification> categories = selected();
         final List<AdditionalServiceReservationModification> additionalServices = selectedAdditionalServices();
 
-        final boolean wrongCategorySelected = categories.stream().filter(c -> {
+        final boolean validCategorySelection = categories.stream().allMatch(c -> {
             TicketCategory tc = eventManager.getTicketCategoryById(c.getTicketCategoryId(), event.getId());
             return OptionalWrapper.optionally(() -> eventManager.findEventByTicketCategory(tc)).isPresent();
-        }).count() != selectionCount;
+        });
 
-        final boolean wrongAdditionalServiceSelected = additionalServices.stream().filter(asm -> {
+        final boolean validAdditionalServiceSelected = additionalServices.stream().allMatch(asm -> {
             AdditionalService as = eventManager.getAdditionalServiceById(asm.getAdditionalServiceId(), event.getId());
             ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             return as.getInception(event.getZoneId()).isBefore(now) && as.getExpiration(event.getZoneId()).isAfter(now) &&
                 OptionalWrapper.optionally(() -> eventManager.findEventByAdditionalService(as)).isPresent();
-        }).count() != additionalServicesCount;
+        });
 
-        if(wrongCategorySelected || wrongAdditionalServiceSelected) {
+        if(!validCategorySelection || !validAdditionalServiceSelected) {
             bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE);
             return Optional.empty();
         }

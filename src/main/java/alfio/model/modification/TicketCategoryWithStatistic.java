@@ -16,6 +16,8 @@
  */
 package alfio.model.modification;
 
+import alfio.model.Event;
+import alfio.model.PriceContainer;
 import alfio.model.SpecialPrice;
 import alfio.model.TicketCategory;
 import alfio.util.MonetaryUtil;
@@ -25,16 +27,15 @@ import lombok.experimental.Delegate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.function.UnaryOperator;
+import java.util.Optional;
 
 import static java.util.stream.Collectors.toList;
 
 @Getter
-public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWithStatistic>, StatisticsContainer {
+public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWithStatistic>, StatisticsContainer, PriceContainer {
 
     @Delegate
     @JsonIgnore
@@ -43,27 +44,26 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
     private final BigDecimal soldTicketsPercent;
     private final List<TicketWithStatistic> tickets;
     private final List<SpecialPrice> tokenStatus;
-    private final int actualPrice;
     private final int checkedInTickets;
+    private final int pendingTickets;
     @JsonIgnore
-    private final ZoneId eventZoneId;
+    private final Event event;
 
     private final Map<String, String> description;
 
     public TicketCategoryWithStatistic(TicketCategory ticketCategory,
                                        List<TicketWithStatistic> tickets,
                                        List<SpecialPrice> tokenStatus,
-                                       ZoneId eventZoneId,
-                                       UnaryOperator<Integer> vatAdder,
+                                       Event event,
                                        Map<String, String> description) {
         this.ticketCategory = ticketCategory;
         this.tickets = tickets.stream().filter(tc -> tc.hasBeenSold() || tc.isStuck()).collect(toList());
+        this.pendingTickets = (int) tickets.stream().filter(TicketWithStatistic::isPending).count();
         this.checkedInTickets = (int) this.tickets.stream().filter(TicketWithStatistic::isCheckedIn).count();
         this.soldTickets = ((int) this.tickets.stream().filter(TicketWithStatistic::hasBeenSold).count()) - checkedInTickets;
         this.tokenStatus = tokenStatus;
-        this.eventZoneId = eventZoneId;
+        this.event = event;
         this.soldTicketsPercent = calcSoldTicketsPercent(ticketCategory, soldTickets);
-        this.actualPrice = vatAdder.apply(ticketCategory.getPriceInCents());
         this.description = description;
     }
 
@@ -76,7 +76,7 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
         if(!ticketCategory.isBounded()) {
             return 0;
         }
-        return ticketCategory.getMaxTickets() - soldTickets - checkedInTickets;
+        return ticketCategory.getMaxTickets() - soldTickets - checkedInTickets - pendingTickets;
     }
 
     @Override
@@ -90,7 +90,7 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
     }
 
     public boolean isExpired() {
-        return ZonedDateTime.now(eventZoneId).isAfter(ticketCategory.getExpiration(eventZoneId));
+        return ZonedDateTime.now(event.getZoneId()).isAfter(ticketCategory.getExpiration(event.getZoneId()));
     }
 
     public boolean isContainingOrphans() {
@@ -107,7 +107,7 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
 
     @Override
     public int compareTo(TicketCategoryWithStatistic o) {
-        return getExpiration(eventZoneId).compareTo(o.getExpiration(eventZoneId));
+        return getExpiration(event.getZoneId()).compareTo(o.getExpiration(event.getZoneId()));
     }
 
     private static BigDecimal calcSoldTicketsPercent(TicketCategory ticketCategory, int soldTickets) {
@@ -116,15 +116,29 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
     }
 
     public String getFormattedInception() {
-        return getInception(eventZoneId).format(EventWithStatistics.JSON_DATE_FORMATTER);
+        return getInception(event.getZoneId()).format(EventWithStatistics.JSON_DATE_FORMATTER);
     }
 
     public String getFormattedExpiration() {
-        return getExpiration(eventZoneId).format(EventWithStatistics.JSON_DATE_FORMATTER);
+        return getExpiration(event.getZoneId()).format(EventWithStatistics.JSON_DATE_FORMATTER);
     }
 
     public BigDecimal getActualPrice() {
-        return MonetaryUtil.centsToUnit(actualPrice);
+        return getFinalPrice();
     }
 
+    @Override
+    public String getCurrencyCode() {
+        return event.getCurrency();
+    }
+
+    @Override
+    public Optional<BigDecimal> getOptionalVatPercentage() {
+        return Optional.ofNullable(event.getVat());
+    }
+
+    @Override
+    public VatStatus getVatStatus() {
+        return event.getVatStatus();
+    }
 }

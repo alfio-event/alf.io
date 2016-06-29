@@ -17,30 +17,45 @@
 package alfio.manager;
 
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TransactionRepository;
+import alfio.util.ErrorsCode;
+import com.paypal.base.rest.PayPalRESTException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
+import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 @Log4j2
 public class PaymentManager {
 
     private final StripeManager stripeManager;
+    private final PaypalManager paypalManager;
     private final TransactionRepository transactionRepository;
+    private final ConfigurationManager configurationManager;
 
     @Autowired
     public PaymentManager(StripeManager stripeManager,
-                          TransactionRepository transactionRepository) {
+                          PaypalManager paypalManager,
+                          TransactionRepository transactionRepository,
+                          ConfigurationManager configurationManager) {
         this.stripeManager = stripeManager;
+        this.paypalManager = paypalManager;
         this.transactionRepository = transactionRepository;
+        this.configurationManager = configurationManager;
     }
 
     /**
@@ -87,4 +102,43 @@ public class PaymentManager {
         return PaymentResult.successful(transactionId);
     }
 
+    public PaymentResult processPaypalPayment(String reservationId, String token, String payerId, int price, Event event) {
+        try {
+            String transactionId = paypalManager.commitPayment(reservationId, token, payerId, event);
+            transactionRepository.insert(transactionId, reservationId,
+                ZonedDateTime.now(), price, event.getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name());
+            return PaymentResult.successful(transactionId);
+        } catch (Exception e) {
+            log.warn("errow while processing paypal payment: " + e.getMessage(), e);
+            if(e instanceof PayPalRESTException) {
+                return PaymentResult.unsuccessful(ErrorsCode.STEP_2_PAYPAL_UNEXPECTED);
+            }
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public List<PaymentMethod> getPaymentMethods(int organizationId) {
+        return PaymentProxy.availableProxies()
+            .stream()
+            .map(p -> {
+                PaymentMethod.PaymentMethodStatus status = ConfigurationKeys.byCategory(p.getSettingCategories()).stream()
+                    .allMatch(c -> c.isBackedByDefault() || configurationManager.getStringConfigValue(Configuration.from(organizationId, c)).filter(StringUtils::isNotEmpty).isPresent()) ? PaymentMethod.PaymentMethodStatus.ACTIVE : PaymentMethod.PaymentMethodStatus.ERROR;
+                return new PaymentMethod(p, status);
+            })
+            .collect(Collectors.toList());
+    }
+
+    @Data
+    public static final class PaymentMethod {
+
+        public enum PaymentMethodStatus {
+            ACTIVE, ERROR
+        }
+
+        private final PaymentProxy paymentProxy;
+        private final PaymentMethodStatus status;
+        public boolean isActive() {
+            return status == PaymentMethodStatus.ACTIVE;
+        }
+    }
 }

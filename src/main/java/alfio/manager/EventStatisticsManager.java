@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static alfio.util.EventUtil.categoryPriceCalculator;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.stream.Collectors.toList;
 
@@ -74,10 +73,10 @@ public class EventStatisticsManager {
     }
 
     EventWithStatistics fillWithStatistics(Event event) {
-        return new EventWithStatistics(event, eventDescriptionRepository.findByEventId(event.getId()), loadTicketCategoriesWithStats(event));
+        return new EventWithStatistics(event, eventDescriptionRepository.findByEventId(event.getId()), loadTicketCategoriesWithStats(event), ticketRepository.countReleasedTickets(event.getId()));
     }
 
-    public List<Event> getAllEvents(String username) {
+    private List<Event> getAllEvents(String username) {
         return userManager.findUserOrganizations(username)
                 .parallelStream()
                 .flatMap(o -> eventRepository.findByOrganizationId(o.getId()).stream())
@@ -91,14 +90,13 @@ public class EventStatisticsManager {
                 .collect(toList());
     }
 
-    public TicketCategoryWithStatistic loadTicketCategoryWithStats(int categoryId, Event event) {
+    TicketCategoryWithStatistic loadTicketCategoryWithStats(int categoryId, Event event) {
         final TicketCategory tc = ticketCategoryRepository.getById(categoryId, event.getId());
         return new TicketCategoryWithStatistic(tc,
                 loadModifiedTickets(event.getId(), tc.getId()),
-                specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId(),
-                categoryPriceCalculator(event),
-                descriptionForTicketCategory(tc.getId())
-            );
+                specialPriceRepository.findAllByCategoryId(tc.getId()),
+                event,
+                descriptionForTicketCategory(tc.getId()));
     }
 
     private Map<String, String> descriptionForTicketCategory(int ticketCategory) {
@@ -108,7 +106,7 @@ public class EventStatisticsManager {
     public List<TicketCategoryWithStatistic> loadTicketCategoriesWithStats(Event event) {
         return loadTicketCategories(event).stream()
                 .map(tc -> new TicketCategoryWithStatistic(tc, loadModifiedTickets(tc.getEventId(), tc.getId()),
-                    specialPriceRepository.findAllByCategoryId(tc.getId()), event.getZoneId(), categoryPriceCalculator(event),
+                    specialPriceRepository.findAllByCategoryId(tc.getId()), event,
                     descriptionForTicketCategory(tc.getId())))
                 .sorted()
                 .collect(toList());
@@ -137,10 +135,10 @@ public class EventStatisticsManager {
                 .orElseThrow(IllegalArgumentException::new);
     }
 
-    public List<TicketWithStatistic> loadModifiedTickets(int eventId, int categoryId) {
+    private List<TicketWithStatistic> loadModifiedTickets(int eventId, int categoryId) {
         Event event = eventRepository.findById(eventId);
         return ticketRepository.findAllModifiedTickets(eventId, categoryId).stream()
-                .map(t -> new TicketWithStatistic(t, ticketReservationRepository.findReservationById(t.getTicketsReservationId()),
+                .map(t -> new TicketWithStatistic(t, event, ticketReservationRepository.findReservationById(t.getTicketsReservationId()),
                         event.getZoneId(), optionally(() -> transactionRepository.loadByReservationId(t.getTicketsReservationId()))))
                 .sorted()
                 .collect(Collectors.toList());

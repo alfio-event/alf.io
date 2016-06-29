@@ -26,22 +26,27 @@
 
     baseServices.service('PaymentProxyService', function($http, HttpErrorHandler) {
         return {
-            getAllProxies : function() {
-                return $http.get('/admin/api/paymentProxies.json').error(HttpErrorHandler.handle);
+            getAllProxies : function(orgId) {
+                return $http.get('/admin/api/paymentProxies/'+orgId+'.json').error(HttpErrorHandler.handle);
             }
         };
     });
 
-    baseServices.service("EventService", function($http, HttpErrorHandler) {
-        return {
+    baseServices.service("EventService", function($http, HttpErrorHandler, $uibModal, $window, $rootScope) {
+        var service = {
+            data: {},
             getAllEvents : function() {
                 return $http.get('/admin/api/events.json').error(HttpErrorHandler.handle);
             },
             getEvent: function(name) {
-                return $http.get('/admin/api/events/'+name+'.json').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/events/'+name+'.json').success(function(result) {
+                    $rootScope.$emit('EventLoaded', result.event);
+                }).error(HttpErrorHandler.handle);
             },
             getEventById: function(eventId) {
-                return $http.get('/admin/api/events/id/'+eventId+'.json').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/events/id/'+eventId+'.json').success(function(result) {
+                    $rootScope.$emit('EventLoaded', result);
+                }).error(HttpErrorHandler.handle);
             },
             checkEvent : function(event) {
                 return $http['post']('/admin/api/events/check', event).error(HttpErrorHandler.handle);
@@ -73,7 +78,18 @@
                 return $http['put']('/admin/api/events/'+event.shortName+'/category/'+category.id+'/unbind-tickets').error(HttpErrorHandler.handle);
             },
             getPendingPayments: function(eventName) {
-                return $http.get('/admin/api/events/'+eventName+'/pending-payments').error(HttpErrorHandler.handle);
+                service.data.pendingPayments = service.data.pendingPayments || {};
+                var element = service.data.pendingPayments[eventName];
+                var now = moment();
+                if(!angular.isDefined(element) || now.subtract(20, 's').isAfter(element.ts)) {
+                    var promise = $http.get('/admin/api/events/'+eventName+'/pending-payments').error(HttpErrorHandler.handle);
+                    element = {
+                        ts: moment(),
+                        payments: promise
+                    };
+                    service.data.pendingPayments[eventName] = element;
+                }
+                return element.payments;
             },
             registerPayment: function(eventName, reservationId) {
                 return $http['post']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId+'/confirm').error(HttpErrorHandler.handle);
@@ -125,10 +141,68 @@
             swapFieldPosition: function(eventName, id1, id2) {
             	return $http.post('/admin/api/events/'+eventName+'/additional-field/swap-position/'+id1+'/'+id2);
             },
-            deleteEvent: function(eventId) {
-            	return $http['delete']('/admin/api/events/'+eventId);
+
+            deleteEvent: function(event) {
+                var modal = $uibModal.open({
+                    size:'lg',
+                    templateUrl: '/resources/angular-templates/admin/partials/event/fragment/delete-event-modal.html',
+                    backdrop: 'static',
+                    controller: function($scope) {
+                        $scope.cancel = function() {
+                            modal.dismiss('canceled');
+                        };
+
+                        $scope.deleteEvent = function() {
+                            $http['delete']('/admin/api/events/'+event.id).then(function() {
+                                modal.close('OK');
+                            });
+                        };
+                        $scope.event = event;
+                    }
+                });
+                return modal.result;
+            },
+
+            exportAttendees: function(event) {
+                var modal = $uibModal.open({
+                    size:'lg',
+                    templateUrl:'/resources/angular-templates/admin/partials/event/fragment/select-field-modal.html',
+                    backdrop: 'static',
+                    controller: function($scope) {
+                        $scope.selected = {};
+                        service.getFields(event.shortName).then(function(fields) {
+                            $scope.fields = fields.data;
+                            angular.forEach(fields.data, function(v) {
+                                $scope.selected[v] = false;
+                            })
+                        });
+
+                        $scope.selectAll = function() {
+                            angular.forEach($scope.selected, function(v,k) {
+                                $scope.selected[k] = true;
+                            });
+                        };
+
+                        $scope.deselectAll = function() {
+                            angular.forEach($scope.selected, function(v,k) {
+                                $scope.selected[k] = false;
+                            });
+                        };
+
+                        $scope.download = function() {
+                            var queryString = "";
+                            angular.forEach($scope.selected, function(v,k) {
+                                if(v) {
+                                    queryString+="fields="+k+"&";
+                                }
+                            });
+                            $window.open($window.location.pathname+"/api/events/"+event.shortName+"/export.csv?"+queryString);
+                        };
+                    }
+                });
             }
         };
+        return service;
     });
 
     baseServices.service("LocationService", function($http, HttpErrorHandler) {
@@ -177,12 +251,12 @@
     baseServices.service("PriceCalculator", function() {
         var instance = {
             calculateTotalPrice: function(event, viewMode) {
-                if(isNaN(event.regularPrice) || isNaN(event.vat)) {
+                if(isNaN(event.regularPrice) || isNaN(event.vatPercentage)) {
                     return '0.00';
                 }
                 var vat = numeral(0.0);
                 if((viewMode && angular.isDefined(event.id)) || !event.vatIncluded) {
-                    vat = instance.applyPercentage(event.regularPrice, event.vat);
+                    vat = instance.applyPercentage(event.regularPrice, event.vatPercentage);
                 }
                 return numeral(vat.add(event.regularPrice).format('0.00')).value();
             },
@@ -193,22 +267,15 @@
                 if(isNaN(event.regularPrice) || isNaN(category.price)) {
                     return '0.00';
                 }
-                
-                //TODO cleanup, not happy about that
-                var regularPrice = event.regularPrice;
-                if(editMode && event.vatIncluded) {
-                    regularPrice = instance.calculateTotalPrice(event, true);
-                }
-                //
-                return instance.calcPercentage(category.price, regularPrice).format('0.00');
+                return instance.calcPercentage(category.price, event.regularPrice).format('0.00');
             },
             calcCategoryPrice: function(category, event) {
-                if(isNaN(event.vat) || isNaN(category.price)) {
+                if(isNaN(event.vatPercentage) || isNaN(category.price)) {
                     return '0.00';
                 }
                 var vat = numeral(0.0);
                 if(event.vatIncluded) {
-                    vat = instance.applyPercentage(category.price, event.vat);
+                    vat = instance.applyPercentage(category.price, event.vatPercentage);
                 }
                 return numeral(category.price).add(vat).format('0.00');
             },
@@ -294,7 +361,7 @@
         };
     }]);
 
-    baseServices.service('EventUtilsService', ['$http', 'HttpErrorHandler', function($http, HttpErrorHandler) {
+    baseServices.service('UtilsService', ['$http', 'HttpErrorHandler', function($http, HttpErrorHandler) {
         return {
             generateShortName: function(displayName) {
                 return $http.get('/admin/api/utils/short-name/generate?displayName='+displayName).error(HttpErrorHandler.handle);
@@ -303,7 +370,13 @@
                 return $http['post']('/admin/api/utils/short-name/validate', null, {params: {shortName: shortName}}).error(HttpErrorHandler.handle);
             },
             renderCommonMark: function(text) {
-            	return $http.get('/admin/api/utils/render-commonmark', {params: {text: text}});
+            	return $http.get('/admin/api/utils/render-commonmark', {params: {text: text}}).error(HttpErrorHandler.handle);
+            },
+            getApplicationInfo: function() {
+                return $http.get('/admin/api/utils/alfio/info').error(HttpErrorHandler.handle);
+            },
+            logout: function() {
+                return $http.post("/logout").error(HttpErrorHandler.handle);
             }
         };
     }]);

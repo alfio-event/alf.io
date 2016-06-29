@@ -34,10 +34,13 @@ public class AdditionalServiceItem {
     private final ZonedDateTime utcLastModified;
     private final String ticketsReservationUuid;
     private final int additionalServiceId;
-    private final Integer originalPriceInCents;
-    private final Integer paidPriceInCents;
     private final AdditionalServiceItemStatus status;
     private final int eventId;
+
+    private final Integer srcPriceCts;
+    private final Integer finalPriceCts;
+    private final Integer vatCts;
+    private final Integer discountCts;
 
     public AdditionalServiceItem(@Column("id") int id,
                                  @Column("uuid") String uuid,
@@ -45,19 +48,23 @@ public class AdditionalServiceItem {
                                  @Column("last_modified") ZonedDateTime utcLastModified,
                                  @Column("tickets_reservation_uuid") String ticketsReservationUuid,
                                  @Column("additional_service_id_fk") int additionalServiceId,
-                                 @Column("original_price_cts") Integer originalPriceInCents,
-                                 @Column("paid_price_cts") Integer paidPriceInCents,
                                  @Column("status") AdditionalServiceItemStatus status,
-                                 @Column("event_id_fk") int eventId) {
+                                 @Column("event_id_fk") int eventId,
+                                 @Column("src_price_cts") Integer srcPriceCts,
+                                 @Column("final_price_cts") Integer finalPriceCts,
+                                 @Column("vat_cts") Integer vatCts,
+                                 @Column("discount_cts") Integer discountCts) {
         this.id = id;
         this.uuid = uuid;
         this.utcCreation = utcCreation;
         this.utcLastModified = utcLastModified;
         this.ticketsReservationUuid = ticketsReservationUuid;
         this.additionalServiceId = additionalServiceId;
-        this.originalPriceInCents = originalPriceInCents;
-        this.paidPriceInCents = paidPriceInCents;
         this.status = status;
         this.eventId = eventId;
+        this.srcPriceCts = srcPriceCts;
+        this.finalPriceCts = finalPriceCts;
+        this.vatCts = vatCts;
+        this.discountCts = discountCts;
     }
 }

@@ -4,14 +4,14 @@
     angular.module('alfio-email', ['adminServices'])
         .config(['$stateProvider', function($stateProvider) {
             $stateProvider
-                .state('events.email-log', {
-                    url: '/:eventName/email-log',
+                .state('events.single.email-log', {
+                    url: '/email-log',
                     templateUrl: '/resources/angular-templates/admin/partials/email/log.html',
                     controller: EmailLogController,
                     controllerAs: 'ctrl'
                 })
-                .state('events.email-log-detail', {
-                    url: '/:eventName/email-log/:messageId',
+                .state('events.single.email-log-detail', {
+                    url: '/email-log/:messageId',
                     templateUrl: '/resources/angular-templates/admin/partials/email/entry-detail.html',
                     controller: EmailDetailController,
                     controllerAs: 'detailCtrl'
@@ -29,16 +29,16 @@
         });
 
 
-    function EmailLogController(EmailService, $stateParams, $state, $filter, $scope) {
+    function EmailLogController(EmailService, $filter, $scope, getEvent) {
         var ctrl = this;
         ctrl.emailMessages = [];
-        ctrl.eventName = $stateParams.eventName;
+        ctrl.eventName = getEvent.data.event.shortName;
         var evaluateResultsLength = function(results) {
             ctrl.emailMessages = results;
             ctrl.filteredResults = $filter('filter')(results, ctrl.searchFilter);
             ctrl.tooManyResults = (ctrl.filteredResults.length > 50);
         };
-        EmailService.loadEmailLog($stateParams.eventName).success(function(results) {
+        EmailService.loadEmailLog(ctrl.eventName).success(function(results) {
             evaluateResultsLength(results);
         });
 
@@ -51,14 +51,14 @@
         });
     }
 
-    EmailLogController.prototype.$inject = ['EmailService','$stateParams', '$state', '$filter', '$scope'];
+    EmailLogController.prototype.$inject = ['EmailService', '$filter', '$scope', 'EventService', '$stateParams'];
 
-    function EmailDetailController(EmailService, $stateParams) {
+    function EmailDetailController(EmailService, $stateParams, event) {
         var self = this;
-        EmailService.loadEmailDetail($stateParams.eventName, $stateParams.messageId).success(function(result) {
+        EmailService.loadEmailDetail(event.shortName, $stateParams.messageId).success(function(result) {
             self.message = result;
         });
-        this.eventName = $stateParams.eventName;
+        this.eventName = event.shortName;
     }
 
     EmailDetailController.prototype.$inject = ['EmailService', '$stateParams'];

@@ -17,6 +17,7 @@
 package alfio.model.modification;
 
 import alfio.model.Event;
+import alfio.model.PriceContainer;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
@@ -50,7 +51,7 @@ public class EventModification {
     private final BigDecimal regularPrice;
     private final String currency;
     private final int availableSeats;
-    private final BigDecimal vat;
+    private final BigDecimal vatPercentage;
     private final boolean vatIncluded;
     private final List<PaymentProxy> allowedPaymentProxies;
     private final List<TicketCategoryModification> ticketCategories;
@@ -79,7 +80,7 @@ public class EventModification {
                              @JsonProperty("regularPrice") BigDecimal regularPrice,
                              @JsonProperty("currency") String currency,
                              @JsonProperty("availableSeats") int availableSeats,
-                             @JsonProperty("vat") BigDecimal vat,
+                             @JsonProperty("vatPercentage") BigDecimal vatPercentage,
                              @JsonProperty("vatIncluded") boolean vatIncluded,
                              @JsonProperty("allowedPaymentProxies") List<PaymentProxy> allowedPaymentProxies,
                              @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories,
@@ -105,7 +106,7 @@ public class EventModification {
         this.regularPrice = regularPrice;
         this.currency = currency;
         this.availableSeats = availableSeats;
-        this.vat = vat;
+        this.vatPercentage = vatPercentage;
         this.vatIncluded = vatIncluded;
         this.locationDescriptor = locationDescriptor;
         this.additionalServices = additionalServices;
@@ -118,6 +119,13 @@ public class EventModification {
 
     public int getPriceInCents() {
         return freeOfCharge ? 0 : MonetaryUtil.unitToCents(regularPrice);
+    }
+
+    public PriceContainer.VatStatus getVatStatus() {
+        if(!freeOfCharge) {
+            return vatIncluded ? PriceContainer.VatStatus.INCLUDED : PriceContainer.VatStatus.NOT_INCLUDED;
+        }
+        return PriceContainer.VatStatus.NONE;
     }
 
     public LocationDescriptor getGeolocation() {
@@ -265,14 +273,14 @@ public class EventModification {
             public Builder withText(List<alfio.model.AdditionalServiceText> text) {
                 Map<Boolean, List<AdditionalServiceText>> byType = text.stream()
                     .map(AdditionalServiceText::from)
-                    .collect(Collectors.partitioningBy(ast -> ast.getType() == alfio.model.AdditionalServiceText.AdditionalServiceDescriptionType.TITLE));
+                    .collect(Collectors.partitioningBy(ast -> ast.getType() == alfio.model.AdditionalServiceText.TextType.TITLE));
                 this.title = byType.getOrDefault(true, this.title);
                 this.description = byType.getOrDefault(false, this.description);
                 return this;
             }
 
             public AdditionalService build() {
-                return new AdditionalService(src.getId(), Optional.ofNullable(src.getPriceInCents()).map(MonetaryUtil::centsToUnit).orElse(BigDecimal.ZERO),
+                return new AdditionalService(src.getId(), Optional.ofNullable(src.getSrcPriceCts()).map(MonetaryUtil::centsToUnit).orElse(BigDecimal.ZERO),
                     src.isFixPrice(), src.getOrdinal(), src.getAvailableQuantity(), src.getMaxQtyPerOrder(), DateTimeModification.fromZonedDateTime(src.getInception(zoneId)),
                     DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description);
             }
@@ -285,12 +293,12 @@ public class EventModification {
         private final Integer id;
         private final String locale;
         private final String value;
-        private final alfio.model.AdditionalServiceText.AdditionalServiceDescriptionType type;
+        private final alfio.model.AdditionalServiceText.TextType type;
 
         public AdditionalServiceText(@JsonProperty("id") Integer id,
                                      @JsonProperty("locale") String locale,
                                      @JsonProperty("value") String value,
-                                     @JsonProperty("type") alfio.model.AdditionalServiceText.AdditionalServiceDescriptionType type) {
+                                     @JsonProperty("type") alfio.model.AdditionalServiceText.TextType type) {
             this.id = id;
             this.locale = locale;
             this.value = value;

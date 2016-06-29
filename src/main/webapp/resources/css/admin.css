@@ -9,8 +9,16 @@ ng\:form {
   display: block;
 }
 
-body {
-    padding-top:70px;
+@font-face {
+  font-family: 'Architects Daughter';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Architects Daughter'), local('ArchitectsDaughter'), url("../font/ArchitectsDaughter.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+
+div.menu-spacer {
+    padding-top:50px;
 }
 
 div.list-even {
@@ -50,34 +58,47 @@ form.force-show-errors textarea.ng-invalid + field-error > div.text-danger {
     display:block;
 }
 
-div.category-danger {
+.progress {
+    margin-bottom: 0;
+    margin-top: 5px;
+}
+
+.category-name {
+    margin-top:4px
+}
+
+.category-danger {
     border: 1px solid #d9534f;
     border-left-width: 5px;
     border-radius: 2px;
 }
 
-div.category-warning {
+.category-warning {
     border: 1px solid #f0ad4e;
     border-left-width: 5px;
     border-radius: 2px;
 }
 
-div.category-info {
+.category-info {
     border: 1px solid #5bc0de;
     border-left-width: 5px;
     border-radius: 2px;
 }
 
-div.category-success {
+.category-success {
     border: 1px solid #5cb85c;
     border-left-width: 5px;
     border-radius: 2px;
 }
 
-div.category-expired {
+.category-expired {
     border: 1px solid #545558;
     border-left-width: 5px;
     border-radius: 2px;
+}
+
+.category-active {
+    font-weight: bold;
 }
 
 a.icon, a.icon:hover {
@@ -176,4 +197,83 @@ td.cell-wrap {
 
 .system-setting {
     color: red;
+}
+
+@media (min-width: 992px) {
+    div.sidebar {
+        width:175px;
+    }
+}
+
+@media (min-width: 1150px) {
+    div.sidebar {
+        width:200px;
+    }
+}
+
+@media (min-width: 1550px) {
+    div.sidebar {
+        width:300px;
+    }
+}
+
+@media (min-height: 900px) {
+    div.sidebar {
+        position: fixed;
+        top:20px;
+    }
+}
+
+a[data-ng-click], a[ng-click] {
+    cursor: pointer;
+}
+
+a.emulate-nav-pills-link {
+    border-radius: 4px;
+    position: relative;
+    display: block;
+    padding: 10px 15px;
+    color: #428bca;
+    text-decoration: none;
+    background: 0 0;
+}
+
+.emulate-nav-pills-link+.active > .badge {
+    color: #428bca;
+    background-color: #fff;
+}
+
+.emulate-nav-pills-link > a > .badge {
+    margin-left: 3px;
+}
+
+.emulate-nav-pills-link+.active,
+.emulate-nav-pills-link+.active :hover,
+.emulate-nav-pills-link+.active :focus {
+    color: #fff;
+    background-color: #428bca;
+}
+
+.emulate-nav-pills-link:hover,
+.emulate-nav-pills-link:focus {
+    text-decoration: none;
+    background-color: #eee;
+}
+
+.sidebar-header {
+    border-bottom: 1px solid #eee;
+}
+
+.sidebar-header img {
+    max-height: 60px;
+}
+
+.subitem-active {
+    font-weight: bolder;
+}
+
+.title {
+    font-family: 'Architects Daughter', cursive;
+    font-size: 3em;
+    font-weight: 500;
 }

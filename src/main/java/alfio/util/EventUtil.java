@@ -18,7 +18,6 @@ package alfio.util;
 
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
@@ -28,18 +27,15 @@ import alfio.model.system.Configuration;
 import lombok.experimental.UtilityClass;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
-import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
 import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
-import static alfio.util.MonetaryUtil.addVAT;
 import static java.time.temporal.ChronoField.*;
 
 @UtilityClass
@@ -63,17 +59,15 @@ public class EventUtil {
         .toFormatter(Locale.ROOT);
 
     public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<Event> noTicketsAvailable) {
-        Optional<SaleableTicketCategory> lastCategoryOptional = findLastCategory(categories);
-        if(!lastCategoryOptional.isPresent()) {
+        return findLastCategory(categories).map(lastCategory -> {
+            ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+            if(isPreSales(event, categories)) {
+                return configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false);
+            } else if(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE), false)) {
+                return now.isBefore(lastCategory.getZonedExpiration()) && noTicketsAvailable.test(event);
+            }
             return false;
-        }
-        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        if(isPreSales(event, categories)) {
-            return configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false);
-        } else if(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE), false)) {
-            return now.isBefore(lastCategoryOptional.get().getZonedExpiration()) && noTicketsAvailable.test(event);
-        }
-        return false;
+        }).orElse(false);
     }
 
 
@@ -98,7 +92,7 @@ public class EventUtil {
 
     public static Stream<MapSqlParameterSource> generateEmptyTickets(Event event, Date creationDate, int limit) {
         return generateStreamForTicketCreation(limit)
-                .map(ps -> buildTicketParams(event.getId(), creationDate, Optional.<TicketCategory>empty(), 0, 0, ps));
+                .map(ps -> buildTicketParams(event.getId(), creationDate, Optional.empty(), 0, ps));
     }
 
     public static Stream<MapSqlParameterSource> generateStreamForTicketCreation(int limit) {
@@ -109,76 +103,24 @@ public class EventUtil {
     public static MapSqlParameterSource buildTicketParams(int eventId,
                                               Date creation,
                                               Optional<TicketCategory> tc,
-                                              int originalPrice,
-                                              int paidPrice,
+                                              int srcPriceCts,
                                               MapSqlParameterSource ps) {
         return ps.addValue("uuid", UUID.randomUUID().toString())
                 .addValue("creation", creation)
                 .addValue("categoryId", tc.map(TicketCategory::getId).orElse(null))
                 .addValue("eventId", eventId)
                 .addValue("status", Ticket.TicketStatus.FREE.name())
-                .addValue("originalPrice", originalPrice)
-                .addValue("paidPrice", paidPrice);
+                .addValue("srcPriceCts", srcPriceCts);
     }
 
-    /**
-     * Calculate the price for ticket category edit page
-     *
-     * @param e
-     * @return
-     */
-    public static UnaryOperator<Integer> categoryPriceCalculator(Event e) {
-        return p -> {
-            if(e.isFreeOfCharge()) {
-                return 0;
-            }
-            if(e.isVatIncluded()) {
-                return MonetaryUtil.addVAT(p, e.getVat());
-            }
-            return p;
-        };
-    }
-
-    public static int evaluatePrice(int price, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge) {
-        if(freeOfCharge) {
-            return 0;
-        }
-        if(!vatIncluded) {
-            return price;
-        }
-        return MonetaryUtil.removeVAT(price, vat);
+    public static int evaluatePrice(int price, boolean freeOfCharge) {
+        return freeOfCharge ? 0 : price;
     }
 
     public static int determineAvailableSeats(TicketCategoryWithStatistic tc, EventWithStatistics e) {
         return tc.isBounded() ? tc.getNotSoldTickets() : e.getDynamicAllocation();
     }
 
-    public static int getFinalPriceInCents(Event event, TicketCategory category) {
-        if(event.isVatIncluded()) {
-            return addVAT(category.getPriceInCents(), event.getVat());
-        }
-        return category.getPriceInCents();
-    }
-
-    public static int getFinalPriceInCents(Event event, AdditionalService additionalService) {
-        if(!additionalService.isFixPrice()) {
-            return 0;
-        }
-        switch(additionalService.getVatType()) {
-            case NONE:
-            case CUSTOM_EXCLUDED:
-                return additionalService.getPriceInCents();
-            case INHERITED:
-                if(event.isVatIncluded()) {
-                    return addVAT(additionalService.getPriceInCents(), event.getVat());
-                }
-                return additionalService.getPriceInCents();
-            case CUSTOM_INCLUDED:
-                return addVAT(additionalService.getPriceInCents(), additionalService.getVat());
-            default:
-                return additionalService.getPriceInCents();
-        }
-    }
 
 
 }

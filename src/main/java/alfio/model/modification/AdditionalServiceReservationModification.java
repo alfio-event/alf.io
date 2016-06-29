@@ -24,4 +24,5 @@ import java.math.BigDecimal;
 public class AdditionalServiceReservationModification {
     private Integer additionalServiceId;
     private BigDecimal amount;
+    private Integer quantity = 1;
 }

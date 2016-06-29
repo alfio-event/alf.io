@@ -205,7 +205,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                 // lockdown policy
                 response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
                         + " script-src 'self' https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/;"//
-                        + " style-src 'self';"//
+                        + " style-src 'self' 'unsafe-inline';" // unsafe-inline for style is acceptable...
                         + " img-src 'self' https: data:;"//
                         + " child-src 'self';"//webworker
                         + " frame-src 'self' https://js.stripe.com;"

@@ -16,27 +16,30 @@
  */
 package alfio.model.transaction;
 
+import alfio.model.system.ConfigurationKeys;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public enum PaymentProxy {
-    STRIPE("stripe.com", false, true),
-    ON_SITE("on-site payment", true, true),
-    OFFLINE("offline payment", false, true),
-    NONE("no payment required", false, false);
+    STRIPE("stripe.com", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_STRIPE)),
+    ON_SITE("on-site payment", true, true, Collections.emptySet()),
+    OFFLINE("offline payment", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_OFFLINE)),
+    NONE("no payment required", false, false, Collections.emptySet()),
+    PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL));
 
     private final String description;
     private final boolean deskPayment;
     private final boolean visible;
+    private final Set<ConfigurationKeys.SettingCategory> settingCategories;
 
-    PaymentProxy(String description, boolean deskPayment, boolean visible) {
+    PaymentProxy(String description, boolean deskPayment, boolean visible, Set<ConfigurationKeys.SettingCategory> settingCategories) {
         this.description = description;
         this.deskPayment = deskPayment;
         this.visible = visible;
+        this.settingCategories = settingCategories;
     }
 
     public String getDescription() {
@@ -53,6 +56,11 @@ public enum PaymentProxy {
 
     private boolean isVisible() {
         return visible;
+    }
+
+    @JsonIgnore
+    public Set<ConfigurationKeys.SettingCategory> getSettingCategories() {
+        return settingCategories;
     }
 
     public static Optional<PaymentProxy> safeValueOf(String name) {

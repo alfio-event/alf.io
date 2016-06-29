@@ -16,19 +16,20 @@
  */
 package alfio.model;
 
-import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Base64;
+import java.util.EnumSet;
+import java.util.Optional;
+import java.util.Set;
 
 @Getter
 public class Ticket {
@@ -45,27 +46,32 @@ public class Ticket {
     private final Integer categoryId;
     private final int eventId;
     private final TicketStatus status;
-    private final int originalPriceInCents;
-    private final int paidPriceInCents;
     private final String ticketsReservationId;
     private final String fullName;
     private final String email;
     private final boolean lockedAssignment;
     private final String userLanguage;
-    
+
+    private final int srcPriceCts;
+    private final int finalPriceCts;
+    private final int vatCts;
+    private final int discountCts;
+
     public Ticket(@Column("id") int id,
                   @Column("uuid") String uuid,
                   @Column("creation") ZonedDateTime creation,
                   @Column("category_id") Integer categoryId,
                   @Column("status") String status,
                   @Column("event_id") int eventId,
-                  @Column("original_price_cts") int originalPriceInCents,
-                  @Column("paid_price_cts") int paidPriceInCents,
                   @Column("tickets_reservation_id") String ticketsReservationId,
                   @Column("full_name") String fullName,
                   @Column("email_address") String email,
                   @Column("locked_assignment") boolean lockedAssignment,
-                  @Column("user_language") String userLanguage) {
+                  @Column("user_language") String userLanguage,
+                  @Column("src_price_cts") int srcPriceCts,
+                  @Column("final_price_cts") int finalPriceCts,
+                  @Column("vat_cts") int vatCts,
+                  @Column("discount_cts") int discountCts) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
@@ -74,12 +80,14 @@ public class Ticket {
 
         this.userLanguage = userLanguage;
         this.status = TicketStatus.valueOf(status);
-        this.originalPriceInCents = originalPriceInCents;
-        this.paidPriceInCents = paidPriceInCents;
         this.ticketsReservationId = ticketsReservationId;
         this.fullName = Optional.ofNullable(fullName).orElse("");
         this.email = Optional.ofNullable(email).orElse("");
         this.lockedAssignment = lockedAssignment;
+        this.srcPriceCts = srcPriceCts;
+        this.finalPriceCts = finalPriceCts;
+        this.vatCts = vatCts;
+        this.discountCts = discountCts;
     }
     
     public boolean getAssigned() {
@@ -90,14 +98,6 @@ public class Ticket {
         return lockedAssignment;
     }
 
-    public BigDecimal getOriginalPrice() {
-        return MonetaryUtil.centsToUnit(originalPriceInCents);
-    }
-
-    public BigDecimal getPaidPrice() {
-        return MonetaryUtil.centsToUnit(paidPriceInCents);
-    }
-    
     /**
      * The code is composed with:
      * 

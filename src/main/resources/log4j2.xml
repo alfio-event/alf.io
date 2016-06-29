@@ -14,7 +14,6 @@
             </PatternLayout>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
-                <SizeBasedTriggeringPolicy size="20 MB"/>
             </Policies>
             <DefaultRolloverStrategy max="20"/>
         </RollingFile>
@@ -24,8 +23,8 @@
     </Appenders>
 
     <Loggers>
-        <Logger name="alfio" level="info" additivity="false">
-            <appender-ref ref="Console" />
+        <Logger name="alfio" level="debug" additivity="false">
+            <appender-ref ref="Console" level="info"/>
             <appender-ref ref="Async" />
         </Logger>
         <Logger name="org.springframework" level="warn" additivity="false">

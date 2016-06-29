@@ -26,4 +26,5 @@ public class WaitingQueueSubscriptionForm {
     private String email;
     private Locale userLanguage;
     private boolean termAndConditionsAccepted;
+    private Integer selectedCategory;
 }

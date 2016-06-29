@@ -208,7 +208,7 @@ public class ReservationFlowIntegrationTest {
 
 
         // check that the payment page is shown
-        String reservationPage = reservationController.showPaymentPage(eventName, reservationIdentifier, new BindingAwareModelMap(), Locale.ENGLISH);
+        String reservationPage = reservationController.showPaymentPage(eventName, reservationIdentifier, null, null, null, null, null, null, null, null, new BindingAwareModelMap(), Locale.ENGLISH);
         Assert.assertEquals("/event/reservation-page", reservationPage);
         //
 

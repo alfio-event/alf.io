@@ -83,7 +83,7 @@ public class WaitingQueueSubscriptionProcessor {
             WaitingQueueSubscription subscription = triple.getLeft();
             Locale locale = subscription.getLocale();
             ZonedDateTime expiration = triple.getRight();
-            String reservationId = createReservation(event.getId(), triple.getMiddle(), expiration, locale);
+            String reservationId = createReservation(event, triple.getMiddle(), expiration, locale);
             String subject = messageSource.getMessage("email-waiting-queue-acquired.subject", new Object[]{event.getDisplayName()}, locale);
             Map<String, Object> model = new HashMap<>();
             model.put("event", event);
@@ -99,8 +99,8 @@ public class WaitingQueueSubscriptionProcessor {
         });
     }
 
-    private String createReservation(int eventId, TicketReservationWithOptionalCodeModification reservation, ZonedDateTime expiration, Locale locale) {
-        return ticketReservationManager.createTicketReservation(eventId,
+    private String createReservation(Event event, TicketReservationWithOptionalCodeModification reservation, ZonedDateTime expiration, Locale locale) {
+        return ticketReservationManager.createTicketReservation(event,
                 Collections.singletonList(reservation), Collections.emptyList(), Date.from(expiration.toInstant()),
                 Optional.empty(),
                 Optional.empty(),

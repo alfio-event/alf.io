@@ -1,68 +1,66 @@
-<div class="container">
-    <div class="panel panel-info">
-        <div class="panel-heading">
-            <h3 class="panel-title">Edit Donation option</h3>
-        </div>
-        <div class="panel-body">
+<form name="ctrl.additionalServiceForm" data-ng-submit="ctrl.save()" novalidate data-error-sensitive="">
+<div class="modal-content">
+    <div class="modal-header">
+        <h2 class="modal-title">Edit Donation option</h2>
+    </div>
+    <div class="modal-body">
 
-            <form name="ctrl.additionalServiceForm" data-ng-submit="ctrl.save()" novalidate data-error-sensitive="">
-                <h4>Title</h4>
-                <hr/>
-                <div class="row">
-                    <div class="col-sm-3" data-ng-repeat="title in ctrl.item.title">
-                        <label for="title-{{title.locale}}">{{title.displayLanguage}}</label>
+            <div data-ng-repeat="pair in ctrl.item.zippedTitleAndDescriptions">
+                <div class="row" >
+                    <div class="col-xs-12 col-md-2"><h4>{{pair[0].displayLanguage}}</h4></div>
+                    <div class="col-md-4 col-xs-12" data-ng-init="title = pair[0]">
+                        <label for="title-{{title.locale}}">Title</label>
                         <input id="title-{{title.locale}}" type="text" data-ng-model="title.value" class="form-control" required>
                     </div>
-                </div>
-                <div class="page-header">
-                    <h4>Description</h4>
-                </div>
-                <div class="row">
-                    <div class="col-sm-3" data-ng-repeat="desc in ctrl.item.description">
-                        <label for="desc-{{desc.locale}}">{{desc.displayLanguage}}</label>
+                    <div class="col-md-6 col-xs-12" data-ng-init="desc = pair[1]">
+                        <label for="desc-{{desc.locale}}">Description</label>
                         <textarea id="desc-{{desc.locale}}" data-ng-model="desc.value" class="form-control" required></textarea>
                     </div>
                 </div>
+                <hr data-ng-if="!$last" />
+            </div>
 
-                <div class="page-header">
-                    <h4>Availability and prices</h4>
+
+            <div class="page-header">
+                <h3>Availability and prices</h3>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-4">
+                    <label for="date">Validity range</label>
+                    <input type="text" data-date-range data-start-model="ctrl.item.inception" data-min-date="true" data-end-model="ctrl.item.expiration" data-ng-model="ctrl.item.dateString" name="date" id="date" class="form-control" required />
+                    <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.dateString" data-show-existing-errors="showExistingErrors"></field-error>
                 </div>
-
-                <div class="row">
-                    <div class="col-sm-4">
-                        <label for="date">Validity range</label>
-                        <input type="text" data-date-range data-start-model="ctrl.item.inception" data-min-date="true" data-end-model="ctrl.item.expiration" data-ng-model="ctrl.item.dateString" name="date" id="date" class="form-control" required />
-                        <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.dateString" data-show-existing-errors="showExistingErrors"></field-error>
-                    </div>
-                    <div class="col-sm-4">
-                        <label class="control-label">Price policy</label>
-                        <div class="form-group">
-                            <div class="radio-inline">
-                                <label><input type="radio" data-ng-model="ctrl.item.fixPrice" data-ng-value="true"> Fixed</label>
-                            </div>
-                            <div class="radio-inline">
-                                <label><input type="radio" data-ng-model="ctrl.item.fixPrice" data-ng-value="false"> User-defined</label>
-                            </div>
+                <div class="col-sm-3">
+                    <label class="control-label">Price policy</label>
+                    <div class="form-group">
+                        <div class="radio-inline">
+                            <label><input type="radio" data-ng-model="ctrl.item.fixPrice" data-ng-value="true"> Fixed</label>
+                        </div>
+                        <div class="radio-inline">
+                            <label><input type="radio" data-ng-model="ctrl.item.fixPrice" data-ng-value="false"> User-defined</label>
                         </div>
                     </div>
-                    <div class="col-sm-4" data-ng-if="ctrl.item.fixPrice">
-                        <label>
-                            Price: <input class="form-control" data-ng-model="ctrl.item.price" required>
-                        </label>
-                        <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.price" data-show-existing-errors="ctrl.showExistingErrors"></field-error>
-                    </div>
-                    <div class="col-sm-4">
-                        <label>
-                            VAT Type:
-                            <select class="form-control" data-ng-model="ctrl.item.vatType" required>
-                                <option data-ng-repeat="type in ctrl.vatTypes" data-ng-selected="{{ctrl.item.vatType === type.key}}" data-ng-value="type.key">{{type.value}}</option>
-                            </select>
-                        </label>
-                        <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.vatType" data-show-existing-errors="ctrl.showExistingErrors"></field-error>
-                    </div>
                 </div>
-                <control-buttons data-form-obj="ctrl.additionalServiceForm" data-cancel-handler="ctrl.cancel"></control-buttons>
-            </form>
-        </div>
+                <div class="col-sm-2" data-ng-if="ctrl.item.fixPrice">
+                    <label>
+                        Price: <input type="number" class="form-control" data-ng-model="ctrl.item.price" required>
+                    </label>
+                    <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.price" data-show-existing-errors="ctrl.showExistingErrors"></field-error>
+                </div>
+                <div class="col-sm-3">
+                    <label>
+                        VAT Type:
+                        <select class="form-control" data-ng-model="ctrl.item.vatType" required>
+                            <option data-ng-repeat="type in ctrl.vatTypes" data-ng-selected="{{ctrl.item.vatType === type.key}}" data-ng-value="type.key">{{type.value}}</option>
+                        </select>
+                    </label>
+                    <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.vatType" data-show-existing-errors="ctrl.showExistingErrors"></field-error>
+                </div>
+            </div>
+    </div>
+    <div class="modal-footer">
+        <control-buttons data-form-obj="ctrl.additionalServiceForm" data-cancel-handler="ctrl.cancel"></control-buttons>
     </div>
 </div>
+</form>
