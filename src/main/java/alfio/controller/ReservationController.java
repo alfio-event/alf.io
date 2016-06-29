@@ -179,7 +179,9 @@ public class ReservationController {
                                 return Pair.of(category, decorators);
                             })
                             .collect(toList()));
-                    model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
+                    boolean ticketsAllAssigned = tickets.stream().allMatch(Ticket::getAssigned);
+                    model.addAttribute("ticketsAreAllAssigned", ticketsAllAssigned);
+                    model.addAttribute("collapseEnabled", tickets.size() > 1 && !ticketsAllAssigned);
                     model.addAttribute("additionalServicesOnly", tickets.isEmpty() && !additionalServices.isEmpty());
                     model.addAttribute("additionalServices", additionalServices);
                     model.addAttribute("countries", ticketHelper.getLocalizedCountries(locale));
