@@ -7,7 +7,8 @@
                     selectedLanguages: '=',
                     availableLanguages: '=',
                     onModification: '&',
-                    eventId: '='
+                    eventId: '=',
+                    eventStartDate: '='
                 },
                 bindToController: true,
                 templateUrl: '/resources/angular-templates/admin/partials/event/fragment/additional-services.html',
@@ -22,7 +23,8 @@
                     availableLanguages: '=',
                     selectedLanguages: '=',
                     onEditComplete: '&',
-                    onDismiss: '&'
+                    onDismiss: '&',
+                    eventStartDate: '='
                 },
                 bindToController: true,
                 templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-additional-service.html',
@@ -30,11 +32,19 @@
                 controllerAs: 'ctrl'
             };
         })
+        .filter('formatDateTimeModification', [function() {
+            return function(dateTimeModification) {
+                if(angular.isDefined(dateTimeModification)) {
+                    return dateTimeModification.date + ' ' + dateTimeModification.time;
+                }
+                return moment().format('YYYY-MM-DD HH:mm');
+            };
+        }])
         .controller('AdditionalServicesController', AdditionalServicesController)
         .controller('EditAdditionalServiceController', EditAdditionalServiceController)
         .service('AdditionalServiceManager', AdditionalServiceManager);
 
-    function AdditionalServicesController(AdditionalServiceManager, ValidationService) {
+    function AdditionalServicesController(AdditionalServiceManager) {
         var self = this;
 
         self.propagateChanges = angular.isDefined(self.eventId);
@@ -113,7 +123,7 @@
         };
     }
 
-    AdditionalServicesController.$inject = ['AdditionalServiceManager', 'ValidationService'];
+    AdditionalServicesController.$inject = ['AdditionalServiceManager'];
 
     function EditAdditionalServiceController(ValidationService, AdditionalServiceManager, $q) {
         var ctrl = this;
@@ -126,6 +136,15 @@
                 inception: {},
                 expiration: {}
             };
+            if(angular.isDefined(ctrl.eventStartDate)) {
+                var d = moment.max(moment(ctrl.eventStartDate), moment().startOf('hour'));
+                ctrl.item = angular.extend(ctrl.item, {
+                    expiration : {
+                        date: d.format('YYYY-MM-DD'),
+                        time: d.format('HH:mm')
+                    }
+                });
+            }
         }
 
         if(!angular.isDefined(ctrl.item.title)) {
