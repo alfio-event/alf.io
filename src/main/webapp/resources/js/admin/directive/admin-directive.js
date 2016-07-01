@@ -222,7 +222,11 @@
                 $scope.selectedLanguages = {};
 
                 EventService.getSupportedLanguages().success(function(result) {
-                        $scope.selectedLanguages.langs = _.map(result, function(r) {
+                    var locales = $scope.obj.locales;
+                    var selected = _.filter(result, function(r) {
+                        return (r.value & locales) === r.value;
+                    });
+                    $scope.selectedLanguages.langs = _.map(selected, function(r) {
                         return r.value;
                     });
                 });
