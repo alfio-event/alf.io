@@ -194,7 +194,7 @@
                     return $http.get('/admin/api/event/'+eventId+'/additional-services/').error(HttpErrorHandler.handle);
                 }
                 var deferred = $q.defer();
-                deferred.resolve([]);
+                deferred.resolve({data:[]});
                 return deferred.promise;
             },
             save: function(eventId, additionalService) {
