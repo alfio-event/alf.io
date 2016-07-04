@@ -177,7 +177,7 @@ public class TicketReservationManagerIntegrationTest {
 
         assertTrue(ticketReservationManager.findById(reservationId2).isPresent());
 
-        ticketReservationManager.deleteOfflinePayment(event.getEvent(), reservationId2);
+        ticketReservationManager.deleteOfflinePayment(event.getEvent(), reservationId2, false);
 
         Assert.assertFalse(ticketReservationManager.findById(reservationId2).isPresent());
 

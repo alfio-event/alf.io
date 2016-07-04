@@ -327,7 +327,7 @@ public class ReservationController {
             return redirectReservation(ticketReservation, eventName, reservationId);
         }
         if (paymentForm.shouldCancelReservation()) {
-            ticketReservationManager.cancelPendingReservation(reservationId);
+            ticketReservationManager.cancelPendingReservation(reservationId, false);
             SessionUtil.removeSpecialPriceData(request);
             return "redirect:/event/" + eventName + "/";
         }
