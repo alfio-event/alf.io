@@ -35,7 +35,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.BindingResult;
 
-import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +66,7 @@ public class ReservationForm {
         return ofNullable(additionalService)
             .orElse(emptyList())
             .stream()
-            .filter(e -> e != null && e.getAmount() != null && e.getAdditionalServiceId() != null && e.getAmount().compareTo(BigDecimal.ZERO) > 0)
+            .filter(e -> e != null && e.getQuantity() != null && e.getAdditionalServiceId() != null && e.getQuantity() > 0)
             .collect(toList());
     }
 
