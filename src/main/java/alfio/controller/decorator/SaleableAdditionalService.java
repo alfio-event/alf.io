@@ -139,6 +139,10 @@ public class SaleableAdditionalService {
         return false;
     }
 
+    public String getCurrency() {
+        return event.getCurrency();
+    }
+
     private interface Exclusions {
         BigDecimal getVat();
     }
