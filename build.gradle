@@ -253,20 +253,20 @@ test {
 bootRun {
     def externalConfig = new File("./custom.jvmargs")
     def opts = []
+    opts += [
+        "-Dspring.profiles.active=${project.springProfilesActive}",
+        "-Ddatasource.dialect=${project.datasourceDialect}",
+        "-Ddatasource.driver=${project.datasourceDriver}",
+        "-Ddatasource.url=${project.datasourceUrl}",
+        "-Ddatasource.username=${project.datasourceUsername}",
+        "-Ddatasource.password=${project.datasourcePassword}",
+        "-Ddatasource.validationQuery=${project.datasourceValidationQuery}",
+        "-Dalfio.version=${project.version}",
+        "-Dalfio.build-ts=${ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)}"
+    ]
     if(externalConfig.exists()) {
         opts += externalConfig.readLines()
     }
-    opts += [
-            "-Dspring.profiles.active=${project.springProfilesActive}",
-            "-Ddatasource.dialect=${project.datasourceDialect}",
-            "-Ddatasource.driver=${project.datasourceDriver}",
-            "-Ddatasource.url=${project.datasourceUrl}",
-            "-Ddatasource.username=${project.datasourceUsername}",
-            "-Ddatasource.password=${project.datasourcePassword}",
-            "-Ddatasource.validationQuery=${project.datasourceValidationQuery}",
-            "-Dalfio.version=${project.version}",
-            "-Dalfio.build-ts=${ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)}"
-    ]
     jvmArgs = opts
 }
 
