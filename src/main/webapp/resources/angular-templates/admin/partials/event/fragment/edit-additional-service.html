@@ -6,20 +6,14 @@
         <div class="panel-body">
 
             <form name="ctrl.additionalServiceForm" data-ng-submit="ctrl.save()" novalidate data-error-sensitive="">
-                <h4>Title</h4>
-                <hr/>
-                <div class="row">
-                    <div class="col-sm-3" data-ng-repeat="title in ctrl.item.title">
-                        <label for="title-{{title.locale}}">{{title.displayLanguage}}</label>
+                <div class="row" data-ng-repeat="pair in ctrl.item.zippedTitleAndDescriptions">
+                    <div class="col-xs-12"><h4>{{pair[0].displayLanguage}}</h4></div>
+                    <div class="col-sm-6 col-xs-12" data-ng-init="title = pair[0]">
+                        <label for="title-{{title.locale}}">Title</label>
                         <input id="title-{{title.locale}}" type="text" data-ng-model="title.value" class="form-control" required>
                     </div>
-                </div>
-                <div class="page-header">
-                    <h4>Description</h4>
-                </div>
-                <div class="row">
-                    <div class="col-sm-3" data-ng-repeat="desc in ctrl.item.description">
-                        <label for="desc-{{desc.locale}}">{{desc.displayLanguage}}</label>
+                    <div class="col-sm-6 col-xs-12" data-ng-init="desc = pair[1]">
+                        <label for="desc-{{desc.locale}}">Description</label>
                         <textarea id="desc-{{desc.locale}}" data-ng-model="desc.value" class="form-control" required></textarea>
                     </div>
                 </div>

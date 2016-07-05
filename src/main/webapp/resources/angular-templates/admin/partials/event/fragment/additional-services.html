@@ -2,27 +2,28 @@
     <h3>Donation options</h3>
     <span>here you can add one or more "donation" option.</span>
 </div>
-<div class="row">
-    <div class="col-xs-12" data-ng-repeat="item in asCtrl.displayList">
-        <div class="row">
-            <div class="col-xs-4" data-ng-repeat="pair in item.zippedTitleAndDescriptions">
-                <p><strong title="{{pair[0].value}} ({{pair[0].locale}})">{{pair[0].value}}</strong></p>
-                <p><small title="{{pair[1].value}} ({{pair[1].locale}})">{{pair[1].value}}</small></p>
+<div class="container" data-ng-repeat="item in asCtrl.displayList">
+    <div class="row" data-ng-repeat="pair in item.zippedTitleAndDescriptions">
+        <div class="col-xs-11"><h4 title="{{pair[0].value}} ({{pair[0].locale}})">{{pair[0].value}} <small title="{{pair[1].value}} ({{pair[1].locale}})">{{pair[1].value}}</small></h4></div>
+    </div>
+    <div class="row">
+        <div class="col-xs-10">
+            <div>
+                <i class="fa fa-clock-o"></i> <span class="text-success">{{item.inception.date | date:'MMM d, yyyy'}} {{item.inception.time | date:'HH:mm'}}</span> -
+                <span class="text-warning">{{item.expiration.date | date:'MMM d, yyyy'}} {{item.expiration.time | date:'HH:mm'}}</span>
             </div>
-            <div class="col-xs-12">
-                <span>from: {{item.inception.date}} {{item.inception.time}}</span>
-                <span>to: {{item.expiration.date}} {{item.expiration.time}}</span>
-            </div>
-            <div class="col-xs-12">
-                <span data-ng-if="!item.fixPrice">User-defined price</span>
-                <span data-ng-if="item.fixPrice">Price: {{item.price}} {{asCtrl.currency}}</span>
-            </div>
-            <div class="col-xs-2 col-xs-push-10">
-                <a class="btn btn-danger" title="delete" data-ng-click="asCtrl.delete(item)"><i class="fa fa-trash"></i></a>
-                <a class="btn btn-warning" title="edit" data-ng-click="asCtrl.edit(item)"><i class="fa fa-edit"></i></a>
+            <div>
+                <i class="fa fa-money"></i>
+                <span data-ng-if="!item.fixPrice">User-defined</span>
+                <span data-ng-if="item.fixPrice">{{item.price}} {{asCtrl.currency}}</span>
             </div>
         </div>
+        <div class="col-xs-2">
+            <button class="btn btn-danger" title="delete" data-ng-click="asCtrl.delete(item)"><i class="fa fa-trash"></i></button>
+            <button class="btn btn-warning" title="edit" data-ng-click="asCtrl.edit(item)"><i class="fa fa-edit"></i></button>
+        </div>
     </div>
+    <br/>
 </div>
 <div class="row">
     <div class="col-xs-12"><button type="button" class="btn btn-success pull-right" data-ng-click="asCtrl.edit()" data-ng-if="!asCtrl.editActive" data-ng-disabled="asCtrl.eventIsFreeOfCharge"><i class="fa fa-plus"></i> Add new</button></div>

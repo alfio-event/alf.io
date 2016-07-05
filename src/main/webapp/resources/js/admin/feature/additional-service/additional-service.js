@@ -167,6 +167,9 @@
                 }
             });
         }
+
+        ctrl.item.zippedTitleAndDescriptions = _.zip(ctrl.item.title, ctrl.item.description);
+
         ctrl.vatTypes = [
             {key: 'INHERITED', value:'Use event settings'},
             {key: 'NONE', value:'Do not apply VAT'}/*,
