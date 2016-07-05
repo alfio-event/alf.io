@@ -15,9 +15,11 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
+set @@sql_mode='';
+
 -- here be tables for mysql
 
---entities
+-- entities
 create table special_price (
   id integer auto_increment primary key not null,
   code varchar(64) not null,
@@ -120,7 +122,7 @@ alter table ticket add foreign key(tickets_reservation_id) references tickets_re
 alter table ticket add foreign key(special_price_id_fk) references special_price(id);
 alter table ticket add constraint unique_special_price unique(special_price_id_fk);
 
---join tables
+-- join tables
 create table j_user_organization (
 	user_id integer not null,
 	org_id integer not null
