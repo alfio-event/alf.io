@@ -1,0 +1,4 @@
+-Dmaps.serverApiKey=<Google Maps Server Key>
+-Dmaps.clientApiKey=<Google Maps Client Key>
+-Ddatasource.username=<database username>
+-Ddatasource.password=<database password>
