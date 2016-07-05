@@ -1,14 +1,15 @@
 (function () {
     "use strict";
     angular.module('alfio-additional-services', ['adminServices', 'ui.bootstrap'])
-        .directive('additionalServices', ['$uibModal', function() {
+        .directive('additionalServices', [function() {
             return {
                 scope: {
                     selectedLanguages: '=',
                     availableLanguages: '=',
                     onModification: '&',
                     eventId: '=',
-                    eventStartDate: '='
+                    eventStartDate: '=',
+                    eventIsFreeOfCharge: '='
                 },
                 bindToController: true,
                 templateUrl: '/resources/angular-templates/admin/partials/event/fragment/additional-services.html',
