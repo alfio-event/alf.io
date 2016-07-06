@@ -27,8 +27,8 @@
                     controller: 'EventConfigurationController',
                     controllerAs: 'eventConf'
                 })
-                .state('events.configuration', {
-                    url: '/:eventName/configuration',
+                .state('events.single.configuration', {
+                    url: '/configuration',
                     templateUrl: '/resources/angular-templates/admin/partials/configuration/event.html',
                     controller: 'EventConfigurationController',
                     controllerAs: 'eventConf'

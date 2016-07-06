@@ -1,93 +1,95 @@
-<div class="text-center" data-ng-if="eventConf.loading">
-    <i class="fa fa-cog fa-spin fa-3x"></i><span class="sr-only">Loading...</span>
-</div>
-<div class="alert alert-warning" data-ng-if="eventConf.noResults">
-    <h1>You are not authorized to see Event configuration.</h1>
-</div>
-<div data-ng-if="eventConf.hasResults">
-
-    <div>
-        <h1>Configuration for {{eventConf.event.displayName}}</h1>
+<div class="container">
+    <div class="text-center" data-ng-if="eventConf.loading">
+        <i class="fa fa-cog fa-spin fa-3x"></i><span class="sr-only">Loading...</span>
     </div>
-
-    <div class="page-header">
-        <h2>General</h2>
-        <span>General settings</span>
+    <div class="alert alert-warning" data-ng-if="eventConf.noResults">
+        <h1>You are not authorized to see Event configuration.</h1>
     </div>
+    <div data-ng-if="eventConf.hasResults">
 
-    <form name="settingsForm" novalidate data-ng-submit="eventConf.saveSettings(settingsForm)">
-        <div data-ng-if="eventConf.general">
-            <div data-ng-repeat="setting in eventConf.general.settings">
-                <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="eventConf.globalSettings" data-delete-handler="eventConf.delete(config)" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+        <div>
+            <h1>Configuration for {{eventConf.event.displayName}}</h1>
+        </div>
+
+        <div class="page-header">
+            <h2>General</h2>
+            <span>General settings</span>
+        </div>
+
+        <form name="settingsForm" novalidate data-ng-submit="eventConf.saveSettings(settingsForm)">
+            <div data-ng-if="eventConf.general">
+                <div data-ng-repeat="setting in eventConf.general.settings">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="eventConf.globalSettings" data-delete-handler="eventConf.delete(config)" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                </div>
             </div>
-        </div>
 
-        <div class="page-header" data-ng-if="eventConf.mail">
-            <h2>E-Mail</h2>
-            <span>E-Mail settings</span>
-        </div>
+            <div class="page-header" data-ng-if="eventConf.mail">
+                <h2>E-Mail</h2>
+                <span>E-Mail settings</span>
+            </div>
 
-        <div data-ng-if="eventConf.mail">
-            <div data-ng-if="eventConf.mail.type" class="system-setting">
-                <div class="radio-inline">
-                    <label>
-                        <input type="radio" name="mailer.type" data-ng-model="eventConf.mail.type.value" data-ng-value="'smtp'">
-                        SMTP
-                    </label>
+            <div data-ng-if="eventConf.mail">
+                <div data-ng-if="eventConf.mail.type" class="system-setting">
+                    <div class="radio-inline">
+                        <label>
+                            <input type="radio" name="mailer.type" data-ng-model="eventConf.mail.type.value" data-ng-value="'smtp'">
+                            SMTP
+                        </label>
+                    </div>
+                    <div class="radio-inline">
+                        <label>
+                            <input type="radio" name="mailer.type" data-ng-model="eventConf.mail.type.value" data-ng-value="'mailgun'">
+                            Mailgun.com
+                        </label>
+                    </div>
+                    <div data-ng-repeat="setting in eventConf.mail.settings | mailSettingsFilter:eventConf.mail.type.value" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                    </div>
+                    <div>
+                        <setting obj="eventConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" class="system-setting"></setting>
+                    </div>
+                    <div>
+                        <setting obj="eventConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                    </div>
                 </div>
-                <div class="radio-inline">
-                    <label>
-                        <input type="radio" name="mailer.type" data-ng-model="eventConf.mail.type.value" data-ng-value="'mailgun'">
-                        Mailgun.com
-                    </label>
-                </div>
-                <div data-ng-repeat="setting in eventConf.mail.settings | mailSettingsFilter:eventConf.mail.type.value" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
+                <div data-ng-repeat="setting in eventConf.mail.settings" data-ng-if="!eventConf.mail.type" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
                     <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                 </div>
-                <div>
-                    <setting obj="eventConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" class="system-setting"></setting>
-                </div>
-                <div>
-                    <setting obj="eventConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
-                </div>
-            </div>
-            <div data-ng-repeat="setting in eventConf.mail.settings" data-ng-if="!eventConf.mail.type" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
-                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
-            </div>
-        </div>
-
-        <div class="page-header" data-ng-if="eventConf.payment">
-            <h2>Payment</h2>
-            <span>Payment provider settings</span>
-        </div>
-
-        <div data-ng-if="eventConf.payment">
-            <div data-ng-repeat="setting in eventConf.payment.settings" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
-                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
-            </div>
-        </div>
-
-        <div data-ng-if="eventConf.pluginSettingsByPluginId">
-            <div class="page-header">
-                <h2>Plugins</h2>
-                <span>Plugins settings</span>
             </div>
 
-            <div data-ng-repeat="(key, settings) in eventConf.pluginSettingsByPluginId">
-                <div class="page-header"><h3 data-ng-bind="key"></h3></div>
-                <div data-ng-repeat="setting in settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-organization="systemConf.organization"></setting>
+            <div class="page-header" data-ng-if="eventConf.payment">
+                <h2>Payment</h2>
+                <span>Payment provider settings</span>
+            </div>
+
+            <div data-ng-if="eventConf.payment">
+                <div data-ng-repeat="setting in eventConf.payment.settings" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                 </div>
             </div>
-        </div>
 
-        <div class="pull-left wMarginBottom wMarginTop" data-ng-if="eventConf.eventName">
-            <a class="btn btn-default" data-ng-if="eventConf.eventName" data-ui-sref="events.single.detail({eventName: eventConf.eventName})">back to event</a>
-        </div>
-        <div class="pull-right wMarginBottom wMarginTop">
-            <button type="submit" class="btn btn-success" data-ng-disabled="eventConf.loading">save</button>
-            <a class="btn btn-default" data-ng-if="!eventConf.eventName" data-ui-sref="index">cancel</a>
-            <a class="btn btn-default" data-ng-if="eventConf.eventName" data-ui-sref="events.single.detail({eventName: eventConf.eventName})">cancel</a>
-        </div>
-    </form>
+            <div data-ng-if="eventConf.pluginSettingsByPluginId">
+                <div class="page-header">
+                    <h2>Plugins</h2>
+                    <span>Plugins settings</span>
+                </div>
+
+                <div data-ng-repeat="(key, settings) in eventConf.pluginSettingsByPluginId">
+                    <div class="page-header"><h3 data-ng-bind="key"></h3></div>
+                    <div data-ng-repeat="setting in settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-organization="systemConf.organization"></setting>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pull-left wMarginBottom wMarginTop" data-ng-if="eventConf.eventName">
+                <a class="btn btn-default" data-ng-if="eventConf.eventName" data-ui-sref="events.single.detail({eventName: eventConf.eventName})">back to event</a>
+            </div>
+            <div class="pull-right wMarginBottom wMarginTop">
+                <button type="submit" class="btn btn-success" data-ng-disabled="eventConf.loading">save</button>
+                <a class="btn btn-default" data-ng-if="!eventConf.eventName" data-ui-sref="index">cancel</a>
+                <a class="btn btn-default" data-ng-if="eventConf.eventName" data-ui-sref="events.single.detail({eventName: eventConf.eventName})">cancel</a>
+            </div>
+        </form>
+    </div>
 </div>
