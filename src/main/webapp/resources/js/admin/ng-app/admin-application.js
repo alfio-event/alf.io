@@ -42,38 +42,55 @@
                     eventType: 'EXTERNAL'
                 }
             })
-            .state('events.detail', {
+            .state('events.single', {
+                abstract: true,
                 url: '/:eventName',
-                templateUrl: BASE_STATIC_URL + '/event/detail.html',
-                controller: 'EventDetailController'
+                template: '<div><event-sidebar data-event="ctrl.event"></event-sidebar><div data-ui-view></div></div>',
+                resolve: {
+                    'getEvent': function($stateParams, EventService) {
+                        return EventService.getEvent($stateParams.eventName);
+                    }
+                },
+                controllerAs: 'ctrl',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                }
             })
-            .state('events.checkIn', {
-                url: '/:eventName/check-in',
+            .state('events.single.detail', {
+                url: '/detail',
+                templateUrl: BASE_STATIC_URL + '/event/detail.html',
+                controller: 'EventDetailController',
+                data: {
+                    detail: true
+                }
+            })
+            .state('events.single.checkIn', {
+                url: '/check-in',
                 templateUrl: BASE_STATIC_URL + '/event/check-in.html',
                 controller: 'EventCheckInController'
             })
-            .state('events.checkInScan', {
-                url: '/:eventName/check-in/scan',
+            .state('events.single.checkInScan', {
+                url: '/check-in/scan',
                 templateUrl: BASE_STATIC_URL + '/event/check-in-scan.html',
                 controller: 'EventCheckInScanController'
             })
-            .state('events.sendInvitations', {
-                url: '/:eventName/c/:categoryId/send-invitation',
+            .state('events.single.sendInvitations', {
+                url: '/c/:categoryId/send-invitation',
                 templateUrl: BASE_STATIC_URL + '/event/fragment/send-reserved-codes.html',
                 controller: 'SendInvitationsController'
             })
-            .state('pending-reservations', {
-                url: '/pending-reservations/:eventName/',
+            .state('events.single.pending-reservations', {
+                url: '/pending-reservations/',
                 templateUrl: BASE_STATIC_URL + '/pending-reservations/index.html',
                 controller: 'PendingReservationsController'
             })
-            .state('compose-custom-message', {
-                url: '/compose-custom-message/:eventName',
+            .state('events.single.compose-custom-message', {
+                url: '/compose-custom-message',
                 templateUrl: BASE_STATIC_URL + '/custom-message/index.html',
                 controller: 'ComposeCustomMessage'
             })
-            .state('events.show-waiting-queue', {
-                url: '/:eventName/waiting-queue',
+            .state('events.single.show-waiting-queue', {
+                url: '/waiting-queue',
                 templateUrl: BASE_STATIC_URL + '/waiting-queue/index.html',
                 controller: 'ShowWaitingQueue as ctrl'
             });
@@ -375,43 +392,44 @@
                                                         $log,
                                                         $q,
                                                         $window,
-                                                        $uibModal) {
+                                                        $uibModal,
+                                                        getEvent) {
         var loadData = function() {
             $scope.loading = true;
-            EventService.getEvent($stateParams.eventName).success(function(result) {
-                $scope.event = result.event;
-                $scope.organization = result.organization;
-                $scope.validCategories = _.filter(result.event.ticketCategories, function(tc) {
-                    return !tc.expired && tc.bounded;
-                });
-                $scope.loading = false;
-                $scope.loadingMap = true;
-                LocationService.getMapUrl(result.event.latitude, result.event.longitude).success(function(mapUrl) {
-                    $scope.event.geolocation = {
-                        mapUrl: mapUrl,
-                        timeZone: result.event.timeZone
-                    };
-                    $scope.loadingMap = false;
-                });
-                
-                
-                PromoCodeService.list(result.event.id).success(function(list) {
-                    $scope.promocodes = list;
-                    angular.forEach($scope.promocodes, function(v) {
-                        (function(v) {
-                            PromoCodeService.countUse(result.event.id, v.promoCode).then(function(val) {
-                                v.useCount = parseInt(val.data, 10);
-                            });
-                        })(v);
-                    });
-                });
+            var result = getEvent.data;
 
-                $scope.unbindTickets = function(event , category) {
-                    EventService.unbindTickets(event, category).success(function() {
-                        loadData();
-                    });
-                };
+            $scope.event = result.event;
+            $scope.organization = result.organization;
+            $scope.validCategories = _.filter(result.event.ticketCategories, function(tc) {
+                return !tc.expired && tc.bounded;
             });
+            $scope.loading = false;
+            $scope.loadingMap = true;
+            LocationService.getMapUrl(result.event.latitude, result.event.longitude).success(function(mapUrl) {
+                $scope.event.geolocation = {
+                    mapUrl: mapUrl,
+                    timeZone: result.event.timeZone
+                };
+                $scope.loadingMap = false;
+            });
+
+
+            PromoCodeService.list(result.event.id).success(function(list) {
+                $scope.promocodes = list;
+                angular.forEach($scope.promocodes, function(v) {
+                    (function(v) {
+                        PromoCodeService.countUse(result.event.id, v.promoCode).then(function(val) {
+                            v.useCount = parseInt(val.data, 10);
+                        });
+                    })(v);
+                });
+            });
+
+            $scope.unbindTickets = function(event , category) {
+                EventService.unbindTickets(event, category).success(function() {
+                    loadData();
+                });
+            };
 
             EventService.getAdditionalFields($stateParams.eventName).success(function(result) {
                 $scope.additionalFields = result;
@@ -555,29 +573,13 @@
             }, errorHandler);
         };
         
-        
+
         $scope.openDeleteWarning = function(event) {
-        	$modal.open({
-        		size:'lg',
-        		templateUrl: BASE_STATIC_URL + '/event/fragment/delete-event-modal.html',
-        		backdrop: 'static',
-        		controller: function($scope) {
-        			$scope.cancel = function() {
-                        $scope.$dismiss('canceled');
-                    };
-                    
-                    $scope.deleteEvent = function() {
-                    	EventService.deleteEvent(event.id).then(function() {
-                    		$scope.$dismiss('canceled');
-                    		$state.go('index');
-                    	});
-                    };
-                    
-                    $scope.event = event;
-        		}
-        	})
+            EventService.deleteEvent(event.id).then(function(result) {
+                $state.go('index');
+            });
         };
-        
+
 
         var parentScope = $scope;
 
@@ -789,45 +791,7 @@
 
 
         $scope.openFieldSelectionModal = function() {
-            $uibModal.open({
-                size:'lg',
-                templateUrl:BASE_STATIC_URL + '/event/fragment/select-field-modal.html',
-                backdrop: 'static',
-                controller: function($scope) {
-                    $scope.selected = {};
-                    EventService.getFields(parentScope.event.shortName).then(function(fields) {
-                        $scope.fields = fields.data;
-                        angular.forEach(fields.data, function(v) {
-                            $scope.selected[v] = false;
-                        })
-                    });
-
-                    $scope.selectAll = function() {
-                        angular.forEach($scope.selected, function(v,k) {
-                            $scope.selected[k] = true;
-                        });
-                    };
-
-                    $scope.deselectAll = function() {
-                        angular.forEach($scope.selected, function(v,k) {
-                            $scope.selected[k] = false;
-                        });
-                    };
-
-                    $scope.download = function() {
-
-                        var queryString = "";
-
-                        angular.forEach($scope.selected, function(v,k) {
-                            if(v) {
-                                queryString+="fields="+k+"&";
-                            }
-                        });
-
-                        $window.open($window.location.pathname+"/api/events/"+parentScope.event.shortName+"/export.csv?"+queryString);
-                    };
-                }
-            });
+            EventService.exportAttendees(parentScope.event);
         };
 
         $scope.downloadSponsorsScan = function() {
@@ -944,7 +908,7 @@
         $scope.sendCodes = function(data) {
             EventService.sendCodesByEmail($stateParams.eventName, $stateParams.categoryId, data).success(function() {
                 alert('Codes have been successfully sent');
-                $state.go('events.detail', {eventName: $stateParams.eventName});
+                $state.go('events.single.detail', {eventName: $stateParams.eventName});
             }).error(function(e) {
                 alert(e.data);
             });
@@ -975,7 +939,7 @@
         }
 
         $scope.goToScanPage = function() {
-            $state.go('events.checkInScan', $stateParams);
+            $state.go('events.single.checkInScan', $stateParams);
         };
 
         EventService.getEvent($stateParams.eventName).success(function(result) {
@@ -1011,7 +975,7 @@
         var canReadCamera = MediaStreamTrack.getSources !== undefined;
 
         $scope.goToScanPage = function() {
-            $state.go('events.checkInScan', $stateParams);
+            $state.go('events.single.checkInScan', $stateParams);
         };
 
         $scope.canReadCamera = canReadCamera;
@@ -1182,6 +1146,11 @@
     });
 
     admin.controller('PendingReservationsController', function($scope, EventService, $stateParams, $log, $window) {
+
+        EventService.getEvent($stateParams.eventName).then(function(result) {
+            $scope.event = result.data.event;
+        });
+
         var getPendingPayments = function() {
             EventService.getPendingPayments($stateParams.eventName).success(function(data) {
                 $scope.pendingReservations = data;
@@ -1245,7 +1214,7 @@
         });
 
         $scope.cancel = function() {
-            $state.go('events.detail', {eventName: $stateParams.eventName});
+            $state.go('events.single.detail', {eventName: $stateParams.eventName});
         };
 
 

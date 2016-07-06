@@ -1,23 +1,23 @@
 <div class="page-header">
     <h1>{{event.displayName}} 
-    	<a class="btn btn-default" data-ng-if="isInternal(event)" data-ui-sref="events.configuration({eventName: event.shortName})"><i class="fa fa-wrench"></i><span class="sr-only"> settings</span></a>
-    	<button type="button" ng-click="openDeleteWarning(event)" class="btn btn-danger" ng-if="isInternal(event)"><i class="fa fa-trash"></i> Delete</button>
+    	<a class="btn btn-default visible-xs" data-ng-if="isInternal(event)" data-ui-sref="events.configuration({eventName: event.shortName})"><i class="fa fa-wrench"></i><span class="sr-only"> settings</span></a>
+    	<button type="button" ng-click="openDeleteWarning(event)" class="btn btn-danger visible-xs" ng-if="isInternal(event)"><i class="fa fa-trash"></i> Delete</button>
 	</h1>
     <h4 class="text-muted">{{event.shortDescription}}</h4>
-    <div data-ng-if="isInternal(event)">
+    <div data-ng-if="isInternal(event)" class="visible-xs">
         <span><button class="btn btn-primary" type="button" data-ng-click="openFieldSelectionModal()" ><i class="fa fa-download"></i> download attendees' data</button></span>
-        <span><a class="btn btn-warning" data-ui-sref="compose-custom-message({eventName: event.shortName})"><i class="fa fa-envelope"></i> send a message to attendees</a></span>
+        <span><a class="btn btn-warning" data-ui-sref="events.single.compose-custom-message({eventName: event.shortName})"><i class="fa fa-envelope"></i> send a message to attendees</a></span>
         <waiting-queue-display-counter data-event="event"></waiting-queue-display-counter>
         <span><a class="btn btn-warning" data-ng-click="downloadSponsorsScan()" ><i class="fa fa-download"></i> download sponsors scan</a></span>
-        <span><a class="btn btn-default" data-ui-sref="events.email-log({eventName:event.shortName})"><i class="fa fa-paper-plane-o"></i> view sent messages</a></span>
-        <span><a class="btn btn-default" data-ui-sref="events.plugin-log({eventName:event.shortName})"><i class="fa fa-plug"></i> view Plugins log</a></span>
+        <span><a class="btn btn-default" data-ui-sref="events.single.email-log({eventName:event.shortName})"><i class="fa fa-paper-plane-o"></i> view sent messages</a></span>
+        <span><a class="btn btn-default" data-ui-sref="events.single.plugin-log({eventName:event.shortName})"><i class="fa fa-plug"></i> view Plugins log</a></span>
     </div>
 </div>
-<div class="page-header"><h2>Logistic info</h2></div>
+<div class="page-header"><h2>Location and Date</h2></div>
 <div class="row">
     <div class="col-sm-12 col-md-6">
         <div class="form-group">
-            <label>Owner Organization</label>
+            <label>Organized by</label>
             <p class="form-control-static">{{organization.name}} &lt;{{organization.email}}&gt;</p>
             <label>Website URL</label>
             <p class="form-control-static"><a href="{{event.websiteUrl}}" target="_blank">{{event.websiteUrl}}</a></p>

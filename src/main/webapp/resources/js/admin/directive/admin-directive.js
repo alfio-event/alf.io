@@ -391,11 +391,41 @@
         };
     });
 
+    directives.directive('pendingReservationsLink', ['$rootScope', '$interval', 'EventService', function($rootScope, $interval, EventService) {
+        return {
+            restrict: 'E',
+            scope: {
+                event: '=',
+                styleClass: '@'
+            },
+            bindToController: true,
+            controllerAs: 'ctrl',
+            template: '<a ng-class="ctrl.styleClass" data-ui-sref="events.single.pending-reservations({eventName: ctrl.event.shortName})"><i class="fa fa-dollar"></i> Pending Reservations <pending-reservations-badge event-name="{{ctrl.event.shortName}}"></pending-reservations-badge></a>',
+            controller: ['$scope', function($scope) {
+                var ctrl = this;
+                var eventName = ctrl.event.shortName;
+                ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
+                var getPendingPayments = function() {
+                    EventService.getPendingPayments(eventName).success(function(data) {
+                        ctrl.pendingReservations = data.length;
+                        $rootScope.$broadcast('PendingReservationsFound', data);
+                    });
+                };
+                getPendingPayments();
+                var promise = $interval(getPendingPayments, 1000);
+
+                $scope.$on('$destroy', function() {
+                    $interval.cancel(promise);
+                });
+            }]
+        }
+    }]);
+
     directives.directive('pendingReservationsBadge', function($rootScope, $interval, EventService) {
         return {
             restrict: 'E',
             scope: false,
-            templateUrl: '/resources/angular-templates/admin/partials/pending-reservations/badge.html',
+            template: '<span class="badge">{{pendingReservations}}</span>',
             link: function(scope, element, attrs) {
                 var eventName = attrs.eventName;
                 scope.pendingReservations = 0;
@@ -513,7 +543,8 @@
             restrict: 'E',
             bindToController: true,
             scope: {
-                event: '='
+                event: '=',
+                styleClass: '@'
             },
             controllerAs: 'ctrl',
             controller: function(WaitingQueueService) {
@@ -521,8 +552,9 @@
                 WaitingQueueService.countSubscribers(this.event).success(function(result) {
                     ctrl.count = result;
                 });
+                ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
             },
-            template: '<span><a class="btn btn-warning" data-ui-sref="events.show-waiting-queue({eventName: ctrl.event.shortName})"><i class="fa fa-group"></i> waiting queue <span class="badge">{{ctrl.count}}</span></a></span>'
+            template: '<a data-ng-class="ctrl.styleClass" data-ui-sref="events.single.show-waiting-queue({eventName: ctrl.event.shortName})"><i class="fa fa-group"></i> waiting queue <span class="badge">{{ctrl.count}}</span></a>'
         }
     });
 
@@ -574,6 +606,37 @@
     			
     		}
     	}
-    }])
+    }]);
+
+    directives.directive('eventSidebar', ['EventService', '$state', '$window', '$rootScope', function(EventService, $state, $window, $rootScope) {
+        return {
+            restrict: 'E',
+            bindToController: true,
+            scope: {
+                event: '='
+            },
+            controllerAs: 'ctrl',
+            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/event-sidebar.html',
+            controller: [function() {
+                var ctrl = this;
+                ctrl.internal = (ctrl.event.type === 'INTERNAL');
+                $rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+                    ctrl.showBackLink = !toState.data || !toState.data.detail;
+                });
+                ctrl.openDeleteWarning = function() {
+                    EventService.deleteEvent(ctrl.event).then(function(result) {
+                        $state.go('index');
+                    });
+                };
+                ctrl.openFieldSelectionModal = function() {
+                    EventService.exportAttendees(ctrl.event);
+                };
+                ctrl.downloadSponsorsScan = function() {
+                    $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export.csv");
+                };
+
+            }]
+        }
+    }]);
 
 })();

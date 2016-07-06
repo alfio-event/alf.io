@@ -1,84 +1,86 @@
-<div class="container">
-    <div class="page-header">
-        <h1>Pending Reservations for {{eventName}}</h1>
-        <small class="text-muted">You can update them either one at a time or bulky</small>
-    </div>
-
-    <div class="wMarginTop wMarginBottom" data-ng-if="pendingReservations.length == 0">
-        <h3><i class="fa fa-thumbs-up"></i> No pending reservations found</h3>
-    </div>
-    <div class="wMarginTop wMarginBottom" data-ng-if="pendingReservations.length > 0" data-nv-file-drop="" data-uploader="uploader">
+<div>
+    <div class="container">
         <div class="page-header">
-            <h3>Manual confirmation</h3>
-            <small class="text-muted">Review and confirm each transaction</small>
+            <h1>Pending Reservations for {{eventName}}</h1>
+            <small class="text-muted">You can update them either one at a time or bulky</small>
         </div>
 
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <th>ID</th>
-                    <th>Expiration Date</th>
-                    <th>Amount</th>
-                    <th>Customer's name</th>
-                    <th>Customer's email</th>
-                    <th></th>
-                </thead>
-                <tbody>
-                    <tr data-ng-repeat="reservation in pendingReservations">
-                        <td data-ng-class-even="'active'">{{reservation.left.id}}</td>
-                        <td data-ng-class-even="'active'">{{reservation.left.validity | formatDate}}</td>
-                        <td data-ng-class-even="'active'">{{reservation.right.totalPrice}}</td>
-                        <td data-ng-class-even="'active'">{{reservation.left.fullName}}</td>
-                        <td data-ng-class-even="'active'">{{reservation.left.email}}</td>
-                        <td data-ng-class-even="'active'"><button class="btn btn-success btn-xs" data-ng-disabled="loading" data-ng-click="registerPayment(eventName, reservation.left.id)"><i class="fa fa-check"></i> confirm</button> <button data-ng-disabled="loading" data-ng-click="deletePayment(eventName, reservation.left.id)" class="btn btn-danger btn-xs"><i class="fa fa-trash-o"></i> delete</button></td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="wMarginTop wMarginBottom" data-ng-if="pendingReservations.length == 0">
+            <h3><i class="fa fa-thumbs-up"></i> No pending reservations found</h3>
         </div>
-
-        <div class="page-header">
-            <h3>Bulk confirmation</h3>
-            <small class="text-muted">Upload CSV file(s) with received payments</small>
-        </div>
-
-        <div>
-            <h2>File Specifications:</h2>
-            <h3>General</h3>
-            <span>Please create a CSV file without header, using commas (<strong>,</strong>) as separator, double quotes (<strong>"</strong>)as quote character and backslash (<strong>\</strong>) as escaping character</span>
-            <h3>Row specification</h3>
-            <pre>
-                <span class="text-info">abcd-efghi-jklm</span><strong>,</strong><span class="text-danger">10.00</span>
-
-                where:
-
-                <span class="text-info">abcd-efghi-jklm</span> is the partial or full reservation code
-                <span class="text-danger">10.00</span> is the amount of the payment
-            </pre>
-        </div>
-
-        <file-upload data-accept="'text/csv'" data-target-url="uploadUrl" data-success-callback="uploadSuccess"></file-upload>
-
-        <div data-ng-if="results && results.length > 0">
+        <div class="wMarginTop wMarginBottom" data-ng-if="pendingReservations.length > 0" data-nv-file-drop="" data-uploader="uploader">
             <div class="page-header">
-                <h3>Upload results:</h3>
+                <h3>Manual confirmation</h3>
+                <small class="text-muted">Review and confirm each transaction</small>
             </div>
+
             <div class="table-responsive">
                 <table class="table">
                     <thead>
-                        <th>Row #</th>
-                        <th>Status</th>
-                        <th>Reservation ID</th>
-                        <th>Error message</th>
+                        <th>ID</th>
+                        <th>Expiration Date</th>
+                        <th>Amount</th>
+                        <th>Customer's name</th>
+                        <th>Customer's email</th>
+                        <th></th>
                     </thead>
                     <tbody>
-                        <tr data-ng-repeat="result in results">
-                            <td data-ng-class-even="'active'">{{$index + 1}}</td>
-                            <td data-ng-class-even="'active'" data-ng-class="{'text-danger': !result.left, 'text-success': result.left}"><i data-ng-class="{'fa fa-warning': !result.left, 'fa fa-check-circle': result.left}"></i></td>
-                            <td data-ng-class-even="'active'">{{result.middle}}</td>
-                            <td data-ng-class-even="'active'">{{result.right}}</td>
+                        <tr data-ng-repeat="reservation in pendingReservations">
+                            <td data-ng-class-even="'active'">{{reservation.left.id}}</td>
+                            <td data-ng-class-even="'active'">{{reservation.left.validity | formatDate}}</td>
+                            <td data-ng-class-even="'active'">{{reservation.right.totalPrice}}</td>
+                            <td data-ng-class-even="'active'">{{reservation.left.fullName}}</td>
+                            <td data-ng-class-even="'active'">{{reservation.left.email}}</td>
+                            <td data-ng-class-even="'active'"><button class="btn btn-success btn-xs" data-ng-disabled="loading" data-ng-click="registerPayment(eventName, reservation.left.id)"><i class="fa fa-check"></i> confirm</button> <button data-ng-disabled="loading" data-ng-click="deletePayment(eventName, reservation.left.id)" class="btn btn-danger btn-xs"><i class="fa fa-trash-o"></i> delete</button></td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div class="page-header">
+                <h3>Bulk confirmation</h3>
+                <small class="text-muted">Upload CSV file(s) with received payments</small>
+            </div>
+
+            <div>
+                <h2>File Specifications:</h2>
+                <h3>General</h3>
+                <span>Please create a CSV file without header, using commas (<strong>,</strong>) as separator, double quotes (<strong>"</strong>)as quote character and backslash (<strong>\</strong>) as escaping character</span>
+                <h3>Row specification</h3>
+                <pre>
+                    <span class="text-info">abcd-efghi-jklm</span><strong>,</strong><span class="text-danger">10.00</span>
+
+                    where:
+
+                    <span class="text-info">abcd-efghi-jklm</span> is the partial or full reservation code
+                    <span class="text-danger">10.00</span> is the amount of the payment
+                </pre>
+            </div>
+
+            <file-upload data-accept="'text/csv'" data-target-url="uploadUrl" data-success-callback="uploadSuccess"></file-upload>
+
+            <div data-ng-if="results && results.length > 0">
+                <div class="page-header">
+                    <h3>Upload results:</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <th>Row #</th>
+                            <th>Status</th>
+                            <th>Reservation ID</th>
+                            <th>Error message</th>
+                        </thead>
+                        <tbody>
+                            <tr data-ng-repeat="result in results">
+                                <td data-ng-class-even="'active'">{{$index + 1}}</td>
+                                <td data-ng-class-even="'active'" data-ng-class="{'text-danger': !result.left, 'text-success': result.left}"><i data-ng-class="{'fa fa-warning': !result.left, 'fa fa-check-circle': result.left}"></i></td>
+                                <td data-ng-class-even="'active'">{{result.middle}}</td>
+                                <td data-ng-class-even="'active'">{{result.right}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
