@@ -55,7 +55,7 @@ public class UtilsApiController {
     }
     
     @RequestMapping(value = "/render-commonmark") 
-    public String renderCommonmark(@RequestParam("text") String input) {
+    public String renderCommonmark(@RequestParam(value = "text", defaultValue = "") String input) {
     	return MustacheCustomTagInterceptor.renderToCommonmark(input);
     }
 
