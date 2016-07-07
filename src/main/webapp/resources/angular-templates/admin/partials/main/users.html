@@ -18,9 +18,9 @@
             <tr data-ng-repeat="user in usersList.users" data-ng-class-even="active">
                 <td><a data-ui-sref="index.edit-user({userId:user.id})">{{user.username}}</a></td>
                 <td>
-                    <a class="btn btn-xs btn-default" data-ui-sref="index.edit-user({userId:user.id})" data-tooltip="Edit"><i class="fa fa-edit"></i><span class="sr-only">Edit</span></a>
-                    <button class="btn btn-xs btn-warning" data-ng-click="usersList.resetPassword(user)" data-tooltip="Reset Password"><i class="fa fa-refresh"></i><span class="sr-only">Reset Password</span></button>
-                    <button class="btn btn-xs btn-danger" data-ng-click="usersList.deleteUser(user)"  data-tooltip="Delete"><i class="fa fa-trash"></i><span class="sr-only">Delete</span></button>
+                    <a class="btn btn-xs btn-default" data-ui-sref="index.edit-user({userId:user.id})" data-uib-tooltip="Edit"><i class="fa fa-edit"></i><span class="sr-only">Edit</span></a>
+                    <button class="btn btn-xs btn-warning" data-ng-click="usersList.resetPassword(user)" data-uib-tooltip="Reset Password"><i class="fa fa-refresh"></i><span class="sr-only">Reset Password</span></button>
+                    <button class="btn btn-xs btn-danger" data-ng-click="usersList.deleteUser(user)"  data-uib-tooltip="Delete"><i class="fa fa-trash"></i><span class="sr-only">Delete</span></button>
                 </td>
             </tr>
         </tbody>
