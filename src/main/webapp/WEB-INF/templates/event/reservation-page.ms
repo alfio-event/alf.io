@@ -87,6 +87,21 @@
 </div>
 
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
+    {{#paypalCheckoutConfirmation}}
+
+        <input type="hidden" name="fullName" value="{{fullName}}">
+        <input type="hidden" name="email" value="{{email}}">
+        <input type="hidden" name="billingAddress" value="{{billingAddress}}">
+        <input type="hidden" name="hmac" value="{{hmac}}">
+        <input type="hidden" name="paymentMethod" value="PAYPAL">
+        <input type="hidden" name="paypalPaymentId" value="{{paypalPaymentId}}">
+        <input type="hidden" name="paypalPayerID" value="{{paypalPayerID}}">
+        <input type="hidden" name="termAndConditionsAccepted" value="true">
+        {{#i18n}}reservation-page.paypal.confirm{{/i18n}}
+    {{/paypalCheckoutConfirmation}}
+    {{^paypalCheckoutConfirmation}}
+
+
     <h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
     <div class="form-group {{#field-has-error}}[fullName] has-error{{/field-has-error}}">
         <label for="full-name" class="control-label">{{#i18n}}common.full-name{{/i18n}}</label>
@@ -106,6 +121,9 @@
         <textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450">{{paymentForm.billingAddress}}</textarea>
         {{#field-has-error}}[billingAddress]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddress{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
     </div>
+
+
+
     <h2>{{#i18n}}reservation-page.payment{{/i18n}}</h2>
 
         {{#event.multiplePaymentMethods}}
@@ -113,8 +131,8 @@
                 {{#event.allowedPaymentProxies}}
                 <label class="btn btn-default tooltip-handler xs-payment-method" {{#is-payment-method}}[STRIPE,{{.}}]  title="Powered by Stripe"{{/is-payment-method}}>
                     <input type="radio" required name="paymentMethod" id="option-{{.}}" data-payment-method="{{.}}" autocomplete="off" value="{{.}}">
-                    {{#is-payment-method}}[STRIPE,{{.}}]
-                        <i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
+                    {{#is-payment-method}}[STRIPE,{{.}}]<i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
+                    {{#is-payment-method}}[PAYPAL,{{.}}]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
                     {{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
                     {{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
                 </label>
@@ -124,8 +142,8 @@
         {{^event.multiplePaymentMethods}}
             {{#event.firstPaymentMethod}}
                 <h4 class="wMarginTop">
-                {{#is-payment-method}}[STRIPE,{{.}}]
-                    <i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
+                {{#is-payment-method}}[STRIPE,{{.}}]<i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
+                {{#is-payment-method}}[PAYPAL,{{.}}]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
                 {{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
                 {{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
                 </h4>
@@ -135,6 +153,7 @@
         {{#event.allowedPaymentProxies}}
             <div class="payment-method-detail" id="payment-method-{{.}}">
                 {{#is-payment-method}}[STRIPE,{{.}}]{{> /event/payment/stripe }}{{/is-payment-method}}
+                {{#is-payment-method}}[PAYPAL,{{.}}]{{> /event/payment/paypal }}{{/is-payment-method}}
                 {{#is-payment-method}}[ON_SITE,{{.}}]{{> /event/payment/on-site }}{{/is-payment-method}}
                 {{#is-payment-method}}[OFFLINE,{{.}}]{{> /event/payment/offline }}{{/is-payment-method}}
             </div>
@@ -157,7 +176,12 @@
         </label>
     </div>
 
+
+    {{/paypalCheckoutConfirmation}}
+
     <hr />
+
+
 
     {{#orderSummary.free}}
         <div class="row">
@@ -167,10 +191,21 @@
     {{/orderSummary.free}}
     {{^orderSummary.free}}
         <div class="row">
-            <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom"><button type="submit" class="btn btn-success btn-block" id="continue-button">{{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}</button></div>
+            <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom"><button type="submit" class="btn btn-success btn-block" id="continue-button">
+                {{#paypalCheckoutConfirmation}}
+                    {{#i18n}}reservation-page.paypal.confirm-button{{/i18n}}
+                {{/paypalCheckoutConfirmation}}
+                {{^paypalCheckoutConfirmation}}
+                    {{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}
+                {{/paypalCheckoutConfirmation}}
+            </button></div>
             <div class="col-md-4 col-md-pull-4 col-xs-12"><button type="submit" class="btn btn-default btn-block" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button></div>
         </div>
     {{/orderSummary.free}}
+
+
+
+
  
     <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
     

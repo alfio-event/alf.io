@@ -89,7 +89,13 @@ public enum ConfigurationKeys {
     WAITING_QUEUE_RESERVATION_TIMEOUT("The maximum time, in hours, before the \"waiting queue\" reservation would expire (default: 4)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     
     //
-    MAIL_ATTEMPTS_COUNT("The number of attempts when trying to sending an email (default: 10)", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT));
+    MAIL_ATTEMPTS_COUNT("The number of attempts when trying to sending an email (default: 10)", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+
+    //
+    PAYPAL_CLIENT_ID("Paypal REST API client ID", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
+    PAYPAL_CLIENT_SECRET("Paypal REST API client secret", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
+    PAYPAL_LIVE_MODE("Enable live mode for Paypal", false, SettingCategory.PAYMENT, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION));
+    //
     
 
     @Getter

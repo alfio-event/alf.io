@@ -59,6 +59,9 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set latest_reminder_ts = :latestReminderTimestamp where id = :reservationId")
     int updateLatestReminderTimestamp(@Bind("reservationId") String reservationId, @Bind("latestReminderTimestamp") ZonedDateTime latestReminderTimestamp);
 
+    @Query("update tickets_reservation set validity = :validity where id = :reservationId")
+    int updateValidity(@Bind("reservationId") String reservationId, @Bind("validity") Date validity);
+
     @Query("select id from tickets_reservation where id = :reservationId for update")
     String lockReservationForUpdate(@Bind("reservationId") String reservationId);
 

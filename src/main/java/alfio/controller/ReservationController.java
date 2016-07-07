@@ -21,10 +21,7 @@ import alfio.controller.form.PaymentForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TicketDecorator;
-import alfio.manager.EventManager;
-import alfio.manager.NotificationManager;
-import alfio.manager.StripeManager;
-import alfio.manager.TicketReservationManager;
+import alfio.manager.*;
 import alfio.manager.support.OrderSummary;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
@@ -40,6 +37,7 @@ import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
 import alfio.util.ValidationResult;
+import com.paypal.base.rest.PayPalRESTException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,6 +72,7 @@ public class ReservationController {
     private final OrganizationRepository organizationRepository;
 
     private final StripeManager stripeManager;
+    private final PaypalManager paypalManager;
     private final TemplateManager templateManager;
     private final MessageSource messageSource;
     private final ConfigurationManager configurationManager;
@@ -92,7 +91,8 @@ public class ReservationController {
                                  ConfigurationManager configurationManager,
                                  NotificationManager notificationManager,
                                  TicketHelper ticketHelper,
-                                 TicketFieldRepository ticketFieldRepository) {
+                                 TicketFieldRepository ticketFieldRepository,
+                                 PaypalManager paypalManager) {
         this.eventRepository = eventRepository;
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
@@ -104,11 +104,21 @@ public class ReservationController {
         this.notificationManager = notificationManager;
         this.ticketHelper = ticketHelper;
         this.ticketFieldRepository = ticketFieldRepository;
+        this.paypalManager = paypalManager;
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
     public String showPaymentPage(@PathVariable("eventName") String eventName,
                                   @PathVariable("reservationId") String reservationId,
+                                  //paypal related parameters
+                                  @RequestParam(value = "paymentId", required = false) String paypalPaymentId,
+                                  @RequestParam(value = "PayerID", required = false) String paypalPayerID,
+                                  @RequestParam(value = "paypal-success", required = false) Boolean isPaypalSuccess,
+                                  @RequestParam(value = "paypal-error", required = false) Boolean isPaypalError,
+                                  @RequestParam(value = "fullName", required = false) String fullName,
+                                  @RequestParam(value = "email", required = false) String email,
+                                  @RequestParam(value = "billingAddress", required = false) String billingAddress,
+                                  @RequestParam(value = "hmac", required = false) String hmac,
                                   Model model,
                                   Locale locale) {
 
@@ -116,8 +126,20 @@ public class ReservationController {
             .map(event -> ticketReservationManager.findById(reservationId)
                 .map(reservation -> {
 
-                    if(reservation.getStatus() != TicketReservationStatus.PENDING) {
+                    if (reservation.getStatus() != TicketReservationStatus.PENDING) {
                         return redirectReservation(Optional.of(reservation), eventName, reservationId);
+                    }
+
+                    if (Boolean.TRUE.equals(isPaypalSuccess) && paypalPayerID != null && paypalPaymentId != null) {
+                        model.addAttribute("paypalPaymentId", paypalPaymentId)
+                            .addAttribute("paypalPayerID", paypalPayerID)
+                            .addAttribute("paypalCheckoutConfirmation", true)
+                            .addAttribute("fullName", fullName)
+                            .addAttribute("email", email)
+                            .addAttribute("billingAddress", billingAddress)
+                            .addAttribute("hmac", hmac);
+                    } else {
+                        model.addAttribute("paypalCheckoutConfirmation", false);
                     }
 
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
@@ -335,13 +357,28 @@ public class ReservationController {
             bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
         }
         final TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        paymentForm.validate(bindingResult, reservationCost, event.getAllowedPaymentProxies());
+        paymentForm.validate(bindingResult, reservationCost, event);
         if (bindingResult.hasErrors()) {
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
             return redirectReservation(ticketReservation, eventName, reservationId);
         }
+
+        //handle paypal redirect!
+        if(paymentForm.getPaymentMethod() == PaymentProxy.PAYPAL && !paymentForm.hasPaypalTokens()) {
+            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
+            try {
+                String checkoutUrl = paypalManager.createCheckoutRequest(event, reservationId, orderSummary, paymentForm.getFullName(), paymentForm.getEmail(), paymentForm.getBillingAddress(), locale);
+                return "redirect:" + checkoutUrl;
+            } catch (Exception e) {
+                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
+                return redirectReservation(ticketReservation, eventName, reservationId);
+            }
+        }
+        //
+
+
         boolean directTicketAssignment = Optional.ofNullable(paymentForm.getExpressCheckoutRequested()).map(b -> Boolean.logicalAnd(b, isExpressCheckoutEnabled(event, ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale)))).orElse(false);
-        final PaymentResult status = ticketReservationManager.confirm(paymentForm.getStripeToken(), event, reservationId, paymentForm.getEmail(),
+        final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaypalPayerID(), event, reservationId, paymentForm.getEmail(),
                 paymentForm.getFullName(), locale, paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                 Optional.ofNullable(paymentForm.getPaymentMethod()), directTicketAssignment);
 

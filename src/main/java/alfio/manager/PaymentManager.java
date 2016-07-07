@@ -20,6 +20,8 @@ import alfio.manager.support.PaymentResult;
 import alfio.model.Event;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TransactionRepository;
+import alfio.util.ErrorsCode;
+import com.paypal.base.rest.PayPalRESTException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
 import lombok.extern.log4j.Log4j2;
@@ -34,12 +36,15 @@ import java.util.UUID;
 public class PaymentManager {
 
     private final StripeManager stripeManager;
+    private final PaypalManager paypalManager;
     private final TransactionRepository transactionRepository;
 
     @Autowired
     public PaymentManager(StripeManager stripeManager,
+                          PaypalManager paypalManager,
                           TransactionRepository transactionRepository) {
         this.stripeManager = stripeManager;
+        this.paypalManager = paypalManager;
         this.transactionRepository = transactionRepository;
     }
 
@@ -87,4 +92,18 @@ public class PaymentManager {
         return PaymentResult.successful(transactionId);
     }
 
+    public PaymentResult processPaypalPayment(String reservationId, String token, String payerId, int price, Event event) {
+        try {
+            String transactionId = paypalManager.commitPayment(reservationId, token, payerId, event);
+            transactionRepository.insert(transactionId, reservationId,
+                ZonedDateTime.now(), price, event.getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name());
+            return PaymentResult.successful(transactionId);
+        } catch (Exception e) {
+            log.warn("errow while processing paypal payment: " + e.getMessage(), e);
+            if(e instanceof PayPalRESTException) {
+                return PaymentResult.unsuccessful(ErrorsCode.STEP_2_PAYPAL_UNEXPECTED);
+            }
+            throw new IllegalStateException(e);
+        }
+    }
 }

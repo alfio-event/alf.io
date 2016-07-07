@@ -6,7 +6,8 @@
     var PAYMENT_PROXY_DESCRIPTIONS = {
         'STRIPE': 'Credit card payments',
         'ON_SITE': 'On site (cash) payment',
-        'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)'
+        'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)',
+        'PAYPAL' : 'Paypal'
     };
     
     //
