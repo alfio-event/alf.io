@@ -34,6 +34,11 @@
                     <a data-ui-sref="events.single.compose-custom-message({eventName: ctrl.event.shortName})"><i class="fa fa-envelope"></i> compose message</a>
                 </li>
             </ul>
+            <ul class="nav nav-pills nav-stacked" data-ng-if="ctrl.internal && !ctrl.event.expired">
+                <li role="presentation">
+                    <a data-ui-sref="events.single.checkIn({eventName: ctrl.event.shortName})"><i class="fa fa-check"></i> Check-in</a>
+                </li>
+            </ul>
             <ul class="nav nav-pills nav-stacked" data-ng-if="ctrl.internal">
                 <li role="presentation">
                     <a ng-click="ctrl.openDeleteWarning(ctrl.event)"><i class="fa fa-trash"></i> Delete</a>
