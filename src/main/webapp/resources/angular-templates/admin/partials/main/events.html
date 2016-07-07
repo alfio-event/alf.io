@@ -21,7 +21,7 @@
         </tr>
         <tr data-ng-repeat="event in events" data-ng-class="{'bg-danger': event.warningNeeded, 'text-muted': event.expired}">
             <td data-ng-class-even="'active'">
-                <span class="label label-danger" data-ng-if="event.warningNeeded"><i class="fa fa-warning" data-tooltip="something wrong is happening..."></i></span>
+                <span class="label label-danger" data-ng-if="event.warningNeeded"><i class="fa fa-warning" data-uib-tooltip="something wrong is happening..."></i></span>
                 <a data-ui-sref="events.single.detail({eventName: event.shortName})">{{event.displayName}}</a>
             </td>
             <td data-ng-class-even="'active'" class="hidden-xs">{{event.formattedBegin | formatDate}} / {{event.formattedEnd | formatDate}}</td>

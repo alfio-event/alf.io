@@ -22,10 +22,10 @@
             </tr>
             <tr data-ng-repeat="organization in orgList.organizations">
                 <td>{{organization.name}}</td>
-                <td class="hidden-xs"><div class="organization-description" data-tooltip="{{organization.description}}">{{organization.description}}</div></td>
+                <td class="hidden-xs"><div class="organization-description" data-uib-tooltip="{{organization.description}}">{{organization.description}}</div></td>
                 <td>{{organization.email}}</td>
                 <td class="text-center">
-                    <a class="btn btn-xs btn-default" data-ui-sref="index.edit-organization({organizationId:organization.id})" data-tooltip="Edit"><i class="fa fa-edit"></i><span class="sr-only">Edit</span></a>
+                    <a class="btn btn-xs btn-default" data-ui-sref="index.edit-organization({organizationId:organization.id})" data-uib-tooltip="Edit"><i class="fa fa-edit"></i><span class="sr-only">Edit</span></a>
                 </td>
             </tr>
         </tbody>
