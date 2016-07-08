@@ -277,8 +277,9 @@ public class TicketReservationManagerTest {{
         PluginManager pluginManager = mock(PluginManager.class);
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
         TicketFieldRepository ticketFieldRepository = mock(TicketFieldRepository.class);
+        AdditionalServiceItemRepository additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
         TicketReservationManager ticketReservationManager = new TicketReservationManager(null, null, ticketRepository, ticketReservationRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository,
-            null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager, pluginManager, fileUploadManager, ticketFieldRepository, null, null, null);
+            null, null, null, specialPriceRepository, null, null, null, null, null, waitingQueueManager, pluginManager, fileUploadManager, ticketFieldRepository, null, additionalServiceItemRepository, null);
         String specialPriceCode = "SPECIAL-PRICE";
         String specialPriceSessionId = "session-id";
         int specialPriceId = -42;

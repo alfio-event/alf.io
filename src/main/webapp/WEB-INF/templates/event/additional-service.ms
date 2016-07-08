@@ -28,17 +28,17 @@
                 {{/free}}
                 {{^free}}
                     {{#expired}}
-                        {{finalPrice}} {{event.currency}}
+                        {{finalPrice}} {{currency}}
                     {{/expired}}
                     {{^expired}}
                         {{^userDefinedPrice}}
                             {{#supportsDiscount}}
                                 <del>{{finalPrice}}</del>
                                 <mark>{{discountedPrice}}</mark>
-                                {{event.currency}}
+                                {{currency}}
                             {{/supportsDiscount}}
                             {{^supportsDiscount}}
-                                {{finalPrice}} {{event.currency}}
+                                {{finalPrice}} {{currency}}
                             {{/supportsDiscount}}
                             {{#vatApplies}}
                             <i class="fa fa-info-circle text-info tooltip-handler" title="{{#vatIncluded}}{{#i18n}}show-event.incVat [{{vat}}]{{/i18n}}{{/vatIncluded}}{{^vatIncluded}}{{#i18n}}show-event.excVat [{{vat}}]{{/i18n}}{{/vatIncluded}}"></i>
@@ -52,7 +52,7 @@
             {{#saleable}}
                 <input name="additionalService[{{-index}}].additionalServiceId" value="{{id}}" type="hidden">
                 {{#fixPrice}}
-                    <select aria-labelledby="{{id}}-label" name="additionalService[{{-index}}].amount" class="form-control text-align-center" placeholder="0" autocomplete="off">
+                    <select aria-labelledby="{{id}}-label" name="additionalService[{{-index}}].quantity" class="form-control text-align-center" placeholder="0" autocomplete="off">
                         {{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
                     </select>
                 {{/fixPrice}}

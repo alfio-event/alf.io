@@ -1,13 +1,15 @@
 (function () {
     "use strict";
     angular.module('alfio-additional-services', ['adminServices', 'ui.bootstrap'])
-        .directive('additionalServices', ['$uibModal', function() {
+        .directive('additionalServices', [function() {
             return {
                 scope: {
                     selectedLanguages: '=',
                     availableLanguages: '=',
                     onModification: '&',
-                    eventId: '='
+                    eventId: '=',
+                    eventStartDate: '=',
+                    eventIsFreeOfCharge: '='
                 },
                 bindToController: true,
                 templateUrl: '/resources/angular-templates/admin/partials/event/fragment/additional-services.html',
@@ -22,7 +24,8 @@
                     availableLanguages: '=',
                     selectedLanguages: '=',
                     onEditComplete: '&',
-                    onDismiss: '&'
+                    onDismiss: '&',
+                    eventStartDate: '='
                 },
                 bindToController: true,
                 templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-additional-service.html',
@@ -30,11 +33,19 @@
                 controllerAs: 'ctrl'
             };
         })
+        .filter('formatDateTimeModification', [function() {
+            return function(dateTimeModification) {
+                if(angular.isDefined(dateTimeModification)) {
+                    return dateTimeModification.date + ' ' + dateTimeModification.time;
+                }
+                return moment().format('YYYY-MM-DD HH:mm');
+            };
+        }])
         .controller('AdditionalServicesController', AdditionalServicesController)
         .controller('EditAdditionalServiceController', EditAdditionalServiceController)
         .service('AdditionalServiceManager', AdditionalServiceManager);
 
-    function AdditionalServicesController(AdditionalServiceManager, ValidationService) {
+    function AdditionalServicesController(AdditionalServiceManager) {
         var self = this;
 
         self.propagateChanges = angular.isDefined(self.eventId);
@@ -113,7 +124,7 @@
         };
     }
 
-    AdditionalServicesController.$inject = ['AdditionalServiceManager', 'ValidationService'];
+    AdditionalServicesController.$inject = ['AdditionalServiceManager'];
 
     function EditAdditionalServiceController(ValidationService, AdditionalServiceManager, $q) {
         var ctrl = this;
@@ -126,6 +137,15 @@
                 inception: {},
                 expiration: {}
             };
+            if(angular.isDefined(ctrl.eventStartDate)) {
+                var d = moment.max(moment(ctrl.eventStartDate), moment().startOf('hour'));
+                ctrl.item = angular.extend(ctrl.item, {
+                    expiration : {
+                        date: d.format('YYYY-MM-DD'),
+                        time: d.format('HH:mm')
+                    }
+                });
+            }
         }
 
         if(!angular.isDefined(ctrl.item.title)) {
@@ -147,6 +167,9 @@
                 }
             });
         }
+
+        ctrl.item.zippedTitleAndDescriptions = _.zip(ctrl.item.title, ctrl.item.description);
+
         ctrl.vatTypes = [
             {key: 'INHERITED', value:'Use event settings'},
             {key: 'NONE', value:'Do not apply VAT'}/*,
@@ -175,7 +198,7 @@
                     return $http.get('/admin/api/event/'+eventId+'/additional-services/').error(HttpErrorHandler.handle);
                 }
                 var deferred = $q.defer();
-                deferred.resolve([]);
+                deferred.resolve({data:[]});
                 return deferred.promise;
             },
             save: function(eventId, additionalService) {

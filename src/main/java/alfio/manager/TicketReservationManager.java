@@ -66,6 +66,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
@@ -241,8 +242,12 @@ public class TicketReservationManager {
                 AdditionalService as = pair.getValue();
                 AdditionalService.VatType vatType = as.getVatType();
                 boolean vatIncluded = vatType == AdditionalService.VatType.NONE || vatType == AdditionalService.VatType.INHERITED && e.isVatIncluded();
-                int paidPrice = vatIncluded ? removeVAT(unitToCents(additionalServiceReservation.getAmount()), e.getVat()) : unitToCents(additionalServiceReservation.getAmount());
-                additionalServiceItemRepository.insert(UUID.randomUUID().toString(), ZonedDateTime.now(Clock.systemUTC()), transactionId, as.getId(), as.getPriceInCents(), paidPrice, AdditionalServiceItemStatus.PENDING, eventId);
+                IntStream.range(0, additionalServiceReservation.getQuantity())
+                    .forEach(i -> {
+                        BigDecimal price = as.isFixPrice() ? centsToUnit(as.getPriceInCents()) : additionalServiceReservation.getAmount();
+                        int paidPrice = vatIncluded ? removeVAT(unitToCents(price), e.getVat()) : unitToCents(additionalServiceReservation.getAmount());
+                        additionalServiceItemRepository.insert(UUID.randomUUID().toString(), ZonedDateTime.now(Clock.systemUTC()), transactionId, as.getId(), as.getPriceInCents(), paidPrice, AdditionalServiceItemStatus.PENDING, eventId);
+                    });
             });
 
     }
@@ -396,13 +401,13 @@ public class TicketReservationManager {
         return Optional.ofNullable(ticketReservationRepository.findReservationById(reservationId).getUserLanguage()).map(Locale::forLanguageTag).orElse(Locale.ENGLISH);
     }
 
-    public void deleteOfflinePayment(Event event, String reservationId) {
+    public void deleteOfflinePayment(Event event, String reservationId, boolean expired) {
         TicketReservation reservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
         Validate.isTrue(reservation.getStatus() == OFFLINE_PAYMENT, "Invalid reservation status");
         Map<String, Object> emailModel = prepareModelForReservationEmail(event, reservation);
         Locale reservationLanguage = findReservationLanguage(reservationId);
         String subject = messageSource.getMessage("reservation-email-expired-subject", new Object[]{getShortReservationID(event, reservationId), event.getDisplayName()}, reservationLanguage);
-        cancelReservation(reservationId);
+        cancelReservation(reservationId, expired);
         notificationManager.sendSimpleEmail(event, reservation.getEmail(), subject, () -> {
             return templateManager.renderClassPathResource("/alfio/templates/offline-reservation-expired-email-txt.ms", emailModel, reservationLanguage, TemplateOutput.TEXT);
         });
@@ -537,7 +542,7 @@ public class TicketReservationManager {
     private void cleanupOfflinePayment(String reservationId) {
         try {
             requiresNewTransactionTemplate.execute((tc) -> {
-                deleteOfflinePayment(eventRepository.findByReservationId(reservationId), reservationId);
+                deleteOfflinePayment(eventRepository.findByReservationId(reservationId), reservationId, true);
                 return null;
             });
         } catch (Exception e) {
@@ -755,16 +760,17 @@ public class TicketReservationManager {
                 .orElse(true);
     }
 
-    public void cancelPendingReservation(String reservationId) {
+    public void cancelPendingReservation(String reservationId, boolean expired) {
         Validate.isTrue(ticketReservationRepository.findReservationById(reservationId).getStatus() == TicketReservationStatus.PENDING, "status is not PENDING");
-        cancelReservation(reservationId);
+        cancelReservation(reservationId, expired);
     }
 
-    private void cancelReservation(String reservationId) {
+    private void cancelReservation(String reservationId, boolean expired) {
         List<String> reservationIdsToRemove = singletonList(reservationId);
         specialPriceRepository.updateStatusForReservation(reservationIdsToRemove, Status.FREE.toString());
+        int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
         int updatedTickets = ticketRepository.freeFromReservation(reservationIdsToRemove);
-        Validate.isTrue(updatedTickets > 0, "no tickets have been updated");
+        Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
         waitingQueueManager.fireReservationExpired(reservationId);
         deleteReservations(reservationIdsToRemove);
     }
@@ -799,7 +805,7 @@ public class TicketReservationManager {
         } else if(price.getStatus() == Status.PENDING) {
             Optional<Ticket> optionalTicket = optionally(() -> ticketRepository.findBySpecialPriceId(price.getId()));
             if(optionalTicket.isPresent()) {
-                cancelPendingReservation(optionalTicket.get().getTicketsReservationId());
+                cancelPendingReservation(optionalTicket.get().getTicketsReservationId(), false);
                 return Optional.of(getSpecialPriceByCode(price.getCode()));
             }
         }

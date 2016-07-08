@@ -25,7 +25,7 @@
 	</div>
 
 	<div class="modal-footer">
-		<button type="submit" class="btn btn-primary" ng-disabled="!confirm2 || (confimedEventShortName != event.shortName)">Confirm deletion</button>
-		<button type="button" class="btn btn-default" data-ng-click="$close(true)">Cancel</button>
+		<button type="submit" class="btn btn-danger" ng-disabled="!confirm2 || (confimedEventShortName != event.shortName)">Confirm deletion</button>
+		<button type="button" class="btn btn-default" data-ng-click="cancel()">Cancel</button>
 	</div>
 </form>

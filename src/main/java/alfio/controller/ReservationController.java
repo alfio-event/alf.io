@@ -179,7 +179,9 @@ public class ReservationController {
                                 return Pair.of(category, decorators);
                             })
                             .collect(toList()));
-                    model.addAttribute("ticketsAreAllAssigned", tickets.stream().allMatch(Ticket::getAssigned));
+                    boolean ticketsAllAssigned = tickets.stream().allMatch(Ticket::getAssigned);
+                    model.addAttribute("ticketsAreAllAssigned", ticketsAllAssigned);
+                    model.addAttribute("collapseEnabled", tickets.size() > 1 && !ticketsAllAssigned);
                     model.addAttribute("additionalServicesOnly", tickets.isEmpty() && !additionalServices.isEmpty());
                     model.addAttribute("additionalServices", additionalServices);
                     model.addAttribute("countries", ticketHelper.getLocalizedCountries(locale));
@@ -325,7 +327,7 @@ public class ReservationController {
             return redirectReservation(ticketReservation, eventName, reservationId);
         }
         if (paymentForm.shouldCancelReservation()) {
-            ticketReservationManager.cancelPendingReservation(reservationId);
+            ticketReservationManager.cancelPendingReservation(reservationId, false);
             SessionUtil.removeSpecialPriceData(request);
             return "redirect:/event/" + eventName + "/";
         }

@@ -16,14 +16,14 @@
  */
 package alfio.model;
 
-import biweekly.property.Organizer;
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
 import biweekly.ICalVersion;
 import biweekly.ICalendar;
 import biweekly.component.VEvent;
 import biweekly.io.text.ICalWriter;
+import biweekly.property.Organizer;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Log4j2
-public class Event {
+public class Event implements EventHiddenFieldContainer {
     public enum EventType {
         INTERNAL, EXTERNAL
     }
@@ -139,11 +139,13 @@ public class Event {
         return begin.truncatedTo(ChronoUnit.DAYS).equals(end.truncatedTo(ChronoUnit.DAYS));
     }
 
+    @Override
     @JsonIgnore
     public String getPrivateKey() {
         return privateKey;
     }
     
+    @Override
     @JsonIgnore
     public Pair<String, String> getLatLong() {
         return Pair.of(latitude, longitude);
@@ -153,7 +155,6 @@ public class Event {
      * Returns the begin date in the event's timezone
      * @return Date
      */
-    @JsonIgnore
     public ZonedDateTime getBegin() {
         return begin;
     }
@@ -174,6 +175,7 @@ public class Event {
         return timeZone.toString();
     }
 
+    @Override
     @JsonIgnore
     public ZoneId getZoneId() {
         return timeZone;
@@ -211,11 +213,13 @@ public class Event {
         return ContentLanguage.findAllFor(getLocales());
     }
 
+    @Override
     @JsonIgnore
     public String getGoogleCalendarUrl() {
         return getGoogleCalendarUrl("");//used by the email
     }
 
+    @Override
     @JsonIgnore
     public String getGoogleCalendarUrl(String description) {
         //format described at http://stackoverflow.com/a/19867654
@@ -231,6 +235,7 @@ public class Event {
                 .toUriString();
     }
 
+    @Override
     @JsonIgnore
     public Optional<byte[]> getIcal(String description, String organizerName, String organizerEmail) {
         ICalendar ical = new ICalendar();

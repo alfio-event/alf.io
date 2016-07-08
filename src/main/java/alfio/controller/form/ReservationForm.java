@@ -35,7 +35,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.BindingResult;
 
-import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +66,7 @@ public class ReservationForm {
         return ofNullable(additionalService)
             .orElse(emptyList())
             .stream()
-            .filter(e -> e != null && e.getAmount() != null && e.getAdditionalServiceId() != null && e.getAmount().compareTo(BigDecimal.ZERO) > 0)
+            .filter(e -> e != null && e.getQuantity() != null && e.getAdditionalServiceId() != null && e.getQuantity() > 0)
             .collect(toList());
     }
 
@@ -113,19 +112,19 @@ public class ReservationForm {
         final List<TicketReservationModification> categories = selected();
         final List<AdditionalServiceReservationModification> additionalServices = selectedAdditionalServices();
 
-        final boolean wrongCategorySelected = categories.stream().filter(c -> {
+        final boolean validCategorySelection = categories.stream().allMatch(c -> {
             TicketCategory tc = eventManager.getTicketCategoryById(c.getTicketCategoryId(), event.getId());
             return OptionalWrapper.optionally(() -> eventManager.findEventByTicketCategory(tc)).isPresent();
-        }).count() != selectionCount;
+        });
 
-        final boolean wrongAdditionalServiceSelected = additionalServices.stream().filter(asm -> {
+        final boolean validAdditionalServiceSelected = additionalServices.stream().allMatch(asm -> {
             AdditionalService as = eventManager.getAdditionalServiceById(asm.getAdditionalServiceId(), event.getId());
             ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             return as.getInception(event.getZoneId()).isBefore(now) && as.getExpiration(event.getZoneId()).isAfter(now) &&
                 OptionalWrapper.optionally(() -> eventManager.findEventByAdditionalService(as)).isPresent();
-        }).count() != additionalServicesCount;
+        });
 
-        if(wrongCategorySelected || wrongAdditionalServiceSelected) {
+        if(!validCategorySelection || !validAdditionalServiceSelected) {
             bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE);
             return Optional.empty();
         }

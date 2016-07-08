@@ -18,6 +18,7 @@ package alfio.model.modification;
 
 import alfio.model.Event;
 import alfio.model.EventDescription;
+import alfio.model.EventHiddenFieldContainer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.experimental.Delegate;
@@ -38,7 +39,7 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
     public static final DateTimeFormatter JSON_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm");
     public static final Predicate<TicketCategoryWithStatistic> IS_BOUNDED = TicketCategoryWithStatistic::isBounded;
 
-    @Delegate
+    @Delegate(excludes = EventHiddenFieldContainer.class)
     @JsonIgnore
     private final Event event;
     private final List<TicketCategoryWithStatistic> ticketCategories;

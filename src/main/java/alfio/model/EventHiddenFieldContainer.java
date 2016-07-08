@@ -14,15 +14,33 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.modification;
+package alfio.model;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.lang3.tuple.Pair;
 
-import java.math.BigDecimal;
+import java.time.ZoneId;
+import java.util.Optional;
 
-@Data
-public class AdditionalServiceReservationModification {
-    private Integer additionalServiceId;
-    private BigDecimal amount;
-    private Integer quantity = 1;
+/**
+ * Created by celestino on 06.07.16.
+ */
+public interface EventHiddenFieldContainer {
+    @JsonIgnore
+    String getPrivateKey();
+
+    @JsonIgnore
+    Pair<String, String> getLatLong();
+
+    @JsonIgnore
+    ZoneId getZoneId();
+
+    @JsonIgnore
+    String getGoogleCalendarUrl();
+
+    @JsonIgnore
+    String getGoogleCalendarUrl(String description);
+
+    @JsonIgnore
+    Optional<byte[]> getIcal(String description, String organizerName, String organizerEmail);
 }

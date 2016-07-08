@@ -222,7 +222,11 @@
                 $scope.selectedLanguages = {};
 
                 EventService.getSupportedLanguages().success(function(result) {
-                        $scope.selectedLanguages.langs = _.map(result, function(r) {
+                    var locales = $scope.obj.locales;
+                    var selected = _.filter(result, function(r) {
+                        return (r.value & locales) === r.value;
+                    });
+                    $scope.selectedLanguages.langs = _.map(selected, function(r) {
                         return r.value;
                     });
                 });
@@ -387,11 +391,41 @@
         };
     });
 
+    directives.directive('pendingReservationsLink', ['$rootScope', '$interval', 'EventService', function($rootScope, $interval, EventService) {
+        return {
+            restrict: 'E',
+            scope: {
+                event: '=',
+                styleClass: '@'
+            },
+            bindToController: true,
+            controllerAs: 'ctrl',
+            template: '<a ng-class="ctrl.styleClass" data-ui-sref="events.single.pending-reservations({eventName: ctrl.event.shortName})"><i class="fa fa-dollar"></i> Pending Reservations <pending-reservations-badge event-name="{{ctrl.event.shortName}}"></pending-reservations-badge></a>',
+            controller: ['$scope', function($scope) {
+                var ctrl = this;
+                var eventName = ctrl.event.shortName;
+                ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
+                var getPendingPayments = function() {
+                    EventService.getPendingPayments(eventName).success(function(data) {
+                        ctrl.pendingReservations = data.length;
+                        $rootScope.$broadcast('PendingReservationsFound', data);
+                    });
+                };
+                getPendingPayments();
+                var promise = $interval(getPendingPayments, 1000);
+
+                $scope.$on('$destroy', function() {
+                    $interval.cancel(promise);
+                });
+            }]
+        }
+    }]);
+
     directives.directive('pendingReservationsBadge', function($rootScope, $interval, EventService) {
         return {
             restrict: 'E',
             scope: false,
-            templateUrl: '/resources/angular-templates/admin/partials/pending-reservations/badge.html',
+            template: '<span class="badge">{{pendingReservations}}</span>',
             link: function(scope, element, attrs) {
                 var eventName = attrs.eventName;
                 scope.pendingReservations = 0;
@@ -509,7 +543,8 @@
             restrict: 'E',
             bindToController: true,
             scope: {
-                event: '='
+                event: '=',
+                styleClass: '@'
             },
             controllerAs: 'ctrl',
             controller: function(WaitingQueueService) {
@@ -517,8 +552,9 @@
                 WaitingQueueService.countSubscribers(this.event).success(function(result) {
                     ctrl.count = result;
                 });
+                ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
             },
-            template: '<span><a class="btn btn-warning" data-ui-sref="events.show-waiting-queue({eventName: ctrl.event.shortName})"><i class="fa fa-group"></i> waiting queue <span class="badge">{{ctrl.count}}</span></a></span>'
+            template: '<a data-ng-class="ctrl.styleClass" data-ui-sref="events.single.show-waiting-queue({eventName: ctrl.event.shortName})"><i class="fa fa-group"></i> waiting queue <span class="badge">{{ctrl.count}}</span></a>'
         }
     });
 
@@ -539,7 +575,7 @@
             }
         }
     }]);
-    
+
     directives.directive('displayCommonmarkPreview', ['EventUtilsService', '$uibModal', function(EventUtilsService, $uibModal) {
         return {
             restrict: 'E',
@@ -556,35 +592,66 @@
                     if (ctrl.text) {
                         EventUtilsService.renderCommonMark(ctrl.text)
                             .then(function (res) {
-                                return $uibModal.open({
-                                    size: 'sm',
-                                    template: '<div class="modal-header"><h1>Preview</h1></div><div class="modal-body" ng-bind-html="text"></div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
-                                    backdrop: 'static',
-                                    controller: function ($scope) {
-                                        $scope.ok = function () {
-                                            $scope.$close(true);
-                                        };
-                                        $scope.text = res.data;
-                                    }
-                                })
-                            }, function(res) {
-                                return $uibModal.open({
-                                    size: 'sm',
-                                    template: '<div class="modal-body">There was an error fetching the preview</div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
-                                    backdrop: 'static',
-                                    controller: function ($scope) {
-                                        $scope.ok = function () {
-                                            $scope.$close(true);
-                                        };
-                                    }
-                                })
-                            }
-                        );
+                                    return $uibModal.open({
+                                        size: 'sm',
+                                        template: '<div class="modal-header"><h1>Preview</h1></div><div class="modal-body" ng-bind-html="text"></div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
+                                        backdrop: 'static',
+                                        controller: function ($scope) {
+                                            $scope.ok = function () {
+                                                $scope.$close(true);
+                                            };
+                                            $scope.text = res.data;
+                                        }
+                                    })
+                                }, function(res) {
+                                    return $uibModal.open({
+                                        size: 'sm',
+                                        template: '<div class="modal-body">There was an error fetching the preview</div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
+                                        backdrop: 'static',
+                                        controller: function ($scope) {
+                                            $scope.ok = function () {
+                                                $scope.$close(true);
+                                            };
+                                        }
+                                    })
+                                }
+                            );
                     }
                 };
 
             }
         }
-    }])
+    }]);
 
+    directives.directive('eventSidebar', ['EventService', '$state', '$window', '$rootScope', function(EventService, $state, $window, $rootScope) {
+        return {
+            restrict: 'E',
+            bindToController: true,
+            scope: {
+                event: '='
+            },
+            controllerAs: 'ctrl',
+            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/event-sidebar.html',
+            controller: [function() {
+                var ctrl = this;
+                ctrl.internal = (ctrl.event.type === 'INTERNAL');
+                $rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+                    ctrl.showBackLink = !toState.data || !toState.data.detail;
+                });
+                ctrl.openDeleteWarning = function() {
+                    EventService.deleteEvent(ctrl.event).then(function(result) {
+                        $state.go('index');
+                    });
+                };
+                ctrl.openFieldSelectionModal = function() {
+                    EventService.exportAttendees(ctrl.event);
+                };
+                ctrl.downloadSponsorsScan = function() {
+                    $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export.csv");
+                };
+
+            }]
+        }
+    }]);
+    
 })();

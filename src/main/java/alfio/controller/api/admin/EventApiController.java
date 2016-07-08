@@ -396,7 +396,7 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}", method = DELETE)
     public String deletePendingPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
-        ticketReservationManager.deleteOfflinePayment(loadEvent(eventName, principal), reservationId);
+        ticketReservationManager.deleteOfflinePayment(loadEvent(eventName, principal), reservationId, false);
         return OK;
     }
 
