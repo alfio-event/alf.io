@@ -19,7 +19,12 @@ package alfio.controller.api.admin;
 import alfio.manager.EventNameManager;
 import alfio.util.MustacheCustomTagInterceptor;
 
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,6 +36,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @RestController
 @RequestMapping("/admin/api/utils")
+@Log4j2
 public class UtilsApiController {
 
     private final EventNameManager eventNameManager;
@@ -38,6 +44,12 @@ public class UtilsApiController {
     @Autowired
     public UtilsApiController(EventNameManager eventNameManager) {
         this.eventNameManager = eventNameManager;
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<String> handleMissingServletRequestParameterException(Exception e) {
+        log.warn("missing parameters", e);
+        return new ResponseEntity<>("missing parameters", HttpStatus.BAD_REQUEST);
     }
 
     @RequestMapping(value = "/short-name/generate", method = GET)

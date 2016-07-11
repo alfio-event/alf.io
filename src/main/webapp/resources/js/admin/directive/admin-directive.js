@@ -575,37 +575,52 @@
             }
         }
     }]);
-    
+
     directives.directive('displayCommonmarkPreview', ['EventUtilsService', '$uibModal', function(EventUtilsService, $uibModal) {
-    	return {
-    		restrict: 'E',
-    		bindToController: true,
-    		scope: {
-    			text: '='
-    		},
-    		controllerAs: 'ctrl',
-    		template:'<button class="btn btn-default" type="button" ng-click="ctrl.openModal()">Preview</button>',
-    		controller: function() {
-    			var ctrl = this;
-    			
-				ctrl.openModal = function() {
-					EventUtilsService.renderCommonMark(ctrl.text).then(function(res) {
-	    				return $uibModal.open({
-	                        size:'sm',
-	                        template:'<div class="modal-header"><h1>Preview</h1></div><div class="modal-body" ng-bind-html="text"></div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
-	                        backdrop: 'static',
-	                        controller: function($scope) {
-	                        	$scope.ok = function() {
-	                                $scope.$close(true);
-	                            };
-	                            $scope.text = res.data;
-	                        }
-	                    });
-					});	
-    			};
-    			
-    		}
-    	}
+        return {
+            restrict: 'E',
+            bindToController: true,
+            scope: {
+                text: '='
+            },
+            controllerAs: 'ctrl',
+            template:'<button class="btn btn-default" type="button" ng-click="ctrl.openModal()">Preview</button>',
+            controller: function() {
+                var ctrl = this;
+
+                ctrl.openModal = function() {
+                    if (ctrl.text) {
+                        EventUtilsService.renderCommonMark(ctrl.text)
+                            .then(function (res) {
+                                    return $uibModal.open({
+                                        size: 'sm',
+                                        template: '<div class="modal-header"><h1>Preview</h1></div><div class="modal-body" ng-bind-html="text"></div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
+                                        backdrop: 'static',
+                                        controller: function ($scope) {
+                                            $scope.ok = function () {
+                                                $scope.$close(true);
+                                            };
+                                            $scope.text = res.data;
+                                        }
+                                    })
+                                }, function(res) {
+                                    return $uibModal.open({
+                                        size: 'sm',
+                                        template: '<div class="modal-body">There was an error fetching the preview</div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
+                                        backdrop: 'static',
+                                        controller: function ($scope) {
+                                            $scope.ok = function () {
+                                                $scope.$close(true);
+                                            };
+                                        }
+                                    })
+                                }
+                            );
+                    }
+                };
+
+            }
+        }
     }]);
 
     directives.directive('eventSidebar', ['EventService', '$state', '$window', '$rootScope', function(EventService, $state, $window, $rootScope) {
@@ -638,5 +653,5 @@
             }]
         }
     }]);
-
+    
 })();
