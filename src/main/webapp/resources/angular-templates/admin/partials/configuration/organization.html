@@ -51,6 +51,9 @@
                 <div>
                     <setting obj="organizationConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                 </div>
+                <div>
+                    <setting obj="organizationConf.mail.mailAttemptsCount" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                </div>
             </div>
             <div data-ng-repeat="setting in organizationConf.mail.settings" data-ng-if="!organizationConf.mail.type"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>

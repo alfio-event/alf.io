@@ -55,6 +55,9 @@
                 <div>
                     <setting obj="systemConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
                 </div>
+                <div>
+                    <setting obj="systemConf.mail.mailAttemptsCount" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                </div>
             </div>
             <div data-ng-repeat="setting in systemConf.mail.settings" data-ng-if="!systemConf.mail.type">
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
