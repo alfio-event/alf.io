@@ -155,6 +155,7 @@ dependencies {
     compile "org.apache.logging.log4j:log4j-jcl:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
     compile "com.stripe:stripe-java:$stripeVersion"
+    compile 'com.paypal.sdk:rest-api-sdk:1.8.0'
     compile "com.google.maps:google-maps-services:0.1.7"
     compile "org.apache.commons:commons-lang3:3.4"
     compile "com.squareup.okhttp:okhttp:2.4.0"

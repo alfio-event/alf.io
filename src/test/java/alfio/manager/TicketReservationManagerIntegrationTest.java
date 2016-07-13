@@ -149,7 +149,7 @@ public class TicketReservationManagerIntegrationTest {
 
         assertEquals(0, ticketReservationManager.getPendingPayments(event).size());
 
-        PaymentResult confirm = ticketReservationManager.confirm(null, event.getEvent(), reservationId, "email@example.com", "full name", Locale.ENGLISH, "billing address",
+        PaymentResult confirm = ticketReservationManager.confirm(null, null, event.getEvent(), reservationId, "email@example.com", "full name", Locale.ENGLISH, "billing address",
             totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false);
 
 
@@ -172,7 +172,7 @@ public class TicketReservationManagerIntegrationTest {
         TicketReservationWithOptionalCodeModification modForDelete = new TicketReservationWithOptionalCodeModification(trForDelete, Optional.<SpecialPrice>empty());
         String reservationId2 = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(modForDelete), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
 
-        ticketReservationManager.confirm(null, event.getEvent(), reservationId2, "email@example.com", "full name", Locale.ENGLISH, "billing address",
+        ticketReservationManager.confirm(null, null, event.getEvent(), reservationId2, "email@example.com", "full name", Locale.ENGLISH, "billing address",
             totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false);
 
         assertTrue(ticketReservationManager.findById(reservationId2).isPresent());

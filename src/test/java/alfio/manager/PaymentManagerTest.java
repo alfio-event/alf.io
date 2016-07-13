@@ -55,14 +55,14 @@ public class PaymentManagerTest {{
 
     describe("success flow", it -> {
         it.should("return a successful payment result", expect -> {
-            expect.that(new PaymentManager(successStripe, transactionRepository).processPayment("", "", 100, event, "", "", ""))
+            expect.that(new PaymentManager(successStripe, null, transactionRepository).processPayment("", "", 100, event, "", "", ""))
                     .is(PaymentResult.successful(paymentId));
         });
     });
 
     describe("stripe error", it -> {
         it.should("return an unsuccessful payment result", expect -> {
-            expect.that(new PaymentManager(failureStripe, transactionRepository).processPayment("", "", 100, event, "", "", ""))
+            expect.that(new PaymentManager(failureStripe, null, transactionRepository).processPayment("", "", 100, event, "", "", ""))
                     .is(PaymentResult.unsuccessful(error));
         });
     });
@@ -70,7 +70,7 @@ public class PaymentManagerTest {{
     describe("internal error", it -> {
         it.should("throw IllegalStateException in case of internal error", expect -> {
             expect.exception(IllegalStateException.class, () -> {
-                new PaymentManager(successStripe, failureTR).processPayment("", "", 100, event, "", "", "");
+                new PaymentManager(successStripe, null, failureTR).processPayment("", "", 100, event, "", "", "");
             });
         });
     });
