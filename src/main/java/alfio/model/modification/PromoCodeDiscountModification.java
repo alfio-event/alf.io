@@ -17,6 +17,7 @@
 package alfio.model.modification;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import lombok.Getter;
 import alfio.model.PromoCodeDiscount.DiscountType;
@@ -33,18 +34,21 @@ public class PromoCodeDiscountModification {
     private final DateTimeModification end;
     private final BigDecimal discountAmount;
     private final DiscountType discountType;
+    private final List<Integer> categories;
 
     @JsonCreator
     public PromoCodeDiscountModification(@JsonProperty("promoCode") String promoCode,
             @JsonProperty("start") DateTimeModification start,
             @JsonProperty("end") DateTimeModification end,
             @JsonProperty("discountAmount") BigDecimal discountAmount,
-            @JsonProperty("discountType") DiscountType discountType) {
+            @JsonProperty("discountType") DiscountType discountType,
+            @JsonProperty("categories") List<Integer> categories) {
         this.promoCode = promoCode;
         this.start = start;
         this.end = end;
         this.discountAmount = discountAmount;
-        this.discountType = discountType;   
+        this.discountType = discountType;
+        this.categories = categories;
     }
     
     public int getDiscountAsPercent() {
