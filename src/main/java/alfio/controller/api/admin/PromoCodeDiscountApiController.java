@@ -60,7 +60,7 @@ public class PromoCodeDiscountApiController {
         int discount = promoCode.getDiscountType() == DiscountType.FIXED_AMOUNT ? promoCode.getDiscountInCents() : promoCode.getDiscountAsPercent();
         
         eventManager.addPromoCode(promoCode.getPromoCode(), eventId, promoCode.getStart().toZonedDateTime(zoneId), 
-                promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType());
+                promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType(), promoCode.getCategories());
     }
 
     @RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}", method = POST)

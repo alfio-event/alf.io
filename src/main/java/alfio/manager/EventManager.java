@@ -604,7 +604,7 @@ public class EventManager {
         return true;
     }
 
-    public void addPromoCode(String promoCode, int eventId, ZonedDateTime start, ZonedDateTime end, int discountAmount, DiscountType discountType) {
+    public void addPromoCode(String promoCode, int eventId, ZonedDateTime start, ZonedDateTime end, int discountAmount, DiscountType discountType, List<Integer> categoriesId) {
         Validate.isTrue(promoCode.length() >= 7, "min length is 7 chars");
         if(DiscountType.PERCENTAGE == discountType) {
             Validate.inclusiveBetween(0, 100, discountAmount, "percentage discount must be between 0 and 100");
@@ -613,7 +613,7 @@ public class EventManager {
             Validate.isTrue(discountAmount >= 0, "fixed discount amount cannot be less than zero");
         }
 
-        promoCodeRepository.addPromoCode(promoCode, eventId, start, end, discountAmount, discountType.toString());
+        promoCodeRepository.addPromoCode(promoCode, eventId, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId));
     }
     
     public void deletePromoCode(int promoCodeId) {
