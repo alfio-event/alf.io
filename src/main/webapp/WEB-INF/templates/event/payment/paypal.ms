@@ -1,0 +1,1 @@
+<div class="wMarginBottom wMarginTop text-muted">{{#i18n}}reservation-page.paypal.description{{/i18n}}</div>

@@ -149,7 +149,7 @@ public class TicketReservationManagerIntegrationTest {
 
         assertEquals(0, ticketReservationManager.getPendingPayments(event).size());
 
-        PaymentResult confirm = ticketReservationManager.confirm(null, event.getEvent(), reservationId, "email@example.com", "full name", Locale.ENGLISH, "billing address",
+        PaymentResult confirm = ticketReservationManager.confirm(null, null, event.getEvent(), reservationId, "email@example.com", "full name", Locale.ENGLISH, "billing address",
             totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false);
 
 
@@ -172,7 +172,7 @@ public class TicketReservationManagerIntegrationTest {
         TicketReservationWithOptionalCodeModification modForDelete = new TicketReservationWithOptionalCodeModification(trForDelete, Optional.<SpecialPrice>empty());
         String reservationId2 = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(modForDelete), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
 
-        ticketReservationManager.confirm(null, event.getEvent(), reservationId2, "email@example.com", "full name", Locale.ENGLISH, "billing address",
+        ticketReservationManager.confirm(null, null, event.getEvent(), reservationId2, "email@example.com", "full name", Locale.ENGLISH, "billing address",
             totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false);
 
         assertTrue(ticketReservationManager.findById(reservationId2).isPresent());
@@ -194,8 +194,8 @@ public class TicketReservationManagerIntegrationTest {
 
         TicketCategoryWithStatistic unbounded = event.getTicketCategories().stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
-        eventManager.addPromoCode("MYPROMOCODE", event.getId(), event.getBegin(), event.getEnd(), 10, PromoCodeDiscount.DiscountType.PERCENTAGE);
-        eventManager.addPromoCode("MYFIXEDPROMO", event.getId(), event.getBegin(), event.getEnd(), 5, PromoCodeDiscount.DiscountType.FIXED_AMOUNT);
+        eventManager.addPromoCode("MYPROMOCODE", event.getId(), event.getBegin(), event.getEnd(), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null);
+        eventManager.addPromoCode("MYFIXEDPROMO", event.getId(), event.getBegin(), event.getEnd(), 5, PromoCodeDiscount.DiscountType.FIXED_AMOUNT, null);
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(3);

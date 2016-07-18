@@ -102,7 +102,8 @@
                         settings: _.filter(original['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
                         type: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAILER_TYPE';}),
                         maxEmailPerCycle: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';}),
-                        mailReplyTo: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';})
+                        mailReplyTo: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';}),
+                        mailAttemptsCount: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_ATTEMPTS_COUNT';})
                     };
                 }
                 if(angular.isDefined(original['PAYMENT']) && original['PAYMENT'].length > 0) {

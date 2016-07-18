@@ -40,7 +40,6 @@ import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
 import alfio.util.Wrappers;
-import com.lowagie.text.DocumentException;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -57,6 +56,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.ZoneId;
@@ -291,7 +291,7 @@ public class TicketReservationManager {
         return specialPrice;
     }
 
-    public PaymentResult confirm(String gatewayToken, Event event, String reservationId,
+    public PaymentResult confirm(String gatewayToken, String payerId, Event event, String reservationId,
                                  String email, String fullName, Locale userLanguage, String billingAddress,
                                  TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method, boolean directTicketAssignment) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
@@ -305,6 +305,13 @@ public class TicketReservationManager {
                 switch(paymentProxy) {
                     case STRIPE:
                         paymentResult = paymentManager.processPayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, fullName, billingAddress);
+                        if(!paymentResult.isSuccessful()) {
+                            reTransitionToPending(reservationId);
+                            return paymentResult;
+                        }
+                        break;
+                    case PAYPAL:
+                        paymentResult = paymentManager.processPaypalPayment(reservationId, gatewayToken, payerId, reservationCost.getPriceWithVAT(), event);
                         if(!paymentResult.isSuccessful()) {
                             reTransitionToPending(reservationId);
                             return paymentResult;
@@ -671,8 +678,8 @@ public class TicketReservationManager {
         if(reservationCost.getDiscount() != 0) {
             promoCodeDiscount.ifPresent((promo) -> {
                 String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount()) : (promo.getDiscountAmount()+"%"));
-                summary.add(new SummaryRow(promo.getPromoCode(), 
-                        formattedSingleAmount, 
+                summary.add(new SummaryRow(promo.getPromoCode(),
+                        formattedSingleAmount,
                         reservationCost.discountAppliedCount, 
                         formatCents(reservationCost.discount), reservationCost.discount, SummaryRow.SummaryType.PROMOTION_CODE));
             });
@@ -875,7 +882,7 @@ public class TicketReservationManager {
     private void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder, PartialTicketPDFGenerator pdfTemplateGenerator) {
         try {
             notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, pdfTemplateGenerator);
-        } catch (DocumentException e) {
+        } catch (IOException e) {
             throw new IllegalStateException(e);
         }
     }
@@ -1023,7 +1030,7 @@ public class TicketReservationManager {
     }
 
     public String getShortReservationID(Event event, String reservationId) {
-        return StringUtils.substring(reservationId, 0, configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), PARTIAL_RESERVATION_ID_LENGTH), 8)).toUpperCase();
+        return configurationManager.getShortReservationID(event, reservationId);
     }
 
     public int countAvailableTickets(Event event, TicketCategory category) {

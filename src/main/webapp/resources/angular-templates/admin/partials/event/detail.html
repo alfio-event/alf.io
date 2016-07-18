@@ -162,12 +162,13 @@
                                     <th>Customer's e-mail</th>
                                     <th>Payment Type</th>
                                     <th>transaction id</th>
+                                    <th>payment gateway id</th>
                                     <th>transaction timestamp</th>
                                     <th></th>
                                 </thead>
                                 <tbody>
                                     <tr data-ng-repeat="ticket in ::ticketCategory.tickets | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
-                                        <td data-ng-class-even="'active'"><i data-ng-class="evaluateTicketStatus(ticket.status)" data-tooltip="{{ticket.status | statusText}}"></i><br/></td>
+                                        <td data-ng-class-even="'active'"><i data-ng-class="evaluateTicketStatus(ticket.status)" data-uib-tooltip="{{ticket.status | statusText}}"></i><br/></td>
                                         <td data-ng-class-even="'active'"><a href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketReservation.id}}/" target="_blank">{{::ticket.uuid}}</a></td>
                                         <td data-ng-class-even="'active'">{{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</td>
                                         <td data-ng-class-even="'active'">{{::ticket.fullName}}</td>
@@ -176,6 +177,7 @@
                                         <td data-ng-class-even="'active'">{{::ticket.ticketReservation.email}}</td>
                                         <td data-ng-class-even="'active'">{{::ticket.ticketReservation.paymentMethod}}</td>
                                         <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
+                                        <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transaction.transactionId}}</span></td>
                                         <td data-ng-class-even="'active'"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
                                         <td data-ng-class-even="'active'"><button class="btn btn-warning" data-ng-click="toggleLocking(event, ticket, ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button></td>
                                     </tr>

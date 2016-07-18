@@ -27,7 +27,8 @@ public enum PaymentProxy {
     STRIPE("stripe.com", false, true),
     ON_SITE("on-site payment", true, true),
     OFFLINE("offline payment", false, true),
-    NONE("no payment required", false, false);
+    NONE("no payment required", false, false),
+    PAYPAL("paypal", false, true);
 
     private final String description;
     private final boolean deskPayment;

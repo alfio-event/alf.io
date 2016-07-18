@@ -571,7 +571,7 @@ public class TicketReservationManagerTest {{
             when(ticketRepository.updateTicketsStatusWithReservationId(eq(reservationId), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
             when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), isNull(ZonedDateTime.class), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
             when(paymentManager.processPayment(eq(reservationId), eq(gatewayToken), anyInt(), eq(event), anyString(), anyString(), anyString())).thenReturn(PaymentResult.successful(transactionId));
-            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE), false);
+            PaymentResult result = ticketReservationManager.confirm(gatewayToken, null, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE), false);
             expect.that(result.isSuccessful()).is(true);
             expect.that(result.getGatewayTransactionId()).is(Optional.of(transactionId));
             verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()));
@@ -586,7 +586,7 @@ public class TicketReservationManagerTest {{
             when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), isNull(ZonedDateTime.class), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
             when(ticketReservationRepository.updateTicketStatus(eq(reservationId), eq(TicketReservationStatus.PENDING.toString()))).thenReturn(1);
             when(paymentManager.processPayment(eq(reservationId), eq(gatewayToken), anyInt(), eq(event), anyString(), anyString(), anyString())).thenReturn(PaymentResult.unsuccessful("error-code"));
-            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE), false);
+            PaymentResult result = ticketReservationManager.confirm(gatewayToken, null, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE), false);
             expect.that(result.isSuccessful()).is(false);
             expect.that(result.getGatewayTransactionId()).is(Optional.empty());
             expect.that(result.getErrorCode()).is(Optional.of("error-code"));
@@ -599,7 +599,7 @@ public class TicketReservationManagerTest {{
             when(ticketRepository.updateTicketsStatusWithReservationId(eq(reservationId), eq(TicketStatus.TO_BE_PAID.toString()))).thenReturn(1);
             when(ticketReservationRepository.updateTicketReservation(eq(reservationId), eq(COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()))).thenReturn(1);
             when(paymentManager.processPayment(eq(reservationId), eq(gatewayToken), anyInt(), eq(event), anyString(), anyString(), anyString())).thenReturn(PaymentResult.unsuccessful("error-code"));
-            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE), false);
+            PaymentResult result = ticketReservationManager.confirm(gatewayToken, null, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE), false);
             expect.that(result.isSuccessful()).is(true);
             expect.that(result.getGatewayTransactionId()).is(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
             verify(ticketReservationRepository).updateTicketReservation(eq(reservationId), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()));
@@ -611,7 +611,7 @@ public class TicketReservationManagerTest {{
 
         it.should("handle the OFFLINE payment method", expect -> {
             when(ticketReservationRepository.postponePayment(eq(reservationId), any(Date.class), anyString(), anyString(), anyString())).thenReturn(1);
-            PaymentResult result = ticketReservationManager.confirm(gatewayToken, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false);
+            PaymentResult result = ticketReservationManager.confirm(gatewayToken, null, event, reservationId, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false);
             expect.that(result.isSuccessful()).is(true);
             expect.that(result.getGatewayTransactionId()).is(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
             verify(waitingQueueManager, never()).fireReservationConfirmed(eq(reservationId));

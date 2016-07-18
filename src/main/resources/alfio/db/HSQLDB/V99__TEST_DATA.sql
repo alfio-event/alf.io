@@ -18,7 +18,7 @@
 INSERT INTO organization(name, description, email) VALUES ('demo', 'demo organization', 'info@pippobaudo.com');
 
 insert into event(short_name, website_url, website_t_c_url, location, latitude, longitude, start_ts, end_ts, regular_price_cts, currency, available_seats, vat_included, vat, allowed_payment_proxies, private_key, org_id, time_zone, image_url)
-values('eventname', 'http://localhost:8080', 'http://localhost:8080', 'demo location', '0', '0', '2016-10-10 04:00:00' , '2016-10-11 03:59:00' , 1000, 'CHF', 20, 'true', 8, 'STRIPE,ON_SITE,OFFLINE', 'alfio-uberall', 0, 'America/New_York', 'http://localhost:8080/resources/images/sample-logo.png');
+values('eventname', 'http://localhost:8080', 'http://localhost:8080', 'demo location', '0', '0', '2016-10-10 04:00:00' , '2016-10-11 03:59:00' , 1000, 'CHF', 20, 'true', 8, 'STRIPE,ON_SITE,OFFLINE,PAYPAL', 'alfio-uberall', 0, 'America/New_York', 'http://localhost:8080/resources/images/sample-logo.png');
 
 insert into ticket_category(inception, expiration, name, max_tickets, price_cts, access_restricted, tc_status, event_id, bounded) values
   ('2014-01-10 00:00:00', '2016-10-10 00:00:00', 'Normal', 2, 0, false, 'ACTIVE', 0, true),
@@ -77,7 +77,10 @@ insert into configuration (c_key, c_value, description) values
   ('STRIPE_SECRET_KEY', 'sk_test_cayJOFUUYF9cWOoMXemJd61Z', 'Stripe''s secret key'),
   ('STRIPE_PUBLIC_KEY', 'pk_test_gY3X0UiTgKCeStUG67i2kEFq', 'Stripe''s public key'),
   ('BASE_URL', 'http://localhost:8080/', 'Base application url'),
-  ('SUPPORTED_LANGUAGES', '7', 'supported languages');
+  ('SUPPORTED_LANGUAGES', '7', 'supported languages'),
+  ('PAYPAL_CLIENT_ID', 'AQkquBDf1zctJOWGKWUEtKXm6qVhueUEMvXO_-MCI4DQQ4-LWvkDLIN2fGsd', 'Paypal REST API client ID'),
+  ('PAYPAL_CLIENT_SECRET','EL1tVxAjhT7cJimnz5-Nsx9k2reTKSVfErNQF-CmrwJgxRtylkGTKlU4RvrX', 'Paypal REST API client secret'),
+  ('PAYPAL_LIVE_MODE', 'false', 'Enable live mode for Paypal');
 
 
 -- create fields configuration

@@ -17,9 +17,9 @@
 package alfio.manager.support;
 
 import alfio.model.Ticket;
-import org.xhtmlrenderer.pdf.ITextRenderer;
+import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 
 @FunctionalInterface
 public interface PartialTicketPDFGenerator {
-    ITextRenderer generate(Ticket ticket);
+    PdfBoxRenderer generate(Ticket ticket);
 }
