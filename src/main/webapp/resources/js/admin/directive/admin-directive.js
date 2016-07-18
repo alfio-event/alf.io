@@ -623,13 +623,13 @@
         }
     }]);
 
-    directives.directive('eventSidebar', ['EventService', 'UtilsService', '$state', '$window', '$rootScope', function(EventService, UtilsService, $state, $window, $rootScope) {
+    directives.directive('alfioSidebar', ['EventService', 'UtilsService', '$state', '$window', '$rootScope', function(EventService, UtilsService, $state, $window, $rootScope) {
         return {
             restrict: 'E',
             bindToController: true,
             scope: {},
             controllerAs: 'ctrl',
-            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/event-sidebar.html',
+            templateUrl: '/resources/angular-templates/admin/partials/main/sidebar.html',
             controller: ['$location', '$anchorScroll', '$scope', function($location, $anchorScroll, $scope) {
                 var ctrl = this;
                 var toUnbind = [];
