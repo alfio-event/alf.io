@@ -1,5 +1,24 @@
-<div class="sidebar hidden-xs" data-ng-if="ctrl.event">
+<div class="sidebar" data-ng-if="ctrl.event">
     <ul class="list-unstyled">
+        <li data-ng-if="ctrl.internal && ctrl.isDetail">
+            <label class="control-label text-muted" for="sidebarCategoryFilter"><h4>Categories</h4></label>
+        </li>
+        <li data-ng-if="ctrl.internal && ctrl.isDetail">
+            <form class="form-inline">
+                <label>
+                    <div class="input-group">
+                        <input type="search" id="sidebarCategoryFilter" data-ng-change="ctrl.filterChanged()" data-ng-model="ctrl.categoryFilter.freeText" class="form-control input-sm" placeholder="Filter...">
+                        <div class="input-group-addon"><i class="fa fa-search"></i></div>
+                    </div>
+                </label>
+            </form>
+        </li>
+        <li data-ng-if="ctrl.internal && ctrl.isDetail">
+            <ul class="nav nav-pills nav-stacked">
+                <li data-ng-repeat="category in ctrl.event.ticketCategories | showSelectedCategories : ctrl.categoryFilter"><a data-ng-click="ctrl.goToCategory(category)"><i class="fa fa-ticket"></i> {{category.name}}</a></li>
+                <li data-ng-if="(ctrl.event.ticketCategories | showSelectedCategories : ctrl.categoryFilter).length === 0">nothing found</li>
+            </ul>
+        </li>
         <li><h4 class="text-muted">Details</h4></li>
         <li>
             <ul class="nav nav-pills nav-stacked" data-ng-if="ctrl.internal">
@@ -54,7 +73,7 @@
                 </li>
             </ul>
         </li>
-        <li data-ng-if="ctrl.showBackLink">
+        <li data-ng-if="!ctrl.isDetail">
             <ul class="nav nav-pills nav-stacked">
                 <li>
                     <a data-ui-sref="events.single.detail({eventName: ctrl.event.shortName})"><i class="fa fa-arrow-left"></i> back to {{ctrl.event.displayName}}</a>

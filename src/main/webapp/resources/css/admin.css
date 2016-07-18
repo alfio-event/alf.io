@@ -179,12 +179,8 @@ td.cell-wrap {
 }
 
 div.sidebar {
-    width: 300px;
-    float: left;
-    border: 1px solid #e7e7e7;
-    -webkit-border-radius:3px;
-    -moz-border-radius:3px;
-    border-radius:3px;
+    /*width: 300px;*/
+    /*float: left;*/
     position: fixed;
 }
 

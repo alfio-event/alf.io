@@ -87,14 +87,14 @@
                 <div class="form-inline">
                     <label class="btn btn-sm btn-default" data-ng-model="selection.active" data-uib-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.active, 'fa-square-o': !selection.active}"></i> Active <span class="badge">{{countActive(event.ticketCategories)}}</span></label>
                     <label class="btn btn-sm btn-default" data-ng-model="selection.expired" data-uib-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.expired, 'fa-square-o': !selection.expired}"></i> Expired <span class="badge">{{countExpired(event.ticketCategories)}}</span></label>
-                    <label><div class="input-group"><div class="input-group-addon"><i class="fa fa-search"></i></div><input type="text" class="form-control input-sm" data-ng-model="selection.freeText"></div></label>
+                    <label><div class="input-group"><div class="input-group-addon"><i class="fa fa-search"></i></div><input type="text" class="form-control input-sm" data-ng-model="selection.freeText" data-ng-change="updateSelectionText(selection.freeText)"></div></label>
                 </div>
 
                 <div data-ng-if="(event.ticketCategories | showSelectedCategories : selection).length === 0" class="alert alert-warning">
                     No categories matching the selected criteria have been found.
                 </div>
 
-                <div data-ng-repeat="ticketCategory in event.ticketCategories | orderBy: ['id'] | showSelectedCategories : selection" class="container wMarginBottom" data-ng-class="evaluateCategoryStatusClass($index, ticketCategory)">
+                <div data-ng-repeat="ticketCategory in event.ticketCategories | orderBy: ['id'] | showSelectedCategories : selection" class="container wMarginBottom" data-ng-class="evaluateCategoryStatusClass($index, ticketCategory)" id="ticket-category-{{ticketCategory.id}}">
                     <div class="page-header">
                         <div class="alert alert-danger" data-ng-if="ticketCategory.containingOrphans" data-ng-form="moveTickets">
                             <div class="form-inline">

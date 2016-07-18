@@ -46,7 +46,7 @@
             .state('events.single', {
                 abstract: true,
                 url: '/:eventName',
-                template: '<div><event-sidebar data-event="ctrl.event"></event-sidebar><div data-ui-view></div></div>',
+                templateUrl: BASE_STATIC_URL + '/event/fragment/event-detail-container.html',
                 resolve: {
                     'getEvent': function($stateParams, EventService) {
                         return EventService.getEvent($stateParams.eventName);
@@ -163,12 +163,7 @@
             });
         });
         $rootScope.$on('ErrorNotLoggedIn', function() {
-            $uibModal.open({
-                size:'sm',
-                templateUrl:'/resources/angular-templates/admin/partials/error/not-logged-in.html'
-            }).result.then(angular.noop, function() {
-                $window.location.reload();
-            });
+            $window.location.reload();
         });
     });
 
@@ -899,6 +894,19 @@
                     };
                 }});
         };
+
+        var unbind = $rootScope.$on('SidebarCategoryFilterUpdated', function(e, categoryFilter) {
+            if(categoryFilter) {
+                $scope.selection.freeText = categoryFilter.freeText;
+            }
+        });
+        
+        $scope.updateSelectionText = function() {
+            $rootScope.$emit('CategoryFilterUpdated', $scope.selection);
+        };
+
+        $scope.$on('$destroy', unbind);
+
 
     });
 

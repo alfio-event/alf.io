@@ -632,12 +632,14 @@
             },
             controllerAs: 'ctrl',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/event-sidebar.html',
-            controller: [function() {
+            controller: ['$location', '$anchorScroll', '$scope', function($location, $anchorScroll, $scope) {
                 var ctrl = this;
+                var toUnbind = [];
                 ctrl.internal = (ctrl.event.type === 'INTERNAL');
-                $rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
-                    ctrl.showBackLink = !toState.data || !toState.data.detail;
-                });
+                ctrl.isDetail = $state.current.data && $state.current.data.detail;
+                toUnbind.push($rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+                    ctrl.isDetail = toState.data && toState.data.detail;
+                }));
                 ctrl.openDeleteWarning = function() {
                     EventService.deleteEvent(ctrl.event).then(function(result) {
                         $state.go('index');
@@ -649,6 +651,30 @@
                 ctrl.downloadSponsorsScan = function() {
                     $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export.csv");
                 };
+                ctrl.goToCategory = function(category) {
+                    //thanks to http://stackoverflow.com/a/14717011
+                    $location.hash('ticket-category-'+category.id);
+                    $anchorScroll();
+                };
+                ctrl.categoryFilter = {
+                    active: true,
+                    expired: false,
+                    freeText: ''
+                };
+
+                ctrl.filterChanged = function() {
+                    $rootScope.$emit('SidebarCategoryFilterUpdated', ctrl.categoryFilter);
+                };
+
+                toUnbind.push($rootScope.$on('CategoryFilterUpdated', function(ev, categoryFilter) {
+                    if(categoryFilter) {
+                        ctrl.categoryFilter.freeText = categoryFilter.freeText;
+                    }
+                }));
+
+                $scope.$on('$destroy', function() {
+                    toUnbind.forEach(function(f) {f();});
+                });
 
             }]
         }
