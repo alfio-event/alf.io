@@ -41,7 +41,7 @@
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
 <body>
-    <div class="navbar navbar-default navbar-fixed-top" role="navigation" data-ng-controller="MenuController">
+    <div class="navbar navbar-default navbar-fixed-top visible-sm visible-xs" role="navigation" data-ng-controller="MenuController">
         <div class="container">
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle" data-ng-click="toggleCollapse(menuCollapsed)">
@@ -69,9 +69,16 @@
             </div>
         </div>
     </div>
-    <div data-ui-view></div>
-    <footer>
-        <div class="text-center"><span class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{alfioVersion}}</span></div>
-    </footer>
+    <div class="menu-spacer visible-sm visible-xs"></div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="hidden-xs hidden-sm col-md-2">
+                <event-sidebar></event-sidebar>
+            </div>
+            <div class="col-sm-12 col-xs-12 col-md-10">
+                <div data-ui-view></div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

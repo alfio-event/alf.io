@@ -53,8 +53,11 @@
                     }
                 },
                 controllerAs: 'ctrl',
-                controller: function(getEvent) {
-                    this.event = getEvent.data.event;
+                controller: function(getEvent, $state) {
+                    $state.current.data['event'] = getEvent.data.event;
+                },
+                data: {
+                    displayEventData: true
                 }
             })
             .state('events.single.detail', {

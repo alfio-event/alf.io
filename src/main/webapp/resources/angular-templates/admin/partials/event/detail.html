@@ -17,64 +17,13 @@
                 <button class="btn btn-default" data-ng-if="editPrices" data-ng-disabled="pricesForm.$waiting" data-ng-click="toggleEditPrices(true)">cancel</button>
             </form>
 
-            <div class="page-header" data-ng-if="isInternal(event) && pendingReservations.length > 0">
+            <div class="page-header visible-sm visible-xs" data-ng-if="isInternal(event) && pendingReservations.length > 0">
                 <h3>Payments to be confirmed</h3>
                 <h5>There are reservations for which a payment has not yet confirmed.</h5>
                 <a class="btn btn-warning" data-ui-sref="events.single.pending-reservations({eventName: event.shortName})">
                     <i class="fa fa-dollar"></i> Pending payments <pending-reservations-badge data-event-name="{{event.shortName}}"></pending-reservations-badge>
                 </a>
             </div>
-
-            <div data-ng-if="isInternal(event) && !event.freeOfCharge">
-                <div class="page-header">
-                    <h3>Promo codes</h3>
-                    <h5 class="text-muted">Manage/Handle the promo codes.</h5>
-                    <button type="button" class="btn btn-success" data-ng-click="addPromoCode(event)"><i class="fa fa-plus"></i> add promo code</button>
-                </div>
-                <div data-ng-repeat="promocode in promocodes" class="container wMarginBottom" data-ng-class="{'category-success': !promocode.expired, 'category-expired': promocode.expired}">
-                    <div class="page-header">
-                        <div class="row">
-                            <div class="col-sm-4">
-                                <h4>{{::promocode.promoCode}} <span data-ng-if="promocode.expired">(Expired)</span></h4>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="row">
-                                    <div class="col-sm-4"><strong>Start validity</strong></div>
-                                    <div class="col-sm-8">{{::promocode.formattedStart | formatDate}} </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-sm-4"><strong>End validity</strong></div>
-                                    <div class="col-sm-8">{{::promocode.formattedEnd | formatDate}} </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-sm-4"><strong>Discount type</strong></div>
-                                    <div class="col-sm-8">{{::promocode.discountType}} </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-sm-4"><strong>Discount amount</strong></div>
-                                    <div class="col-sm-8">
-                                        <span data-ng-if="promocode.discountType === 'PERCENTAGE'">{{::promocode.discountAmount}}%</span>
-                                        <span data-ng-if="promocode.discountType === 'FIXED_AMOUNT'">{{::promocode.formattedDiscountAmount | currency : (event.currency || "")}}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row wMarginBottom">
-                        <div class="col-sm-12">
-                            Used {{promocode.useCount}} times.
-                        </div>
-                    </div>
-                    <div class="row wMarginBottom">
-                        <div class="col-sm-4">
-                            <button data-ng-show="promocode.useCount === 0" class="btn btn-warning" data-ng-click="deletePromocode(promocode)"><i class="fa fa-remove"></i> Delete</button>
-                            <button data-ng-hide="promocode.expired" class="btn btn-warning" data-ng-click="disablePromocode(promocode)"><i class="fa fa-remove"></i> Disable</button>
-                            <button class="btn btn-warning" ng-click="changeDate(promocode)"><i class="fa fa-calendar"></i> Change date</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
 
             <div data-ng-if="isInternal(event)">
 
@@ -198,8 +147,51 @@
                     <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory(event)"><i class="fa fa-plus"></i> add category</button>
                 </div>
 
+                <div data-ng-if="isInternal(event) && !event.freeOfCharge" id="promo-codes">
+                    <div class="page-header">
+                        <h3>Promo codes</h3>
+                        <h5 class="text-muted">Manage/Handle the promo codes.</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th><abbr title="Usage count">count</abbr></th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr data-ng-repeat="promocode in promocodes" data-ng-class="{'category-success': !promocode.expired, 'category-expired': promocode.expired}">
+                                <td>{{::promocode.promoCode}} <span data-ng-if="promocode.expired">(Expired)</span></td>
+                                <td>{{promocode.useCount}}</td>
+                                <td>{{::promocode.formattedStart | formatDate}}</td>
+                                <td>{{::promocode.formattedEnd | formatDate}}</td>
+                                <td>{{::promocode.discountType}}</td>
+                                <td>
+                                    <span data-ng-if="promocode.discountType === 'PERCENTAGE'">{{::promocode.discountAmount}}%</span>
+                                    <span data-ng-if="promocode.discountType === 'FIXED_AMOUNT'">{{::promocode.formattedDiscountAmount | currency : (event.currency || "")}}</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-xs btn-warning" ng-click="changeDate(promocode)"><i class="fa fa-calendar"></i> Change date</button>
+                                    <button data-ng-hide="promocode.expired" class="btn btn-xs btn-default" data-ng-click="disablePromocode(promocode)"><i class="fa fa-remove"></i> Disable</button>
+                                    <button data-ng-show="promocode.useCount === 0" class="btn btn-xs btn-danger" data-ng-click="deletePromocode(promocode)"><i class="fa fa-trash"></i> Delete</button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <div>
+                            <button type="button" class="btn btn-success" data-ng-click="addPromoCode(event)"><i class="fa fa-plus"></i> add promo code</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- -->
-                <div class="page-header">
+                <div class="page-header" id="additional-fields">
                     <h3>Additional Fields</h3>
                     <h5 class="text-muted">Here are the additional fields defined</h5>
                 </div>
@@ -281,7 +273,7 @@
                 <button type="button" class="btn btn-success" data-ng-click="addField(event)"><i class="fa fa-plus"></i> add additional field</button>
             </div>
 
-            <div class="page-header">
+            <div class="page-header" id="donation-options">
                 <additional-services data-selected-languages="event.locales" data-event-is-free-of-charge="event.freeOfCharge" data-available-languages="allLanguages" data-on-modification="setAdditionalServices(event, additionalServices)" data-event-id="event.id" data-event-start-date="event.formattedBegin"></additional-services>
             </div>
            </div>

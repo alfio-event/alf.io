@@ -201,7 +201,7 @@
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
-            controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, EventUtilsService, EventService) {
+            controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService) {
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',
                         'description', 'websiteUrl', 'externalUrl', 'termsAndConditionsUrl', 'imageUrl', 'fileBlobId', 'formattedBegin','type',
@@ -278,7 +278,7 @@
                     };
                     if(shouldUpdate()) {
                         $scope.loading = true;
-                        EventUtilsService.generateShortName(eventName).success(function(data) {
+                        UtilsService.generateShortName(eventName).success(function(data) {
                             if(shouldUpdate()) {
                                 $scope.obj.shortName = data;
                             }
@@ -558,7 +558,7 @@
         }
     });
 
-    directives.directive('validateShortName', ['EventUtilsService', function(EventUtilsService) {
+    directives.directive('validateShortName', ['UtilsService', function(UtilsService) {
         return {
             require: 'ngModel',
             link: function(scope, element, attrs, ngModelCtrl) {
@@ -567,7 +567,7 @@
                     ngModelCtrl.$asyncValidators.validateShortName = function(modelValue, viewValue) {
                         var value = modelValue || viewValue;
                         scope.loading = true;
-                        return EventUtilsService.validateShortName(value)['finally'](function() {
+                        return UtilsService.validateShortName(value)['finally'](function() {
                             scope.loading = false;
                         });
                     }
@@ -576,7 +576,7 @@
         }
     }]);
 
-    directives.directive('displayCommonmarkPreview', ['EventUtilsService', '$uibModal', function(EventUtilsService, $uibModal) {
+    directives.directive('displayCommonmarkPreview', ['UtilsService', '$uibModal', function(UtilsService, $uibModal) {
         return {
             restrict: 'E',
             bindToController: true,
@@ -590,7 +590,7 @@
 
                 ctrl.openModal = function() {
                     if (ctrl.text) {
-                        EventUtilsService.renderCommonMark(ctrl.text)
+                        UtilsService.renderCommonMark(ctrl.text)
                             .then(function (res) {
                                     return $uibModal.open({
                                         size: 'sm',
@@ -623,59 +623,79 @@
         }
     }]);
 
-    directives.directive('eventSidebar', ['EventService', '$state', '$window', '$rootScope', function(EventService, $state, $window, $rootScope) {
+    directives.directive('eventSidebar', ['EventService', 'UtilsService', '$state', '$window', '$rootScope', function(EventService, UtilsService, $state, $window, $rootScope) {
         return {
             restrict: 'E',
             bindToController: true,
-            scope: {
-                event: '='
-            },
+            scope: {},
             controllerAs: 'ctrl',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/event-sidebar.html',
             controller: ['$location', '$anchorScroll', '$scope', function($location, $anchorScroll, $scope) {
                 var ctrl = this;
                 var toUnbind = [];
-                ctrl.internal = (ctrl.event.type === 'INTERNAL');
+                var loadEventData = function() {
+                    if(ctrl.displayEventData && $state.current.data.event) {
+                        ctrl.event = $state.current.data.event;
+                        ctrl.internal = (ctrl.event.type === 'INTERNAL');
+                        ctrl.openDeleteWarning = function() {
+                            EventService.deleteEvent(ctrl.event).then(function(result) {
+                                $state.go('index');
+                            });
+                        };
+                        ctrl.openFieldSelectionModal = function() {
+                            EventService.exportAttendees(ctrl.event);
+                        };
+                        ctrl.downloadSponsorsScan = function() {
+                            $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export.csv");
+                        };
+                        ctrl.goToCategory = function(category) {
+                            ctrl.navigateTo('ticket-category-'+category.id);
+                        };
+                        ctrl.categoryFilter = {
+                            active: true,
+                            expired: false,
+                            freeText: ''
+                        };
+                        ctrl.filterChanged = function() {
+                            $rootScope.$emit('SidebarCategoryFilterUpdated', ctrl.categoryFilter);
+                        };
+                        toUnbind.push($rootScope.$on('CategoryFilterUpdated', function(ev, categoryFilter) {
+                            if(categoryFilter) {
+                                ctrl.categoryFilter.freeText = categoryFilter.freeText;
+                            }
+                        }));
+                    }
+                };
                 ctrl.isDetail = $state.current.data && $state.current.data.detail;
+                loadEventData();
                 toUnbind.push($rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
                     ctrl.isDetail = toState.data && toState.data.detail;
-                }));
-                ctrl.openDeleteWarning = function() {
-                    EventService.deleteEvent(ctrl.event).then(function(result) {
-                        $state.go('index');
-                    });
-                };
-                ctrl.openFieldSelectionModal = function() {
-                    EventService.exportAttendees(ctrl.event);
-                };
-                ctrl.downloadSponsorsScan = function() {
-                    $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export.csv");
-                };
-                ctrl.goToCategory = function(category) {
-                    //thanks to http://stackoverflow.com/a/14717011
-                    $location.hash('ticket-category-'+category.id);
-                    $anchorScroll();
-                };
-                ctrl.categoryFilter = {
-                    active: true,
-                    expired: false,
-                    freeText: ''
-                };
-
-                ctrl.filterChanged = function() {
-                    $rootScope.$emit('SidebarCategoryFilterUpdated', ctrl.categoryFilter);
-                };
-
-                toUnbind.push($rootScope.$on('CategoryFilterUpdated', function(ev, categoryFilter) {
-                    if(categoryFilter) {
-                        ctrl.categoryFilter.freeText = categoryFilter.freeText;
+                    ctrl.displayEventData = toState.data && toState.data.displayEventData;
+                    loadEventData();
+                    if(!ctrl.displayEventData) {
+                        delete ctrl.event;
                     }
                 }));
+
+                ctrl.navigateTo = function(id) {
+                    //thanks to http://stackoverflow.com/a/14717011
+                    $location.hash(id);
+                    $anchorScroll();
+                };
+
+                ctrl.doLogout = function() {
+                    UtilsService.logout().then(function() {
+                        $window.location.reload();
+                    });
+                };
 
                 $scope.$on('$destroy', function() {
                     toUnbind.forEach(function(f) {f();});
                 });
 
+                UtilsService.getApplicationInfo().then(function(result) {
+                    ctrl.applicationInfo = result.data;
+                });
             }]
         }
     }]);

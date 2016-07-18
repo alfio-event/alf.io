@@ -18,9 +18,9 @@ package alfio.controller.api.admin;
 
 import alfio.manager.EventNameManager;
 import alfio.util.MustacheCustomTagInterceptor;
-
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -30,6 +30,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
+import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
@@ -40,10 +43,12 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 public class UtilsApiController {
 
     private final EventNameManager eventNameManager;
+    private final String version;
 
     @Autowired
-    public UtilsApiController(EventNameManager eventNameManager) {
+    public UtilsApiController(EventNameManager eventNameManager, @Value("${alfio.version}") String version) {
         this.eventNameManager = eventNameManager;
+        this.version = version;
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
@@ -69,6 +74,14 @@ public class UtilsApiController {
     @RequestMapping(value = "/render-commonmark") 
     public String renderCommonmark(@RequestParam("text") String input) {
     	return MustacheCustomTagInterceptor.renderToCommonmark(input);
+    }
+
+    @RequestMapping(value = "/alfio/info", method = GET)
+    public Map<String, String> getApplicationInfo(Principal principal) {
+        Map<String, String> applicationInfo = new HashMap<>();
+        applicationInfo.put("version", version);
+        applicationInfo.put("username", principal.getName());
+        return applicationInfo;
     }
 
 }

@@ -1,10 +1,10 @@
 <div class="page-header">
     <h1>{{event.displayName}} 
-    	<a class="btn btn-default visible-xs" data-ng-if="isInternal(event)" data-ui-sref="events.single.configuration({eventName: event.shortName})"><i class="fa fa-wrench"></i><span class="sr-only"> settings</span></a>
-    	<button type="button" ng-click="openDeleteWarning(event)" class="btn btn-danger visible-xs" ng-if="isInternal(event)"><i class="fa fa-trash"></i> Delete</button>
+    	<a class="btn btn-default visible-xs-inline visible-sm-inline" data-ng-if="isInternal(event)" data-ui-sref="events.single.configuration({eventName: event.shortName})"><i class="fa fa-wrench"></i><span class="sr-only"> settings</span></a>
+    	<button type="button" ng-click="openDeleteWarning(event)" class="btn btn-danger visible-xs-inline visible-sm-inline" ng-if="isInternal(event)"><i class="fa fa-trash"></i> Delete</button>
 	</h1>
     <h4 class="text-muted">{{event.shortDescription}}</h4>
-    <div data-ng-if="isInternal(event)" class="visible-xs">
+    <div data-ng-if="isInternal(event)" class="visible-xs visible-sm">
         <span><button class="btn btn-primary" type="button" data-ng-click="openFieldSelectionModal()" ><i class="fa fa-download"></i> download attendees' data</button></span>
         <span><a class="btn btn-warning" data-ui-sref="events.single.compose-custom-message({eventName: event.shortName})"><i class="fa fa-envelope"></i> send a message to attendees</a></span>
         <waiting-queue-display-counter data-event="event"></waiting-queue-display-counter>

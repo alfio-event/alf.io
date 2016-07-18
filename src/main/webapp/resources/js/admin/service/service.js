@@ -368,7 +368,7 @@
         };
     }]);
 
-    baseServices.service('EventUtilsService', ['$http', 'HttpErrorHandler', function($http, HttpErrorHandler) {
+    baseServices.service('UtilsService', ['$http', 'HttpErrorHandler', function($http, HttpErrorHandler) {
         return {
             generateShortName: function(displayName) {
                 return $http.get('/admin/api/utils/short-name/generate?displayName='+displayName).error(HttpErrorHandler.handle);
@@ -377,7 +377,13 @@
                 return $http['post']('/admin/api/utils/short-name/validate', null, {params: {shortName: shortName}}).error(HttpErrorHandler.handle);
             },
             renderCommonMark: function(text) {
-            	return $http.get('/admin/api/utils/render-commonmark', {params: {text: text}});
+            	return $http.get('/admin/api/utils/render-commonmark', {params: {text: text}}).error(HttpErrorHandler.handle);
+            },
+            getApplicationInfo: function() {
+                return $http.get('/admin/api/utils/alfio/info').error(HttpErrorHandler.handle);
+            },
+            logout: function() {
+                return $http.post("/logout").error(HttpErrorHandler.handle);
             }
         };
     }]);
