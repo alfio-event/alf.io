@@ -241,11 +241,10 @@ public class TicketReservationManager {
                 Event e = pair.getKey();
                 AdditionalService as = pair.getValue();
                 AdditionalService.VatType vatType = as.getVatType();
-                boolean vatIncluded = vatType == AdditionalService.VatType.NONE || vatType == AdditionalService.VatType.INHERITED && e.isVatIncluded();
                 IntStream.range(0, additionalServiceReservation.getQuantity())
                     .forEach(i -> {
                         BigDecimal price = as.isFixPrice() ? centsToUnit(as.getPriceInCents()) : additionalServiceReservation.getAmount();
-                        int paidPrice = vatIncluded ? removeVAT(unitToCents(price), e.getVat()) : unitToCents(additionalServiceReservation.getAmount());
+                        int paidPrice = vatType == AdditionalService.VatType.NONE ? unitToCents(price) : removeVAT(unitToCents(price), e.getVat());
                         additionalServiceItemRepository.insert(UUID.randomUUID().toString(), ZonedDateTime.now(Clock.systemUTC()), transactionId, as.getId(), as.getPriceInCents(), paidPrice, AdditionalServiceItemStatus.PENDING, eventId);
                     });
             });
@@ -614,6 +613,7 @@ public class TicketReservationManager {
         
         //TODO cleanup/refactor
         //take in account the discount code
+        boolean vatIncluded = event.isVatIncluded();
         if (promoCodeDiscount.isPresent()) {
             PromoCodeDiscount discount = promoCodeDiscount.get();
             
@@ -622,12 +622,12 @@ public class TicketReservationManager {
                 discountAppliedCount = ((int) tickets.stream().filter(t -> t.getPaidPriceInCents() > 0).count());
                 amountToBeDiscounted =  discountAppliedCount * discount.getDiscountAmount();
             } else {
-                amountToBeDiscounted = MonetaryUtil.calcPercentage(event.isVatIncluded() ? net + vat : net, new BigDecimal(discount.getDiscountAmount()));
+                amountToBeDiscounted = MonetaryUtil.calcPercentage(vatIncluded ? net + vat : net, new BigDecimal(discount.getDiscountAmount()));
                 discountAppliedCount = 1;
             }
             
             // recalc the net and vat
-            if(event.isVatIncluded()) {
+            if(vatIncluded) {
                 int finalPrice = Math.max(net + vat - amountToBeDiscounted, 0);
                 net = MonetaryUtil.removeVAT(finalPrice, event.getVat());
                 vat = finalPrice - net;
@@ -693,7 +693,7 @@ public class TicketReservationManager {
                 reservation.getPaymentMethod() == PaymentProxy.ON_SITE);
     }
     
-    private List<SummaryRow> extractSummary(String reservationId, Event event, Locale locale) {
+    List<SummaryRow> extractSummary(String reservationId, Event event, Locale locale) {
         List<SummaryRow> summary = new ArrayList<>();
         List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
         tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).forEach((categoryId, ticketsByCategory) -> {
@@ -707,8 +707,14 @@ public class TicketReservationManager {
         });
         summary.addAll(collectAdditionalServiceItems(reservationId, event)
             .flatMap(entry -> {
-                AdditionalServiceText title = additionalServiceTextRepository.findByLocaleAndType(entry.getKey().getId(), locale.getLanguage(), AdditionalServiceText.AdditionalServiceDescriptionType.TITLE);
-                return entry.getValue().stream().map(item -> new SummaryRow(title.getValue(), MonetaryUtil.formatCents(item.getPaidPriceInCents()), 1, MonetaryUtil.formatCents(item.getPaidPriceInCents()), item.getPaidPriceInCents(), SummaryRow.SummaryType.ADDITIONAL_SERVICE));
+                AdditionalServiceText title = additionalServiceTextRepository.findByLocaleAndType(entry.getKey().getId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE);
+                return entry.getValue().stream().map(item -> {
+                    Integer paidPriceInCents = item.getPaidPriceInCents();
+                    if(entry.getKey().getVatType() != AdditionalService.VatType.NONE && event.isVatIncluded()) {
+                        paidPriceInCents = addVAT(paidPriceInCents, event.getVat());//FIXME add custom VAT for #111
+                    }
+                    return new SummaryRow(title.getValue(), MonetaryUtil.formatCents(paidPriceInCents), 1, MonetaryUtil.formatCents(paidPriceInCents), paidPriceInCents, SummaryRow.SummaryType.ADDITIONAL_SERVICE);
+                });
             }).collect(Collectors.toList()));
         return summary;
     }
@@ -1101,7 +1107,7 @@ public class TicketReservationManager {
     }
 
     @Data
-    private class Price {
+    static class Price {
         private final int net;
         private final int vat;
 

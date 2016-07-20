@@ -22,20 +22,20 @@ import lombok.Getter;
 @Getter
 public class AdditionalServiceText {
 
-    public enum AdditionalServiceDescriptionType {
+    public enum TextType {
         TITLE, DESCRIPTION
     }
 
     private final int id;
     private final Integer additionalServiceId;
     private final String locale;
-    private final AdditionalServiceDescriptionType type;
+    private final TextType type;
     private final String value;
 
     public AdditionalServiceText(@Column("id") int id,
                                  @Column("additional_service_id_fk") Integer additionalServiceId,
                                  @Column("locale") String locale,
-                                 @Column("type") AdditionalServiceDescriptionType type,
+                                 @Column("type") TextType type,
                                  @Column("value") String value) {
         this.id = id;
         this.additionalServiceId = additionalServiceId;

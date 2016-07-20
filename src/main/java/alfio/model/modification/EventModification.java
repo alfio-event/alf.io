@@ -265,7 +265,7 @@ public class EventModification {
             public Builder withText(List<alfio.model.AdditionalServiceText> text) {
                 Map<Boolean, List<AdditionalServiceText>> byType = text.stream()
                     .map(AdditionalServiceText::from)
-                    .collect(Collectors.partitioningBy(ast -> ast.getType() == alfio.model.AdditionalServiceText.AdditionalServiceDescriptionType.TITLE));
+                    .collect(Collectors.partitioningBy(ast -> ast.getType() == alfio.model.AdditionalServiceText.TextType.TITLE));
                 this.title = byType.getOrDefault(true, this.title);
                 this.description = byType.getOrDefault(false, this.description);
                 return this;
@@ -285,12 +285,12 @@ public class EventModification {
         private final Integer id;
         private final String locale;
         private final String value;
-        private final alfio.model.AdditionalServiceText.AdditionalServiceDescriptionType type;
+        private final alfio.model.AdditionalServiceText.TextType type;
 
         public AdditionalServiceText(@JsonProperty("id") Integer id,
                                      @JsonProperty("locale") String locale,
                                      @JsonProperty("value") String value,
-                                     @JsonProperty("type") alfio.model.AdditionalServiceText.AdditionalServiceDescriptionType type) {
+                                     @JsonProperty("type") alfio.model.AdditionalServiceText.TextType type) {
             this.id = id;
             this.locale = locale;
             this.value = value;

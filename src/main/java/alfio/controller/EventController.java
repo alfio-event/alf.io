@@ -322,7 +322,7 @@ public class EventController {
     }
 
     private SaleableAdditionalService getSaleableAdditionalService(Event event, Locale locale, AdditionalService as, PromoCodeDiscount promoCodeDiscount) {
-        return new SaleableAdditionalService(event, as, additionalServiceTextRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.AdditionalServiceDescriptionType.TITLE).getValue(), additionalServiceTextRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.AdditionalServiceDescriptionType.DESCRIPTION).getValue(), promoCodeDiscount);
+        return new SaleableAdditionalService(event, as, additionalServiceTextRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE).getValue(), additionalServiceTextRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.DESCRIPTION).getValue(), promoCodeDiscount);
     }
 
 }
