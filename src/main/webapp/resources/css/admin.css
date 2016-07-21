@@ -10,7 +10,7 @@ ng\:form {
 }
 
 div.menu-spacer {
-    padding-top:70px;
+    padding-top:50px;
 }
 
 div.list-even {
@@ -245,4 +245,14 @@ a.emulate-nav-pills-link {
 
 .sidebar-header img {
     max-height: 60px;
+}
+
+.subitem-active {
+    font-weight: bolder;
+}
+
+.title {
+    font-family: 'Architects Daughter', cursive;
+    font-size: 3em;
+    font-weight: 500;
 }

@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-csp.css"/>
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.css"/>
+    <link href="https://fonts.googleapis.com/css?family=Architects+Daughter|Source+Sans+Pro:300,600" rel="stylesheet" type="text/css">
     <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/lodash/lodash.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
@@ -41,41 +42,47 @@
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
 <body>
-    <div class="navbar navbar-default navbar-fixed-top visible-sm visible-xs" role="navigation" data-ng-controller="MenuController">
-        <div class="container">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-ng-click="toggleCollapse(menuCollapsed)">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand logo" data-ui-sref="index">{{#i18n}}admin.title{{/i18n}}</a>
-            </div>
-            <div class="navbar-left">
-                <div class="collapse navbar-collapse" data-uib-collapse="menuCollapsed">
-                    <ul class="nav navbar-nav">
-                        <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
-                        <li data-ui-sref-active="active"><a data-ui-sref="configuration.system">Configuration</a></li>
-                        <li class="nav-divider"></li>
-                        <li class="visible-xs"><a href="#" data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-user"></i> {{username}}</a></li>
-                        <li class="visible-xs"><a href="" data-ng-click="doLogout()">Logout</a></li>
-                    </ul>
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation" data-ng-controller="MenuController">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12 col-md-10 col-md-push-1">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-ng-click="toggleCollapse(menuCollapsed)">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="navbar-brand logo title" data-ui-sref="index">Alf.io</a>
+                    </div>
+                    <div class="navbar-left">
+                        <div class="collapse navbar-collapse" data-uib-collapse="menuCollapsed">
+                            <ul class="nav navbar-nav">
+                                <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="configuration.system">Configuration</a></li>
+                                <li class="nav-divider"></li>
+                                <li class="visible-xs"><a href="#" data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-user"></i> {{username}}</a></li>
+                                <li class="visible-xs"><a href="" data-ng-click="doLogout()">Logout</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="navbar-right hidden-xs">
+                        <ul class="nav navbar-nav">
+                            <li role="presentation" class="navbar-text"><i class="fa fa-user"></i> Logged in as {{username}}</li>
+                            <li role="presentation" data-ui-sref-active="active"> <a data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-edit"></i> edit account</a></li>
+                            <li role="presentation"><a href="" data-ng-click="ctrl.doLogout()"><i class="fa fa-sign-out"></i> Log out</a></li>
+                        </ul>
+                    </div>
                 </div>
-            </div>
-            <div class="navbar-right hidden-xs">
-                <span class="navbar-text"><a href="#" title="click to update account details" data-ui-sref="edit-current-user"><i class="fa fa-user"></i> {{username}}</a></span>
-                <span class="navbar-text"><a href="" data-ng-click="doLogout()">Logout</a></span>
             </div>
         </div>
     </div>
-    <div class="menu-spacer visible-sm visible-xs"></div>
-    <div class="container-fluid">
+    <div class="container-fluid menu-spacer">
         <div class="row">
-            <div class="hidden-xs hidden-sm col-md-2">
+            <div class="hidden-xs hidden-sm col-md-2 col-md-push-1">
                 <alfio-sidebar></alfio-sidebar>
             </div>
-            <div class="col-sm-12 col-xs-12 col-md-10">
+            <div class="col-sm-12 col-xs-12 col-md-8 col-md-push-1">
                 <div data-ui-view></div>
             </div>
         </div>

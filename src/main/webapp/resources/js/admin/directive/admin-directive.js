@@ -633,6 +633,12 @@
             controller: ['$location', '$anchorScroll', '$scope', function($location, $anchorScroll, $scope) {
                 var ctrl = this;
                 var toUnbind = [];
+                var detectCurrentView = function(state) {
+                    if(!state.data) {
+                        return 'UNKNOWN';
+                    }
+                    return state.data.view || 'UNKNOWN';
+                };
                 var loadEventData = function() {
                     if(ctrl.displayEventData && $state.current.data.event) {
                         ctrl.event = $state.current.data.event;
@@ -666,15 +672,25 @@
                         }));
                     }
                 };
-                ctrl.isDetail = $state.current.data && $state.current.data.detail;
+                ctrl.currentView = detectCurrentView($state.current);
+                ctrl.isDetail = ctrl.currentView === 'EVENT_DETAIL';
                 loadEventData();
                 toUnbind.push($rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
-                    ctrl.isDetail = toState.data && toState.data.detail;
+                    ctrl.currentView = detectCurrentView(toState);
+                    ctrl.isDetail = ctrl.currentView === 'EVENT_DETAIL';
                     ctrl.displayEventData = toState.data && toState.data.displayEventData;
                     loadEventData();
                     if(!ctrl.displayEventData) {
                         delete ctrl.event;
                     }
+                }));
+
+                ctrl.isConfiguration = function() {
+                    return ctrl.currentView === 'CONFIGURATION';
+                };
+
+                toUnbind.push($rootScope.$on('ConfigurationMenuLoaded', function(e, organizations) {
+                    ctrl.organizations = organizations;
                 }));
 
                 ctrl.navigateTo = function(id) {

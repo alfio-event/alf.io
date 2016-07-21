@@ -5,9 +5,12 @@
             $stateProvider
                 .state('configuration', {
                     url: '/configuration',
-                    templateUrl: '/resources/angular-templates/admin/partials/configuration/index.html',
+                    template: '<div class="container"><div data-ui-view></div></div>',
                     controller: 'ConfigurationController',
-                    controllerAs: 'configCtrl'
+                    controllerAs: 'configCtrl',
+                    data: {
+                        view: 'CONFIGURATION'
+                    }
                 })
                 .state('configuration.system', {
                     url: '/system',
@@ -118,7 +121,7 @@
 
     ConfigurationService.$inject = ['$http', 'HttpErrorHandler'];
 
-    function ConfigurationController(OrganizationService, EventService, $q) {
+    function ConfigurationController(OrganizationService, EventService, $q, $rootScope) {
         var configCtrl = this;
         configCtrl.loading = true;
         $q.all([OrganizationService.getAllOrganizations(), EventService.getAllEvents()]).then(function(results) {
@@ -128,6 +131,7 @@
                 org.events = _.filter(events, function(e) {return !e.expired && e.organizationId === org.id});
                 return org;
             });
+            $rootScope.$emit('ConfigurationMenuLoaded', configCtrl.organizations);
             configCtrl.loading = false;
         }, function(e) {
             alert(e);
@@ -135,7 +139,7 @@
         });
     }
 
-    ConfigurationController.$inject = ['OrganizationService', 'EventService', '$q'];
+    ConfigurationController.$inject = ['OrganizationService', 'EventService', '$q', '$rootScope'];
 
     function SystemConfigurationController(ConfigurationService, EventService, $rootScope, $q) {
         var systemConf = this;

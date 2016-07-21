@@ -1,15 +1,5 @@
-<div class="sidebar">
-    <section>
-        <ul class="nav nav-pills nav-stacked">
-            <li role="presentation" data-ui-sref-active="active"><a data-ui-sref="index"><i class="fa fa-home"></i> Dashboard</a></li>
-            <li role="presentation" data-ui-sref-active="active"><a data-ui-sref="configuration.system"><i class="fa fa-wrench"></i> System Configuration</a></li>
-        </ul>
-    </section>
-    <hr />
+<div class="sidebar menu-spacer">
     <section data-ng-if="ctrl.event">
-        <div>
-            <h4>{{ctrl.event.displayName}}</h4>
-        </div>
         <ul class="list-inline">
             <li role="presentation" data-uib-dropdown data-ng-if="ctrl.internal">
                 <a data-uib-dropdown-toggle id="actions-dpdwn" class="btn btn-default"><i class="fa fa-pencil"></i> Actions <span class="caret"></span></a>
@@ -89,13 +79,33 @@
         </ul>
         <hr />
     </section>
-    <footer>
-        <h4 class="text-muted"><i class="fa fa-user"></i> Logged in as {{ctrl.applicationInfo.username}}</h4>
-        <ul class="list-inline">
-            <li role="presentation" data-ui-sref-active="active"><a data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-edit"></i> edit account</a></li>
-            <li role="presentation"><a href="" data-ng-click="ctrl.doLogout()"><i class="fa fa-sign-out"></i> Log out</a></li>
+    <section data-ng-if="ctrl.isConfiguration()">
+        <div>
+            <h4>Configuration</h4>
+        </div>
+
+        <ul class="list-unstyled">
+            <li>
+                <h4 class="text-muted">Level</h4>
+            </li>
+            <li>
+                <ul class="nav nav-pills nav-stacked">
+                    <li role="presentation" data-ui-sref-active="active">
+                        <a data-ui-sref="configuration.system"><i class="fa fa-globe"></i> System</a>
+                    </li>
+                    <li role="presentation" data-ui-sref-active="active" data-ng-repeat="org in ctrl.organizations">
+                        <a data-ui-sref="configuration.organization({organizationId: org.id})"><i class="fa fa-users"></i> {{org.name}}</a>
+                        <ul>
+                            <li data-ng-repeat="ev in org.events" data-ui-sref-active="subitem-active">
+                                <a data-ui-sref="configuration.event({organizationId: org.id, eventId: ev.id})">{{ev.shortName}}</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
         </ul>
-        <hr/>
+    </section>
+    <footer data-ng-if="ctrl.currentView !== 'UNKNOWN'">
         <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{ctrl.applicationInfo.version}}</h5>
     </footer>
 </div>

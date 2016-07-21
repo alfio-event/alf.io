@@ -57,7 +57,8 @@
                     $state.current.data['event'] = getEvent.data.event;
                 },
                 data: {
-                    displayEventData: true
+                    displayEventData: true,
+                    view: 'EVENT'
                 }
             })
             .state('events.single.detail', {
@@ -65,38 +66,56 @@
                 templateUrl: BASE_STATIC_URL + '/event/detail.html',
                 controller: 'EventDetailController',
                 data: {
-                    detail: true
+                    view: 'EVENT_DETAIL'
                 }
             })
             .state('events.single.checkIn', {
                 url: '/check-in',
                 templateUrl: BASE_STATIC_URL + '/event/check-in.html',
-                controller: 'EventCheckInController'
+                controller: 'EventCheckInController',
+                data: {
+                    view: 'CHECK_IN'
+                }
             })
             .state('events.single.checkInScan', {
                 url: '/check-in/scan',
                 templateUrl: BASE_STATIC_URL + '/event/check-in-scan.html',
-                controller: 'EventCheckInScanController'
+                controller: 'EventCheckInScanController',
+                data: {
+                    view: 'CHECK_IN_SCAN'
+                }
             })
             .state('events.single.sendInvitations', {
                 url: '/c/:categoryId/send-invitation',
                 templateUrl: BASE_STATIC_URL + '/event/fragment/send-reserved-codes.html',
-                controller: 'SendInvitationsController'
+                controller: 'SendInvitationsController',
+                data: {
+                    view: 'SEND_INVITATIONS'
+                }
             })
             .state('events.single.pending-reservations', {
                 url: '/pending-reservations/',
                 templateUrl: BASE_STATIC_URL + '/pending-reservations/index.html',
-                controller: 'PendingReservationsController'
+                controller: 'PendingReservationsController',
+                data: {
+                    view: 'PENDING_RESERVATIONS'
+                }
             })
             .state('events.single.compose-custom-message', {
                 url: '/compose-custom-message',
                 templateUrl: BASE_STATIC_URL + '/custom-message/index.html',
-                controller: 'ComposeCustomMessage'
+                controller: 'ComposeCustomMessage',
+                data: {
+                    view: 'CUSTOM_MESSAGE'
+                }
             })
             .state('events.single.show-waiting-queue', {
                 url: '/waiting-queue',
                 templateUrl: BASE_STATIC_URL + '/waiting-queue/index.html',
-                controller: 'ShowWaitingQueue as ctrl'
+                controller: 'ShowWaitingQueue as ctrl',
+                data: {
+                    view: 'WAITING_QUEUE'
+                }
             });
 
         var printLabel = function(val) {
