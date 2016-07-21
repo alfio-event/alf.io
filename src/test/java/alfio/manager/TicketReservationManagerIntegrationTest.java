@@ -256,6 +256,35 @@ public class TicketReservationManagerIntegrationTest {
         tr.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
-        ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
+        ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+    }
+
+    @Test
+    public void testDeletePendingPaymentUnboundedCategory() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false));
+        EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
+
+        TicketCategoryWithStatistic unbounded = event.getTicketCategories().get(0);
+
+        TicketReservationModification tr = new TicketReservationModification();
+        tr.setAmount(AVAILABLE_SEATS / 2 + 1);
+        tr.setTicketCategoryId(unbounded.getId());
+
+        TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
+        String reservationId = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
+        assertTrue(result.isSuccessful());
+        ticketReservationManager.deleteOfflinePayment(event.getEvent(), reservationId, false);
+
+        mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
+        reservationId = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
+        reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
+        assertTrue(result.isSuccessful());
     }
 }
