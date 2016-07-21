@@ -42,12 +42,12 @@
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
 <body>
-    <div class="navbar navbar-default navbar-fixed-top" role="navigation" data-ng-controller="MenuController">
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation" data-ng-controller="MenuController as ctrl">
         <div class="container-fluid">
             <div class="row">
                 <div class="col-xs-12 col-md-10 col-md-push-1">
                     <div class="navbar-header">
-                        <button type="button" class="navbar-toggle" data-ng-click="toggleCollapse(menuCollapsed)">
+                        <button type="button" class="navbar-toggle" data-ng-click="ctrl.toggleCollapse(ctrl.menuCollapsed)">
                             <span class="sr-only">Toggle navigation</span>
                             <span class="icon-bar"></span>
                             <span class="icon-bar"></span>
@@ -56,13 +56,14 @@
                         <a class="navbar-brand logo title" data-ui-sref="index">Alf.io</a>
                     </div>
                     <div class="navbar-left">
-                        <div class="collapse navbar-collapse" data-uib-collapse="menuCollapsed">
+                        <div class="collapse navbar-collapse" data-uib-collapse="ctrl.menuCollapsed">
                             <ul class="nav navbar-nav">
                                 <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="configuration.system">Configuration</a></li>
                                 <li class="nav-divider"></li>
-                                <li class="visible-xs"><a href="#" data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-user"></i> {{username}}</a></li>
-                                <li class="visible-xs"><a href="" data-ng-click="doLogout()">Logout</a></li>
+                                <li class="visible-xs navbar-text"><i class="fa fa-user"></i> Logged in as {{username}}</li>
+                                <li class="visible-xs"><a href="#" data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-edit"></i> edit account</a></li>
+                                <li class="visible-xs"><a href="" data-ng-click="ctrl.doLogout()">Logout</a></li>
                             </ul>
                         </div>
                     </div>

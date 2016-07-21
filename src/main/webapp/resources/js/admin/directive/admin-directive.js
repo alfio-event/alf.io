@@ -699,12 +699,6 @@
                     $anchorScroll();
                 };
 
-                ctrl.doLogout = function() {
-                    UtilsService.logout().then(function() {
-                        $window.location.reload();
-                    });
-                };
-
                 $scope.$on('$destroy', function() {
                     toUnbind.forEach(function(f) {f();});
                 });

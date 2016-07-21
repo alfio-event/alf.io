@@ -211,17 +211,18 @@
         return deferred.promise;
     };
 
-    admin.controller('MenuController', function($scope, $http, $window) {
-        $scope.menuCollapsed = true;
-        $scope.toggleCollapse = function(currentStatus) {
-            $scope.menuCollapsed = !currentStatus;
+    admin.controller('MenuController', ['$scope', '$http', '$window', 'UtilsService', function($scope, $http, $window, UtilsService) {
+        var ctrl = this;
+        ctrl.menuCollapsed = true;
+        ctrl.toggleCollapse = function(currentStatus) {
+            ctrl.menuCollapsed = !currentStatus;
         };
-        $scope.doLogout = function() {
-            $http.post("/logout").then(function() {
-                $window.location.href = "/";
+        ctrl.doLogout = function() {
+            UtilsService.logout().then(function() {
+                $window.location.reload();
             });
-        }
-    });
+        };
+    }]);
 
     var createCategory = function(sticky, $scope, expirationExtractor) {
         var lastCategory = _.last($scope.event.ticketCategories);
