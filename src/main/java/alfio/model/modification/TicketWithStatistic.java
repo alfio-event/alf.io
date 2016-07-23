@@ -61,6 +61,10 @@ public class TicketWithStatistic implements Comparable<TicketWithStatistic> {
         return tx.isPresent();
     }
 
+    public boolean isPending() {
+        return getStatus() == Ticket.TicketStatus.PENDING;
+    }
+
     public Transaction getTransaction() {
         return tx.orElse(null);
     }

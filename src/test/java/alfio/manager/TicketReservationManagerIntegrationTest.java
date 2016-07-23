@@ -81,6 +81,8 @@ public class TicketReservationManagerIntegrationTest {
 
     @Autowired
     private ConfigurationRepository configurationRepository;
+    @Autowired
+    private WaitingQueueManager waitingQueueManager;
 
     @Before
     public void ensureConfiguration() {
@@ -280,9 +282,10 @@ public class TicketReservationManagerIntegrationTest {
         PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
         assertTrue(result.isSuccessful());
         ticketReservationManager.deleteOfflinePayment(event.getEvent(), reservationId, false);
+        waitingQueueManager.distributeSeats(event.getEvent());
 
         mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
-        reservationId = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
+        reservationId = ticketReservationManager.createTicketReservation(event.getId(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
         assertTrue(result.isSuccessful());

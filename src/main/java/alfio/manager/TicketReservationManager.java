@@ -782,9 +782,10 @@ public class TicketReservationManager {
         List<String> reservationIdsToRemove = singletonList(reservationId);
         specialPriceRepository.updateStatusForReservation(reservationIdsToRemove, Status.FREE.toString());
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
+        Event event = eventRepository.findByReservationId(reservationId);
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
-        int updatedTickets = ticketRepository.freeFromReservation(reservationIdsToRemove);
-        Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
+        int updatedTickets = ticketRepository.findTicketsInReservation(reservationId).stream().mapToInt(t -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), t.getId())).sum();
+        Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
         waitingQueueManager.fireReservationExpired(reservationId);
         deleteReservations(reservationIdsToRemove);
     }

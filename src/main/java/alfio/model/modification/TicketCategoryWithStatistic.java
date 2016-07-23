@@ -45,6 +45,7 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
     private final List<SpecialPrice> tokenStatus;
     private final int actualPrice;
     private final int checkedInTickets;
+    private final int pendingTickets;
     @JsonIgnore
     private final ZoneId eventZoneId;
 
@@ -58,6 +59,7 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
                                        Map<String, String> description) {
         this.ticketCategory = ticketCategory;
         this.tickets = tickets.stream().filter(tc -> tc.hasBeenSold() || tc.isStuck()).collect(toList());
+        this.pendingTickets = (int) tickets.stream().filter(TicketWithStatistic::isPending).count();
         this.checkedInTickets = (int) this.tickets.stream().filter(TicketWithStatistic::isCheckedIn).count();
         this.soldTickets = ((int) this.tickets.stream().filter(TicketWithStatistic::hasBeenSold).count()) - checkedInTickets;
         this.tokenStatus = tokenStatus;
@@ -76,7 +78,7 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
         if(!ticketCategory.isBounded()) {
             return 0;
         }
-        return ticketCategory.getMaxTickets() - soldTickets - checkedInTickets;
+        return ticketCategory.getMaxTickets() - soldTickets - checkedInTickets - pendingTickets;
     }
 
     @Override
