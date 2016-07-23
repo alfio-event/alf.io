@@ -47,16 +47,19 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
     private final int soldTickets;
     private final int checkedInTickets;
     private final int allocatedTickets;
+    private final int releasedTickets;
     private final boolean containsUnboundedCategories;
 
     public EventWithStatistics(Event event,
                                List<EventDescription> eventDescriptions,
-                               List<TicketCategoryWithStatistic> ticketCategories) {
+                               List<TicketCategoryWithStatistic> ticketCategories,
+                               int releasedTickets) {
         this.event = event;
         this.ticketCategories = ticketCategories;
         this.soldTickets = countSoldTickets(ticketCategories);
         this.checkedInTickets = countCheckedInTickets(ticketCategories);
         this.allocatedTickets = ticketCategories.stream().filter(IS_BOUNDED).mapToInt(TicketCategoryWithStatistic::getMaxTickets).sum();
+        this.releasedTickets = releasedTickets;
         this.containsUnboundedCategories = ticketCategories.stream().anyMatch(IS_BOUNDED.negate());
         this.description = eventDescriptions.stream().collect(Collectors.toMap(EventDescription::getLocale, EventDescription::getDescription));
     }
@@ -97,7 +100,7 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
     public int getDynamicAllocation() {
         if(containsUnboundedCategories) {
             List<TicketCategoryWithStatistic> unboundedCategories = ticketCategories.stream().filter(IS_BOUNDED.negate()).collect(Collectors.toList());
-            return countNotAllocatedTickets() - countSoldTickets(unboundedCategories) - countCheckedInTickets(unboundedCategories) - countPendingTickets();
+            return countNotAllocatedTickets() - countSoldTickets(unboundedCategories) - countCheckedInTickets(unboundedCategories) - countPendingTickets(unboundedCategories) - releasedTickets;
         }
         return 0;
     }
@@ -106,8 +109,8 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
         return event.getAvailableSeats() - allocatedTickets;
     }
 
-    private int countPendingTickets() {
-        return ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getPendingTickets).sum();
+    private int countPendingTickets(List<TicketCategoryWithStatistic> unboundedCategories) {
+        return unboundedCategories.stream().mapToInt(TicketCategoryWithStatistic::getPendingTickets).sum();
     }
 
     @Override

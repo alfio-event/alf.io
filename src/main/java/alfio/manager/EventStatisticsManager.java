@@ -74,7 +74,7 @@ public class EventStatisticsManager {
     }
 
     EventWithStatistics fillWithStatistics(Event event) {
-        return new EventWithStatistics(event, eventDescriptionRepository.findByEventId(event.getId()), loadTicketCategoriesWithStats(event));
+        return new EventWithStatistics(event, eventDescriptionRepository.findByEventId(event.getId()), loadTicketCategoriesWithStats(event), ticketRepository.countReleasedTickets(event.getId()));
     }
 
     public List<Event> getAllEvents(String username) {
