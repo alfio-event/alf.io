@@ -114,8 +114,8 @@ public class WaitingQueueProcessorIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        waitingQueueManager.subscribe(event, "Giuseppe Garibaldi", "peppino@garibaldi.com", Locale.ENGLISH);
-        waitingQueueManager.subscribe(event, "Nino Bixio", "bixio@mille.org", Locale.ITALIAN);
+        waitingQueueManager.subscribe(event, "Giuseppe Garibaldi", "peppino@garibaldi.com", null, Locale.ENGLISH);
+        waitingQueueManager.subscribe(event, "Nino Bixio", "bixio@mille.org", null, Locale.ITALIAN);
         assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
 
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -166,9 +166,9 @@ public class WaitingQueueProcessorIntegrationTest {
         ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name());
 
         //sold-out
-        waitingQueueManager.subscribe(event, "Giuseppe Garibaldi", "peppino@garibaldi.com", Locale.ENGLISH);
+        waitingQueueManager.subscribe(event, "Giuseppe Garibaldi", "peppino@garibaldi.com", null, Locale.ENGLISH);
         Thread.sleep(100L);//we are testing ordering, not concurrency...
-        waitingQueueManager.subscribe(event, "Nino Bixio", "bixio@mille.org", Locale.ITALIAN);
+        waitingQueueManager.subscribe(event, "Nino Bixio", "bixio@mille.org", null, Locale.ITALIAN);
         List<WaitingQueueSubscription> subscriptions = waitingQueueRepository.loadAll(event.getId());
         assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
         assertTrue(subscriptions.stream().allMatch(w -> w.getSubscriptionType().equals(WaitingQueueSubscription.Type.SOLD_OUT)));

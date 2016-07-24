@@ -54,6 +54,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.controller.support.SessionUtil.addToFlash;
@@ -218,7 +219,7 @@ public class EventController {
             List<SaleableTicketCategory> expiredCategories = ticketCategories.stream().filter(SaleableTicketCategory::getExpired).collect(Collectors.toList());
             List<SaleableTicketCategory> validCategories = ticketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
             List<SaleableAdditionalService> additionalServices = additionalServiceRepository.loadAllForEvent(event.getId()).stream().map((as) -> getSaleableAdditionalService(event, locale, as, promoCodeDiscount.orElse(null))).collect(Collectors.toList());
-
+            Predicate<SaleableTicketCategory> waitingQueueTargetCategory = tc -> !tc.getExpired() && !tc.isBounded();
             model.addAttribute("event", eventDescriptor)//
                 .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
                 .addAttribute("ticketCategories", validCategories)//
@@ -232,12 +233,14 @@ public class EventController {
                 .addAttribute("hasPromoCodeDiscount", promoCodeDiscount.isPresent())
                 .addAttribute("promoCodeDiscount", promoCodeDiscount.orElse(null))
                 .addAttribute("displayWaitingQueueForm", EventUtil.displayWaitingQueueForm(event, ticketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable()))
+                .addAttribute("displayCategorySelectionForWaitingQueue", ticketCategories.stream().filter(waitingQueueTargetCategory).count() > 1)
+                .addAttribute("unboundedCategories", ticketCategories.stream().filter(waitingQueueTargetCategory).collect(Collectors.toList()))
                 .addAttribute("preSales", EventUtil.isPreSales(event, ticketCategories))
                 .addAttribute("userLanguage", locale.getLanguage())
                 .addAttribute("showAdditionalServices", !additionalServices.isEmpty())
                 .addAttribute("enabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isNotExpired).collect(Collectors.toList()))
                 .addAttribute("disabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isExpired).collect(Collectors.toList()))
-                .addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable) && additionalServices.stream().noneMatch(SaleableAdditionalService::getSaleable));
+                .addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable));
             model.asMap().putIfAbsent("hasErrors", false);//
             return "/event/show-event";
         }).orElse(REDIRECT + "/");
