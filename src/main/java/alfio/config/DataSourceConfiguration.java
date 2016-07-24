@@ -136,6 +136,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 
         migration.setValidateOnMigrate(false);
         migration.setTarget(MigrationVersion.LATEST);
+        migration.setOutOfOrder(true);
 
         migration.setLocations("alfio/db/" + sqlDialect + "/");
         migration.migrate();
