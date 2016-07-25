@@ -682,6 +682,25 @@ public class TicketReservationManager {
         return tickets.stream().mapToInt(Ticket::getPaidPriceInCents).map(p -> MonetaryUtil.calcVat(p, vat)).sum();
     }
 
+    private String formatPromoCode(PromoCodeDiscount promoCodeDiscount, List<Ticket> tickets) {
+
+        List<Ticket> filteredTickets = tickets.stream().filter(ticket -> promoCodeDiscount.getCategories().contains(ticket.getCategoryId())).collect(toList());
+
+        if (promoCodeDiscount.getCategories().isEmpty() || filteredTickets.isEmpty()) {
+            return promoCodeDiscount.getPromoCode();
+        }
+
+        String formattedDiscountedCategories = filteredTickets.stream()
+            .map(Ticket::getCategoryId)
+            .collect(toSet())
+            .stream()
+            .map(categoryId -> ticketCategoryRepository.getById(categoryId, promoCodeDiscount.getEventId()).getName())
+            .collect(Collectors.joining(", ", "(", ")"));
+
+
+        return promoCodeDiscount.getPromoCode() + " " + formattedDiscountedCategories;
+    }
+
     public OrderSummary orderSummaryForReservationId(String reservationId, Event event, Locale locale) {
         TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
         TotalPrice reservationCost = totalReservationCostWithVAT(reservationId);
@@ -697,7 +716,7 @@ public class TicketReservationManager {
         if(reservationCost.getDiscount() != 0) {
             promoCodeDiscount.ifPresent((promo) -> {
                 String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount()) : (promo.getDiscountAmount()+"%"));
-                summary.add(new SummaryRow(promo.getPromoCode(),
+                summary.add(new SummaryRow(formatPromoCode(promo, ticketRepository.findTicketsInReservation(reservationId)),
                         formattedSingleAmount,
                         reservationCost.discountAppliedCount, 
                         formatCents(reservationCost.discount), reservationCost.discount, SummaryRow.SummaryType.PROMOTION_CODE));
