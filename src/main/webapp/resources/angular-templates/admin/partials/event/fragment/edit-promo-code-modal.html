@@ -16,6 +16,13 @@
                 <input type="text" data-date-range data-start-model="promocode.start" min-date="true" data-end-model="promocode.end" data-ng-model="promocode.dateString" name="date" id="date" class="form-control" required />
                 <field-error data-form-obj="promocode" data-field-obj="promocode.dateString" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
+
+            <div class="form-group">
+                <label>Restrict to categories</label>
+                <ul>
+                    <li ng-repeat="category in validCategories"><label><input type="checkbox" ng-true-value="{{::category.id}}" ng-false-value="null" ng-model="promocode.categories[$index]"> {{::category.name}}</label></li>
+                </ul>
+            </div>
             
                     
             <div class="form-group">

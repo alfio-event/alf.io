@@ -422,6 +422,15 @@
             $scope.validCategories = _.filter(result.event.ticketCategories, function(tc) {
                 return !tc.expired && tc.bounded;
             });
+
+
+            //
+            $scope.ticketCategoriesById = {};
+            angular.forEach(result.event.ticketCategories, function(v) {
+                $scope.ticketCategoriesById[v.id] = v;
+            });
+            //
+
             $scope.loading = false;
             $scope.loadingMap = true;
             LocationService.getMapUrl(result.event.latitude, result.event.longitude).success(function(mapUrl) {
@@ -760,6 +769,10 @@
                 }
             });
         };
+
+
+        //
+        var validCategories = $scope.validCategories;
         
         $scope.addPromoCode = function(event) {
             $uibModal.open({
@@ -772,8 +785,14 @@
                     
                     var now = moment();
                     var eventBegin = moment(event.formattedBegin);
+
+                    $scope.validCategories = validCategories;
                     
-                    $scope.promocode = {discountType :'PERCENTAGE', start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')}, end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}};
+                    $scope.promocode = {discountType :'PERCENTAGE', start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')}, end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}, categories:[]};
+
+                    $scope.addCategory = function addCategory(index, value) {
+                        $scope.promocode.categories[index] = value;
+                    };
                     
                     $scope.$watch('promocode.promoCode', function(newVal) {
                         if(newVal) {
@@ -789,6 +808,9 @@
                             return;
                         }
                         $scope.$close(true);
+
+
+                        promocode.categories = _.filter(promocode.categories, function(i) {return i != null;});
                         
                         PromoCodeService.add(event.id, promocode).then(function(result) {
                             validationErrorHandler(result, form, form.promocode).then(function() {
