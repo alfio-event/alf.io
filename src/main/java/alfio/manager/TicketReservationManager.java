@@ -588,44 +588,46 @@ public class TicketReservationManager {
                 .collect(Collectors.toList());
     }
 
-    private int totalFrom(List<Ticket> tickets, Event event) {
+    private static int totalFrom(List<Ticket> tickets, Event event) {
         return tickets.stream().mapToInt(Ticket::getPaidPriceInCents).sum();
     }
 
     /**
-     * Get the total cost with VAT if it's not included in the ticket price.
-     * 
-     * @param reservationId
+     * Check if a given ticket can have the promo code applied
+     *
+     * @param promoCodeDiscount
+     * @param ticket
      * @return
      */
-    public TotalPrice totalReservationCostWithVAT(String reservationId) {
-        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-        
-        Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
-        
-        Event event = eventRepository.findByReservationId(reservationId);
-        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
+    private static boolean canApplyDiscount(PromoCodeDiscount promoCodeDiscount, Ticket ticket) {
+        return promoCodeDiscount.getCategories().isEmpty() || promoCodeDiscount.getCategories().contains(ticket.getCategoryId());
+    }
+
+
+    static TotalPrice totalReservationCostWithVAT(TicketReservation reservation, Optional<PromoCodeDiscount> promoCodeDiscount, Event event, List<Ticket> tickets, Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems) {
         int net = totalFrom(tickets, event);
         int vat = totalVat(tickets, event.getVat());
         final int amountToBeDiscounted;
         final int discountAppliedCount;
-        
-        
+
+
         //TODO cleanup/refactor
         //take in account the discount code
         boolean vatIncluded = event.isVatIncluded();
         if (promoCodeDiscount.isPresent()) {
             PromoCodeDiscount discount = promoCodeDiscount.get();
-            
+
+            List<Ticket> discountedTickets = tickets.stream().filter(t -> t.getPaidPriceInCents() > 0 && canApplyDiscount(discount, t)).collect(toList());
             if(discount.getDiscountType() == DiscountType.FIXED_AMOUNT) {
                 //we apply the fixed discount for each paid ticket
-                discountAppliedCount = ((int) tickets.stream().filter(t -> t.getPaidPriceInCents() > 0).count());
+                discountAppliedCount = discountedTickets.size();
                 amountToBeDiscounted =  discountAppliedCount * discount.getDiscountAmount();
             } else {
-                amountToBeDiscounted = MonetaryUtil.calcPercentage(vatIncluded ? net + vat : net, new BigDecimal(discount.getDiscountAmount()));
+                int discountedTicketTotal = discountedTickets.stream().mapToInt(Ticket::getPaidPriceInCents).sum();
+                amountToBeDiscounted = MonetaryUtil.calcPercentage(vatIncluded ? MonetaryUtil.addVAT(discountedTicketTotal, event.getVat()) : discountedTicketTotal, new BigDecimal(discount.getDiscountAmount()));
                 discountAppliedCount = 1;
             }
-            
+
             // recalc the net and vat
             if(vatIncluded) {
                 int finalPrice = Math.max(net + vat - amountToBeDiscounted, 0);
@@ -641,14 +643,31 @@ public class TicketReservationManager {
         }
 
         //FIXME discount is not applied to donations, as it wouldn't make sense. Must be implemented for #111
-        Price additionalServicesPrice = collectAdditionalServiceItems(reservationId, event)
+        Price additionalServicesPrice = additionalServiceItems
             .map(calculateAdditionalServicePrice(event))
             .reduce(new Price(0,0), Price::sum);
         Price finalPrice = additionalServicesPrice.sum(new Price(net, vat));
         return new TotalPrice(finalPrice.getTotal(), finalPrice.vat, -amountToBeDiscounted, discountAppliedCount);
     }
 
-    private Function<Pair<AdditionalService, List<AdditionalServiceItem>>, Price> calculateAdditionalServicePrice(Event event) {
+    /**
+     * Get the total cost with VAT if it's not included in the ticket price.
+     * 
+     * @param reservationId
+     * @return
+     */
+    public TotalPrice totalReservationCostWithVAT(String reservationId) {
+        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        
+        Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
+        
+        Event event = eventRepository.findByReservationId(reservationId);
+        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
+
+        return totalReservationCostWithVAT(reservation, promoCodeDiscount, event, tickets, collectAdditionalServiceItems(reservationId, event));
+    }
+
+    private static Function<Pair<AdditionalService, List<AdditionalServiceItem>>, Price> calculateAdditionalServicePrice(Event event) {
         return p -> {
             AdditionalService as = p.getLeft();
             AdditionalService.VatType vatType = as.getVatType();
@@ -659,7 +678,7 @@ public class TicketReservationManager {
     }
     
 
-    private int totalVat(List<Ticket> tickets, BigDecimal vat) {
+    private static int totalVat(List<Ticket> tickets, BigDecimal vat) {
         return tickets.stream().mapToInt(Ticket::getPaidPriceInCents).map(p -> MonetaryUtil.calcVat(p, vat)).sum();
     }
 
