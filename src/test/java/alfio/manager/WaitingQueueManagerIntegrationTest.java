@@ -29,10 +29,12 @@ import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -77,10 +79,17 @@ public class WaitingQueueManagerIntegrationTest {
     private EventStatisticsManager eventStatisticsManager;
     @Autowired
     private TicketReservationManager ticketReservationManager;
+    @Autowired
+    private ConfigurationRepository configurationRepository;
 
     @BeforeClass
     public static void initEnv() {
         initSystemProperties();
+    }
+
+    @Before
+    public void init() {
+        ensureMinimalConfiguration(configurationRepository);
     }
 
     @Test
