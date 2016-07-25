@@ -27,6 +27,7 @@ import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.repository.AdditionalServiceRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
@@ -35,6 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.BindingResult;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -74,18 +76,21 @@ public class ReservationForm {
         return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
     }
 
-    private int additionalServicesSelectionCount() {
-        return (int) selectedAdditionalServices().stream().count();
+    private int additionalServicesSelectionCount(AdditionalServiceRepository additionalServiceRepository, int eventId) {
+        return (int) selectedAdditionalServices().stream()
+            .filter(as -> as.getAdditionalServiceId() != null && (additionalServiceRepository.getById(as.getAdditionalServiceId(), eventId).isFixPrice() || Optional.ofNullable(as.getAmount()).filter(a -> a.compareTo(BigDecimal.ZERO) > 0).isPresent()))
+            .count();
     }
 
     public Optional<Pair<List<TicketReservationWithOptionalCodeModification>, List<ASReservationWithOptionalCodeModification>>> validate(BindingResult bindingResult,
                                                                                                                                          TicketReservationManager tickReservationManager,
                                                                                                                                          TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
+                                                                                                                                         AdditionalServiceRepository additionalServiceRepository,
                                                                                                                                          EventManager eventManager,
                                                                                                                                          Event event,
                                                                                                                                          Locale locale) {
         int selectionCount = ticketSelectionCount();
-        int additionalServicesCount = additionalServicesSelectionCount();
+        int additionalServicesCount = additionalServicesSelectionCount(additionalServiceRepository, event.getId());
 
         if (selectionCount + additionalServicesCount <= 0) {
             bindingResult.reject(ErrorsCode.STEP_1_SELECT_AT_LEAST_ONE);
