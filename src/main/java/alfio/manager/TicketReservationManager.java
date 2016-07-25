@@ -604,7 +604,7 @@ public class TicketReservationManager {
     }
 
 
-    static TotalPrice totalReservationCostWithVAT(TicketReservation reservation, Optional<PromoCodeDiscount> promoCodeDiscount, Event event, List<Ticket> tickets, Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems) {
+    static TotalPrice totalReservationCostWithVAT(Optional<PromoCodeDiscount> promoCodeDiscount, Event event, List<Ticket> tickets, Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems) {
         int net = totalFrom(tickets, event);
         int vat = totalVat(tickets, event.getVat());
         final int amountToBeDiscounted;
@@ -664,7 +664,7 @@ public class TicketReservationManager {
         Event event = eventRepository.findByReservationId(reservationId);
         List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
 
-        return totalReservationCostWithVAT(reservation, promoCodeDiscount, event, tickets, collectAdditionalServiceItems(reservationId, event));
+        return totalReservationCostWithVAT(promoCodeDiscount, event, tickets, collectAdditionalServiceItems(reservationId, event));
     }
 
     private static Function<Pair<AdditionalService, List<AdditionalServiceItem>>, Price> calculateAdditionalServicePrice(Event event) {
