@@ -216,8 +216,8 @@ public class WaitingQueueManagerIntegrationTest {
     public void testAssignTicketToWaitingQueueBoundedCategory() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now().minusMinutes(3)),
+                new DateTimeModification(LocalDate.now(), LocalTime.now().plusMinutes(20)),
                 DESCRIPTION, BigDecimal.TEN, false, "", true));
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
