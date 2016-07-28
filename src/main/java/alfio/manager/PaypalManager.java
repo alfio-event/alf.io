@@ -117,15 +117,9 @@ public class PaypalManager {
         String description = messageSource.getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(event, reservationId), event.getDisplayName()}, locale);
         transaction.setDescription(description).setAmount(amount);
 
-        List<Item> items = orderSummary.getSummary().stream()
-            .map(summaryRow ->  fromSummaryRow(summaryRow, event))
-            .collect(Collectors.toList());
 
-        if(!event.isVatIncluded()) {
-            String vatMsg = messageSource.getMessage("reservation-page.vat", new Object[] {event.getVat()}, locale);
-            items.add(new Item(vatMsg, "1", orderSummary.getTotalVAT(), event.getCurrency()));
-        }
-
+        List<Item> items = new ArrayList<>();
+        items.add(new Item(description, "1", orderSummary.getTotalPrice(), event.getCurrency()));
         transaction.setItemList(new ItemList().setItems(items));
 
         List<Transaction> transactions = new ArrayList<>();
