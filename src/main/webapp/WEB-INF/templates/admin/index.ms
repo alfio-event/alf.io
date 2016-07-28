@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-csp.css"/>
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.css"/>
-    <link href="https://fonts.googleapis.com/css?family=Architects+Daughter|Source+Sans+Pro:300,600" rel="stylesheet" type="text/css">
     <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/lodash/lodash.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
