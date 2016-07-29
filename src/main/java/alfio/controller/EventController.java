@@ -296,7 +296,7 @@ public class EventController {
                     Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
 
                     try {
-                        String reservationId = ticketReservationManager.createTicketReservation(event.getId(),
+                        String reservationId = ticketReservationManager.createTicketReservation(event,
                                 selected.getLeft(), selected.getRight(), expiration,
                                 SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()),
                                 SessionUtil.retrievePromotionCodeDiscount(request.getRequest()),

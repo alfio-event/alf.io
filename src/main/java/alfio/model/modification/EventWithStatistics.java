@@ -19,27 +19,30 @@ package alfio.model.modification;
 import alfio.model.Event;
 import alfio.model.EventDescription;
 import alfio.model.EventHiddenFieldContainer;
+import alfio.model.PriceContainer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Getter
-public class EventWithStatistics implements StatisticsContainer, Comparable<EventWithStatistics> {
+public class EventWithStatistics implements StatisticsContainer, Comparable<EventWithStatistics>, PriceContainer {
 
     public static final DateTimeFormatter JSON_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm");
     public static final Predicate<TicketCategoryWithStatistic> IS_BOUNDED = TicketCategoryWithStatistic::isBounded;
 
-    @Delegate(excludes = EventHiddenFieldContainer.class)
+    @Delegate(excludes = {EventHiddenFieldContainer.class, PriceContainer.class})
     @JsonIgnore
     private final Event event;
     private final List<TicketCategoryWithStatistic> ticketCategories;
@@ -138,5 +141,35 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
 
     private static int countSoldTickets(List<TicketCategoryWithStatistic> ticketCategories) {
         return ticketCategories.stream().mapToInt(TicketCategoryWithStatistic::getSoldTickets).sum();
+    }
+
+    @Override
+    @JsonIgnore
+    public int getSrcPriceCts() {
+        return event.getSrcPriceCts();
+    }
+
+    @Override
+    public String getCurrencyCode() {
+        return getCurrency();
+    }
+
+    @Override
+    @JsonIgnore
+    public Optional<BigDecimal> getOptionalVatPercentage() {
+        return getVatStatus() != VatStatus.NONE ? Optional.ofNullable(event.getVat()) : Optional.empty();
+    }
+
+    public BigDecimal getVatPercentage() {
+        return getVatPercentageOrZero();
+    }
+
+    public BigDecimal getVat() {
+        return getVAT();
+    }
+
+    @Override
+    public VatStatus getVatStatus() {
+        return event.getVatStatus();
     }
 }

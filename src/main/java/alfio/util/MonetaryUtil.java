@@ -18,8 +18,7 @@ package alfio.util;
 
 import java.math.BigDecimal;
 
-import static java.math.RoundingMode.HALF_UP;
-import static java.math.RoundingMode.UP;
+import static java.math.RoundingMode.*;
 
 public final class MonetaryUtil {
 
@@ -36,11 +35,8 @@ public final class MonetaryUtil {
         return price.add(price.multiply(vat.divide(HUNDRED, 5, UP))).setScale(0, HALF_UP);
     }
 
-    public static int removeVAT(int priceInCents, BigDecimal vat) {
-        return new BigDecimal(priceInCents)
-                .divide(BigDecimal.ONE.add(vat.divide(HUNDRED, 5, UP)), 5, HALF_UP)
-                .setScale(0, HALF_UP)
-                .intValueExact();
+    public static BigDecimal extractVAT(BigDecimal price, BigDecimal vat) {
+        return price.subtract(price.divide(BigDecimal.ONE.add(vat.divide(HUNDRED, 5, UP)), 5, HALF_DOWN));
     }
 
     public static int calcPercentage(int priceInCents, BigDecimal vat) {
@@ -48,9 +44,9 @@ public final class MonetaryUtil {
                 .setScale(0, HALF_UP)
                 .intValueExact();
     }
-    
-    public static int calcVat(int priceInCents, BigDecimal percentage) {
-        return calcPercentage(priceInCents, percentage);
+
+    public static BigDecimal calcVat(BigDecimal price, BigDecimal percentage) {
+        return price.multiply(percentage.divide(HUNDRED, 5, HALF_UP));
     }
 
     public static BigDecimal centsToUnit(int cents) {

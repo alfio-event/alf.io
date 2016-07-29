@@ -29,9 +29,9 @@
             <field-error data-form-obj="editEvent" data-field-obj="editEvent.currency" data-required-pattern="'Three capital letters'"></field-error>
         </div>
         <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
-            <label for="vat">VAT (%)</label>
-            <input type="number" data-ng-model="obj.vat" name="vat" id="vat" class="form-control" required />
-            <field-error data-form-obj="editEvent" data-field-obj="editEvent.vat"></field-error>
+            <label for="vatPercentage">VAT (%)</label>
+            <input type="number" data-ng-model="obj.vatPercentage" name="vatPercentage" id="vatPercentage" class="form-control" required />
+            <field-error data-form-obj="editEvent" data-field-obj="editEvent.vatPercentage"></field-error>
         </div>
         <div class="col-sm-4" data-ng-if="!obj.freeOfCharge">
             <label for="vatIncluded">VAT included</label>

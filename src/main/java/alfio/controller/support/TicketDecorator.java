@@ -55,7 +55,7 @@ public class TicketDecorator {
     }
 
     public boolean isFree() {
-        return getPaidPriceInCents() == 0;
+        return getFinalPriceCts() == 0;
     }
 
     public boolean getCancellationEnabled() {

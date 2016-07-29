@@ -18,8 +18,8 @@ package alfio.controller.decorator;
 
 import alfio.model.AdditionalService;
 import alfio.model.Event;
+import alfio.model.PriceContainer;
 import alfio.model.PromoCodeDiscount;
-import alfio.util.EventUtil;
 import lombok.experimental.Delegate;
 
 import java.math.BigDecimal;
@@ -27,11 +27,9 @@ import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
-import static alfio.util.MonetaryUtil.formatCents;
-
-public class SaleableAdditionalService {
+public class SaleableAdditionalService implements PriceContainer {
     private final Event event;
-    @Delegate(excludes = Exclusions.class)
+    @Delegate(excludes = {Exclusions.class, PriceContainer.class})
     private final AdditionalService additionalService;
     private final String title;
     private final String description;
@@ -66,7 +64,7 @@ public class SaleableAdditionalService {
     }
 
     public boolean getFree() {
-        return isFixPrice() && getPriceInCents() == 0;
+        return isFixPrice() && getFinalPrice().compareTo(BigDecimal.ZERO) == 0;
     }
 
     public boolean getSaleable() {
@@ -81,12 +79,47 @@ public class SaleableAdditionalService {
         return getExpiration(event.getZoneId());
     }
 
-    public String getFinalPrice() {
-        return formatCents(getFinalPriceInCents());
+    @Override
+    public int getSrcPriceCts() {
+        return Optional.ofNullable(additionalService.getSrcPriceCts()).orElse(0);
     }
 
-    private int getFinalPriceInCents() {
-        return EventUtil.getFinalPriceInCents(event, additionalService);
+    @Override
+    public Optional<PromoCodeDiscount> getDiscount() {
+        return Optional.ofNullable(promoCodeDiscount);
+    }
+
+    @Override
+    public String getCurrencyCode() {
+        return event.getCurrency();
+    }
+
+    @Override
+    public Optional<BigDecimal> getOptionalVatPercentage() {
+        if(getVatStatus() != VatStatus.NONE) {
+            return Optional.ofNullable(event.getVat()); //FIXME implement VAT override
+        }
+        return Optional.of(BigDecimal.ZERO);
+    }
+
+    @Override
+    public VatStatus getVatStatus() {
+        switch (getVatType()) {
+            case INHERITED:
+                return event.getVatStatus();
+            case NONE:
+                return VatStatus.NONE;
+            case CUSTOM_EXCLUDED:
+                return VatStatus.NOT_INCLUDED;
+            case CUSTOM_INCLUDED:
+                return VatStatus.INCLUDED;
+            default:
+                return VatStatus.NOT_INCLUDED;
+        }
+    }
+
+    public String getFormattedFinalPrice() {
+        return getFinalPrice().add(getAppliedDiscount()).toPlainString();
     }
 
     public boolean getSupportsDiscount() {
@@ -98,7 +131,7 @@ public class SaleableAdditionalService {
     }
 
     public String getDiscountedPrice() {
-        return Optional.ofNullable(promoCodeDiscount).map(d -> formatCents(DecoratorUtil.calcDiscount(d, getFinalPriceInCents()))).orElseGet(this::getFinalPrice);
+        return getFinalPrice().toPlainString();
     }
 
     public boolean getVatIncluded() {
@@ -109,7 +142,7 @@ public class SaleableAdditionalService {
             case CUSTOM_EXCLUDED:
                 return false;
             case CUSTOM_INCLUDED:
-                return false;
+                return true;
             default:
                 return false;
         }

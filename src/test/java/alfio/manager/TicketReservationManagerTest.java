@@ -178,6 +178,7 @@ public class TicketReservationManagerTest {
         when(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL))).thenReturn(BASE_URL);
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
         when(ticket.getId()).thenReturn(TICKET_ID);
+        when(ticket.getSrcPriceCts()).thenReturn(10);
         when(ticketCategory.getId()).thenReturn(TICKET_CATEGORY_ID);
     }
 
@@ -453,8 +454,9 @@ public class TicketReservationManagerTest {
         when(ticketRepository.selectTicketInCategoryForUpdate(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(1), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(ids);
         when(reservationModification.getAmount()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
-        trm.reserveTicketsForCategory(EVENT_ID, Optional.empty(), "trid", reservationModification, Locale.ENGLISH, false);
-        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage());
+        when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
+        trm.reserveTicketsForCategory(event, Optional.empty(), "trid", reservationModification, Locale.ENGLISH, false, null);
+        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0);
     }
 
     @Test
@@ -464,8 +466,9 @@ public class TicketReservationManagerTest {
         when(ticketRepository.selectTicketInCategoryForUpdate(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(1), eq(asList(TicketStatus.RELEASED.name(), TicketStatus.PRE_RESERVED.name())))).thenReturn(ids);
         when(reservationModification.getAmount()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
-        trm.reserveTicketsForCategory(EVENT_ID, Optional.<String>empty(), "trid", reservationModification, Locale.ENGLISH, true);
-        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage());
+        when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
+        trm.reserveTicketsForCategory(event, Optional.empty(), "trid", reservationModification, Locale.ENGLISH, true, null);
+        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0);
     }
 
     @Test
@@ -475,8 +478,9 @@ public class TicketReservationManagerTest {
         when(ticketRepository.selectNotAllocatedTicketsForUpdate(eq(EVENT_ID), eq(1), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(ids);
         when(reservationModification.getAmount()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
-        trm.reserveTicketsForCategory(EVENT_ID, Optional.empty(), "trid", reservationModification, Locale.ENGLISH, false);
-        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage());
+        when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
+        trm.reserveTicketsForCategory(event, Optional.empty(), "trid", reservationModification, Locale.ENGLISH, false, null);
+        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0);
     }
 
     @Test
@@ -486,8 +490,9 @@ public class TicketReservationManagerTest {
         when(ticketRepository.selectNotAllocatedTicketsForUpdate(eq(EVENT_ID), eq(1), eq(asList(TicketStatus.RELEASED.name(), TicketStatus.PRE_RESERVED.name())))).thenReturn(ids);
         when(reservationModification.getAmount()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
-        trm.reserveTicketsForCategory(EVENT_ID, Optional.<String>empty(), "trid", reservationModification, Locale.ENGLISH, true);
-        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage());
+        when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
+        trm.reserveTicketsForCategory(event, Optional.empty(), "trid", reservationModification, Locale.ENGLISH, true, null);
+        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0);
     }
 
     //cleanup expired reservations
@@ -617,7 +622,7 @@ public class TicketReservationManagerTest {
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), isNull(ZonedDateTime.class), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
         when(paymentManager.processPayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), anyString(), anyString())).thenReturn(PaymentResult.successful(TRANSACTION_ID));
-        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.<String>empty(), Optional.of(PaymentProxy.STRIPE), false);
+        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", "", Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE), false);
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayTransactionId());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()));
