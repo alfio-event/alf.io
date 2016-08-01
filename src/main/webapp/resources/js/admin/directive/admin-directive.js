@@ -640,38 +640,45 @@
                     return state.data.view || 'UNKNOWN';
                 };
                 var loadEventData = function() {
-                    if(ctrl.displayEventData && $state.current.data.event) {
-                        ctrl.event = $state.current.data.event;
-                        ctrl.internal = (ctrl.event.type === 'INTERNAL');
-                        ctrl.openDeleteWarning = function() {
-                            EventService.deleteEvent(ctrl.event).then(function(result) {
-                                $state.go('index');
-                            });
-                        };
-                        ctrl.openFieldSelectionModal = function() {
-                            EventService.exportAttendees(ctrl.event);
-                        };
-                        ctrl.downloadSponsorsScan = function() {
-                            $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export.csv");
-                        };
-                        ctrl.goToCategory = function(category) {
-                            ctrl.navigateTo('ticket-category-'+category.id);
-                        };
-                        ctrl.categoryFilter = {
-                            active: true,
-                            expired: false,
-                            freeText: ''
-                        };
-                        ctrl.filterChanged = function() {
-                            $rootScope.$emit('SidebarCategoryFilterUpdated', ctrl.categoryFilter);
-                        };
-                        toUnbind.push($rootScope.$on('CategoryFilterUpdated', function(ev, categoryFilter) {
-                            if(categoryFilter) {
-                                ctrl.categoryFilter.freeText = categoryFilter.freeText;
-                            }
-                        }));
+                    if(ctrl.displayEventData && $state.params.eventName) {
+                        EventService.getEvent($state.params.eventName).success(function(event) {
+                            ctrl.event = event.event;
+                            ctrl.internal = (ctrl.event.type === 'INTERNAL');
+                            ctrl.openDeleteWarning = function() {
+                                EventService.deleteEvent(ctrl.event).then(function(result) {
+                                    $state.go('index');
+                                });
+                            };
+                            ctrl.openFieldSelectionModal = function() {
+                                EventService.exportAttendees(ctrl.event);
+                            };
+                            ctrl.downloadSponsorsScan = function() {
+                                $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export.csv");
+                            };
+                            ctrl.goToCategory = function(category) {
+                                ctrl.navigateTo('ticket-category-'+category.id);
+                            };
+                            ctrl.categoryFilter = {
+                                active: true,
+                                expired: false,
+                                freeText: ''
+                            };
+                            ctrl.filterChanged = function() {
+                                $rootScope.$emit('SidebarCategoryFilterUpdated', ctrl.categoryFilter);
+                            };
+                            toUnbind.push($rootScope.$on('CategoryFilterUpdated', function(ev, categoryFilter) {
+                                if(categoryFilter) {
+                                    ctrl.categoryFilter.freeText = categoryFilter.freeText;
+                                }
+                            }));
+                        });
                     }
                 };
+
+                $rootScope.$on('EventUpdated', function() {
+                    loadEventData();
+                });
+
                 ctrl.currentView = detectCurrentView($state.current);
                 ctrl.isDetail = ctrl.currentView === 'EVENT_DETAIL';
                 loadEventData();

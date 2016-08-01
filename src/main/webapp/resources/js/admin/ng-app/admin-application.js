@@ -415,52 +415,57 @@
                                                         getEvent) {
         var loadData = function() {
             $scope.loading = true;
-            var result = getEvent.data;
 
-            $scope.event = result.event;
-            $scope.organization = result.organization;
-            $scope.validCategories = _.filter(result.event.ticketCategories, function(tc) {
-                return !tc.expired && tc.bounded;
-            });
+            EventService.getEvent($state.params.eventName).success(function(result) {
+                if($scope.event) {
+                    //for sidebar
+                    $rootScope.$emit('EventUpdated');
+                }
+                $scope.event = result.event;
+                $scope.organization = result.organization;
+                $scope.validCategories = _.filter(result.event.ticketCategories, function(tc) {
+                    return !tc.expired && tc.bounded;
+                });
 
 
-            //
-            $scope.ticketCategoriesById = {};
-            angular.forEach(result.event.ticketCategories, function(v) {
-                $scope.ticketCategoriesById[v.id] = v;
-            });
-            //
+                //
+                $scope.ticketCategoriesById = {};
+                angular.forEach(result.event.ticketCategories, function(v) {
+                    $scope.ticketCategoriesById[v.id] = v;
+                });
+                //
 
-            $scope.loading = false;
-            $scope.loadingMap = true;
-            LocationService.getMapUrl(result.event.latitude, result.event.longitude).success(function(mapUrl) {
-                $scope.event.geolocation = {
-                    mapUrl: mapUrl,
-                    timeZone: result.event.timeZone
+                $scope.loading = false;
+                $scope.loadingMap = true;
+                LocationService.getMapUrl(result.event.latitude, result.event.longitude).success(function(mapUrl) {
+                    $scope.event.geolocation = {
+                        mapUrl: mapUrl,
+                        timeZone: result.event.timeZone
+                    };
+                    $scope.loadingMap = false;
+                });
+
+
+                PromoCodeService.list(result.event.id).success(function(list) {
+                    $scope.promocodes = list;
+                    angular.forEach($scope.promocodes, function(v) {
+                        (function(v) {
+                            PromoCodeService.countUse(result.event.id, v.promoCode).then(function(val) {
+                                v.useCount = parseInt(val.data, 10);
+                            });
+                        })(v);
+                    });
+                });
+
+                $scope.unbindTickets = function(event , category) {
+                    EventService.unbindTickets(event, category).success(function() {
+                        loadData();
+                    });
                 };
-                $scope.loadingMap = false;
-            });
 
-
-            PromoCodeService.list(result.event.id).success(function(list) {
-                $scope.promocodes = list;
-                angular.forEach($scope.promocodes, function(v) {
-                    (function(v) {
-                        PromoCodeService.countUse(result.event.id, v.promoCode).then(function(val) {
-                            v.useCount = parseInt(val.data, 10);
-                        });
-                    })(v);
+                EventService.getAdditionalFields($stateParams.eventName).success(function(result) {
+                    $scope.additionalFields = result;
                 });
-            });
-
-            $scope.unbindTickets = function(event , category) {
-                EventService.unbindTickets(event, category).success(function() {
-                    loadData();
-                });
-            };
-
-            EventService.getAdditionalFields($stateParams.eventName).success(function(result) {
-                $scope.additionalFields = result;
             });
         };
         loadData();
@@ -630,6 +635,7 @@
                         }
                         EventService.saveTicketCategory(event, category).then(function(result) {
                             validationErrorHandler(result, form, form).then(function() {
+                                loadData();
                                 $scope.$close(true);
                             });
                         }, errorHandler);
@@ -780,7 +786,7 @@
                 templateUrl:BASE_STATIC_URL + '/event/fragment/edit-promo-code-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
-                    
+
                     $scope.event = event;
                     
                     var now = moment();
