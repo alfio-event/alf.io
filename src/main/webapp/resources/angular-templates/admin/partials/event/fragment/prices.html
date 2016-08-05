@@ -20,11 +20,11 @@
             </div>
             <div class="col-sm-3" data-ng-if="!event.freeOfCharge">
                 <label>VAT (%)</label>
-                <p class="form-control-static">{{event.vat}}</p>
+                <p class="form-control-static">{{event.vatPercentage | currency:""}}</p>
             </div>
             <div class="col-sm-3" data-ng-if="!event.freeOfCharge">
                 <label>Final Price</label>
-                <p class="form-control-static">{{calculateTotalPrice(event) | currency : (event.currency || "")}}</p>
+                <p class="form-control-static">{{event.finalPrice | currency : (event.currency || "")}}</p>
             </div>
         </div>
     </div>

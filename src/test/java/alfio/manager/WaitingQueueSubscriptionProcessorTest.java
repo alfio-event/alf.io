@@ -72,10 +72,10 @@ public class WaitingQueueSubscriptionProcessorTest {{
             TicketReservationWithOptionalCodeModification reservation = it.usesMock(TicketReservationWithOptionalCodeModification.class);
             ZonedDateTime expiration = ZonedDateTime.now().plusDays(1);
             when(waitingQueueManager.distributeSeats(eq(event))).thenReturn(Stream.of(Triple.of(subscription, reservation, expiration)));
-            when(ticketReservationManager.createTicketReservation(eq(eventId), anyListOf(TicketReservationWithOptionalCodeModification.class), anyListOf(ASReservationWithOptionalCodeModification.class), any(Date.class), eq(Optional.<String>empty()), eq(Optional.<String>empty()), any(Locale.class), eq(true))).thenReturn(reservationId);
+            when(ticketReservationManager.createTicketReservation(eq(event), anyListOf(TicketReservationWithOptionalCodeModification.class), anyListOf(ASReservationWithOptionalCodeModification.class), any(Date.class), eq(Optional.empty()), eq(Optional.empty()), any(Locale.class), eq(true))).thenReturn(reservationId);
             processor.handleWaitingTickets();
             verify(configurationManager).getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false));
-            verify(ticketReservationManager).createTicketReservation(eq(eventId), eq(Collections.singletonList(reservation)), anyListOf(ASReservationWithOptionalCodeModification.class), eq(Date.from(expiration.toInstant())), eq(Optional.<String>empty()), eq(Optional.<String>empty()), eq(Locale.ENGLISH), eq(true));
+            verify(ticketReservationManager).createTicketReservation(eq(event), eq(Collections.singletonList(reservation)), anyListOf(ASReservationWithOptionalCodeModification.class), eq(Date.from(expiration.toInstant())), eq(Optional.empty()), eq(Optional.empty()), eq(Locale.ENGLISH), eq(true));
             verify(notificationManager).sendSimpleEmail(eq(event), eq("me"), eq("subject"), any(TextTemplateGenerator.class));
         });
     });

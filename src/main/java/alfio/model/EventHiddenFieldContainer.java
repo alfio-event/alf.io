@@ -19,12 +19,10 @@ package alfio.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.util.Optional;
 
-/**
- * Created by celestino on 06.07.16.
- */
 public interface EventHiddenFieldContainer {
     @JsonIgnore
     String getPrivateKey();
@@ -37,6 +35,9 @@ public interface EventHiddenFieldContainer {
 
     @JsonIgnore
     String getGoogleCalendarUrl();
+
+    @JsonIgnore
+    BigDecimal getVat();
 
     @JsonIgnore
     String getGoogleCalendarUrl(String description);

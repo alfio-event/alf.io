@@ -16,47 +16,41 @@
  */
 package alfio.util;
 
-import com.insightfullogic.lambdabehave.JunitSuiteRunner;
-import org.junit.runner.RunWith;
+import org.junit.Test;
 
 import java.math.BigDecimal;
 
-import static com.insightfullogic.lambdabehave.Suite.describe;
+import static org.junit.Assert.assertEquals;
 
-@RunWith(JunitSuiteRunner.class)
-public class MonetaryUtilTest {{
-        int price = 10000;
-        describe("MonetaryUtil.addVAT", it -> {
-            it.should("include 7.5% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("7.50"))).is(10750));
-            it.should("include 8% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("8.00"))).is(10800));
-            it.should("include 8% of VAT (corner case)", expect -> expect.that(MonetaryUtil.addVAT(7407, new BigDecimal("8.00"))).is(8000));
-            it.should("include 8% of VAT (another corner case)", expect -> expect.that(MonetaryUtil.addVAT(370, new BigDecimal("8.00"))).is(400));
-            it.should("include 8% of VAT (yet another corner case)", expect -> expect.that(MonetaryUtil.addVAT(648, new BigDecimal("8.00"))).is(700));
-            it.should("include 7.99% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("7.99"))).is(10799));
-            it.should("include 7.999% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("7.999"))).is(10800));
-            it.should("include 21% of VAT", expect -> expect.that(MonetaryUtil.addVAT(price, new BigDecimal("21.00"))).is(12100));
-        });
+public class MonetaryUtilTest {
 
-        describe("MonetaryUtil.removeVAT", it -> {
-            it.should("remove 7.5% of VAT", expect -> expect.that(MonetaryUtil.removeVAT(10750, new BigDecimal("7.50"))).is(price));
-            it.should("remove 8% of VAT", expect -> expect.that(MonetaryUtil.removeVAT(10800, new BigDecimal("8.00"))).is(price));
-            it.should("remove 8% of VAT (corner case)", expect -> expect.that(MonetaryUtil.removeVAT(8000, new BigDecimal("8.00"))).is(7407));
-            it.should("remove 7.99% of VAT", expect -> expect.that(MonetaryUtil.removeVAT(10799, new BigDecimal("7.99"))).is(price));
-            it.should("remove 7.999% of VAT", expect -> expect.that(MonetaryUtil.removeVAT(10800, new BigDecimal("7.999"))).is(price));
-            it.should("remove 21% of VAT", expect -> expect.that(MonetaryUtil.removeVAT(12100, new BigDecimal("21.00"))).is(price));
-        });
+    private static final int price = 10000;
 
-        describe("MonetaryUtil.centsToUnit", it -> {
-            it.should("convert 10000", expect -> expect.that(MonetaryUtil.centsToUnit(10000)).is(new BigDecimal("100.00")));
-            it.should("convert 10001", expect -> expect.that(MonetaryUtil.centsToUnit(10001)).is(new BigDecimal("100.01")));
-            it.should("convert 10099", expect -> expect.that(MonetaryUtil.centsToUnit(10099)).is(new BigDecimal("100.99")));
-            it.should("convert 9750", expect -> expect.that(MonetaryUtil.centsToUnit(9750)).is(new BigDecimal("97.50")));
-        });
+    @Test
+    public void addVAT() throws Exception {
+        assertEquals(10750, MonetaryUtil.addVAT(price, new BigDecimal("7.50")));
+        assertEquals(10800, MonetaryUtil.addVAT(price, new BigDecimal("8.00")));
+        assertEquals(8000, MonetaryUtil.addVAT(7407, new BigDecimal("8.00")));
+        assertEquals(400, MonetaryUtil.addVAT(370, new BigDecimal("8.00")));
+        assertEquals(700, MonetaryUtil.addVAT(648, new BigDecimal("8.00")));
+        assertEquals(10799, MonetaryUtil.addVAT(price, new BigDecimal("7.99")));
+        assertEquals(10800, MonetaryUtil.addVAT(price, new BigDecimal("7.999")));
+        assertEquals(12100, MonetaryUtil.addVAT(price, new BigDecimal("21.00")));
+    }
 
-        describe("MonetaryUtil.unitToCents", it -> {
-            it.should("convert 100.00", expect -> expect.that(MonetaryUtil.unitToCents(new BigDecimal("100.00"))).is(10000));
-            it.should("convert 100.01", expect -> expect.that(MonetaryUtil.unitToCents(new BigDecimal("100.01"))).is(10001));
-            it.should("convert 100.99", expect -> expect.that(MonetaryUtil.unitToCents(new BigDecimal("100.99"))).is(10099));
-            it.should("convert 100.999", expect -> expect.that(MonetaryUtil.unitToCents(new BigDecimal("100.999"))).is(10100));
-        });
-}}
+    @Test
+    public void centsToUnit() throws Exception {
+        assertEquals(new BigDecimal("100.00"), MonetaryUtil.centsToUnit(10000));
+        assertEquals(new BigDecimal("100.01"), MonetaryUtil.centsToUnit(10001));
+        assertEquals(new BigDecimal("100.99"), MonetaryUtil.centsToUnit(10099));
+        assertEquals(new BigDecimal("97.50"), MonetaryUtil.centsToUnit(9750));
+    }
+
+    @Test
+    public void unitToCents() throws Exception {
+        assertEquals(10000, MonetaryUtil.unitToCents(new BigDecimal("100.00")));
+        assertEquals(10001, MonetaryUtil.unitToCents(new BigDecimal("100.01")));
+        assertEquals(10099, MonetaryUtil.unitToCents(new BigDecimal("100.99")));
+        assertEquals(10100, MonetaryUtil.unitToCents(new BigDecimal("100.999")));
+    }
+}

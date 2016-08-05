@@ -17,19 +17,18 @@
 package alfio.controller.decorator;
 
 import alfio.model.Event;
+import alfio.model.PriceContainer;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.TicketCategory;
-import alfio.util.EventUtil;
 import lombok.experimental.Delegate;
 
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
-import static alfio.util.MonetaryUtil.formatCents;
-
-public class SaleableTicketCategory {
+public class SaleableTicketCategory implements PriceContainer {
 
     @Delegate
     private final TicketCategory ticketCategory;
@@ -99,12 +98,28 @@ public class SaleableTicketCategory {
         return getInception(zoneId);
     }
 
-    public String getFinalPrice() {
-        return formatCents(getFinalPriceInCents());
+    @Override
+    public Optional<PromoCodeDiscount> getDiscount() {
+        return Optional.ofNullable(promoCodeDiscount);
     }
 
-    private int getFinalPriceInCents() {
-        return EventUtil.getFinalPriceInCents(event, ticketCategory);
+    @Override
+    public String getCurrencyCode() {
+        return event.getCurrency();
+    }
+
+    @Override
+    public Optional<BigDecimal> getOptionalVatPercentage() {
+        return Optional.ofNullable(event.getVat());
+    }
+
+    @Override
+    public VatStatus getVatStatus() {
+        return event.getVatStatus();
+    }
+
+    public String getFormattedFinalPrice() {
+        return getFinalPriceToDisplay(getFinalPrice().add(getAppliedDiscount()), getVAT(), getVatStatus()).toString();
     }
 
     public int[] getAmountOfTickets() {
@@ -116,7 +131,7 @@ public class SaleableTicketCategory {
     }
 
     public String getDiscountedPrice() {
-        return Optional.ofNullable(promoCodeDiscount).map(d -> formatCents(DecoratorUtil.calcDiscount(d, getFinalPriceInCents()))).orElseGet(this::getFinalPrice);
+        return getFinalPriceToDisplay(getFinalPrice(), getVAT(), getVatStatus()).toString();
     }
 
     public boolean getSupportsDiscount() {
@@ -125,6 +140,13 @@ public class SaleableTicketCategory {
 
     public PromoCodeDiscount getPromoCodeDiscount() {
         return promoCodeDiscount;
+    }
+
+    private static BigDecimal getFinalPriceToDisplay(BigDecimal price, BigDecimal vat, VatStatus vatStatus) {
+        if(vatStatus == VatStatus.NOT_INCLUDED) {
+            return price.subtract(vat);
+        }
+        return price;
     }
 
 

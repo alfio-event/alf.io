@@ -39,7 +39,7 @@ public interface SponsorScanRepository {
     int insert(@Bind("userId") int userId, @Bind("creation") ZonedDateTime creation, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
 
     @Query("select t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
-        " t.original_price_cts t_original_price_cts, t.paid_price_cts t_paid_price_cts, t.tickets_reservation_id t_tickets_reservation_id," +
+        " t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id," +
         " t.full_name t_full_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment," +
         " t.user_language t_user_language," +
         " s.user_id s_user_id, s.creation s_creation, s.event_id s_event_id, s.ticket_id s_ticket_id" +

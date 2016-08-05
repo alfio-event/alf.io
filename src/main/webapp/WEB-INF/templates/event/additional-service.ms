@@ -28,17 +28,17 @@
                 {{/free}}
                 {{^free}}
                     {{#expired}}
-                        {{finalPrice}} {{currency}}
+                        {{formattedFinalPrice}} {{currencyCode}}
                     {{/expired}}
                     {{^expired}}
                         {{^userDefinedPrice}}
                             {{#supportsDiscount}}
-                                <del>{{finalPrice}}</del>
+                                <del>{{formattedFinalPrice}}</del>
                                 <mark>{{discountedPrice}}</mark>
-                                {{currency}}
+                                {{currencyCode}}
                             {{/supportsDiscount}}
                             {{^supportsDiscount}}
-                                {{finalPrice}} {{currency}}
+                                {{formattedFinalPrice}} {{currencyCode}}
                             {{/supportsDiscount}}
                             {{#vatApplies}}
                             <i class="fa fa-info-circle text-info tooltip-handler" title="{{#vatIncluded}}{{#i18n}}show-event.incVat [{{vat}}]{{/i18n}}{{/vatIncluded}}{{^vatIncluded}}{{#i18n}}show-event.excVat [{{vat}}]{{/i18n}}{{/vatIncluded}}"></i>

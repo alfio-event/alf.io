@@ -34,6 +34,7 @@ import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.repository.TicketFieldRepository;
+import alfio.util.MonetaryUtil;
 import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import com.opencsv.CSVReader;
@@ -267,8 +268,10 @@ public class EventApiController {
                 if(fields.contains("category")) {line.add(categoriesMap.get(t.getCategoryId()).getName());}
                 if(fields.contains("event")) {line.add(eventName);}
                 if(fields.contains("status")) {line.add(t.getStatus().toString());}
-                if(fields.contains("originalPrice")) {line.add(t.getOriginalPrice().toString());}
-                if(fields.contains("paidPrice")) {line.add(t.getPaidPrice().toString());}
+                if(fields.contains("originalPrice")) {line.add(MonetaryUtil.centsToUnit(t.getSrcPriceCts()).toString());}
+                if(fields.contains("paidPrice")) {line.add(MonetaryUtil.centsToUnit(t.getFinalPriceCts()).toString());}
+                if(fields.contains("discount")) {line.add(MonetaryUtil.centsToUnit(t.getDiscountCts()).toString());}
+                if(fields.contains("vat")) {line.add(MonetaryUtil.centsToUnit(t.getVatCts()).toString());}
                 if(fields.contains("reservationID")) {line.add(t.getTicketsReservationId());}
                 if(fields.contains("Name")) {line.add(t.getFullName());}
                 if(fields.contains("E-Mail")) {line.add(t.getEmail());}

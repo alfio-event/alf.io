@@ -19,11 +19,9 @@ package alfio.manager;
 import alfio.manager.plugin.PluginManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
-import alfio.model.SpecialPrice;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.modification.TicketCategoryWithStatistic;
-import alfio.model.modification.TicketWithStatistic;
 import alfio.model.user.Organization;
 import alfio.repository.*;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
@@ -42,7 +40,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static alfio.manager.testSupport.TicketCategoryGenerator.generateCategoryStream;
-import static alfio.util.EventUtil.categoryPriceCalculator;
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.*;
@@ -63,8 +60,8 @@ public class EventManagerTest {{
         EventManager eventManager = new EventManager(null, null, null, null, null, null, ticketRepository, null, null, null, jdbc, null, pluginManager, null, null, null, null);
         when(original.getId()).thenReturn(20);
         when(updated.getId()).thenReturn(30);
-        when(original.getPriceInCents()).thenReturn(1000);
-        when(updated.getPriceInCents()).thenReturn(1000);
+        when(original.getSrcPriceCts()).thenReturn(1000);
+        when(updated.getSrcPriceCts()).thenReturn(1000);
         when(original.getMaxTickets()).thenReturn(10);
         when(updated.getMaxTickets()).thenReturn(11);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
@@ -100,33 +97,35 @@ public class EventManagerTest {{
         EventManager eventManager = new EventManager(null, null, null, null, null, null, ticketRepository, null, null, null, null, null, pluginManager, null, null, null, null);
         TicketCategory original = mock(TicketCategory.class);
         TicketCategory updated = mock(TicketCategory.class);
+        Event event = mock(Event.class);
+        when(event.getId()).thenReturn(1);
 
         it.should("do nothing if the price is not changed", expect -> {
-            when(original.getPriceInCents()).thenReturn(10);
-            when(updated.getPriceInCents()).thenReturn(10);
-            eventManager.handlePriceChange(10, original, updated);
+            when(original.getSrcPriceCts()).thenReturn(10);
+            when(updated.getSrcPriceCts()).thenReturn(10);
+            eventManager.handlePriceChange(event, original, updated);
             verify(ticketRepository, never()).selectTicketInCategoryForUpdate(anyInt(), anyInt(), anyInt(), any());
-            verify(ticketRepository, never()).updateTicketPrice(anyInt(), anyInt(), anyInt());
+            verify(ticketRepository, never()).updateTicketPrice(anyInt(), anyInt(), anyInt(), eq(0), eq(0), eq(0));
         });
 
         it.should("throw an exception if there aren't enough tickets", expect -> {
-            when(original.getPriceInCents()).thenReturn(10);
-            when(updated.getPriceInCents()).thenReturn(11);
+            when(original.getSrcPriceCts()).thenReturn(10);
+            when(updated.getSrcPriceCts()).thenReturn(11);
             when(updated.getMaxTickets()).thenReturn(2);
             when(updated.getId()).thenReturn(20);
             when(ticketRepository.selectTicketInCategoryForUpdate(eq(10), eq(20), eq(2), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(singletonList(1));
-            expect.exception(IllegalStateException.class, () -> eventManager.handlePriceChange(10, original, updated));
-            verify(ticketRepository, never()).updateTicketPrice(anyInt(), anyInt(), anyInt());
+            expect.exception(IllegalStateException.class, () -> eventManager.handlePriceChange(event, original, updated));
+            verify(ticketRepository, never()).updateTicketPrice(anyInt(), anyInt(), anyInt(), eq(0), eq(0), eq(0));
         });
 
         it.should("update tickets if constraints are verified", expect -> {
-            when(original.getPriceInCents()).thenReturn(10);
-            when(updated.getPriceInCents()).thenReturn(11);
+            when(original.getSrcPriceCts()).thenReturn(10);
+            when(updated.getSrcPriceCts()).thenReturn(11);
             when(updated.getMaxTickets()).thenReturn(2);
             when(updated.getId()).thenReturn(20);
-            when(ticketRepository.selectTicketInCategoryForUpdate(eq(10), eq(20), eq(2), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(Arrays.asList(1, 2));
-            eventManager.handlePriceChange(10, original, updated);
-            verify(ticketRepository, times(1)).updateTicketPrice(20, 10, 11);
+            when(ticketRepository.selectTicketInCategoryForUpdate(eq(1), eq(20), eq(2), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(Arrays.asList(1, 2));
+            eventManager.handlePriceChange(event, original, updated);
+            verify(ticketRepository, times(1)).updateTicketPrice(20, 1, 11, 0, 0, 0);
         });
     });
 
@@ -203,7 +202,7 @@ public class EventManagerTest {{
         it.should("create tickets for the unbounded category", expect -> {
             List<TicketCategory> categories = generateCategoryStream().limit(3).collect(Collectors.toList());
             when(ticketCategoryRepository.findByEventId(eq(eventId))).thenReturn(categories);
-            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(eventId, ZonedDateTime.now(), event, 1000);
+            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(), event);
             expect.that(parameterSources).isNotNull();
             expect.that(parameterSources.length).is(availableSeats);
         });
@@ -211,7 +210,7 @@ public class EventManagerTest {{
         it.should("create tickets for the unbounded categories", expect -> {
             List<TicketCategory> categories = generateCategoryStream().limit(6).collect(Collectors.toList());
             when(ticketCategoryRepository.findByEventId(eq(eventId))).thenReturn(categories);
-            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(eventId, ZonedDateTime.now(), event, 1000);
+            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(), event);
             expect.that(parameterSources).isNotNull();
             expect.that(parameterSources.length).is(availableSeats);
         });
@@ -219,7 +218,7 @@ public class EventManagerTest {{
         it.should("create tickets only for the bounded categories", expect -> {
             List<TicketCategory> categories = generateCategoryStream().limit(2).collect(Collectors.toList());
             when(ticketCategoryRepository.findByEventId(eq(eventId))).thenReturn(categories);
-            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(eventId, ZonedDateTime.now(), event, 1000);
+            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(), event);
             expect.that(parameterSources).isNotNull();
             expect.that(parameterSources.length).is(20);
             expect.that(Arrays.stream(parameterSources).filter(p -> p.getValue("categoryId") != null).count()).is(4L);
@@ -247,7 +246,7 @@ public class EventManagerTest {{
         EventStatisticsManager esm = mock(EventStatisticsManager.class);
         Event event = mock(Event.class);
         TicketCategory ticketCategory = it.usesMock(TicketCategory.class);
-        TicketCategoryWithStatistic tc = new TicketCategoryWithStatistic(ticketCategory, Collections.<TicketWithStatistic>emptyList(), Collections.<SpecialPrice>emptyList(), ZoneId.systemDefault(), categoryPriceCalculator(event), desc);
+        TicketCategoryWithStatistic tc = new TicketCategoryWithStatistic(ticketCategory, Collections.emptyList(), Collections.emptyList(), event, desc);
         when(esm.loadTicketCategoryWithStats(eq(categoryId), eq(event))).thenReturn(tc);
 
         EventManager eventManager = new EventManager(userManager, eventRepository, eventDescriptionRepository, esm, ticketCategoryRepository, ticketCategoryDescriptionRepository, ticketRepository, specialPriceRepository, null, null, null, null, pluginManager, null, null, null, null);

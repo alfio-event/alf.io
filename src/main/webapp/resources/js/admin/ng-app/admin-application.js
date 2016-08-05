@@ -1339,16 +1339,6 @@
     }]);
 
     admin.run(function($rootScope, PriceCalculator) {
-        var calculateNetPrice = function(event) {
-            if(isNaN(event.regularPrice) || isNaN(event.vat)) {
-                return numeral(0.0);
-            }
-            if(!event.vatIncluded) {
-                return numeral(event.regularPrice);
-            }
-            return numeral(event.regularPrice).divide(numeral(1).add(numeral(event.vat).divide(100)));
-        };
-
         $rootScope.evaluateBarType = function(index) {
             var barClasses = ['danger', 'warning', 'info', 'success'];
             if(index < barClasses.length) {

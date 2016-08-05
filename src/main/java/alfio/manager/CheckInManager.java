@@ -156,7 +156,7 @@ public class CheckInManager {
         final TicketStatus ticketStatus = ticket.getStatus();
 
         if (ticketStatus == TicketStatus.TO_BE_PAID) {
-            return new TicketAndCheckInResult(ticket, new OnSitePaymentResult(MUST_PAY, "Must pay for ticket", MonetaryUtil.addVAT(ticket.getOriginalPrice(), event.getVat()), event.getCurrency()));
+            return new TicketAndCheckInResult(ticket, new OnSitePaymentResult(MUST_PAY, "Must pay for ticket", MonetaryUtil.addVAT(MonetaryUtil.centsToUnit(ticket.getFinalPriceCts()), event.getVat()), event.getCurrency()));
         }
 
         if (ticketStatus == TicketStatus.CHECKED_IN) {

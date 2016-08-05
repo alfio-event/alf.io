@@ -62,7 +62,6 @@ public class Event implements EventHiddenFieldContainer {
     private final String longitude;
     private final ZonedDateTime begin;
     private final ZonedDateTime end;
-    private final int regularPriceInCents;
     private final String currency;
     private final int availableSeats;
     private final boolean vatIncluded;
@@ -72,6 +71,9 @@ public class Event implements EventHiddenFieldContainer {
     private final int organizationId;
     private final ZoneId timeZone;
     private final int locales;
+
+    private final int srcPriceCts;
+    private final PriceContainer.VatStatus vatStatus;
 
 
     public Event(@Column("id") int id,
@@ -89,15 +91,15 @@ public class Event implements EventHiddenFieldContainer {
                  @Column("file_blob_id") String fileBlobId,
                  @Column("website_t_c_url") String termsAndConditionsUrl,
                  @Column("image_url") String imageUrl,
-                 @Column("regular_price_cts") int regularPriceInCents,
                  @Column("currency") String currency,
                  @Column("available_seats") int availableSeats,
-                 @Column("vat_included") boolean vatIncluded,
                  @Column("vat") BigDecimal vat,
                  @Column("allowed_payment_proxies") String allowedPaymentProxies,
                  @Column("private_key") String privateKey,
                  @Column("org_id") int organizationId,
-                 @Column("locales") int locales) {
+                 @Column("locales") int locales,
+                 @Column("src_price_cts") int srcPriceInCents,
+                 @Column("vat_status") PriceContainer.VatStatus vatStatus) {
 
         this.type = type;
         this.displayName = displayName;
@@ -116,10 +118,9 @@ public class Event implements EventHiddenFieldContainer {
         this.timeZone = zoneId;
         this.begin = begin.withZoneSameInstant(zoneId);
         this.end = end.withZoneSameInstant(zoneId);
-        this.regularPriceInCents = regularPriceInCents;
         this.currency = currency;
         this.availableSeats = availableSeats;
-        this.vatIncluded = vatIncluded;
+        this.vatIncluded = vatStatus == PriceContainer.VatStatus.INCLUDED;
         this.vat = vat;
         this.privateKey = privateKey;
         this.organizationId = organizationId;
@@ -128,10 +129,12 @@ public class Event implements EventHiddenFieldContainer {
                 .filter(StringUtils::isNotBlank)
                 .map(PaymentProxy::valueOf)
                 .collect(Collectors.toList());
+        this.vatStatus = vatStatus;
+        this.srcPriceCts = srcPriceInCents;
     }
 
     public BigDecimal getRegularPrice() {
-        return MonetaryUtil.centsToUnit(regularPriceInCents);
+        return MonetaryUtil.centsToUnit(srcPriceCts);
     }
     
     
@@ -182,7 +185,7 @@ public class Event implements EventHiddenFieldContainer {
     }
 
     public boolean isFreeOfCharge() {
-        return regularPriceInCents == 0;
+        return srcPriceCts == 0;
     }
 
     public boolean getFree() {
