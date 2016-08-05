@@ -242,6 +242,7 @@ public class TicketReservationManager {
         //FIXME we don't need to apply discount codes to a donation, therefore this feature is not yet implemented.
         Optional.ofNullable(additionalServiceReservation.getAdditionalServiceId())
             .flatMap(id -> optionally(() -> additionalServiceRepository.getById(id, eventId)))
+            .filter(as -> additionalServiceReservation.getQuantity() > 0 && (as.isFixPrice() || Optional.ofNullable(additionalServiceReservation.getAmount()).filter(a -> a.compareTo(BigDecimal.ZERO) > 0).isPresent()))
             .map(as -> Pair.of(eventRepository.findById(eventId), as))
             .ifPresent(pair -> {
                 Event e = pair.getKey();
