@@ -126,12 +126,12 @@
                                         <li data-ng-repeat="token in ::ticketCategory.tokenStatus | orderBy: ['id']"><i class="status-icon" data-ng-class="evaluateClass(token)" title="{{::token.status}}"></i> {{::token.code}}</li>
                                     </ul>
                                 </div>
-                                <div data-ng-if="ticketCategory.containingTickets" data-uib-collapse="isTicketViewCollapsed(ticketCategory)">
+                                <div data-ng-if="ticketCategory.containingTickets && !isTicketViewCollapsed(ticketCategory)">
                                     <hr>
                                     <button class="close" aria-label="Close" data-ng-click="toggleTicketViewCollapse(ticketCategory)"><i class="fa fa-close"></i></button>
                                     <h4><i class="fa fa-ticket"></i> Tickets</h4>
                                     <div class="h4">&nbsp;</div>
-                                    <label><div class="input-group"><div class="input-group-addon"><i class="fa fa-search"></i></div><input type="text" class="form-control input-sm" data-ng-model="ticketCategory.ticketFilter"></div></label>
+                                    <label><div class="input-group"><div class="input-group-addon"><i class="fa fa-search"></i></div><input name="ticket-{{ticketCategory.id}}-filter" type="text" class="form-control input-sm" data-ng-model="ticketCategory.ticketFilter" data-grab-focus=""></div></label>
                                     <div class="list-group">
                                         <div class="list-group-item" data-ng-repeat="ticket in ticketCategory.tickets | filter:ticketCategory.ticketFilter | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
                                             <div class="list-group-item-heading">
