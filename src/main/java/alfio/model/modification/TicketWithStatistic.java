@@ -39,6 +39,7 @@ public class TicketWithStatistic implements Comparable<TicketWithStatistic>, Pri
     @Delegate
     @JsonIgnore
     private final Ticket ticket;
+    @JsonIgnore
     private final Event event;
     private final TicketReservation ticketReservation;
     @JsonIgnore
