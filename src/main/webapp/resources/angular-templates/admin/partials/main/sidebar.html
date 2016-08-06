@@ -34,7 +34,7 @@
             </li>
             <li data-ng-if="ctrl.internal && ctrl.isDetail">
                 <ul class="nav nav-pills nav-stacked">
-                    <li data-ng-repeat="category in ctrl.event.ticketCategories | orderBy: ['id'] | showSelectedCategories : ctrl.categoryFilter"><a data-ng-click="ctrl.goToCategory(category)"><i class="fa fa-ticket"></i> {{category.name}}</a></li>
+                    <li data-ng-repeat="category in ctrl.event.ticketCategories | orderBy: ['id'] | showSelectedCategories : ctrl.categoryFilter"><a data-ng-click="ctrl.goToCategory(category)"><i class="fa fa-paperclip"></i> {{category.name}}</a></li>
                     <li data-ng-if="(ctrl.event.ticketCategories | showSelectedCategories : ctrl.categoryFilter).length === 0">nothing found</li>
                 </ul>
             </li>

@@ -129,29 +129,29 @@
             return printLabel(val);
         };
         Chart.defaults.global.colours = [
-            { // yellow
-                fillColor: "rgba(253,180,92,0.2)",
-                strokeColor: "rgba(253,180,92,1)",
-                pointColor: "rgba(253,180,92,1)",
+            { // green, checked in
+                fillColor: "rgba(92,184,92,1)",
+                strokeColor: "rgba(92,184,92,1)",
+                pointColor: "rgba(92,184,92,1)",
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(253,180,92,0.8)"
+                pointHighlightStroke: "rgba(92,184,92,0.8)"
             },
-            { // green
-                fillColor: "rgba(70,191,189,0.2)",
-                strokeColor: "rgba(70,191,189,1)",
-                pointColor: "rgba(70,191,189,1)",
+            { // yellow, sold
+                fillColor: "rgba(240,173,78,1)",
+                strokeColor: "rgba(240,173,78,1)",
+                pointColor: "rgba(240,173,78,1)",
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(70,191,189,0.8)"
+                pointHighlightStroke: "rgba(240,173,78,0.8)"
             },
-            { // blue
-                fillColor: "rgba(151,187,205,0.2)",
-                strokeColor: "rgba(151,187,205,1)",
-                pointColor: "rgba(151,187,205,1)",
+            { // blue, still available
+                fillColor: "rgba(91,192,222,1)",
+                strokeColor: "rgba(91,192,222,1)",
+                pointColor: "rgba(91,192,222,1)",
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(151,187,205,0.8)"
+                pointHighlightStroke: "rgba(91,192,222,0.8)"
             },
             { // light grey
                 fillColor: "rgba(220,220,220,0.2)",
@@ -162,12 +162,12 @@
                 pointHighlightStroke: "rgba(220,220,220,0.8)"
             },
             { // purple
-                fillColor: "rgba(158,31,255,0.2)",
-                strokeColor: "rgba(158,31,255,1)",
-                pointColor: "rgba(158,31,255,0.2)",
+                fillColor: "rgba(66,139,202,1)",
+                strokeColor: "rgba(66,139,202,1)",
+                pointColor: "rgba(66,139,202,1)",
                 pointStrokeColor: "#fff",
                 pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(158,31,255,0.8)"
+                pointHighlightStroke: "rgba(66,139,202,0.8)"
             }
 
         ];
@@ -411,8 +411,7 @@
                                                         $log,
                                                         $q,
                                                         $window,
-                                                        $uibModal,
-                                                        getEvent) {
+                                                        $uibModal) {
         var loadData = function() {
             $scope.loading = true;
 
@@ -494,6 +493,10 @@
             active: true,
             expired: false,
             freeText: ''
+        };
+
+        $scope.getActualCapacity = function(category, event) {
+            return category.bounded ? category.maxTickets : event.dynamicAllocation;
         };
 
         $scope.isTokenViewCollapsed = function(category) {

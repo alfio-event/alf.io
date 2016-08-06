@@ -58,31 +58,40 @@ form.force-show-errors textarea.ng-invalid + field-error > div.text-danger {
     display:block;
 }
 
-div.category-danger {
+.progress {
+    margin-bottom: 0;
+    margin-top: 5px;
+}
+
+.category-name {
+    margin-top:4px
+}
+
+.category-danger {
     border: 1px solid #d9534f;
     border-left-width: 5px;
     border-radius: 2px;
 }
 
-div.category-warning {
+.category-warning {
     border: 1px solid #f0ad4e;
     border-left-width: 5px;
     border-radius: 2px;
 }
 
-div.category-info {
+.category-info {
     border: 1px solid #5bc0de;
     border-left-width: 5px;
     border-radius: 2px;
 }
 
-div.category-success {
+.category-success {
     border: 1px solid #5cb85c;
     border-left-width: 5px;
     border-radius: 2px;
 }
 
-div.category-expired {
+.category-expired {
     border: 1px solid #545558;
     border-left-width: 5px;
     border-radius: 2px;
