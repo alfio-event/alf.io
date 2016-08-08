@@ -97,7 +97,13 @@ public class AdditionalServiceApiController {
                     additionalService.getExpiration().toZonedDateTime(event.getZoneId()), additionalService.getVat(), additionalService.getVatType(), Optional.ofNullable(additionalService.getPrice()).map(MonetaryUtil::unitToCents).orElse(0));
                 Validate.isTrue(result <= 1, "too many records updated");
                 Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
-                    forEach(t -> additionalServiceTextRepository.update(t.getId(), t.getLocale(), t.getType(), t.getValue()));
+                    forEach(t -> {
+                        if(t.getId() != null) {
+                            additionalServiceTextRepository.update(t.getId(), t.getLocale(), t.getType(), t.getValue());
+                        } else {
+                            additionalServiceTextRepository.insert(additionalService.getId(), t.getLocale(), t.getType(), t.getValue());
+                        }
+                    });
                 return ResponseEntity.ok(additionalService);
             }).orElseThrow(IllegalArgumentException::new);
     }

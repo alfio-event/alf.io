@@ -1,35 +1,55 @@
 <div class="page-header">
-    <h3>Donation options</h3>
-    <span>here you can add one or more "donation" option.</span>
+    <h3><i class="fa fa-money"></i> Donation options</h3>
+    <span class="text-muted">here you can add one or more "donation" option.</span>
 </div>
-<div class="container" data-ng-repeat="item in asCtrl.displayList">
-    <div class="row" data-ng-repeat="pair in item.zippedTitleAndDescriptions">
-        <div class="col-xs-11"><h4 title="{{pair[0].value}} ({{pair[0].locale}})">{{pair[0].value}} <small title="{{pair[1].value}} ({{pair[1].locale}})">{{pair[1].value}}</small></h4></div>
-    </div>
-    <div class="row">
-        <div class="col-xs-10">
-            <div>
-                <i class="fa fa-clock-o"></i> <span class="text-success">{{item.inception.date | date:'MMM d, yyyy'}} {{item.inception.time | date:'HH:mm'}}</span> -
-                <span class="text-warning">{{item.expiration.date | date:'MMM d, yyyy'}} {{item.expiration.time | date:'HH:mm'}}</span>
-            </div>
-            <div>
-                <i class="fa fa-money"></i>
-                <span data-ng-if="!item.fixPrice">User-defined</span>
-                <span data-ng-if="item.fixPrice">{{item.price}} {{asCtrl.currency}}</span>
+<div class="panel panel-default" data-ng-repeat="item in ctrl.displayList">
+    <div class="panel-heading">
+        <div class="panel-title">
+            <div class="row">
+                <div class="col-xs-9">
+                    <div class="h4"><span data-ng-repeat="pair in item.zippedTitleAndDescriptions" title="{{pair[0].locale}}"><span ng-class="{'text-danger': pair[0].value === ''}">{{pair[0] | showMissingASText}}</span> <span data-ng-if="!$last"> / </span></span></div>
+                </div>
+                <div class="col-xs-3">
+                    <div class="pull-right">
+                        <button class="btn btn-sm btn-default" title="edit" data-ng-click="ctrl.edit(item)"><i class="fa fa-edit"></i> edit</button>
+                        <button class="btn btn-sm btn-default" title="delete" data-ng-click="ctrl.delete(item)"><i class="fa fa-trash"></i> delete</button>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-xs-2">
-            <button class="btn btn-danger" title="delete" data-ng-click="asCtrl.delete(item)"><i class="fa fa-trash"></i></button>
-            <button class="btn btn-warning" title="edit" data-ng-click="asCtrl.edit(item)"><i class="fa fa-edit"></i></button>
+    </div>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-xs-12 col-md-5">
+                <div class="row">
+                    <div class="col-sm-4"><strong>Inception</strong></div>
+                    <div class="col-sm-8">{{item.inception.date + ' ' +item.inception.time | formatDate}}</div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4"><strong>Expiration</strong></div>
+                    <div class="col-sm-8">{{item.expiration.date + ' ' + item.expiration.time | formatDate}}</div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4"><strong>Price</strong></div>
+                    <div class="col-sm-8">
+                        <span data-ng-if="!item.fixPrice">User-defined</span>
+                        <span data-ng-if="item.fixPrice">{{item.price}} {{ctrl.currency}}</span>
+                    </div>
+                </div>
+                <div class="row" data-ng-if="!event.freeOfCharge">
+                    <div class="col-sm-4"><strong>Final price</strong></div>
+                    <div class="col-sm-8">{{::ticketCategory.actualPrice | currency : (event.currency || "")}}</div>
+                </div>
+            </div>
+            <div class="hidden-xs col-md-7">
+                <p class="text-muted" data-ng-repeat="pair in item.zippedTitleAndDescriptions" title="{{pair[1].locale}}" ng-class="{'text-danger': pair[1].value === ''}">{{pair[1] | showMissingASText}}</p>
+            </div>
         </div>
     </div>
-    <br/>
 </div>
 <div class="row">
-    <div class="col-xs-12"><button type="button" class="btn btn-success" data-ng-click="asCtrl.edit()" data-ng-if="!asCtrl.editActive" data-ng-disabled="asCtrl.eventIsFreeOfCharge"><i class="fa fa-plus"></i> Add new</button></div>
+    <div class="col-xs-12"><button type="button" class="btn btn-success" data-ng-click="ctrl.edit()" data-ng-if="!ctrl.editActive" data-ng-disabled="ctrl.eventIsFreeOfCharge"><i class="fa fa-plus"></i> Add new</button></div>
 </div>
-<div class="alert alert-warning" data-ng-if="asCtrl.eventIsFreeOfCharge">
+<div class="alert alert-warning" data-ng-if="ctrl.eventIsFreeOfCharge">
     <span class="fa fa-warning"></span> Cannot add donations to an event marked as "free of charge". Please change this setting, add a default price > 0, specify currency and VAT
 </div>
-
-<edit-additional-service data-ng-if="asCtrl.editActive" data-editing-item="asCtrl.editingItem" data-available-languages="asCtrl.availableLanguages" data-selected-languages="asCtrl.selectedLanguages" data-on-edit-complete="asCtrl.onEditComplete(item)" data-on-dismiss="asCtrl.onDismiss()" data-event-start-date="asCtrl.eventStartDate"></edit-additional-service>
