@@ -36,6 +36,10 @@ public class AdditionalService {
         CUSTOM_EXCLUDED
     }
 
+    public enum AdditionalServiceType {
+        DONATION
+    }
+
     private final int id;
     private final int eventId;
     private final boolean fixPrice;
@@ -46,6 +50,7 @@ public class AdditionalService {
     private final ZonedDateTime utcExpiration;
     private final BigDecimal vat;
     private final VatType vatType;
+    private final AdditionalServiceType type = AdditionalServiceType.DONATION;
 
     private final Integer srcPriceCts;
 

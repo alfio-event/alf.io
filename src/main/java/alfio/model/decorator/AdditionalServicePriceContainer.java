@@ -47,7 +47,7 @@ public class AdditionalServicePriceContainer implements PriceContainer {
 
     @Override
     public Optional<PromoCodeDiscount> getDiscount() {
-        return Optional.ofNullable(promoCodeDiscount);
+        return Optional.ofNullable(promoCodeDiscount).filter(d -> additionalService.getType() != AdditionalService.AdditionalServiceType.DONATION);
     }
 
     @Override
