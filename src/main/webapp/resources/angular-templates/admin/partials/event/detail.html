@@ -135,7 +135,7 @@
                                     <div class="list-group">
                                         <div class="list-group-item" data-ng-repeat="ticket in ticketCategory.tickets | filter:ticketCategory.ticketFilter | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
                                             <div class="list-group-item-heading">
-                                                <button class="btn btn-sm btn-warning pull-right" data-ng-click="toggleLocking(event, ticket, ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-uib-tooltip="forbid ticket reassignment" data-tooltip-placement="left" data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button>
+                                                <button class="btn btn-sm btn-default pull-right" data-ng-click="toggleLocking(event, ticket, ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-uib-tooltip="forbid ticket reassignment" data-tooltip-placement="left" data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button>
                                                 <h4><i data-ng-class="evaluateTicketStatus(ticket.status)" data-uib-tooltip="{{ticket.status | statusText}}"></i> {{::ticket.uuid | limitTo:8}} <span data-ng-if="ticket.paid">Confirmed on: {{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span> by {{::ticket.ticketReservation.fullName}}</h4>
                                             </div>
                                             <div class="list-group-item-text">
@@ -216,8 +216,27 @@
                     <h3><i class="fa fa-info-circle"></i> Additional Fields</h3>
                     <h5 class="text-muted">Here are the additional fields defined</h5>
                 </div>
-                <div>
-                    <div data-ng-repeat="field in additionalFields | orderBy: 'order' " class="category container">
+                <div class="panel panel-default" data-ng-repeat="field in additionalFields | orderBy: 'order' ">
+                    <div class="panel-heading">
+                        <div class="panel-title">
+                            <div class="row">
+                                <div class="col-xs-5 col-md-3">
+                                    {{field.name}}
+                                </div>
+                                <div class="col-xs-7 col-md-9">
+                                    <div class="pull-right">
+                                        <button class="btn btn-sm btn-default" type="button" ng-click="toEdit = {};prepareFieldDescriptionEdit(toEdit, field);edit=true" ng-hide="edit"><i class="fa fa-edit"></i> edit</button>
+                                        <button class="btn btn-sm btn-default" ng-click="fieldUp($index)" ng-hide="edit || $first"><i class="fa fa-arrow-up"></i> move up</button>
+                                        <button class="btn btn-sm btn-default" ng-click="fieldDown($index)" ng-hide="edit || $last"><i class="fa fa-arrow-down"></i> move down</button>
+                                        <button class="btn btn-sm btn-default" type="button" ng-click="deleteFieldModal(field)" ng-hide="edit"><i class="fa fa-trash"></i> delete</button>
+                                        <button class="btn btn-sm btn-success" type="button" ng-click="saveFieldDescription(toEdit.description);edit=false" ng-show="edit">Save</button>
+                                        <button class="btn btn-sm btn-default" type="button" ng-click="edit=false" ng-show="edit">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">
@@ -275,16 +294,6 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-12 text-right">
-                            <p>
-                                <button class="btn btn-default" ng-click="fieldUp($index)" ng-hide="edit || $first"><i class="fa fa-arrow-up"></i></button>
-                                <button class="btn btn-default" ng-click="fieldDown($index)" ng-hide="edit || $last"><i class="fa fa-arrow-down"></i></button>
-                                <button class="btn btn-danger" type="button" ng-click="deleteFieldModal(field)" ng-hide="edit"><i class="fa fa-trash"></i></button>
-                                <button class="btn btn-warning" type="button" ng-click="toEdit = {};prepareFieldDescriptionEdit(toEdit, field);edit=true" ng-hide="edit"><i class="fa fa-wrench"></i></button>
-                                <button class="btn btn-success" type="button" ng-click="saveFieldDescription(toEdit.description);edit=false" ng-show="edit">Save</button>
-                                <button class="btn btn-default" type="button" ng-click="edit=false" ng-show="edit">Cancel</button>
-                            </p>
                         </div>
                     </div>
                 </div>
