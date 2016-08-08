@@ -97,6 +97,10 @@ form.force-show-errors textarea.ng-invalid + field-error > div.text-danger {
     border-radius: 2px;
 }
 
+.category-active {
+    font-weight: bold;
+}
+
 a.icon, a.icon:hover {
     text-decoration: none;
 }

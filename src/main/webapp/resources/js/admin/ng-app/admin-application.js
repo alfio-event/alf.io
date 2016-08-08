@@ -781,8 +781,6 @@
 
 
         //
-        var validCategories = $scope.validCategories;
-        
         $scope.addPromoCode = function(event) {
             $uibModal.open({
                 size:'lg',
@@ -795,7 +793,9 @@
                     var now = moment();
                     var eventBegin = moment(event.formattedBegin);
 
-                    $scope.validCategories = validCategories;
+                    $scope.validCategories = _.filter(event.ticketCategories, function(tc) {
+                        return !tc.expired;
+                    });
                     
                     $scope.promocode = {discountType :'PERCENTAGE', start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')}, end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}, categories:[]};
 

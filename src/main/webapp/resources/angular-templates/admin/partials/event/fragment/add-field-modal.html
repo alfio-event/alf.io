@@ -65,13 +65,13 @@
     </div>
     
 	<div class="col-sm-11">
-		<h4>Add from template <span data-ng-repeat="template in dynamicFieldTemplates" ><a class="btn btn-primary btn-xs" data-ng-click="addFromTemplate(template)">{{template.name}}</a> </span></h4>
+		<h4>Add from template <span data-ng-repeat="template in dynamicFieldTemplates" ><a class="btn btn-default btn-sm" data-ng-click="addFromTemplate(template)">{{template.name}}</a> </span></h4>
 	</div>
 </div>
 
 <div class="modal-footer">
         <div>
-            <button type="submit" class="btn btn-primary" data-ng-disabled="addField.$waiting" data-ng-click="ok(field)">Save</button>
+            <button type="submit" class="btn btn-success" data-ng-disabled="addField.$waiting" data-ng-click="ok(field)">Save</button>
             <button type="button" class="btn btn-default" data-ng-click="$close(true)">Cancel</button>
         </div>
     </div>
