@@ -379,6 +379,7 @@ public class ReservationController {
                 return "redirect:" + checkoutUrl;
             } catch (Exception e) {
                 bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
+                SessionUtil.addToFlash(bindingResult, redirectAttributes);
                 return redirectReservation(ticketReservation, eventName, reservationId);
             }
         }
