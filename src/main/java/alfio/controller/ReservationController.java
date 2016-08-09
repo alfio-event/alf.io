@@ -37,7 +37,6 @@ import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
 import alfio.util.ValidationResult;
-import com.paypal.base.rest.PayPalRESTException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,6 +78,7 @@ public class ReservationController {
     private final NotificationManager notificationManager;
     private final TicketHelper ticketHelper;
     private final TicketFieldRepository ticketFieldRepository;
+    private final PaymentManager paymentManager;
 
     @Autowired
     public ReservationController(EventRepository eventRepository,
@@ -92,7 +92,8 @@ public class ReservationController {
                                  NotificationManager notificationManager,
                                  TicketHelper ticketHelper,
                                  TicketFieldRepository ticketFieldRepository,
-                                 PaypalManager paypalManager) {
+                                 PaypalManager paypalManager,
+                                 PaymentManager paymentManager) {
         this.eventRepository = eventRepository;
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
@@ -105,6 +106,7 @@ public class ReservationController {
         this.ticketHelper = ticketHelper;
         this.ticketFieldRepository = ticketFieldRepository;
         this.paypalManager = paypalManager;
+        this.paymentManager = paymentManager;
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
@@ -143,14 +145,20 @@ public class ReservationController {
                     }
 
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
+                    List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
+                        .stream()
+                        .filter(p -> p.isActive() && event.getAllowedPaymentProxies().contains(p.getPaymentProxy()))
+                        .map(PaymentManager.PaymentMethod::getPaymentProxy)
+                        .collect(toList());
                     model.addAttribute("orderSummary", orderSummary);
                     model.addAttribute("reservationId", reservationId);
                     model.addAttribute("reservation", reservation);
                     model.addAttribute("pageTitle", "reservation-page.header.title");
                     model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
                     model.addAttribute("event", event);
+                    model.addAttribute("activePaymentMethods", activePaymentMethods);
                     model.addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary));
-                    boolean includeStripe = !orderSummary.getFree() && event.getAllowedPaymentProxies().contains(PaymentProxy.STRIPE);
+                    boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
                     model.addAttribute("includeStripe", includeStripe);
                     if (includeStripe) {
                         model.addAttribute("stripe_p_key", stripeManager.getPublicKey(event));

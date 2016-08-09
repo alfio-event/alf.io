@@ -281,15 +281,19 @@
             $scope.organizations = result;
         });
 
-        PaymentProxyService.getAllProxies().success(function(result) {
-            $scope.allowedPaymentProxies = _.map(result, function(p) {
-                return {
-                    id: p,
-                    description: PAYMENT_PROXY_DESCRIPTIONS[p] || 'Unknown provider ('+p+')  Please check configuration'
-                };
-            });
+        $scope.$watch('event.organizationId', function(newVal) {
+            if(newVal) {
+                PaymentProxyService.getAllProxies(newVal).success(function(result) {
+                    $scope.allowedPaymentProxies = _.map(result, function(p) {
+                        return {
+                            id: p.paymentProxy,
+                            description: PAYMENT_PROXY_DESCRIPTIONS[p.paymentProxy] || 'Unknown provider ('+p.paymentProxy+')  Please check configuration',
+                            enabled: p.status === 'ACTIVE'
+                        };
+                    });
+                });
+            }
         });
-
         $scope.addCategory = function() {
             createAndPushCategory(false, $scope);
         };

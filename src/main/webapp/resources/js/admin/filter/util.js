@@ -69,4 +69,17 @@
             return targetUrl;
         }
     }]);
+
+    filters.filter('paymentMethodFilter', function() {
+        return function(list, disabled) {
+            var query = 'enabled';
+            if(disabled) {
+                query = function(m) {
+                    return !m.enabled;
+                };
+            }
+            return _.filter(list, query);
+        }
+    });
+
 })();

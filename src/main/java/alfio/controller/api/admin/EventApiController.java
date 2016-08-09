@@ -21,13 +21,13 @@ import alfio.controller.api.support.EventListItem;
 import alfio.controller.api.support.TicketHelper;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
+import alfio.manager.PaymentManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.OrderSummary;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
-import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.DynamicFieldTemplateRepository;
@@ -87,6 +87,7 @@ public class EventApiController {
     private final DynamicFieldTemplateRepository dynamicFieldTemplateRepository;
     private final UserManager userManager;
     private final SponsorScanRepository sponsorScanRepository;
+    private final PaymentManager paymentManager;
 
     @Autowired
     public EventApiController(EventManager eventManager,
@@ -99,7 +100,8 @@ public class EventApiController {
                               TicketHelper ticketHelper,
                               DynamicFieldTemplateRepository dynamicFieldTemplateRepository,
                               UserManager userManager,
-                              SponsorScanRepository sponsorScanRepository) {
+                              SponsorScanRepository sponsorScanRepository,
+                              PaymentManager paymentManager) {
         this.eventManager = eventManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.i18nManager = i18nManager;
@@ -111,6 +113,7 @@ public class EventApiController {
         this.dynamicFieldTemplateRepository = dynamicFieldTemplateRepository;
         this.userManager = userManager;
         this.sponsorScanRepository = sponsorScanRepository;
+        this.paymentManager = paymentManager;
     }
 
     @ExceptionHandler(DataAccessException.class)
@@ -129,10 +132,15 @@ public class EventApiController {
     }
 
 
-    @RequestMapping(value = "/paymentProxies", method = GET)
+    @RequestMapping(value = "/paymentProxies/{organizationId}", method = GET)
     @ResponseStatus(HttpStatus.OK)
-    public List<PaymentProxy> getPaymentProxies() {
-        return PaymentProxy.availableProxies();
+    public List<PaymentManager.PaymentMethod> getPaymentProxies(@PathVariable("organizationId") int organizationId, Principal principal) {
+        return userManager.findUserOrganizations(principal.getName())
+            .stream()
+            .filter(o -> o.getId() == organizationId)
+            .findFirst()
+            .map(o -> paymentManager.getPaymentMethods(o.getId()))
+            .orElse(Collections.emptyList());
     }
 
     @RequestMapping(value = "/events", method = GET, headers = "Authorization")

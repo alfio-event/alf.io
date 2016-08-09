@@ -9,6 +9,7 @@
             <div class="col-sm-12" data-ng-if="!event.freeOfCharge">
                 <label>Accepted payment methods</label>
                 <p class="form-control-static">{{event.allowedPaymentProxies.join(',')}}</p>
+                <span class="help-block text-danger" data-ng-if="(allowedPaymentProxies | paymentMethodFilter:false).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter:true">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check the <a data-ui-sref="configuration.organization({organizationId: event.organizationId})">configuration</a>.</span>
             </div>
             <div class="col-sm-3">
                 <label>Max tickets</label>

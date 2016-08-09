@@ -109,11 +109,13 @@
                         mailAttemptsCount: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_ATTEMPTS_COUNT';})
                     };
                 }
-                if(angular.isDefined(original['PAYMENT']) && original['PAYMENT'].length > 0) {
-                    transformed.payment = {
-                        settings: original['PAYMENT']
-                    };
-                }
+                _.forEach(['PAYMENT_STRIPE', 'PAYMENT_PAYPAL', 'PAYMENT_OFFLINE'], function(group) {
+                    if(angular.isDefined(original[group]) && original[group].length > 0) {
+                        transformed[_.camelCase(group)] = {
+                            settings: original[group]
+                        };
+                    }
+                });
                 return transformed;
             }
         };
@@ -150,7 +152,9 @@
             $q.all([EventService.getAllLanguages(), ConfigurationService.loadAll()]).then(function(results) {
                 systemConf.allLanguages = results[0].data;
                 loadSettings(systemConf, results[1].data, ConfigurationService);
-                systemConf.general.selectedLanguages = _.chain(systemConf.allLanguages).map('value').filter(function(x) {return parseInt(systemConf.general.supportedTranslations.value) & x;}).value();
+                if(systemConf.general) {
+                    systemConf.general.selectedLanguages = _.chain(systemConf.allLanguages).map('value').filter(function(x) {return parseInt(systemConf.general.supportedTranslations.value) & x;}).value();
+                }
             }, function() {
                 systemConf.loading = false;
             });

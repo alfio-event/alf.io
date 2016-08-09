@@ -348,7 +348,7 @@
             controller: function EditPricesController($scope, PriceCalculator) {
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','freeOfCharge', 'allowedPaymentProxies', 'availableSeats',
-                        'regularPrice', 'currency', 'vatPercentage', 'vatIncluded']);
+                        'regularPrice', 'currency', 'vatPercentage', 'vatIncluded', 'organizationId']);
                     angular.extend($scope.obj, source);
                 }
 

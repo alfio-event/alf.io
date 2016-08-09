@@ -128,15 +128,15 @@
 
         {{#event.multiplePaymentMethods}}
             <div class="btn-group j-btn-group" data-toggle="buttons">
-                {{#event.allowedPaymentProxies}}
+                {{#activePaymentMethods}}
                 <label class="btn btn-default tooltip-handler xs-payment-method" {{#is-payment-method}}[STRIPE,{{.}}]  title="Powered by Stripe"{{/is-payment-method}}>
                     <input type="radio" required name="paymentMethod" id="option-{{.}}" data-payment-method="{{.}}" autocomplete="off" value="{{.}}">
-                    {{#is-payment-method}}[STRIPE,{{.}}]<i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
+                    {{#is-payment-method}}[STRIPE,{{.}}]<i class="fa fa-cc-stripe"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
                     {{#is-payment-method}}[PAYPAL,{{.}}]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
                     {{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
                     {{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
                 </label>
-                {{/event.allowedPaymentProxies}}
+                {{/activePaymentMethods}}
             </div>
         {{/event.multiplePaymentMethods}}
         {{^event.multiplePaymentMethods}}

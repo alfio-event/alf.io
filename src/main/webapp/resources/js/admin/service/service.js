@@ -26,8 +26,8 @@
 
     baseServices.service('PaymentProxyService', function($http, HttpErrorHandler) {
         return {
-            getAllProxies : function() {
-                return $http.get('/admin/api/paymentProxies.json').error(HttpErrorHandler.handle);
+            getAllProxies : function(orgId) {
+                return $http.get('/admin/api/paymentProxies/'+orgId+'.json').error(HttpErrorHandler.handle);
             }
         };
     });
