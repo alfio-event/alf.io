@@ -247,7 +247,6 @@ public class TicketReservationManagerTest {
         when(original.getUserLanguage()).thenReturn(USER_LANGUAGE);
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, (c) -> null, Optional.empty());
         verifyZeroInteractions(messageSource);
-        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(originalEmail), anyString(), any(TextTemplateGenerator.class));
     }
 
     @Test
