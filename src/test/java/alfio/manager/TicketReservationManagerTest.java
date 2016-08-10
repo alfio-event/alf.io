@@ -217,6 +217,7 @@ public class TicketReservationManagerTest {
         final String originalEmail = "me@myaddress.com";
         final String originalName = "First Last";
         Ticket original = mock(Ticket.class);
+        when(original.getStatus()).thenReturn(TicketStatus.ACQUIRED);
         Ticket modified = mock(Ticket.class);
         UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
         when(event.getShortName()).thenReturn("short-name");
@@ -229,12 +230,33 @@ public class TicketReservationManagerTest {
         verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(originalEmail), anyString(), any(TextTemplateGenerator.class));
     }
 
+    // check we don't send the ticket-has-changed-owner email if the originalEmail and name are present and the status is not ACQUIRED
+    @Test
+    public void dontSendWarningEmailIfNotAcquiredStatus() {
+        final String ticketId = "abcde";
+        final String originalEmail = "me@myaddress.com";
+        final String originalName = "First Last";
+        Ticket original = mock(Ticket.class);
+        when(original.getStatus()).thenReturn(TicketStatus.FREE);
+        Ticket modified = mock(Ticket.class);
+        UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
+        when(event.getShortName()).thenReturn("short-name");
+        initUpdateTicketOwner(original, modified, ticketId, originalEmail, originalName, form);
+        PartialTicketTextGenerator ownerChangeTextBuilder = mock(PartialTicketTextGenerator.class);
+        when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn("Hello, world");
+        when(original.getUserLanguage()).thenReturn(USER_LANGUAGE);
+        trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, (c) -> null, Optional.empty());
+        verifyZeroInteractions(messageSource);
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(originalEmail), anyString(), any(TextTemplateGenerator.class));
+    }
+
     @Test
     public void fallbackToCurrentLocale() throws IOException {
         final String ticketId = "abcde";
         final String originalEmail = "me@myaddress.com";
         final String originalName = "First Last";
         Ticket original = mock(Ticket.class);
+        when(original.getStatus()).thenReturn(TicketStatus.ACQUIRED);
         Ticket modified = mock(Ticket.class);
         UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
         when(event.getShortName()).thenReturn("short-name");
