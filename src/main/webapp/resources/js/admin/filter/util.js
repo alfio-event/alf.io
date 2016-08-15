@@ -82,4 +82,16 @@
         }
     });
 
+    filters.filter('boundedCategories', function() {
+        return function(list, remove) {
+            var query = 'bounded';
+            if(remove) {
+                query = function(c) {
+                    return !c.bounded;
+                };
+            }
+            return _.filter(list, query);
+        }
+    })
+
 })();

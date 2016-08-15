@@ -183,7 +183,8 @@
         return {
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/event-header.html',
-            link: angular.noop
+            link: angular.noop,
+            transclude: true
         }
     });
 
@@ -364,6 +365,7 @@
         return {
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/prices.html',
+            transclude:true,
             controller: function ViewPricesController($scope, PriceCalculator) {
                 $scope.calculateTotalPrice = function(event) {
                     return PriceCalculator.calculateTotalPrice(event, true);
@@ -581,7 +583,7 @@
                 text: '='
             },
             controllerAs: 'ctrl',
-            template:'<button class="btn btn-default" type="button" ng-click="ctrl.openModal()">Preview</button>',
+            template:'<span><a class="btn btn-xs btn-default" ng-click="ctrl.openModal()"><i class="fa fa-eye"></i> preview</a></span>',
             controller: function() {
                 var ctrl = this;
 

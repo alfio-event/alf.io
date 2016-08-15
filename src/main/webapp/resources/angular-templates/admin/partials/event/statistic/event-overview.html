@@ -1,0 +1,58 @@
+        <div class="row">
+            <div class="col-xs-4">
+                <!-- inspired by https://blackrockdigital.github.io/startbootstrap-sb-admin-2/ -->
+                <div class="panel panel-info">
+                    <div class="panel-heading"><div class="panel-title">Total tickets confirmed</div></div>
+                    <div class="panel-body text-info">
+                        <div class="row">
+                            <div class="col-xs-8"><div class="fa fa-ticket fa-5x"></div></div>
+                            <div class="col-xs-4"><div class="text-right event-statistic-highlighted">{{ctrl.ticketsConfirmed}}</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-4">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <div class="panel-title">Reservations in progress</div>
+                    </div>
+                    <div class="panel-body text-info">
+                        <div class="row">
+                            <div class="col-xs-8"><div class="fa fa-cogs fa-5x"></div></div>
+                            <div class="col-xs-4"><div class="text-right event-statistic-highlighted">{{ctrl.pendingReservations}}</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-4" data-ng-if="!ctrl.event.freeOfCharge">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <div class="panel-title">Gross income ({{ctrl.event.currency}})</div>
+                    </div>
+                    <div class="panel-body text-info">
+                        <div class="row">
+                            <div class="col-xs-4"><div class="fa fa-money fa-5x"></div></div>
+                            <div class="col-xs-8"><div class="text-right event-statistic-highlighted">{{ctrl.event.grossIncome|currency:''}}</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <div class="row">
+            <div class="col-xs-12 col-lg-6">
+                <div class="row">
+                    <div class="col-xs-2"><a ng-click="ctrl.increment()"><i class="fa fa-chevron-circle-left fa-2x"></i></a></div>
+                    <div class="col-xs-8">
+                        <p class="text-center" ng-if="ctrl.isEven()">Tickets confirmed, last two weeks</p>
+                        <p class="text-center" ng-if="ctrl.isOdd()">Tickets confirmed, entire sale period</p>
+                    </div>
+                    <div class="col-xs-2"><a ng-click="ctrl.increment()" class="pull-right"><i class="fa fa-chevron-circle-right fa-2x"></i></a></div>
+                </div>
+                <event-two-weeks-bar ng-if="ctrl.isEven()" tickets="ctrl.confirmedTickets"></event-two-weeks-bar>
+                <event-all-tickets-by-day ng-if="ctrl.isOdd()" tickets="ctrl.confirmedTickets"></event-all-tickets-by-day>
+            </div>
+            <div class="col-xs-12 col-lg-5 col-lg-offset-1">
+                <event-tickets-pie event="ctrl.event"></event-tickets-pie>
+            </div>
+        </div>

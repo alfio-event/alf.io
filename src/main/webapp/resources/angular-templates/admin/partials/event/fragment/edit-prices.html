@@ -1,47 +1,65 @@
-<div class="page-header">
-    <h2>Tickets</h2>
-    <div class="btn-group">
-        <label class="btn btn-primary" data-ng-model="obj.freeOfCharge" data-uib-btn-radio="false">Paid</label>
-        <label class="btn btn-primary" data-ng-model="obj.freeOfCharge" data-uib-btn-radio="true">Free</label>
-    </div>
-</div>
 <div data-ng-form="editPrices">
-    <div class="form-group" data-ng-if="!obj.freeOfCharge">
-        <label for="allowedPaymentProxies">Accepted payment methods</label>
-        <select data-ng-model="obj.allowedPaymentProxies" multiple name="allowedPaymentProxies" id="allowedPaymentProxies" class="form-control" required data-ng-options="proxy.id as proxy.description for proxy in allowedPaymentProxies | paymentMethodFilter"></select>
-        <span class="help-block text-danger" data-ng-if="(allowedPaymentProxies | paymentMethodFilter:true).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter:true">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check the <a data-ui-sref="configuration.organization({organizationId: obj.organizationId})">configuration</a>.</span>
-        <field-error data-form-obj="editEvent" data-field-obj="editEvent.allowedPaymentProxies"></field-error>
-    </div>
-
-    <div class="row wMarginBottom">
-        <div class="col-sm-2">
-            <label for="availableSeats">Max tickets</label>
-            <input type="number" data-ng-model="obj.availableSeats" name="availableSeats" id="availableSeats" class="form-control" required />
-            <field-error data-form-obj="editEvent" data-field-obj="editEvent.availableSeats"></field-error>
-        </div>
-        <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
-            <label for="regularPrice">Regular Price <i data-ng-if="showPriceWarning" class="fa fa-warning text-warning tooltip-handler" title="Changing the regular price could lead to incoherence with categories' prices. Please do a double check before saving."></i></label>
-            <input type="number" data-ng-model="obj.regularPrice" name="regularPrice" id="regularPrice" class="form-control" required />
-            <field-error data-form-obj="editEvent" data-field-obj="editEvent.regularPrice"></field-error>
-        </div>
-        <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
-            <label for="currency">Currency</label>
-            <input type="text" data-ng-model="obj.currency" name="currency" id="currency" class="form-control" required pattern="[A-Z]{3}"/>
-            <field-error data-form-obj="editEvent" data-field-obj="editEvent.currency" data-required-pattern="'Three capital letters'"></field-error>
-        </div>
-        <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
-            <label for="vatPercentage">VAT (%)</label>
-            <input type="number" data-ng-model="obj.vatPercentage" name="vatPercentage" id="vatPercentage" class="form-control" required />
-            <field-error data-form-obj="editEvent" data-field-obj="editEvent.vatPercentage"></field-error>
-        </div>
-        <div class="col-sm-4" data-ng-if="!obj.freeOfCharge">
-            <label for="vatIncluded">VAT included</label>
-            <div class="input-group">
-                        <span class="input-group-addon">
-                            <input type="checkbox" data-ng-model="obj.vatIncluded" name="vatIncluded" id="vatIncluded">
-                        </span>
-                <span class="form-control text-muted">Price VAT included: {{calculateTotalPrice(obj) | currency : (obj.currency || "")}}</span>
+    <div class="form-group">
+        <label>Ticket price model</label>
+        <div class="form-group">
+            <div class="radio-inline">
+                <label>
+                    <input type="radio" name="freeOfCharge" data-ng-model="obj.freeOfCharge" data-ng-value="false"> Entry fee requested
+                </label>
+            </div>
+            <div class="radio-inline">
+                <label >
+                    <input type="radio" name="freeOfCharge" data-ng-model="obj.freeOfCharge" data-ng-value="true"> Free of charge
+                </label>
             </div>
         </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-2">
+            <div class="form-group">
+                <label for="availableSeats">Max tickets</label>
+                <input type="number" data-ng-model="obj.availableSeats" name="availableSeats" id="availableSeats" class="form-control" required />
+                <field-error data-form-obj="editEvent" data-field-obj="editEvent.availableSeats"></field-error>
+            </div>
+        </div>
+        <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
+            <div class="form-group">
+                <label for="regularPrice">Regular Price <i data-ng-if="showPriceWarning" class="fa fa-warning text-warning tooltip-handler" title="Changing the regular price could lead to incoherence with categories' prices. Please do a double check before saving."></i></label>
+                <input type="number" data-ng-model="obj.regularPrice" name="regularPrice" id="regularPrice" class="form-control" required />
+                <field-error data-form-obj="editEvent" data-field-obj="editEvent.regularPrice"></field-error>
+            </div>
+        </div>
+        <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
+            <div class="form-group">
+                <label for="currency">Currency</label>
+                <input type="text" data-ng-model="obj.currency" name="currency" id="currency" class="form-control" required pattern="[A-Z]{3}"/>
+                <field-error data-form-obj="editEvent" data-field-obj="editEvent.currency" data-required-pattern="'Three capital letters'"></field-error>
+            </div>
+        </div>
+        <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
+            <div class="form-group">
+                <label for="vatPercentage">VAT (%)</label>
+                <input type="number" data-ng-model="obj.vatPercentage" name="vatPercentage" id="vatPercentage" class="form-control" required />
+                <field-error data-form-obj="editEvent" data-field-obj="editEvent.vatPercentage"></field-error>
+            </div>
+        </div>
+        <div class="col-sm-4" data-ng-if="!obj.freeOfCharge">
+            <div class="form-group">
+                <label for="vatIncluded">VAT included</label>
+                <div class="input-group">
+                            <span class="input-group-addon">
+                                <input type="checkbox" data-ng-model="obj.vatIncluded" name="vatIncluded" id="vatIncluded">
+                            </span>
+                    <span class="form-control text-muted">Price VAT included: {{calculateTotalPrice(obj) | currency : (obj.currency || "")}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-group" data-ng-if="!obj.freeOfCharge" data-ng-class="{'has-warning': !event.organizationId}">
+        <label for="allowedPaymentProxies">Accepted payment methods</label>
+        <select data-ng-model="obj.allowedPaymentProxies" multiple name="allowedPaymentProxies" id="allowedPaymentProxies" class="form-control" required data-ng-options="proxy.id as proxy.description for proxy in allowedPaymentProxies | paymentMethodFilter"></select>
+        <span class="help-block" data-ng-if="(allowedPaymentProxies | paymentMethodFilter:true).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter:true">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check the <a data-ui-sref="configuration.organization({organizationId: obj.organizationId})">configuration</a>.</span>
+        <span class="help-block" data-ng-if="!event.organizationId"><i class="fa fa-warning"></i> Please select an organization in order to load the payment methods</span>
+        <field-error data-form-obj="editEvent" data-field-obj="editEvent.allowedPaymentProxies"></field-error>
     </div>
 </div>

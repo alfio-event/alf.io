@@ -13,60 +13,50 @@
         <span><a class="btn btn-default" data-ui-sref="events.single.plugin-log({eventName:event.shortName})"><i class="fa fa-plug"></i> view Plugins log</a></span>
     </div>
 </div>
-<div class="row">
-    <div class="col-sm-12 col-md-6">
-        <div class="form-group">
-            <label>Organized by</label>
-            <p class="form-control-static">{{organization.name}} &lt;{{organization.email}}&gt;</p>
-            <label>Website URL</label>
-            <p class="form-control-static"><a href="{{event.websiteUrl}}" target="_blank">{{event.websiteUrl}}</a></p>
+<event-overview data-event="event"></event-overview>
 
-            <div data-ng-if="!isInternal(event)">
-                <label>External URL</label>
-                <p class="form-control-static"><a href="{{event.externalUrl}}" target="_blank">{{event.externalUrl}}</a></p>
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <div class="panel-title">
+            <div class="row">
+                <div class="col-xs-9"><strong>Logistic info and description</strong></div>
+                <div class="col-xs-3"><div class="pull-right"><div data-ng-transclude=""></div></div></div>
             </div>
-
-            <div data-ng-if="isInternal(event)">
-                <label>Terms and conditions URL</label>
-                <p class="form-control-static"><a href="{{event.termsAndConditionsUrl}}" target="_blank">{{event.termsAndConditionsUrl}}</a></p>
-            </div>
-
-            <label data-ng-if="event.fileBlobIdIsPresent">Event image</label>
-            <p data-ng-if="event.fileBlobIdIsPresent"><img data-ng-src="/file/{{event.fileBlobId}}" class="img-responsive"></p>
-
-            <label data-ng-if="!event.fileBlobIdIsPresent">Image URL</label>
-            <p  data-ng-if="!event.fileBlobIdIsPresent" class="form-control-static"><a href="{{event.imageUrl}}" target="_blank">{{event.imageUrl}}</a></p>
-
-            <label>Location</label>
-            <p class="form-control-static">{{event.location}}</p>
-
-            <div data-ng-if="isInternal(event)">
-                <label>Languages</label>
-                <p class="form-control-static" data-ng-repeat="cl in event.contentLanguages">
-                    - {{cl.displayLanguage}}
-                </p>
-
-                <label>Description</label>
-                <div></div>
-                <div data-ng-repeat="cl in event.contentLanguages">
-                    <p class="form-control-static">- {{cl.displayLanguage}}: <display-commonmark-preview text="event.description[cl.locale]"></display-commonmark-preview></p>
-                    <pre class="white form-control-static">{{event.description[cl.locale]}}</pre>
-                </div>
-            </div>
-
-            <label>Start Date/Time</label>
-            <p class="form-control-static">{{event.formattedBegin | formatDate}}</p>
-
-            <label>End Date/Time</label>
-            <p class="form-control-static">{{event.formattedEnd | formatDate}}</p>
-
-            <label>Time Zone</label>
-            <p class="form-control-static">{{event.timeZone}}</p>
-
         </div>
     </div>
-    <div class="col-sm-12 col-md-6">
-        <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loadingMap"></i>
-        <img data-ng-if="event.geolocation && !loadingMap" data-ng-src="{{event.geolocation.mapUrl}}" alt="{{event.location}}" class="img-responsive" />
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-xs-1">
+                <img data-ng-if="event.fileBlobIdIsPresent" data-ng-src="/file/{{event.fileBlobId}}" class="img-responsive event-logo">
+                <a href="{{event.imageUrl}}" data-ng-if="!event.fileBlobIdIsPresent" target="_blank">{{event.imageUrl}}</a>
+            </div>
+            <div class="col-xs-6">
+                <dl class="dl-horizontal">
+                    <dt>Organized by</dt>
+                    <dd>{{organization.name}} &lt;{{organization.email}}&gt;</dd>
+                    <dt>Website URL</dt>
+                    <dd><a href="{{event.websiteUrl}}" target="_blank">{{event.websiteUrl}}</a></dd>
+                    <dt data-ng-if="!isInternal(event)">External URL</dt>
+                    <dd data-ng-if="!isInternal(event)"><a href="{{event.externalUrl}}" target="_blank">{{event.externalUrl}}</a></dd>
+                    <dt data-ng-if="isInternal(event)">T&C URL</dt>
+                    <dd data-ng-if="isInternal(event)"><a href="{{event.termsAndConditionsUrl}}" target="_blank">{{event.termsAndConditionsUrl}}</a></dd>
+                    <dt>Location</dt>
+                    <dd><a ng-href="{{event.geolocation.mapUrl}}" target="_blank">{{event.location}}</a></dd>
+                    <dt data-ng-if="isInternal(event)">Languages</dt>
+                    <dd data-ng-if="isInternal(event)"><span data-ng-repeat="cl in event.contentLanguages">{{cl.displayLanguage}}<span data-ng-if="!$last">, </span></span></dd>
+                    <dt>Start Date/Time</dt>
+                    <dd>{{event.formattedBegin | formatDate}}</dd>
+                    <dt>End Date/Time</dt>
+                    <dd>{{event.formattedEnd | formatDate}}</dd>
+                    <dt>Time Zone</dt>
+                    <dd>{{event.timeZone}}</dd>
+                </dl>
+            </div>
+            <div class="col-xs-5">
+                <div data-ng-repeat="cl in event.contentLanguages">
+                    <p class="text-muted"><display-commonmark-preview text="event.description[cl.locale]"></display-commonmark-preview> {{event.description[cl.locale]}}</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

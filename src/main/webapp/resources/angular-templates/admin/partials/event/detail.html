@@ -2,20 +2,12 @@
 </div>
 <div data-ng-if="event">
     <div class="container">
-            <form name="headerForm" role="form" data-ng-submit="saveEventHeader(headerForm, eventHeader)" novalidate class="force-show-errors" data-error-sensitive="editEventHeader">
-                <event-header data-ng-if="!editEventHeader"></event-header>
-                <edit-event-header data-ng-if="editEventHeader" data-show-dates-warning="true" data-show-existing-errors="true" data-event-obj="event" data-target-obj="eventHeader" data-organizations="organizations"  data-all-languages="allLanguages" data-all-languages-mapping="allLanguagesMapping"></edit-event-header>
-                <button class="btn btn-warning" data-ng-if="!editEventHeader" data-ng-click="toggleEditHeader(false)"><i class="fa fa-edit"></i> edit</button>
-                <button class="btn btn-success" type="submit" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting">save</button>
-                <button class="btn btn-default" data-ng-if="editEventHeader" data-ng-disabled="headerForm.$waiting" data-ng-click="toggleEditHeader(true)">cancel</button>
-            </form>
-            <form name="pricesForm" role="form" data-ng-submit="saveEventPrices(pricesForm, eventPrices, event.organizationId)" novalidate class="force-show-errors" data-error-sensitive="editPrices" data-ng-if="isInternal(event)">
-                <prices data-ng-if="!editPrices"></prices>
-                <edit-prices data-ng-if="editPrices" data-show-price-warning="true" data-event-obj="event" data-show-existing-errors="true" data-target-obj="eventPrices" data-allowed-payment-proxies="allowedPaymentProxies"></edit-prices>
-                <button class="btn btn-warning" data-ng-if="!editPrices" data-ng-click="toggleEditPrices(false)"><i class="fa fa-edit"></i> edit</button>
-                <button class="btn btn-success" type="submit" data-ng-if="editPrices" data-ng-disabled="pricesForm.$waiting">save</button>
-                <button class="btn btn-default" data-ng-if="editPrices" data-ng-disabled="pricesForm.$waiting" data-ng-click="toggleEditPrices(true)">cancel</button>
-            </form>
+            <event-header data-ng-if="!editEventHeader">
+                <button class="btn btn-sm btn-default" data-ng-click="editHeader()"><i class="fa fa-edit"></i> edit</button>
+            </event-header>
+            <prices>
+                <button class="btn btn-sm btn-default" data-ng-click="editPrices()"><i class="fa fa-edit"></i> edit</button>
+            </prices>
 
             <div class="page-header visible-sm visible-xs" data-ng-if="isInternal(event) && pendingReservations.length > 0">
                 <h3>Payments to be confirmed</h3>
@@ -144,6 +136,8 @@
                                                     <dd><a href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketReservation.id}}/" target="_blank">{{::ticket.uuid}}</a></dd>
                                                     <dt>Reservation by</dt>
                                                     <dd>{{::ticket.ticketReservation.fullName}} &lt;{{::ticket.ticketReservation.email}}&gt;</dd>
+                                                    <dt data-ng-if="!ticket.pending">Confirmed on</dt>
+                                                    <dd data-ng-if="!ticket.pending">{{::ticket.ticketReservation.confirmationTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</dd>
                                                     <dt data-ng-class="{'text-warning': !ticket.fullName}">Assignee</dt>
                                                     <dd>{{::ticket.fullName}} <span data-ng-if="ticket.email">&lt;{{::ticket.email}}&gt;</span></dd>
                                                     <dt data-ng-if="ticket.appliedDiscount > 0">Discount</dt>

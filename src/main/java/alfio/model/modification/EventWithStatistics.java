@@ -100,6 +100,11 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
     }
 
     @Override
+    public int getPendingTickets() {
+        return getTicketCategories().stream().mapToInt(TicketCategoryWithStatistic::getPendingTickets).sum();
+    }
+
+    @Override
     public int getDynamicAllocation() {
         if(containsUnboundedCategories) {
             List<TicketCategoryWithStatistic> unboundedCategories = ticketCategories.stream().filter(IS_BOUNDED.negate()).collect(Collectors.toList());
@@ -147,6 +152,13 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
     @JsonIgnore
     public int getSrcPriceCts() {
         return event.getSrcPriceCts();
+    }
+
+    public BigDecimal getGrossIncome() {
+        return getTicketCategories().stream()
+            .flatMap(tc -> tc.getTickets().stream())
+            .map(TicketWithStatistic::getFinalPrice)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     @Override

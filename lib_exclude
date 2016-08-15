@@ -21,10 +21,6 @@
 /bootstrap/less/**
 /bootstrap/dist/fonts/**
 /bootstrap/dist/js/bootstrap.js
-/Chart.js/docs/**
-/Chart.js/samples/**
-/Chart.js/src/**
-/Chart.js/Chart.js
 /jquery/src/**
 /jquery/dist/jquery.js
 /lodash/lodash.js
@@ -43,3 +39,9 @@
 /numeral/min/languages/**
 /nz-toggle/example/**
 /nz-toggle/src/**
+/chartist/dist/scss/**
+/chartist/dist/chartist.css
+/chartist/dist/chartist.js
+/chartist-plugin-accessibility/dist/chartist-plugin-accessibility.js
+/chartist-plugin-tooltip/tasks/**
+/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.js

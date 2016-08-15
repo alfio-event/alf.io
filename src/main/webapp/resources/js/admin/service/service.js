@@ -260,8 +260,11 @@
                 }
                 return numeral(vat.add(event.regularPrice).format('0.00')).value();
             },
-            calcBarValue: function(categorySeats, eventSeats) {
-                return instance.calcPercentage(categorySeats, eventSeats).format('0.00');
+            calcBarValue: function(category) {
+                if(category.bounded) {
+                    return category.maxTickets || 1;
+                }
+                return 0;
             },
             calcCategoryPricePercent: function(category, event, editMode) {
                 if(isNaN(event.regularPrice) || isNaN(category.price)) {

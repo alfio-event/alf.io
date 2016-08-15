@@ -7,13 +7,13 @@
         'STRIPE': 'Credit card payments',
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)',
-        'PAYPAL' : 'Paypal'
+        'PAYPAL' : 'PayPal'
     };
     
     //
     var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
     
-    var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'chart.js', 'nzToggle', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-users', 'alfio-additional-services']);
+    var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-users', 'alfio-additional-services', 'alfio-event-statistic']);
 
     admin.config(function($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.otherwise("/");
@@ -117,60 +117,6 @@
                     view: 'WAITING_QUEUE'
                 }
             });
-
-        var printLabel = function(val) {
-            return val.label + ' ('+ val.value +')';
-        };
-
-        Chart.defaults.global.multiTooltipTemplate = function(val) {
-            return printLabel(val);
-        };
-        Chart.defaults.global.tooltipTemplate = function(val) {
-            return printLabel(val);
-        };
-        Chart.defaults.global.colours = [
-            { // green, checked in
-                fillColor: "rgba(92,184,92,1)",
-                strokeColor: "rgba(92,184,92,1)",
-                pointColor: "rgba(92,184,92,1)",
-                pointStrokeColor: "#fff",
-                pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(92,184,92,0.8)"
-            },
-            { // yellow, sold
-                fillColor: "rgba(240,173,78,1)",
-                strokeColor: "rgba(240,173,78,1)",
-                pointColor: "rgba(240,173,78,1)",
-                pointStrokeColor: "#fff",
-                pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(240,173,78,0.8)"
-            },
-            { // blue, still available
-                fillColor: "rgba(91,192,222,1)",
-                strokeColor: "rgba(91,192,222,1)",
-                pointColor: "rgba(91,192,222,1)",
-                pointStrokeColor: "#fff",
-                pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(91,192,222,0.8)"
-            },
-            { // light grey
-                fillColor: "rgba(220,220,220,0.2)",
-                strokeColor: "rgba(220,220,220,1)",
-                pointColor: "rgba(220,220,220,1)",
-                pointStrokeColor: "#fff",
-                pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(220,220,220,0.8)"
-            },
-            { // purple
-                fillColor: "rgba(66,139,202,1)",
-                strokeColor: "rgba(66,139,202,1)",
-                pointColor: "rgba(66,139,202,1)",
-                pointStrokeColor: "#fff",
-                pointHighlightFill: "#fff",
-                pointHighlightStroke: "rgba(66,139,202,0.8)"
-            }
-
-        ];
     });
 
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -244,7 +190,7 @@
             expiration: {},
             sticky: sticky,
             notBefore: notBefore,
-            bounded: true
+            bounded: false
         };
 
     };
@@ -400,6 +346,18 @@
                 });
             }, angular.noop);
         };
+
+        $scope.calcDynamicTickets = function(eventSeats, categories) {
+            var value = 0;
+            if(eventSeats) {
+                value = eventSeats - _.chain(categories).filter('bounded').reduce(function(sum, c) {
+                        return sum + (c.maxTickets || 0);
+                    }, 0).value();
+
+            }
+            console.log('value', value);
+            return value;
+        }
 
     });
 
@@ -557,14 +515,6 @@
         $scope.eventHeader = {};
         $scope.eventPrices = {};
 
-        $scope.toggleEditHeader = function(editEventHeader) {
-            $scope.editEventHeader = !editEventHeader;
-        };
-
-        $scope.toggleEditPrices = function(editPrices) {
-            $scope.editPrices = !editPrices;
-        };
-
         var validationErrorHandler = function(result, form, fieldsContainer) {
             return $q(function(resolve, reject) {
                 if(result.data['errorCount'] == 0) {
@@ -587,32 +537,71 @@
             alert(error.data);
         };
 
-        $scope.saveEventHeader = function(form, header) {
-            /*if(!form.$valid) {
-                return;
-            }*/
-            EventService.updateEventHeader(header).then(function(result) {
-                validationErrorHandler(result, form, form.editEventHeader).then(function(result) {
-                    $scope.editEventHeader = false;
-                    loadData();
-                });
-            }, errorHandler);
+        $scope.editHeader = function() {
+            var parentScope = $scope;
+            var editEventHeader = $uibModal.open({
+                size:'lg',
+                templateUrl:BASE_STATIC_URL + '/event/fragment/edit-event-header-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                    $scope.eventHeader = parentScope.eventHeader;
+                    $scope.event = parentScope.event;
+                    $scope.organizations = parentScope.organizations;
+                    $scope.allLanguages = parentScope.allLanguages;
+                    $scope.allLanguagesMapping = parentScope.allLanguagesMapping;
+
+                    $scope.cancel = function() {
+                        $scope.$dismiss('canceled');
+                    };
+                    $scope.update = function(form, eventHeader) {
+                        if(!form.$valid) {
+                            return;
+                        }
+                        EventService.updateEventHeader(eventHeader).then(function(result) {
+                            validationErrorHandler(result, form, form.editEventHeader).then(function(result) {
+                                $scope.$close(eventHeader);
+                            });
+                        }, errorHandler);
+                    };
+                }
+            });
+            editEventHeader.result.then(function() {
+                loadData();
+            });
         };
 
-        $scope.saveEventPrices = function(form, eventPrices, organizationId) {
-            if(!form.$valid) {
-                return;
-            }
-            var obj = {'organizationId':organizationId};
-            angular.extend(obj, eventPrices);
-            EventService.updateEventPrices(obj).then(function(result) {
-                validationErrorHandler(result, form, form.editPrices).then(function(result) {
-                    $scope.editPrices = false;
-                    loadData();
-                });
-            }, errorHandler);
+        $scope.editPrices = function() {
+            var parentScope = $scope;
+            var editPrices = $uibModal.open({
+                size:'lg',
+                templateUrl:BASE_STATIC_URL + '/event/fragment/edit-event-prices-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                    $scope.eventPrices = parentScope.eventPrices;
+                    $scope.event = parentScope.event;
+                    $scope.allowedPaymentProxies = parentScope.allowedPaymentProxies;
+
+                    $scope.cancel = function() {
+                        $scope.$dismiss('canceled');
+                    };
+                    $scope.update = function(form, eventPrices, organizationId) {
+                        if(!form.$valid) {
+                            return;
+                        }
+                        var obj = {'organizationId':organizationId};
+                        angular.extend(obj, eventPrices);
+                        EventService.updateEventPrices(obj).then(function(result) {
+                            validationErrorHandler(result, form, form.editPrices).then(function(result) {
+                                $scope.$close(eventPrices);
+                            });
+                        }, errorHandler);
+                    };
+                }
+            });
+            editPrices.result.then(function() {
+                loadData();
+            });
         };
-        
 
         $scope.openDeleteWarning = function(event) {
             EventService.deleteEvent(event.id).then(function(result) {

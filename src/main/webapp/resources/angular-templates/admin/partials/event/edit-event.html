@@ -4,31 +4,44 @@
 <div class="container" data-ng-if="event">
     <div class="page-header">
         <h1>Create new Event</h1>
-        <h4 class="text-muted">Please fill in the required information and then save</h4>
+        <span class="text-muted">Please fill in the required information and then save</span>
     </div>
     <form role="form" name="editEvent" data-ng-submit="save(editEvent, event)" data-error-sensitive="editEventHeader,editPrices" novalidate>
+        <div class="page-header">
+            <h3>Logistic info and description</h3>
+        </div>
         <edit-event-header data-target-obj="event" data-organizations="organizations" data-full-edit-mode="true" data-show-existing-errors="showExistingErrors" data-all-languages="allLanguages" data-all-languages-mapping="allLanguagesMapping"></edit-event-header>
 
         <div data-ng-if="isInternal(event)">
+            <div class="page-header">
+                <h3>Seats and payment info</h3>
+            </div>
             <edit-prices data-target-obj="event" data-full-edit-mode="true" data-allowed-payment-proxies="allowedPaymentProxies" data-show-existing-errors="showExistingErrors"></edit-prices>
 
             <div class="page-header">
                 <h3>Categories</h3>
-                <h5 class="text-muted">Here you can define all the ticket categories for the event. Please note that at least one category is required in order to create the event.</h5>
+                <span class="text-muted">Here you can define all the ticket categories for the event. Please note that at least one category is required in order to create the event.</span>
             </div>
 
             <div class="row">
                 <div class="col-sm-12">
                     total:
                     <uib-progressbar value="100">{{event.availableSeats}}</uib-progressbar>
-                    assigned:
-                    <uib-progress>
-                        <uib-bar data-ng-repeat="category in event.ticketCategories | orderBy: ['inception', 'expiration', 'bounded']" value="calcBarValue(category, event.availableSeats)" type="{{evaluateBarType($index)}}">{{category.name}} ({{category.maxTickets}})</uib-bar>
+                </div>
+            </div>
+            <div class="row wMarginBottom">
+                <div class="col-sm-12">
+                    allocated:
+                    <uib-progress max="event.availableSeats || 0">
+                        <uib-bar data-ng-repeat="category in event.ticketCategories | boundedCategories | orderBy: ['inception', 'expiration']" value="calcBarValue(category)" type="{{evaluateBarType($index)}}">{{category.name}} ({{category.maxTickets}})</uib-bar>
+                        <uib-bar data-ng-if="(event.ticketCategories | boundedCategories:true).length > 0" value="calcDynamicTickets(event.availableSeats, event.ticketCategories)">Dynamic allocation ({{calcDynamicTickets(event.availableSeats, event.ticketCategories)}})</uib-bar>
                     </uib-progress>
                 </div>
             </div>
-            <div class="row category" data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories" data-ng-class="'category-' + evaluateBarType($index)">
-                <edit-category></edit-category>
+            <div class="row panel panel-default" data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories" data-ng-class="'category-' + evaluateBarType($index)">
+                <div class="panel-body">
+                    <edit-category></edit-category>
+                </div>
             </div>
 
             <div class="row">

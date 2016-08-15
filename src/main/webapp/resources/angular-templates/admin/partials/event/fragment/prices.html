@@ -1,35 +1,24 @@
-<div class="page-header">
-    <h2>Tickets</h2>
-    <h4>This event has been marked as <span data-ng-if="event.freeOfCharge">Free of charge</span> <span data-ng-if="!event.freeOfCharge">Paid</span></h4>
-</div>
-
-<div class="row">
-    <div class="col-sm-8">
-        <div class="row">
-            <div class="col-sm-12" data-ng-if="!event.freeOfCharge">
-                <label>Accepted payment methods</label>
-                <p class="form-control-static">{{event.allowedPaymentProxies.join(',')}}</p>
-                <span class="help-block text-danger" data-ng-if="(allowedPaymentProxies | paymentMethodFilter:true).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter:true">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check the <a data-ui-sref="configuration.organization({organizationId: event.organizationId})">configuration</a>.</span>
-            </div>
-            <div class="col-sm-3">
-                <label>Max tickets</label>
-                <p class="form-control-static">{{event.availableSeats}}</p>
-            </div>
-            <div class="col-sm-3" data-ng-if="!event.freeOfCharge">
-                <label>Regular Price</label>
-                <p class="form-control-static">{{event.regularPrice | currency : (event.currency || "")}}</p>
-            </div>
-            <div class="col-sm-3" data-ng-if="!event.freeOfCharge">
-                <label>VAT (%)</label>
-                <p class="form-control-static">{{event.vatPercentage | currency:""}}</p>
-            </div>
-            <div class="col-sm-3" data-ng-if="!event.freeOfCharge">
-                <label>Final Price</label>
-                <p class="form-control-static">{{event.finalPrice | currency : (event.currency || "")}}</p>
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <div class="panel-title">
+            <div class="row">
+                <div class="col-xs-9"><strong>Seats and payment info</strong></div>
+                <div class="col-xs-3"><div class="pull-right"><div data-ng-transclude=""></div></div></div>
             </div>
         </div>
     </div>
-    <div class="col-sm-4">
-        <ticket-status data-statistics-container="event"></ticket-status>
+    <div class="panel-body">
+        <dl class="dl-horizontal">
+            <dt>Tickets Price</dt>
+            <dd><span data-ng-if="event.freeOfCharge">Free of charge</span> <span data-ng-if="!event.freeOfCharge">{{event.regularPrice | currency : (event.currency || "")}}</span></dd>
+            <dt data-ng-if="!event.freeOfCharge">Accepted payment methods</dt>
+            <dd data-ng-if="!event.freeOfCharge">{{event.allowedPaymentProxies.join(',')}} <div class="text-danger" data-ng-if="(allowedPaymentProxies | paymentMethodFilter:true).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter:true">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check the <a data-ui-sref="configuration.organization({organizationId: event.organizationId})">configuration</a>.</div></dd>
+            <dt>Max tickets</dt>
+            <dd>{{event.availableSeats}}</dd>
+            <dt data-ng-if="!event.freeOfCharge">VAT (%)</dt>
+            <dd data-ng-if="!event.freeOfCharge">{{event.vatPercentage | currency:""}}</dd>
+            <dt data-ng-if="!event.freeOfCharge">Final Price</dt>
+            <dd data-ng-if="!event.freeOfCharge">{{event.finalPrice | currency : (event.currency || "")}}</dd>
+        </dl>
     </div>
 </div>
