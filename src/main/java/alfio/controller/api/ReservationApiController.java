@@ -78,6 +78,7 @@ public class ReservationApiController {
             model.addAttribute("validationResult", t.getLeft());
             model.addAttribute("countries", ticketHelper.getLocalizedCountries(requestLocale));
             model.addAttribute("event", t.getMiddle());
+            model.addAttribute("useFirstAndLastName", t.getMiddle().mustUseFirstAndLastName());
             model.addAttribute("availableLanguages", i18nManager.getEventLanguages(eventName).stream()
                     .map(ContentLanguage.toLanguage(requestLocale)).collect(Collectors.toList()));
             String uuid = t.getRight().getUuid();
