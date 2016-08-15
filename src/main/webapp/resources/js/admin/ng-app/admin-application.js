@@ -355,7 +355,6 @@
                     }, 0).value();
 
             }
-            console.log('value', value);
             return value;
         }
 
