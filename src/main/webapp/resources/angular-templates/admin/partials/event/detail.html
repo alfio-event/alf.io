@@ -108,7 +108,7 @@
                                             <div class="col-sm-8">{{::ticketCategory.actualPrice | currency : (event.currency || "")}}</div>
                                         </div>
                                     </div>
-                                    <div class="col-md-7 hidden-xs"><p class="text-muted" data-ng-repeat="(lang, desc) in ticketCategory.description" title="{{lang}}">{{desc}}</p></div>
+                                    <div class="col-md-7 hidden-xs"><p class="text-muted" data-ng-repeat="(lang, desc) in ticketCategory.description" title="{{lang}}"><display-commonmark-preview text="desc"></display-commonmark-preview> {{desc}}</p></div>
                                 </div>
                                 <div data-ng-if="ticketCategory.accessRestricted" class="wMarginBottom" data-uib-collapse="isTokenViewCollapsed(ticketCategory)">
                                     <hr>

@@ -18,7 +18,7 @@
                 </div>
             {{/expired}}
             <div>
-                {{description}}
+                {{#commonmark}}{{description}}{{/commonmark}}
             </div>
         </div>
         <div class="col-sm-3">
