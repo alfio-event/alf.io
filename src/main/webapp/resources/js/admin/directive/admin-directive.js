@@ -201,7 +201,7 @@
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
-            controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, EventUtilsService, EventService) {
+            controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService) {
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',
                         'description', 'websiteUrl', 'externalUrl', 'termsAndConditionsUrl', 'imageUrl', 'fileBlobId', 'formattedBegin','type',
@@ -222,7 +222,11 @@
                 $scope.selectedLanguages = {};
 
                 EventService.getSupportedLanguages().success(function(result) {
-                        $scope.selectedLanguages.langs = _.map(result, function(r) {
+                    var locales = $scope.obj.locales;
+                    var selected = _.filter(result, function(r) {
+                        return (r.value & locales) === r.value;
+                    });
+                    $scope.selectedLanguages.langs = _.map(selected, function(r) {
                         return r.value;
                     });
                 });
@@ -274,7 +278,7 @@
                     };
                     if(shouldUpdate()) {
                         $scope.loading = true;
-                        EventUtilsService.generateShortName(eventName).success(function(data) {
+                        UtilsService.generateShortName(eventName).success(function(data) {
                             if(shouldUpdate()) {
                                 $scope.obj.shortName = data;
                             }
@@ -344,10 +348,7 @@
             controller: function EditPricesController($scope, PriceCalculator) {
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','freeOfCharge', 'allowedPaymentProxies', 'availableSeats',
-                        'regularPrice', 'currency', 'vat', 'vatIncluded']);
-                    if(source.vatIncluded) {
-                        source.regularPrice = PriceCalculator.calculateTotalPrice(source, true);
-                    }
+                        'regularPrice', 'currency', 'vatPercentage', 'vatIncluded', 'organizationId']);
                     angular.extend($scope.obj, source);
                 }
 
@@ -387,11 +388,41 @@
         };
     });
 
+    directives.directive('pendingReservationsLink', ['$rootScope', '$interval', 'EventService', function($rootScope, $interval, EventService) {
+        return {
+            restrict: 'E',
+            scope: {
+                event: '=',
+                styleClass: '@'
+            },
+            bindToController: true,
+            controllerAs: 'ctrl',
+            template: '<a ng-class="ctrl.styleClass" data-ui-sref="events.single.pending-reservations({eventName: ctrl.event.shortName})"><i class="fa fa-dollar"></i> Pending Reservations <pending-reservations-badge event-name="{{ctrl.event.shortName}}"></pending-reservations-badge></a>',
+            controller: ['$scope', function($scope) {
+                var ctrl = this;
+                var eventName = ctrl.event.shortName;
+                ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
+                var getPendingPayments = function() {
+                    EventService.getPendingPayments(eventName).success(function(data) {
+                        ctrl.pendingReservations = data.length;
+                        $rootScope.$broadcast('PendingReservationsFound', data);
+                    });
+                };
+                getPendingPayments();
+                var promise = $interval(getPendingPayments, 1000);
+
+                $scope.$on('$destroy', function() {
+                    $interval.cancel(promise);
+                });
+            }]
+        }
+    }]);
+
     directives.directive('pendingReservationsBadge', function($rootScope, $interval, EventService) {
         return {
             restrict: 'E',
             scope: false,
-            templateUrl: '/resources/angular-templates/admin/partials/pending-reservations/badge.html',
+            template: '<span class="badge">{{pendingReservations}}</span>',
             link: function(scope, element, attrs) {
                 var eventName = attrs.eventName;
                 scope.pendingReservations = 0;
@@ -465,10 +496,10 @@
             controller: function($scope) {
                 $scope.$watch('statisticsContainer', function(newVal) {
                     if(angular.isDefined(newVal)) {
-                        $scope.statistics = [newVal.soldTickets, newVal.checkedInTickets, newVal.notSoldTickets, newVal.notAllocatedTickets, newVal.dynamicAllocation];
+                        $scope.statistics = [newVal.checkedInTickets, newVal.soldTickets, newVal.notSoldTickets, newVal.notAllocatedTickets, newVal.dynamicAllocation];
                     }
                 });
-                $scope.labels = ['Sold', 'Checked in', 'Still available', 'Not yet allocated', 'Dynamically allocated'];
+                $scope.labels = ['Checked in', 'Sold', 'Still available', 'Not yet allocated', 'Dynamically allocated'];
             }
         }
     });
@@ -509,7 +540,8 @@
             restrict: 'E',
             bindToController: true,
             scope: {
-                event: '='
+                event: '=',
+                styleClass: '@'
             },
             controllerAs: 'ctrl',
             controller: function(WaitingQueueService) {
@@ -517,12 +549,13 @@
                 WaitingQueueService.countSubscribers(this.event).success(function(result) {
                     ctrl.count = result;
                 });
+                ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
             },
-            template: '<span><a class="btn btn-warning" data-ui-sref="events.show-waiting-queue({eventName: ctrl.event.shortName})"><i class="fa fa-group"></i> waiting queue <span class="badge">{{ctrl.count}}</span></a></span>'
+            template: '<a data-ng-class="ctrl.styleClass" data-ui-sref="events.single.show-waiting-queue({eventName: ctrl.event.shortName})"><i class="fa fa-group"></i> waiting queue <span class="badge">{{ctrl.count}}</span></a>'
         }
     });
 
-    directives.directive('validateShortName', ['EventUtilsService', function(EventUtilsService) {
+    directives.directive('validateShortName', ['UtilsService', function(UtilsService) {
         return {
             require: 'ngModel',
             link: function(scope, element, attrs, ngModelCtrl) {
@@ -531,7 +564,7 @@
                     ngModelCtrl.$asyncValidators.validateShortName = function(modelValue, viewValue) {
                         var value = modelValue || viewValue;
                         scope.loading = true;
-                        return EventUtilsService.validateShortName(value)['finally'](function() {
+                        return UtilsService.validateShortName(value)['finally'](function() {
                             scope.loading = false;
                         });
                     }
@@ -539,37 +572,146 @@
             }
         }
     }]);
-    
-    directives.directive('displayCommonmarkPreview', ['EventUtilsService', '$uibModal', function(EventUtilsService, $uibModal) {
-    	return {
-    		restrict: 'E',
-    		bindToController: true,
-    		scope: {
-    			text: '='
-    		},
-    		controllerAs: 'ctrl',
-    		template:'<button class="btn btn-default" type="button" ng-click="ctrl.openModal()">Preview</button>',
-    		controller: function() {
-    			var ctrl = this;
-    			
-				ctrl.openModal = function() {
-					EventUtilsService.renderCommonMark(ctrl.text).then(function(res) {
-	    				return $uibModal.open({
-	                        size:'sm',
-	                        template:'<div class="modal-header"><h1>Preview</h1></div><div class="modal-body" ng-bind-html="text"></div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
-	                        backdrop: 'static',
-	                        controller: function($scope) {
-	                        	$scope.ok = function() {
-	                                $scope.$close(true);
-	                            };
-	                            $scope.text = res.data;
-	                        }
-	                    });
-					});	
-    			};
-    			
-    		}
-    	}
-    }])
 
+    directives.directive('displayCommonmarkPreview', ['UtilsService', '$uibModal', function(UtilsService, $uibModal) {
+        return {
+            restrict: 'E',
+            bindToController: true,
+            scope: {
+                text: '='
+            },
+            controllerAs: 'ctrl',
+            template:'<button class="btn btn-default" type="button" ng-click="ctrl.openModal()">Preview</button>',
+            controller: function() {
+                var ctrl = this;
+
+                ctrl.openModal = function() {
+                    if (ctrl.text) {
+                        UtilsService.renderCommonMark(ctrl.text)
+                            .then(function (res) {
+                                    return $uibModal.open({
+                                        size: 'sm',
+                                        template: '<div class="modal-header"><h1>Preview</h1></div><div class="modal-body" ng-bind-html="text"></div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
+                                        backdrop: 'static',
+                                        controller: function ($scope) {
+                                            $scope.ok = function () {
+                                                $scope.$close(true);
+                                            };
+                                            $scope.text = res.data;
+                                        }
+                                    })
+                                }, function(res) {
+                                    return $uibModal.open({
+                                        size: 'sm',
+                                        template: '<div class="modal-body">There was an error fetching the preview</div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
+                                        backdrop: 'static',
+                                        controller: function ($scope) {
+                                            $scope.ok = function () {
+                                                $scope.$close(true);
+                                            };
+                                        }
+                                    })
+                                }
+                            );
+                    }
+                };
+
+            }
+        }
+    }]);
+
+    directives.directive('alfioSidebar', ['EventService', 'UtilsService', '$state', '$window', '$rootScope', function(EventService, UtilsService, $state, $window, $rootScope) {
+        return {
+            restrict: 'E',
+            bindToController: true,
+            scope: {},
+            controllerAs: 'ctrl',
+            templateUrl: '/resources/angular-templates/admin/partials/main/sidebar.html',
+            controller: ['$location', '$anchorScroll', '$scope', function($location, $anchorScroll, $scope) {
+                var ctrl = this;
+                var toUnbind = [];
+                var detectCurrentView = function(state) {
+                    if(!state.data) {
+                        return 'UNKNOWN';
+                    }
+                    return state.data.view || 'UNKNOWN';
+                };
+                var loadEventData = function() {
+                    if(ctrl.displayEventData && $state.params.eventName) {
+                        EventService.getEvent($state.params.eventName).success(function(event) {
+                            ctrl.event = event.event;
+                            ctrl.internal = (ctrl.event.type === 'INTERNAL');
+                            ctrl.openDeleteWarning = function() {
+                                EventService.deleteEvent(ctrl.event).then(function(result) {
+                                    $state.go('index');
+                                });
+                            };
+                            ctrl.openFieldSelectionModal = function() {
+                                EventService.exportAttendees(ctrl.event);
+                            };
+                            ctrl.downloadSponsorsScan = function() {
+                                $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export.csv");
+                            };
+                            ctrl.goToCategory = function(category) {
+                                ctrl.navigateTo('ticket-category-'+category.id);
+                            };
+                            ctrl.categoryFilter = {
+                                active: true,
+                                expired: false,
+                                freeText: ''
+                            };
+                            ctrl.filterChanged = function() {
+                                $rootScope.$emit('SidebarCategoryFilterUpdated', ctrl.categoryFilter);
+                            };
+                            toUnbind.push($rootScope.$on('CategoryFilterUpdated', function(ev, categoryFilter) {
+                                if(categoryFilter) {
+                                    ctrl.categoryFilter.freeText = categoryFilter.freeText;
+                                }
+                            }));
+                        });
+                    }
+                };
+
+                $rootScope.$on('EventUpdated', function() {
+                    loadEventData();
+                });
+
+                ctrl.currentView = detectCurrentView($state.current);
+                ctrl.isDetail = ctrl.currentView === 'EVENT_DETAIL';
+                loadEventData();
+                toUnbind.push($rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+                    ctrl.currentView = detectCurrentView(toState);
+                    ctrl.isDetail = ctrl.currentView === 'EVENT_DETAIL';
+                    ctrl.displayEventData = toState.data && toState.data.displayEventData;
+                    loadEventData();
+                    if(!ctrl.displayEventData) {
+                        delete ctrl.event;
+                    }
+                }));
+
+                ctrl.isConfiguration = function() {
+                    return ctrl.currentView === 'CONFIGURATION';
+                };
+
+                toUnbind.push($rootScope.$on('ConfigurationMenuLoaded', function(e, organizations) {
+                    ctrl.organizations = organizations;
+                }));
+
+                ctrl.navigateTo = function(id) {
+                    //thanks to http://stackoverflow.com/a/14717011
+                    $location.hash(id);
+                    $anchorScroll();
+                };
+
+                $scope.$on('$destroy', function() {
+                    toUnbind.forEach(function(f) {f();});
+                });
+
+                UtilsService.getApplicationInfo().then(function(result) {
+                    ctrl.applicationInfo = result.data;
+                });
+            }]
+        }
+    }]);
+    
 })();

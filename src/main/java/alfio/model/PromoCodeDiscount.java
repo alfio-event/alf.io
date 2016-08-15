@@ -19,9 +19,12 @@ package alfio.model;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.*;
 
+import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import alfio.util.MonetaryUtil;
+import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 
 @Getter
@@ -38,6 +41,7 @@ public class PromoCodeDiscount {
     private final ZonedDateTime utcEnd;
     private final int discountAmount;
     private final DiscountType discountType;
+    private final Set<Integer> categories;
     
     public PromoCodeDiscount(@Column("id")int id, 
             @Column("promo_code") String promoCode, 
@@ -45,7 +49,8 @@ public class PromoCodeDiscount {
             @Column("valid_from") ZonedDateTime utcStart, 
             @Column("valid_to") ZonedDateTime utcEnd, 
             @Column("discount_amount") int discountAmount,
-            @Column("discount_type") DiscountType discountType) {
+            @Column("discount_type") DiscountType discountType,
+            @Column("categories") String categories) {
         this.id = id;
         this.promoCode = promoCode;
         this.eventId = eventId;
@@ -53,6 +58,12 @@ public class PromoCodeDiscount {
         this.utcEnd = utcEnd;
         this.discountAmount = discountAmount;
         this.discountType = discountType;
+        if(categories != null) {
+            List<Integer> categoriesId = Json.GSON.<List<Integer>>fromJson(categories, new TypeToken<List<Integer>>(){}.getType());
+            this.categories = categoriesId == null ? Collections.emptySet() : new TreeSet<>(categoriesId);
+        } else {
+            this.categories = Collections.emptySet();
+        }
     }
     
     public boolean isCurrentlyValid(ZoneId eventZoneId, ZonedDateTime now) {

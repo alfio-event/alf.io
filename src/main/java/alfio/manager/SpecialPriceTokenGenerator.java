@@ -67,12 +67,11 @@ public class SpecialPriceTokenGenerator {
 
     void generatePendingCodes() {
         StopWatch stopWatch = new StopWatch();
-        log.debug("start pending codes generation");
+        log.trace("start pending codes generation");
         stopWatch.start();
-        specialPriceRepository.findWaitingElements().stream()
-                .forEach(this::generateCode);
+        specialPriceRepository.findWaitingElements().forEach(this::generateCode);
         stopWatch.stop();
-        log.debug("end. Took {} ms", stopWatch.getTime());
+        log.trace("end. Took {} ms", stopWatch.getTime());
     }
 
     private void generateCode(SpecialPrice specialPrice) {
@@ -83,9 +82,9 @@ public class SpecialPriceTokenGenerator {
 
         while (true) {
             try {
-                log.debug("generate code for special price with id {}", specialPrice.getId());
+                log.trace("generate code for special price with id {}", specialPrice.getId());
                 specialPriceRepository.updateCode(nextValidCode(maxLength), specialPrice.getId());
-                log.debug("done.");
+                log.trace("done.");
                 return;
             } catch (DataAccessException e) {
                 log.warn("got a duplicate. Retrying...", e);

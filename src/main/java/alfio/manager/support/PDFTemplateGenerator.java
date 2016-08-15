@@ -16,9 +16,9 @@
  */
 package alfio.manager.support;
 
-import org.xhtmlrenderer.pdf.ITextRenderer;
+import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 
 @FunctionalInterface
 public interface PDFTemplateGenerator {
-    ITextRenderer generate();
+    PdfBoxRenderer generate();
 }

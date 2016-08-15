@@ -262,14 +262,14 @@ public class ConfigurationManagerIntegrationTest {
     @Test
     public void testLoadOrganizationConfiguration() {
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> orgConf = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
-        assertEquals(3, orgConf.size());
+        assertEquals(5, orgConf.size());
         assertEquals(ConfigurationKeys.byPathLevel(ConfigurationPathLevel.ORGANIZATION).size(), orgConf.values().stream().flatMap(Collection::stream).count());
         String value = "MY-ACCOUNT_NUMBER";
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue(), value, "empty");
         orgConf = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
-        assertEquals(3, orgConf.size());
+        assertEquals(5, orgConf.size());
         assertEquals(ConfigurationKeys.byPathLevel(ConfigurationPathLevel.ORGANIZATION).size(), orgConf.values().stream().flatMap(Collection::stream).count());
-        assertEquals(value, orgConf.get(ConfigurationKeys.SettingCategory.PAYMENT).stream().filter(c -> c.getConfigurationKey() == ConfigurationKeys.BANK_ACCOUNT_NR).findFirst().orElseThrow(IllegalStateException::new).getValue());
+        assertEquals(value, orgConf.get(SettingCategory.PAYMENT_OFFLINE).stream().filter(c -> c.getConfigurationKey() == ConfigurationKeys.BANK_ACCOUNT_NR).findFirst().orElseThrow(IllegalStateException::new).getValue());
     }
 
     @Test

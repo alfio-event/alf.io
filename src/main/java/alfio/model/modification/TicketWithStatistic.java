@@ -16,14 +16,18 @@
  */
 package alfio.model.modification;
 
+import alfio.model.Event;
+import alfio.model.PriceContainer;
 import alfio.model.Ticket;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.Transaction;
+import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -31,10 +35,12 @@ import java.util.Optional;
 import java.util.function.Function;
 
 @Getter
-public class TicketWithStatistic implements Comparable<TicketWithStatistic> {
+public class TicketWithStatistic implements Comparable<TicketWithStatistic>, PriceContainer {
     @Delegate
     @JsonIgnore
     private final Ticket ticket;
+    @JsonIgnore
+    private final Event event;
     private final TicketReservation ticketReservation;
     @JsonIgnore
     private final ZoneId zoneId;
@@ -43,10 +49,12 @@ public class TicketWithStatistic implements Comparable<TicketWithStatistic> {
     private final Function<ZonedDateTime, LocalDateTime> dateMapper;
 
     public TicketWithStatistic(Ticket ticket,
+                               Event event,
                                TicketReservation ticketReservation,
                                ZoneId zoneId,
                                Optional<Transaction> tx) {
         this.ticket = ticket;
+        this.event = event;
         this.ticketReservation = ticketReservation;
         this.zoneId = zoneId;
         this.tx = tx;
@@ -59,6 +67,10 @@ public class TicketWithStatistic implements Comparable<TicketWithStatistic> {
 
     public boolean isPaid() {
         return tx.isPresent();
+    }
+
+    public boolean isPending() {
+        return getStatus() == Ticket.TicketStatus.PENDING;
     }
 
     public Transaction getTransaction() {
@@ -78,4 +90,34 @@ public class TicketWithStatistic implements Comparable<TicketWithStatistic> {
         return new CompareToBuilder().append(getTimestamp(), o.getTimestamp()).toComparison();
     }
 
+    @Override
+    public String getCurrencyCode() {
+        return event.getCurrency();
+    }
+
+    @Override
+    @JsonIgnore
+    public Optional<BigDecimal> getOptionalVatPercentage() {
+        return Optional.ofNullable(event.getVat());
+    }
+
+    @Override
+    public BigDecimal getAppliedDiscount() {
+        return MonetaryUtil.centsToUnit(ticket.getDiscountCts());
+    }
+
+    @Override
+    public BigDecimal getFinalPrice() {
+        return MonetaryUtil.centsToUnit(ticket.getFinalPriceCts());
+    }
+
+    @Override
+    public BigDecimal getVAT() {
+        return MonetaryUtil.centsToUnit(ticket.getVatCts());
+    }
+
+    @Override
+    public VatStatus getVatStatus() {
+        return event.getVatStatus();
+    }
 }

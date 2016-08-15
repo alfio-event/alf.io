@@ -71,7 +71,7 @@ public class WaitingQueueApiController {
 
         ValidationResult validationResult = Validator.validateWaitingQueueSubscription(subscription, bindingResult);
         if(validationResult.isSuccess()) {
-            model.addAttribute("error", !waitingQueueManager.subscribe(optional.get(), subscription.getFullName(), subscription.getEmail(), subscription.getUserLanguage()));
+            model.addAttribute("error", !waitingQueueManager.subscribe(optional.get(), subscription.getFullName(), subscription.getEmail(), subscription.getSelectedCategory(), subscription.getUserLanguage()));
             result.put("partial", templateManager.renderServletContextResource("/WEB-INF/templates/event/waiting-queue-subscription-result.ms", model.asMap(), request, HTML));
         }
         result.put("validationResult", validationResult);

@@ -28,14 +28,17 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
-import com.lowagie.text.DocumentException;
-import com.lowagie.text.pdf.BaseFont;
+import com.openhtmltopdf.DOMBuilder;
+import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import lombok.extern.log4j.Log4j2;
-import org.xhtmlrenderer.pdf.ITextRenderer;
+import org.jsoup.Jsoup;
+import org.springframework.core.io.ClassPathResource;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 import static alfio.util.ImageUtil.createQRCode;
@@ -112,12 +115,15 @@ public final class TemplateProcessor {
         };
     }
 
-    private static ITextRenderer prepareItextRenderer(String page) {
-        ITextRenderer renderer = new ITextRenderer();
-        renderer.setDocumentFromString(page);
-        try {
-            renderer.getFontResolver().addFont("/alfio/font/DejaVuSansMono.ttf", BaseFont.IDENTITY_H, true);
-        } catch(IOException | DocumentException e) {
+    private static PdfBoxRenderer prepareItextRenderer(String page) {
+
+        PdfRendererBuilder builder = new PdfRendererBuilder();
+
+        builder.withW3cDocument(DOMBuilder.jsoup2DOM(Jsoup.parse(page)), "");
+        PdfBoxRenderer renderer = builder.buildPdfRenderer();
+        try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream()) {
+            renderer.getFontResolver().addFont(is, "DejaVu Sans Mono");
+        } catch(IOException e) {
             log.warn("error while loading DejaVuSansMono.ttf font", e);
         }
         renderer.layout();
@@ -170,7 +176,7 @@ public final class TemplateProcessor {
         try {
             prepareItextRenderer(page).createPDF(baos);
             return Optional.of(baos.toByteArray());
-        } catch (DocumentException ioe) {
+        } catch (IOException ioe) {
             return Optional.empty();
         }
     }

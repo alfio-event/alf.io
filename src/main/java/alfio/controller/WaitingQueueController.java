@@ -48,7 +48,7 @@ public class WaitingQueueController {
     public String subscribe(@ModelAttribute WaitingQueueSubscriptionForm subscription, BindingResult bindingResult, Model model, @PathVariable("eventName") String eventName, RedirectAttributes redirectAttributes) {
         Validator.validateWaitingQueueSubscription(subscription, bindingResult).ifSuccess(() -> {
             Event event = eventRepository.findOptionalByShortName(eventName).orElseThrow(IllegalArgumentException::new);
-            if(waitingQueueManager.subscribe(event, subscription.getFullName(), subscription.getEmail(), subscription.getUserLanguage())) {
+            if(waitingQueueManager.subscribe(event, subscription.getFullName(), subscription.getEmail(), subscription.getSelectedCategory(), subscription.getUserLanguage())) {
                 redirectAttributes.addFlashAttribute("subscriptionComplete", true);
             } else {
                 redirectAttributes.addFlashAttribute("subscriptionError", true);

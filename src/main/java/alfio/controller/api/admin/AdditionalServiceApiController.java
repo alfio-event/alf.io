@@ -92,12 +92,18 @@ public class AdditionalServiceApiController {
         Validate.isTrue(additionalServiceId == additionalService.getId(), "wrong input");
         return optionally(() -> eventRepository.findById(eventId))
             .map(event -> {
-                int result = additionalServiceRepository.update(additionalServiceId, Optional.ofNullable(additionalService.getPrice()).map(MonetaryUtil::unitToCents).orElse(0), additionalService.isFixPrice(),
+                int result = additionalServiceRepository.update(additionalServiceId, additionalService.isFixPrice(),
                     additionalService.getOrdinal(), additionalService.getAvailableQuantity(), additionalService.getMaxQtyPerOrder(), additionalService.getInception().toZonedDateTime(event.getZoneId()),
-                    additionalService.getExpiration().toZonedDateTime(event.getZoneId()), additionalService.getVat(), additionalService.getVatType());
+                    additionalService.getExpiration().toZonedDateTime(event.getZoneId()), additionalService.getVat(), additionalService.getVatType(), Optional.ofNullable(additionalService.getPrice()).map(MonetaryUtil::unitToCents).orElse(0));
                 Validate.isTrue(result <= 1, "too many records updated");
                 Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
-                    forEach(t -> additionalServiceTextRepository.update(t.getId(), t.getLocale(), t.getType(), t.getValue()));
+                    forEach(t -> {
+                        if(t.getId() != null) {
+                            additionalServiceTextRepository.update(t.getId(), t.getLocale(), t.getType(), t.getValue());
+                        } else {
+                            additionalServiceTextRepository.insert(additionalService.getId(), t.getLocale(), t.getType(), t.getValue());
+                        }
+                    });
                 return ResponseEntity.ok(additionalService);
             }).orElseThrow(IllegalArgumentException::new);
     }

@@ -17,10 +17,9 @@
 package alfio.controller.api.support;
 
 import alfio.model.Event;
+import alfio.model.PriceContainer;
 import alfio.model.TicketCategory;
 import alfio.model.TicketCategoryDescription;
-import alfio.util.EventUtil;
-import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
@@ -29,12 +28,13 @@ import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
-public class PublicCategory {
-    public static Comparator<PublicCategory> SORT_BY_DATE = (c1, c2) -> new CompareToBuilder()
+public class PublicCategory implements PriceContainer {
+    static Comparator<PublicCategory> SORT_BY_DATE = (c1, c2) -> new CompareToBuilder()
         .append(c1.getUtcInception(), c2.getUtcInception())
         .append(c1.getUtcExpiration(), c2.getUtcExpiration())
         .toComparison();
@@ -90,8 +90,28 @@ public class PublicCategory {
         return getUtcExpiration().withZoneSameInstant(Clock.systemUTC().getZone());
     }
 
-    public BigDecimal getFinalPrice() {
-        return MonetaryUtil.centsToUnit(EventUtil.getFinalPriceInCents(event, category));
+    @Override
+    @JsonIgnore
+    public int getSrcPriceCts() {
+        return category.getSrcPriceCts();
+    }
+
+    @Override
+    @JsonIgnore
+    public String getCurrencyCode() {
+        return event.getCurrency();
+    }
+
+    @Override
+    @JsonIgnore
+    public Optional<BigDecimal> getOptionalVatPercentage() {
+        return Optional.ofNullable(event.getVat());
+    }
+
+    @Override
+    @JsonIgnore
+    public VatStatus getVatStatus() {
+        return event.getVatStatus();
     }
 
     public int getMaxTickets() {

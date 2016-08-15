@@ -30,7 +30,6 @@ import alfio.repository.EventDescriptionRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
 import com.google.gson.*;
-import com.lowagie.text.DocumentException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -42,6 +41,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -89,7 +89,7 @@ public class NotificationManager {
         this.gson = builder.create();
     }
 
-    public void sendTicketByEmail(Ticket ticket, Event event, Locale locale, PartialTicketTextGenerator textBuilder, PartialTicketPDFGenerator ticketBuilder) throws DocumentException {
+    public void sendTicketByEmail(Ticket ticket, Event event, Locale locale, PartialTicketTextGenerator textBuilder, PartialTicketPDFGenerator ticketBuilder) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ticketBuilder.generate(ticket).createPDF(baos);
 

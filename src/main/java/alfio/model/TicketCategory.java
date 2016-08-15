@@ -16,8 +16,8 @@
  */
 package alfio.model;
 
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import alfio.util.MonetaryUtil;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
@@ -40,41 +40,41 @@ public class TicketCategory {
     private final ZonedDateTime utcExpiration;
     private final int maxTickets;
     private final String name;
-    private final int priceInCents;
     private final boolean accessRestricted;
     private final Status status;
     private final int eventId;
     private final boolean bounded;
+    private final int srcPriceCts;
 
     public TicketCategory(@Column("id") int id,
                           @Column("inception") ZonedDateTime utcInception,
                           @Column("expiration") ZonedDateTime utcExpiration,
                           @Column("max_tickets") int maxTickets,
                           @Column("name") String name,
-                          @Column("price_cts") int priceInCents,
                           @Column("access_restricted") boolean accessRestricted,
                           @Column("tc_status") Status status,
                           @Column("event_id") int eventId,
-                          @Column("bounded") boolean bounded) {
+                          @Column("bounded") boolean bounded,
+                          @Column("src_price_cts") int srcPriceCts) {
         this.id = id;
         this.utcInception = utcInception;
         this.utcExpiration = utcExpiration;
         this.maxTickets = maxTickets;
         this.name = name;
-        this.priceInCents = priceInCents;
         this.accessRestricted = accessRestricted;
         this.status = status;
         this.eventId = eventId;
         this.bounded = bounded;
+        this.srcPriceCts = srcPriceCts;
     }
 
     public BigDecimal getPrice() {
         //TODO: apply this conversion only for some currency. Not all are cent based.
-        return MonetaryUtil.centsToUnit(priceInCents);
+        return MonetaryUtil.centsToUnit(srcPriceCts);
     }
     
     public boolean getFree() {
-        return priceInCents == 0;
+        return srcPriceCts == 0;
     }
 
     public ZonedDateTime getInception(ZoneId zoneId) {

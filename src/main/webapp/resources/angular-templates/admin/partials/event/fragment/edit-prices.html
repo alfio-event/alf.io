@@ -8,7 +8,8 @@
 <div data-ng-form="editPrices">
     <div class="form-group" data-ng-if="!obj.freeOfCharge">
         <label for="allowedPaymentProxies">Accepted payment methods</label>
-        <select data-ng-model="obj.allowedPaymentProxies" multiple name="allowedPaymentProxies" id="allowedPaymentProxies" class="form-control" required data-ng-options="proxy.id as proxy.description for proxy in allowedPaymentProxies"></select>
+        <select data-ng-model="obj.allowedPaymentProxies" multiple name="allowedPaymentProxies" id="allowedPaymentProxies" class="form-control" required data-ng-options="proxy.id as proxy.description for proxy in allowedPaymentProxies | paymentMethodFilter"></select>
+        <span class="help-block text-danger" data-ng-if="(allowedPaymentProxies | paymentMethodFilter:true).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter:true">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check the <a data-ui-sref="configuration.organization({organizationId: obj.organizationId})">configuration</a>.</span>
         <field-error data-form-obj="editEvent" data-field-obj="editEvent.allowedPaymentProxies"></field-error>
     </div>
 
@@ -29,9 +30,9 @@
             <field-error data-form-obj="editEvent" data-field-obj="editEvent.currency" data-required-pattern="'Three capital letters'"></field-error>
         </div>
         <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
-            <label for="vat">VAT (%)</label>
-            <input type="number" data-ng-model="obj.vat" name="vat" id="vat" class="form-control" required />
-            <field-error data-form-obj="editEvent" data-field-obj="editEvent.vat"></field-error>
+            <label for="vatPercentage">VAT (%)</label>
+            <input type="number" data-ng-model="obj.vatPercentage" name="vatPercentage" id="vatPercentage" class="form-control" required />
+            <field-error data-form-obj="editEvent" data-field-obj="editEvent.vatPercentage"></field-error>
         </div>
         <div class="col-sm-4" data-ng-if="!obj.freeOfCharge">
             <label for="vatIncluded">VAT included</label>

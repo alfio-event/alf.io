@@ -43,7 +43,7 @@ public class EventWithStatisticsTest {{
             TicketCategoryWithStatistic bounded2 = it.usesMock(TicketCategoryWithStatistic.class);
             when(bounded2.isBounded()).thenReturn(true);
             when(bounded2.getMaxTickets()).thenReturn(5);
-            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(), asList(bounded, unbounded, bounded2));
+            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(), asList(bounded, unbounded, bounded2), 0);
             expect.that(eventWithStatistics.getAllocatedTickets()).is(6);
             expect.that(eventWithStatistics.getNotAllocatedTickets()).is(0);
             expect.that(eventWithStatistics.getDynamicAllocation()).is(4);
@@ -55,7 +55,7 @@ public class EventWithStatisticsTest {{
             TicketCategoryWithStatistic bounded2 = it.usesMock(TicketCategoryWithStatistic.class);
             when(bounded2.isBounded()).thenReturn(true);
             when(bounded2.getMaxTickets()).thenReturn(5);
-            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(), asList(bounded, bounded2));
+            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(), asList(bounded, bounded2), 0);
             expect.that(eventWithStatistics.getAllocatedTickets()).is(6);
             expect.that(eventWithStatistics.getNotAllocatedTickets()).is(4);
             expect.that(eventWithStatistics.getDynamicAllocation()).is(0);
@@ -69,7 +69,7 @@ public class EventWithStatisticsTest {{
             TicketCategoryWithStatistic second = it.usesMock(TicketCategoryWithStatistic.class);
             when(second.isBounded()).thenReturn(false);
             when(second.getNotSoldTickets()).thenReturn(1);
-            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(), asList(first, second));
+            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(), asList(first, second), 0);
             expect.that(eventWithStatistics.getAllocatedTickets()).is(2);
             expect.that(eventWithStatistics.getCheckedInTickets()).is(1);
             expect.that(eventWithStatistics.getNotSoldTickets()).is(0);
@@ -87,7 +87,7 @@ public class EventWithStatisticsTest {{
             TicketCategoryWithStatistic second = it.usesMock(TicketCategoryWithStatistic.class);
             when(second.isBounded()).thenReturn(false);
             when(second.getSoldTickets()).thenReturn(8);
-            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(), asList(first, second));
+            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(), asList(first, second), 0);
             expect.that(eventWithStatistics.getAllocatedTickets()).is(2);
             expect.that(eventWithStatistics.getCheckedInTickets()).is(1);
             expect.that(eventWithStatistics.getNotSoldTickets()).is(0);
@@ -102,7 +102,7 @@ public class EventWithStatisticsTest {{
             when(first.isBounded()).thenReturn(false);
             when(first.getSoldTickets()).thenReturn(8);
             when(first.getCheckedInTickets()).thenReturn(1);
-            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(), Collections.singletonList(first));
+            EventWithStatistics eventWithStatistics = new EventWithStatistics(event, asList(), Collections.singletonList(first), 0);
             expect.that(eventWithStatistics.getAllocatedTickets()).is(0);
             expect.that(eventWithStatistics.getCheckedInTickets()).is(1);
             expect.that(eventWithStatistics.getNotSoldTickets()).is(0);

@@ -16,8 +16,8 @@
  */
 package alfio.model;
 
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import alfio.model.transaction.PaymentProxy;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 
@@ -41,8 +41,10 @@ public class FullTicketInfo {
                           @Column("t_category_id") int categoryId,
                           @Column("t_status") String status,
                           @Column("t_event_id") int eventId,
-                          @Column("t_original_price_cts") int originalPriceInCents,
-                          @Column("t_paid_price_cts") int paidPriceInCents,
+                          @Column("t_src_price_cts") int ticketSrcPriceCts,
+                          @Column("t_final_price_cts") int ticketFinalPriceCts,
+                          @Column("t_vat_cts") int ticketVatCts,
+                          @Column("t_discount_cts") int ticketDiscountCts,
                           @Column("t_tickets_reservation_id") String ticketsReservationId,
                           @Column("t_full_name") String fullName,
                           @Column("t_email_address") String email,
@@ -71,18 +73,18 @@ public class FullTicketInfo {
                           @Column("tc_expiration") ZonedDateTime tcUtcExpiration,
                           @Column("tc_max_tickets") int tcMaxTickets,
                           @Column("tc_name") String tcName,
-                          @Column("tc_price_cts") int tcPriceInCents,
+                          @Column("tc_src_price_cts") int tcSrcPriceCts,
                           @Column("tc_access_restricted") boolean tcAccessRestricted,
                           @Column("tc_tc_status") TicketCategory.Status tcStatus,
                           @Column("tc_event_id") int tcEventId,
                           @Column("tc_bounded") boolean bounded) {
 
-        this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, originalPriceInCents, paidPriceInCents,
-                ticketsReservationId, fullName, email, lockedAssignment, userLanguage);
+        this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, email,
+            lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trEmail, trBillingAddress,
                 trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage, directAssignment);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,
-                tcPriceInCents, tcAccessRestricted, tcStatus, tcEventId, bounded);
+                tcAccessRestricted, tcStatus, tcEventId, bounded, tcSrcPriceCts);
 
     }
 }

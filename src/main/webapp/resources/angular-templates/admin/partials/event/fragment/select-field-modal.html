@@ -5,7 +5,14 @@
     <ul>
         <li data-ng-repeat="field in fields"><label><input type="checkbox" ng-model="selected[field]"> {{field}}</label></li>
     </ul>
-    <button class="btn btn-primary" type="button" data-ng-click="download()" ><i class="fa fa-download"></i> download attendees' data</button>
-    <button class="btn btn-default" data-ng-click="selectAll()">Select all</button>
-    <button class="btn btn-default" data-ng-click="deselectAll()">Deselect all</button>
+</div>
+<div class="modal-footer">
+    <div class="pull-left">
+        <button class="btn btn-default" data-ng-click="selectAll()">Select all</button>
+        <button class="btn btn-default" data-ng-click="deselectAll()">Deselect all</button>
+    </div>
+    <div class="pull-right">
+        <button class="btn btn-primary" type="button" data-ng-click="download()" ><i class="fa fa-download"></i> download attendees' data</button>
+        <button class="btn btn-default" type="button" data-ng-click="$dismiss()"><i class="fa fa-times"></i> close</button>
+    </div>
 </div>

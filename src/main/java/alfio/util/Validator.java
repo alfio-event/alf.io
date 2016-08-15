@@ -84,7 +84,7 @@ public final class Validator {
             if(ev.getRegularPrice() == null || BigDecimal.ZERO.compareTo(ev.getRegularPrice()) >= 0) {
                 errors.rejectValue("regularPrice", "error.regularprice");
             }
-            if(ev.getVat() == null || BigDecimal.ZERO.compareTo(ev.getVat()) > 0) {
+            if(ev.getVatPercentage() == null || BigDecimal.ZERO.compareTo(ev.getVatPercentage()) > 0) {
                 errors.rejectValue("vat", "error.vat");
             }
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "currency", "error.currency");
