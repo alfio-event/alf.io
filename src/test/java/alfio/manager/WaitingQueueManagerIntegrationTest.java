@@ -23,6 +23,7 @@ import alfio.config.WebSecurityConfig;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
 import alfio.model.WaitingQueueSubscription;
@@ -154,7 +155,7 @@ public class WaitingQueueManagerIntegrationTest {
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
         TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
+        PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event.getEvent()), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
         assertTrue(result.isSuccessful());
         event = eventStatisticsManager.fillWithStatistics(event.getEvent());
         assertEquals(0, event.getDynamicAllocation());
@@ -187,12 +188,12 @@ public class WaitingQueueManagerIntegrationTest {
 
         String reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(multi), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
+        PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event.getEvent()), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
         assertTrue(result.isSuccessful());
 
         String reservationIdSingle = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(single), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         TicketReservationManager.TotalPrice reservationCostSingle = ticketReservationManager.totalReservationCostWithVAT(reservationIdSingle);
-        PaymentResult resultSingle = ticketReservationManager.confirm("", null, event.getEvent(), reservationIdSingle, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCostSingle, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
+        PaymentResult resultSingle = ticketReservationManager.confirm("", null, event.getEvent(), reservationIdSingle, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event.getEvent()), Locale.ENGLISH, "", reservationCostSingle, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
         assertTrue(resultSingle.isSuccessful());
 
         event = eventStatisticsManager.fillWithStatistics(event.getEvent());
@@ -239,12 +240,12 @@ public class WaitingQueueManagerIntegrationTest {
 
         String reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(multi), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
+        PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event.getEvent()), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
         assertTrue(result.isSuccessful());
 
         String reservationIdSingle = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(single), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         TicketReservationManager.TotalPrice reservationCostSingle = ticketReservationManager.totalReservationCostWithVAT(reservationIdSingle);
-        PaymentResult resultSingle = ticketReservationManager.confirm("", null, event.getEvent(), reservationIdSingle, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCostSingle, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
+        PaymentResult resultSingle = ticketReservationManager.confirm("", null, event.getEvent(), reservationIdSingle, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event.getEvent()), Locale.ENGLISH, "", reservationCostSingle, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
         assertTrue(resultSingle.isSuccessful());
 
         event = eventStatisticsManager.fillWithStatistics(event.getEvent());
@@ -300,17 +301,17 @@ public class WaitingQueueManagerIntegrationTest {
 
         String reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(multi), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
+        PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event.getEvent()), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
         assertTrue(result.isSuccessful());
 
         String reservationIdSingleFirst = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(single), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         TicketReservationManager.TotalPrice reservationCostSingle = ticketReservationManager.totalReservationCostWithVAT(reservationIdSingleFirst);
-        PaymentResult resultSingleFirst = ticketReservationManager.confirm("", null, event.getEvent(), reservationIdSingleFirst, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCostSingle, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
+        PaymentResult resultSingleFirst = ticketReservationManager.confirm("", null, event.getEvent(), reservationIdSingleFirst, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event.getEvent()), Locale.ENGLISH, "", reservationCostSingle, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
         assertTrue(resultSingleFirst.isSuccessful());
 
         String reservationIdSingleSecond = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(single), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         TicketReservationManager.TotalPrice reservationCostSingleSecond = ticketReservationManager.totalReservationCostWithVAT(reservationIdSingleSecond);
-        PaymentResult resultSingleSecond = ticketReservationManager.confirm("", null, event.getEvent(), reservationIdSingleSecond, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCostSingleSecond, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
+        PaymentResult resultSingleSecond = ticketReservationManager.confirm("", null, event.getEvent(), reservationIdSingleSecond, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event.getEvent()), Locale.ENGLISH, "", reservationCostSingleSecond, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
         assertTrue(resultSingleSecond.isSuccessful());
 
         event = eventStatisticsManager.fillWithStatistics(event.getEvent());

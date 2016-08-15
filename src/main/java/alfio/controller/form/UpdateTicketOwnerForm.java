@@ -24,6 +24,8 @@ import java.util.Map;
 public class UpdateTicketOwnerForm {
     private String email;
     private String fullName;
+    private String firstName;
+    private String lastName;
     private String userLanguage;
 
 

@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -68,7 +69,7 @@ public class PaymentManager {
      * @param price
      * @param event
      * @param email
-     * @param fullName
+     * @param customerName
      * @param billingAddress
      * @return PaymentResult
      * @throws java.lang.IllegalStateException if there is an error after charging the credit card
@@ -78,11 +79,11 @@ public class PaymentManager {
                           int price,
                           Event event,
                           String email,
-                          String fullName,
+                          CustomerName customerName,
                           String billingAddress) {
         try {
             final Charge charge = stripeManager.chargeCreditCard(gatewayToken, price,
-                    event, reservationId, email, fullName, billingAddress);
+                    event, reservationId, email, customerName.getFullName(), billingAddress);
             log.info("transaction {} paid: {}", reservationId, charge.getPaid());
             transactionRepository.insert(charge.getId(), reservationId,
                     ZonedDateTime.now(), price, event.getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name());

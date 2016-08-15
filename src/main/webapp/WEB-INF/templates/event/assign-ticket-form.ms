@@ -29,6 +29,31 @@
     {{/isSuccess}}
 {{/validationResult}}
 <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/ticket/{{uuid}}/assign" class="form-horizontal {{#displayAssignForm}}show-by-default{{/displayAssignForm}} {{^displayAssignForm}}hide-by-default{{/displayAssignForm}} {{^assigned}}not-assigned{{/assigned}}" id="ticket-{{uuid}}" data-ticket-uuid="{{uuid}}">
+{{#useFirstAndLastName}}
+    <div class="form-group">
+        <label class="col-sm-3 control-label" for="first-name-{{uuid}}">{{#i18n}}common.first-name{{/i18n}} *</label>
+        <div class="col-sm-9">
+            {{^lockedAssignment}}
+                <input type="text" name="firstName" value="{{firstName}}" required id="first-name-{{uuid}}" class="form-control"  maxlength="255" autocomplete="fname">
+            {{/lockedAssignment}}
+            {{#lockedAssignment}}
+                <p class="form-control-static">{{firstName}}</p>
+            {{/lockedAssignment}}
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-3 control-label" for="last-name-{{uuid}}">{{#i18n}}common.last-name{{/i18n}} *</label>
+        <div class="col-sm-9">
+            {{^lockedAssignment}}
+                <input type="text" name="lastName" value="{{lastName}}" required id="last-name-{{uuid}}" class="form-control"  maxlength="255" autocomplete="lname">
+            {{/lockedAssignment}}
+            {{#lockedAssignment}}
+                <p class="form-control-static">{{lastName}}</p>
+            {{/lockedAssignment}}
+        </div>
+    </div>
+{{/useFirstAndLastName}}
+{{^useFirstAndLastName}}
     <div class="form-group">
         <label class="col-sm-3 control-label" for="full-name-{{uuid}}">{{#i18n}}common.full-name{{/i18n}} *</label>
         <div class="col-sm-9">
@@ -40,6 +65,7 @@
             {{/lockedAssignment}}
         </div>
     </div>
+{{/useFirstAndLastName}}
     <div class="form-group">
         <label class="col-sm-3 control-label" for="email-{{uuid}}">{{#i18n}}common.email{{/i18n}} *</label>
         <div class="col-sm-9">

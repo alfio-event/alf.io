@@ -88,14 +88,20 @@
 
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
     {{#paypalCheckoutConfirmation}}
-
+        {{#useFirstAndLastName}}
+        <input type="hidden" name="firstName" value="{{firstName}}">
+        <input type="hidden" name="lastName" value="{{lastName}}">
+        {{/useFirstAndLastName}}
+        {{^useFirstAndLastName}}
         <input type="hidden" name="fullName" value="{{fullName}}">
+        {{/useFirstAndLastName}}
         <input type="hidden" name="email" value="{{email}}">
         <input type="hidden" name="billingAddress" value="{{billingAddress}}">
         <input type="hidden" name="hmac" value="{{hmac}}">
         <input type="hidden" name="paymentMethod" value="PAYPAL">
         <input type="hidden" name="paypalPaymentId" value="{{paypalPaymentId}}">
         <input type="hidden" name="paypalPayerID" value="{{paypalPayerID}}">
+        <input type="hidden" name="expressCheckoutRequested" value="{{expressCheckoutRequested}}">
         <input type="hidden" name="termAndConditionsAccepted" value="true">
         {{#i18n}}reservation-page.paypal.confirm{{/i18n}}
     {{/paypalCheckoutConfirmation}}
@@ -103,11 +109,25 @@
 
 
     <h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
+    {{#useFirstAndLastName}}
+    <div class="form-group {{#field-has-error}}[firstName] has-error{{/field-has-error}}">
+        <label for="full-name" class="control-label">{{#i18n}}common.first-name{{/i18n}}</label>
+        <input type="text" name="firstName" id="first-name" required class="form-control" autocomplete="fname" maxlength="255" value="{{paymentForm.firstName}}">
+        {{#field-has-error}}[firstName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}firstName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+    </div>
+    <div class="form-group {{#field-has-error}}[lastName] has-error{{/field-has-error}}">
+        <label for="full-name" class="control-label">{{#i18n}}common.last-name{{/i18n}}</label>
+        <input type="text" name="lastName" id="last-name" required class="form-control" autocomplete="lname" maxlength="255" value="{{paymentForm.lastName}}">
+        {{#field-has-error}}[lastName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}lastName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+    </div>
+    {{/useFirstAndLastName}}
+    {{^useFirstAndLastName}}
     <div class="form-group {{#field-has-error}}[fullName] has-error{{/field-has-error}}">
         <label for="full-name" class="control-label">{{#i18n}}common.full-name{{/i18n}}</label>
         <input type="text" name="fullName" id="full-name" required class="form-control" autocomplete="name" maxlength="255" value="{{paymentForm.fullName}}">
         {{#field-has-error}}[fullName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}fullName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
     </div>
+    {{/useFirstAndLastName}}
     <div class="form-group {{#field-has-error}}[email] has-error{{/field-has-error}}">
         <label for="email" class="control-label">{{#i18n}}common.email{{/i18n}}</label>
         <input type="email" name="email" id="email" required class="form-control" autocomplete="email" maxlength="255" value="{{paymentForm.email}}">
