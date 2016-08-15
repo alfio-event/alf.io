@@ -3,13 +3,7 @@
 
     var BASE_TEMPLATE_URL = "/admin/partials";
     var BASE_STATIC_URL = "/resources/angular-templates/admin/partials";
-    var PAYMENT_PROXY_DESCRIPTIONS = {
-        'STRIPE': 'Credit card payments',
-        'ON_SITE': 'On site (cash) payment',
-        'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)',
-        'PAYPAL' : 'PayPal'
-    };
-    
+
     //
     var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
     
@@ -199,7 +193,7 @@
         $scope.event.ticketCategories.push(createCategory(sticky, $scope, expirationExtractor));
     };
 
-    var initScopeForEventEditing = function ($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state) {
+    var initScopeForEventEditing = function ($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS) {
         $scope.organizations = {};
 
         $scope.isInternal = function(event) {
@@ -314,7 +308,7 @@
 
     admin.controller('CreateEventController', function($scope, $state, $rootScope,
                                                        $q, OrganizationService, PaymentProxyService,
-                                                       EventService, LocationService) {
+                                                       EventService, LocationService, PAYMENT_PROXY_DESCRIPTIONS) {
 
         var eventType = $state.$current.data.eventType;
         $scope.event = {
@@ -323,7 +317,7 @@
             begin: {},
             end: {}
         };
-        initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state);
+        initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS);
 
         $scope.event.ticketCategories = [];
         $scope.event.additionalServices = [];
@@ -372,11 +366,12 @@
                                                         $log,
                                                         $q,
                                                         $window,
-                                                        $uibModal) {
+                                                        $uibModal,
+                                                        PAYMENT_PROXY_DESCRIPTIONS) {
         var loadData = function() {
             $scope.loading = true;
 
-            EventService.getEvent($state.params.eventName).success(function(result) {
+            return EventService.getEvent($state.params.eventName).success(function(result) {
                 if($scope.event) {
                     //for sidebar
                     $rootScope.$emit('EventUpdated');
@@ -428,8 +423,9 @@
                 });
             });
         };
-        loadData();
-        initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state);
+        loadData().then(function() {
+            initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS);
+        });
         $scope.evaluateCategoryStatusClass = function(index, category) {
             if(category.expired) {
                 return 'category-expired';
