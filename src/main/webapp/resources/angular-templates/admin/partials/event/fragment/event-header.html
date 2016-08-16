@@ -26,7 +26,7 @@
     </div>
     <div class="panel-body">
         <div class="row">
-            <div class="col-xs-1">
+            <div class="col-xs-1 hide-overflowing-text">
                 <img data-ng-if="event.fileBlobIdIsPresent" data-ng-src="/file/{{event.fileBlobId}}" class="img-responsive event-logo">
                 <a href="{{event.imageUrl}}" data-ng-if="!event.fileBlobIdIsPresent" target="_blank">{{event.imageUrl}}</a>
             </div>

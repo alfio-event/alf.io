@@ -373,3 +373,8 @@ a.emulate-nav-pills-link {
     stroke:#428bca;
     color:white;
 }
+
+.hide-overflowing-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
