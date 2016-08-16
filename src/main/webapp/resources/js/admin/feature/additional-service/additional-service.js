@@ -5,7 +5,6 @@
             return {
                 scope: {
                     selectedLanguages: '=',
-                    availableLanguages: '=',
                     onModification: '&',
                     eventId: '=',
                     eventStartDate: '=',
@@ -54,27 +53,38 @@
         .controller('EditAdditionalServiceController', EditAdditionalServiceController)
         .service('AdditionalServiceManager', AdditionalServiceManager);
 
-    function AdditionalServicesController(AdditionalServiceManager, $uibModal) {
+    function AdditionalServicesController(AdditionalServiceManager, EventService, $q, $uibModal) {
         var self = this;
 
         self.propagateChanges = angular.isDefined(self.eventId);
 
-        var languages = _.filter(self.availableLanguages, function(l) {return (l.value & self.selectedLanguages) === l.value});
-        var titles = _.map(languages, function(l) {
-            return {
-                locale: l.locale,
-                type: 'TITLE',
-                value: '',
-                displayLanguage: l.displayLanguage
-            }
-        });
-        var descriptions = _.map(languages, function(l) {
-            return {
-                locale: l.locale,
-                type: 'DESCRIPTION',
-                value: '',
-                displayLanguage: l.displayLanguage
-            }
+        $q.all([EventService.getSupportedLanguages(), AdditionalServiceManager.loadAll(self.eventId)]).then(function(results) {
+            var languages = _.filter(results[0].data, function(l) {return (l.value & self.selectedLanguages) === l.value});
+            var titles = _.map(languages, function(l) {
+                return {
+                    locale: l.locale,
+                    type: 'TITLE',
+                    value: '',
+                    displayLanguage: l.displayLanguage
+                }
+            });
+            var descriptions = _.map(languages, function(l) {
+                return {
+                    locale: l.locale,
+                    type: 'DESCRIPTION',
+                    value: '',
+                    displayLanguage: l.displayLanguage
+                }
+            });
+
+            var result = results[1].data;
+            self.list = _.map(result, function(item) {
+                item.title = _.map(titles, fillExistingTexts(item.title));
+                item.description = _.map(descriptions, fillExistingTexts(item.description));
+                return item;
+            });
+            self.displayList = buildDisplayList(self.list);
+
         });
 
         function fillExistingTexts(texts) {
@@ -88,15 +98,6 @@
             return _.zip(item.title, item.description);
         };
 
-        AdditionalServiceManager.loadAll(self.eventId).then(function(success) {
-            var result = success.data;
-            self.list = _.map(result, function(item) {
-                item.title = _.map(titles, fillExistingTexts(item.title));
-                item.description = _.map(descriptions, fillExistingTexts(item.description));
-                return item;
-            });
-            self.displayList = buildDisplayList(self.list);
-        });
         self.addedItem = undefined;
 
         self.edit = function(item) {
@@ -189,7 +190,7 @@
         };
     }
 
-    AdditionalServicesController.$inject = ['AdditionalServiceManager', '$uibModal'];
+    AdditionalServicesController.$inject = ['AdditionalServiceManager', 'EventService', '$q','$uibModal'];
 
     function EditAdditionalServiceController(ValidationService, AdditionalServiceManager, $q) {
         var ctrl = this;
