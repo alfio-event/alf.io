@@ -112,8 +112,8 @@
                     ctrl.item = angular.copy(item);
                     ctrl.availableLanguages = parentCtrl.availableLanguages;
                     ctrl.selectedLanguages = parentCtrl.selectedLanguages;
-                    ctrl.titles = titles;
-                    ctrl.descriptions = descriptions;
+                    ctrl.titles = parentCtrl.titles;
+                    ctrl.descriptions = parentCtrl.descriptions;
                     ctrl.onEditComplete = function(item) {
                         modal.close(item);
                     };

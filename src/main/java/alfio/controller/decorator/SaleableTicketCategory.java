@@ -142,7 +142,7 @@ public class SaleableTicketCategory implements PriceContainer {
         return promoCodeDiscount;
     }
 
-    private static BigDecimal getFinalPriceToDisplay(BigDecimal price, BigDecimal vat, VatStatus vatStatus) {
+    static BigDecimal getFinalPriceToDisplay(BigDecimal price, BigDecimal vat, VatStatus vatStatus) {
         if(vatStatus == VatStatus.NOT_INCLUDED) {
             return price.subtract(vat);
         }

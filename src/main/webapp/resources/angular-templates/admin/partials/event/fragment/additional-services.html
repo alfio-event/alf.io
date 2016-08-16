@@ -33,12 +33,12 @@
                     <div class="col-sm-4"><strong>Price</strong></div>
                     <div class="col-sm-8">
                         <span data-ng-if="!item.fixPrice">User-defined</span>
-                        <span data-ng-if="item.fixPrice">{{item.price}} {{ctrl.currency}}</span>
+                        <span data-ng-if="item.fixPrice">{{item.price  | currency : (item.currency || "")}}</span>
                     </div>
                 </div>
-                <div class="row" data-ng-if="!event.freeOfCharge">
+                <div class="row" data-ng-if="!event.freeOfCharge && item.fixPrice">
                     <div class="col-sm-4"><strong>Final price</strong></div>
-                    <div class="col-sm-8">{{::ticketCategory.actualPrice | currency : (event.currency || "")}}</div>
+                    <div class="col-sm-8">{{item.finalPrice | currency : (item.currency || "")}}</div>
                 </div>
             </div>
             <div class="hidden-xs col-md-7">
