@@ -163,7 +163,7 @@ public interface TicketRepository {
     @Query("update ticket set reminder_sent = true where id = :id and reminder_sent = false")
     int flagTicketAsReminderSent(@Bind("id") int ticketId);
 
-    @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, category_id = null where id = :ticketId and status = 'ACQUIRED' and tickets_reservation_id = :reservationId and event_id = :eventId")
+    @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null where id = :ticketId and status = 'ACQUIRED' and tickets_reservation_id = :reservationId and event_id = :eventId")
     int releaseTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
 
     @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, special_price_id_fk = null where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
