@@ -71,6 +71,10 @@
     
      
     jQuery(function() {
+
+        $(document).ready(function() {
+            $(":input:not(input[type=button],input[type=submit],button):visible:first").focus();
+        });
         
         H5F.setup(document.getElementById("payment-form"));
         

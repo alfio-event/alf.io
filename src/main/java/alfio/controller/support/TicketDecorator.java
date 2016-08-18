@@ -33,17 +33,28 @@ public class TicketDecorator {
     private final boolean conditionsMet;
     private final String urlSuffix;
     private final List<Pair<TicketFieldConfigurationAndDescription, String>> ticketFieldConfiguration;
+    private final boolean forceDisplayAssignForm;
 
-    public TicketDecorator(Ticket ticket, boolean freeCancellationEnabled, boolean conditionsMet, List<Pair<TicketFieldConfigurationAndDescription, String>> ticketFieldConfiguration) {
-        this(ticket, freeCancellationEnabled, conditionsMet, ticket.getUuid(), ticketFieldConfiguration);
+    private TicketDecorator(Ticket ticket,
+                            boolean freeCancellationEnabled,
+                            boolean conditionsMet,
+                            List<Pair<TicketFieldConfigurationAndDescription, String>> ticketFieldConfiguration,
+                            boolean forceDisplayAssignForm) {
+        this(ticket, freeCancellationEnabled, conditionsMet, ticket.getUuid(), ticketFieldConfiguration, forceDisplayAssignForm);
     }
 
-    public TicketDecorator(Ticket ticket, boolean freeCancellationEnabled, boolean conditionsMet, String urlSuffix, List<Pair<TicketFieldConfigurationAndDescription, String>> ticketFieldConfiguration) {
+    public TicketDecorator(Ticket ticket,
+                           boolean freeCancellationEnabled,
+                           boolean conditionsMet,
+                           String urlSuffix,
+                           List<Pair<TicketFieldConfigurationAndDescription, String>> ticketFieldConfiguration,
+                           boolean forceDisplayAssignForm) {
         this.ticket = ticket;
         this.freeCancellationEnabled = freeCancellationEnabled;
         this.conditionsMet = conditionsMet;
         this.urlSuffix = urlSuffix;
         this.ticketFieldConfiguration = ticketFieldConfiguration;
+        this.forceDisplayAssignForm = forceDisplayAssignForm;
     }
 
     public String getUrlSuffix() {
@@ -66,7 +77,11 @@ public class TicketDecorator {
         return ticketFieldConfiguration;
     }
 
-    public static List<TicketDecorator> decorate(List<Ticket> tickets, boolean freeCancellationEnabled, Function<Ticket, Boolean> categoryEvaluator, Function<Ticket, List<Pair<TicketFieldConfigurationAndDescription, String>>> fieldsLoader) {
-        return tickets.stream().map(t -> new TicketDecorator(t, freeCancellationEnabled, categoryEvaluator.apply(t), fieldsLoader.apply(t))).collect(Collectors.toList());
+    public boolean getDisplayAssignForm() {
+        return !getAssigned() || forceDisplayAssignForm;
+    }
+
+    public static List<TicketDecorator> decorate(List<Ticket> tickets, boolean freeCancellationEnabled, Function<Ticket, Boolean> categoryEvaluator, Function<Ticket, List<Pair<TicketFieldConfigurationAndDescription, String>>> fieldsLoader, boolean forceDisplayAssignForm) {
+        return tickets.stream().map(t -> new TicketDecorator(t, freeCancellationEnabled, categoryEvaluator.apply(t), fieldsLoader.apply(t), forceDisplayAssignForm)).collect(Collectors.toList());
     }
 }
