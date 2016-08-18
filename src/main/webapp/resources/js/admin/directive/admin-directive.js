@@ -324,8 +324,7 @@
                         })
 
                     };
-                    
-					if (files.length <= 0) {
+                    if (files.length <= 0) {
 						alert('Your image not uploaded correctly.Please upload the image again');
 					} else if (!((files[0].type == 'image/png') || (files[0].type == 'image/jpeg'))) {
 						alert('only png or jpeg files are accepted');
