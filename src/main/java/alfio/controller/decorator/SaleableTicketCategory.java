@@ -118,6 +118,10 @@ public class SaleableTicketCategory implements PriceContainer {
         return event.getVatStatus();
     }
 
+    public String getDescription() {
+        return description;
+    }
+
     public String getFormattedFinalPrice() {
         return getFinalPriceToDisplay(getFinalPrice().add(getAppliedDiscount()), getVAT(), getVatStatus()).toString();
     }

@@ -1022,9 +1022,9 @@ public class TicketReservationManager {
 
     public int countAvailableTickets(Event event, TicketCategory category) {
         if(category.isBounded()) {
-            return ticketRepository.countNotSoldTickets(event.getId(), category.getId());
+            return ticketRepository.countFreeTickets(event.getId(), category.getId());
         }
-        return ticketRepository.countNotSoldTicketsForUnbounded(event.getId());
+        return ticketRepository.countFreeTicketsForUnbounded(event.getId());
     }
 
     public void releaseTicket(Event event, TicketReservation ticketReservation, Ticket ticket) {
