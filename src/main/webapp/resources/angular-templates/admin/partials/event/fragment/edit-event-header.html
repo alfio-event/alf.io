@@ -1,86 +1,123 @@
-<div class="page-header"><h2>Logistic info</h2></div>
-<div class="row" data-ng-form="editEventHeader">
-    <div class="col-sm-12 col-md-6">
-        <div class="form-group">
-            <label for="displayName">Name</label>
-            <input type="text" data-ng-model="obj.displayName" name="displayName" data-grab-focus id="displayName" class="form-control" required data-ng-change="updateURL(obj.displayName)" data-ng-model-options="{ updateOn: 'default blur', debounce: 500}"/>
-            <field-error data-form-obj="editEventHeader" data-min-char="1" data-field-obj="editEventHeader.displayName" data-show-existing-errors="showExistingErrors"></field-error>
+<div data-ng-form="editEventHeader">
+    <div class="row">
+        <div class="col-sm-8 col-md-8">
+            <div class="form-group">
+                <label for="displayName">Name</label>
+                <input type="text" data-ng-model="obj.displayName" name="displayName" data-grab-focus id="displayName" class="form-control" required data-ng-change="updateURL(obj.displayName)" data-ng-model-options="{ updateOn: 'default blur', debounce: 500}"/>
+                <field-error data-form-obj="editEventHeader" data-min-char="1" data-field-obj="editEventHeader.displayName" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
+            <div class="form-group">
 
-            <label for="shortName">URL</label>
-            <div class="input-group">
+                <label for="shortName">URL</label>
+                <div class="input-group" data-ng-if="!isUpdate">
                 <span class="input-group-addon">
                     <span>/event/</span>
                 </span>
-                <input type="text" id="shortName" data-ng-model="obj.shortName" class="form-control" data-ng-disabled="isUpdate" required pattern="^[A-Za-z0-9]{1,}([-_]*[A-Za-z0-9]+)+$" name="shortName" data-validate-short-name="isUpdate" data-ng-model-options="{updateOn:'blur'}"/>
-                <span class="form-control-feedback" data-ng-if="loading"><i class="fa fa-circle-o-notch fa-spin"></i></span>
-                <field-error data-form-obj="editEventHeader" data-required-pattern="'A-Za-z0-9_- (no spaces, letter or number at the end)'" data-field-obj="editEventHeader.shortName"  data-show-existing-errors="showExistingErrors"></field-error>
-                <span class="input-group-addon">
+                    <input type="text" id="shortName" data-ng-model="obj.shortName" class="form-control" required pattern="^[A-Za-z0-9]{1,}([-_]*[A-Za-z0-9]+)+$" name="shortName" data-validate-short-name="isUpdate" data-ng-model-options="{updateOn:'blur'}"/>
+                    <span class="form-control-feedback" data-ng-if="loading"><i class="fa fa-circle-o-notch fa-spin"></i></span>
+                    <field-error data-form-obj="editEventHeader" data-required-pattern="'A-Za-z0-9_- (no spaces, letter or number at the end)'" data-field-obj="editEventHeader.shortName"  data-show-existing-errors="showExistingErrors"></field-error>
+                    <span class="input-group-addon">
                     <span>/</span>
                 </span>
+                </div>
+                <div class="form-control-static" data-ng-if="isUpdate">/event/{{obj.shortName}}/</div>
             </div>
+            <div class="form-group">
+                <label for="organizationId">Owner Organization</label>
+                <select data-ng-model="obj.organizationId" name="organizationId" id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>
+                <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.organizationId" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
+            <div class="form-group">
+                <label for="location">Location</label>
+                <textarea data-ng-model="obj.location" name="location" id="location" class="form-control" required data-ng-minlength="10" data-ng-change="updateLocation(obj.location)" data-ng-model-options="{ updateOn: 'blur'}"></textarea>
+                <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.location" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
+        </div>
+        <div class="col-sm-4 col-md-4">
+            <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loadingMap"></i>
+            <span class="text-danger" data-ng-if="mapError && !loadingMap">{{mapError}}</span>
+            <img data-ng-if="obj.geolocation && !loadingMap" data-ng-src="{{obj.geolocation.mapUrl}}" alt="{{obj.location}}" class="img-responsive"/>
+        </div>
+    </div>
 
-            <label for="organizationId">Owner Organization</label>
-            <select data-ng-model="obj.organizationId" name="organizationId" id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>
-            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.organizationId" data-show-existing-errors="showExistingErrors"></field-error>
-
-            <label for="location">Location</label>
-            <textarea data-ng-model="obj.location" name="location" id="location" class="form-control" required data-ng-minlength="10" data-ng-change="updateLocation(obj.location)" data-ng-model-options="{ updateOn: 'blur'}"></textarea>
-            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.location" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
-
-            <div data-ng-if="obj.type === 'INTERNAL'">
-                <label for="languages">Languages</label>
-                <select id="languages" class="form-control" multiple data-ng-model="selectedLanguages.langs" data-ng-options="lang.value as lang.displayLanguage for lang in allLanguages" data-ng-change="updateLocales()"></select>
-                <div data-ng-repeat="langValue in selectedLanguages.langs">
+    <div data-ng-if="obj.type === 'INTERNAL'">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label for="languages">Languages</label>
+                    <select id="languages" class="form-control" multiple data-ng-model="selectedLanguages.langs" data-ng-options="lang.value as lang.displayLanguage for lang in allLanguages" data-ng-change="updateLocales()"></select>
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-6" data-ng-repeat="langValue in selectedLanguages.langs">
+                <div class="form-group">
                     <label for="description">Event Description: {{allLanguagesMapping[langValue].displayLanguage}} <display-commonmark-preview text="obj.description[allLanguagesMapping[langValue].locale]"></display-commonmark-preview></p></label>
                     <textarea data-ng-model="obj.description[allLanguagesMapping[langValue].locale]" name="description-{{allLanguagesMapping[langValue].locale}}" id="description" required class="form-control" data-ng-minlength="10" data-ng-maxlength="2048"></textarea>
                     <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader['description-'+allLanguagesMapping[langValue].locale]" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
                 </div>
             </div>
+        </div>
 
-            <label for="websiteUrl">Website URL</label>
-            <input type="url" data-ng-model="obj.websiteUrl" name="websiteUrl" id="websiteUrl" required class="form-control" />
-            <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.websiteUrl" data-show-existing-errors="showExistingErrors"></field-error>
 
-            <div data-ng-if="obj.type !== 'INTERNAL'">
+    </div>
+    <div class="row">
+        <div class="col-xs-6">
+            <div class="form-group">
+                <label for="websiteUrl">Website URL</label>
+                <input type="url" data-ng-model="obj.websiteUrl" name="websiteUrl" id="websiteUrl" required class="form-control" />
+                <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.websiteUrl" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
+        </div>
+        <div class="col-xs-6">
+            <div data-ng-if="obj.type !== 'INTERNAL'" class="form-group">
                 <label for="externalUrl">External ticket reservation URL</label>
                 <input type="url" data-ng-model="obj.externalUrl" name="externalUrl" id="externalUrl" required class="form-control" />
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.externalUrl" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
 
-            <div data-ng-if="obj.type === 'INTERNAL'">
+            <div data-ng-if="obj.type === 'INTERNAL'" class="form-group">
                 <label for="termsAndConditionsUrl">Terms and Conditions URL</label>
                 <input type="url" data-ng-model="obj.termsAndConditionsUrl" name="termsAndConditionsUrl" id="termsAndConditionsUrl" required class="form-control" />
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.termsAndConditionsUrl" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
-
-            <label for="imageFile">Image</label>
-            <div data-ng-if="imageBase64 || obj.fileBlobId || previousFileBlobId" class="wMarginBottom">
-                <div class="wMarginBottom" data-ng-if="imageBase64 || obj.fileBlobId">
-                    <img data-ng-src="{{imageBase64 || ('/file/' + obj.fileBlobId)}}" class="img-responsive center-block">
-                </div>
-                <div class="wMarginBottom">
-                    <button class="btn btn-default pull-left" data-ng-click="removeImage(obj)" type="button">Remove image</button>
-                    <button class="btn btn-default pull-right" data-ng-click="resetImage(obj)" type="button">Reset image</button>
-                </div>
-                <div class="clearfix"></div>
-            </div>
-
-            <div id="imageFile" class="drop-file-zone wMarginBottom well" data-accept="image/*" data-ngf-pattern="'image/*'" data-ng-model="droppedFile" data-ngf-drop data-ngf-select data-ngf-multiple="false" data-ngf-allow-dir="false" data-ngf-drag-over-class="'drop-file-zone-hover'">
-                Drop image here or click to upload (Maximum size : 1MB)
-            </div>
-        </div>
-        <div class="form-group">
-            <label for="date">Event Date <i data-ng-if="showDatesWarning" class="fa fa-warning text-warning tooltip-handler" title="You should notify all the ticket owners about a date change"></i></label>
-            <input type="text" data-date-range data-start-model="obj.begin" data-end-model="obj.end" data-ng-model="obj.dateString" name="date" id="date" class="form-control" required />
-        </div>
-        <div class="form-group">
-            <label for="timeZone">Event time zone</label>
-            <input class="form-control" id="timeZone" readonly name="timeZone" data-ng-model="obj.geolocation.timeZone" required />
         </div>
     </div>
-    <div class="col-sm-12 col-md-6">
-        <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loadingMap"></i>
-        <span class="text-danger" data-ng-if="mapError && !loadingMap">{{mapError}}</span>
-        <img data-ng-if="obj.geolocation && !loadingMap" data-ng-src="{{obj.geolocation.mapUrl}}" alt="{{obj.location}}" class="img-responsive"/>
+    <div class="row">
+        <div class="col-xs-6">
+            <div class="form-group">
+                <label for="imageFile">Image</label>
+                <div data-ng-if="imageBase64 || obj.fileBlobId || previousFileBlobId" class="wMarginBottom">
+                    <div class="wMarginBottom">
+                        <button class="btn btn-sm btn-default pull-left" data-ng-click="removeImage(obj)" type="button">Remove image</button>
+                        <button class="btn btn-sm btn-default pull-right" data-ng-click="resetImage(obj)" type="button">Reset image</button>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+
+                <div id="imageFile" class="drop-file-zone wMarginBottom well" data-accept="image/*" data-ngf-pattern="'image/*'" data-ng-model="droppedFile" data-ngf-drop data-ngf-select data-ngf-multiple="false" data-ngf-allow-dir="false" data-ngf-drag-over-class="'drop-file-zone-hover'">
+                    Drop image here or click to upload (Maximum size : 1MB)
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-6">
+            <div>
+                <img data-ng-if="imageBase64 || obj.fileBlobId" data-ng-src="{{imageBase64 || ('/file/' + obj.fileBlobId)}}" class="img-responsive center-block event-logo">
+                <div class="alert alert-danger alert-form" data-ng-if="!imageBase64 && !obj.fileBlobId"><i class="fa fa-warning"></i> Event logo is missing!</div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+
+        <div class="col-xs-6">
+            <div class="form-group">
+                <label for="date">Event Date <i data-ng-if="showDatesWarning" class="fa fa-warning text-warning tooltip-handler" title="You should notify all the ticket owners about a date change"></i></label>
+                <input type="text" data-date-range data-start-model="obj.begin" data-end-model="obj.end" data-ng-model="obj.dateString" name="date" id="date" class="form-control" required />
+            </div>
+        </div>
+        <div class="col-xs-6">
+            <div class="form-group">
+                <label for="timeZone">Event time zone</label>
+                <input class="form-control" id="timeZone" readonly name="timeZone" data-ng-model="obj.geolocation.timeZone" required />
+            </div>
+        </div>
     </div>
 </div>
