@@ -85,4 +85,19 @@ public class AdditionalService {
     public ZonedDateTime getExpiration(ZoneId zoneId) {
         return Optional.ofNullable(utcExpiration).map(i -> i.withZoneSameInstant(zoneId)).orElseGet(() -> ZonedDateTime.now(zoneId).plus(1L, ChronoUnit.HOURS));
     }
+
+    public static PriceContainer.VatStatus getVatStatus(VatType vatType, PriceContainer.VatStatus eventVatStatus) {
+        switch (vatType) {
+            case INHERITED:
+                return eventVatStatus;
+            case NONE:
+                return PriceContainer.VatStatus.NONE;
+            case CUSTOM_EXCLUDED:
+                return PriceContainer.VatStatus.NOT_INCLUDED;
+            case CUSTOM_INCLUDED:
+                return PriceContainer.VatStatus.INCLUDED;
+            default:
+                return PriceContainer.VatStatus.NOT_INCLUDED;
+        }
+    }
 }

@@ -2,6 +2,13 @@
     "use strict";
     var filters = angular.module('utilFilters', []);
 
+    filters.value('PAYMENT_PROXY_DESCRIPTIONS', {
+        'STRIPE': 'Credit card payments',
+        'ON_SITE': 'On site (cash) payment',
+        'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)',
+        'PAYPAL' : 'PayPal'
+    });
+
     filters.filter('printSelectedOrganization', function() {
         return function(organizations, id) {
             var existing = _.find(organizations, function(organization) {
@@ -81,5 +88,25 @@
             return _.filter(list, query);
         }
     });
+
+    filters.filter('boundedCategories', function() {
+        return function(list, remove) {
+            var query = 'bounded';
+            if(remove) {
+                query = function(c) {
+                    return !c.bounded;
+                };
+            }
+            return _.filter(list, query);
+        }
+    });
+
+    filters.filter('translatePaymentProxies', ['PAYMENT_PROXY_DESCRIPTIONS', function(PAYMENT_PROXY_DESCRIPTIONS) {
+        return function(list) {
+            return _.map(list, function(p) {
+                return PAYMENT_PROXY_DESCRIPTIONS[p] ? PAYMENT_PROXY_DESCRIPTIONS[p] : p;
+            }).join(', ');
+        }
+    }]);
 
 })();

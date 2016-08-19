@@ -12,6 +12,10 @@
         
 
         var initListeners = function() {
+
+            $(document).ready(function() {
+                $(":input:not(input[type=button],input[type=submit],button):visible:first").focus();
+            });
             
             $(".update-ticket-owner,.unbind-btn").click(function() {
                 $($(this).attr('href')).show().find("input:first").focus();
@@ -37,7 +41,7 @@
 
             $('.loading').hide();
 
-            var activeForms = $('form.show-by-default');
+            var activeForms = $('form.show-by-default.not-assigned');
             if(activeForms.length === 0) {
                 $('#back-to-event-site').removeClass('hidden');
             }

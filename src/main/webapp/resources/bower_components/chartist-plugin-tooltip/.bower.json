@@ -1,0 +1,30 @@
+{
+  "name": "chartist-plugin-tooltip",
+  "main": [
+    "./dist/chartist-plugin-tooltip.min.js",
+    "./dist/chartist-plugin-tooltip.css"
+  ],
+  "dependencies": {
+    "chartist": "~0.9.4"
+  },
+  "ignore": [
+    ".*",
+    "Gruntfile.js",
+    "package.json",
+    "node_modules",
+    "src",
+    "test"
+  ],
+  "homepage": "https://github.com/Globegitter/chartist-plugin-tooltip",
+  "version": "0.0.15",
+  "_release": "0.0.15",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.0.15",
+    "commit": "32ef6af961db55aeb27441dc3b8e532663cb56dd"
+  },
+  "_source": "https://github.com/Globegitter/chartist-plugin-tooltip.git",
+  "_target": "^0.0.15",
+  "_originalSource": "https://github.com/Globegitter/chartist-plugin-tooltip.git",
+  "_direct": true
+}

@@ -646,6 +646,13 @@ public class EventManager {
         return CategoryEvaluator.ticketCancellationAvailabilityChecker(ticketCategoryRepository);
     }
 
+    void resetReleasedTickets(Event event) {
+        int reverted = ticketRepository.revertToFree(event.getId());
+        if(reverted > 0) {
+            log.debug("Reverted {} tickets to FREE for event {}", reverted, event.getId());
+        }
+    }
+
     public void updateTicketFieldDescriptions(Map<String, TicketFieldDescriptionModification> descriptions) {
         descriptions.forEach((locale, value) -> {
             String description = Json.GSON.toJson(value.getDescription());

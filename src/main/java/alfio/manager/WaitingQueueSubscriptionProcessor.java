@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Date;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
 import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
@@ -67,10 +68,11 @@ public class WaitingQueueSubscriptionProcessor {
         this.templateManager = templateManager;
     }
 
-    public void handleWaitingTickets() {
-        eventManager.getActiveEvents().stream()
-            .filter(this::isWaitingListFormEnabled)
-            .forEach(this::distributeAvailableSeats);
+    void handleWaitingTickets() {
+        Map<Boolean, List<Event>> activeEvents = eventManager.getActiveEvents().stream()
+            .collect(Collectors.partitioningBy(this::isWaitingListFormEnabled));
+        activeEvents.get(true).forEach(this::distributeAvailableSeats);
+        activeEvents.get(false).forEach(eventManager::resetReleasedTickets);
     }
 
     private boolean isWaitingListFormEnabled(Event event) {

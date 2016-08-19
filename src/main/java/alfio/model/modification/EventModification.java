@@ -214,6 +214,8 @@ public class EventModification {
         private final List<AdditionalField> additionalServiceFields;
         private final List<AdditionalServiceText> title;
         private final List<AdditionalServiceText> description;
+        private final BigDecimal finalPrice;
+        private final String currencyCode;
 
         @JsonCreator
         public AdditionalService(@JsonProperty("id") Integer id,
@@ -229,6 +231,24 @@ public class EventModification {
                                  @JsonProperty("additionalServiceFields") List<AdditionalField> additionalServiceFields,
                                  @JsonProperty("title") List<AdditionalServiceText> title,
                                  @JsonProperty("description") List<AdditionalServiceText> description) {
+            this(id, price, fixPrice, ordinal, availableQuantity, maxQtyPerOrder, inception, expiration, vat, vatType, additionalServiceFields, title, description, null, null);
+        }
+
+        private AdditionalService(Integer id,
+                                  BigDecimal price,
+                                  boolean fixPrice,
+                                  int ordinal,
+                                  int availableQuantity,
+                                  int maxQtyPerOrder,
+                                  DateTimeModification inception,
+                                  DateTimeModification expiration,
+                                  BigDecimal vat,
+                                  alfio.model.AdditionalService.VatType vatType,
+                                  List<AdditionalField> additionalServiceFields,
+                                  List<AdditionalServiceText> title,
+                                  List<AdditionalServiceText> description,
+                                  BigDecimal finalPrice,
+                                  String currencyCode) {
             this.id = id;
             this.price = price;
             this.fixPrice = fixPrice;
@@ -242,6 +262,8 @@ public class EventModification {
             this.additionalServiceFields = additionalServiceFields;
             this.title = title;
             this.description = description;
+            this.finalPrice = finalPrice;
+            this.currencyCode = currencyCode;
         }
 
         public static Builder from(alfio.model.AdditionalService src) {
@@ -255,6 +277,7 @@ public class EventModification {
             private List<AdditionalField> additionalServiceFields = new ArrayList<>();
             private List<AdditionalServiceText> title = new ArrayList<>();
             private List<AdditionalServiceText> description = new ArrayList<>();
+            private PriceContainer priceContainer;
 
             private Builder(alfio.model.AdditionalService src) {
                 this.src = src;
@@ -262,6 +285,11 @@ public class EventModification {
 
             public Builder withZoneId(ZoneId zoneId) {
                 this.zoneId = zoneId;
+                return this;
+            }
+
+            public Builder withPriceContainer(PriceContainer priceContainer) {
+                this.priceContainer = priceContainer;
                 return this;
             }
 
@@ -280,9 +308,12 @@ public class EventModification {
             }
 
             public AdditionalService build() {
+                Optional<PriceContainer> priceContainer = Optional.ofNullable(this.priceContainer);
+                BigDecimal finalPrice = priceContainer.map(PriceContainer::getFinalPrice).orElse(BigDecimal.ZERO);
+                String currencyCode = priceContainer.map(PriceContainer::getCurrencyCode).orElse("");
                 return new AdditionalService(src.getId(), Optional.ofNullable(src.getSrcPriceCts()).map(MonetaryUtil::centsToUnit).orElse(BigDecimal.ZERO),
                     src.isFixPrice(), src.getOrdinal(), src.getAvailableQuantity(), src.getMaxQtyPerOrder(), DateTimeModification.fromZonedDateTime(src.getInception(zoneId)),
-                    DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description);
+                    DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description, finalPrice, currencyCode);
             }
 
         }

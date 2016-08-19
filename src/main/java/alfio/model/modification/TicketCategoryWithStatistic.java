@@ -16,10 +16,7 @@
  */
 package alfio.model.modification;
 
-import alfio.model.Event;
-import alfio.model.PriceContainer;
-import alfio.model.SpecialPrice;
-import alfio.model.TicketCategory;
+import alfio.model.*;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
@@ -57,7 +54,7 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
                                        Event event,
                                        Map<String, String> description) {
         this.ticketCategory = ticketCategory;
-        this.tickets = tickets.stream().filter(tc -> tc.hasBeenSold() || tc.isStuck()).collect(toList());
+        this.tickets = tickets.stream().filter(tc -> tc.getStatus() != Ticket.TicketStatus.CANCELLED).collect(toList());
         this.pendingTickets = (int) tickets.stream().filter(TicketWithStatistic::isPending).count();
         this.checkedInTickets = (int) this.tickets.stream().filter(TicketWithStatistic::isCheckedIn).count();
         this.soldTickets = ((int) this.tickets.stream().filter(TicketWithStatistic::hasBeenSold).count()) - checkedInTickets;

@@ -104,22 +104,11 @@ public class SaleableAdditionalService implements PriceContainer {
 
     @Override
     public VatStatus getVatStatus() {
-        switch (getVatType()) {
-            case INHERITED:
-                return event.getVatStatus();
-            case NONE:
-                return VatStatus.NONE;
-            case CUSTOM_EXCLUDED:
-                return VatStatus.NOT_INCLUDED;
-            case CUSTOM_INCLUDED:
-                return VatStatus.INCLUDED;
-            default:
-                return VatStatus.NOT_INCLUDED;
-        }
+        return AdditionalService.getVatStatus(getVatType(), event.getVatStatus());
     }
 
     public String getFormattedFinalPrice() {
-        return getFinalPrice().add(getAppliedDiscount()).toPlainString();
+        return SaleableTicketCategory.getFinalPriceToDisplay(getFinalPrice().add(getAppliedDiscount()), getVAT(), getVatStatus()).toPlainString();
     }
 
     public boolean getSupportsDiscount() {
@@ -148,7 +137,7 @@ public class SaleableAdditionalService implements PriceContainer {
         }
     }
 
-    public BigDecimal getVat() {
+    public BigDecimal getVatPercentage() {
         AdditionalService.VatType vatType = getVatType();
         if(vatType == AdditionalService.VatType.INHERITED) {
             return event.getVat();

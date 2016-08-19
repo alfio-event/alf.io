@@ -277,3 +277,104 @@ a.emulate-nav-pills-link {
     font-size: 3em;
     font-weight: 500;
 }
+
+.event-logo {
+    max-height: 200px;
+}
+
+.alert-form {
+    margin-top:28px;
+}
+
+.event-statistic-highlighted {
+    font-size:3.5em;
+}
+
+/* pie chart */
+
+.tickets-pie-legend {
+    width:1em;
+    height:1em;
+    display: inline-block;
+}
+
+
+.tickets-pie-legend-text {
+    width:auto;
+    display: inline-block;
+}
+
+.slice-success {
+    fill: #5cb85c;
+    background-color: #5cb85c;
+    stroke:white;
+}
+.slice-warning {
+    fill: #f0ad4e;
+    background-color: #f0ad4e;
+    stroke:white;
+}
+.slice-info {
+    fill: #5bc0de;
+    background-color: #5bc0de;
+    stroke:white;
+}
+.slice-pending {
+    fill: #0408de;
+    background-color: #0408DE;
+    stroke:white;
+}
+.slice-danger {
+    fill: #d9534f;
+    background-color: #d9534f;
+    stroke:white;
+}
+.slice-default {
+    fill: #428bca;
+    background-color: #428bca;
+    stroke:white;
+    color:white;
+}
+
+.ct-label {
+    color: white;
+    fill: white;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.event-tw .ct-label {
+    color: black;
+    fill: black;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.event-tw .ct-series-a .ct-bar {
+    fill: #428bca;
+    stroke:#428bca;
+    color:white;
+}
+
+.event-tl .ct-label {
+    color: black;
+    fill: black;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+.event-tl .ct-point {
+    stroke-width: 6px;
+}
+.event-tl .ct-line {
+    stroke-width: 2px;
+}
+
+.event-tl .ct-series-a .ct-point, .event-tl .ct-series-a .ct-line {
+    stroke:#428bca;
+    color:white;
+}
+
+.hide-overflowing-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

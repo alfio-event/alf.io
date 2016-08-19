@@ -28,7 +28,7 @@
         <div class="alert alert-danger wMarginTop wMarginBottom">{{#i18n}}reservation-page-complete.please-check-input-fields{{/i18n}}</div>
     {{/isSuccess}}
 {{/validationResult}}
-<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/ticket/{{uuid}}/assign" class="form-horizontal {{^assigned}}show-by-default{{/assigned}} {{#assigned}}hide-by-default{{/assigned}}" id="ticket-{{uuid}}" data-ticket-uuid="{{uuid}}">
+<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/ticket/{{uuid}}/assign" class="form-horizontal {{#displayAssignForm}}show-by-default{{/displayAssignForm}} {{^displayAssignForm}}hide-by-default{{/displayAssignForm}} {{^assigned}}not-assigned{{/assigned}}" id="ticket-{{uuid}}" data-ticket-uuid="{{uuid}}">
     <div class="form-group">
         <label class="col-sm-3 control-label" for="full-name-{{uuid}}">{{#i18n}}common.full-name{{/i18n}} *</label>
         <div class="col-sm-9">
@@ -56,7 +56,7 @@
         <span class="collapse-more"><a class="btn btn-primary btn-xs toggle-collapse"><i class="fa fa-arrow-circle-o-down"></i> {{#i18n}}show.optional.fields{{/i18n}}</a></span>
         <span class="collapse-less collapse-toggle hidden"><a class="btn btn-primary btn-xs toggle-collapse"><i class="fa fa-arrow-circle-o-up"></i> {{#i18n}}hide.optional.fields{{/i18n}}</a></span>
     </div>
-    <div {{^assigned}}class="collapsible"{{/assigned}}>
+    <div {{#displayAssignForm}}class="collapsible"{{/displayAssignForm}}>
         {{#ticketFieldConfiguration}}
             <div class="form-group">
                  <label class="col-sm-3 control-label" for="{{key.name}}-title-{{uuid}}">{{key.labelDescription}}</label>

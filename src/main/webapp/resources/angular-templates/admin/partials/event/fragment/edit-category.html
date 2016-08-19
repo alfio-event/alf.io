@@ -1,76 +1,121 @@
 <div class="col-sm-12">
     <div class="row">
         <div class="col-sm-12 col-md-4">
-            <label for="{{buildPrefix($index, 'name')}}">Name</label>
-            <input type="text" data-ng-model="ticketCategory.name" name="{{buildPrefix($index, 'name')}}" id="{{buildPrefix($index, 'name')}}" class="form-control" required />
-            <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.name" data-show-existing-errors="showExistingErrors"></field-error>
+            <div class="form-group">
+                <label for="{{buildPrefix($index, 'name')}}">Name</label>
+                <input type="text" data-ng-model="ticketCategory.name" name="{{buildPrefix($index, 'name')}}" id="{{buildPrefix($index, 'name')}}" class="form-control" required />
+                <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.name" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
         </div>
 
-        <div class="col-sm-12 col-md-3">
-            <label class="control-label">Ticket policy</label>
+        <div class="col-sm-12 col-md-4">
             <div class="form-group">
-                <div class="radio-inline">
-                    <label>
-                        <input type="radio" name="{{buildPrefix($index, 'bounded')}}" data-ng-model="ticketCategory.bounded" data-ng-value="true" required="">
-                        Fixed
-                    </label>
-                </div>
-                <div class="radio-inline" data-ng-if="!ticketCategory.tokenGenerationRequested">
-                    <label>
-                        <input type="radio" name="{{buildPrefix($index, 'bounded')}}" data-ng-model="ticketCategory.bounded" data-ng-value="false" required="">
-                        Dynamic
-                    </label>
+                <label class="control-label">Ticket allocation strategy</label> <a class="btn btn-xs btn-default" uib-popover-template="'helpTicketAllocation.html'"><i class="fa fa-info-circle"></i> help</a>
+                <script type="text/ng-template" id="helpTicketAllocation.html">
+                    <h4>Ticket allocation strategies:</h4>
+                    <p>You should decide how to distribute available seats between categories. The default is to create one or more dynamic categories. <strong>If unsure, please select "Grow dynamically"</strong></p>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <div class="list-group-item-heading"><strong>Grow dynamically</strong></div>
+                            <div class="list-group-item-text">
+                                This category doesn't allocate seats exclusively, instead it shares them with other dynamic categories, if any. This is useful if you have only one category or if you have different ways to sell the same seat.
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="list-group-item-heading"><strong>Limited seats</strong></div>
+                            <div class="list-group-item-text">
+                                Select this option if you want to <strong>allocate exclusively</strong> a fixed number of seats to this category. This could be useful if you want to create a special price, like a "Super early bird".
+                            </div>
+                        </li>
+                    </ul>
+                </script>
+                <div class="form-group">
+                    <div class="radio-inline" data-ng-if="!ticketCategory.tokenGenerationRequested">
+                        <label>
+                            <input type="radio" name="{{buildPrefix($index, 'bounded')}}" data-ng-model="ticketCategory.bounded" data-ng-value="false" required="">
+                            Grow dynamically
+                        </label>
+                    </div>
+                    <div class="radio-inline">
+                        <label>
+                            <input type="radio" name="{{buildPrefix($index, 'bounded')}}" data-ng-model="ticketCategory.bounded" data-ng-value="true" required="">
+                            Limited seats
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-sm-12 col-md-3">
-            <label class="control-label">Category type</label>
+        <div class="col-sm-12 col-md-4">
             <div class="form-group">
-                <div class="radio-inline">
-                    <label>
-                        <input type="radio" name="{{buildPrefix($index, 'tokenGenerationRequested')}}" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="false" required="">
-                        Public
-                    </label>
-                </div>
-                <div class="radio-inline" data-ng-if="ticketCategory.bounded">
-                    <label>
-                        <input type="radio" name="{{buildPrefix($index, 'tokenGenerationRequested')}}" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-click="ticketCategory.bounded = true" data-ng-value="true" required="">
-                        Restricted
-                    </label>
+                <label class="control-label">Category visibility</label> <a class="btn btn-xs btn-default" uib-popover-template="'helpCategoryVisibility.html'"><i class="fa fa-info-circle"></i> help</a>
+                <script type="text/ng-template" id="helpCategoryVisibility.html">
+                    <h4>Category visibility:</h4>
+                    <p>Categories can be public (that is, accessible to everybody) or restricted (accessible after inserting an unique discount code)</p>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <div class="list-group-item-heading"><strong>Public</strong></div>
+                            <div class="list-group-item-text">
+                                Everyone can buy/get a ticket for this category. This is the default option.
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="list-group-item-heading"><strong>Restricted</strong></div>
+                            <div class="list-group-item-text">
+                                Only a restricted group of people can access and get tickets for this category. Once you create a restricted category, the system will generate a set of unique codes (one code per seat) that can be used to reserve a ticket for this category.
+                                <br/><strong>Restricted categories are not compatible with "Grow dynamically" ticket allocation strategy</strong>
+                            </div>
+                        </li>
+                    </ul>
+                </script>
+                <div class="form-group">
+                    <div class="radio-inline">
+                        <label>
+                            <input type="radio" name="{{buildPrefix($index, 'tokenGenerationRequested')}}" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-value="false" required="">
+                            Public
+                        </label>
+                    </div>
+                    <div class="radio-inline" data-ng-if="ticketCategory.bounded">
+                        <label>
+                            <input type="radio" name="{{buildPrefix($index, 'tokenGenerationRequested')}}" data-ng-model="ticketCategory.tokenGenerationRequested" data-ng-click="ticketCategory.bounded = true" data-ng-value="true" required="">
+                            Restricted
+                        </label>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <div class="col-sm-12 col-md-2" data-ng-if="ticketCategory.bounded">
-            <label for="{{buildPrefix($index, 'maxTickets')}}">Max Tickets</label>
-            <input type="number" data-ng-model="ticketCategory.maxTickets" name="{{buildPrefix($index, 'maxTickets')}}" id="{{buildPrefix($index, 'maxTickets')}}" class="form-control" required />
-            <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.maxTickets" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
 
     </div>
     <div class="row">
-
         <div class="col-sm-12 col-md-4">
-            <label for="{{buildPrefix($index, 'dateString')}}">Validity range</label>
-            <input type="text" data-date-range data-start-model="ticketCategory.inception" data-end-model="ticketCategory.expiration" data-start-date="ticketCategory.notBefore" data-ng-model="ticketCategory.dateString" name="{{buildPrefix($index, 'dateString')}}" id="{{buildPrefix($index, 'dateString')}}" class="form-control" required />
-            <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.dateString" data-show-existing-errors="showExistingErrors"></field-error>
-        </div>
-
-        <div class="col-sm-12 col-md-3" data-ng-if="!event.freeOfCharge">
-            <label for="{{buildPrefix($index, 'price')}}">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event, editMode)}}%)</span></label>
-            <input type="number" data-ng-model="ticketCategory.price" name="{{buildPrefix($index, 'price')}}" id="{{buildPrefix($index, 'price')}}" class="form-control" required />
-            <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.price" data-show-existing-errors="showExistingErrors"></field-error>
-        </div>
-
-        <div class="col-sm-12 col-md-5">
-            <div data-ng-repeat="(lang, language) in allLanguagesMapping">
-                <div data-ng-if="isLanguagePresent(event.locales, language.value)">
-                    <label for="{{buildPrefix($index, 'description.'+lang)}}">Description: {{language.displayLanguage}} <display-commonmark-preview text="ticketCategory.description[language.locale]"></display-commonmark-preview></label>
-                    <textarea data-ng-model="ticketCategory.description[language.locale]" name="{{buildPrefix($index, 'description.'+lang)}}" id="{{buildPrefix($index, 'description.'+lang)}}" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
-                </div>
+            <div class="form-group">
+                <label for="{{buildPrefix($index, 'dateString')}}">Validity range</label>
+                <input type="text" data-date-range data-start-model="ticketCategory.inception" data-end-model="ticketCategory.expiration" data-start-date="ticketCategory.notBefore" data-ng-model="ticketCategory.dateString" name="{{buildPrefix($index, 'dateString')}}" id="{{buildPrefix($index, 'dateString')}}" class="form-control" required />
+                <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.dateString" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
 
+        <div class="col-sm-12 col-md-4" data-ng-if="!event.freeOfCharge">
+            <div class="form-group">
+                <label for="{{buildPrefix($index, 'price')}}">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event, editMode)}}%)</span></label>
+                <input type="number" data-ng-model="ticketCategory.price" name="{{buildPrefix($index, 'price')}}" id="{{buildPrefix($index, 'price')}}" class="form-control" required />
+                <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.price" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-4" data-ng-if="ticketCategory.bounded">
+            <div class="form-group">
+                <label for="{{buildPrefix($index, 'maxTickets')}}">Max Tickets</label>
+                <input type="number" data-ng-model="ticketCategory.maxTickets" name="{{buildPrefix($index, 'maxTickets')}}" id="{{buildPrefix($index, 'maxTickets')}}" class="form-control" required />
+                <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.maxTickets" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div data-ng-repeat="(lang, language) in allLanguagesMapping" class="col-sm-6 col-md-4">
+            <div data-ng-if="isLanguagePresent(event.locales, language.value)" class="form-group">
+                <label for="{{buildPrefix($index, 'description.'+lang)}}">Description: {{language.displayLanguage}} <display-commonmark-preview text="ticketCategory.description[language.locale]"></display-commonmark-preview></label>
+                <textarea data-ng-model="ticketCategory.description[language.locale]" name="{{buildPrefix($index, 'description.'+lang)}}" id="{{buildPrefix($index, 'description.'+lang)}}" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
+            </div>
+        </div>
     </div>
 </div>

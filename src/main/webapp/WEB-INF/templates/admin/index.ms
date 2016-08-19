@@ -7,6 +7,8 @@
     <meta name="_csrf" content="{{_csrf.token}}"/>
     <meta name="_csrf_header" content="{{_csrf.headerName}}"/>
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/chartist/dist/chartist.min.css">
+    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.css">
     <link rel="stylesheet" href="{{request.contextPath}}/resources/css/admin.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
@@ -23,8 +25,9 @@
     <script src="{{request.contextPath}}/resources/bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/ng-file-upload/ng-file-upload-shim.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/ng-file-upload/ng-file-upload.js"></script>
-    <script src="{{request.contextPath}}/resources/bower_components/Chart.js/Chart.min.js"></script>
-    <script src="{{request.contextPath}}/resources/bower_components/angular-chart.js/angular-chart.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/chartist/dist/chartist.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/chartist-plugin-accessibility/dist/chartist-plugin-accessibility.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
     <script src="{{request.contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/ng-app/admin-application.js"></script>
@@ -37,6 +40,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/user/user.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/additional-service/additional-service.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
