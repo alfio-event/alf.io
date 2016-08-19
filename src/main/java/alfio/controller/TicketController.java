@@ -38,6 +38,7 @@ import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import com.google.zxing.WriterException;
+import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -177,7 +178,10 @@ public class TicketController {
         response.setContentType("application/pdf");
         response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
         try (OutputStream os = response.getOutputStream()) {
-            preparePdfTicket(request, data.getLeft(), data.getMiddle(), ticket).generate(ticket).createPDF(os);
+            PdfBoxRenderer renderer = preparePdfTicket(request, data.getLeft(), data.getMiddle(), ticket).generate(ticket);
+            if(renderer != null) {
+                renderer.createPDF(os);
+            }
         }
     }
     
