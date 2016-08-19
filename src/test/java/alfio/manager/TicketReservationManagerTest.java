@@ -418,7 +418,7 @@ public class TicketReservationManagerTest {
     @Test
     public void doNothingIfPrerequisitesAreNotSatisfied() {
         //do nothing if the category is not restricted
-        assertFalse(trm.fixToken(Optional.empty(), TICKET_CATEGORY_ID, EVENT_ID, Optional.empty(), null).isPresent());
+        assertFalse(trm.fixToken(Optional.empty(), TICKET_CATEGORY_ID, EVENT_ID, Optional.empty(), mock(TicketReservationWithOptionalCodeModification.class)).isPresent());
         //do nothing if special price status is pending and sessionId don't match
         assertFalse(trm.renewSpecialPrice(Optional.of(specialPrice), Optional.empty()).isPresent());
         //do nothing if special price status is pending and sessionId don't match
