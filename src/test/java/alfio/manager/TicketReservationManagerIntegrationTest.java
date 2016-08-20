@@ -22,6 +22,7 @@ import alfio.config.Initializer;
 import alfio.manager.support.OrderSummary;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.user.UserManager;
+import alfio.model.CustomerName;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.Ticket;
 import alfio.model.TicketReservation;
@@ -150,7 +151,7 @@ public class TicketReservationManagerIntegrationTest {
 
         assertEquals(0, ticketReservationManager.getPendingPayments(event).size());
 
-        PaymentResult confirm = ticketReservationManager.confirm(null, null, event.getEvent(), reservationId, "email@example.com", "full name", Locale.ENGLISH, "billing address",
+        PaymentResult confirm = ticketReservationManager.confirm(null, null, event.getEvent(), reservationId, "email@example.com", new CustomerName("full name", "full", "name", event.getEvent()), Locale.ENGLISH, "billing address",
             totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false);
 
 
@@ -173,7 +174,7 @@ public class TicketReservationManagerIntegrationTest {
         TicketReservationWithOptionalCodeModification modForDelete = new TicketReservationWithOptionalCodeModification(trForDelete, Optional.empty());
         String reservationId2 = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(modForDelete), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
-        ticketReservationManager.confirm(null, null, event.getEvent(), reservationId2, "email@example.com", "full name", Locale.ENGLISH, "billing address",
+        ticketReservationManager.confirm(null, null, event.getEvent(), reservationId2, "email@example.com", new CustomerName("full name", "full", "name", event.getEvent()), Locale.ENGLISH, "billing address",
             totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false);
 
         assertTrue(ticketReservationManager.findById(reservationId2).isPresent());
@@ -278,7 +279,7 @@ public class TicketReservationManagerIntegrationTest {
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
+        PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", new CustomerName("full name", "full", "name", event.getEvent()), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
         assertTrue(result.isSuccessful());
         ticketReservationManager.deleteOfflinePayment(event.getEvent(), reservationId, false);
         waitingQueueManager.distributeSeats(event.getEvent());
@@ -286,7 +287,7 @@ public class TicketReservationManagerIntegrationTest {
         mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", "Full Name", Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
+        result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", new CustomerName("full name", "full", "name", event.getEvent()), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), true);
         assertTrue(result.isSuccessful());
     }
 }

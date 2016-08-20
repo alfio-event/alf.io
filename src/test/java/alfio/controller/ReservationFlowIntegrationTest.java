@@ -208,7 +208,7 @@ public class ReservationFlowIntegrationTest {
 
 
         // check that the payment page is shown
-        String reservationPage = reservationController.showPaymentPage(eventName, reservationIdentifier, null, null, null, null, null, null, null, null, new BindingAwareModelMap(), Locale.ENGLISH);
+        String reservationPage = reservationController.showPaymentPage(eventName, reservationIdentifier, null, null, null, null, null, null, null, null, null, null, null, new BindingAwareModelMap(), Locale.ENGLISH);
         Assert.assertEquals("/event/reservation-page", reservationPage);
         //
 
@@ -245,22 +245,24 @@ public class ReservationFlowIntegrationTest {
         Assert.assertTrue(ticketController.showTicketForUpdate(eventName, reservationIdentifier, ticketIdentifier, new BindingAwareModelMap(), Locale.ENGLISH).startsWith("redirect:/event/"));
         //
 
-        String name1 = "Test McTest";
+        String fname1 = "Test";
+        String lname1 = "McTest";
 
         //assign ticket to person
-        assignTicket(eventName, reservationIdentifier, ticketIdentifier, name1);
+        assignTicket(eventName, reservationIdentifier, ticketIdentifier, fname1, lname1);
 
         Assert.assertEquals("/event/update-ticket", ticketController.showTicketForUpdate(eventName, reservationIdentifier, ticketIdentifier, new BindingAwareModelMap(), Locale.ENGLISH));
 
         //
         Assert.assertEquals("/event/show-ticket", ticketController.showTicket(eventName, reservationIdentifier, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()));
         //
-        checkCSV(eventName, ticketIdentifier, name1);
+        checkCSV(eventName, ticketIdentifier, fname1 + " " + lname1);
 
 
         // use api to update
         UpdateTicketOwnerForm updateTicketOwnerForm = new UpdateTicketOwnerForm();
-        updateTicketOwnerForm.setFullName("Test Testson");
+        updateTicketOwnerForm.setFirstName("Test");
+        updateTicketOwnerForm.setLastName("Testson");
         updateTicketOwnerForm.setEmail("testmctest@test.com");
         updateTicketOwnerForm.setUserLanguage("en");
         reservationApiController.assignTicketToPerson(eventName, reservationIdentifier, ticketIdentifier, true,
@@ -270,17 +272,18 @@ public class ReservationFlowIntegrationTest {
         //
 
         //update
-        String name2 = "Test OTest";
-        assignTicket(eventName, reservationIdentifier, ticketIdentifier, name2);
-        checkCSV(eventName, ticketIdentifier, name2);
+        String fname2 = "Test";
+        String lname2 = "OTest";
+        assignTicket(eventName, reservationIdentifier, ticketIdentifier, fname2, lname2);
+        checkCSV(eventName, ticketIdentifier, fname2 + " " + lname2);
 
         //lock ticket
         Principal principal = Mockito.mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(user);
         eventApiController.toggleTicketLocking(eventName, ticketDecorator.getCategoryId(), ticketDecorator.getId(), principal);
 
-        assignTicket(eventName, reservationIdentifier, ticketIdentifier, name1);
-        checkCSV(eventName, ticketIdentifier, name2);
+        assignTicket(eventName, reservationIdentifier, ticketIdentifier, fname1, fname2);
+        checkCSV(eventName, ticketIdentifier, fname2 + " " + lname2);
 
         //ticket has changed, update
         ticketDecorator = checkReservationComplete(eventName, reservationIdentifier);
@@ -323,9 +326,10 @@ public class ReservationFlowIntegrationTest {
         return tickets.get(0).getRight().get(0);
     }
 
-    private void assignTicket(String eventName, String reservationIdentifier, String ticketIdentifier, String fullName) throws Exception {
+    private void assignTicket(String eventName, String reservationIdentifier, String ticketIdentifier, String firstName, String lastName) throws Exception {
         UpdateTicketOwnerForm ticketOwnerForm = new UpdateTicketOwnerForm();
-        ticketOwnerForm.setFullName(fullName);
+        ticketOwnerForm.setFirstName(firstName);
+        ticketOwnerForm.setLastName(lastName);
         ticketOwnerForm.setEmail("testmctest@test.com");
         ticketOwnerForm.setUserLanguage("en");
         Assert.assertTrue(reservationController.assignTicketToPerson(eventName, reservationIdentifier, ticketIdentifier, ticketOwnerForm, Mockito.mock(BindingResult.class), new MockHttpServletRequest(), new BindingAwareModelMap()).endsWith("/success"));
@@ -346,7 +350,7 @@ public class ReservationFlowIntegrationTest {
         Assert.assertEquals(ticketIdentifier, csv.get(1)[0]);
         Assert.assertEquals("default", csv.get(1)[2]);
         Assert.assertEquals("ACQUIRED", csv.get(1)[4]);
-        Assert.assertEquals(fullName, csv.get(1)[8]);
+        Assert.assertEquals(fullName, csv.get(1)[10]);
     }
 
     private void validatePayment(String eventName, String reservationIdentifier) {
@@ -362,7 +366,8 @@ public class ReservationFlowIntegrationTest {
         paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
         paymentForm.setEmail("test@test.com");
         paymentForm.setBillingAddress("my billing address");
-        paymentForm.setFullName("full name");
+        paymentForm.setFirstName("full");
+        paymentForm.setLastName("name");
         paymentForm.setTermAndConditionsAccepted(true);
         BindingResult bindingResult = new BeanPropertyBindingResult(paymentForm, "paymentForm");
         Model model = new BindingAwareModelMap();

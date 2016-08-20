@@ -246,7 +246,7 @@ public class EventApiController {
         return OK;
     }
 
-    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "creation", "category", "event", "status", "originalPrice", "paidPrice","reservationID", "Name", "E-Mail", "locked", "Language");
+    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "creation", "category", "event", "status", "originalPrice", "paidPrice", "discount", "vat", "reservationID", "Full Name", "First name", "Last name", "E-Mail", "locked", "Language");
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
 
     @RequestMapping("/events/{eventName}/export.csv")
@@ -281,7 +281,9 @@ public class EventApiController {
                 if(fields.contains("discount")) {line.add(MonetaryUtil.centsToUnit(t.getDiscountCts()).toString());}
                 if(fields.contains("vat")) {line.add(MonetaryUtil.centsToUnit(t.getVatCts()).toString());}
                 if(fields.contains("reservationID")) {line.add(t.getTicketsReservationId());}
-                if(fields.contains("Name")) {line.add(t.getFullName());}
+                if(fields.contains("Full Name")) {line.add(t.getFullName());}
+                if(fields.contains("First Name")) {line.add(t.getFirstName());}
+                if(fields.contains("Last Name")) {line.add(t.getLastName());}
                 if(fields.contains("E-Mail")) {line.add(t.getEmail());}
                 if(fields.contains("locked")) {line.add(String.valueOf(t.getLockedAssignment()));}
                 if(fields.contains("Language")) {line.add(String.valueOf(t.getUserLanguage()));}
@@ -401,7 +403,7 @@ public class EventApiController {
         ticketReservationManager.confirmOfflinePayment(loadEvent(eventName, principal), reservationId);
         ticketReservationManager.findById(reservationId)
             .filter(TicketReservation::isDirectAssignmentRequested)
-            .ifPresent(reservation -> ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getUserLanguage(), Optional.empty(), request, model));
+            .ifPresent(reservation -> ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), reservation.getUserLanguage(), Optional.empty(), request, model));
         return OK;
     }
 

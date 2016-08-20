@@ -125,7 +125,7 @@ public final class Validator {
         return ValidationResult.success();
     }
 
-    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Optional<Errors> errorsOptional) {
+    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Optional<Errors> errorsOptional, Event event) {
         if(!errorsOptional.isPresent()) {
             return ValidationResult.success();//already validated
         }
@@ -136,8 +136,12 @@ public final class Validator {
             errors.rejectValue("email", "error.email");
         }
 
-        validateMaxLength(form.getFullName(), "fullName", "error.fullname", 255, errors);
-
+        if(event.mustUseFirstAndLastName()) {
+            validateMaxLength(form.getFirstName(), "firstName", "error.firstname", 255, errors);
+            validateMaxLength(form.getLastName(), "lastName", "error.lastname", 255, errors);
+        } else {
+            validateMaxLength(form.getFullName(), "fullName", "error.fullname", 255, errors);
+        }
 
 
         //

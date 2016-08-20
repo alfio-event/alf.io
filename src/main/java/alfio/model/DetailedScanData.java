@@ -41,6 +41,8 @@ public class DetailedScanData {
 
                             @Column("t_tickets_reservation_id") String ticketsReservationId,
                             @Column("t_full_name") String ticketFullName,
+                            @Column("t_first_name") String ticketFirstName,
+                            @Column("t_last_name") String ticketLastName,
                             @Column("t_email_address") String ticketEmail,
                             @Column("t_locked_assignment") boolean ticketLockedAssignment,
                             @Column("t_user_language") String ticketUserLanguage,
@@ -49,7 +51,7 @@ public class DetailedScanData {
                             @Column("s_creation") ZonedDateTime scanTimestamp,
                             @Column("s_event_id") int scanEventId,
                             @Column("s_ticket_id") int scanTicketId) {
-        this.ticket = new Ticket(ticketId, ticketUuid, ticketCreation, ticketCategoryId, ticketStatus, ticketEventId, ticketsReservationId, ticketFullName, ticketEmail, ticketLockedAssignment, ticketUserLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts);
+        this.ticket = new Ticket(ticketId, ticketUuid, ticketCreation, ticketCategoryId, ticketStatus, ticketEventId, ticketsReservationId, ticketFullName, ticketFirstName, ticketLastName, ticketEmail, ticketLockedAssignment, ticketUserLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts);
         this.sponsorScan = new SponsorScan(scanUserId, scanTimestamp, scanEventId, scanTicketId);
     }
 }

@@ -99,15 +99,18 @@ public class TicketHelper {
         Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.fetchComplete(eventName, reservationId, ticketIdentifier)
                 .map(result -> {
                     Ticket t = result.getRight();
+                    final Event event = result.getLeft();
                     if(t.getLockedAssignment()) {
-                        //in case of locked assignment, fullName and Email will be overwritten
+                        //in case of locked assignment, fullName and Email will be overwritte
+                        updateTicketOwner.setFirstName(t.getFirstName());
+                        updateTicketOwner.setLastName(t.getLastName());
                         updateTicketOwner.setFullName(t.getFullName());
                         updateTicketOwner.setEmail(t.getEmail());
                     }
-                    final Event event = result.getLeft();
+
                     final TicketReservation ticketReservation = result.getMiddle();
                     List<TicketFieldConfiguration> fieldConf = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-                    ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult)
+                    ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event)
                             .ifSuccess(() -> updateTicketOwner(updateTicketOwner, request, t, event, ticketReservation, userDetails));
                     return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
                 });
@@ -134,6 +137,8 @@ public class TicketHelper {
                                                                                     String reservationId,
                                                                                     String email,
                                                                                     String fullName,
+                                                                                    String firstName,
+                                                                                    String lastName,
                                                                                     String userLanguage,
                                                                                     Optional<Errors> bindingResult,
                                                                                     HttpServletRequest request,
@@ -147,6 +152,8 @@ public class TicketHelper {
         form.setAdditional(Collections.emptyMap());
         form.setEmail(email);
         form.setFullName(fullName);
+        form.setFirstName(firstName);
+        form.setLastName(lastName);
         form.setUserLanguage(userLanguage);
         return assignTicket(eventName, reservationId, ticketUuid, form, bindingResult, request, model);
     }
