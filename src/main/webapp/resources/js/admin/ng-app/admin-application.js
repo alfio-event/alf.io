@@ -222,7 +222,7 @@
         });
 
         $scope.$watch('event.organizationId', function(newVal) {
-            if(newVal) {
+            if(newVal !== undefined && newVal !== null) {
                 PaymentProxyService.getAllProxies(newVal).success(function(result) {
                     $scope.allowedPaymentProxies = _.map(result, function(p) {
                         return {
