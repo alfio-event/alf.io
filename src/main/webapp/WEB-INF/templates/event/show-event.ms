@@ -95,6 +95,7 @@
     {{/ticketCategories}}
     </ul>
     {{#showAdditionalServices}}
+    <h2>{{#i18n}}show-event.additional-services{{/i18n}}</h2>
     <ul class="list-group">
         {{#enabledAdditionalServices}}
             {{> /event/additional-service.ms }}
