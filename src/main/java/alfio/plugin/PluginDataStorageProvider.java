@@ -16,9 +16,11 @@
  */
 package alfio.plugin;
 
+import alfio.model.Event;
 import alfio.model.plugin.PluginConfigOption;
 import alfio.model.plugin.PluginLog;
 import alfio.model.system.ComponentType;
+import alfio.repository.EventRepository;
 import alfio.repository.plugin.PluginConfigurationRepository;
 import alfio.repository.plugin.PluginLogRepository;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -33,17 +35,20 @@ public class PluginDataStorageProvider {
     private final PluginConfigurationRepository pluginConfigurationRepository;
     private final PluginLogRepository pluginLogRepository;
     private final PlatformTransactionManager platformTransactionManager;
+    private final EventRepository eventRepository;
 
     public PluginDataStorageProvider(PluginConfigurationRepository pluginConfigurationRepository,
                                      PluginLogRepository pluginLogRepository,
-                                     PlatformTransactionManager platformTransactionManager) {
+                                     PlatformTransactionManager platformTransactionManager,
+                                     EventRepository eventRepository) {
         this.pluginConfigurationRepository = pluginConfigurationRepository;
         this.pluginLogRepository = pluginLogRepository;
         this.platformTransactionManager = platformTransactionManager;
+        this.eventRepository = eventRepository;
     }
 
     public PluginDataStorage getDataStorage(String pluginId) {
-        return new PluginDataStorage(pluginId, pluginConfigurationRepository, pluginLogRepository, new TransactionTemplate(platformTransactionManager));
+        return new PluginDataStorage(pluginId, pluginConfigurationRepository, pluginLogRepository, new TransactionTemplate(platformTransactionManager), eventRepository);
     }
 
 
@@ -52,14 +57,20 @@ public class PluginDataStorageProvider {
         private final PluginConfigurationRepository pluginConfigurationRepository;
         private final PluginLogRepository pluginLogRepository;
         private final TransactionTemplate tx;
+        private final EventRepository eventRepository;
 
         private PluginDataStorage(String pluginId,
                                   PluginConfigurationRepository pluginConfigurationRepository,
-                                  PluginLogRepository pluginLogRepository, TransactionTemplate tx) {
+                                  PluginLogRepository pluginLogRepository, TransactionTemplate tx, EventRepository eventRepository) {
             this.pluginId = pluginId;
             this.pluginConfigurationRepository = pluginConfigurationRepository;
             this.pluginLogRepository = pluginLogRepository;
             this.tx = tx;
+            this.eventRepository = eventRepository;
+        }
+
+        public Event getEventById(int eventId) {
+            return eventRepository.findById(eventId);
         }
 
         public Optional<String> getConfigValue(String name, int eventId) {

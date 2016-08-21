@@ -39,6 +39,8 @@ public class WaitingQueueSubscription {
     private final int eventId;
     private final Status status;
     private final String fullName;
+    private final String firstName;
+    private final String lastName;
     private final String emailAddress;
     private final String reservationId;
     private final String userLanguage;
@@ -50,6 +52,8 @@ public class WaitingQueueSubscription {
                                     @Column("event_id") int eventId,
                                     @Column("status") String status,
                                     @Column("full_name") String fullName,
+                                    @Column("first_name") String firstName,
+                                    @Column("last_name") String lastName,
                                     @Column("email_address") String emailAddress,
                                     @Column("ticket_reservation_id") String reservationId,
                                     @Column("user_language") String userLanguage,
@@ -63,6 +67,8 @@ public class WaitingQueueSubscription {
         this.subscriptionType = subscriptionType;
         this.status = Status.valueOf(status);
         this.fullName = fullName;
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.reservationId = reservationId;
         this.emailAddress = emailAddress;
     }

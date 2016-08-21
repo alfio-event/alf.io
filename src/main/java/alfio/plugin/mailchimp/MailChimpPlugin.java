@@ -16,9 +16,7 @@
  */
 package alfio.plugin.mailchimp;
 
-import alfio.model.Ticket;
-import alfio.model.TicketReservation;
-import alfio.model.WaitingQueueSubscription;
+import alfio.model.*;
 import alfio.model.plugin.PluginConfigOption;
 import alfio.model.system.ComponentType;
 import alfio.plugin.PluginDataStorageProvider;
@@ -50,17 +48,23 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
 
     @Override
     public void onTicketAssignment(Ticket ticket) {
-        subscribeUser(ticket.getEmail(), ticket.getFullName(), ticket.getUserLanguage(), ticket.getEventId());
+        Event event = pluginDataStorage.getEventById(ticket.getEventId());
+        CustomerName customerName = new CustomerName(ticket.getFullName(), ticket.getFirstName(), ticket.getLastName(), event);
+        subscribeUser(ticket.getEmail(), customerName, ticket.getUserLanguage(), ticket.getEventId());
     }
 
     @Override
     public void onReservationConfirmation(TicketReservation ticketReservation, int eventId) {
-        subscribeUser(ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getUserLanguage(), eventId);
+        Event event = pluginDataStorage.getEventById(eventId);
+        CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event);
+        subscribeUser(ticketReservation.getEmail(), customerName, ticketReservation.getUserLanguage(), eventId);
     }
 
     @Override
     public void onWaitingQueueSubscription(WaitingQueueSubscription waitingQueueSubscription) {
-        subscribeUser(waitingQueueSubscription.getEmailAddress(), waitingQueueSubscription.getFullName(), waitingQueueSubscription.getUserLanguage(), waitingQueueSubscription.getEventId());
+        Event event = pluginDataStorage.getEventById(waitingQueueSubscription.getEventId());
+        CustomerName customerName = new CustomerName(waitingQueueSubscription.getFullName(), waitingQueueSubscription.getFirstName(), waitingQueueSubscription.getLastName(), event);
+        subscribeUser(waitingQueueSubscription.getEmailAddress(), customerName, waitingQueueSubscription.getUserLanguage(), waitingQueueSubscription.getEventId());
     }
 
     @Override
@@ -90,7 +94,7 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
         getConfigOptions(eventId).stream().forEach(o -> pluginDataStorage.insertConfigValue(eventId, o.getOptionName(), o.getOptionValue(), o.getDescription(), o.getComponentType()));
     }
 
-    private Optional<String> getListAddress(int eventId, String email, String name, String language) {
+    private Optional<String> getListAddress(int eventId, String email, CustomerName name, String language) {
         Optional<String> dataCenter = pluginDataStorage.getConfigValue(DATA_CENTER, eventId);
         Optional<String> listId = pluginDataStorage.getConfigValue(LIST_ID, eventId);
         if(dataCenter.isPresent() && listId.isPresent()) {
@@ -101,7 +105,7 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
         return Optional.empty();
     }
 
-    private Optional<String> getApiKey(int eventId, String email, String name, String language) {
+    private Optional<String> getApiKey(int eventId, String email, CustomerName name, String language) {
         Optional<String> apiKey = pluginDataStorage.getConfigValue(API_KEY, eventId);
         if(!apiKey.isPresent()) {
             pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, "missing API Key"), eventId);
@@ -109,7 +113,7 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
         return apiKey;
     }
 
-    private void subscribeUser(String email, String name, String language, int eventId) {
+    private void subscribeUser(String email, CustomerName name, String language, int eventId) {
         Optional<String> listAddress = getListAddress(eventId, email, name, language);
         Optional<String> apiKey = getApiKey(eventId, email, name, language);
         if(listAddress.isPresent() && apiKey.isPresent()) {
@@ -117,11 +121,11 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
         }
     }
 
-    private boolean send(int eventId, String address, String apiKey, String email, String name, String language) {
+    private boolean send(int eventId, String address, String apiKey, String email, CustomerName name, String language) {
         Map<String, Object> content = new HashMap<>();
         content.put("email_address", email);
         content.put("status", "subscribed");
-        content.put("merge_fields", Collections.singletonMap("FNAME", name));
+        content.put("merge_fields", Collections.singletonMap("FNAME", name.isHasFirstAndLastName() ? name.getFirstName() : name.getFullName()));
         content.put("language", language);
         Request request = new Request.Builder()
                 .url(address)

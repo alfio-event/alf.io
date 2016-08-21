@@ -125,7 +125,7 @@ public final class Validator {
         return ValidationResult.success();
     }
 
-    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Optional<Errors> errorsOptional) {
+    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Optional<Errors> errorsOptional, Event event) {
         if(!errorsOptional.isPresent()) {
             return ValidationResult.success();//already validated
         }
@@ -136,8 +136,16 @@ public final class Validator {
             errors.rejectValue("email", "error.email");
         }
 
-        validateMaxLength(form.getFullName(), "fullName", "error.fullname", 255, errors);
+        if(event.mustUseFirstAndLastName()) {
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
+            validateMaxLength(form.getFirstName(), "firstName", ErrorsCode.STEP_2_MAX_LENGTH_FIRSTNAME, 255, errors);
 
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
+            validateMaxLength(form.getLastName(), "lastName", ErrorsCode.STEP_2_MAX_LENGTH_LASTNAME, 255, errors);
+        } else {
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fullName", ErrorsCode.STEP_2_EMPTY_FULLNAME);
+            validateMaxLength(form.getFullName(), "fullName", ErrorsCode.STEP_2_MAX_LENGTH_FULLNAME, 255, errors);
+        }
 
 
         //
@@ -181,11 +189,22 @@ public final class Validator {
         }
     }
 
-    public static ValidationResult validateWaitingQueueSubscription(WaitingQueueSubscriptionForm form, Errors errors) {
+    public static ValidationResult validateWaitingQueueSubscription(WaitingQueueSubscriptionForm form, Errors errors, Event event) {
         if(!form.isTermAndConditionsAccepted()) {
             errors.rejectValue("termAndConditionsAccepted", "error.termAndConditionsAccepted");
         }
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fullName", "error.fullName");
+
+        if(event.mustUseFirstAndLastName()) {
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "firstName", "error.firstname");
+            validateMaxLength(form.getFirstName(), "firstName", "error.firstname", 255, errors);
+
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "lastName", "lastname.fullname");
+            validateMaxLength(form.getLastName(), "lastName", "error.lastname", 255, errors);
+        } else {
+            validateMaxLength(form.getFullName(), "fullName", "error.fullname", 255, errors);
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fullName", "error.fullname");
+        }
+
         if(!isEmailValid(form.getEmail())) {
             errors.rejectValue("email", "error.email");
         }
