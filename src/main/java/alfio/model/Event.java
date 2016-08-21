@@ -29,6 +29,7 @@ import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -74,6 +75,9 @@ public class Event implements EventHiddenFieldContainer {
 
     private final int srcPriceCts;
     private final PriceContainer.VatStatus vatStatus;
+    private final String version;
+
+    private static final String VERSION_FOR_FIRST_AND_LAST_NAME = "15.1.8.8";
 
 
     public Event(@Column("id") int id,
@@ -99,7 +103,8 @@ public class Event implements EventHiddenFieldContainer {
                  @Column("org_id") int organizationId,
                  @Column("locales") int locales,
                  @Column("src_price_cts") int srcPriceInCents,
-                 @Column("vat_status") PriceContainer.VatStatus vatStatus) {
+                 @Column("vat_status") PriceContainer.VatStatus vatStatus,
+                 @Column("version") String version) {
 
         this.type = type;
         this.displayName = displayName;
@@ -131,6 +136,7 @@ public class Event implements EventHiddenFieldContainer {
                 .collect(Collectors.toList());
         this.vatStatus = vatStatus;
         this.srcPriceCts = srcPriceInCents;
+        this.version = version;
     }
 
     public BigDecimal getRegularPrice() {
@@ -265,4 +271,19 @@ public class Event implements EventHiddenFieldContainer {
         return type == EventType.INTERNAL;
     }
 
+    public boolean getUseFirstAndLastName() {
+        return mustUseFirstAndLastName();
+    }
+
+    public boolean mustUseFirstAndLastName() {
+        return mustUseFirstAndLastName(this);
+    }
+
+
+    private static boolean mustUseFirstAndLastName(Event event) {
+        if(event.getVersion() == null) {
+            return false;
+        }
+        return MigrationVersion.fromVersion(event.getVersion()).compareTo(MigrationVersion.fromVersion(VERSION_FOR_FIRST_AND_LAST_NAME)) >= 0;
+    }
 }

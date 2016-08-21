@@ -48,6 +48,8 @@ public class Ticket {
     private final TicketStatus status;
     private final String ticketsReservationId;
     private final String fullName;
+    private final String firstName;
+    private final String lastName;
     private final String email;
     private final boolean lockedAssignment;
     private final String userLanguage;
@@ -65,6 +67,8 @@ public class Ticket {
                   @Column("event_id") int eventId,
                   @Column("tickets_reservation_id") String ticketsReservationId,
                   @Column("full_name") String fullName,
+                  @Column("first_name") String firstName,
+                  @Column("last_name") String lastName,
                   @Column("email_address") String email,
                   @Column("locked_assignment") boolean lockedAssignment,
                   @Column("user_language") String userLanguage,
@@ -82,6 +86,8 @@ public class Ticket {
         this.status = TicketStatus.valueOf(status);
         this.ticketsReservationId = ticketsReservationId;
         this.fullName = Optional.ofNullable(fullName).orElse("");
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.email = Optional.ofNullable(email).orElse("");
         this.lockedAssignment = lockedAssignment;
         this.srcPriceCts = srcPriceCts;
@@ -91,7 +97,7 @@ public class Ticket {
     }
     
     public boolean getAssigned() {
-        return StringUtils.isNotBlank(fullName) && StringUtils.isNotBlank(email);
+        return (StringUtils.isNotBlank(fullName) || (StringUtils.isNotBlank(firstName) && StringUtils.isNotBlank(lastName))) && StringUtils.isNotBlank(email);
     }
     
     public boolean getLockedAssignment() {
@@ -107,7 +113,7 @@ public class Ticket {
      * @return
      */
     public String ticketCode(String eventKey) {
-        String code = StringUtils.join(new String[]{ticketsReservationId , uuid, fullName, email}, '/');
+        String code = StringUtils.join(new String[]{ticketsReservationId , uuid, getFullName(), email}, '/');
         return uuid + '/' + hmacSHA256Base64(eventKey, code);
     }
 
@@ -127,5 +133,9 @@ public class Ticket {
         } catch(InvalidKeyException | NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    public String getFullName() {
+        return (firstName != null && lastName != null) ? (firstName + " " + lastName) : fullName;
     }
 }

@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.manager.support.OrderSummary;
 import alfio.manager.support.SummaryRow;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.model.TicketReservation;
 import alfio.model.system.Configuration;
@@ -133,7 +134,7 @@ public class PaypalManager {
         return new Item(summaryRow.getName(), quantity, price, event.getCurrency());
     }
 
-    public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary, String fullName, String email, String billingAddress, Locale locale) throws Exception {
+    public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary, CustomerName customerName, String email, String billingAddress, Boolean expressCheckoutRequested, Locale locale) throws Exception {
 
         Optional<String> experienceProfileId = getOrCreateWebProfile(event, locale);
 
@@ -153,10 +154,13 @@ public class PaypalManager {
         String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + reservationId + "/book";
 
         UriComponentsBuilder bookUrlBuilder = UriComponentsBuilder.fromUriString(bookUrl)
-            .queryParam("fullName", fullName)
+            .queryParam("fullName", customerName.getFullName())
+            .queryParam("firstName", customerName.getFirstName())
+            .queryParam("lastName", customerName.getLastName())
             .queryParam("email", email)
             .queryParam("billingAddress", billingAddress)
-            .queryParam("hmac", computeHMAC(fullName, email, billingAddress, event));
+            .queryParam("expressCheckoutRequested", expressCheckoutRequested)
+            .queryParam("hmac", computeHMAC(customerName, email, billingAddress, event));
         String finalUrl = bookUrlBuilder.toUriString();
 
         redirectUrls.setCancelUrl(finalUrl + "&paypal-cancel=true");
@@ -181,12 +185,12 @@ public class PaypalManager {
 
     }
 
-    private static String computeHMAC(String fullName, String email, String billingAddress, Event event) {
-        return HmacUtils.hmacSha256Hex(event.getPrivateKey(), StringUtils.trimToEmpty(fullName) + StringUtils.trimToEmpty(email) + StringUtils.trimToEmpty(billingAddress));
+    private static String computeHMAC(CustomerName customerName, String email, String billingAddress, Event event) {
+        return HmacUtils.hmacSha256Hex(event.getPrivateKey(), StringUtils.trimToEmpty(customerName.getFullName()) + StringUtils.trimToEmpty(email) + StringUtils.trimToEmpty(billingAddress));
     }
 
-    public static boolean isValidHMAC(String fullName, String email, String billingAddress, String hmac, Event event) {
-        String computedHmac = computeHMAC(fullName, email, billingAddress, event);
+    public static boolean isValidHMAC(CustomerName customerName, String email, String billingAddress, String hmac, Event event) {
+        String computedHmac = computeHMAC(customerName, email, billingAddress, event);
         return MessageDigest.isEqual(hmac.getBytes(StandardCharsets.UTF_8), computedHmac.getBytes(StandardCharsets.UTF_8));
     }
 

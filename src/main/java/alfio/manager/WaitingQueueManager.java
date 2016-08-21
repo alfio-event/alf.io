@@ -93,13 +93,13 @@ public class WaitingQueueManager {
         this.pluginManager = pluginManager;
     }
 
-    public boolean subscribe(Event event, String fullName, String email, Integer selectedCategoryId, Locale userLanguage) {
+    public boolean subscribe(Event event, CustomerName customerName, String email, Integer selectedCategoryId, Locale userLanguage) {
         try {
             WaitingQueueSubscription.Type subscriptionType = getSubscriptionType(event);
             validateSubscriptionType(event, subscriptionType);
             validateSelectedCategoryId(event.getId(), selectedCategoryId);
-            AffectedRowCountAndKey<Integer> key = waitingQueueRepository.insert(event.getId(), fullName, email, ZonedDateTime.now(event.getZoneId()), userLanguage.getLanguage(), subscriptionType, selectedCategoryId);
-            notifySubscription(event, fullName, email, userLanguage, subscriptionType);
+            AffectedRowCountAndKey<Integer> key = waitingQueueRepository.insert(event.getId(), customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), email, ZonedDateTime.now(event.getZoneId()), userLanguage.getLanguage(), subscriptionType, selectedCategoryId);
+            notifySubscription(event, customerName, email, userLanguage, subscriptionType);
             pluginManager.handleWaitingQueueSubscription(waitingQueueRepository.loadById(key.getKey()));
             return true;
         } catch(DuplicateKeyException e) {
@@ -114,11 +114,11 @@ public class WaitingQueueManager {
         Optional.ofNullable(selectedCategoryId).ifPresent(id -> Validate.isTrue(ticketCategoryRepository.findUnboundedOrderByExpirationDesc(eventId).stream().anyMatch(c -> id.equals(c.getId()))));
     }
 
-    private void notifySubscription(Event event, String fullName, String email, Locale userLanguage, WaitingQueueSubscription.Type subscriptionType) {
+    private void notifySubscription(Event event, CustomerName name, String email, Locale userLanguage, WaitingQueueSubscription.Type subscriptionType) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         Map<String, Object> model = new HashMap<>();
         model.put("eventName", event.getDisplayName());
-        model.put("fullName", fullName);
+        model.put("fullName", name.getFullName());
         model.put("organization", organization);
         notificationManager.sendSimpleEmail(event, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getDisplayName()}, userLanguage),
                 () -> templateManager.renderClassPathResource("/alfio/templates/waiting-queue-joined.ms", model, userLanguage, TemplateManager.TemplateOutput.TEXT));

@@ -51,8 +51,14 @@
             <hr/>
             <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/waiting-queue/subscribe" role="form">
                 <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
-                <label for="fullName">{{#i18n}}common.full-name{{/i18n}} </label><input type="text" id="fullName" class="form-control" name="fullName" required="required" aria-required="true">
-                <label for="email">{{#i18n}}common.email{{/i18n}}</label><input type="email" id="email" class="form-control" name="email"  required="required" aria-required="true">
+                {{#useFirstAndLastName}}
+                <label for="firstName">{{#i18n}}common.first-name{{/i18n}} </label><input type="text" id="firstName" class="form-control" name="firstName" required="required" aria-required="true" maxlength="255">
+                <label for="lastName">{{#i18n}}common.last-name{{/i18n}} </label><input type="text" id="lastName" class="form-control" name="lastName" required="required" aria-required="true" maxlength="255">
+                {{/useFirstAndLastName}}
+                {{^useFirstAndLastName}}
+                <label for="fullName">{{#i18n}}common.full-name{{/i18n}} </label><input type="text" id="fullName" class="form-control" name="fullName" required="required" aria-required="true" maxlength="255">
+                {{/useFirstAndLastName}}
+                <label for="email">{{#i18n}}common.email{{/i18n}}</label><input type="email" id="email" class="form-control" name="email"  required="required" aria-required="true" maxlength="255">
                 {{#displayCategorySelectionForWaitingQueue}}
                     <label for="selectedCategory">{{#i18n}}reservation-page.category{{/i18n}}</label>
                     <select name="selectedCategory" id="selectedCategory" class="form-control" required="required" aria-required="true">

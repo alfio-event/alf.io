@@ -296,10 +296,10 @@ public class TicketReservationManager {
     }
 
     public PaymentResult confirm(String gatewayToken, String payerId, Event event, String reservationId,
-                                 String email, String fullName, Locale userLanguage, String billingAddress,
+                                 String email, CustomerName customerName, Locale userLanguage, String billingAddress,
                                  TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method, boolean directTicketAssignment) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
-        if(!initPaymentProcess(reservationCost, paymentProxy, reservationId, email, fullName, userLanguage, billingAddress)) {
+        if(!initPaymentProcess(reservationCost, paymentProxy, reservationId, email, customerName, userLanguage, billingAddress)) {
             return PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION");
         }
         try {
@@ -308,7 +308,7 @@ public class TicketReservationManager {
             if(reservationCost.getPriceWithVAT() > 0) {
                 switch(paymentProxy) {
                     case STRIPE:
-                        paymentResult = paymentManager.processPayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, fullName, billingAddress);
+                        paymentResult = paymentManager.processPayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
                         if(!paymentResult.isSuccessful()) {
                             reTransitionToPending(reservationId);
                             return paymentResult;
@@ -322,7 +322,7 @@ public class TicketReservationManager {
                         }
                         break;
                     case OFFLINE:
-                        transitionToOfflinePayment(event, reservationId, email, fullName, billingAddress);
+                        transitionToOfflinePayment(event, reservationId, email, customerName, billingAddress);
                         paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
                         break;
                     case ON_SITE:
@@ -334,7 +334,7 @@ public class TicketReservationManager {
             } else {
                 paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
             }
-            completeReservation(event.getId(), reservationId, email, fullName, userLanguage, billingAddress, specialPriceSessionId, paymentProxy, directTicketAssignment);
+            completeReservation(event.getId(), reservationId, email, customerName, userLanguage, billingAddress, specialPriceSessionId, paymentProxy, directTicketAssignment);
             return paymentResult;
         } catch(Exception ex) {
             //it is guaranteed that in this case we're dealing with "local" error (e.g. database failure),
@@ -355,10 +355,10 @@ public class TicketReservationManager {
         return PaymentProxy.STRIPE;
     }
 
-    private boolean initPaymentProcess(TotalPrice reservationCost, PaymentProxy paymentProxy, String reservationId, String email, String fullName, Locale userLanguage, String billingAddress) {
+    private boolean initPaymentProcess(TotalPrice reservationCost, PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName, Locale userLanguage, String billingAddress) {
         if(reservationCost.getPriceWithVAT() > 0 && paymentProxy == PaymentProxy.STRIPE) {
             try {
-                transitionToInPayment(reservationId, email, fullName, userLanguage, billingAddress);
+                transitionToInPayment(reservationId, email, customerName, userLanguage, billingAddress);
             } catch (Exception e) {
                 //unable to do the transition. Exiting.
                 log.debug(String.format("unable to flag the reservation %s as IN_PAYMENT", reservationId), e);
@@ -374,7 +374,8 @@ public class TicketReservationManager {
         Validate.isTrue(ticketReservation.getPaymentMethod() == PaymentProxy.OFFLINE, "invalid payment method");
         Validate.isTrue(ticketReservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT, "invalid status");
         ticketReservationRepository.confirmOfflinePayment(reservationId, TicketReservationStatus.COMPLETE.name(), ZonedDateTime.now());
-        acquireItems(TicketStatus.ACQUIRED, AdditionalServiceItemStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), ticketReservation.getFullName(), ticketReservation.getUserLanguage(), ticketReservation.getBillingAddress());
+        CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event);
+        acquireItems(TicketStatus.ACQUIRED, AdditionalServiceItemStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), customerName, ticketReservation.getUserLanguage(), ticketReservation.getBillingAddress());
 
         Locale language = findReservationLanguage(reservationId);
 
@@ -443,17 +444,19 @@ public class TicketReservationManager {
         return model;
     }
 
-    private void transitionToInPayment(String reservationId, String email, String fullName, Locale userLanguage, String billingAddress) {
+    private void transitionToInPayment(String reservationId, String email, CustomerName customerName, Locale userLanguage, String billingAddress) {
         requiresNewTransactionTemplate.execute(status -> {
-            int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, IN_PAYMENT.toString(), email, fullName, userLanguage.getLanguage(), billingAddress, null, PaymentProxy.STRIPE.toString());
+            int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, IN_PAYMENT.toString(), email,
+                customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage.getLanguage(), billingAddress, null, PaymentProxy.STRIPE.toString());
             Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
             return null;
         });
     }
 
-    private void transitionToOfflinePayment(Event event, String reservationId, String email, String fullName, String billingAddress) {
+    private void transitionToOfflinePayment(Event event, String reservationId, String email, CustomerName customerName, String billingAddress) {
         ZonedDateTime deadline = getOfflinePaymentDeadline(event, configurationManager);
-        int updatedReservation = ticketReservationRepository.postponePayment(reservationId, Date.from(deadline.toInstant()), email, fullName, billingAddress);
+        int updatedReservation = ticketReservationRepository.postponePayment(reservationId, Date.from(deadline.toInstant()), email,
+            customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), billingAddress);
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
     }
 
@@ -506,15 +509,15 @@ public class TicketReservationManager {
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress/userLanguage.
      * @param reservationId
      * @param email
-     * @param fullName
+     * @param customerName
      * @param billingAddress
      * @param specialPriceSessionId
      */
-    private void completeReservation(int eventId, String reservationId, String email, String fullName, Locale userLanguage, String billingAddress, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy, boolean directAssignment) {
+    private void completeReservation(int eventId, String reservationId, String email, CustomerName customerName, Locale userLanguage, String billingAddress, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy, boolean directAssignment) {
         if(paymentProxy != PaymentProxy.OFFLINE) {
             TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
             AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
-            acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, email, fullName, userLanguage.getLanguage(), billingAddress);
+            acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, email, customerName, userLanguage.getLanguage(), billingAddress);
             pluginManager.handleReservationConfirmation(ticketReservationRepository.findReservationById(reservationId), eventId);
         }
         //cleanup unused special price codes...
@@ -522,13 +525,14 @@ public class TicketReservationManager {
         ticketReservationRepository.updateDirectAssignmentFlag(reservationId, directAssignment);
     }
 
-    private void acquireItems(TicketStatus ticketStatus, AdditionalServiceItemStatus asStatus, PaymentProxy paymentProxy, String reservationId, String email, String fullName, String userLanguage, String billingAddress) {
+    private void acquireItems(TicketStatus ticketStatus, AdditionalServiceItemStatus asStatus, PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName, String userLanguage, String billingAddress) {
         int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
         specialPriceRepository.updateStatusForReservation(singletonList(reservationId), Status.TAKEN.toString());
         ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
-        int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email, fullName, userLanguage, billingAddress, timestamp, paymentProxy.toString());
+        int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email,
+            customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString());
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
         waitingQueueManager.fireReservationConfirmed(reservationId);
     }
@@ -831,8 +835,9 @@ public class TicketReservationManager {
                                   Optional<UserDetails> userDetails) {
 
         String newEmail = updateTicketOwner.getEmail().trim();
-        String newFullName = updateTicketOwner.getFullName().trim();
-        ticketRepository.updateTicketOwner(ticket.getUuid(), newEmail, newFullName);
+        CustomerName customerName = new CustomerName(updateTicketOwner.getFullName(), updateTicketOwner.getFirstName(), updateTicketOwner.getLastName(), event);
+        ticketRepository.updateTicketOwner(ticket.getUuid(), newEmail, customerName.getFullName(), customerName.getFirstName(), customerName.getLastName());
+
         //
         Locale userLocale = Optional.ofNullable(StringUtils.trimToNull(updateTicketOwner.getUserLanguage())).map(Locale::forLanguageTag).orElse(locale);
 
@@ -840,7 +845,7 @@ public class TicketReservationManager {
         ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket, event);
 
         Ticket newTicket = ticketRepository.findByUUID(ticket.getUuid());
-        if (!StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) || !StringUtils.equalsIgnoreCase(newFullName, ticket.getFullName())) {
+        if (!StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) || !StringUtils.equalsIgnoreCase(customerName.getFullName(), ticket.getFullName())) {
             sendTicketByEmail(newTicket, userLocale, event, confirmationTextBuilder, pdfTemplateGenerator);
         }
 

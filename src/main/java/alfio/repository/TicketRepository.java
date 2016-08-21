@@ -110,8 +110,8 @@ public interface TicketRepository {
     @Query("select * from ticket where uuid = :uuid for update")
     Optional<Ticket> findByUUIDForUpdate(@Bind("uuid") String uuid);
 
-    @Query("update ticket set email_address = :email, full_name = :fullName where uuid = :ticketIdentifier")
-    int updateTicketOwner(@Bind("ticketIdentifier") String ticketIdentifier, @Bind("email") String email, @Bind("fullName") String fullName);
+    @Query("update ticket set email_address = :email, full_name = :fullName, first_name = :firstName, last_name = :lastName where uuid = :ticketIdentifier")
+    int updateTicketOwner(@Bind("ticketIdentifier") String ticketIdentifier, @Bind("email") String email, @Bind("fullName") String fullName, @Bind("firstName") String firstName, @Bind("lastName") String lastName);
 
     @Query("update ticket set locked_assignment = :lockedAssignment where id = :id and category_id = :categoryId")
     int toggleTicketLocking(@Bind("id") int ticketId, @Bind("categoryId") int categoryId, @Bind("lockedAssignment") boolean locked);
@@ -134,9 +134,9 @@ public interface TicketRepository {
     @Query("select " +
             " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
             " t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id," +
-            " t.full_name t_full_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment," +
+            " t.full_name t_full_name, t.first_name t_first_name, t.last_name t_last_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment," +
             " t.user_language t_user_language," +
-            " tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address," +
+            " tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address," +
             " tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language, tr.direct_assignment tr_direct_assignment," +
             " tc.id tc_id, tc.inception tc_inception, tc.expiration tc_expiration, tc.max_tickets tc_max_tickets, tc.name tc_name, tc.src_price_cts tc_src_price_cts, tc.access_restricted tc_access_restricted, tc.tc_status tc_tc_status, tc.event_id tc_event_id, tc.bounded tc_bounded" +
             " from ticket t " +
@@ -163,7 +163,7 @@ public interface TicketRepository {
     @Query("update ticket set reminder_sent = true where id = :id and reminder_sent = false")
     int flagTicketAsReminderSent(@Bind("id") int ticketId);
 
-    @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, full_name = null, email_address = null where id = :ticketId and status = 'ACQUIRED' and tickets_reservation_id = :reservationId and event_id = :eventId")
+    @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, full_name = null, first_name = null, last_name = null, email_address = null where id = :ticketId and status = 'ACQUIRED' and tickets_reservation_id = :reservationId and event_id = :eventId")
     int releaseTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
 
     @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, special_price_id_fk = null where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")

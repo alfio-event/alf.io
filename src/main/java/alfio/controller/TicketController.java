@@ -131,7 +131,8 @@ public class TicketController {
                 .addAttribute("ticketCategory", ticketCategory)//
                 .addAttribute("countries", ticketHelper.getLocalizedCountries(locale))
                 .addAttribute("organization", organization)//
-                .addAttribute("pageTitle", "show-ticket.header.title");
+                .addAttribute("pageTitle", "show-ticket.header.title")
+                .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName());
 
         return "/event/update-ticket";
     }
@@ -233,18 +234,20 @@ public class TicketController {
 
         TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId(), data.getLeft().getId());
         Organization organization = organizationRepository.getById(data.getLeft().getOrganizationId());
+        Event event = data.getLeft();
 
         TicketReservation reservation = data.getMiddle();
         model.addAttribute("ticket", data.getRight())//
             .addAttribute("reservation", reservation)//
-            .addAttribute("event", data.getLeft())//
+            .addAttribute("event", event)//
             .addAttribute("ticketCategory", ticketCategory)//
             .addAttribute("organization", organization)//
             .addAttribute("ticketEmailSent", ticketEmailSent)
             .addAttribute("deskPaymentRequired", Optional.ofNullable(reservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired())
             .addAttribute("backSuffix", backSuffix)
             .addAttribute("userLanguage", locale.getLanguage())
-            .addAttribute("pageTitle", "show-ticket.header.title");
+            .addAttribute("pageTitle", "show-ticket.header.title")
+            .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName());
 
         return "/event/show-ticket";
     }

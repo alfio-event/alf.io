@@ -241,7 +241,8 @@ public class EventController {
                 .addAttribute("showAdditionalServices", !additionalServices.isEmpty())
                 .addAttribute("enabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isNotExpired).collect(Collectors.toList()))
                 .addAttribute("disabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isExpired).collect(Collectors.toList()))
-                .addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable));
+                .addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable))
+                .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName());
             model.asMap().putIfAbsent("hasErrors", false);//
             return "/event/show-event";
         }).orElse(REDIRECT + "/");

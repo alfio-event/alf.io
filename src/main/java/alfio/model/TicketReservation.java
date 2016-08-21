@@ -37,6 +37,8 @@ public class TicketReservation {
     private final Date validity;
     private final TicketReservationStatus status;
     private final String fullName;
+    private final String firstName;
+    private final String lastName;
     private final String email;
     private final String billingAddress;
     private final ZonedDateTime confirmationTimestamp;
@@ -52,6 +54,8 @@ public class TicketReservation {
                              @Column("validity") Date validity,
                              @Column("status") TicketReservationStatus status,
                              @Column("full_name") String fullName,
+                             @Column("first_name") String firstName,
+                             @Column("last_name") String lastName,
                              @Column("email_address") String email,
                              @Column("billing_address") String billingAddress,
                              @Column("confirmation_ts") ZonedDateTime confirmationTimestamp,
@@ -66,6 +70,8 @@ public class TicketReservation {
         this.validity = validity;
         this.status = status;
         this.fullName = fullName;
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.email = email;
         this.billingAddress = billingAddress;
         this.confirmationTimestamp = confirmationTimestamp;
@@ -92,5 +98,9 @@ public class TicketReservation {
 
     public Optional<ZonedDateTime> latestNotificationTimestamp(ZoneId zoneId) {
         return Optional.ofNullable(latestReminder).map(d -> d.withZoneSameInstant(zoneId));
+    }
+
+    public String getFullName() {
+        return (firstName != null && lastName != null) ? (firstName + " " + lastName) : fullName;
     }
 }

@@ -41,6 +41,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.flywaydb.core.Flyway;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -89,6 +90,7 @@ public class EventManager {
     private final EventDeleterRepository eventDeleterRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
+    private final Flyway flyway;
 
     @Autowired
     public EventManager(UserManager userManager,
@@ -106,7 +108,8 @@ public class EventManager {
                         PluginManager pluginManager,
                         TicketFieldRepository ticketFieldRepository,
                         EventDeleterRepository eventDeleterRepository,
-                        AdditionalServiceRepository additionalServiceRepository, AdditionalServiceTextRepository additionalServiceTextRepository) {
+                        AdditionalServiceRepository additionalServiceRepository, AdditionalServiceTextRepository additionalServiceTextRepository,
+                        Flyway flyway) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -124,6 +127,7 @@ public class EventManager {
         this.eventDeleterRepository = eventDeleterRepository;
         this.additionalServiceRepository = additionalServiceRepository;
         this.additionalServiceTextRepository = additionalServiceTextRepository;
+        this.flyway = flyway;
     }
 
     public Event getSingleEvent(String eventName, String username) {
@@ -567,10 +571,11 @@ public class EventManager {
         BigDecimal vat = !em.isInternal() || em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();
         String privateKey = UUID.randomUUID().toString();
         final GeolocationResult result = geolocate(em.getLocation());
+        String currentVersion = flyway.info().current().getVersion().getVersion();
         return eventRepository.insert(em.getShortName(), em.getEventType(), em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.isInternal() ? em.getTermsAndConditionsUrl() : "",
             em.getImageUrl(), em.getFileBlobId(), em.getLocation(), result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()),
             em.getEnd().toZonedDateTime(result.getZoneId()), result.getTimeZone(), em.getCurrency(), em.getAvailableSeats(), em.isInternal() && em.isVatIncluded(),
-            vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales(), em.getVatStatus(), em.getPriceInCents()).getKey();
+            vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales(), em.getVatStatus(), em.getPriceInCents(), currentVersion).getKey();
     }
 
     private String collectPaymentProxies(EventModification em) {

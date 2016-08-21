@@ -118,9 +118,12 @@ public class ReservationController {
                                   @RequestParam(value = "paypal-success", required = false) Boolean isPaypalSuccess,
                                   @RequestParam(value = "paypal-error", required = false) Boolean isPaypalError,
                                   @RequestParam(value = "fullName", required = false) String fullName,
+                                  @RequestParam(value = "firstName", required = false) String firstName,
+                                  @RequestParam(value = "lastName", required = false) String lastName,
                                   @RequestParam(value = "email", required = false) String email,
                                   @RequestParam(value = "billingAddress", required = false) String billingAddress,
                                   @RequestParam(value = "hmac", required = false) String hmac,
+                                  @RequestParam(value = "expressCheckoutRequested", required = false) Boolean expressCheckoutRequested,
                                   Model model,
                                   Locale locale) {
 
@@ -137,9 +140,12 @@ public class ReservationController {
                             .addAttribute("paypalPayerID", paypalPayerID)
                             .addAttribute("paypalCheckoutConfirmation", true)
                             .addAttribute("fullName", fullName)
+                            .addAttribute("firstName", firstName)
+                            .addAttribute("lastName", lastName)
                             .addAttribute("email", email)
                             .addAttribute("billingAddress", billingAddress)
-                            .addAttribute("hmac", hmac);
+                            .addAttribute("hmac", hmac)
+                            .addAttribute("expressCheckoutRequested", expressCheckoutRequested == Boolean.TRUE);
                     } else {
                         model.addAttribute("paypalCheckoutConfirmation", false);
                     }
@@ -158,6 +164,7 @@ public class ReservationController {
                     model.addAttribute("event", event);
                     model.addAttribute("activePaymentMethods", activePaymentMethods);
                     model.addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary));
+                    model.addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName());
                     boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
                     model.addAttribute("includeStripe", includeStripe);
                     if (includeStripe) {
@@ -218,6 +225,7 @@ public class ReservationController {
                     model.addAttribute("countries", ticketHelper.getLocalizedCountries(locale));
                     model.addAttribute("pageTitle", "reservation-page-complete.header.title");
                     model.addAttribute("event", ev);
+                    model.addAttribute("useFirstAndLastName", ev.mustUseFirstAndLastName());
                     model.asMap().putIfAbsent("validationResult", ValidationResult.success());
                     return "/event/reservation-page-complete";
                 }).orElseGet(() -> redirectReservation(tr, eventName, reservationId));
@@ -372,11 +380,13 @@ public class ReservationController {
             return redirectReservation(ticketReservation, eventName, reservationId);
         }
 
+        CustomerName customerName = new CustomerName(paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), event);
+
         //handle paypal redirect!
         if(paymentForm.getPaymentMethod() == PaymentProxy.PAYPAL && !paymentForm.hasPaypalTokens()) {
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
             try {
-                String checkoutUrl = paypalManager.createCheckoutRequest(event, reservationId, orderSummary, paymentForm.getFullName(), paymentForm.getEmail(), paymentForm.getBillingAddress(), locale);
+                String checkoutUrl = paypalManager.createCheckoutRequest(event, reservationId, orderSummary, customerName, paymentForm.getEmail(), paymentForm.getBillingAddress(),paymentForm.getExpressCheckoutRequested(), locale);
                 return "redirect:" + checkoutUrl;
             } catch (Exception e) {
                 bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
@@ -389,7 +399,7 @@ public class ReservationController {
 
         boolean directTicketAssignment = Optional.ofNullable(paymentForm.getExpressCheckoutRequested()).map(b -> Boolean.logicalAnd(b, isExpressCheckoutEnabled(event, ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale)))).orElse(false);
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaypalPayerID(), event, reservationId, paymentForm.getEmail(),
-                paymentForm.getFullName(), locale, paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
+            customerName, locale, paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                 Optional.ofNullable(paymentForm.getPaymentMethod()), directTicketAssignment);
 
         if(!status.isSuccessful()) {
@@ -407,7 +417,7 @@ public class ReservationController {
         //
 
         if(directTicketAssignment) {
-            ticketHelper.directTicketAssignment(eventName, reservationId, paymentForm.getEmail(), paymentForm.getFullName(), locale.getLanguage(), Optional.of(bindingResult), request, model);
+            ticketHelper.directTicketAssignment(eventName, reservationId, paymentForm.getEmail(), paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), locale.getLanguage(), Optional.of(bindingResult), request, model);
         }
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";

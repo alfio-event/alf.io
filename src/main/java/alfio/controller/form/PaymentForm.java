@@ -18,6 +18,7 @@ package alfio.controller.form;
 
 import alfio.manager.PaypalManager;
 import alfio.manager.TicketReservationManager;
+import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ErrorsCode;
@@ -39,6 +40,8 @@ public class PaymentForm {
     private String paypalPayerID;
     private String email;
     private String fullName;
+    private String firstName;
+    private String lastName;
     private String billingAddress;
     private String hmac;
     private Boolean cancelReservation;
@@ -86,14 +89,26 @@ public class PaymentForm {
         }
         
         email = StringUtils.trim(email);
+
         fullName = StringUtils.trim(fullName);
+        firstName = StringUtils.trim(firstName);
+        lastName = StringUtils.trim(lastName);
+
         billingAddress = StringUtils.trim(billingAddress);
 
         ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "email", ErrorsCode.STEP_2_EMPTY_EMAIL);
         rejectIfOverLength(bindingResult, "email", ErrorsCode.STEP_2_MAX_LENGTH_EMAIL, email, 255);
 
-        ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "fullName", ErrorsCode.STEP_2_EMPTY_FULLNAME);
-        rejectIfOverLength(bindingResult, "fullName", ErrorsCode.STEP_2_MAX_LENGTH_FULLNAME, fullName, 255);
+        if(event.mustUseFirstAndLastName()) {
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
+            rejectIfOverLength(bindingResult, "firstName", ErrorsCode.STEP_2_MAX_LENGTH_FIRSTNAME, fullName, 255);
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
+            rejectIfOverLength(bindingResult, "lastName", ErrorsCode.STEP_2_MAX_LENGTH_LASTNAME, fullName, 255);
+        } else {
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "fullName", ErrorsCode.STEP_2_EMPTY_FULLNAME);
+            rejectIfOverLength(bindingResult, "fullName", ErrorsCode.STEP_2_MAX_LENGTH_FULLNAME, fullName, 255);
+        }
+
 
         rejectIfOverLength(bindingResult, "billingAddress", ErrorsCode.STEP_2_MAX_LENGTH_BILLING_ADDRESS,
                 billingAddress, 450);
@@ -102,7 +117,7 @@ public class PaymentForm {
             bindingResult.rejectValue("email", ErrorsCode.STEP_2_INVALID_EMAIL);
         }
 
-        if (hasPaypalTokens() && !PaypalManager.isValidHMAC(fullName, email, billingAddress, hmac, event)) {
+        if (hasPaypalTokens() && !PaypalManager.isValidHMAC(new CustomerName(fullName, firstName, lastName, event), email, billingAddress, hmac, event)) {
             bindingResult.reject(ErrorsCode.STEP_2_INVALID_HMAC);
         }
     }

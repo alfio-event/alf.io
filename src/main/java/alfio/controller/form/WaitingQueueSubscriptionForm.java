@@ -16,6 +16,9 @@
  */
 package alfio.controller.form;
 
+import alfio.model.CustomerName;
+import alfio.model.Event;
+import com.stripe.model.Customer;
 import lombok.Data;
 
 import java.util.Locale;
@@ -23,8 +26,14 @@ import java.util.Locale;
 @Data
 public class WaitingQueueSubscriptionForm {
     private String fullName;
+    private String firstName;
+    private String lastName;
     private String email;
     private Locale userLanguage;
     private boolean termAndConditionsAccepted;
     private Integer selectedCategory;
+
+    public CustomerName toCustomerName(Event event) {
+        return new CustomerName(fullName, firstName, lastName, event);
+    }
 }

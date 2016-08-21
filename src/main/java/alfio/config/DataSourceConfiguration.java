@@ -20,6 +20,7 @@ import alfio.config.support.PlatformProvider;
 import alfio.manager.Jobs.*;
 import alfio.plugin.PluginDataStorageProvider;
 import alfio.plugin.mailchimp.MailChimpPlugin;
+import alfio.repository.EventRepository;
 import alfio.repository.plugin.PluginConfigurationRepository;
 import alfio.repository.plugin.PluginLogRepository;
 import alfio.util.TemplateManager;
@@ -174,15 +175,17 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     @Bean
     public MailChimpPlugin getMailChimpPlugin(PluginConfigurationRepository pluginConfigurationRepository,
                                               PluginLogRepository pluginLogRepository,
-                                              PlatformTransactionManager platformTransactionManager) {
-        return new MailChimpPlugin(pluginDataStorageProvider(pluginConfigurationRepository, pluginLogRepository, platformTransactionManager));
+                                              PlatformTransactionManager platformTransactionManager,
+                                              EventRepository eventRepository) {
+        return new MailChimpPlugin(pluginDataStorageProvider(pluginConfigurationRepository, pluginLogRepository, platformTransactionManager, eventRepository));
     }
 
     @Bean
     public PluginDataStorageProvider pluginDataStorageProvider(PluginConfigurationRepository pluginConfigurationRepository,
                                                                PluginLogRepository pluginLogRepository,
-                                                               PlatformTransactionManager platformTransactionManager) {
-        return new PluginDataStorageProvider(pluginConfigurationRepository, pluginLogRepository, platformTransactionManager);
+                                                               PlatformTransactionManager platformTransactionManager,
+                                                               EventRepository eventRepository) {
+        return new PluginDataStorageProvider(pluginConfigurationRepository, pluginLogRepository, platformTransactionManager, eventRepository);
     }
 
     // ----- scheduler conf ------
