@@ -78,6 +78,8 @@
             });
 
             var result = results[1].data;
+            self.titles = titles;
+            self.descriptions = descriptions;
             self.list = _.map(result, function(item) {
                 item.title = _.map(titles, fillExistingTexts(item.title));
                 item.description = _.map(descriptions, fillExistingTexts(item.description));
@@ -111,7 +113,6 @@
                     var ctrl = this;
                     ctrl.item = angular.copy(item);
                     ctrl.availableLanguages = parentCtrl.availableLanguages;
-                    ctrl.selectedLanguages = parentCtrl.selectedLanguages;
                     ctrl.titles = parentCtrl.titles;
                     ctrl.descriptions = parentCtrl.descriptions;
                     ctrl.onEditComplete = function(item) {
