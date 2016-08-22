@@ -15,6 +15,8 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
+set @@sql_mode='';
+
 -- event
 alter table event add column version varchar(50);
 
