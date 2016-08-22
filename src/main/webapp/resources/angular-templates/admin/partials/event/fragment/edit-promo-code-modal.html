@@ -4,14 +4,14 @@
 <form name="promoCodeForm" data-ng-submit="update(promoCodeForm, promocode, event)" novalidate data-error-sensitive>
     <div class="modal-body">
         <div class="col-sm-12 col-md-8 col-md-offset-2">
-            <div class="form-group">
+            <div class="form-group" bs-form-error="promocode.promoCode">
                 <label for="promoCode">Promo code name (min length is 7 characters)</label>
                 <input type="text" id="promoCode" data-ng-model="promocode.promoCode" class="form-control to-uppercase" required minlength="7"/>
                 <field-error data-form-obj="promocode" data-field-obj="promocode.promoCode" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
             
             
-            <div class="form-group">
+            <div class="form-group" bs-form-error="promocode.dateString">
                 <label for="date">Validity range</label>
                 <input type="text" data-date-range data-start-model="promocode.start" min-date="true" data-end-model="promocode.end" data-ng-model="promocode.dateString" name="date" id="date" class="form-control" required />
                 <field-error data-form-obj="promocode" data-field-obj="promocode.dateString" data-show-existing-errors="showExistingErrors"></field-error>
@@ -43,7 +43,7 @@
                 </div>
             </div>
                     
-            <div class="form-group">
+            <div class="form-group" bs-form-error="promocode.discountAmount">
                 <label for="promoCode">Discount amount</label>
                 <div class="input-group">
                     <input type="number" id="discountAmount" data-ng-model="promocode.discountAmount" class="form-control" min="0" required/>

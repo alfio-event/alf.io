@@ -7,11 +7,12 @@
         <div class="page-header">
             <h4>Personal information</h4>
         </div>
-        <div class="form-group">
+        <div class="form-group" bs-form-error="editCurrentUserCtrl.user.firstName">
             <label for="firstName">First Name</label>
             <input class="form-control" name="name" id="firstName" data-ng-model="editCurrentUserCtrl.user.firstName" required data-ng-minlength="2">
+            <field-error data-form-obj="editUser" data-field-obj="editCurrentUserCtrl.user.firstName"></field-error>
         </div>
-        <div class="form-group">
+        <div class="form-group" bs-form-error="editCurrentUserCtrl.user.lastName">
             <label for="lastName">Last Name</label>
             <input class="form-control" name="lastName" id="lastName" data-ng-model="editCurrentUserCtrl.user.lastName" required data-ng-minlength="2">
             <field-error data-form-obj="editUser" data-field-obj="editCurrentUserCtrl.user.lastName"></field-error>

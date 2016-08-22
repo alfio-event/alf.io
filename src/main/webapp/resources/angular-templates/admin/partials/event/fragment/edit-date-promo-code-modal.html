@@ -4,7 +4,7 @@
 <form name="promoCodeForm" data-ng-submit="update(promocode)" novalidate data-error-sensitive>
     <div class="modal-body">
         <div class="col-sm-12 col-md-8 col-md-offset-2">
-            <div class="form-group">
+            <div class="form-group" bs-form-error="promocode.dateString">
                 <label for="date">Validity range</label>
                 <input type="text" data-date-range data-start-model="promocode.start" min-date="true" data-end-model="promocode.end" data-ng-model="promocode.dateString" name="date" id="date" class="form-control" required />
                 <field-error data-form-obj="promocode" data-field-obj="promocode.dateString" data-show-existing-errors="showExistingErrors"></field-error>

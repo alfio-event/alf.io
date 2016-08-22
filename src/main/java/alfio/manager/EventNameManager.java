@@ -35,7 +35,8 @@ import java.util.stream.IntStream;
 public class EventNameManager {
 
     private static final Pattern NUMBER_MATCHER = Pattern.compile("^\\d+$");
-    public static final String SPACES_AND_PUNCTUATION = "[\\s\\p{Punct}]";
+    private static final String SPACES_AND_PUNCTUATION = "[\\s\\p{Punct}]";
+    private static final String FIND_EVIL_CHARACTERS = "[^\\sA-Z\\-a-z0-9]";
     private final EventRepository eventRepository;
 
     @Autowired
@@ -46,6 +47,7 @@ public class EventNameManager {
     /**
      * Generates and returns a short name based on the given display name.<br>
      * The generated short name will be returned only if it was not already used.<br>
+     * The input parameter will be clean from "evil" characters such as punctuation and accents
      *
      * 1) if the {@code displayName} is a one-word name, then no further calculation will be done and it will be returned as it is, to lower case
      * 2) the {@code displayName} will be split by word and transformed to lower case. If the total length is less than 15, then it will be joined using "-" and returned
@@ -57,7 +59,7 @@ public class EventNameManager {
      */
     public String generateShortName(String displayName) {
         Validate.isTrue(StringUtils.isNotBlank(displayName));
-        String cleanDisplayName = StringUtils.normalizeSpace(displayName).toLowerCase(Locale.ENGLISH);
+        String cleanDisplayName = StringUtils.stripAccents(StringUtils.normalizeSpace(displayName)).toLowerCase(Locale.ENGLISH).replaceAll(FIND_EVIL_CHARACTERS, "-");
         if(!StringUtils.containsWhitespace(cleanDisplayName) && isUnique(cleanDisplayName)) {
             return cleanDisplayName;
         }

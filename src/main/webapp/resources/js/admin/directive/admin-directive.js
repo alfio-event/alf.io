@@ -719,5 +719,38 @@
             }]
         }
     }]);
+
+    directives.directive('bsFormError', function() {
+        return {
+            restrict: 'A',
+            scope: true,
+            link: function($scope, element, attrs) {
+
+                $scope.$watch(attrs.bsFormError + '.$error', function(newVal, oldVal) {
+
+                    if(!newVal) {
+                        return;
+                    }
+
+                    var addOrRemove = function(add) {
+                        if(add) {
+                            element.addClass('has-error');
+                        } else {
+                            element.removeClass('has-error');
+                        }
+                    };
+
+                    var hasErrors = function(target) {
+                        return ['minlength','maxlength','pattern','email','url'].filter(function(k) {
+                            return target[k] && target[k] !== '';
+                        }).length > 0;
+                    };
+
+                    addOrRemove(hasErrors(newVal));
+
+                }, true);
+            }
+        };
+    })
     
 })();

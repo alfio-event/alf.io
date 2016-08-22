@@ -17,49 +17,60 @@
 package alfio.manager;
 
 import alfio.repository.EventRepository;
-import com.insightfullogic.lambdabehave.JunitSuiteRunner;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+import org.junit.Test;
 
-import static com.insightfullogic.lambdabehave.Suite.describe;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 
-@RunWith(JunitSuiteRunner.class)
-public class EventNameManagerTest {{
-    describe("generateUniqueName", it -> {
-        EventRepository eventRepository = mock(EventRepository.class);
-        EventNameManager eventNameManager = new EventNameManager(eventRepository);
-        it.should("return the same name (lower case) if the display name is a single word", expect -> expect.that(eventNameManager.generateShortName("myEvent")).is("myevent"));
+public class EventNameManagerTest {
 
-        it.should("return the same name ( with dashes and lower case) if the display name is less than 15 chars", expect -> {
-            when(eventRepository.countByShortName("my-event-2015")).thenReturn(0);
-            expect.that(eventNameManager.generateShortName("my Event 2015")).is("my-event-2015");
-        });
+    private EventRepository eventRepository = mock(EventRepository.class);
+    private EventNameManager eventNameManager = new EventNameManager(eventRepository);
 
-        it.should("return the cropped name (with dashes and lower case) if the display name is more than 15 chars", expect -> {
-            when(eventRepository.countByShortName("vdt2016")).thenReturn(0);
-            when(eventRepository.countByShortName("vdz2016")).thenReturn(0);
-            expect.that(eventNameManager.generateShortName("Voxxed Days Ticino 2016")).is("vdt2016");
-            expect.that(eventNameManager.generateShortName("Voxxed Days Zürich 2016")).is("vdz2016");
-        });
+    @Test
+    public void testSingleWord() {
+        assertEquals("myevent", eventNameManager.generateShortName("myEvent"));
+    }
 
-        it.should("return a random name if the cropped names are not available", expect -> {
-            when(eventRepository.countByShortName("vdt2016")).thenReturn(1);
-            when(eventRepository.countByShortName("vdz2016")).thenReturn(1);
-            expect.that(eventNameManager.generateShortName("Voxxed Days Ticino 2016")).never().is("vdt2016");
-            expect.that(eventNameManager.generateShortName("Voxxed Days Zürich 2016")).never().is("vdz2016");
-        });
+    @Test
+    public void dashedLowerCaseIfLessThan15Chars() throws Exception {
+        when(eventRepository.countByShortName("my-event-2015")).thenReturn(0);
+        assertEquals("my-event-2015", eventNameManager.generateShortName("my Event 2015"));
+    }
 
-        it.should("remove punctuation", expect -> {
-            expect.that(eventNameManager.generateShortName("BigG I/O 2015")).is("bigg-i-o-2015");
-        });
+    @Test
+    public void croppedNameIfMoreThan15Chars() {
+        when(eventRepository.countByShortName("vdt2016")).thenReturn(0);
+        when(eventRepository.countByShortName("vdz2016")).thenReturn(0);
+        assertEquals("vdt2016", eventNameManager.generateShortName("Voxxed Days Ticino 2016"));
+        assertEquals("vdz2016", eventNameManager.generateShortName("Voxxed Days Zürich 2016"));
+    }
 
-        it.should("try to generate a random short name for a maximum of 5 times and then give up", expect -> {
-            Mockito.reset(eventRepository);
-            when(eventRepository.countByShortName(anyString())).thenReturn(1);
-            expect.that(eventNameManager.generateShortName("Pippo Baudo and Friends 2017")).is("");
-            verify(eventRepository, times(6)).countByShortName(anyString());
-        });
-    });
-}}
+    @Test
+    public void randomNameIfCroppedNotAvailable() throws Exception {
+        when(eventRepository.countByShortName("vdt2016")).thenReturn(1);
+        when(eventRepository.countByShortName("vdz2016")).thenReturn(1);
+        assertNotEquals("vdt2016", eventNameManager.generateShortName("Voxxed Days Ticino 2016"));
+        assertNotEquals("vdz2016", eventNameManager.generateShortName("Voxxed Days Zürich 2016"));
+    }
+
+    @Test
+    public void removePunctuation() throws Exception {
+        assertEquals("bigg-i-o-2015", eventNameManager.generateShortName("BigG I/O 2015"));
+    }
+
+    @Test
+    public void giveUpAfter5Times() throws Exception {
+        when(eventRepository.countByShortName(anyString())).thenReturn(1);
+        assertEquals("", eventNameManager.generateShortName("Pippo Baudo and Friends 2017"));
+        verify(eventRepository, times(6)).countByShortName(anyString());
+    }
+
+    @Test
+    public void removeUnicodeCharacters() throws Exception {
+        assertEquals("sa-lsia", eventNameManager.generateShortName("sa\u2013lsia"));
+    }
+
+}

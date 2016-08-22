@@ -1,7 +1,7 @@
 <div class="col-sm-12">
     <div class="row">
         <div class="col-sm-12 col-md-4">
-            <div class="form-group">
+            <div class="form-group" bs-form-error="ticketCategory.name">
                 <label for="{{buildPrefix($index, 'name')}}">Name</label>
                 <input type="text" data-ng-model="ticketCategory.name" name="{{buildPrefix($index, 'name')}}" id="{{buildPrefix($index, 'name')}}" class="form-control" required />
                 <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.name" data-show-existing-errors="showExistingErrors"></field-error>
@@ -88,7 +88,7 @@
     </div>
     <div class="row">
         <div class="col-sm-12 col-md-4">
-            <div class="form-group">
+            <div class="form-group" bs-form-error="ticketCategory.dateString">
                 <label for="{{buildPrefix($index, 'dateString')}}">Validity range</label>
                 <input type="text" data-date-range data-start-model="ticketCategory.inception" data-end-model="ticketCategory.expiration" data-start-date="ticketCategory.notBefore" data-ng-model="ticketCategory.dateString" name="{{buildPrefix($index, 'dateString')}}" id="{{buildPrefix($index, 'dateString')}}" class="form-control" required />
                 <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.dateString" data-show-existing-errors="showExistingErrors"></field-error>
@@ -96,14 +96,14 @@
         </div>
 
         <div class="col-sm-12 col-md-4" data-ng-if="!event.freeOfCharge">
-            <div class="form-group">
+            <div class="form-group" bs-form-error="ticketCategory.price">
                 <label for="{{buildPrefix($index, 'price')}}">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event, editMode)}}%)</span></label>
                 <input type="number" data-ng-model="ticketCategory.price" name="{{buildPrefix($index, 'price')}}" id="{{buildPrefix($index, 'price')}}" class="form-control" required />
                 <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.price" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
         <div class="col-sm-12 col-md-4" data-ng-if="ticketCategory.bounded">
-            <div class="form-group">
+            <div class="form-group" bs-form-error="ticketCategory.maxTickets">
                 <label for="{{buildPrefix($index, 'maxTickets')}}">Max Tickets</label>
                 <input type="number" data-ng-model="ticketCategory.maxTickets" name="{{buildPrefix($index, 'maxTickets')}}" id="{{buildPrefix($index, 'maxTickets')}}" class="form-control" required />
                 <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.maxTickets" data-show-existing-errors="showExistingErrors"></field-error>

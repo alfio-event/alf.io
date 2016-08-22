@@ -1,33 +1,33 @@
 <div data-ng-form="editEventHeader">
     <div class="row">
         <div class="col-sm-8 col-md-8">
-            <div class="form-group">
+            <div class="form-group" bs-form-error="editEventHeader.displayName">
                 <label for="displayName">Name</label>
                 <input type="text" data-ng-model="obj.displayName" name="displayName" data-grab-focus id="displayName" class="form-control" required data-ng-change="updateURL(obj.displayName)" data-ng-model-options="{ updateOn: 'default blur', debounce: 500}"/>
                 <field-error data-form-obj="editEventHeader" data-min-char="1" data-field-obj="editEventHeader.displayName" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
-            <div class="form-group">
+            <div class="form-group" bs-form-error="editEventHeader.shortName">
 
                 <label for="shortName">URL</label>
                 <div class="input-group" data-ng-if="!isUpdate">
-                <span class="input-group-addon">
-                    <span>/event/</span>
-                </span>
+                    <span class="input-group-addon">
+                        <span>/event/</span>
+                    </span>
                     <input type="text" id="shortName" data-ng-model="obj.shortName" class="form-control" required pattern="^[A-Za-z0-9]{1,}([-_]*[A-Za-z0-9]+)+$" name="shortName" data-validate-short-name="isUpdate" data-ng-model-options="{updateOn:'blur'}"/>
                     <span class="form-control-feedback" data-ng-if="loading"><i class="fa fa-circle-o-notch fa-spin"></i></span>
-                    <field-error data-form-obj="editEventHeader" data-required-pattern="'A-Za-z0-9_- (no spaces, letter or number at the end)'" data-field-obj="editEventHeader.shortName"  data-show-existing-errors="showExistingErrors"></field-error>
                     <span class="input-group-addon">
-                    <span>/</span>
-                </span>
+                        <span>/</span>
+                    </span>
                 </div>
                 <div class="form-control-static" data-ng-if="isUpdate">/event/{{obj.shortName}}/</div>
+                <field-error data-form-obj="editEventHeader" data-required-pattern="'A-Za-z0-9_- (no spaces; the last character must be a letter or a number)'" data-field-obj="editEventHeader.shortName"  data-show-existing-errors="showExistingErrors"></field-error>
             </div>
-            <div class="form-group">
+            <div class="form-group" bs-form-error="editEventHeader.organizationId">
                 <label for="organizationId">Owner Organization</label>
                 <select data-ng-model="obj.organizationId" name="organizationId" id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.organizationId" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
-            <div class="form-group">
+            <div class="form-group" bs-form-error="editEventHeader.location">
                 <label for="location">Location</label>
                 <textarea data-ng-model="obj.location" name="location" id="location" class="form-control" required data-ng-minlength="10" data-ng-change="updateLocation(obj.location)" data-ng-model-options="{ updateOn: 'blur'}"></textarea>
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.location" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
@@ -43,13 +43,14 @@
     <div data-ng-if="obj.type === 'INTERNAL'">
         <div class="row">
             <div class="col-xs-12">
-                <div class="form-group">
+                <div class="form-group" bs-form-error="editEventHeader.organizationId">
                     <label for="languages">Languages</label>
-                    <select id="languages" class="form-control" multiple data-ng-model="selectedLanguages.langs" data-ng-options="lang.value as lang.displayLanguage for lang in allLanguages" data-ng-change="updateLocales()"></select>
+                    <select id="languages" name="languages" class="form-control" multiple data-ng-model="selectedLanguages.langs" data-ng-options="lang.value as lang.displayLanguage for lang in allLanguages" data-ng-change="updateLocales()" required></select>
+                    <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.languages" data-show-existing-errors="showExistingErrors"></field-error>
                 </div>
             </div>
             <div class="col-xs-12 col-sm-6" data-ng-repeat="langValue in selectedLanguages.langs">
-                <div class="form-group">
+                <div class="form-group" bs-form-error="editEventHeader['description-'+allLanguagesMapping[langValue].locale]">
                     <label for="description">Event Description: {{allLanguagesMapping[langValue].displayLanguage}} <display-commonmark-preview text="obj.description[allLanguagesMapping[langValue].locale]"></display-commonmark-preview></p></label>
                     <textarea data-ng-model="obj.description[allLanguagesMapping[langValue].locale]" name="description-{{allLanguagesMapping[langValue].locale}}" id="description" required class="form-control" data-ng-minlength="10" data-ng-maxlength="2048"></textarea>
                     <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader['description-'+allLanguagesMapping[langValue].locale]" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
@@ -61,20 +62,20 @@
     </div>
     <div class="row">
         <div class="col-xs-6">
-            <div class="form-group">
+            <div class="form-group" bs-form-error="editEventHeader.websiteUrl">
                 <label for="websiteUrl">Website URL</label>
                 <input type="url" data-ng-model="obj.websiteUrl" name="websiteUrl" id="websiteUrl" required class="form-control" />
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.websiteUrl" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
         <div class="col-xs-6">
-            <div data-ng-if="obj.type !== 'INTERNAL'" class="form-group">
+            <div data-ng-if="obj.type !== 'INTERNAL'" class="form-group" bs-form-error="editEventHeader.externalUrl">
                 <label for="externalUrl">External ticket reservation URL</label>
                 <input type="url" data-ng-model="obj.externalUrl" name="externalUrl" id="externalUrl" required class="form-control" />
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.externalUrl" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
 
-            <div data-ng-if="obj.type === 'INTERNAL'" class="form-group">
+            <div data-ng-if="obj.type === 'INTERNAL'" class="form-group" bs-form-error="editEventHeader.termsAndConditionsUrl">
                 <label for="termsAndConditionsUrl">Terms and Conditions URL</label>
                 <input type="url" data-ng-model="obj.termsAndConditionsUrl" name="termsAndConditionsUrl" id="termsAndConditionsUrl" required class="form-control" />
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.termsAndConditionsUrl" data-show-existing-errors="showExistingErrors"></field-error>
@@ -108,13 +109,13 @@
     <div class="row">
 
         <div class="col-xs-6">
-            <div class="form-group">
+            <div class="form-group" bs-form-error="editEventHeader.date">
                 <label for="date">Event Date <i data-ng-if="showDatesWarning" class="fa fa-warning text-warning tooltip-handler" title="You should notify all the ticket owners about a date change"></i></label>
                 <input type="text" data-date-range data-start-model="obj.begin" data-end-model="obj.end" data-ng-model="obj.dateString" name="date" id="date" class="form-control" required />
             </div>
         </div>
         <div class="col-xs-6">
-            <div class="form-group">
+            <div class="form-group" bs-form-error="editEventHeader.timeZone">
                 <label for="timeZone">Event time zone</label>
                 <input class="form-control" id="timeZone" readonly name="timeZone" data-ng-model="obj.geolocation.timeZone" required />
             </div>
