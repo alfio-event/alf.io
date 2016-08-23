@@ -10,7 +10,7 @@
 
         <div class="col-sm-12 col-md-4">
             <div class="form-group">
-                <label class="control-label">Ticket allocation strategy</label> <a class="btn btn-xs btn-default" uib-popover-template="'helpTicketAllocation.html'"><i class="fa fa-info-circle"></i> help</a>
+                <label class="control-label">Ticket allocation strategy</label> <a class="btn btn-xs btn-default" uib-popover-template="'helpTicketAllocation.html'" popover-placement="bottom"><i class="fa fa-info-circle"></i> help</a>
                 <script type="text/ng-template" id="helpTicketAllocation.html">
                     <h4>Ticket allocation strategies:</h4>
                     <p>You should decide how to distribute available seats between categories. The default is to create one or more dynamic categories. <strong>If unsure, please select "Grow dynamically"</strong></p>
@@ -30,13 +30,13 @@
                     </ul>
                 </script>
                 <div class="form-group">
-                    <div class="radio-inline" data-ng-if="!ticketCategory.tokenGenerationRequested">
+                    <div data-ng-if="!ticketCategory.tokenGenerationRequested" data-ng-class="allocationStrategyRadioClass">
                         <label>
                             <input type="radio" name="{{buildPrefix($index, 'bounded')}}" data-ng-model="ticketCategory.bounded" data-ng-value="false" required="">
                             Grow dynamically
                         </label>
                     </div>
-                    <div class="radio-inline">
+                    <div class="radio-inline" data-ng-class="allocationStrategyRadioClass">
                         <label>
                             <input type="radio" name="{{buildPrefix($index, 'bounded')}}" data-ng-model="ticketCategory.bounded" data-ng-value="true" required="">
                             Limited seats
@@ -48,7 +48,7 @@
 
         <div class="col-sm-12 col-md-4">
             <div class="form-group">
-                <label class="control-label">Category visibility</label> <a class="btn btn-xs btn-default" uib-popover-template="'helpCategoryVisibility.html'"><i class="fa fa-info-circle"></i> help</a>
+                <label class="control-label">Category visibility</label> <a class="btn btn-xs btn-default" uib-popover-template="'helpCategoryVisibility.html'" popover-placement="bottom"><i class="fa fa-info-circle"></i> help</a>
                 <script type="text/ng-template" id="helpCategoryVisibility.html">
                     <h4>Category visibility:</h4>
                     <p>Categories can be public (that is, accessible to everybody) or restricted (accessible after inserting an unique discount code)</p>
@@ -90,7 +90,7 @@
         <div class="col-sm-12 col-md-4">
             <div class="form-group" bs-form-error="ticketCategory.dateString">
                 <label for="{{buildPrefix($index, 'dateString')}}">Validity range</label>
-                <input type="text" data-date-range data-start-model="ticketCategory.inception" data-end-model="ticketCategory.expiration" data-start-date="ticketCategory.notBefore" data-ng-model="ticketCategory.dateString" name="{{buildPrefix($index, 'dateString')}}" id="{{buildPrefix($index, 'dateString')}}" class="form-control" required />
+                <input type="text" data-date-range data-start-model="ticketCategory.inception" data-end-model="ticketCategory.expiration" data-watch-obj="event.start" data-start-date="ticketCategory.notBefore" data-ng-model="ticketCategory.dateString" name="{{buildPrefix($index, 'dateString')}}" id="{{buildPrefix($index, 'dateString')}}" class="form-control" required />
                 <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.dateString" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>

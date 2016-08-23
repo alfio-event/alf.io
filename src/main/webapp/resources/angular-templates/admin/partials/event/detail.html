@@ -104,6 +104,10 @@
                                             <div class="col-sm-8">{{::ticketCategory.formattedExpiration | formatDate}} </div>
                                         </div>
                                         <div class="row" data-ng-if="!event.freeOfCharge">
+                                            <div class="col-sm-4"><strong>Price</strong></div>
+                                            <div class="col-sm-8">{{::ticketCategory.price | currency : (event.currency || "")}}</div>
+                                        </div>
+                                        <div class="row" data-ng-if="!event.freeOfCharge">
                                             <div class="col-sm-4"><strong>Final price</strong></div>
                                             <div class="col-sm-8">{{::ticketCategory.actualPrice | currency : (event.currency || "")}}</div>
                                         </div>

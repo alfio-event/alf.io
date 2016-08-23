@@ -39,7 +39,8 @@
                 maxDate: '=',
                 startDate: '=',
                 startModelObj: '=startModel',
-                endModelObj: '=endModel'
+                endModelObj: '=endModel',
+                watchObj: '='
             },
             require: '^ngModel',
             link: function(scope, element, attrs, ctrl) {
@@ -73,7 +74,7 @@
 
                 var minDate = scope.minDate || getNowAtStartOfHour();
 
-                element.daterangepicker({
+                var pickerElement = element.daterangepicker({
                     format: dateFormat,
                     separator: ' / ',
                     startDate: startDate,
@@ -94,27 +95,46 @@
                 function updateDates(picker, override) {
                 	if(angular.isDefined(picker)) {
                         scope.$apply(function() {
-                            var start = picker.startDate;
-                            var end = picker.endDate;
-                            scope.startModelObj['date'] = start.format('YYYY-MM-DD');
-                            scope.startModelObj['time'] = start.format('HH:mm');
-                            scope.endModelObj['date'] = end.format('YYYY-MM-DD');
-                            scope.endModelObj['time'] = end.format('HH:mm');
-                            if(override) {
-                            	element.val(start.format(dateFormat) + ' / ' + end.format(dateFormat))
-                            }
-                            ctrl.$setViewValue(element.val());
+                            updateInDigest(picker, override);
                         });
                     }
+                }
+
+                function updateInDigest(picker, override) {
+                    var start = picker.startDate;
+                    var end = picker.endDate;
+                    scope.startModelObj['date'] = start.format('YYYY-MM-DD');
+                    scope.startModelObj['time'] = start.format('HH:mm');
+                    scope.endModelObj['date'] = end.format('YYYY-MM-DD');
+                    scope.endModelObj['time'] = end.format('HH:mm');
+                    if (override) {
+                        element.val(start.format(dateFormat) + ' / ' + end.format(dateFormat))
+                    }
+                    ctrl.$setViewValue(element.val());
+                }
+
+                if(scope.watchObj) {
+                    var clearListener = scope.$watch(function() { return scope.watchObj; }, function(newVal, oldVal) {
+                        if(newVal && newVal['date']) {
+                            var dr = pickerElement.data('daterangepicker');
+                            if(angular.equals({date: dr.endDate.format('YYYY-MM-DD'), time: dr.endDate.format('HH:mm')}, oldVal)) {
+                                dr.setCustomDates(dr.startDate, moment(newVal['date'] + 'T' + newVal['time']));
+                                updateInDigest(dr, true);
+                            } else {
+                                clearListener();
+                            }
+                        }
+                    }, true);
                 }
 
                 element.on('apply.daterangepicker', function(ev, picker) {
                 	updateDates(picker);
                 });
-                
+
                 element.on('hide.daterangepicker', function(ev, picker) {
                 	updateDates(picker, true);
                 });
+
             }
         };
     });

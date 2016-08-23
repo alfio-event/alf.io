@@ -164,33 +164,27 @@
         };
     }]);
 
-    var createCategory = function(sticky, $scope, expirationExtractor) {
-        var lastCategory = _.last($scope.event.ticketCategories);
-        var inceptionDate, notBefore;
-        if(angular.isDefined(lastCategory)) {
-            var lastExpiration = angular.isFunction(expirationExtractor) ? expirationExtractor(lastCategory) : lastCategory.expiration.date;
-            inceptionDate = moment(lastExpiration).format('YYYY-MM-DD');
-            notBefore = inceptionDate;
-        } else {
-            inceptionDate = moment().format('YYYY-MM-DD');
-            notBefore = undefined;
-        }
+    var createCategory = function(sticky, $scope) {
+        var now = moment().startOf('hour');
+        var initialDateTime = {
+            date: now.format('YYYY-MM-DD'),
+            time: now.format('HH:mm')
+        };
 
-        return {
-            inception: {
-                date: inceptionDate
-            },
+        var category = {
+            inception: initialDateTime,
+            expiration: initialDateTime,
             tokenGenerationRequested: false,
-            expiration: {},
             sticky: sticky,
-            notBefore: notBefore,
             bounded: false
         };
 
+        return category;
+
     };
 
-    var createAndPushCategory = function(sticky, $scope, expirationExtractor) {
-        $scope.event.ticketCategories.push(createCategory(sticky, $scope, expirationExtractor));
+    var createAndPushCategory = function(sticky, $scope) {
+        $scope.event.ticketCategories.push(createCategory(sticky, $scope));
     };
 
     var initScopeForEventEditing = function ($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS) {
@@ -234,9 +228,6 @@
                 });
             }
         });
-        $scope.addCategory = function() {
-            createAndPushCategory(false, $scope);
-        };
 
         $scope.canAddCategory = function(categories) {
             var remaining = _.foldl(categories, function(difference, category) {
@@ -317,7 +308,11 @@
             begin: {},
             end: {}
         };
+        $scope.allocationStrategyRadioClass = 'radio-inline';
         initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS);
+        $scope.addCategory = function() {
+            createAndPushCategory(false, $scope);
+        };
 
         $scope.event.ticketCategories = [];
         $scope.event.additionalServices = [];
@@ -426,6 +421,7 @@
         loadData().then(function() {
             initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS);
         });
+        $scope.allocationStrategyRadioClass = 'radio';
         $scope.evaluateCategoryStatusClass = function(index, category) {
             if(category.expired) {
                 return 'category-expired';
@@ -637,7 +633,7 @@
         };
 
         $scope.addCategory = function(event) {
-            openCategoryDialog(createCategory(true, $scope, function(obj) {return obj.formattedExpiration}), event).then(function() {
+            openCategoryDialog(createCategory(true, $scope), event).then(function() {
                 loadData();
             });
         };
@@ -682,7 +678,7 @@
             var categoryObj = {
                 id: category.id,
                 name: category.name,
-                price: category.actualPrice,
+                price: category.price,
                 description: category.description,
                 maxTickets: category.maxTickets,
                 bounded: category.bounded,
