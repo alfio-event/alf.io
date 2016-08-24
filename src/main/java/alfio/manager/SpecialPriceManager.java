@@ -16,6 +16,8 @@
  */
 package alfio.manager;
 
+import alfio.manager.i18n.I18nManager;
+import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.SpecialPrice;
 import alfio.model.TicketCategory;
@@ -44,18 +46,21 @@ public class SpecialPriceManager {
     private final SpecialPriceRepository specialPriceRepository;
     private final TemplateManager templateManager;
     private final MessageSource messageSource;
+    private final I18nManager i18nManager;
 
     @Autowired
     public SpecialPriceManager(EventManager eventManager,
                                NotificationManager notificationManager,
                                SpecialPriceRepository specialPriceRepository,
                                TemplateManager templateManager,
-                               MessageSource messageSource) {
+                               MessageSource messageSource,
+                               I18nManager i18nManager) {
         this.eventManager = eventManager;
         this.notificationManager = notificationManager;
         this.specialPriceRepository = specialPriceRepository;
         this.templateManager = templateManager;
         this.messageSource = messageSource;
+        this.i18nManager = i18nManager;
     }
 
     private List<String> checkCodeAssignment(Set<SendCodeModification> input, int categoryId, Event event, String username) {
@@ -87,15 +92,17 @@ public class SpecialPriceManager {
         Set<SendCodeModification> set = new LinkedHashSet<>(input);
         checkCodeAssignment(set, categoryId, event, username);
         Validate.isTrue(set.stream().allMatch(IS_CODE_PRESENT), "There are missing codes. Please check input file.");
+        List<ContentLanguage> eventLanguages = i18nManager.getEventLanguages(event.getLocales());
+        Validate.isTrue(!eventLanguages.isEmpty(), "No locales have been defined for the event. Please check the configuration");
+        ContentLanguage defaultLocale = eventLanguages.contains(ContentLanguage.ENGLISH) ? ContentLanguage.ENGLISH : eventLanguages.get(0);
         set.forEach(m -> {
-            Locale locale = Locale.forLanguageTag(StringUtils.defaultString(m.getLanguage(), "en"));
+            Locale locale = Locale.forLanguageTag(StringUtils.defaultString(StringUtils.trimToNull(m.getLanguage()), defaultLocale.getLanguage()));
             Map<String, Object> model = new HashMap<>();
             model.put("code", m.getCode());
             model.put("event", event);
             model.put("organization", organization);
             model.put("eventPage", eventManager.getEventUrl(event));
             model.put("assignee", m.getAssignee());
-
             notificationManager.sendSimpleEmail(event, m.getEmail(), messageSource.getMessage("email-code.subject", new Object[] {event.getDisplayName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/send-reserved-code-txt.ms", model, locale, TemplateManager.TemplateOutput.TEXT));
         });
         return true;

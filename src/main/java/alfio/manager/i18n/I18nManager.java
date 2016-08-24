@@ -49,10 +49,14 @@ public class I18nManager {
     }
 
     public List<ContentLanguage> getEventLanguages(String eventName) {
-        List<ContentLanguage> system = getSupportedLanguages();
         return eventRepository.findOptionalByShortName(eventName)
-            .map(event -> ContentLanguage.findAllFor(event.getLocales()))
-            .orElse(Collections.emptyList())
+            .map(event -> getEventLanguages(event.getLocales()))
+            .orElse(Collections.emptyList());
+    }
+
+    public List<ContentLanguage> getEventLanguages(int eventLocales) {
+        List<ContentLanguage> system = getSupportedLanguages();
+        return ContentLanguage.findAllFor(eventLocales)
             .stream()
             .filter(system::contains)
             .collect(Collectors.toList());
