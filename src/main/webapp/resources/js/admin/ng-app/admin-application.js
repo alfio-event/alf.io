@@ -166,14 +166,17 @@
 
     var createCategory = function(sticky, $scope) {
         var now = moment().startOf('hour');
-        var initialDateTime = {
+        var inceptionDateTime = {
             date: now.format('YYYY-MM-DD'),
             time: now.format('HH:mm')
         };
-
+        var expirationDateTime = {
+            date: now.format('YYYY-MM-DD'),
+            time: now.format('HH:mm')
+        };
         var category = {
-            inception: initialDateTime,
-            expiration: initialDateTime,
+            inception: inceptionDateTime,
+            expiration: expirationDateTime,
             tokenGenerationRequested: false,
             sticky: sticky,
             bounded: false
