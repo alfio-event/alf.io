@@ -59,7 +59,7 @@
         <label for="allowedPaymentProxies">Accepted payment methods</label>
         <select data-ng-model="obj.allowedPaymentProxies" multiple name="allowedPaymentProxies" id="allowedPaymentProxies" class="form-control" required data-ng-options="proxy.id as proxy.description for proxy in allowedPaymentProxies | paymentMethodFilter"></select>
         <span class="help-block" data-ng-if="(allowedPaymentProxies | paymentMethodFilter:true).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter:true">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check the <a data-ui-sref="configuration.organization({organizationId: obj.organizationId})">configuration</a>.</span>
-        <span class="help-block" data-ng-if="(!angular.isDefined(obj.allowedPaymentProxies) || obj.allowedPaymentProxies.length == 0) && (obj.organizationId === null || !angular.isDefined(obj.organizationId))"><i class="fa fa-warning"></i> Please select an organization in order to load the payment methods</span>
+        <span class="help-block" data-ng-if="(obj.allowedPaymentProxies === undefined || obj.allowedPaymentProxies.length == 0) && (obj.organizationId === null || obj.organizationId === undefined)"><i class="fa fa-warning"></i> Please select an organization in order to load the payment methods</span>
         <field-error data-form-obj="editEvent" data-field-obj="editEvent.allowedPaymentProxies"></field-error>
     </div>
 </div>
