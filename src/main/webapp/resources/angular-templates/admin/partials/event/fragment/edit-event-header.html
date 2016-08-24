@@ -39,6 +39,20 @@
             <img data-ng-if="obj.geolocation && !loadingMap" data-ng-src="{{obj.geolocation.mapUrl}}" alt="{{obj.location}}" class="img-responsive"/>
         </div>
     </div>
+    <div class="row">
+        <div class="col-xs-6">
+            <div class="form-group" bs-form-error="editEventHeader.date">
+                <label for="date">Event Date <i data-ng-if="showDatesWarning" class="fa fa-warning text-warning tooltip-handler" title="You should notify all the ticket owners about a date change"></i></label>
+                <input type="text" data-date-range data-start-model="obj.begin" data-end-model="obj.end" data-ng-model="obj.dateString" name="date" id="date" class="form-control" required />
+            </div>
+        </div>
+        <div class="col-xs-6">
+            <div class="form-group" bs-form-error="editEventHeader.timeZone">
+                <label for="timeZone">Event time zone</label>
+                <input class="form-control" id="timeZone" readonly name="timeZone" data-ng-model="obj.geolocation.timeZone" required />
+            </div>
+        </div>
+    </div>
 
     <div data-ng-if="obj.type === 'INTERNAL'">
         <div class="row">
@@ -103,21 +117,6 @@
             <div>
                 <img data-ng-if="imageBase64 || obj.fileBlobId" data-ng-src="{{imageBase64 || ('/file/' + obj.fileBlobId)}}" class="img-responsive center-block event-logo">
                 <div class="alert alert-danger alert-form" data-ng-if="!imageBase64 && !obj.fileBlobId"><i class="fa fa-warning"></i> Event logo is missing!</div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-
-        <div class="col-xs-6">
-            <div class="form-group" bs-form-error="editEventHeader.date">
-                <label for="date">Event Date <i data-ng-if="showDatesWarning" class="fa fa-warning text-warning tooltip-handler" title="You should notify all the ticket owners about a date change"></i></label>
-                <input type="text" data-date-range data-start-model="obj.begin" data-end-model="obj.end" data-ng-model="obj.dateString" name="date" id="date" class="form-control" required />
-            </div>
-        </div>
-        <div class="col-xs-6">
-            <div class="form-group" bs-form-error="editEventHeader.timeZone">
-                <label for="timeZone">Event time zone</label>
-                <input class="form-control" id="timeZone" readonly name="timeZone" data-ng-model="obj.geolocation.timeZone" required />
             </div>
         </div>
     </div>
