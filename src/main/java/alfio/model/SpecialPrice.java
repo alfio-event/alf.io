@@ -19,6 +19,8 @@ package alfio.model;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
+import java.time.ZonedDateTime;
+
 @Getter
 public class SpecialPrice {
 
@@ -32,18 +34,31 @@ public class SpecialPrice {
     private final int ticketCategoryId;
     private final Status status;
     private final String sessionIdentifier;
+    private final ZonedDateTime sentTimestamp;
+    private final String recipientName;
+    private final String recipientEmail;
 
     public SpecialPrice(@Column("id") int id,
                         @Column("code") String code,
                         @Column("price_cts") int priceInCents,
                         @Column("ticket_category_id") int ticketCategoryId,
                         @Column("status") String status,
-                        @Column("session_id") String sessionIdentifier) {
+                        @Column("session_id") String sessionIdentifier,
+                        @Column("sent_ts") ZonedDateTime sentTimestamp,
+                        @Column("recipient_name") String recipientName,
+                        @Column("recipient_email") String recipientEmail) {
         this.id = id;
         this.code = code;
         this.priceInCents = priceInCents;
         this.ticketCategoryId = ticketCategoryId;
         this.status = Status.valueOf(status);
         this.sessionIdentifier = sessionIdentifier;
+        this.sentTimestamp = sentTimestamp;
+        this.recipientName = recipientName;
+        this.recipientEmail = recipientEmail;
+    }
+
+    public boolean notSent() {
+        return sentTimestamp == null;
     }
 }

@@ -35,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.MessageSource;
 
+import java.time.ZoneId;
 import java.util.*;
 
 import static java.util.Arrays.asList;
@@ -68,7 +69,7 @@ public class SpecialPriceManagerTest {
 
     @Before
     public void init() {
-        List<SpecialPrice> specialPrices = asList(new SpecialPrice(0, "123", 0, 0, "FREE", null), new SpecialPrice(0, "456", 0, 0, "FREE", null));
+        List<SpecialPrice> specialPrices = asList(new SpecialPrice(0, "123", 0, 0, "FREE", null, null, null, null), new SpecialPrice(0, "456", 0, 0, "FREE", null, null, null, null));
         when(i18nManager.getEventLanguages(anyInt())).thenReturn(Collections.singletonList(ContentLanguage.ITALIAN));
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("text");
         when(eventManager.getSingleEvent(anyString(), anyString())).thenReturn(event);
@@ -80,6 +81,8 @@ public class SpecialPriceManagerTest {
         when(event.getShortName()).thenReturn("eventName");
         when(event.getDisplayName()).thenReturn("Event Name");
         when(event.getLocales()).thenReturn(1);
+        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+        when(specialPriceRepository.markAsSent(any(), anyString(), anyString(), anyString())).thenReturn(1);
         setRestricted(ticketCategory, true);
         specialPriceManager = new SpecialPriceManager(eventManager, notificationManager, specialPriceRepository, templateManager, messageSource, i18nManager);
     }

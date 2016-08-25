@@ -8,7 +8,8 @@
                 scope: {
                     accept: '=',
                     targetUrl: '=',
-                    successCallback: '='
+                    successCallback: '=',
+                    errorCallback: '='
                 },
                 bindToController: true,
                 controller: FileUploadController,
@@ -32,6 +33,10 @@
                 $http['post'](ctrl.targetUrl, {file : fileBase64.substring(fileBase64.indexOf('base64,') + 7), type : file.type, name : file.name})
                     .success(function(data) {
                         ctrl.successCallback(data);
+                    }).error(function(data) {
+                        if(ctrl.errorCallback) {
+                            ctrl.errorCallback(data);
+                        }
                     });
             };
             reader.readAsDataURL(file);

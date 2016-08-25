@@ -951,21 +951,47 @@
 
     });
 
-    admin.controller('SendInvitationsController', function($scope, $stateParams, $state, EventService, $log) {
+    admin.controller('SendInvitationsController', function($scope, $stateParams, $state, EventService, $window) {
         $scope.eventName = $stateParams.eventName;
         $scope.categoryId = $stateParams.categoryId;
 
+        var loadSentCodes = function() {
+            EventService.loadSentCodes($stateParams.eventName, $stateParams.categoryId).then(function(result) {
+                $scope.codes = result.data;
+            })
+        };
+
+        $scope.closeAlert = function() {
+            $scope.errorMessage = null;
+            $scope.success = false;
+        };
+
+        loadSentCodes();
+
         $scope.sendCodes = function(data) {
             EventService.sendCodesByEmail($stateParams.eventName, $stateParams.categoryId, data).success(function() {
-                alert('Codes have been successfully sent');
-                $state.go('events.single.detail', {eventName: $stateParams.eventName});
+                loadSentCodes();
+                $scope.success = true;
             }).error(function(e) {
-                alert(e.data);
+                $scope.errorMessage = e.data;
+                $scope.success = false;
             });
+        };
+
+        $scope.clearRecipient = function(id, code) {
+            if($window.confirm('About to clear recipient for code '+code+'. Are you sure?')) {
+                EventService.deleteRecipientData($stateParams.eventName, $stateParams.categoryId, id).then(function() {
+                    loadSentCodes();
+                });
+            }
         };
 
         $scope.uploadSuccess = function(data) {
             $scope.results = data;
+        };
+        $scope.uploadError = function(data) {
+            $scope.errorMessage = data;
+            $scope.success = false;
         };
         $scope.uploadUrl = '/admin/api/events/'+$stateParams.eventName+'/categories/'+$stateParams.categoryId+'/link-codes';
     });

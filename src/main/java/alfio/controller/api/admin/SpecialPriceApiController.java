@@ -17,6 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.SpecialPriceManager;
+import alfio.model.SpecialPrice;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.modification.UploadBase64FileModification;
 import com.opencsv.CSVReader;
@@ -33,6 +34,8 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.trim;
 
 @RestController
 @RequestMapping("/admin/api")
@@ -52,11 +55,12 @@ public class SpecialPriceApiController {
     public String handleExceptions(Exception e) {
         if(!IllegalArgumentException.class.isInstance(e)) {
             log.error("Unexpected exception in SpecialPriceApiController", e);
+            return e.toString();
         }
-        return e.toString();
+        return e.getMessage();
     }
 
-    @RequestMapping("/events/{eventName}/categories/{categoryId}/link-codes")
+    @RequestMapping(value = "/events/{eventName}/categories/{categoryId}/link-codes")
     public List<SendCodeModification> linkAssigneeToCodes(@PathVariable("eventName") String eventName,
                                                           @PathVariable("categoryId") int categoryId,
                                                           @RequestBody UploadBase64FileModification file,
@@ -67,14 +71,14 @@ public class SpecialPriceApiController {
             List<SendCodeModification> content = reader.readAll().stream()
                     .map(line -> {
                         Validate.isTrue(line.length >= 4);
-                        return new SendCodeModification(StringUtils.trimToNull(line[0]), line[1], line[2], line[3]);
+                        return new SendCodeModification(StringUtils.trimToNull(line[0]), trim(line[1]), trim(line[2]), trim(line[3]));
                     })
                     .collect(Collectors.toList());
             return specialPriceManager.linkAssigneeToCode(content, eventName, categoryId, principal.getName());
         }
     }
 
-    @RequestMapping("/events/{eventName}/categories/{categoryId}/send-codes")
+    @RequestMapping(value = "/events/{eventName}/categories/{categoryId}/send-codes", method = RequestMethod.POST)
     public boolean sendCodes(@PathVariable("eventName") String eventName,
                              @PathVariable("categoryId") int categoryId,
                              @RequestBody List<SendCodeModification> codes,
@@ -85,6 +89,21 @@ public class SpecialPriceApiController {
         Validate.isTrue(!codes.isEmpty(), "Collection of codes cannot be empty");
         specialPriceManager.sendCodeToAssignee(codes, eventName, categoryId, principal.getName());
         return true;
+    }
+
+    @RequestMapping(value = "/events/{eventName}/categories/{categoryId}/sent-codes", method = RequestMethod.GET)
+    public List<SpecialPrice> loadSentCodes(@PathVariable("eventName") String eventName,
+                                            @PathVariable("categoryId") int categoryId,
+                                            Principal principal) {
+        return specialPriceManager.loadSentCodes(eventName, categoryId, principal.getName());
+    }
+
+    @RequestMapping(value = "/events/{eventName}/categories/{categoryId}/codes/{codeId}/recipient", method = RequestMethod.DELETE)
+    public boolean clearRecipientData(@PathVariable("eventName") String eventName,
+                                      @PathVariable("categoryId") int categoryId,
+                                      @PathVariable("codeId") int codeId,
+                                      Principal principal) {
+        return specialPriceManager.clearRecipientData(eventName, categoryId, codeId, principal.getName());
     }
 
 }

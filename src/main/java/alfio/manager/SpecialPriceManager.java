@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -64,16 +65,24 @@ public class SpecialPriceManager {
     }
 
     private List<String> checkCodeAssignment(Set<SendCodeModification> input, int categoryId, Event event, String username) {
-        eventManager.checkOwnership(event, username, event.getOrganizationId());
-        final List<TicketCategory> categories = eventManager.loadTicketCategories(event);
-        final TicketCategory category = categories.stream().filter(tc -> tc.getId() == categoryId).findFirst().orElseThrow(IllegalArgumentException::new);
-        Validate.isTrue(category.isAccessRestricted(), "Access to the selected category is not restricted.");
-        List<String> availableCodes = new ArrayList<>(specialPriceRepository.findActiveByCategoryId(category.getId()).stream().map(SpecialPrice::getCode).collect(toList()));
-        Validate.isTrue(input.size() <= availableCodes.size(), "not enough free codes.");
+        final TicketCategory category = checkOwnership(categoryId, event, username);
+        List<String> availableCodes = new ArrayList<>(specialPriceRepository.findActiveByCategoryId(category.getId())
+            .stream()
+            .filter(SpecialPrice::notSent)
+            .map(SpecialPrice::getCode).collect(toList()));
+        Validate.isTrue(input.size() <= availableCodes.size(), "Requested codes: "+input.size()+ ", available: "+availableCodes.size()+".");
         List<String> requestedCodes = input.stream().filter(IS_CODE_PRESENT).map(SendCodeModification::getCode).collect(toList());
         Validate.isTrue(requestedCodes.stream().distinct().count() == requestedCodes.size(), "Cannot assign the same code twice. Please fix the input file.");
         Validate.isTrue(requestedCodes.stream().allMatch(availableCodes::contains), "some requested codes don't exist.");
         return availableCodes;
+    }
+
+    private TicketCategory checkOwnership(int categoryId, Event event, String username) {
+        eventManager.checkOwnership(event, username, event.getOrganizationId());
+        final List<TicketCategory> categories = eventManager.loadTicketCategories(event);
+        final TicketCategory category = categories.stream().filter(tc -> tc.getId() == categoryId).findFirst().orElseThrow(IllegalArgumentException::new);
+        Validate.isTrue(category.isAccessRestricted(), "Access to the selected category is not restricted.");
+        return category;
     }
 
     public List<SendCodeModification> linkAssigneeToCode(List<SendCodeModification> input, String eventName, int categoryId, String username) {
@@ -84,6 +93,21 @@ public class SpecialPriceManager {
         return Stream.concat(set.stream().filter(IS_CODE_PRESENT),
                 input.stream().filter(IS_CODE_PRESENT.negate())
                         .map(p -> new SendCodeModification(codes.next(), p.getAssignee(), p.getEmail(), p.getLanguage()))).collect(toList());
+    }
+
+    public List<SpecialPrice> loadSentCodes(String eventName, int categoryId, String username) {
+        final Event event = eventManager.getSingleEvent(eventName, username);
+        checkOwnership(categoryId, event, username);
+        Predicate<SpecialPrice> p = SpecialPrice::notSent;
+        return specialPriceRepository.findAllByCategoryId(categoryId).stream().filter(p.negate()).collect(toList());
+    }
+
+    public boolean clearRecipientData(String eventName, int categoryId, int codeId, String username) {
+        final Event event = eventManager.getSingleEvent(eventName, username);
+        checkOwnership(categoryId, event, username);
+        int result = specialPriceRepository.clearRecipientData(codeId, categoryId);
+        Validate.isTrue(result <= 1, "too many records affected");
+        return result == 1;
     }
 
     public boolean sendCodeToAssignee(List<SendCodeModification> input, String eventName, int categoryId, String username) {
@@ -104,6 +128,8 @@ public class SpecialPriceManager {
             model.put("eventPage", eventManager.getEventUrl(event));
             model.put("assignee", m.getAssignee());
             notificationManager.sendSimpleEmail(event, m.getEmail(), messageSource.getMessage("email-code.subject", new Object[] {event.getDisplayName()}, locale), () -> templateManager.renderClassPathResource("/alfio/templates/send-reserved-code-txt.ms", model, locale, TemplateManager.TemplateOutput.TEXT));
+            int marked = specialPriceRepository.markAsSent(ZonedDateTime.now(event.getZoneId()), m.getAssignee().trim(), m.getEmail().trim(), m.getCode().trim());
+            Validate.isTrue(marked == 1, "Expected exactly one row updated, got "+marked);
         });
         return true;
     }
