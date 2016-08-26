@@ -36,6 +36,7 @@ import org.springframework.util.Assert;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
@@ -219,8 +220,7 @@ public class UserManager {
         if(existing > 0) {
             return ValidationResult.failed(new ValidationResult.ValidationError("username", "There is already another user with the same username."));
         }
-        return ValidationResult.of(Arrays.asList(Pair.of(firstName, "firstName"), Pair.of(lastName, "lastName"), Pair.of(emailAddress, "emailAddress"))
-            .stream()
+        return ValidationResult.of(Stream.of(Pair.of(firstName, "firstName"), Pair.of(lastName, "lastName"), Pair.of(emailAddress, "emailAddress"))
             .filter(p -> StringUtils.isEmpty(p.getKey()))
             .map(p -> new ValidationResult.ValidationError(p.getKey(), p.getValue() + " is required"))
             .collect(toList()));
@@ -234,13 +234,13 @@ public class UserManager {
                 List<ValidationResult.ValidationError> errors = new ArrayList<>();
                 Optional<String> password = userRepository.findPasswordByUsername(username);
                 if(!password.filter(p -> passwordEncoder.matches(oldPassword, p)).isPresent()) {
-                    errors.add(new ValidationResult.ValidationError("old-password-invalid", "wrong password"));
+                    errors.add(new ValidationResult.ValidationError("alfio.old-password-invalid", "wrong password"));
                 }
                 if(!PasswordGenerator.isValid(newPassword)) {
-                    errors.add(new ValidationResult.ValidationError("new-password-invalid", "new password is not strong enough"));
+                    errors.add(new ValidationResult.ValidationError("alfio.new-password-invalid", "new password is not strong enough"));
                 }
                 if(!StringUtils.equals(newPassword, newPasswordConfirm)) {
-                    errors.add(new ValidationResult.ValidationError("new-password-does-not-match", "new password has not been confirmed"));
+                    errors.add(new ValidationResult.ValidationError("alfio.new-password-does-not-match", "new password has not been confirmed"));
                 }
                 return ValidationResult.of(errors);
             })

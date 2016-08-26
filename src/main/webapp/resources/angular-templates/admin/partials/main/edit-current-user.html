@@ -30,6 +30,7 @@
         </div>
     </form>
     <div class="clearfix"></div>
+    <div uib-alert type="success" close="editCurrentUserCtrl.dismissMessage()" dismiss-on-timeout="1500" data-ng-if="editCurrentUserCtrl.showMessage">Success!</div>
     <div class="page-header">
         <h4>Change Password</h4>
     </div>
@@ -54,8 +55,9 @@
             <button type="reset" class="btn btn-default">Cancel</button>
         </div>
 
-        <div data-ng-messages="editCurrentUserCtrl.changePassword.$error" class="text-danger" data-ng-messages-multiple>
-            <div data-ng-message="new-password-invalid">
+
+        <div data-ng-messages="editCurrentUserCtrl.changePassword.$error" class="text-danger wMarginBottom" data-ng-messages-multiple>
+            <div data-ng-message="alfio.new-password-invalid">
                 <span>The new password doesn't match the required format. It must be <strong>at least</strong> 10 characters and it must: </span>
                 <ul>
                     <li>contain <strong>at least</strong> an uppercase letter <code>A-Z</code></li>
@@ -64,8 +66,8 @@
                     <li><strong>not</strong> contain spaces</li>
                 </ul>
             </div>
-            <div data-ng-message="new-password-does-not-match">"New password" and "Confirm new password" don't match</div>
-            <div data-ng-message="old-password-invalid">Current password is not valid</div>
+            <div data-ng-message="alfio.new-password-does-not-match">"New password" and "Confirm new password" don't match</div>
+            <div data-ng-message="alfio.old-password-invalid">Current password is not valid</div>
             <div data-ng-message="pattern">The value should match the following pattern: {{requiredPattern}}</div>
         </div>
 

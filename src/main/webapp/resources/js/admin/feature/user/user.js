@@ -147,7 +147,7 @@
 
     EditUserController.$inject = ['$state', '$stateParams', '$rootScope', '$q', 'OrganizationService', 'UserService', 'ValidationService', '$q'];
 
-    function EditCurrentUserController($state, user, UserService, ValidationService) {
+    function EditCurrentUserController($state, user, UserService, $timeout) {
         var self = this;
         self.user = user;
         self.original = user;
@@ -159,6 +159,7 @@
                     return UserService.editUser(self.user).then(function() {
                         self.original = angular.copy(self.user);
                         self.loading = false;
+                        self.showMessage = true;
                     });
                 });
                 promise.then(function() {}, function(err) {
@@ -175,6 +176,9 @@
         };
 
         self.updatePassword = function() {
+            ['alfio.new-password-invalid', 'alfio.new-password-does-not-match', 'alfio.old-password-invalid'].forEach(function(e) {
+                self.changePassword.$setValidity(e, true);
+            });
             if(self.changePassword.$valid) {
                 self.loading = true;
                 UserService.updatePassword(self.passwordContainer).then(function(result) {
@@ -182,7 +186,11 @@
                     if(validationResult.success) {
                         self.passwordContainer = {};
                         self.changePasswordErrors = {};
-                        alert('succeeded');
+                        self.showMessage = true;
+                        $timeout(function() {
+                            self.changePassword.$setPristine();
+                            self.changePassword.$setUntouched();
+                        });
                     } else {
                         angular.forEach(validationResult.validationErrors, function(e) {
                             self.changePassword.$setValidity(e.fieldName, false);
@@ -191,11 +199,14 @@
                     self.loading = false;
                 });
             }
+            self.dismissMessage = function() {
+                self.showMessage = false;
+            };
         };
 
     }
 
-    EditCurrentUserController.$inject = ['$state', 'user', 'UserService', 'ValidationService'];
+    EditCurrentUserController.$inject = ['$state', 'user', 'UserService', '$timeout'];
 
     function OrganizationService($http, HttpErrorHandler) {
         return {
