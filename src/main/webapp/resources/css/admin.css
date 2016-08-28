@@ -378,3 +378,7 @@ a.emulate-nav-pills-link {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.map-container {
+    min-height: 360px;
+}

@@ -33,7 +33,7 @@
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.location" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
-        <div class="col-sm-4 col-md-4">
+        <div class="col-sm-4 col-md-4 map-container">
             <i class="fa fa-cog fa-spin fa-3x" data-ng-if="loadingMap"></i>
             <span class="text-danger" data-ng-if="mapError && !loadingMap">{{mapError}}</span>
             <img data-ng-if="obj.geolocation && !loadingMap" data-ng-src="{{obj.geolocation.mapUrl}}" alt="{{obj.location}}" class="img-responsive"/>
