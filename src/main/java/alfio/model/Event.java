@@ -251,14 +251,14 @@ public class Event implements EventHiddenFieldContainer {
         VEvent vEvent = new VEvent();
         vEvent.setSummary(getDisplayName());
         vEvent.setDescription(description);
-        vEvent.setLocation(getLocation());
+        vEvent.setLocation(StringUtils.replacePattern(getLocation(), "[\n\r\t]+", " "));
         vEvent.setDateStart(Date.from(getBegin().toInstant()));
         vEvent.setDateEnd(Date.from(getEnd().toInstant()));
         vEvent.setUrl(getWebsiteUrl());
         vEvent.setOrganizer(new Organizer(organizerName, organizerEmail));
         ical.addEvent(vEvent);
         StringWriter strWriter = new StringWriter();
-        try (ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V1_0)) {
+        try (ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V2_0)) {
             writer.write(ical);
             return Optional.of(strWriter.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
