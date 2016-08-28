@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.manager.EventNameManager;
 import alfio.util.MustacheCustomTagInterceptor;
 import lombok.extern.log4j.Log4j2;
@@ -31,8 +32,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
@@ -42,6 +43,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @Log4j2
 public class UtilsApiController {
 
+    private static final List<String> CURRENCIES_BLACKLIST = Arrays.asList("USN", "USS");
     private final EventNameManager eventNameManager;
     private final String version;
 
@@ -82,6 +84,14 @@ public class UtilsApiController {
         applicationInfo.put("version", version);
         applicationInfo.put("username", principal.getName());
         return applicationInfo;
+    }
+
+    @RequestMapping(value = "/currencies", method = GET)
+    public List<CurrencyDescriptor> getCurrencies() {
+        return Currency.getAvailableCurrencies().stream()
+            .filter(c -> c.getDefaultFractionDigits() == 2 && !CURRENCIES_BLACKLIST.contains(c.getCurrencyCode())) //currencies which don't support cents are filtered out. Support will be implemented in the next version
+            .map(c -> new CurrencyDescriptor(c.getCurrencyCode(), c.getDisplayName(), c.getSymbol(), c.getDefaultFractionDigits()))
+            .collect(Collectors.toList());
     }
 
 }

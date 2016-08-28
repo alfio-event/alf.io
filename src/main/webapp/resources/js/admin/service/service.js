@@ -384,6 +384,9 @@
             getApplicationInfo: function() {
                 return $http.get('/admin/api/utils/alfio/info').error(HttpErrorHandler.handle);
             },
+            getAvailableCurrencies: function() {
+                return $http.get('/admin/api/utils/currencies').error(HttpErrorHandler.handle);
+            },
             logout: function() {
                 return $http.post("/logout").error(HttpErrorHandler.handle);
             }

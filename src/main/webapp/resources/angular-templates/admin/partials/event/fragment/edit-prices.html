@@ -31,8 +31,8 @@
         </div>
         <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
             <div class="form-group" bs-form-error="editEvent.currency">
-                <label for="currency">Currency</label>
-                <input type="text" data-ng-model="obj.currency" name="currency" id="currency" class="form-control" required pattern="[A-Z]{3}"/>
+                <label for="currency">Currency <i class="fa fa-info-circle" data-uib-tooltip="Some payment options don't support all currencies. Please double check that before activate them"></i></label>
+                <input type="text" data-ng-model="obj.currency" name="currency" id="currency" class="form-control" uib-typeahead="currency.code as currency.name for currency in currencies | filter:$viewValue | limitTo:8" required pattern="[A-Z]{3}"/>
                 <field-error data-form-obj="editEvent" data-field-obj="editEvent.currency" data-required-pattern="'Three capital letters'"></field-error>
             </div>
         </div>

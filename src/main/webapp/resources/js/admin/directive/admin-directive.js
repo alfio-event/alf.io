@@ -358,7 +358,7 @@
         }
     });
 
-    directives.directive('editPrices', function() {
+    directives.directive('editPrices', ['UtilsService', function(UtilsService) {
         return {
             scope: {
                 obj: '=targetObj',
@@ -381,9 +381,13 @@
                     return PriceCalculator.calculateTotalPrice(event, false);
                 };
 
+                UtilsService.getAvailableCurrencies().then(function(result) {
+                    $scope.currencies = result.data;
+                });
+
             }
         }
-    });
+    }]);
 
     directives.directive('prices', function() {
         return {
