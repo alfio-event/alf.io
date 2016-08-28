@@ -110,15 +110,21 @@
 
     <h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
     {{#useFirstAndLastName}}
-    <div class="form-group {{#field-has-error}}[firstName] has-error{{/field-has-error}}">
-        <label for="full-name" class="control-label">{{#i18n}}common.first-name{{/i18n}}</label>
-        <input type="text" name="firstName" id="first-name" required class="form-control" autocomplete="fname" maxlength="255" value="{{paymentForm.firstName}}">
-        {{#field-has-error}}[firstName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}firstName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
-    </div>
-    <div class="form-group {{#field-has-error}}[lastName] has-error{{/field-has-error}}">
-        <label for="full-name" class="control-label">{{#i18n}}common.last-name{{/i18n}}</label>
-        <input type="text" name="lastName" id="last-name" required class="form-control" autocomplete="lname" maxlength="255" value="{{paymentForm.lastName}}">
-        {{#field-has-error}}[lastName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}lastName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+    <div class="row">
+        <div class="col-xs-12 col-sm-6">
+            <div class="form-group {{#field-has-error}}[firstName] has-error{{/field-has-error}}">
+                <label for="first-name" class="control-label">{{#i18n}}common.first-name{{/i18n}}</label>
+                <input type="text" name="firstName" id="first-name" required class="form-control" autocomplete="fname" maxlength="255" value="{{paymentForm.firstName}}">
+                {{#field-has-error}}[firstName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}firstName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-6">
+            <div class="form-group {{#field-has-error}}[lastName] has-error{{/field-has-error}}">
+                <label for="last-name" class="control-label">{{#i18n}}common.last-name{{/i18n}}</label>
+                <input type="text" name="lastName" id="last-name" required class="form-control" autocomplete="lname" maxlength="255" value="{{paymentForm.lastName}}">
+                {{#field-has-error}}[lastName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}lastName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+            </div>
+        </div>
     </div>
     {{/useFirstAndLastName}}
     {{^useFirstAndLastName}}
