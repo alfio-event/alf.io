@@ -114,7 +114,7 @@
                 }
 
                 if(scope.watchObj) {
-                    var clearListener = scope.$watch(function() { return scope.watchObj; }, function(newVal, oldVal) {
+                    var clearListener = scope.$watch('watchObj', function(newVal, oldVal) {
                         if(newVal && newVal['date']) {
                             var dr = pickerElement.data('daterangepicker');
                             if(angular.equals({date: dr.endDate.format('YYYY-MM-DD'), time: dr.endDate.format('HH:mm')}, oldVal)) {

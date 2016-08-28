@@ -174,15 +174,13 @@
             date: now.format('YYYY-MM-DD'),
             time: now.format('HH:mm')
         };
-        var category = {
+        return {
             inception: inceptionDateTime,
             expiration: expirationDateTime,
             tokenGenerationRequested: false,
             sticky: sticky,
             bounded: false
         };
-
-        return category;
 
     };
 
