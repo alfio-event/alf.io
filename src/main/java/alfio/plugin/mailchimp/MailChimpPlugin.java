@@ -25,18 +25,27 @@ import alfio.plugin.ReservationConfirmationPlugin;
 import alfio.plugin.TicketAssignmentPlugin;
 import alfio.plugin.WaitingQueueSubscriptionPlugin;
 import alfio.util.Json;
+import biweekly.util.org.apache.commons.codec.binary.Hex;
 import com.squareup.okhttp.*;
+import lombok.extern.log4j.Log4j2;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
-
+@Log4j2
 public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAssignmentPlugin, WaitingQueueSubscriptionPlugin {
 
     private static final String DATA_CENTER = "dataCenter";
     private static final String API_KEY = "apiKey";
     private static final String LIST_ID = "listId";
-    private static final String LIST_ADDRESS = "https://%s.api.mailchimp.com/3.0/lists/%s/members/";
+    private static final String LIST_ADDRESS = "https://%s.api.mailchimp.com/3.0/lists/%s/";
+    private static final String LIST_MEMBERS = "members/";
+    private static final String MERGE_FIELDS = "merge-fields/";
     private static final String FAILURE_MSG = "cannot add user {email: %s, name:%s, language: %s} to the list (%s)";
+    private static final String ALFIO_EVENT_KEY = "ALFIO_EKEY";
+    private static final String APPLICATION_JSON = "application/json";
     private final String id = "alfio.mailchimp";
     private final PluginDataStorage pluginDataStorage;
     private final OkHttpClient httpClient = new OkHttpClient();
@@ -48,23 +57,24 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
 
     @Override
     public void onTicketAssignment(Ticket ticket) {
+
         Event event = pluginDataStorage.getEventById(ticket.getEventId());
         CustomerName customerName = new CustomerName(ticket.getFullName(), ticket.getFirstName(), ticket.getLastName(), event);
-        subscribeUser(ticket.getEmail(), customerName, ticket.getUserLanguage(), ticket.getEventId());
+        subscribeUser(ticket.getEmail(), customerName, ticket.getUserLanguage(), ticket.getEventId(), event.getShortName());
     }
 
     @Override
     public void onReservationConfirmation(TicketReservation ticketReservation, int eventId) {
         Event event = pluginDataStorage.getEventById(eventId);
         CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event);
-        subscribeUser(ticketReservation.getEmail(), customerName, ticketReservation.getUserLanguage(), eventId);
+        subscribeUser(ticketReservation.getEmail(), customerName, ticketReservation.getUserLanguage(), eventId, event.getShortName());
     }
 
     @Override
     public void onWaitingQueueSubscription(WaitingQueueSubscription waitingQueueSubscription) {
         Event event = pluginDataStorage.getEventById(waitingQueueSubscription.getEventId());
         CustomerName customerName = new CustomerName(waitingQueueSubscription.getFullName(), waitingQueueSubscription.getFirstName(), waitingQueueSubscription.getLastName(), event);
-        subscribeUser(waitingQueueSubscription.getEmailAddress(), customerName, waitingQueueSubscription.getUserLanguage(), waitingQueueSubscription.getEventId());
+        subscribeUser(waitingQueueSubscription.getEmailAddress(), customerName, waitingQueueSubscription.getUserLanguage(), waitingQueueSubscription.getEventId(), event.getShortName());
     }
 
     @Override
@@ -91,7 +101,7 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
 
     @Override
     public void install(int eventId) {
-        getConfigOptions(eventId).stream().forEach(o -> pluginDataStorage.insertConfigValue(eventId, o.getOptionName(), o.getOptionValue(), o.getDescription(), o.getComponentType()));
+        getConfigOptions(eventId).forEach(o -> pluginDataStorage.insertConfigValue(eventId, o.getOptionName(), o.getOptionValue(), o.getDescription(), o.getComponentType()));
     }
 
     private Optional<String> getListAddress(int eventId, String email, CustomerName name, String language) {
@@ -113,24 +123,36 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
         return apiKey;
     }
 
-    private void subscribeUser(String email, CustomerName name, String language, int eventId) {
+    private void subscribeUser(String email, CustomerName name, String language, int eventId, String eventKey) {
         Optional<String> listAddress = getListAddress(eventId, email, name, language);
         Optional<String> apiKey = getApiKey(eventId, email, name, language);
         if(listAddress.isPresent() && apiKey.isPresent()) {
-            send(eventId, listAddress.get(), apiKey.get(), email, name, language);
+            createMergeFieldIfNotPresent(listAddress.get(), apiKey.get(), eventId, eventKey);
+            send(eventId, listAddress.get() + LIST_MEMBERS + getMd5Email(email), apiKey.get(), email, name, language, eventKey);
         }
     }
 
-    private boolean send(int eventId, String address, String apiKey, String email, CustomerName name, String language) {
+    static String getMd5Email(String email) {
+        try {
+            return Hex.encodeHexString(MessageDigest.getInstance("MD5").digest(email.trim().getBytes("UTF-8")));
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+            return email;//should never happen...
+        }
+    }
+
+    private boolean send(int eventId, String address, String apiKey, String email, CustomerName name, String language, String eventKey) {
         Map<String, Object> content = new HashMap<>();
         content.put("email_address", email);
         content.put("status", "subscribed");
-        content.put("merge_fields", Collections.singletonMap("FNAME", name.isHasFirstAndLastName() ? name.getFirstName() : name.getFullName()));
+        Map<String, String> mergeFields = new HashMap<>();
+        mergeFields.put("FNAME", name.isHasFirstAndLastName() ? name.getFirstName() : name.getFullName());
+        mergeFields.put(ALFIO_EVENT_KEY, eventKey);
+        content.put("merge_fields", mergeFields);
         content.put("language", language);
         Request request = new Request.Builder()
                 .url(address)
-                .header("Authorization", Credentials.basic("api", apiKey))
-                .post(RequestBody.create(MediaType.parse("application/json"), Json.GSON.toJson(content, Map.class)))
+                .header("Authorization", Credentials.basic("alfio", apiKey))
+                .put(RequestBody.create(MediaType.parse(APPLICATION_JSON), Json.GSON.toJson(content, Map.class)))
                 .build();
         try {
             Response response = httpClient.newCall(request).execute();
@@ -149,6 +171,52 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
         } catch (IOException e) {
             pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, e.toString()), eventId);
             return false;
+        }
+    }
+
+    private void createMergeFieldIfNotPresent(String listAddress, String apiKey, int eventId, String eventKey) {
+        Request request = new Request.Builder()
+            .url(listAddress + MERGE_FIELDS)
+            .header("Authorization", Credentials.basic("alfio", apiKey))
+            .get()
+            .build();
+        try {
+            Response response = httpClient.newCall(request).execute();
+            String responseBody = response.body().string();
+            if(!responseBody.contains(ALFIO_EVENT_KEY)) {
+                log.debug("can't find ALFIO_EKEY for event "+eventKey);
+                createMergeField(listAddress, apiKey, eventKey, eventId);
+            }
+        } catch (IOException e) {
+            pluginDataStorage.registerFailure(String.format("Cannot get merge fields for %s, got: %s", eventKey, e.getMessage()), eventId);
+            log.warn("exception while reading merge fields for event id "+eventId, e);
+        }
+    }
+
+    private void createMergeField(String listAddress, String apiKey, String eventKey, int eventId) {
+
+        Map<String, Object> mergeField = new HashMap<>();
+        mergeField.put("tag", ALFIO_EVENT_KEY);
+        mergeField.put("name", "Alfio's event key");
+        mergeField.put("type", "text");
+        mergeField.put("required", false);
+        mergeField.put("public", false);
+
+
+        Request request = new Request.Builder()
+            .url(listAddress + MERGE_FIELDS)
+            .header("Authorization", Credentials.basic("alfio", apiKey))
+            .post(RequestBody.create(MediaType.parse(APPLICATION_JSON), Json.GSON.toJson(mergeField, Map.class)))
+            .build();
+
+        try {
+            Response response = httpClient.newCall(request).execute();
+            if(!response.isSuccessful()) {
+                log.debug("can't create {} merge field. Got: {}", ALFIO_EVENT_KEY, response.body().string());
+            }
+        } catch (IOException e) {
+            pluginDataStorage.registerFailure(String.format("Cannot create merge field for %s, got: %s", eventKey, e.getMessage()), eventId);
+            log.warn("exception while creating ALFIO_EKEY for event id "+eventId, e);
         }
     }
 
