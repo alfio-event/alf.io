@@ -45,6 +45,7 @@ public class DefaultMailer implements Mailer {
         this.defaultMailer = new SmtpMailer(configurationManager);
         mailers.put("smtp", defaultMailer);
         mailers.put("mailgun", new MailgunMailer(configurationManager));
+        mailers.put("mailjet", new MailjetMailer(configurationManager));
     }
 
     @Override

@@ -42,6 +42,12 @@
                         Mailgun.com
                     </label>
                 </div>
+                <div class="radio-inline">
+                    <label>
+                        <input type="radio" name="mailer.type" data-ng-model="organizationConf.mail.type.value" data-ng-value="'mailjet'">
+                        Mailjet.com
+                    </label>
+                </div>
                 <div data-ng-repeat="setting in organizationConf.mail.settings | mailSettingsFilter:organizationConf.mail.type.value"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
                     <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                 </div>
