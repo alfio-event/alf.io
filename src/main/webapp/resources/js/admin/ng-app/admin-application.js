@@ -172,7 +172,7 @@
             time: now.format('HH:mm')
         };
 
-        if (!categoryEndTime | !categoryEndTime.date){
+        if (!categoryEndTime || !categoryEndTime.date){
             categoryEndTime = {
                 date: now.format('YYYY-MM-DD'),
                 time: now.format('HH:mm')
