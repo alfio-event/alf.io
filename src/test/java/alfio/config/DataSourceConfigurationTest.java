@@ -50,6 +50,18 @@ public class DataSourceConfigurationTest {{
             when(environment.getProperty("DB_ENV_DOCKER_DB_NAME")).thenReturn("docker");
             expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.DOCKER);
         });
+        it.should("select AWS BEANSTALK environment", expect -> {
+            when(environment.getProperty("RDS_HOSTNAME")).thenReturn("host.rds.amazonaws.com");
+            when(environment.getRequiredProperty("RDS_HOSTNAME")).thenReturn("host.rds.amazonaws.com");
+            when(environment.getRequiredProperty("RDS_PORT")).thenReturn("3306");
+            when(environment.getRequiredProperty("RDS_DB_NAME")).thenReturn("ebdb");
+            when(environment.getRequiredProperty("RDS_USERNAME")).thenReturn("foo");
+            when(environment.getRequiredProperty("RDS_PASSWORD")).thenReturn("bar");
+            expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.AWS_BEANSTALK);
+            expect.that(configuration.getCloudProvider(environment).getUsername(environment)).isEqualTo("foo");
+            expect.that(configuration.getCloudProvider(environment).getPassword(environment)).isEqualTo("bar");
+            expect.that(configuration.getCloudProvider(environment).getUrl(environment)).isEqualTo("jdbc:mysql://host.rds.amazonaws.com:3306/ebdb");
+        });
 
         it.should("select DEFAULT environment otherwise", expect -> {
             expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.DEFAULT);
