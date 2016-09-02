@@ -164,16 +164,23 @@
         };
     }]);
 
-    var createCategory = function(sticky, $scope) {
+
+    var createCategoryValidUntil = function(sticky, categoryEndTime) {
         var now = moment().startOf('hour');
         var inceptionDateTime = {
             date: now.format('YYYY-MM-DD'),
             time: now.format('HH:mm')
         };
-        var expirationDateTime = {
-            date: now.format('YYYY-MM-DD'),
-            time: now.format('HH:mm')
-        };
+
+        if (!categoryEndTime || !categoryEndTime.date){
+            categoryEndTime = {
+                date: now.format('YYYY-MM-DD'),
+                time: now.format('HH:mm')
+            };
+        }
+
+        var expirationDateTime = _.clone(categoryEndTime);
+
         return {
             inception: inceptionDateTime,
             expiration: expirationDateTime,
@@ -185,7 +192,7 @@
     };
 
     var createAndPushCategory = function(sticky, $scope) {
-        $scope.event.ticketCategories.push(createCategory(sticky, $scope));
+        $scope.event.ticketCategories.push(createCategoryValidUntil(sticky, $scope.event.begin));
     };
 
     var initScopeForEventEditing = function ($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS) {
@@ -634,7 +641,7 @@
         };
 
         $scope.addCategory = function(event) {
-            openCategoryDialog(createCategory(true, $scope), event).then(function() {
+            openCategoryDialog(createCategoryValidUntil(true, event.begin), event).then(function() {
                 loadData();
             });
         };
