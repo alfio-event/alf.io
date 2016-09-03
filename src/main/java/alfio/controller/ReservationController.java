@@ -36,7 +36,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
-import alfio.util.ValidationResult;
+import alfiov2.command.ValidationResult;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;

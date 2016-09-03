@@ -26,7 +26,7 @@ import alfio.model.user.User;
 import alfio.model.user.UserWithPassword;
 import alfio.util.ImageUtil;
 import alfio.util.Json;
-import alfio.util.ValidationResult;
+import alfiov2.command.ValidationResult;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.log4j.Log4j2;

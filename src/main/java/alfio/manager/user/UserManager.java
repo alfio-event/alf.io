@@ -22,7 +22,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.PasswordGenerator;
-import alfio.util.ValidationResult;
+import alfiov2.command.ValidationResult;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;

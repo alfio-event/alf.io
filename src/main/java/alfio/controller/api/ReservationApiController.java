@@ -18,12 +18,12 @@ package alfio.controller.api;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.model.ContentLanguage;
 import alfio.manager.i18n.I18nManager;
+import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.util.TemplateManager;
-import alfio.util.ValidationResult;
+import alfiov2.command.ValidationResult;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;

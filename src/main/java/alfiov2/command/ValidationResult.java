@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.util;
+package alfiov2.command;
 
 import lombok.Getter;
 import org.springframework.validation.FieldError;
