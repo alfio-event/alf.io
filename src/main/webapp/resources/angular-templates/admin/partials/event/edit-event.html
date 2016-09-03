@@ -7,6 +7,9 @@
         <span class="text-muted">Please fill in the required information and then save</span>
     </div>
     <form role="form" name="editEvent" data-ng-submit="save(editEvent, event)" data-error-sensitive="editEventHeader,editPrices" novalidate>
+        <div>
+            <button class="btn btn-warning" ng-click="reset()" type="button">Reset values</button>
+        </div>
         <div class="page-header">
             <h3>Logistic info and description</h3>
         </div>

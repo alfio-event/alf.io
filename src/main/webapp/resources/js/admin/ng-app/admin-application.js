@@ -255,6 +255,9 @@
         };
 
         $scope.cancel = function() {
+            if(window.sessionStorage) {
+                delete window.sessionStorage.new_event;
+            }
             $state.go('index');
         };
 
@@ -310,39 +313,80 @@
                                                        EventService, LocationService, PAYMENT_PROXY_DESCRIPTIONS) {
 
         var eventType = $state.$current.data.eventType;
-        $scope.event = {
-            type: eventType,
-            freeOfCharge: false,
-            begin: {},
-            end: {}
-        };
+
+        if(window.sessionStorage && window.sessionStorage.new_event) {
+            $scope.event = JSON.parse(window.sessionStorage.new_event);
+
+            //hack: remove angular hash for elements in arrays, or else ng-repeat will complain about duplicated data
+            angular.forEach($scope.event.ticketCategories, function(v) {
+                delete v.$$hashKey
+            });
+            angular.forEach($scope.event.additionalServices, function(v) {
+                delete v.$$hashKey
+            });
+            //
+        } else {
+            $scope.event = {
+                    type: eventType,
+                    freeOfCharge: false,
+                    begin: {},
+                    end: {}
+                };
+
+            $scope.event.ticketCategories = [];
+            $scope.event.additionalServices = [];
+            if(eventType === 'INTERNAL') {
+                createAndPushCategory(true, $scope);
+            }
+        }
+
+        $scope.reset = function() {
+            $scope.event = {
+                type: eventType,
+                freeOfCharge: false,
+                begin: {},
+                end: {}
+            };
+            initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS);
+        }
+
+
         $scope.allocationStrategyRadioClass = 'radio-inline';
         initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS);
         $scope.addCategory = function() {
             createAndPushCategory(false, $scope);
         };
 
-        $scope.event.ticketCategories = [];
-        $scope.event.additionalServices = [];
-
         $scope.setAdditionalServices = function(event, additionalServices) {
             event.additionalServices = additionalServices;
         };
 
-        if(eventType === 'INTERNAL') {
-            createAndPushCategory(true, $scope);
-        }
+
 
         $scope.save = function(form, event) {
             /*if(!form.$valid) {
                 return;
             }*/
+
             validationPerformer($q, EventService.checkEvent, event, form).then(function() {
                 EventService.createEvent(event).success(function() {
+                    if(window.sessionStorage) {
+                        delete window.sessionStorage.new_event;
+                    }
                     $state.go('index');
                 });
             }, angular.noop);
         };
+
+        //persist model
+        $scope.$watch('event', function() {
+            if(window.sessionStorage) {
+                try{
+                    window.sessionStorage['new_event'] = JSON.stringify($scope.event);
+                } catch(e) {
+                }
+            }
+        }, true);
 
         $scope.calcDynamicTickets = function(eventSeats, categories) {
             var value = 0;
