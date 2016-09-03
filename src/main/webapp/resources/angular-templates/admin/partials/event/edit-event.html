@@ -7,9 +7,6 @@
         <span class="text-muted">Please fill in the required information and then save</span>
     </div>
     <form role="form" name="editEvent" data-ng-submit="save(editEvent, event)" data-error-sensitive="editEventHeader,editPrices" novalidate>
-        <div>
-            <button class="btn btn-warning" ng-click="reset()" type="button">Reset values</button>
-        </div>
         <div class="page-header">
             <h3>Logistic info and description</h3>
         </div>
@@ -144,6 +141,10 @@
             <additional-services data-selected-languages="event.locales" data-event-is-free-of-charge="event.freeOfCharge" data-available-languages="allLanguages" data-on-modification="setAdditionalServices(event, additionalServices)" data-event-start-date="event.begin | formatDateTimeModification"></additional-services>
         </div>
 
+        <hr class="wMarginTop30px"/>
+        <div class="pull-left">
+            <button class="btn btn-lg btn-default" ng-click="reset()" type="button">Reset values</button>
+        </div>
         <control-buttons data-form-obj="editEvent"></control-buttons>
     </form>
 </div>
