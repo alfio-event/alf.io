@@ -51,7 +51,7 @@
                 <div class="col-sm-2" data-ng-if="ctrl.item.fixPrice">
                     <div class="form-group" bs-form-error="ctrl.additionalServiceForm.price">
                         <label>
-                            Price: <input type="number" class="form-control" data-ng-model="ctrl.item.price" required>
+                            Price: <input type="number" min="0" class="form-control" data-ng-model="ctrl.item.price" required>
                         </label>
                         <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.price" data-show-existing-errors="ctrl.showExistingErrors"></field-error>
                     </div>

@@ -102,14 +102,14 @@
         <div class="col-sm-12 col-md-4" data-ng-if="!event.freeOfCharge">
             <div class="form-group" bs-form-error="ticketCategory.price">
                 <label for="{{buildPrefix($index, 'price')}}">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event, editMode)}}%)</span></label>
-                <input type="number" data-ng-model="ticketCategory.price" name="{{buildPrefix($index, 'price')}}" id="{{buildPrefix($index, 'price')}}" class="form-control" required />
+                <input type="number" min="0" data-ng-model="ticketCategory.price" name="{{buildPrefix($index, 'price')}}" id="{{buildPrefix($index, 'price')}}" class="form-control" required />
                 <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.price" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
         <div class="col-sm-12 col-md-4" data-ng-if="ticketCategory.bounded">
             <div class="form-group" bs-form-error="ticketCategory.maxTickets">
                 <label for="{{buildPrefix($index, 'maxTickets')}}">Max Tickets</label>
-                <input type="number" data-ng-model="ticketCategory.maxTickets" name="{{buildPrefix($index, 'maxTickets')}}" id="{{buildPrefix($index, 'maxTickets')}}" class="form-control" required />
+                <input type="number" min="0" data-ng-model="ticketCategory.maxTickets" name="{{buildPrefix($index, 'maxTickets')}}" id="{{buildPrefix($index, 'maxTickets')}}" class="form-control" required />
                 <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.maxTickets" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>

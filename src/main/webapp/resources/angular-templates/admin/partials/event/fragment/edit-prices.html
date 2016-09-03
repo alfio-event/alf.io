@@ -18,14 +18,14 @@
         <div class="col-sm-2">
             <div class="form-group" bs-form-error="editEvent.availableSeats">
                 <label for="availableSeats">Max tickets</label>
-                <input type="number" data-ng-model="obj.availableSeats" name="availableSeats" id="availableSeats" class="form-control" required />
+                <input type="number" min="0" data-ng-model="obj.availableSeats" name="availableSeats" id="availableSeats" class="form-control" required />
                 <field-error data-form-obj="editEvent" data-field-obj="editEvent.availableSeats"></field-error>
             </div>
         </div>
         <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
             <div class="form-group" bs-form-error="editEvent.regularPrice">
                 <label for="regularPrice">Regular Price <i data-ng-if="showPriceWarning" class="fa fa-warning text-warning tooltip-handler" title="Changing the regular price could lead to incoherence with categories' prices. Please do a double check before saving."></i></label>
-                <input type="number" data-ng-model="obj.regularPrice" name="regularPrice" id="regularPrice" class="form-control" required />
+                <input type="number" min="0" data-ng-model="obj.regularPrice" name="regularPrice" id="regularPrice" class="form-control" required />
                 <field-error data-form-obj="editEvent" data-field-obj="editEvent.regularPrice"></field-error>
             </div>
         </div>
@@ -39,7 +39,7 @@
         <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
             <div class="form-group" bs-form-error="editEvent.vatPercentage">
                 <label for="vatPercentage">VAT (%)</label>
-                <input type="number" data-ng-model="obj.vatPercentage" name="vatPercentage" id="vatPercentage" class="form-control" required />
+                <input type="number" min="0" data-ng-model="obj.vatPercentage" name="vatPercentage" id="vatPercentage" class="form-control" required />
                 <field-error data-form-obj="editEvent" data-field-obj="editEvent.vatPercentage"></field-error>
             </div>
         </div>
