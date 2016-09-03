@@ -1,4 +1,8 @@
 <div class="col-sm-12">
+    <div class="row" ng-if="!ticketCategory.sticky && ticketCategory.id === undefined" style="text-align:right">
+        <button ng-click="event.ticketCategories.splice(event.ticketCategories.indexOf(ticketCategory), 1)" class="btn btn-warning"><i class="fa fa-trash"></i> Remove</button>
+    </div>
+
     <div class="row">
         <div class="col-sm-12 col-md-4">
             <div class="form-group" bs-form-error="ticketCategory.name">
