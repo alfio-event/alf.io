@@ -119,6 +119,7 @@
             <div data-ng-if="isLanguagePresent(event.locales, language.value)" class="form-group">
                 <label for="{{buildPrefix($index, 'description.'+lang)}}">Description: {{language.displayLanguage}} <display-commonmark-preview text="ticketCategory.description[language.locale]"></display-commonmark-preview></label>
                 <textarea data-ng-model="ticketCategory.description[language.locale]" name="{{buildPrefix($index, 'description.'+lang)}}" id="{{buildPrefix($index, 'description.'+lang)}}" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
+                <common-mark-help></common-mark-help>
             </div>
         </div>
     </div>

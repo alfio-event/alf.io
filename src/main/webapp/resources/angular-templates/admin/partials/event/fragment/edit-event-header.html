@@ -67,6 +67,7 @@
                 <div class="form-group" bs-form-error="editEventHeader['description-'+allLanguagesMapping[langValue].locale]">
                     <label for="description">Event Description: {{allLanguagesMapping[langValue].displayLanguage}} <display-commonmark-preview text="obj.description[allLanguagesMapping[langValue].locale]"></display-commonmark-preview></p></label>
                     <textarea data-ng-model="obj.description[allLanguagesMapping[langValue].locale]" name="description-{{allLanguagesMapping[langValue].locale}}" id="description" required class="form-control" data-ng-minlength="10" data-ng-maxlength="2048"></textarea>
+                    <common-mark-help></common-mark-help>
                     <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader['description-'+allLanguagesMapping[langValue].locale]" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
                 </div>
             </div>

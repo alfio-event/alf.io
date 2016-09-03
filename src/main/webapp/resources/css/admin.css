@@ -386,3 +386,16 @@ a.emulate-nav-pills-link {
 .wMarginTop30px {
     margin-top: 30px;
 }
+
+.markdown-logo {
+    width: 16px;
+    height: 16px;
+}
+
+.markdown-help {
+    padding-left: 5px;
+}
+
+.markdown-help a {
+    font-size: 12px;
+}
