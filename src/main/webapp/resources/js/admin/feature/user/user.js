@@ -204,6 +204,8 @@
             };
         };
 
+        self.isAdmin = (self.user.username === 'admin');
+
     }
 
     EditCurrentUserController.$inject = ['$state', 'user', 'UserService', '$timeout'];
