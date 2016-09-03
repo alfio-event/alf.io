@@ -35,11 +35,11 @@ import static java.util.Collections.singleton;
 
 public class EventModellingTest {
 
-    private static final ZoneId ETC = ZoneId.of("ECT");
+    private static final ZoneId CET = ZoneId.of("CET");
 
     @Test
     public void testSingleDayConference() throws Exception {
-        EventBuilder.StrictAllocation vdt17 = EventBuilder.StrictAllocation.newEvent("Voxxed Days Ticino", 440, ETC);
+        EventBuilder.StrictAllocation vdt17 = EventBuilder.StrictAllocation.newEvent("Voxxed Days Ticino", 440, CET);
         vdt17.addTimeSlot(LocalDateTime.of(2017, 5, 6, 9, 0, 0, 0), LocalDateTime.of(2017, 5, 6, 18, 0, 0, 0));
         //Category with limited seats
         vdt17.addCategory(singleton(text(ContentLanguage.ENGLISH, "ILOVEVDT", "Super price!")), 20, PaymentOptionsBuilder.of(new BigDecimal("95.0"), "CHF").vatIncluded(new BigDecimal("8.0")).enableMethods(PaymentProxy.availableProxies()));
@@ -51,7 +51,7 @@ public class EventModellingTest {
     @Test
     public void testSingleDayConferenceWithWorkshop() throws Exception {
 
-        EventBuilder.StrictAllocation vdt17 = EventBuilder.StrictAllocation.newEvent("Voxxed Days Ticino", 440, ETC);
+        EventBuilder.StrictAllocation vdt17 = EventBuilder.StrictAllocation.newEvent("Voxxed Days Ticino", 440, CET);
         vdt17.addTimeSlot(LocalDateTime.of(2017, 5, 6, 9, 0, 0, 0), LocalDateTime.of(2017, 5, 6, 18, 0, 0, 0));
         //tickets are always sold at the combi level, then if they are for the non combi category, they are moved to the category
         vdt17.addCategory(singleton(text(ContentLanguage.ENGLISH, "WORKSHOP_JAVA", "Workshop description")), 20, PaymentOptionsBuilder.of(new BigDecimal("120.0"), "CHF").vatIncluded(new BigDecimal("8.0")).enableMethods(PaymentProxy.availableProxies()))
@@ -63,7 +63,7 @@ public class EventModellingTest {
 
     @Test
     public void testMultipleDaysConference() throws Exception {
-        EventBuilder.StrictAllocation  multiDayEvent = EventBuilder.StrictAllocation.newEvent("Multiple Days", 4000, ETC);
+        EventBuilder.StrictAllocation  multiDayEvent = EventBuilder.StrictAllocation.newEvent("Multiple Days", 4000, CET);
         Stream.of(Pair.of(LocalDateTime.of(2017, 11, 7, 10, 0, 0, 0), LocalDateTime.of(2017, 11, 7, 18, 0, 0, 0)), Pair.of(LocalDateTime.of(2017, 11, 8, 9, 0, 0, 0), LocalDateTime.of(2017, 11, 8, 18, 0, 0, 0)))
             .forEach(p -> multiDayEvent.addTimeSlot(p.getLeft(), p.getRight()));
 
@@ -74,7 +74,7 @@ public class EventModellingTest {
 
     @Test
     public void testMultipleDaysConferenceWithMultipleWorkshops() throws Exception {
-        EventBuilder.StrictAllocation combiEvent = EventBuilder.StrictAllocation.newEvent("Combi event", 4000, ETC);
+        EventBuilder.StrictAllocation combiEvent = EventBuilder.StrictAllocation.newEvent("Combi event", 4000, CET);
 
         Stream.of(Pair.of(LocalDateTime.of(2017, 11, 7, 10, 0, 0, 0), LocalDateTime.of(2017, 11, 7, 18, 0, 0, 0)), Pair.of(LocalDateTime.of(2017, 11, 8, 9, 0, 0, 0), LocalDateTime.of(2017, 11, 8, 18, 0, 0, 0)))
             .forEach(p -> combiEvent.addTimeSlot(p.getLeft(), p.getRight()));
@@ -96,14 +96,14 @@ public class EventModellingTest {
 
     @Test
     public void testFreeEvent() throws Exception {
-        EventBuilder.StrictAllocation jugJune17 = EventBuilder.StrictAllocation.newEvent("JUG Lugano", 3, ETC);
+        EventBuilder.StrictAllocation jugJune17 = EventBuilder.StrictAllocation.newEvent("JUG Lugano", 3, CET);
         jugJune17.addTimeSlot(LocalDateTime.of(2017, 5, 6, 18, 30, 0, 0), LocalDateTime.of(2017, 5, 6, 20, 0, 0, 0));
         jugJune17.startSellingTickets(PaymentOptionsBuilder.none());
     }
 
     @Test
     public void testFreeEventWithGadgets() throws Exception {
-        EventBuilder.StrictAllocation giada = EventBuilder.StrictAllocation.newEvent("Giada Art", 3, ETC);
+        EventBuilder.StrictAllocation giada = EventBuilder.StrictAllocation.newEvent("Giada Art", 3, CET);
         giada.addTimeSlot(LocalDateTime.of(2017, 5, 6, 9, 0, 0, 0), LocalDateTime.of(2017, 5, 6, 18, 0, 0, 0));
         giada.addAdditionalItem(singleton(text(ContentLanguage.ENGLISH, "T-Shirt", "Buy the event T-Shirt!")), PaymentOptionsBuilder.of(new BigDecimal("20"), "CHF").vatIncluded(new BigDecimal("8.0")).enableMethods(PaymentProxy.availableProxies()));
         giada.startSellingTickets(PaymentOptionsBuilder.none());
@@ -111,7 +111,7 @@ public class EventModellingTest {
 
     @Test
     public void testMuseumExposition() throws Exception {
-        EventBuilder.RelaxedAllocation jugJune17 = EventBuilder.RelaxedAllocation.createEvent("LAC - Herman Hesse", ZonedDateTime.of(2017, 4, 1, 9, 0, 0, 0, ETC));
+        EventBuilder.RelaxedAllocation jugJune17 = EventBuilder.RelaxedAllocation.createEvent("LAC - Herman Hesse", ZonedDateTime.of(2017, 4, 1, 9, 0, 0, 0, CET));
     }
 
 }
