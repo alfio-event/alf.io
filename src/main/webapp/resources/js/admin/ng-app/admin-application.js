@@ -314,6 +314,19 @@
 
         var eventType = $state.$current.data.eventType;
 
+        function initTicketCategoriesAndAdditionalServices() {
+            if($scope.event.ticketCategories  === undefined) {
+                $scope.event.ticketCategories = [];
+            }
+            if($scope.event.additionalServices === undefined) {
+                $scope.event.additionalServices = [];
+            }
+
+            if(eventType === 'INTERNAL' && $scope.event.ticketCategories.length === 0) {
+                createAndPushCategory(true, $scope);
+            }
+        }
+
         if(window.sessionStorage && window.sessionStorage.new_event) {
             $scope.event = JSON.parse(window.sessionStorage.new_event);
 
@@ -324,6 +337,8 @@
             angular.forEach($scope.event.additionalServices, function(v) {
                 delete v.$$hashKey
             });
+
+            initTicketCategoriesAndAdditionalServices();
             //
         } else {
             $scope.event = {
@@ -332,12 +347,7 @@
                     begin: {},
                     end: {}
                 };
-
-            $scope.event.ticketCategories = [];
-            $scope.event.additionalServices = [];
-            if(eventType === 'INTERNAL') {
-                createAndPushCategory(true, $scope);
-            }
+                initTicketCategoriesAndAdditionalServices();
         }
 
         $scope.reset = function() {
@@ -347,6 +357,7 @@
                 begin: {},
                 end: {}
             };
+            initTicketCategoriesAndAdditionalServices();
             initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS);
         }
 
