@@ -33,6 +33,7 @@ import static java.util.Optional.ofNullable;
  * - ElephantDB: runs on Openshift and Cloud Foundry
  * - Cloud Foundry: postgres, mysql (injected)
  * - Heroku
+ * - AWS: mysql and postgres
  * - local use with system properties
  */
 public enum PlatformProvider {
@@ -272,6 +273,52 @@ public enum PlatformProvider {
         public boolean isHosting(Environment env) {
             return ofNullable(env.getProperty("DB_ENV_POSTGRES_DB")).isPresent();
         }
+    },
+
+    AWS_BEANSTALK {
+        @Override
+        public String getDriveClassName(Environment env) {
+            return isMySql(env) ? MYSQL_DRIVER : POSTGRESQL_DRIVER;
+        }
+
+        @Override
+        public String getUrl(Environment env) {
+            String dbType = isMySql(env) ? "mysql" : "postgresql";
+            String host = env.getRequiredProperty("RDS_HOSTNAME");
+            String port = env.getRequiredProperty("RDS_PORT");
+            String db = env.getRequiredProperty("RDS_DB_NAME");
+            return String.format("jdbc:%s://%s:%s/%s", dbType, host, port, db);
+        }
+
+        @Override
+        public String getUsername(Environment env) {
+            return env.getRequiredProperty("RDS_USERNAME");
+        }
+
+        @Override
+        public String getPassword(Environment env) {
+            return env.getRequiredProperty("RDS_PASSWORD");
+        }
+
+        @Override
+        public String getValidationQuery(Environment env) {
+            return "SELECT 1";
+        }
+
+        @Override
+        public String getDialect(Environment env) {
+            return isMySql(env) ? MYSQL : PGSQL;
+        }
+
+        @Override
+        public boolean isHosting(Environment env) {
+            return ofNullable(env.getProperty("RDS_HOSTNAME")).isPresent();
+        }
+
+        private boolean isMySql(Environment env) {
+            return ofNullable(env.getRequiredProperty("RDS_PORT")).get().equals("3306");
+        }
+
     };
 
     private static final String POSTGRESQL_DRIVER = "org.postgresql.Driver";
