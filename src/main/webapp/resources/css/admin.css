@@ -382,3 +382,7 @@ a.emulate-nav-pills-link {
 .map-container {
     min-height: 360px;
 }
+
+.wMarginTop30px {
+    margin-top: 30px;
+}
