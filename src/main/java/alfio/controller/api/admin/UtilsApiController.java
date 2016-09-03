@@ -20,6 +20,7 @@ import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.manager.EventNameManager;
 import alfio.util.MustacheCustomTagInterceptor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -75,7 +76,7 @@ public class UtilsApiController {
     
     @RequestMapping(value = "/render-commonmark") 
     public String renderCommonmark(@RequestParam("text") String input) {
-    	return MustacheCustomTagInterceptor.renderToCommonmark(input);
+    	return MustacheCustomTagInterceptor.renderToCommonmark(StringEscapeUtils.escapeHtml4(input));
     }
 
     @RequestMapping(value = "/alfio/info", method = GET)
