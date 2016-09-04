@@ -7,9 +7,6 @@
         <span class="text-muted">Please fill in the required information and then save</span>
     </div>
     <form role="form" name="editEvent" data-ng-submit="save(editEvent, event)" data-error-sensitive="editEventHeader,editPrices" novalidate>
-        <div>
-            <button class="btn btn-warning" ng-click="reset()" type="button">Reset values</button>
-        </div>
         <div class="page-header">
             <h3>Logistic info and description</h3>
         </div>
@@ -55,8 +52,8 @@
 
 
             <div class="page-header">
-                <h3>Ticket form fields</h3>
-                <h5 class="text-muted">Here you can add/remove additional fields</h5>
+                <h3>Attendees' data to collect</h3>
+                <h5 class="text-muted">Attendees' full name, e-mail and language are collected by default. What else do you need to know about your attendees?</h5>
             </div>
 
             <div data-ng-repeat="field in event.ticketFields | orderBy: 'order' " class="category container">
@@ -126,19 +123,28 @@
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-sm-11">
-                    <h4>Add from template <span data-ng-repeat="template in dynamicFieldTemplates" ><a class="btn btn-primary btn-xs" data-ng-click="addTicketFieldFromTemplate(event, template)">{{template.name}}</a> </span></h4>
-
+            <div ng-init="dropdownOpen = false">
+                <div class="btn-group" uib-dropdown is-open="dropdownOpen">
+                    <button id="single-button" type="button" class="btn btn-success" uib-dropdown-toggle>
+                        Add new <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                        <li role="menuitem"><a ng-click="addNewTicketField(event)"><i class="fa fa-file-o"></i> Custom</a></li>
+                        <li role="menuitem" ng-repeat="template in dynamicFieldTemplates"><a ng-click="addTicketFieldFromTemplate(event, template)"><i class="fa fa-clone"></i> {{template.name}}</a></li>
+                    </ul>
                 </div>
-                <div class="col-sm-1"><p><button type="button" class="btn btn-success" ng-click="addNewTicketField(event)"><i class="fa fa-plus"></i></button></p></div>
             </div>
+            <div class="clearfix"></div>
         </div>
 
         <div class="wMarginBottom">
             <additional-services data-selected-languages="event.locales" data-event-is-free-of-charge="event.freeOfCharge" data-available-languages="allLanguages" data-on-modification="setAdditionalServices(event, additionalServices)" data-event-start-date="event.begin | formatDateTimeModification"></additional-services>
         </div>
 
+        <hr class="wMarginTop30px"/>
+        <div class="pull-left">
+            <button class="btn btn-lg btn-default" ng-click="reset()" type="button">Reset values</button>
+        </div>
         <control-buttons data-form-obj="editEvent"></control-buttons>
     </form>
 </div>

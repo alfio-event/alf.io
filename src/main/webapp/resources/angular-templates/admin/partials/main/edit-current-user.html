@@ -34,6 +34,9 @@
     <div class="page-header">
         <h4>Change Password</h4>
     </div>
+    <div class="alert alert-warning" ng-if="editCurrentUserCtrl.isAdmin">
+        <h5><i class="fa fa-warning"></i> With great power comes great responsibility: you are the administrator, therefore <strong>nobody could reset your password if you lose it</strong>. Be careful!</h5>
+    </div>
     <form role="form" name="editCurrentUserCtrl.changePassword" data-error-sensitive data-ng-submit="editCurrentUserCtrl.updatePassword()">
         <div class="form-group">
             <label for="oldPassword">Current Password</label>
