@@ -133,10 +133,25 @@
         return function(validationResult) {
             if(validationResult.errorCount > 0) {
                 angular.forEach(validationResult.validationErrors, function(error) {
+                    var match = error.fieldName.match(/ticketCategories\[([0-9]+)\]\.dateString/);
+                    if(match) {
+                        //HACK
+                        $("[data-ng-model=ticketCategory\\.dateString][name="+match[1]+"-dateString]").addClass('ng-invalid');
+                        //
+                    }
                     if(angular.isFunction(form.$setError)) {
                         form.$setError(error.fieldName, error.message);
                     }
                 });
+                setTimeout(function() {
+                    var firstInvalidElem = $("input.ng-invalid:first, textarea.input.ng-invalid:first, select.ng-invalid:first");
+                    if(firstInvalidElem.length > 0) {
+                        $('html, body').animate({scrollTop: firstInvalidElem.offset().top - 80},500,function() {
+                        firstInvalidElem.focus()
+                        })
+                    }
+
+                }, 0);
                 deferred.reject('invalid form');
             }
             deferred.resolve();

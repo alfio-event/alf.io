@@ -117,7 +117,7 @@
         <div class="col-xs-6">
             <div>
                 <img data-ng-if="imageBase64 || obj.fileBlobId" data-ng-src="{{imageBase64 || ('/file/' + obj.fileBlobId)}}" class="img-responsive center-block event-logo">
-                <div class="alert alert-danger alert-form" data-ng-if="!imageBase64 && !obj.fileBlobId"><i class="fa fa-warning"></i> Event logo is missing!</div>
+                <div class="alert alert-danger alert-form ng-invalid" data-ng-if="!imageBase64 && !obj.fileBlobId"><i class="fa fa-warning"></i> Event logo is missing!</div>
             </div>
         </div>
     </div>
