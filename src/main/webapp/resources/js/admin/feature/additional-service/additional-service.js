@@ -130,31 +130,38 @@
                 bindToController: true,
                 controllerAs: 'ctrl'
             });
-            modal.result.then(function(item) {
-                self.onEditComplete(item);
+            modal.result.then(function(editedItem) {
+                self.onEditComplete(editedItem, item);
             }, function() {
                 self.onDismiss();
             });
         };
 
-        self.onEditComplete = function(item) {
+        self.onEditComplete = function(item, originalItem) {
 
-            var afterUpdate = function(r) {
+            var afterUpdate = function(r, originalItem) {
                 if (!_.find(self.list, function (i) {
-                        return (self.propagateChanges && i.id == r.id) || i === r;
+                        return (self.propagateChanges && i.id == r.id) || i === originalItem;
                     })) {
                     r.ordinal = self.list.length;
                     self.list.push(r);
+                } else if(self.list.indexOf(originalItem) >= 0){
+                    self.list[self.list.indexOf(originalItem)] = r;
                 }
                 editComplete();
             };
 
             if(self.propagateChanges) {
                 AdditionalServiceManager.save(self.eventId, item).then(function(result) {
-                    afterUpdate(result.data);
+                    //HACK
+                    result.data.description = originalItem.description;
+                    result.data.title = originalItem.title;
+                    result.data.zippedTitleAndDescriptions = originalItem.zippedTitleAndDescriptions;
+                    //
+                    afterUpdate(result.data, originalItem);
                 });
             } else {
-                afterUpdate(item);
+                afterUpdate(item, originalItem);
             }
 
         };
