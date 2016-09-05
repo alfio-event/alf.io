@@ -450,6 +450,8 @@
                     $rootScope.$emit('EventUpdated');
                 }
                 $scope.event = result.event;
+                var href = $window.location.href;
+                $scope.eventPublicURL = href.substring(0, href.indexOf('/admin/')) + '/event/' + result.event.shortName;
                 $scope.organization = result.organization;
                 $scope.validCategories = _.filter(result.event.ticketCategories, function(tc) {
                     return !tc.expired && tc.bounded;
