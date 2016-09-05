@@ -85,13 +85,16 @@
     <div {{#displayAssignForm}}class="collapsible"{{/displayAssignForm}}>
         {{#ticketFieldConfiguration}}
             <div class="form-group">
-                 <label class="col-sm-3 control-label" for="{{key.name}}-title-{{uuid}}">{{key.labelDescription}}</label>
+                 <label class="col-sm-3 control-label" for="{{key.name}}-title-{{uuid}}">{{key.labelDescription}}
+                 {{#key.isRequired}}*{{/key.isRequired}}
+                 </label>
                  <div class="col-sm-9">
                     {{#key.inputField}}
                         <input type="{{key.inputType}}" name="additional['{{key.name}}']" value="{{value}}" id="{{key.name}}-title-{{uuid}}" class="form-control"
                             {{#key.placeholderDescriptionDefined}}placeholder="{{key.placeholderDescription}}"{{/key.placeholderDescriptionDefined}}
                             {{#key.maxLengthDefined}}maxlength="{{key.maxLength}}"{{/key.maxLengthDefined}}
                             {{#key.minLengthDefined}}minlength="{{key.minLength}}"{{/key.minLengthDefined}}
+                            {{#key.isRequired}}required{{/key.isRequired}}
                         >
                     {{/key.inputField}}
                     {{#key.textareaField}}
@@ -99,10 +102,13 @@
                             {{#key.placeholderDescriptionDefined}}placeholder="{{key.placeholderDescription}}"{{/key.placeholderDescriptionDefined}}
                             {{#key.maxLengthDefined}}maxlength="{{key.maxLength}}"{{/key.maxLengthDefined}}
                             {{#key.minLengthDefined}}minlength="{{key.minLength}}"{{/key.minLengthDefined}}
-                        >{{value}}</textarea>
+                            {{#key.isRequired}}required{{/key.isRequired}}
+                         >{{value}}</textarea>
                     {{/key.textareaField}}
                     {{#key.countryField}}
-                        <select name="additional['{{key.name}}']" value="{{value}}" id="{{key.name}}-{{uuid}}" class="form-control">
+                        <select name="additional['{{key.name}}']" value="{{value}}" id="{{key.name}}-{{uuid}}" class="form-control" 
+                        {{#key.isRequired}}required{{/key.isRequired}}
+                        >
                             <option value=""></option>
                             {{#countries}}
                                 <option value="{{left}}">{{right}}</option>
@@ -110,7 +116,9 @@
                         </select>
                     {{/key.countryField}}
                     {{#key.selectField}}
-                        <select name="additional['{{key.name}}']" value="{{value}}" id="{{key.name}}-{{uuid}}" class="form-control">
+                        <select name="additional['{{key.name}}']" value="{{value}}" id="{{key.name}}-{{uuid}}" class="form-control" 
+                        {{#key.isRequired}}required{{/key.isRequired}}
+                        >
                             <option value=""></option>
                             {{#key.translatedRestrictedValue}}<option value="{{key}}">{{value}}</option>{{/key.translatedRestrictedValue}}
                         </select>
