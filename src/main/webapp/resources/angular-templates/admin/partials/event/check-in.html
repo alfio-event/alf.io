@@ -3,81 +3,81 @@
         <h1>Check-In: {{event.displayName}}</h1>
     </div>
 
-    <div class="page-header">
-        <h2>Scan the ticket for event {{event.displayName}}</h2>
-    </div>
-    <div>
-        <p><button class="btn btn-primary" type="button" data-ng-click="goToScanPage()">Scan Page</button></p>
+    <div uib-alert type="info">
+        <i class="fa fa-info-circle"></i> Scan tickets for event <i>{{event.displayName}}</i> using the <a href="https://play.google.com/store/apps/details?id=alfio.backoffice" target="_blank">Android application</a> or the <a data-ng-click="goToScanPage()">embedded scan functionality</a></a>
     </div>
 
+    <uib-tabset active="active">
+        <uib-tab index="0">
+            <uib-tab-heading>
+                <i class="fa fa-qrcode"></i> To be checked in <span class="badge">{{(tickets | filter: toBeCheckedIn).length}}</span>
+            </uib-tab-heading>
+            <div style="margin: 15px 15px 15px 0;">
+                <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button>
+            </div>
+            <div>
+                <div class="input-group wMarginBottom">
+                    <div class="input-group-addon"><i class="fa fa-search"></i></div>
+                    <input type="text" class="form-control input-sm" data-ng-model="selection.freeText">
+                    <div class="input-group-addon cursor-pointer" data-ng-click="selection.freeText = undefined">Reset</div>
+                </div>
+                <div class="checkbox">
+                    <label><input type="checkbox" data-ng-model="selection.showAdvancedSearch" data-ng-click="toggledAdvancedSearch(selection.showAdvancedSearch)"> advanced search</label>
+                </div>
+                <div data-ng-if="selection.showAdvancedSearch" class="wMarginBottom">
+                    <div class="form-group">
+                        <label>Holder's name</label>
+                        <div>
+                            <input type="text" class="form-control" data-ng-model="advancedSearch.fullName">
+                        </div>
+                    </div>
+                    <div class="form-group" ng-show="event.useFirstAndLastName">
+                        <label>Holder's first name</label>
+                        <div>
+                            <input type="text" class="form-control" data-ng-model="advancedSearch.firstName">
+                        </div>
+                    </div>
+                    <div class="form-group" ng-show="event.useFirstAndLastName">
+                        <label>Holder's last name</label>
+                        <div>
+                            <input type="text" class="form-control" data-ng-model="advancedSearch.lastName">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Holder's e-mail</label>
+                        <div>
+                            <input type="text" class="form-control" data-ng-model="advancedSearch.email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Reference Number</label>
+                        <div>
+                            <input type="text" class="form-control" data-ng-model="advancedSearch.uuid">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Customer's name</label>
+                        <div>
+                            <input type="text" class="form-control" data-ng-model="advancedSearch.ticketReservation.fullName">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Customer's e-mail</label>
+                        <div>
+                            <input type="text" class="form-control" data-ng-model="advancedSearch.ticketReservation.email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Order identifier</label>
+                        <div>
+                            <input type="text" class="form-control" data-ng-model="advancedSearch.ticketsReservationId">
+                        </div>
+                    </div>
 
-    <div>
-        <div class="page-header" >
-            <h2>Tickets to be checked in <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button></h2>
-        </div>
-        <div>
-            <div class="input-group wMarginBottom">
-                <div class="input-group-addon"><i class="fa fa-search"></i></div>
-                <input type="text" class="form-control input-sm" data-ng-model="selection.freeText">
-                <div class="input-group-addon cursor-pointer" data-ng-click="selection.freeText = undefined">Reset</div>
-            </div>
-            <div class="checkbox">
-                <label><input type="checkbox" data-ng-model="selection.showAdvancedSearch" data-ng-click="toggledAdvancedSearch(selection.showAdvancedSearch)"> advanced search</label>
-            </div>
-            <div data-ng-if="selection.showAdvancedSearch" class="wMarginBottom">
-                <div class="form-group">
-                    <label>Holder's name</label>
-                    <div>
-                        <input type="text" class="form-control" data-ng-model="advancedSearch.fullName">
-                    </div>
+                    <button class="btn btn-default" data-ng-click="resetAdvancedSearch()">Reset</button>
                 </div>
-                <div class="form-group" ng-show="event.useFirstAndLastName">
-                    <label>Holder's first name</label>
-                    <div>
-                        <input type="text" class="form-control" data-ng-model="advancedSearch.firstName">
-                    </div>
-                </div>
-                <div class="form-group" ng-show="event.useFirstAndLastName">
-                    <label>Holder's last name</label>
-                    <div>
-                        <input type="text" class="form-control" data-ng-model="advancedSearch.lastName">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Holder's e-mail</label>
-                    <div>
-                        <input type="text" class="form-control" data-ng-model="advancedSearch.email">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Reference Number</label>
-                    <div>
-                        <input type="text" class="form-control" data-ng-model="advancedSearch.uuid">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Customer's name</label>
-                    <div>
-                        <input type="text" class="form-control" data-ng-model="advancedSearch.ticketReservation.fullName">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Customer's e-mail</label>
-                    <div>
-                        <input type="text" class="form-control" data-ng-model="advancedSearch.ticketReservation.email">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Order identifier</label>
-                    <div>
-                        <input type="text" class="form-control" data-ng-model="advancedSearch.ticketsReservationId">
-                    </div>
-                </div>
-
-                <button class="btn btn-default" data-ng-click="resetAdvancedSearch()">Reset</button>
-            </div>
-            <table class="table check-in-data">
-                <thead>
+                <table class="table check-in-data">
+                    <thead>
                     <th>Status</th>
                     <th>Holder's name</th>
                     <th ng-show="event.useFirstAndLastName">Holder's first name</th>
@@ -92,8 +92,8 @@
                     <th>Transaction id</th>
                     <th>Transaction timestamp</th>
                     <th data-ng-if="filterResult.length == 1">Manual Check-In</th>
-                </thead>
-                <tbody>
+                    </thead>
+                    <tbody>
                     <tr data-ng-repeat="ticket in tickets | filter: toBeCheckedIn | filter: selection.freeText | filter: advancedSearch | orderBy: ['timestamp', 'ticketReservationId' , 'uuid'] as filterResult">
                         <td data-ng-class-even="'active'" data-label="Status">{{::ticket.status | statusText}}</td>
                         <td data-ng-class-even="'active'" data-label="Holder's name">{{::ticket.fullName}}</td>
@@ -108,18 +108,27 @@
                         <td data-ng-class-even="'active'" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
                         <td data-ng-class-even="'active'" data-label="Transaction id"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
                         <td data-ng-class-even="'active'" data-label="Transaction timestamp"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
-                        <td data-ng-class-even="'active'" data-label="Manual Check-In" data-ng-if="filterResult.length == 1"><button type="button" class="btn btn-primary btn-xs" data-ng-click="manualCheckIn(ticket)">Check-In</button></td>
+                        <td data-ng-class-even="'active'" data-label="Manual Check-In"><button type="button" class="btn btn-primary btn-xs" data-ng-click="manualCheckIn(ticket)">Check-In</button></td>
                     </tr>
-                </tbody>
-            </table>
-        </div>
-    
-        <div class="page-header">
-            <h2>Checked in tickets <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button></h2>
-        </div>
-        <div>
-            <table class="table check-in-data">
-                <thead>
+                    </tbody>
+                </table>
+            </div>
+        </uib-tab>
+        <uib-tab index="1">
+            <uib-tab-heading>
+                <i class="fa fa-check"></i> Checked in <span class="badge">{{(tickets | filter: {status: 'CHECKED_IN'}).length}}</span>
+            </uib-tab-heading>
+            <div style="margin: 15px 15px 15px 0;">
+                <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button>
+            </div>
+            <div class="input-group wMarginBottom">
+                <div class="input-group-addon"><i class="fa fa-search"></i></div>
+                <input type="text" class="form-control input-sm" data-ng-model="checkedInSelection.freeText">
+                <div class="input-group-addon cursor-pointer" data-ng-click="checkedInSelection.freeText = undefined">Reset</div>
+            </div>
+            <div>
+                <table class="table check-in-data">
+                    <thead>
                     <th>Status</th>
                     <th>Holder's name</th>
                     <th ng-show="event.useFirstAndLastName">Holder's first name</th>
@@ -133,9 +142,9 @@
                     <th>Payment Type</th>
                     <th>Transaction id</th>
                     <th>Transaction timestamp</th>
-                </thead>
-                <tbody>
-                    <tr data-ng-repeat="ticket in tickets | filter: {status: 'CHECKED_IN'} | orderBy: ['timestamp', 'ticketReservationId' , 'uuid']">
+                    </thead>
+                    <tbody>
+                    <tr data-ng-repeat="ticket in tickets | filter: {status: 'CHECKED_IN'} | filter: checkedInSelection.freeText | orderBy: ['timestamp', 'ticketReservationId' , 'uuid']">
                         <td data-ng-class-even="'active'" data-label="Status">{{::ticket.status | statusText}}</td>
                         <td data-ng-class-even="'active'" data-label="Owner's name">{{::ticket.fullName}}</td>
                         <td data-ng-class-even="'active'" data-label="Owner's first name" ng-show="event.useFirstAndLastName">{{::ticket.firstName}}</td>
@@ -150,8 +159,10 @@
                         <td data-ng-class-even="'active'" data-label="Transaction id"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
                         <td data-ng-class-even="'active'" data-label="Transaction timestamp"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
                     </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+                    </tbody>
+                </table>
+            </div>
+        </uib-tab>
+    </uib-tabset>
+
 </div>

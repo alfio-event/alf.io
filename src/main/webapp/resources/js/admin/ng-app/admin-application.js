@@ -1076,12 +1076,13 @@
     admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService) {
 
         $scope.selection = {};
+        $scope.checkedInSelection = {};
 
         $scope.advancedSearch = {};
 
         $scope.resetAdvancedSearch = function() {
             $scope.advancedSearch = {};
-        }
+        };
 
         $scope.toggledAdvancedSearch = function(toggled) {
             if(toggled) {
@@ -1089,7 +1090,7 @@
             } else {
                 $scope.resetAdvancedSearch();
             }
-        }
+        };
 
         $scope.goToScanPage = function() {
             $state.go('events.single.checkInScan', $stateParams);
@@ -1102,9 +1103,9 @@
             });
         });
 
-        $scope.toBeCheckedIn = function(ticket, idx) {
+        $scope.toBeCheckedIn = function(ticket) {
             return  ['TO_BE_PAID', 'ACQUIRED'].indexOf(ticket.status) >= 0;
-        }
+        };
 
         
         $scope.reloadTickets = function() {
@@ -1117,7 +1118,7 @@
             CheckInService.manualCheckIn(ticket).then($scope.reloadTickets).then(function() {
                 $scope.selection = {};
             });
-        }
+        };
     });
 
     admin.controller('EventCheckInScanController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService) {
