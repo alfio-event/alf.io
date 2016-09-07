@@ -85,7 +85,7 @@ public interface TicketRepository {
     @Query("update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts where event_id = :eventId and category_id = :categoryId and id in(:ids)")
     int updateTicketPrice(@Bind("ids") List<Integer> ids, @Bind("categoryId") int categoryId, @Bind("eventId") int eventId, @Bind("srcPriceCts") int srcPriceCts, @Bind("finalPriceCts") int finalPriceCts, @Bind("vatCts") int vatCts, @Bind("discountCts") int discountCts);
 
-    @Query("update ticket set status = 'FREE', tickets_reservation_id = null, special_price_id_fk = null where status in ('PENDING', 'OFFLINE_PAYMENT') "
+    @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, special_price_id_fk = null where status in ('PENDING', 'OFFLINE_PAYMENT') "
             + " and tickets_reservation_id in (:reservationIds)")
     int freeFromReservation(@Bind("reservationIds") List<String> reservationIds);
 
