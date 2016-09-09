@@ -101,7 +101,13 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         dataSource.setTestOnBorrow(true);
         dataSource.setTestOnConnect(true);
         dataSource.setTestWhileIdle(true);
-        dataSource.setMaxActive(platform.getMaxConnections(env));
+        int maxActive = platform.getMaxActive(env);
+        dataSource.setMaxActive(maxActive);
+        dataSource.setMaxIdle(maxActive);
+        if(dataSource.getInitialSize() > maxActive) {
+            dataSource.setInitialSize(maxActive);
+        }
+        log.debug("Connection pool properties: max active {}, initial size {}", maxActive, dataSource.getInitialSize());
         return dataSource;
     }
 

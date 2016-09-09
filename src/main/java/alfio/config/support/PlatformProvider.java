@@ -84,8 +84,8 @@ public enum PlatformProvider {
         }
 
         @Override
-        public int getMaxConnections(Environment env) {
-            return ofNullable(env.getProperty("ELEPHANTSQL_MAX_CONNS")).map(Integer::parseInt).orElseGet(() -> super.getMaxConnections(env));
+        public int getMaxActive(Environment env) {
+            return ofNullable(env.getProperty("ELEPHANTSQL_MAX_CONNS")).map(Integer::parseInt).orElseGet(() -> super.getMaxActive(env));
         }
     },
 
@@ -316,7 +316,7 @@ public enum PlatformProvider {
         }
 
         private boolean isMySql(Environment env) {
-            return ofNullable(env.getRequiredProperty("RDS_PORT")).get().equals("3306");
+            return ofNullable(env.getProperty("RDS_PORT")).filter("3306"::equals).isPresent();
         }
 
     };
@@ -352,8 +352,10 @@ public enum PlatformProvider {
         return env.getRequiredProperty("datasource.dialect");
     }
 
-    public int getMaxConnections(Environment env) {
-        return PoolProperties.DEFAULT_MAX_ACTIVE;
+    public int getMaxActive(Environment env) {
+        return ofNullable(env.getProperty("datasource.connections.max-active"))
+            .map(Integer::parseInt)
+            .orElse(PoolProperties.DEFAULT_MAX_ACTIVE);
     }
 
     public boolean isHosting(Environment env) {
