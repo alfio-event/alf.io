@@ -36,7 +36,7 @@
                         No categories matching the selected criteria have been found.
                     </div>
                     <div data-ng-switch-default="">
-                        <div class="panel panel-default" data-ng-repeat="ticketCategory in ::event.ticketCategories | orderBy: ['id'] | showSelectedCategories : selection"
+                        <div class="panel panel-default" data-ng-repeat="ticketCategory in event.ticketCategories | orderBy: ['id'] | showSelectedCategories : selection"
                              data-ng-class="{'panel-danger':ticketCategory.containingOrphans, 'panel-warning':ticketCategory.containingStuckTickets}"
                              data-ng-init="displayWarning = ticketCategory.containingStuckTickets || ticketCategory.containingOrphans"
                              id="ticket-category-{{ticketCategory.id}}">
