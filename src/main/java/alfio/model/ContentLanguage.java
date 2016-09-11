@@ -56,7 +56,7 @@ public class ContentLanguage {
     }
 
     public String getDisplayLanguage() {
-        return locale.getDisplayLanguage();
+        return locale.getDisplayLanguage(displayLocale);
     }
 
     public Locale getLocale() {
