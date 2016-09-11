@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.Locale;
+import java.util.Optional;
 
 @Data
 public class MessageModification {
@@ -30,21 +31,24 @@ public class MessageModification {
     private final String text;
     private final String subjectExample;
     private final String textExample;
+    private final boolean attachTicket;
 
     @JsonCreator
     public MessageModification(@JsonProperty("locale") Locale locale,
                                @JsonProperty("subject") String subject,
                                @JsonProperty("text") String text,
                                @JsonProperty("subjectExample") String subjectExample,
-                               @JsonProperty("textExample") String textExample) {
+                               @JsonProperty("textExample") String textExample,
+                               @JsonProperty("attachTicket") Boolean attachTicket) {
         this.locale = locale;
         this.subject = subject;
         this.text = text;
         this.subjectExample = subjectExample;
         this.textExample = textExample;
+        this.attachTicket = Optional.ofNullable(attachTicket).orElse(false);
     }
 
-    public static MessageModification preview(MessageModification original, String subject, String text) {
-        return new MessageModification(original.locale, original.subject, original.text, subject, text);
+    public static MessageModification preview(MessageModification original, String subject, String text, boolean attachTicket) {
+        return new MessageModification(original.locale, original.subject, original.text, subject, text, attachTicket);
     }
 }

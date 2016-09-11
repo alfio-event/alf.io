@@ -8,6 +8,7 @@
     </div>
 
     <div class="modal-footer">
-        <control-buttons data-form-obj="previewForm" data-success-text="Send"></control-buttons>
+        <div class="fa fa-cog fa-spin fa-2x" data-ng-if="pending"></div>
+        <control-buttons data-ng-if="!pending" data-form-obj="previewForm" data-success-text="Send"></control-buttons>
     </div>
 </form>

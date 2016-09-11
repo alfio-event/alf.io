@@ -1354,7 +1354,8 @@
                         subjectExample: 'An important message from {{eventName}}',
                         locale: r.language,
                         text: '',
-                        subject: ''
+                        subject: '',
+                        attachTicket: false
                     };
                 });
                 $scope.fullName = 'John Doe';
@@ -1407,10 +1408,13 @@
                             if(affectedUsers === 0 && !confirm('No one will receive this message. Do you really want to continue?')) {
                                 return;
                             }
+                            $scope.pending = true;
                             EventService.sendMessages(eventName, categoryId, messages).success(function(result) {
+                                $scope.pending = false;
                                 alert(result + ' messages have been enqueued');
                                 $scope.$close(true);
                             }).error(function(error) {
+                                $scope.pending = false;
                                 alert(error);
                             });
                         };

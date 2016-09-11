@@ -1,5 +1,5 @@
-<tabset>
-    <tab data-ng-repeat="m in messages">
+<uib-tabset>
+    <uib-tab data-ng-repeat="m in messages">
         <tab-heading>{{m.locale}}</tab-heading>
         <div class="form-group">
             <label for="subject-{{m.locale}}">Subject</label>
@@ -9,5 +9,11 @@
             <textarea data-ng-if="editMode" id="message-{{m.locale}}" rows="20" class="form-control" name="message-{{m.locale}}" placeholder="{{m.textExample}}" data-ng-model="m.text"></textarea>
             <pre data-ng-if="!editMode" id="message-{{m.locale}}" class="form-control-static">{{m.textExample}}</pre>
         </div>
-    </tab>
-</tabset>
+        <div class="alert alert-info" data-ng-if="!editMode && m.attachTicket">Ticket will be sent as attachment</div>
+    </uib-tab>
+</uib-tabset>
+<div class="checkbox" data-ng-if="editMode">
+    <label>
+        <input type="checkbox" data-ng-click="updateTicketFlag()"> Send attendee's ticket along with this message
+    </label>
+</div>

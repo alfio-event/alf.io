@@ -561,7 +561,15 @@
                editMode: '=',
                messages: '='
            },
-           templateUrl: '/resources/angular-templates/admin/partials/custom-message/edit-messages.html'
+           templateUrl: '/resources/angular-templates/admin/partials/custom-message/edit-messages.html',
+           controller: ['$scope', function($scope) {
+               $scope.attachTicketFlag = false;
+               $scope.updateTicketFlag = function() {
+                   $scope.messages.forEach(function(m) {
+                       m.attachTicket = !m.attachTicket;
+                   });
+               };
+           }]
        };
     });
 
