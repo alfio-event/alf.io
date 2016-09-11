@@ -26,7 +26,7 @@ public final class CategoryEvaluator {
     }
 
     public static Function<Ticket, Boolean> ticketCancellationAvailabilityChecker(TicketCategoryRepository ticketCategoryRepository) {
-        return ticket -> !ticketCategoryRepository.getById(ticket.getCategoryId(), ticket.getEventId()).isAccessRestricted()
+        return ticket -> ticket.getStatus() == Ticket.TicketStatus.ACQUIRED && !ticketCategoryRepository.getById(ticket.getCategoryId(), ticket.getEventId()).isAccessRestricted()
                          || ticketCategoryRepository.countUnboundedCategoriesByEventId(ticket.getEventId()) > 0;
     }
 
