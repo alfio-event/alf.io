@@ -522,7 +522,6 @@ public class TicketReservationManagerTest {
     @Test
     public void doNothingIfNoReservations() throws Exception {
         Date now = new Date();
-        List<String> reservationIds = singletonList("reservation-id");
         when(ticketReservationRepository.findExpiredReservation(eq(now))).thenReturn(Collections.emptyList());
         trm.cleanupExpiredReservations(now);
         verify(ticketReservationRepository).findExpiredReservation(eq(now));
@@ -562,6 +561,7 @@ public class TicketReservationManagerTest {
         when(ticket.getEmail()).thenReturn(RESERVATION_EMAIL);
         when(ticket.getUserLanguage()).thenReturn(USER_LANGUAGE);
         when(ticket.getEventId()).thenReturn(EVENT_ID);
+        when(ticket.getStatus()).thenReturn(Ticket.TicketStatus.ACQUIRED);
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
         when(ticket.getCategoryId()).thenReturn(TICKET_CATEGORY_ID);
