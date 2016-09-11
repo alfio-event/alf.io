@@ -529,7 +529,7 @@
         };
 
         $scope.getActualCapacity = function(category, event) {
-            return category.bounded ? category.maxTickets : event.dynamicAllocation;
+            return category.bounded ? category.maxTickets : (event.dynamicAllocation + category.checkedInTickets + category.soldTickets);
         };
 
         $scope.isTokenViewCollapsed = function(category) {
