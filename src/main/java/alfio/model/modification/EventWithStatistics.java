@@ -123,11 +123,12 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
 
     @Override
     public int getNotSoldTickets() {
+        int pendingTickets = getPendingTickets();
         if(containsUnboundedCategories) {
             List<TicketCategoryWithStatistic> boundedCategories = ticketCategories.stream().filter(IS_BOUNDED).collect(Collectors.toList());
-            return allocatedTickets - countSoldTickets(boundedCategories) - countCheckedInTickets(boundedCategories);
+            return allocatedTickets - countSoldTickets(boundedCategories) - countCheckedInTickets(boundedCategories) - pendingTickets;
         }
-        return allocatedTickets - soldTickets - checkedInTickets;
+        return allocatedTickets - soldTickets - checkedInTickets - pendingTickets;
     }
 
     public boolean isExpired() {
