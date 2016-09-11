@@ -1438,7 +1438,7 @@
 
     admin.run(function($rootScope, PriceCalculator) {
         $rootScope.evaluateBarType = function(index) {
-            var barClasses = ['danger', 'warning', 'info', 'success'];
+            var barClasses = ['warning', 'info', 'success'];
             if(index < barClasses.length) {
                 return barClasses[index];
             }
