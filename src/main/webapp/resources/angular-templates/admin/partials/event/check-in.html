@@ -85,12 +85,7 @@
                     <th>Holder's e-mail</th>
                     <th>Type</th>
                     <th>Reference Number</th>
-                    <th>Customer's name</th>
-                    <th>Customer's e-mail</th>
-                    <th>Order identifier</th>
-                    <th>Payment Type</th>
-                    <th>Transaction id</th>
-                    <th>Transaction timestamp</th>
+                    <th data-ng-if="!event.freeOfCharge">Payment Type</th>
                     <th data-ng-if="filterResult.length == 1">Manual Check-In</th>
                     </thead>
                     <tbody>
@@ -102,12 +97,7 @@
                         <td data-ng-class-even="'active'" data-label="Holder's e-mail">{{::ticket.email}}</td>
                         <td data-ng-class-even="'active'" data-label="Type">{{::ticket.ticketCategory.name}}</td>
                         <td data-ng-class-even="'active'" data-label="Reference Number"><a data-ng-href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketsReservationId}}/{{::ticket.uuid}}">{{::ticket.uuid}}</a></td>
-                        <td data-ng-class-even="'active'" data-label="Customer's name">{{::ticket.ticketReservation.fullName}}</td>
-                        <td data-ng-class-even="'active'" data-label="Customer's e-mail">{{::ticket.ticketReservation.email}}</td>
-                        <td data-ng-class-even="'active'" data-label="Order identifier">{{::ticket.ticketsReservationId}}</td>
-                        <td data-ng-class-even="'active'" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
-                        <td data-ng-class-even="'active'" data-label="Transaction id"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
-                        <td data-ng-class-even="'active'" data-label="Transaction timestamp"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
+                        <td data-ng-class-even="'active'" data-ng-if="!event.freeOfCharge" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
                         <td data-ng-class-even="'active'" data-label="Manual Check-In"><button type="button" class="btn btn-primary btn-xs" data-ng-click="manualCheckIn(ticket)">Check-In</button></td>
                     </tr>
                     </tbody>
