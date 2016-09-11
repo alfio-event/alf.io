@@ -16,6 +16,7 @@
  */
 package alfio.config;
 
+import com.openhtmltopdf.util.XRLog;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 import org.springframework.boot.context.embedded.ErrorPage;
@@ -34,6 +35,7 @@ import javax.servlet.SessionCookieConfig;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import static org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext;
 
@@ -55,6 +57,9 @@ public class SpringBootInitializer {
         SessionCookieConfig config = servletContext.getSessionCookieConfig();
         config.setHttpOnly(true);
         config.setSecure(!environment.acceptsProfiles(Initializer.PROFILE_HTTP));
+        //force log initialization, then disable it
+        XRLog.setLevel(XRLog.EXCEPTION, Level.WARNING);
+        XRLog.setLoggingEnabled(false);
     };
 
     @Bean

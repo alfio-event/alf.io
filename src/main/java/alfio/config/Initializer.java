@@ -17,6 +17,7 @@
 package alfio.config;
 
 import alfio.util.DefaultExceptionHandler;
+import com.openhtmltopdf.util.XRLog;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -31,6 +32,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.SessionCookieConfig;
 import java.util.Objects;
+import java.util.logging.Level;
 
 @Log4j2
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
@@ -58,6 +60,10 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
         Dynamic characterEncodingFilter = servletContext.addFilter("CharacterEncodingFilter", cef);
         characterEncodingFilter.setAsyncSupported(true);
         characterEncodingFilter.addMappingForUrlPatterns(null, false, "/*");
+
+        //force log initialization, then disable it
+        XRLog.setLevel(XRLog.EXCEPTION, Level.WARNING);
+        XRLog.setLoggingEnabled(false);
 
     }
 
