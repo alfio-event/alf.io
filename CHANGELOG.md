@@ -1,10 +1,111 @@
 # Change Log
 
-## [1.7.3](https://github.com/exteso/alf.io/tree/1.7.3) (2016-04-26)
-[Full Changelog](https://github.com/exteso/alf.io/compare/1.7.2...1.7.3)
+## [1.8](https://github.com/exteso/alf.io/tree/1.8) (2016-09-12)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.7.4...1.8)
+
+**Implemented enhancements:**
+
+- create event as draft [\#202](https://github.com/exteso/alf.io/issues/202)
+- add ticket PDF when sending message to attendees [\#200](https://github.com/exteso/alf.io/issues/200)
+- The manual "Check-In" button only appears when there's a single match [\#196](https://github.com/exteso/alf.io/issues/196)
+- Create new event: persist draft during editing [\#184](https://github.com/exteso/alf.io/issues/184)
+- Create new event: Ticket form fields, new field [\#181](https://github.com/exteso/alf.io/issues/181)
+- Change Password: add warning if admin user [\#180](https://github.com/exteso/alf.io/issues/180)
+- Add link to Markdown reference close to the "Preview" button [\#176](https://github.com/exteso/alf.io/issues/176)
+- Mailchimp - add event key as user attribute [\#171](https://github.com/exteso/alf.io/issues/171)
+- Sold tickets: show number in the dashboard [\#154](https://github.com/exteso/alf.io/issues/154)
+- Additional fields: they're hard to see if I buy only one ticket [\#152](https://github.com/exteso/alf.io/issues/152)
+- Improve VAT/Price management [\#148](https://github.com/exteso/alf.io/issues/148)
+- Logout and Ability to Change Password [\#117](https://github.com/exteso/alf.io/issues/117)
+- Assign a discount code to a specific category [\#112](https://github.com/exteso/alf.io/issues/112)
+- Donate an arbitrary amount to the event [\#110](https://github.com/exteso/alf.io/issues/110)
+- Update spring-boot to 1.3 [\#106](https://github.com/exteso/alf.io/issues/106)
+- Add possibility to update validity date for promo code [\#103](https://github.com/exteso/alf.io/issues/103)
+- Split full name in first/last name fields [\#102](https://github.com/exteso/alf.io/issues/102)
+- Remove Event [\#100](https://github.com/exteso/alf.io/issues/100)
+- Paypal integration [\#77](https://github.com/exteso/alf.io/issues/77)
+- Markdown support [\#9](https://github.com/exteso/alf.io/issues/9)
+- Paypal integration [\#145](https://github.com/exteso/alf.io/pull/145) ([syjer](https://github.com/syjer))
+
+**Fixed bugs:**
+
+- Languages always mandatory in donation options [\#190](https://github.com/exteso/alf.io/issues/190)
+- Numeric fields under the “Seats and payment info” allow negative numbers [\#189](https://github.com/exteso/alf.io/issues/189)
+- Event begin date cannot be in the past [\#173](https://github.com/exteso/alf.io/issues/173)
+- Graphs cannot be drawn when data is empty [\#172](https://github.com/exteso/alf.io/issues/172)
+- Change password doesn't work [\#170](https://github.com/exteso/alf.io/issues/170)
+- calendar while editing an existing event goes outside the viewport [\#169](https://github.com/exteso/alf.io/issues/169)
+- .ics file has an error with new line character [\#168](https://github.com/exteso/alf.io/issues/168)
+- Send invitations with CSV uses the wrong language [\#167](https://github.com/exteso/alf.io/issues/167)
+- bug in master: cannot add new category in a existing event [\#161](https://github.com/exteso/alf.io/issues/161)
+- bug in master: cannot change price of category [\#160](https://github.com/exteso/alf.io/issues/160)
+- Cannot edit an event containing strange characters in the url [\#150](https://github.com/exteso/alf.io/issues/150)
+- Show contextualized error message when ticket purchase doesn't work [\#147](https://github.com/exteso/alf.io/issues/147)
+- Warning message to select an organizer althought it is already selected [\#166](https://github.com/exteso/alf.io/issues/166)
+- "ticket-has-changed-owner" email is sent unexpectedly [\#151](https://github.com/exteso/alf.io/issues/151)
+- TicketReservationManager.countAvailableTickets count tickets with "PENDING" status as available [\#144](https://github.com/exteso/alf.io/issues/144)
+
+**Closed issues:**
+
+- missing link to created event [\#194](https://github.com/exteso/alf.io/issues/194)
+- Editing donation options causes duplication [\#191](https://github.com/exteso/alf.io/issues/191)
+- Cannot delete a ticket category [\#188](https://github.com/exteso/alf.io/issues/188)
+- Markdown preview: escape HTML [\#178](https://github.com/exteso/alf.io/issues/178)
+- Allow markdown rendering to handle no-ops [\#139](https://github.com/exteso/alf.io/issues/139)
+- Update Angular $tooltip to $uibTooltip [\#138](https://github.com/exteso/alf.io/issues/138)
+- add mariadb in the travis matrix test [\#130](https://github.com/exteso/alf.io/issues/130)
+- mysql porting v2 [\#98](https://github.com/exteso/alf.io/issues/98)
+- add an additional field while editing an event [\#91](https://github.com/exteso/alf.io/issues/91)
+- Mention contributors on the website [\#87](https://github.com/exteso/alf.io/issues/87)
+- Updated Tutorial/Instructions [\#74](https://github.com/exteso/alf.io/issues/74)
+- "An unexpected error has occurred. Please try again." trying to buy a paid ticket [\#193](https://github.com/exteso/alf.io/issues/193)
+- Mysql errror : alter event table not working [\#165](https://github.com/exteso/alf.io/issues/165)
+- Unable to create new event without image [\#157](https://github.com/exteso/alf.io/issues/157)
+- More info about pending reservations [\#155](https://github.com/exteso/alf.io/issues/155)
+- TicketReservationManager.deleteOfflinePayment does not reset categoryId on ticket for dynamic categories [\#146](https://github.com/exteso/alf.io/issues/146)
+- Content Security Policy errors with style-src self [\#143](https://github.com/exteso/alf.io/issues/143)
+- override general settings with machine-specific settings during development [\#137](https://github.com/exteso/alf.io/issues/137)
+- gitignore Mac's `.DS\_Store` file [\#136](https://github.com/exteso/alf.io/issues/136)
+- MySQL database setup fails \(invalid default timestamp value\) [\#131](https://github.com/exteso/alf.io/issues/131)
+- set max file size for attachments [\#128](https://github.com/exteso/alf.io/issues/128)
+- backend Android app:  login failure [\#125](https://github.com/exteso/alf.io/issues/125)
+
+**Merged pull requests:**
+
+- Add AWS Beanstalk support [\#187](https://github.com/exteso/alf.io/pull/187) ([madama](https://github.com/madama))
+- Calendar fix [\#183](https://github.com/exteso/alf.io/pull/183) ([yankedev](https://github.com/yankedev))
+- \#128 upload file lime 1mb added [\#164](https://github.com/exteso/alf.io/pull/164) ([Praitheesh](https://github.com/Praitheesh))
+- split fullname \#102 [\#163](https://github.com/exteso/alf.io/pull/163) ([syjer](https://github.com/syjer))
+- fix \#148: Improve VAT/Price management [\#149](https://github.com/exteso/alf.io/pull/149) ([cbellone](https://github.com/cbellone))
+- replace data-tooltip with data-uib-tooltip \#138 [\#142](https://github.com/exteso/alf.io/pull/142) ([BunsenMcDubbs](https://github.com/BunsenMcDubbs))
+- Allow markdown noop \#139 [\#141](https://github.com/exteso/alf.io/pull/141) ([BunsenMcDubbs](https://github.com/BunsenMcDubbs))
+- \#131 \#136 \#137 [\#132](https://github.com/exteso/alf.io/pull/132) ([BunsenMcDubbs](https://github.com/BunsenMcDubbs))
+
+
+## [1.7.4](https://github.com/exteso/alf.io/tree/1.7.4) (2016-06-29)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.7.3...1.7.4)
+
 **Fixed bugs:**
 
 - "Someting went wrong" message on scan valid QR ticket [\#120](https://github.com/exteso/alf.io/issues/120)
+
+**Closed issues:**
+
+- Getting "invalid API key", not sure which one [\#126](https://github.com/exteso/alf.io/issues/126)
+- Event creation issue with 1.7.3 [\#124](https://github.com/exteso/alf.io/issues/124)
+- Add change password functionality [\#122](https://github.com/exteso/alf.io/issues/122)
+- Cannot create new events [\#119](https://github.com/exteso/alf.io/issues/119)
+- Does alf support emitting invoices?  [\#104](https://github.com/exteso/alf.io/issues/104)
+- Improve payment form [\#61](https://github.com/exteso/alf.io/issues/61)
+- keep an eye on klimpr.com [\#6](https://github.com/exteso/alf.io/issues/6)
+
+**Merged pull requests:**
+
+- add note about install lombok plugin and autowired ide errors [\#129](https://github.com/exteso/alf.io/pull/129) ([BunsenMcDubbs](https://github.com/BunsenMcDubbs))
+- \#117 - Add logout functionality [\#121](https://github.com/exteso/alf.io/pull/121) ([pgranato](https://github.com/pgranato))
+
+## [1.7.3](https://github.com/exteso/alf.io/tree/1.7.3) (2016-04-26)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.7.2...1.7.3)
 
 ## [1.7.2](https://github.com/exteso/alf.io/tree/1.7.2) (2016-04-21)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.7.2-RC1...1.7.2)
