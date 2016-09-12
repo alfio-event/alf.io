@@ -186,6 +186,12 @@ public class EventManager {
         initPlugins(event);
     }
 
+    public void activateEvent(int id, String username) {
+        Event event = eventRepository.findById(id);
+        checkOwnership(event, username, event.getOrganizationId());
+        eventRepository.activateEvent(id);
+    }
+
     private void createAllAdditionalServices(int eventId, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId) {
         Optional.ofNullable(additionalServices)
             .ifPresent(list -> list.forEach(as -> {
@@ -575,7 +581,7 @@ public class EventManager {
         return eventRepository.insert(em.getShortName(), em.getEventType(), em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.isInternal() ? em.getTermsAndConditionsUrl() : "",
             em.getImageUrl(), em.getFileBlobId(), em.getLocation(), result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()),
             em.getEnd().toZonedDateTime(result.getZoneId()), result.getTimeZone(), em.getCurrency(), em.getAvailableSeats(), em.isInternal() && em.isVatIncluded(),
-            vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales(), em.getVatStatus(), em.getPriceInCents(), currentVersion).getKey();
+            vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales(), em.getVatStatus(), em.getPriceInCents(), currentVersion, Event.Status.DRAFT).getKey();
     }
 
     private String collectPaymentProxies(EventModification em) {
@@ -641,10 +647,17 @@ public class EventManager {
         return ticketRepository.findAllConfirmed(event.getId());
     }
 
+    public List<Event> getPublishedEvents() {
+        return getActiveEventsStream().filter(e -> e.getStatus() == Event.Status.PUBLIC).collect(toList());
+    }
+
     public List<Event> getActiveEvents() {
+        return getActiveEventsStream().collect(toList());
+    }
+
+    private Stream<Event> getActiveEventsStream() {
         return eventRepository.findAll().stream()
-                .filter(e -> e.getEnd().truncatedTo(ChronoUnit.DAYS).plusDays(1).isAfter(ZonedDateTime.now(e.getZoneId()).truncatedTo(ChronoUnit.DAYS)))
-                .collect(toList());
+            .filter(e -> e.getEnd().truncatedTo(ChronoUnit.DAYS).plusDays(1).isAfter(ZonedDateTime.now(e.getZoneId()).truncatedTo(ChronoUnit.DAYS)));
     }
 
     public Function<Ticket, Boolean> checkTicketCancellationPrerequisites() {

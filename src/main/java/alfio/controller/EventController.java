@@ -117,7 +117,7 @@ public class EventController {
 
     @RequestMapping(value = {"/"}, method = RequestMethod.GET)
     public String listEvents(Model model, Locale locale) {
-        List<Event> events = eventManager.getActiveEvents();
+        List<Event> events = eventManager.getPublishedEvents();
         if(events.size() == 1) {
             return REDIRECT + "/event/" + events.get(0).getShortName() + "/";
         } else {

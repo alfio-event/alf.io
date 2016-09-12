@@ -46,6 +46,12 @@ import java.util.stream.Collectors;
 @Getter
 @Log4j2
 public class Event implements EventHiddenFieldContainer {
+
+    private static final String VERSION_FOR_FIRST_AND_LAST_NAME = "15.1.8.8";
+    public enum Status {
+        DRAFT, PUBLIC
+    }
+
     public enum EventType {
         INTERNAL, EXTERNAL
     }
@@ -76,8 +82,8 @@ public class Event implements EventHiddenFieldContainer {
     private final int srcPriceCts;
     private final PriceContainer.VatStatus vatStatus;
     private final String version;
+    private final Status status;
 
-    private static final String VERSION_FOR_FIRST_AND_LAST_NAME = "15.1.8.8";
 
 
     public Event(@Column("id") int id,
@@ -104,7 +110,8 @@ public class Event implements EventHiddenFieldContainer {
                  @Column("locales") int locales,
                  @Column("src_price_cts") int srcPriceInCents,
                  @Column("vat_status") PriceContainer.VatStatus vatStatus,
-                 @Column("version") String version) {
+                 @Column("version") String version,
+                 @Column("status") Status status) {
 
         this.type = type;
         this.displayName = displayName;
@@ -137,6 +144,7 @@ public class Event implements EventHiddenFieldContainer {
         this.vatStatus = vatStatus;
         this.srcPriceCts = srcPriceInCents;
         this.version = version;
+        this.status = status;
     }
 
     public BigDecimal getRegularPrice() {

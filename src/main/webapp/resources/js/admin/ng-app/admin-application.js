@@ -1013,6 +1013,12 @@
                 }});
         };
 
+        $scope.activateEvent = function(id) {
+            EventService.activateEvent(id).then(function() {
+                loadData();
+            });
+        };
+
         var unbind = $rootScope.$on('SidebarCategoryFilterUpdated', function(e, categoryFilter) {
             if(categoryFilter) {
                 $scope.selection.freeText = categoryFilter.freeText;

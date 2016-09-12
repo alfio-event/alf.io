@@ -78,7 +78,7 @@ public class EventPublicApiController {
 
     @RequestMapping("/events")
     public ResponseEntity<List<EventListItem>> getEvents(HttpServletRequest request) {
-        List<EventListItem> events = eventManager.getActiveEvents().stream()
+        List<EventListItem> events = eventManager.getPublishedEvents().stream()
             .map(e -> new EventListItem(e, request.getContextPath(), descriptionsLoader.eventDescriptions()))
             .collect(Collectors.toList());
         return new ResponseEntity<>(events, getCorsHeaders(), HttpStatus.OK);

@@ -13,6 +13,9 @@
         <span><a class="btn btn-default" data-ui-sref="events.single.plugin-log({eventName:event.shortName})"><i class="fa fa-plug"></i> view Plugins log</a></span>
     </div>
 </div>
+<div class="alert alert-warning" data-ng-if="event.status !== 'PUBLIC'">
+    <h4><i class="fa fa-eye-slash"></i> this event has not yet been published. Therefore only people who know the direct URL can see it. <a class="btn btn-warning" ng-click="activateEvent(event.id)">Publish now</a></h4>
+</div>
 <event-overview data-event="event"></event-overview>
 
 <div class="panel panel-default">

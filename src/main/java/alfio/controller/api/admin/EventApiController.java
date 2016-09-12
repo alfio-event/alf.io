@@ -212,6 +212,12 @@ public class EventApiController {
         return OK;
     }
 
+    @RequestMapping(value = "/events/{id}/activate", method = PUT)
+    public String activateEvent(@PathVariable("id") int id, Principal principal) {
+        eventManager.activateEvent(id, principal.getName());
+        return OK;
+    }
+
     @RequestMapping(value = "/events/{id}/header/update", method = POST)
     public ValidationResult updateHeader(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
         Event event = eventManager.getSingleEventById(id, principal.getName());
