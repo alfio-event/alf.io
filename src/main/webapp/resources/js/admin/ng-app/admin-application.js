@@ -399,7 +399,7 @@
                     if(window.sessionStorage) {
                         delete window.sessionStorage.new_event;
                     }
-                    $state.go('index');
+                    $state.go('events.single.detail', {eventName: event.shortName});
                 });
             }, angular.noop);
         };
