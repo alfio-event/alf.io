@@ -18,6 +18,7 @@ package alfio.model;
 
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
@@ -46,16 +47,16 @@ public class TicketCategory {
     private final boolean bounded;
     private final int srcPriceCts;
 
-    public TicketCategory(@Column("id") int id,
-                          @Column("inception") ZonedDateTime utcInception,
-                          @Column("expiration") ZonedDateTime utcExpiration,
-                          @Column("max_tickets") int maxTickets,
-                          @Column("name") String name,
-                          @Column("access_restricted") boolean accessRestricted,
-                          @Column("tc_status") Status status,
-                          @Column("event_id") int eventId,
-                          @Column("bounded") boolean bounded,
-                          @Column("src_price_cts") int srcPriceCts) {
+    public TicketCategory(@JsonProperty("id") @Column("id") int id,
+                          @JsonProperty("utcInception") @Column("inception") ZonedDateTime utcInception,
+                          @JsonProperty("utcExpiration") @Column("expiration") ZonedDateTime utcExpiration,
+                          @JsonProperty("maxTickets") @Column("max_tickets") int maxTickets,
+                          @JsonProperty("name") @Column("name") String name,
+                          @JsonProperty("accessRestricted") @Column("access_restricted") boolean accessRestricted,
+                          @JsonProperty("status") @Column("tc_status") Status status,
+                          @JsonProperty("eventId") @Column("event_id") int eventId,
+                          @JsonProperty("bounded") @Column("bounded") boolean bounded,
+                          @JsonProperty("srcPriceCts") @Column("src_price_cts") int srcPriceCts) {
         this.id = id;
         this.utcInception = utcInception;
         this.utcExpiration = utcExpiration;

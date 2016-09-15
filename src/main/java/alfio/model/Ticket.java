@@ -17,6 +17,7 @@
 package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -59,23 +60,23 @@ public class Ticket {
     private final int vatCts;
     private final int discountCts;
 
-    public Ticket(@Column("id") int id,
-                  @Column("uuid") String uuid,
-                  @Column("creation") ZonedDateTime creation,
-                  @Column("category_id") Integer categoryId,
-                  @Column("status") String status,
-                  @Column("event_id") int eventId,
-                  @Column("tickets_reservation_id") String ticketsReservationId,
-                  @Column("full_name") String fullName,
-                  @Column("first_name") String firstName,
-                  @Column("last_name") String lastName,
-                  @Column("email_address") String email,
-                  @Column("locked_assignment") boolean lockedAssignment,
-                  @Column("user_language") String userLanguage,
-                  @Column("src_price_cts") int srcPriceCts,
-                  @Column("final_price_cts") int finalPriceCts,
-                  @Column("vat_cts") int vatCts,
-                  @Column("discount_cts") int discountCts) {
+    public Ticket(@JsonProperty("id") @Column("id") int id,
+                  @JsonProperty("uuid") @Column("uuid") String uuid,
+                  @JsonProperty("creation") @Column("creation") ZonedDateTime creation,
+                  @JsonProperty("categoryId") @Column("category_id") Integer categoryId,
+                  @JsonProperty("status") @Column("status") String status,
+                  @JsonProperty("eventId") @Column("event_id") int eventId,
+                  @JsonProperty("ticketsReservationId") @Column("tickets_reservation_id") String ticketsReservationId,
+                  @JsonProperty("fullName") @Column("full_name") String fullName,
+                  @JsonProperty("firstName") @Column("first_name") String firstName,
+                  @JsonProperty("lastName") @Column("last_name") String lastName,
+                  @JsonProperty("email") @Column("email_address") String email,
+                  @JsonProperty("lockedAssignment") @Column("locked_assignment") boolean lockedAssignment,
+                  @JsonProperty("userLanguage") @Column("user_language") String userLanguage,
+                  @JsonProperty("srcPriceCts") @Column("src_price_cts") int srcPriceCts,
+                  @JsonProperty("finalPriceCts") @Column("final_price_cts") int finalPriceCts,
+                  @JsonProperty("vatCts") @Column("vat_cts") int vatCts,
+                  @JsonProperty("discountCts") @Column("discount_cts") int discountCts) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;

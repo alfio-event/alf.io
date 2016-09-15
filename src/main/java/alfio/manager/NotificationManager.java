@@ -16,9 +16,8 @@
  */
 package alfio.manager;
 
-import alfio.manager.support.PartialTicketPDFGenerator;
-import alfio.manager.support.PartialTicketTextGenerator;
-import alfio.manager.support.TextTemplateGenerator;
+import alfio.controller.support.TemplateProcessor;
+import alfio.manager.support.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
@@ -28,7 +27,10 @@ import alfio.model.user.Organization;
 import alfio.repository.EmailMessageRepository;
 import alfio.repository.EventDescriptionRepository;
 import alfio.repository.EventRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.Json;
+import alfio.util.TemplateManager;
 import com.google.gson.*;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +51,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Function;
 
 import static alfio.model.EmailMessage.Status.*;
 
@@ -62,10 +65,11 @@ public class NotificationManager {
     private final EmailMessageRepository emailMessageRepository;
     private final TransactionTemplate tx;
     private final EventRepository eventRepository;
-    private final EventDescriptionRepository eventDescriptionRepository;
     private final OrganizationRepository organizationRepository;
     private final ConfigurationManager configurationManager;
     private final Gson gson;
+
+    private final EnumMap<Mailer.AttachmentIdentifier, Function<Map<String, String>, byte[]>> attachmentTransformer;
 
     @Autowired
     public NotificationManager(Mailer mailer,
@@ -75,32 +79,77 @@ public class NotificationManager {
                                EventRepository eventRepository,
                                EventDescriptionRepository eventDescriptionRepository,
                                OrganizationRepository organizationRepository,
-                               ConfigurationManager configurationManager) {
+                               ConfigurationManager configurationManager,
+                               FileUploadManager fileUploadManager,
+                               TemplateManager templateManager,
+                               TicketReservationRepository ticketReservationRepository) {
         this.messageSource = messageSource;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
         this.eventRepository = eventRepository;
-        this.eventDescriptionRepository = eventDescriptionRepository;
         this.organizationRepository = organizationRepository;
         this.tx = new TransactionTemplate(transactionManager);
         this.configurationManager = configurationManager;
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(Mailer.Attachment.class, new AttachmentConverter());
         this.gson = builder.create();
+        attachmentTransformer = new EnumMap<>(Mailer.AttachmentIdentifier.class);
+
+
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, (model) -> {
+            Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
+            Locale locale = Json.fromJson(model.get("locale"), Locale.class);
+            String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
+            Organization organization = organizationRepository.getById(event.getOrganizationId());
+            //TODO add logging
+
+            return event.getIcal(description, organization.getName(), organization.getEmail()).orElse(null);
+        });
+
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, (model) -> {
+            String reservationId = model.get("reservationId");
+            Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
+            Locale language = Json.fromJson(model.get("language"), Locale.class);
+
+            Map<String, Object> reservationEmailModel = Json.fromJson(model.get("reservationEmailModel"), Map.class);
+            //FIXME hack: reservationEmailModel should be a minimal and typed container
+            reservationEmailModel.put("event", event);
+            Optional<byte[]> receipt = TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationEmailModel);
+
+            if(!receipt.isPresent()) {
+                log.warn("was not able to generate the bill for reservation id " + reservationId + " for locale " + language);
+            }
+            return receipt.orElse(null);
+        });
+
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, (model) -> {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try {
+                Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
+                TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
+                TicketCategory ticketCategory = Json.fromJson(model.get("ticketCategory"), TicketCategory.class);
+                Event event = eventRepository.findById(ticket.getEventId());
+                Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
+                PDFTemplateGenerator pdfTemplateGenerator = TemplateProcessor.buildPDFTicket(Locale.forLanguageTag(ticket.getUserLanguage()), event, reservation, ticket, ticketCategory, organization, templateManager, fileUploadManager);
+                pdfTemplateGenerator.generate().createPDF(baos);
+            } catch (IOException e) {
+                //TODO add logging
+            }
+            return baos.toByteArray();
+        });
     }
 
-    public void sendTicketByEmail(Ticket ticket, Event event, Locale locale, PartialTicketTextGenerator textBuilder, PartialTicketPDFGenerator ticketBuilder) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ticketBuilder.generate(ticket).createPDF(baos);
-
-        List<Mailer.Attachment> attachments = new ArrayList<>();
-        attachments.add(new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", baos.toByteArray(), "application/pdf"));
-
-        String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
+    public void sendTicketByEmail(Ticket ticket, Event event, Locale locale, PartialTicketTextGenerator textBuilder, TicketReservation reservation, TicketCategory ticketCategory) throws IOException {
 
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        event.getIcal(description, organization.getName(), organization.getEmail()).map(ics -> new Mailer.Attachment("calendar.ics", ics, "text/calendar")).ifPresent(attachments::add);
 
+        List<Mailer.Attachment> attachments = new ArrayList<>();
+        attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization));
+
+        Map<String, String> icsModel = new HashMap<>();
+        icsModel.put("eventId", Integer.toString(event.getId()));
+        icsModel.put("locale", Json.toJson(locale));
+        attachments.add(new Mailer.Attachment("calendar.ics", null, "text/calendar", icsModel, Mailer.AttachmentIdentifier.CALENDAR_ICS));
 
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[attachments.size()]));
         String subject = messageSource.getMessage("ticket-email-subject", new Object[]{event.getDisplayName()}, locale);
@@ -188,7 +237,17 @@ public class NotificationManager {
         if(StringUtils.isBlank(input)) {
             return new Mailer.Attachment[0];
         }
-        return gson.fromJson(input, Mailer.Attachment[].class);
+        Mailer.Attachment[] attachments = gson.fromJson(input, Mailer.Attachment[].class);
+        return Arrays.stream(attachments).map(this::transformAttachment).toArray(size -> new Mailer.Attachment[size]);
+    }
+
+    private Mailer.Attachment transformAttachment(Mailer.Attachment attachment) {
+        if(attachment.getIdentifier() != null) {
+            byte[] result = attachmentTransformer.get(attachment.getIdentifier()).apply(attachment.getModel());
+            return new Mailer.Attachment(attachment.getFilename(), result, attachment.getContentType(), null, null);
+        } else {
+            return attachment;
+        }
     }
 
     private static String calculateChecksum(String recipient, String attachments, String subject, String text)  {
@@ -210,17 +269,22 @@ public class NotificationManager {
         public JsonElement serialize(Mailer.Attachment src, Type typeOfSrc, JsonSerializationContext context) {
             JsonObject obj = new JsonObject();
             obj.addProperty("filename", src.getFilename());
-            obj.addProperty("source", Base64.getEncoder().encodeToString(src.getSource()));
+            obj.addProperty("source", src.getSource() != null ? Base64.getEncoder().encodeToString(src.getSource()) : null);
             obj.addProperty("contentType", src.getContentType());
+            obj.addProperty("identifier", src.getIdentifier() != null ? src.getIdentifier().name() : null);
+            obj.addProperty("model", src.getModel() != null ? Json.toJson(src.getModel()) : null);
             return obj;
         }
 
         @Override
         public Mailer.Attachment deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
             JsonObject jsonObject = json.getAsJsonObject();
-            return new Mailer.Attachment(jsonObject.getAsJsonPrimitive("filename").getAsString(),
-                    Base64.getDecoder().decode(jsonObject.getAsJsonPrimitive("source").getAsString()),
-                    jsonObject.getAsJsonPrimitive("contentType").getAsString());
+            String filename = jsonObject.getAsJsonPrimitive("filename").getAsString();
+            byte[] source =  jsonObject.has("source") ? Base64.getDecoder().decode(jsonObject.getAsJsonPrimitive("source").getAsString()) : null;
+            String contentType = jsonObject.getAsJsonPrimitive("contentType").getAsString();
+            Mailer.AttachmentIdentifier identifier =  jsonObject.has("identifier") ? Mailer.AttachmentIdentifier.valueOf(jsonObject.getAsJsonPrimitive("identifier").getAsString()) : null;
+            Map<String, String> model = jsonObject.has("model")  ? Json.fromJson(jsonObject.getAsJsonPrimitive("model").getAsString(), Map.class) : null;
+            return new Mailer.Attachment(filename, source, contentType, model, identifier);
         }
     }
 }
