@@ -101,8 +101,6 @@ public class NotificationManager {
             Locale locale = Json.fromJson(model.get("locale"), Locale.class);
             String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
             Organization organization = organizationRepository.getById(event.getOrganizationId());
-            //TODO add logging
-
             return event.getIcal(description, organization.getName(), organization.getEmail()).orElse(null);
         });
 
@@ -124,8 +122,8 @@ public class NotificationManager {
 
         attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, (model) -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
             try {
-                Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
                 TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
                 TicketCategory ticketCategory = Json.fromJson(model.get("ticketCategory"), TicketCategory.class);
                 Event event = eventRepository.findById(ticket.getEventId());
@@ -133,7 +131,7 @@ public class NotificationManager {
                 PDFTemplateGenerator pdfTemplateGenerator = TemplateProcessor.buildPDFTicket(Locale.forLanguageTag(ticket.getUserLanguage()), event, reservation, ticket, ticketCategory, organization, templateManager, fileUploadManager);
                 pdfTemplateGenerator.generate().createPDF(baos);
             } catch (IOException e) {
-                //TODO add logging
+                log.warn("was not able to generate ticket pdf for ticket with id" + ticket.getId(), e);
             }
             return baos.toByteArray();
         });
