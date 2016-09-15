@@ -42,6 +42,8 @@ import org.springframework.ui.Model;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -57,7 +59,7 @@ public class CustomMessageManager {
     private final TicketReservationManager ticketReservationManager;
     private final NotificationManager notificationManager;
     private final TicketCategoryRepository ticketCategoryRepository;
-    private final FileUploadManager fileUploadManager;
+    private final Executor sendMessagesExecutor = Executors.newSingleThreadExecutor();
 
     @Autowired
     public CustomMessageManager(TemplateManager templateManager,
@@ -65,15 +67,13 @@ public class CustomMessageManager {
                                 TicketRepository ticketRepository,
                                 TicketReservationManager ticketReservationManager,
                                 NotificationManager notificationManager,
-                                TicketCategoryRepository ticketCategoryRepository,
-                                FileUploadManager fileUploadManager) {
+                                TicketCategoryRepository ticketCategoryRepository) {
         this.templateManager = templateManager;
         this.eventManager = eventManager;
         this.ticketRepository = ticketRepository;
         this.ticketReservationManager = ticketReservationManager;
         this.notificationManager = notificationManager;
         this.ticketCategoryRepository = ticketCategoryRepository;
-        this.fileUploadManager = fileUploadManager;
     }
 
     public Map<String, Object> generatePreview(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
@@ -84,13 +84,16 @@ public class CustomMessageManager {
         return result;
     }
 
-    public int sendMessages(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
+    public void sendMessages(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
+
         Event event = eventManager.getSingleEvent(eventName, username);
         preview(event, input, username);//dry run for checking the syntax
         Organization organization = eventManager.loadOrganizer(event, username);
         AtomicInteger counter = new AtomicInteger();
         Map<String, List<MessageModification>> byLanguage = input.stream().collect(Collectors.groupingBy(m -> m.getLocale().getLanguage()));
-        categoryId.map(id -> ticketRepository.findConfirmedByCategoryId(event.getId(), id))
+
+        sendMessagesExecutor.execute(() -> {
+            categoryId.map(id -> ticketRepository.findConfirmedByCategoryId(event.getId(), id))
                 .orElseGet(() -> ticketRepository.findAllConfirmed(event.getId()))
                 .stream()
                 .filter(t -> isNotBlank(t.getFullName()) && isNotBlank(t.getEmail()))
@@ -123,7 +126,7 @@ public class CustomMessageManager {
                     counter.incrementAndGet();
                     notificationManager.sendSimpleEmail(event, triple.getMiddle(), subject, () -> text, attachments);
                 });
-        return counter.get();
+        });
 
     }
 
