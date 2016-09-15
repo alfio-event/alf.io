@@ -16,10 +16,44 @@
  */
 package alfio.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import java.io.IOException;
 
 public class Json {
 
     public static final Gson GSON = new GsonBuilder().create();
+
+
+    private static final ObjectMapper mapper;
+
+    static {
+        ObjectMapper m = new ObjectMapper();
+        m.registerModule(new JSR310Module());
+        m.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        m.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        mapper = m;
+    }
+
+    public static String toJson(Object o) {
+        try {
+            return mapper.writeValueAsString(o);
+        } catch(JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public static <T> T fromJson(String value, Class<T> valueType) {
+        try {
+            return mapper.readValue(value, valueType);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 }

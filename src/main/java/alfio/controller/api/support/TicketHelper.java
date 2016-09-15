@@ -173,7 +173,6 @@ public class TicketHelper {
         ticketReservationManager.updateTicketOwner(t, language, event, updateTicketOwner,
                 getConfirmationTextBuilder(request, event, ticketReservation, t),
                 getOwnerChangeTextBuilder(request, t, event),
-                preparePdfTicket(request, event, ticketReservation, t),
                 userDetails);
     }
 

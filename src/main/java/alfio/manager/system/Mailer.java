@@ -19,6 +19,7 @@ package alfio.manager.system;
 import alfio.model.Event;
 import lombok.Data;
 
+import java.util.Map;
 import java.util.Optional;
 
 public interface Mailer {
@@ -28,7 +29,17 @@ public interface Mailer {
     @Data
     class Attachment {
         private final String filename;
+        //can be null if model and identifier are specified
         private final byte[] source;
         private final String contentType;
+
+        //for dynamically generated attachment
+        private final Map<String, String> model;
+        private final AttachmentIdentifier identifier;
+    }
+
+
+    enum AttachmentIdentifier {
+        TICKET_PDF, CALENDAR_ICS, RECEIPT_PDF
     }
 }

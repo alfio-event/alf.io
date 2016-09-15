@@ -156,7 +156,7 @@ public class TicketController {
         TicketReservation reservation = data.getMiddle();
         notificationManager.sendTicketByEmail(ticket,
             event, locale, TemplateProcessor.buildPartialEmail(event, organizationRepository, reservation, templateManager, ticketReservationManager.ticketUpdateUrl(reservation.getId(), event, ticket.getUuid()), request),
-            preparePdfTicket(request, event, reservation, ticket));
+            reservation, ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId()));
         return "redirect:/event/" + eventName + "/reservation/" + reservationId
                 + ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "/success") + "?ticket-email-sent=true";
     }

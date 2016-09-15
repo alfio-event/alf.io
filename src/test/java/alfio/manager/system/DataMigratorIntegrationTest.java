@@ -304,8 +304,8 @@ public class DataMigratorIntegrationTest {
 	        second.setFirstName("Full");
             second.setLastName("Name");
 	        PartialTicketPDFGenerator generator = TemplateProcessor.buildPartialPDFTicket(Locale.ITALIAN, event, ticketReservationManager.findById(reservationId).get(), ticketCategoryRepository.getById(tickets.get(0).getCategoryId(), event.getId()), organizationRepository.getById(event.getOrganizationId()), templateManager, fileUploadManager);
-	        ticketReservationManager.updateTicketOwner(tickets.get(0), Locale.ITALIAN, event, first, (t) -> "", (t) -> "", generator, Optional.empty());
-	        ticketReservationManager.updateTicketOwner(tickets.get(1), Locale.ITALIAN, event, second, (t) -> "", (t) -> "", generator, Optional.empty());
+	        ticketReservationManager.updateTicketOwner(tickets.get(0), Locale.ITALIAN, event, first, (t) -> "", (t) -> "", Optional.empty());
+	        ticketReservationManager.updateTicketOwner(tickets.get(1), Locale.ITALIAN, event, second, (t) -> "", (t) -> "", Optional.empty());
 	        //FIXME
 	        //dataMigrator.fillTicketsGender();
 	        //ticketRepository.findTicketsInReservation(reservationId).forEach(t -> assertEquals("F", t.getGender()));

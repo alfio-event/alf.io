@@ -39,6 +39,7 @@ import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateOutput;
@@ -111,7 +112,6 @@ public class TicketReservationManager {
     private final TransactionTemplate requiresNewTransactionTemplate;
     private final WaitingQueueManager waitingQueueManager;
     private final PluginManager pluginManager;
-    private final FileUploadManager fileUploadManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
@@ -177,7 +177,6 @@ public class TicketReservationManager {
         this.waitingQueueManager = waitingQueueManager;
         this.pluginManager = pluginManager;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
-        this.fileUploadManager = fileUploadManager;
         this.ticketFieldRepository = ticketFieldRepository;
         this.additionalServiceRepository = additionalServiceRepository;
         this.additionalServiceItemRepository = additionalServiceItemRepository;
@@ -394,14 +393,12 @@ public class TicketReservationManager {
         reservationEmailModel.put("confirmationDate", confirmationTimestamp.withZoneSameInstant(event.getZoneId()));
         List<Mailer.Attachment> attachments = new ArrayList<>(1);
         if(!summary.getNotYetPaid()) {
-            Optional<byte[]> receipt = TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationEmailModel);
-            if(!receipt.isPresent()) {
-                log.warn("was not able to generate the bill for reservation id " + reservationId + " for locale " + language);
-            }
-            receipt.ifPresent(data -> {
-                attachments.add(new Mailer.Attachment("receipt.pdf", data, "application/pdf"));
-            });
-
+            Map<String, String> model = new HashMap<>();
+            model.put("reservationId", reservationId);
+            model.put("eventId", Integer.toString(event.getId()));
+            model.put("language", Json.toJson(language));
+            model.put("reservationEmailModel", Json.toJson(reservationEmailModel));
+            attachments.add(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
         }
 
         notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
@@ -420,9 +417,9 @@ public class TicketReservationManager {
         Locale reservationLanguage = findReservationLanguage(reservationId);
         String subject = messageSource.getMessage("reservation-email-expired-subject", new Object[]{getShortReservationID(event, reservationId), event.getDisplayName()}, reservationLanguage);
         cancelReservation(reservationId, expired);
-        notificationManager.sendSimpleEmail(event, reservation.getEmail(), subject, () -> {
-            return templateManager.renderClassPathResource("/alfio/templates/offline-reservation-expired-email-txt.ms", emailModel, reservationLanguage, TemplateOutput.TEXT);
-        });
+        notificationManager.sendSimpleEmail(event, reservation.getEmail(), subject,
+            () ->  templateManager.renderClassPathResource("/alfio/templates/offline-reservation-expired-email-txt.ms", emailModel, reservationLanguage, TemplateOutput.TEXT)
+        );
     }
 
     @Transactional(readOnly = true)
@@ -831,7 +828,6 @@ public class TicketReservationManager {
                                   UpdateTicketOwnerForm updateTicketOwner,
                                   PartialTicketTextGenerator confirmationTextBuilder,
                                   PartialTicketTextGenerator ownerChangeTextBuilder,
-                                  PartialTicketPDFGenerator pdfTemplateGenerator,
                                   Optional<UserDetails> userDetails) {
 
         String newEmail = updateTicketOwner.getEmail().trim();
@@ -846,7 +842,7 @@ public class TicketReservationManager {
 
         Ticket newTicket = ticketRepository.findByUUID(ticket.getUuid());
         if (!StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) || !StringUtils.equalsIgnoreCase(customerName.getFullName(), ticket.getFullName())) {
-            sendTicketByEmail(newTicket, userLocale, event, confirmationTextBuilder, pdfTemplateGenerator);
+            sendTicketByEmail(newTicket, userLocale, event, confirmationTextBuilder);
         }
 
         boolean admin = isAdmin(userDetails);
@@ -871,9 +867,12 @@ public class TicketReservationManager {
         return userDetails.flatMap(u -> u.getAuthorities().stream().map(a -> Role.fromRoleName(a.getAuthority())).filter(Role.ADMIN::equals).findFirst()).isPresent();
     }
 
-    private void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder, PartialTicketPDFGenerator pdfTemplateGenerator) {
+    private void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder) {
         try {
-            notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, pdfTemplateGenerator);
+            TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
+            TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
+            Organization organization = organizationRepository.getById(event.getOrganizationId());
+            notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, reservation, ticketCategory);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

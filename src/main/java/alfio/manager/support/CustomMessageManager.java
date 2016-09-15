@@ -30,6 +30,7 @@ import alfio.model.modification.MessageModification;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
+import alfio.util.Json;
 import alfio.util.TemplateManager;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Triple;
@@ -113,10 +114,9 @@ public class CustomMessageManager {
                     String text = renderResource(m.getText(), model, m.getLocale(), templateManager);
                     List<Mailer.Attachment> attachments = new ArrayList<>();
                     if(m.isAttachTicket()) {
-                        Optional<TicketReservation> ticketReservation = ticketReservationManager.findById(ticket.getTicketsReservationId());
-                        ticketReservation.ifPresent(reservation -> {
+                        ticketReservationManager.findById(ticket.getTicketsReservationId()).ifPresent(reservation -> {
                             ticketCategoryRepository.getById(ticket.getCategoryId()).ifPresent(ticketCategory -> {
-                                generateTicket(ticket, event, reservation, ticketCategory, organization).ifPresent(attachments::add);
+                                attachments.add(generateTicketAttachment(ticket, reservation, ticketCategory, organization));
                             });
                         });
                     }
@@ -142,16 +142,13 @@ public class CustomMessageManager {
                 .collect(Collectors.toList());
     }
 
-    private Optional<Mailer.Attachment> generateTicket(Ticket ticket, Event event, TicketReservation reservation, TicketCategory ticketCategory, Organization organization) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            PDFTemplateGenerator pdfTemplateGenerator = TemplateProcessor.buildPDFTicket(Locale.forLanguageTag(ticket.getUserLanguage()), event, reservation, ticket, ticketCategory, organization, templateManager, fileUploadManager);
-            pdfTemplateGenerator.generate().createPDF(baos);
-            return Optional.of(new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", baos.toByteArray(), "application/pdf"));
-        } catch (IOException | RuntimeException e) {
-            log.warn(() -> "cannot generate PDF ticket with UUID "+ticket.getUuid(), e);
-            return Optional.empty();
-        }
+    public static Mailer.Attachment generateTicketAttachment(Ticket ticket, TicketReservation reservation, TicketCategory ticketCategory, Organization organization) {
+        Map<String, String> model = new HashMap<>();
+        model.put("ticket", Json.toJson(ticket));
+        model.put("ticketCategory", Json.toJson(ticketCategory));
+        model.put("reservationId", reservation.getId());
+        model.put("organizationId", Integer.toString(organization.getId()));
+        return new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.TICKET_PDF);
     }
 
     private static String renderResource(String template, Model model, Locale locale, TemplateManager templateManager) {
