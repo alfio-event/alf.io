@@ -75,7 +75,7 @@
             updateCategoryConfig: function(categoryId, eventId, settings) {
                 return $http.post('/admin/api/configuration/events/'+eventId+'/categories/'+categoryId+'/update', settings).error(HttpErrorHandler.handle);
             },
-            remove: function(conf) {
+            removeSystemConfig: function(conf) {
                 return $http['delete']('/admin/api/configuration/key/' + conf.configurationKey).error(HttpErrorHandler.handle);
             },
             removeOrganizationConfig: function(conf, organizationId) {
@@ -179,7 +179,7 @@
         };
 
         systemConf.delete = function(config) {
-            return ConfigurationService.remove(config);
+            return ConfigurationService.removeSystemConfig(config);
         };
 
         $rootScope.$on('ReloadSettings', function() {
@@ -192,9 +192,6 @@
     function OrganizationConfigurationController(ConfigurationService, OrganizationService, $stateParams, $q, $rootScope) {
         var organizationConf = this;
         organizationConf.organizationId = $stateParams.organizationId;
-        organizationConf.delete = function(config) {
-            return ConfigurationService.removeOrganizationConfig(config, organizationConf.organizationId);
-        };
         var load = function() {
             organizationConf.loading = true;
             $q.all([OrganizationService.getOrganization(organizationConf.organizationId), ConfigurationService.loadOrganizationConfig(organizationConf.organizationId)])
