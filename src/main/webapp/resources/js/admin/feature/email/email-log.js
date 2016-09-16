@@ -53,12 +53,13 @@
 
     EmailLogController.prototype.$inject = ['EmailService', '$filter', '$scope', 'EventService', '$stateParams'];
 
-    function EmailDetailController(EmailService, $stateParams, event) {
+    function EmailDetailController(EmailService, $stateParams, getEvent) {
         var self = this;
-        EmailService.loadEmailDetail(event.shortName, $stateParams.messageId).success(function(result) {
+        var shortName = getEvent.data.event.shortName;
+        EmailService.loadEmailDetail(shortName, $stateParams.messageId).success(function(result) {
             self.message = result;
         });
-        this.eventName = event.shortName;
+        this.eventName = shortName;
     }
 
     EmailDetailController.prototype.$inject = ['EmailService', '$stateParams'];
