@@ -17,7 +17,10 @@
 package alfio.manager;
 
 import alfio.controller.support.TemplateProcessor;
-import alfio.manager.support.*;
+import alfio.manager.support.CustomMessageManager;
+import alfio.manager.support.PDFTemplateGenerator;
+import alfio.manager.support.PartialTicketTextGenerator;
+import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
@@ -31,6 +34,7 @@ import alfio.repository.TicketReservationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.gson.*;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -109,7 +113,7 @@ public class NotificationManager {
             Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
             Locale language = Json.fromJson(model.get("language"), Locale.class);
 
-            Map<String, Object> reservationEmailModel = Json.fromJson(model.get("reservationEmailModel"), Map.class);
+            Map<String, Object> reservationEmailModel = Json.fromJson(model.get("reservationEmailModel"), new TypeReference<Map<String, Object>>() {});
             //FIXME hack: reservationEmailModel should be a minimal and typed container
             reservationEmailModel.put("event", event);
             Optional<byte[]> receipt = TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationEmailModel);
@@ -281,7 +285,7 @@ public class NotificationManager {
             byte[] source =  jsonObject.has("source") ? Base64.getDecoder().decode(jsonObject.getAsJsonPrimitive("source").getAsString()) : null;
             String contentType = jsonObject.getAsJsonPrimitive("contentType").getAsString();
             Mailer.AttachmentIdentifier identifier =  jsonObject.has("identifier") ? Mailer.AttachmentIdentifier.valueOf(jsonObject.getAsJsonPrimitive("identifier").getAsString()) : null;
-            Map<String, String> model = jsonObject.has("model")  ? Json.fromJson(jsonObject.getAsJsonPrimitive("model").getAsString(), Map.class) : null;
+            Map<String, String> model = jsonObject.has("model")  ? Json.fromJson(jsonObject.getAsJsonPrimitive("model").getAsString(), new TypeReference<Map<String, String>>() {}) : null;
             return new Mailer.Attachment(filename, source, contentType, model, identifier);
         }
     }

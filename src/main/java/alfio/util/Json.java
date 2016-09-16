@@ -17,6 +17,7 @@
 package alfio.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -52,6 +53,14 @@ public class Json {
     public static <T> T fromJson(String value, Class<T> valueType) {
         try {
             return mapper.readValue(value, valueType);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public static <T> T fromJson(String value, TypeReference<T> reference) {
+        try {
+            return mapper.readValue(value, reference);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
