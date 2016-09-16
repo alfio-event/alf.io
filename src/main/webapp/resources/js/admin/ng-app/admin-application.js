@@ -1311,8 +1311,8 @@
             $scope.event = result.data.event;
         });
 
-        var getPendingPayments = function() {
-            EventService.getPendingPayments($stateParams.eventName).success(function(data) {
+        var getPendingPayments = function(force) {
+            EventService.getPendingPayments($stateParams.eventName, force).success(function(data) {
                 $scope.pendingReservations = data;
                 $scope.loading = false;
             });
@@ -1330,7 +1330,7 @@
         $scope.registerPayment = function(eventName, id) {
             $scope.loading = true;
             EventService.registerPayment(eventName, id).success(function() {
-                getPendingPayments();
+                getPendingPayments(true);
             }).error(function() {
                 $scope.loading = false;
             });
@@ -1341,7 +1341,7 @@
             }
             $scope.loading = true;
             EventService.cancelPayment(eventName, id).success(function() {
-                getPendingPayments();
+                getPendingPayments(true);
             }).error(function() {
                 $scope.loading = false;
             });

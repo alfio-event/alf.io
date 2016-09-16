@@ -80,11 +80,11 @@
             unbindTickets: function(event, category) {
                 return $http['put']('/admin/api/events/'+event.shortName+'/category/'+category.id+'/unbind-tickets').error(HttpErrorHandler.handle);
             },
-            getPendingPayments: function(eventName) {
+            getPendingPayments: function(eventName, forceReload) {
                 service.data.pendingPayments = service.data.pendingPayments || {};
                 var element = service.data.pendingPayments[eventName];
                 var now = moment();
-                if(!angular.isDefined(element) || now.subtract(20, 's').isAfter(element.ts)) {
+                if(!angular.isDefined(element) || now.subtract(20, 's').isAfter(element.ts) || forceReload) {
                     var promise = $http.get('/admin/api/events/'+eventName+'/pending-payments').error(HttpErrorHandler.handle);
                     element = {
                         ts: moment(),
