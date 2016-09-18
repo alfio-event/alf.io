@@ -53,11 +53,11 @@ public class CustomMessagesApiController {
     }
 
     @RequestMapping(value= "/send", method = RequestMethod.POST)
-    public int send(@PathVariable("eventName") String eventName,
+    public void send(@PathVariable("eventName") String eventName,
                     @RequestParam(required = false, value = "categoryId") Integer categoryId,
                     @RequestBody List<MessageModification> messageModifications,
                     Principal principal) {
-        return customMessageManager.sendMessages(eventName, Optional.ofNullable(categoryId), messageModifications, principal.getName());
+        customMessageManager.sendMessages(eventName, Optional.ofNullable(categoryId), messageModifications, principal.getName());
     }
 
 }
