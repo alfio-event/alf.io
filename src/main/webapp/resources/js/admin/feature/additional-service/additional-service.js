@@ -154,9 +154,11 @@
             if(self.propagateChanges) {
                 AdditionalServiceManager.save(self.eventId, item).then(function(result) {
                     //HACK
-                    result.data.description = originalItem.description;
-                    result.data.title = originalItem.title;
-                    result.data.zippedTitleAndDescriptions = originalItem.zippedTitleAndDescriptions;
+                    if(originalItem) {
+                        result.data.description = originalItem.description;
+                        result.data.title = originalItem.title;
+                        result.data.zippedTitleAndDescriptions = originalItem.zippedTitleAndDescriptions;
+                    }
                     //
                     afterUpdate(result.data, originalItem);
                 });
