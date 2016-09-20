@@ -132,6 +132,7 @@
                     <th>Payment Type</th>
                     <th>Transaction id</th>
                     <th>Transaction timestamp</th>
+                    <th>Actions</th>
                     </thead>
                     <tbody>
                     <tr data-ng-repeat="ticket in tickets | filter: {status: 'CHECKED_IN'} | filter: checkedInSelection.freeText | orderBy: ['timestamp', 'ticketReservationId' , 'uuid']">
@@ -148,6 +149,7 @@
                         <td data-ng-class-even="'active'" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
                         <td data-ng-class-even="'active'" data-label="Transaction id"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
                         <td data-ng-class-even="'active'" data-label="Transaction timestamp"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
+                        <td><button type="button" class="btn btn-primary btn-xs" data-ng-click="revertCheckIn(ticket)">Revert check-in</button></td>
                     </tr>
                     </tbody>
                 </table>

@@ -73,6 +73,12 @@ public class CheckInApiController {
         return checkInManager.manualCheckIn(ticketIdentifier);
     }
 
+    @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/revert-check-in", method = POST)
+    public boolean revertCheckIn(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
+        log.warn("for event id : {} and ticket : {}, a revert of the check in has been done", eventId, ticketIdentifier);
+        return checkInManager.revertCheckIn(ticketIdentifier);
+    }
+
     @RequestMapping(value = "/check-in/event/{eventName}/ticket/{ticketIdentifier}/confirm-on-site-payment", method = POST)
     public TicketAndCheckInResult confirmOnSitePayment(@PathVariable("eventName") String eventName,
                                                        @PathVariable("ticketIdentifier") String ticketIdentifier,

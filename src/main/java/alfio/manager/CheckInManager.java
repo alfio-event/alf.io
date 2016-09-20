@@ -24,8 +24,11 @@ import alfio.model.Event;
 import alfio.model.FullTicketInfo;
 import alfio.model.Ticket;
 import alfio.model.Ticket.TicketStatus;
+import alfio.model.TicketReservation;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.util.MonetaryUtil;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -48,11 +51,13 @@ public class CheckInManager {
 
     private final TicketRepository ticketRepository;
     private final EventRepository eventRepository;
+    private final TicketReservationRepository ticketReservationRepository;
 
     @Autowired
-    public CheckInManager(TicketRepository ticketRepository, EventRepository eventRepository) {
+    public CheckInManager(TicketRepository ticketRepository, EventRepository eventRepository, TicketReservationRepository ticketReservationRepository) {
         this.ticketRepository = ticketRepository;
         this.eventRepository = eventRepository;
+        this.ticketReservationRepository = ticketReservationRepository;
     }
 
 
@@ -105,6 +110,18 @@ public class CheckInManager {
 
             checkIn(ticketIdentifier);
             return true;
+        }).orElse(false);
+    }
+
+    public boolean revertCheckIn(String ticketIdentifier) {
+        return findAndLockTicket(ticketIdentifier).map((t) -> {
+            if(t.getStatus() == TicketStatus.CHECKED_IN) {
+                TicketReservation reservation = ticketReservationRepository.findReservationById(t.getTicketsReservationId());
+                TicketStatus revertedStatus = reservation.getPaymentMethod() == PaymentProxy.ON_SITE ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
+                ticketRepository.updateTicketStatusWithUUID(ticketIdentifier, revertedStatus.toString());
+                return true;
+            }
+            return false;
         }).orElse(false);
     }
 
@@ -169,5 +186,4 @@ public class CheckInManager {
 
         return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(OK_READY_TO_BE_CHECKED_IN, "Ready to be checked in"));
     }
-
 }

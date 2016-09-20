@@ -1125,6 +1125,10 @@
                 $scope.selection = {};
             });
         };
+
+        $scope.revertCheckIn = function(ticket) {
+            CheckInService.revertCheckIn(ticket).then($scope.reloadTickets);
+        };
     });
 
     admin.controller('EventCheckInScanController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService) {
