@@ -22,7 +22,7 @@ import java.util.Arrays;
 
 @Getter
 public enum Role {
-    ADMIN("ROLE_ADMIN", "Administrator"), OWNER("ROLE_OWNER", "Organization owner"), OPERATOR("ROLE_OPERATOR", "Check-in operator"), SPONSOR("ROLE_SPONSOR", "Sponsor");
+    ADMIN("ROLE_ADMIN", "Administrator"), OWNER("ROLE_OWNER", "Organization owner"), SUPERVISOR("ROLE_SUPERVISOR", "Check-in supervisor"), OPERATOR("ROLE_OPERATOR", "Check-in operator"), SPONSOR("ROLE_SPONSOR", "Sponsor");
 
     private final String roleName;
     private final String description;

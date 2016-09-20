@@ -87,7 +87,7 @@ public class UserManager {
 
     public Collection<Role> getAvailableRoles(String username) {
         User user = findUserByUsername(username);
-        return isAdmin(user) || isOwner(user) ? EnumSet.of(Role.OWNER, Role.OPERATOR, Role.SPONSOR) : Collections.emptySet();
+        return isAdmin(user) || isOwner(user) ? EnumSet.of(Role.OWNER, Role.OPERATOR, Role.SUPERVISOR, Role.SPONSOR) : Collections.emptySet();
     }
 
     /**
