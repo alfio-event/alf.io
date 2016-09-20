@@ -5,9 +5,38 @@
         <field-error data-form-obj="editUser" data-field-obj="editUserCtrl.editUser.organizationId"></field-error>
     </div>
     <div class="form-group" bs-form-error="editUserCtrl.editUser.role">
-        <label for="role">Role</label>
+        <label for="role">Role</label> <a class="btn btn-xs btn-default" uib-popover-template="'helpUserRole.html'" popover-placement="left"><i class="fa fa-info-circle"></i> help</a>
         <select data-ng-model="editUserCtrl.user.role" name="role" class="form-control" id="role" data-required data-ng-options="r.role as r.description for r in editUserCtrl.roles"></select>
         <field-error data-form-obj="editUser" data-field-obj="editUserCtrl.editUser.role"></field-error>
+        <script type="text/ng-template" id="helpUserRole.html">
+            <h4>User Role:</h4>
+            <ul class="list-group">
+                <li class="list-group-item">
+                    <div class="list-group-item-heading"><strong>Organization owner</strong></div>
+                    <div class="list-group-item-text">
+                        Can view and update all the events, he/she can also create other users and access the configuration at organization and event level.
+                    </div>
+                </li>
+                <li class="list-group-item">
+                    <div class="list-group-item-heading"><strong>Check-in supervisor</strong></div>
+                    <div class="list-group-item-text">
+                        Can view all the events, he/she can also perform the check-in using either the web interface or the app.
+                    </div>
+                </li>
+                <li class="list-group-item">
+                    <div class="list-group-item-heading"><strong>Check-in operator</strong></div>
+                    <div class="list-group-item-text">
+                        Can only perform the check-in using the app. Access on the web GUI is denied.
+                    </div>
+                </li>
+                <li class="list-group-item">
+                    <div class="list-group-item-heading"><strong>Sponsor</strong></div>
+                    <div class="list-group-item-text">
+                        Can only scan checked-in badges using the app and collect attendees' data. Access on the web GUI is denied.
+                    </div>
+                </li>
+            </ul>
+        </script>
     </div>
     <div class="form-group" bs-form-error="editUserCtrl.editUser.username">
         <label for="username">Username</label>

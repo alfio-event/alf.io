@@ -46,6 +46,7 @@ public class WebSecurityConfig {
     public static final String CSRF_SESSION_ATTRIBUTE = "CSRF_SESSION_ATTRIBUTE";
     public static final String CSRF_PARAM_NAME = "_csrf";
     public static final String OPERATOR = "OPERATOR";
+    private static final String SUPERVISOR = "SUPERVISOR";
     public static final String SPONSOR = "SPONSOR";
     private static final String ADMIN = "ADMIN";
     private static final String OWNER = "OWNER";
@@ -82,9 +83,9 @@ public class WebSecurityConfig {
             http.requestMatcher((request) -> request.getHeader("Authorization") != null).sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and().csrf().disable()
             .authorizeRequests()
-            .antMatchers(ADMIN_API + "/check-in/**").hasRole(OPERATOR)
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SPONSOR)
-            .antMatchers(ADMIN_API + "/user-type").hasAnyRole(OPERATOR, SPONSOR)
+            .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(OPERATOR, SUPERVISOR)
+            .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
+            .antMatchers(ADMIN_API + "/user-type").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
             .antMatchers(ADMIN_API + "/**").denyAll()
             .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
             .antMatchers("/**").authenticated()
@@ -134,11 +135,11 @@ public class WebSecurityConfig {
                 .authorizeRequests()
                 .antMatchers(ADMIN_API + "/configuration/**", ADMIN_API + "/users/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers(ADMIN_API + "/organizations/new").hasRole(ADMIN)
-                .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
-                .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
+                .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+                .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
                 .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
-                .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, OPERATOR)
+                .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
                 .antMatchers("/api/attendees/**").denyAll()
                 .antMatchers("/**").permitAll()
                 .and()
