@@ -45,7 +45,20 @@ You can configure additional System properties (if you need them) by creating th
 vi custom.jvmargs
 ```
 
-Please be aware that since this file could contain sensitive information (such as Google Maps private API key) it will be automatically ignored by git
+Please be aware that since this file could contain sensitive information (such as Google Maps private API key) it will be automatically ignored by git.
+
+
+#### Using hsqldb gui
+
+In the custom.jvmargs add the following 2 lines:
+
+```
+-Djava.awt.headless=false
+-DstartDBManager=true
+```
+
+Then, when executing `./gradlew -Pprofile=dev :bootRun`, the ui will automatically launch.
+
 
 ## Developing alf.io
 Importing the Gradle project into Intellij and Eclipse both work.

@@ -18,6 +18,8 @@ package alfio.config;
 
 import alfio.util.DefaultExceptionHandler;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.reflect.MethodUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -41,5 +43,19 @@ public class SpringBootLauncher {
         ConfigurableApplicationContext applicationContext = application.run(args);
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
         log.info("active profiles: {}", String.join(", ", (CharSequence[]) environment.getActiveProfiles()));
+        if ("true".equals(System.getProperty("startDBManager"))) {
+            launchHsqlGUI();
+        }
+    }
+
+
+    public static void launchHsqlGUI() {
+        Class<?> cls;
+        try {
+            cls = ClassUtils.getClass("org.hsqldb.util.DatabaseManagerSwing");
+            MethodUtils.invokeStaticMethod(cls, "main", new Object[]{new String[]{"--url", "jdbc:hsqldb:mem:alfio", "--noexit"}});
+        } catch (ReflectiveOperationException e) {
+            log.warn("error starting db manager", e);
+        }
     }
 }
