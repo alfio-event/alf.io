@@ -84,8 +84,8 @@
             self.titles = titles;
             self.descriptions = descriptions;
             self.list = _.map(result, function(item) {
-                item.title = _.map(titles, fillExistingTexts(item.title));
-                item.description = _.map(descriptions, fillExistingTexts(item.description));
+                item.title = _.map(angular.copy(titles), fillExistingTexts(item.title));
+                item.description = _.map(angular.copy(descriptions), fillExistingTexts(item.description));
                 return item;
             });
             self.displayList = buildDisplayList(self.list);
@@ -110,15 +110,14 @@
             var parentCtrl = self;
             var modal = $uibModal.open({
                 size:'lg',
-                template:'<edit-additional-service data-editing-item="ctrl.item" data-titles="ctrl.titles" data-descriptions="ctrl.descriptions" selected-languages="ctrl.selectedLanguages" data-on-edit-complete="ctrl.onEditComplete(item)" data-on-dismiss="ctrl.onDismiss()" data-event-start-date="ctrl.eventStartDate"></edit-additional-service>',
+                template:'<edit-additional-service data-editing-item="ctrl.item" data-titles="ctrl.titles" data-descriptions="ctrl.descriptions" data-on-edit-complete="ctrl.onEditComplete(item)" data-on-dismiss="ctrl.onDismiss()" data-event-start-date="ctrl.eventStartDate"></edit-additional-service>',
                 backdrop: 'static',
                 controller: function() {
                     var ctrl = this;
                     ctrl.item = angular.copy(item);
                     ctrl.selectedLanguages = parentCtrl.selectedLanguages;
-                    ctrl.availableLanguages = parentCtrl.availableLanguages;
-                    ctrl.titles = parentCtrl.titles;
-                    ctrl.descriptions = parentCtrl.descriptions;
+                    ctrl.titles = angular.copy(parentCtrl.titles);
+                    ctrl.descriptions = angular.copy(parentCtrl.descriptions);
                     ctrl.onEditComplete = function(item) {
                         modal.close(item);
                     };
@@ -154,12 +153,12 @@
             if(self.propagateChanges) {
                 AdditionalServiceManager.save(self.eventId, item).then(function(result) {
                     //HACK
-                    if(originalItem) {
+                    if(originalItem && !angular.isDefined(originalItem.id)) {
                         result.data.description = originalItem.description;
                         result.data.title = originalItem.title;
                         result.data.zippedTitleAndDescriptions = originalItem.zippedTitleAndDescriptions;
                     }
-                    //
+
                     afterUpdate(result.data, originalItem);
                 });
             } else {
@@ -241,9 +240,6 @@
                 return existing ? angular.extend({displayLanguage: d.displayLanguage}, existing) : d;
             });
         }
-
-        ctrl.item.title = _.filter(ctrl.item.title, function(l) {return (l.localeValue & ctrl.selectedLanguages) === l.localeValue});
-        ctrl.item.description = _.filter(ctrl.item.description, function(l) {return (l.localeValue & ctrl.selectedLanguages) === l.localeValue});
 
         ctrl.item.zippedTitleAndDescriptions = _.zip(ctrl.item.title, ctrl.item.description);
 
