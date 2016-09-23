@@ -289,7 +289,11 @@
                                             <div ng-if="!edit">{{field.description[lang.locale].description.placeholder}}</div>
                                             <input ng-if="edit" type="text" class="form-control" ng-model="toEdit.description[lang.locale].description.placeholder">
                                         </div>
-                                    </div>
+										<div class="form-group">
+											<label>Required</label>
+											<div>{{field.required}}</div>
+										</div>
+									</div>
                                 </div>
                             </div>
                         </div>
