@@ -383,7 +383,7 @@ public class EventApiController {
     @RequestMapping(value = "/events/{eventName}/additional-field/new", method = POST)
     public void addAdditionalField(@PathVariable("eventName") String eventName, @RequestBody EventModification.AdditionalField field, Principal principal) {
     	Event event = eventManager.getSingleEvent(eventName, principal.getName());
-    	eventManager.addAdditionalField(event.getId(), field);
+    	eventManager.addAdditionalField(event, field);
     }
     
     @RequestMapping(value = "/events/{eventName}/additional-field/swap-position/{id1}/{id2}", method = POST)

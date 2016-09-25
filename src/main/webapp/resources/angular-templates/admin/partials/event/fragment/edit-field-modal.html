@@ -1,0 +1,95 @@
+<div class="modal-header">
+    <h3>Edit field</h3>
+</div>
+<form name="editFieldForm" ng-submit="editField(editFieldForm, field)">
+<div class="modal-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Field name</label>
+                    <input type="input" ng-model="field.name" class="form-control" required data-ng-if="addNewField">
+                    <pre class="form-control-static" data-ng-if="!addNewField">{{field.name}}</pre>
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select ng-model="field.type" ng-options="option for option in fieldTypes" class="form-control" required data-ng-if="addNewField">
+                        <option></option>
+                    </select>
+                    <pre class="form-control-static" data-ng-if="!addNewField">{{field.type}}</pre>
+                </div>
+            </div>
+            <div class="col-md-4" ng-if="field.type != 'country'">
+                <div data-ng-if="field.type === 'select'">
+                    <div data-ng-repeat="restrictedValue in field.restrictedValues">
+                        <div class="form-group">
+                            <label>Value</label>
+                            <input ng-model="restrictedValue.value" class="form-control" required data-ng-if="addNewField">
+                            <pre class="form-control-static" data-ng-if="!addNewField">{{restrictedValue}}</pre>
+                        </div>
+                        <div>
+                            <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)" class="form-group">
+                                <label>Text {{lang.displayLanguage}}</label>
+                                <input ng-model="field.description[lang.locale].restrictedValues[restrictedValue.value]" class="form-control" required data-ng-if="addNewField">
+                                <input ng-model="field.description[lang.locale].description.restrictedValues[restrictedValue]" class="form-control" required data-ng-if="!addNewField">
+                            </div>
+                        </div>
+                        <div class="form-group" data-ng-if="addNewField">
+                            <button type="button" ng-click="field.restrictedValues.splice(field.restrictedValues.indexOf(restrictedValue), 1)" class="btn btn-default">Remove</button>
+                        </div>
+                    </div>
+                    <div class="form-group" data-ng-if="addNewField">
+                        <button type="button" data-ng-click="addRestrictedValue();" class="btn btn-success" >Add value</button>
+                    </div>
+                </div>
+                <div data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
+                    <div class="form-group">
+                        <label>Min length</label>
+                        <input type="number" ng-model="field.minLength" class="form-control" data-ng-if="addNewField">
+                        <pre class="form-control-static" data-ng-if="!addNewField">{{field.minLength}}</pre>
+                    </div>
+                    <div class="form-group">
+                        <label>Max length</label>
+                        <input type="number" ng-model="field.maxLength" class="form-control" data-ng-if="addNewField">
+                        <pre class="form-control-static" data-ng-if="!addNewField">{{field.maxLength}}</pre>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div>
+                    <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">
+                        <div class="form-group">
+                            <label>Label {{lang.displayLanguage}}</label>
+                            <input ng-model="field.description[lang.locale].label" type="text" placeholder="label" class="form-control" required data-ng-if="addNewField">
+                            <input ng-model="field.description[lang.locale].description.label" type="text" placeholder="label" class="form-control" required data-ng-if="!addNewField">
+                        </div>
+                        <div class="form-group">
+                            <label>Placeholder {{lang.displayLanguage}}</label>
+                            <input ng-model="field.description[lang.locale].placeholder" type="text" placeholder="placeholder" class="form-control" data-ng-if="addNewField">
+                            <input ng-model="field.description[lang.locale].description.placeholder" type="text" placeholder="placeholder" class="form-control" data-ng-if="!addNewField">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" data-ng-if="addNewField && event.additionalServices.length > 0">
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label>Collect only if Additional option has been selected:</label>
+                    <div class="input-group">
+                        <select data-ng-options="item as joinTitle(item.title) for item in event.additionalServices" data-ng-model="field.forAdditionalService" class="form-control"></select>
+                        <div class="input-group-btn"><button type="button" class="btn btn-default" data-ng-click="field.forAdditionalService = undefined"><i class="fa fa-close"></i> <span class="sr-only">reset</span></button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" data-ng-if="addNewField">
+            <div class="col-sm-11">
+                <h4>Add from template <span data-ng-repeat="template in dynamicFieldTemplates"><a class="btn btn-default btn-sm" data-ng-click="addFromTemplate(template)">{{template.name}}</a> </span></h4>
+            </div>
+        </div>
+
+</div>
+<div class="modal-footer">
+    <control-buttons data-form-obj="editFieldForm" data-success-text="Save"></control-buttons>
+</div>
+</form>

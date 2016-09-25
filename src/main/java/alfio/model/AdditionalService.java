@@ -18,8 +18,11 @@ package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
+import org.springframework.security.crypto.codec.Hex;
 
 import java.math.BigDecimal;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -84,6 +87,24 @@ public class AdditionalService {
 
     public ZonedDateTime getExpiration(ZoneId zoneId) {
         return Optional.ofNullable(utcExpiration).map(i -> i.withZoneSameInstant(zoneId)).orElseGet(() -> ZonedDateTime.now(zoneId).plus(1L, ChronoUnit.HOURS));
+    }
+
+    public String getChecksum() {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            digest.update(Boolean.toString(fixPrice).getBytes());
+            digest.update(Integer.toString(ordinal).getBytes());
+            digest.update(Integer.toString(availableQuantity).getBytes());
+            digest.update(Integer.toString(maxQtyPerOrder).getBytes());
+            digest.update(utcInception.toString().getBytes());
+            digest.update(utcExpiration.toString().getBytes());
+            digest.update(Optional.ofNullable(vat).map(BigDecimal::toString).orElse("").getBytes());
+            digest.update(vatType.name().getBytes());
+            digest.update(type.name().getBytes());
+            return new String(Hex.encode(digest.digest()));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public static PriceContainer.VatStatus getVatStatus(VatType vatType, PriceContainer.VatStatus eventVatStatus) {

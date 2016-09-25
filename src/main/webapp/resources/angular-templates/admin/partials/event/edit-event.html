@@ -38,7 +38,7 @@
                     </uib-progress>
                 </div>
             </div>
-            <div class="row panel panel-default" data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories" data-ng-class="'category-' + evaluateBarType($index)">
+            <div class="row panel panel-default" data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories | orderBy:['inception.date','inception.time']" data-ng-class="'category-' + evaluateBarType($index)">
                 <div class="panel-body">
                     <edit-category></edit-category>
                 </div>
@@ -52,7 +52,7 @@
 
 
             <div class="page-header">
-                <h3>Attendees' data to collect</h3>
+                <h3><i class="fa fa-info-circle"></i> Attendees' data to collect</h3>
                 <h5 class="text-muted">Attendees' full name, e-mail and language are collected by default. What else do you need to know about your attendees?</h5>
             </div>
 
@@ -114,6 +114,17 @@
                                     <label>Placeholder {{lang.displayLanguage}}</label>
                                     <input ng-model="field.description[lang.locale].placeholder" type="text" placeholder="placeholder" class="form-control">
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" data-ng-if="event.additionalServices.length > 0">
+                    <div class="col-xs-12">
+                        <div class="form-group">
+                            <label>Collect only if Additional option has been selected:</label>
+                            <div class="input-group">
+                                <select data-ng-options="item as joinTitle(item.title) for item in event.additionalServices" data-ng-model="field.forAdditionalService" class="form-control"></select>
+                                <div class="input-group-btn"><button type="button" class="btn btn-default" data-ng-click="field.forAdditionalService = undefined"><i class="fa fa-close"></i> <span class="sr-only">reset</span></button></div>
                             </div>
                         </div>
                     </div>

@@ -24,6 +24,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.Ticket.TicketStatus;
+import alfio.model.TicketFieldConfiguration.Context;
 import alfio.model.modification.*;
 import alfio.model.modification.EventModification.AdditionalField;
 import alfio.model.system.Configuration;
@@ -179,10 +180,10 @@ public class EventManager {
         int eventId = insertEvent(em);
         Event event = eventRepository.findById(eventId);
         createOrUpdateEventDescription(eventId, em);
-        createAdditionalFields(eventId, em);
+        createAllAdditionalServices(eventId, em.getAdditionalServices(), event.getZoneId());
+        createAdditionalFields(event, em);
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(event);
-        createAllAdditionalServices(eventId, em.getAdditionalServices(), event.getZoneId());
         initPlugins(event);
     }
 
@@ -224,22 +225,31 @@ public class EventManager {
         }));
     }
 
-    private void createAdditionalFields(int eventId, EventModification em) {
+    private void createAdditionalFields(Event event, EventModification em) {
         if (!CollectionUtils.isEmpty(em.getTicketFields())) {
-           em.getTicketFields().forEach(f -> {
-               insertAdditionalField(eventId, f, f.getOrder());
-           });
+            em.getTicketFields().forEach(f -> {
+                insertAdditionalField(event, f, f.getOrder());
+            });
         }
     }
 
-	private void insertAdditionalField(int eventId, AdditionalField f, int order) {
+	private void insertAdditionalField(Event event, AdditionalField f, int order) {
 		List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValues()).orElseGet(Collections::emptyList).stream().map(EventModification.RestrictedValue::getValue).collect(Collectors.toList());
-		   String serializedRestrictedValues = "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
-		   int configurationId = ticketFieldRepository.insertConfiguration(eventId, f.getName(), order, f.getType(), serializedRestrictedValues, f.getMaxLength(), f.getMinLength(), f.isRequired(), TicketFieldConfiguration.Context.ATTENDEE).getKey();
-		   f.getDescription().forEach((locale, value) -> {
-		       ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value));
-		   });
+        String serializedRestrictedValues = "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
+        Optional<EventModification.AdditionalService> linkedAdditionalService = Optional.ofNullable(f.getLinkedAdditionalService());
+        Integer additionalServiceId = linkedAdditionalService.map(as -> Optional.ofNullable(as.getId()).orElseGet(() -> findAdditionalService(event, as))).orElse(-1);
+        Context context = linkedAdditionalService.isPresent() ? Context.ADDITIONAL_SERVICE : Context.ATTENDEE;
+		int configurationId = ticketFieldRepository.insertConfiguration(event.getId(), f.getName(), order, f.getType(), serializedRestrictedValues, f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId).getKey();
+		f.getDescription().forEach((locale, value) -> ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value)));
 	}
+
+    private Integer findAdditionalService(Event event, EventModification.AdditionalService as) {
+        ZoneId utc = ZoneId.of("UTC");
+        int eventId = event.getId();
+        String checksum = new AdditionalService(0, eventId, as.isFixPrice(), as.getOrdinal(), as.getAvailableQuantity(),
+            as.getMaxQtyPerOrder(), as.getInception().toZonedDateTime(event.getZoneId()).withZoneSameInstant(utc), as.getExpiration().toZonedDateTime(event.getZoneId()).withZoneSameInstant(utc), as.getVat(), as.getVatType(), Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0)).getChecksum();
+        return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::getId).orElse(null);
+    }
 
     public void updateEventHeader(Event original, EventModification em, String username) {
         checkOwnership(original, username, em.getOrganizationId());
@@ -680,9 +690,9 @@ public class EventManager {
         });
     }
     
-	public void addAdditionalField(int eventId, AdditionalField field) {
-		Integer order = ticketFieldRepository.findMaxOrderValue(eventId);
-		insertAdditionalField(eventId, field, order == null ? 0 : order + 1);
+	public void addAdditionalField(Event event, AdditionalField field) {
+		Integer order = ticketFieldRepository.findMaxOrderValue(event.getId());
+		insertAdditionalField(event, field, order == null ? 0 : order + 1);
 	}
 	
 	public void deleteAdditionalField(int ticketFieldConfigurationId) {

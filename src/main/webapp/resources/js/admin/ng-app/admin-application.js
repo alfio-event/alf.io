@@ -319,7 +319,7 @@
             var arr = field.restrictedValues || [];
             arr.push({});
             field.restrictedValues = arr;
-        }
+        };
 
     };
 
@@ -364,6 +364,10 @@
                 };
                 initTicketCategoriesAndAdditionalServices();
         }
+
+        $scope.joinTitle = function(titles) {
+            return titles.map(function(t) { return t.value;}).join(' / ')
+        };
 
         $scope.reset = function() {
             $scope.event = {
@@ -440,7 +444,10 @@
                                                         $q,
                                                         $window,
                                                         $uibModal,
-                                                        PAYMENT_PROXY_DESCRIPTIONS) {
+                                                        PAYMENT_PROXY_DESCRIPTIONS,
+                                                        AdditionalServiceManager,
+                                                        $location,
+                                                        $anchorScroll) {
         var loadData = function() {
             $scope.loading = true;
 
@@ -495,6 +502,9 @@
 
                 EventService.getAdditionalFields($stateParams.eventName).success(function(result) {
                     $scope.additionalFields = result;
+                });
+                AdditionalServiceManager.loadAll(result.event.id).then(function(services) {
+                    result.event.additionalServices = services.data;
                 });
             });
         };
@@ -958,17 +968,23 @@
         	});
         }
         
-        $scope.addField = function(event) {
+        $scope.editField = function(event, addNew, field) {
         	$uibModal.open({
                 size:'lg',
-                templateUrl: BASE_STATIC_URL + '/event/fragment/add-field-modal.html',
+                templateUrl: BASE_STATIC_URL + '/event/fragment/edit-field-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
                 	$scope.event = event;
-                	$scope.field = {};
+                    $scope.addNewField = addNew;
+                	$scope.field = addNew ? {} : angular.copy(field);
                 	$scope.fieldTypes = FIELD_TYPES;
-                	
-                	
+                    $scope.joinTitle = function(titles) {
+                        return titles.map(function(t) { return t.value;}).join(' / ')
+                    };
+                    $scope.cancel = function() {
+                        $scope.$dismiss();
+                    };
+
                 	EventService.getDynamicFieldTemplates().success(function(result) {
                         $scope.dynamicFieldTemplates = result;
                     });
@@ -1003,14 +1019,33 @@
                         return (selectedLanguages & lang) > 0;
                     };
                     
-                    $scope.addField = function(form, field) {
-                    	EventService.addField($stateParams.eventName, field).then(function(result) {
+                    $scope.editField = function(form, field) {
+                        var promise;
+                        if(angular.isDefined(field.id)) {
+                            promise = EventService.saveFieldDescription($stateParams.eventName, field.description);
+                        } else {
+                            promise = EventService.addField($stateParams.eventName, field);
+                        }
+                    	promise.then(function(result) {
                     		return loadData();
                     	}).then(function() {
                     		$scope.$close(true);
                     	});
                     };
                 }});
+        };
+
+        $scope.goToAdditionalService = function(id) {
+            $location.hash('additional-service-'+id);
+            $anchorScroll();
+        };
+
+        $scope.additionalServiceDescription = function(event, id) {
+            var service = _.find(event.additionalServices, function (as) { return as.id === id;});
+            if(service) {
+                return service.title.map(function(t) { return t.value; }).join(' / ');
+            }
+            return "#"+id;
         };
 
         $scope.activateEvent = function(id) {

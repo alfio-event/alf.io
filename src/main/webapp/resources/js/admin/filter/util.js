@@ -109,4 +109,24 @@
         }
     }]);
 
+    filters.filter('selectedLanguages', function() {
+        return function(list, eventLocales) {
+            return (list || []).filter(function(lang) {
+                return (eventLocales & lang.value) > 0
+            })
+        }
+    });
+
+    filters.filter('flattenAdditionalServices', function() {
+        return function(list) {
+            return list.map(function(as, index) {
+                return {
+                    title: as.title.map(function(t) { return t.value;}),
+                    id: as.id,
+                    index: index
+                }
+            })
+        };
+    })
+
 })();

@@ -36,7 +36,7 @@
                         No categories matching the selected criteria have been found.
                     </div>
                     <div data-ng-switch-default="">
-                        <div class="panel panel-default" data-ng-repeat="ticketCategory in event.ticketCategories | orderBy: ['id'] | showSelectedCategories : selection"
+                        <div class="panel panel-default" data-ng-repeat="ticketCategory in event.ticketCategories | orderBy: ['formattedInception'] | showSelectedCategories : selection"
                              data-ng-class="{'panel-danger':ticketCategory.containingOrphans, 'panel-warning':ticketCategory.containingStuckTickets}"
                              data-ng-init="displayWarning = ticketCategory.containingStuckTickets || ticketCategory.containingOrphans"
                              id="ticket-category-{{ticketCategory.id}}">
@@ -211,19 +211,19 @@
 
                 <!-- -->
                 <div class="page-header" id="additional-fields">
-                    <h3><i class="fa fa-info-circle"></i> Additional Fields</h3>
-                    <h5 class="text-muted">Here are the additional fields defined</h5>
+                    <h3><i class="fa fa-info-circle"></i> Attendees' data to collect</h3>
+                    <h5 class="text-muted">The following data will be collected (full name, e-mail and language are collected by default)</h5>
                 </div>
                 <div class="panel panel-default" data-ng-repeat="field in additionalFields | orderBy: 'order' ">
                     <div class="panel-heading">
                         <div class="panel-title">
                             <div class="row">
                                 <div class="col-xs-5 col-md-3">
-                                    {{field.name}}
+                                    [{{field.order}}] {{field.name}}
                                 </div>
                                 <div class="col-xs-7 col-md-9">
-                                    <div class="pull-right">
-                                        <button class="btn btn-sm btn-default" type="button" ng-click="toEdit = {};prepareFieldDescriptionEdit(toEdit, field);edit=true" ng-hide="edit"><i class="fa fa-edit"></i> edit</button>
+                                    <div class="pull-right"><!-- ng-click="toEdit = {};prepareFieldDescriptionEdit(toEdit, field);edit=true"-->
+                                        <button class="btn btn-sm btn-default" type="button" data-ng-click="editField(event, false, field)" ng-hide="edit"><i class="fa fa-edit"></i> edit</button>
                                         <button class="btn btn-sm btn-default" ng-click="fieldUp($index)" ng-hide="edit || $first"><i class="fa fa-arrow-up"></i> move up</button>
                                         <button class="btn btn-sm btn-default" ng-click="fieldDown($index)" ng-hide="edit || $last"><i class="fa fa-arrow-down"></i> move down</button>
                                         <button class="btn btn-sm btn-default" type="button" ng-click="deleteFieldModal(field)" ng-hide="edit"><i class="fa fa-trash"></i> delete</button>
@@ -236,69 +236,62 @@
                     </div>
                     <div class="panel-body">
                         <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Field name</label>
-                                    <div>{{field.name}}</div>
+                            <div class="col-xs-12 col-md-5">
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Field name</strong></div>
+                                    <div class="col-sm-8" >{{field.name}}</div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Order</label>
-                                    <div>{{field.order}}</div>
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Type</strong></div>
+                                    <div class="col-sm-8">{{field.type}} </div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Type</label>
-                                    <div>{{field.type}}</div>
+                                <div class="row" data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
+                                    <div class="col-sm-4"><strong>Min length</strong></div>
+                                    <div class="col-sm-8">{{field.minLength}}</div>
                                 </div>
-                            </div>
-                            <div class="col-md-4" ng-if="field.type != 'country'">
-                                <div data-ng-if="field.type === 'select'">
-                                    <div data-ng-repeat="restrictedValue in field.restrictedValues">
-                                        <div class="form-group">
-                                            <label>Value</label>
-                                            <div>{{restrictedValue}}</div>
-                                        </div>
-                                        <div>
-                                            <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)" class="form-group">
-                                                <label>Text {{lang.displayLanguage}}</label>
-                                                <div ng-if="!edit">{{field.description[lang.locale].description.restrictedValues[restrictedValue]}}</div>
-                                                <input ng-if="edit" type="text" class="form-control" ng-model="toEdit.description[lang.locale].description.restrictedValues[restrictedValue]">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
-                                    <div class="form-group">
-                                        <label>Min length</label>
-                                        <div>{{field.minLength}}</div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Max length</label>
-                                        <div>{{field.maxLength}}</div>
-                                    </div>
+                                <div class="row" data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
+                                    <div class="col-sm-4"><strong>Max Length</strong></div>
+                                    <div class="col-sm-8">{{field.maxLength}}</div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div>
-                                    <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">
-                                        <div class="form-group">
-                                            <label>Label {{lang.displayLanguage}}</label>
-                                            <div ng-if="!edit">{{field.description[lang.locale].description.label}}</div>
-                                            <input ng-if="edit" type="text" class="form-control" ng-model="toEdit.description[lang.locale].description.label">
-                                        <div class="form-group">
-                                            <label>Placeholder {{lang.displayLanguage}}</label>
-                                            <div ng-if="!edit">{{field.description[lang.locale].description.placeholder}}</div>
-                                            <input ng-if="edit" type="text" class="form-control" ng-model="toEdit.description[lang.locale].description.placeholder">
-                                        </div>
+                            <div class="col-xs-12 col-md-5">
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Label</strong></div>
+                                    <div class="col-sm-8">
+                                        <span data-ng-repeat="lang in allLanguages | selectedLanguages:event.locales"><span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.label}}</span><span data-ng-if="!$last"> / </span></span>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>Placeholder</strong></div>
+                                    <div class="col-sm-8">
+                                        <span data-ng-repeat="lang in allLanguages | selectedLanguages:event.locales">
+                                            <span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.placeholder}}</span><span data-ng-if="!$last"> / </span>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                        <hr data-ng-if="field.type == 'select'" />
+                        <div class="row" data-ng-if="field.type == 'select'">
+                            <div class="col-xs-1"><strong>Values</strong></div>
+                            <div class="col-xs-11">
+                                <div data-ng-repeat="restrictedValue in field.restrictedValues">
+                                    <span><strong>{{restrictedValue}}</strong>: </span>
+                                    <span data-ng-repeat="lang in allLanguages | selectedLanguages:event.locales">
+                                        <span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.restrictedValues[restrictedValue]}}</span><span data-ng-if="!$last"> / </span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <hr data-ng-if="field.context === 'ADDITIONAL_SERVICE'" />
+                        <div data-ng-if="field.context === 'ADDITIONAL_SERVICE'">
+                            <i class="fa fa-info-circle"></i> collected only if <i><a data-ng-click="goToAdditionalService(field.additionalServiceId)">{{additionalServiceDescription(event, field.additionalServiceId)}}</a></i> has been selected.
+                        </div>
                 </div>
             </div>
             <div class="clearfix"></div>
             <div class="wMarginBottom">
-                <button type="button" class="btn btn-success" data-ng-click="addField(event)"><i class="fa fa-plus"></i> add additional field</button>
+                <button type="button" class="btn btn-success" data-ng-click="editField(event, true)"><i class="fa fa-plus"></i> add new</button>
             </div>
 
             <div class="page-header" id="donation-options">

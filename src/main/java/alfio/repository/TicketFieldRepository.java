@@ -32,7 +32,7 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query("select count(*) from ticket_field_value where ticket_id_fk = :ticketId and field_value is not null and field_value <> ''")
     Integer countFilledOptionalData(@Bind("ticketId") int id);
 
-    @Query("select a.ticket_id_fk, a.ticket_field_configuration_id_fk, b.field_name, a.field_value from ticket_field_value a, ticket_field_configuration b where a.ticket_id_fk = :ticketId and a.ticket_field_configuration_id_fk = b.id and b.context = 'ATTENDEE'")
+    @Query("select a.ticket_id_fk, a.ticket_field_configuration_id_fk, b.field_name, a.field_value from ticket_field_value a, ticket_field_configuration b where a.ticket_id_fk = :ticketId and a.ticket_field_configuration_id_fk = b.id")
     List<TicketFieldValue> findAllByTicketId(@Bind("ticketId") int id);
 
     @Query("update ticket_field_value set field_value = :value where ticket_id_fk = :ticketId and ticket_field_configuration_id_fk = :fieldConfigurationId")
@@ -44,16 +44,16 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query("delete from ticket_field_value where ticket_id_fk = :ticketId and ticket_field_configuration_id_fk = :fieldConfigurationId")
     int deleteValue(@Bind("ticketId") int ticketId, @Bind("fieldConfigurationId") int fieldConfigurationId);
 
-    @Query("select ticket_field_configuration_id_fk, field_locale, description from ticket_field_description  inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where field_locale = :locale and event_id_fk = :eventId and context = 'ATTENDEE'")
+    @Query("select ticket_field_configuration_id_fk, field_locale, description from ticket_field_description  inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where field_locale = :locale and event_id_fk = :eventId")
     List<TicketFieldDescription> findDescriptions(@Bind("eventId") int eventId, @Bind("locale") String locale);
 
-    @Query("select ticket_field_description.* from ticket_field_description  inner join ticket_field_configuration on ticket_field_configuration_id_fk = id inner join event on event.id = event_id_fk  where short_name = :eventShortName and context = 'ATTENDEE'")
+    @Query("select ticket_field_description.* from ticket_field_description  inner join ticket_field_configuration on ticket_field_configuration_id_fk = id inner join event on event.id = event_id_fk  where short_name = :eventShortName")
     List<TicketFieldDescription> findDescriptions(@Bind("eventShortName") String eventShortName);
 
-    @Query("SELECT field_name FROM ticket_field_configuration inner join event on event.id = event_id_fk  where short_name = :eventShortName and context = 'ATTENDEE' order by field_order asc ")
+    @Query("SELECT field_name FROM ticket_field_configuration inner join event on event.id = event_id_fk  where short_name = :eventShortName order by field_order asc ")
     List<String> findFieldsForEvent(@Bind("eventShortName") String eventShortName);
 
-    @Query("select field_name, field_value from ticket_field_value inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where ticket_id_fk = :ticketId and context = 'ATTENDEE'")
+    @Query("select field_name, field_value from ticket_field_value inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where ticket_id_fk = :ticketId")
     List<FieldNameAndValue> findNameAndValue(@Bind("ticketId") int ticketId);
 
     default void updateOrInsert(Map<String, String> values, Ticket ticket, Event event) {
@@ -87,7 +87,7 @@ public interface TicketFieldRepository extends FieldRepository {
     }
 
 
-    @Query("select * from ticket_field_configuration where event_id_fk = :eventId and context = 'ATTENDEE' order by field_order asc")
+    @Query("select * from ticket_field_configuration where event_id_fk = :eventId order by field_order asc")
     List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventId") int eventId);
     
     @Query("select * from ticket_field_configuration where id = :id")
@@ -96,16 +96,16 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query("update ticket_field_configuration set field_order = :order where id = :id")
     int updateFieldOrder(@Bind("id") int id, @Bind("order") int order);
 
-    @Query("select ticket_field_configuration.* from ticket_field_configuration inner join event on event.id = event_id_fk  where short_name = :eventShortName and ticket_field_configuration.context = 'ATTENDEE' order by field_order asc")
+    @Query("select ticket_field_configuration.* from ticket_field_configuration inner join event on event.id = event_id_fk  where short_name = :eventShortName order by field_order asc")
     List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventShortName") String eventName);
 
-    @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId and context = 'ATTENDEE'")
+    @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId")
     Integer countAdditionalFieldsForEvent(@Bind("eventId") int eventId);
     
-    @Query("select max(field_order) from ticket_field_configuration where event_id_fk = :eventId and context = 'ATTENDEE'")
+    @Query("select max(field_order) from ticket_field_configuration where event_id_fk = :eventId")
     Integer findMaxOrderValue(@Bind("eventId") int eventId);
 
-    @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId and field_required = true and context = 'ATTENDEE'")
+    @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId and field_required = true")
     Integer countRequiredAdditionalFieldsForEvent(@Bind("eventId") int eventId);
 
     default Map<Integer, TicketFieldDescription> findTranslationsFor(Locale locale, int eventId) {
