@@ -3,6 +3,7 @@
     <span class="text-muted">here you can add one or more "donation" option.</span>
 </div>
 <div class="panel panel-default" data-ng-repeat="item in ctrl.displayList">
+    <div data-ng-if="item.id" id="additional-service-{{item.id}}"></div>
     <div class="panel-heading">
         <div class="panel-title">
             <div class="row">

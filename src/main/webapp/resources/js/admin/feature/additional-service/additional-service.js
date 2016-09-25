@@ -116,8 +116,12 @@
                     var ctrl = this;
                     ctrl.item = angular.copy(item);
                     ctrl.selectedLanguages = parentCtrl.selectedLanguages;
-                    ctrl.titles = angular.copy(parentCtrl.titles);
-                    ctrl.descriptions = angular.copy(parentCtrl.descriptions);
+                    ctrl.titles = _.filter(angular.copy(parentCtrl.titles), function(t) {
+                        return (t.localeValue & ctrl.selectedLanguages) === t.localeValue;
+                    });
+                    ctrl.descriptions = _.filter(angular.copy(parentCtrl.descriptions), function(d) {
+                        return (d.localeValue & ctrl.selectedLanguages) === d.localeValue;
+                    });
                     ctrl.onEditComplete = function(item) {
                         modal.close(item);
                     };

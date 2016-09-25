@@ -212,7 +212,7 @@ public class ReservationController {
                                 List<TicketDecorator> decorators = TicketDecorator.decorate(e.getValue(),
                                     configurationManager.getBooleanConfigValue(Configuration.from(ev.getOrganizationId(), ev.getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false),
                                     eventManager.checkTicketCancellationPrerequisites(),
-                                    ticket -> ticketHelper.findTicketFieldConfigurationAndValue(ev.getId(), ticket.getId(), locale),
+                                    ticket -> ticketHelper.findTicketFieldConfigurationAndValue(ev.getId(), ticket, locale),
                                     tickets.size() == 1);
                                 return Pair.of(category, decorators);
                             })

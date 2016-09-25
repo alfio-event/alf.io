@@ -18,8 +18,8 @@ package alfio.controller.api;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.model.ContentLanguage;
 import alfio.manager.i18n.I18nManager;
+import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.util.TemplateManager;
@@ -73,7 +73,7 @@ public class ReservationApiController {
 
         Optional<Triple<ValidationResult, Event, Ticket>> assignmentResult = ticketHelper.assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, Optional.of(bindingResult), request, t -> {
             Locale requestLocale = RequestContextUtils.getLocale(request);
-            model.addAttribute("ticketFieldConfiguration", ticketHelper.findTicketFieldConfigurationAndValue(t.getMiddle().getId(), t.getRight().getId(), requestLocale));
+            model.addAttribute("ticketFieldConfiguration", ticketHelper.findTicketFieldConfigurationAndValue(t.getMiddle().getId(), t.getRight(), requestLocale));
             model.addAttribute("value", t.getRight());
             model.addAttribute("validationResult", t.getLeft());
             model.addAttribute("countries", ticketHelper.getLocalizedCountries(requestLocale));

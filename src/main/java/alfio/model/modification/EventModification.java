@@ -150,6 +150,7 @@ public class EventModification {
 
         // locale -> description
         private final Map<String, Description> description;
+        private final AdditionalService linkedAdditionalService;
 
 
         @JsonCreator
@@ -160,7 +161,8 @@ public class EventModification {
                                @JsonProperty("minLength") Integer minLength,
                                @JsonProperty("maxLength") Integer maxLength,
                                @JsonProperty("restrictedValues") List<RestrictedValue> restrictedValues,
-                               @JsonProperty("description") Map<String, Description> description) {
+                               @JsonProperty("description") Map<String, Description> description,
+                               @JsonProperty("forAdditionalService") AdditionalService linkedAdditionalService) {
             this.order = order;
             this.name = name;
             this.type = type;
@@ -169,6 +171,7 @@ public class EventModification {
             this.maxLength = maxLength;
             this.restrictedValues = restrictedValues;
             this.description = description;
+            this.linkedAdditionalService = linkedAdditionalService;
         }
     }
 
@@ -278,6 +281,7 @@ public class EventModification {
             private List<AdditionalServiceText> title = new ArrayList<>();
             private List<AdditionalServiceText> description = new ArrayList<>();
             private PriceContainer priceContainer;
+            private String uuid = UUID.randomUUID().toString();
 
             private Builder(alfio.model.AdditionalService src) {
                 this.src = src;
