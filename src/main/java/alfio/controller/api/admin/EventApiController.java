@@ -252,7 +252,7 @@ public class EventApiController {
         return OK;
     }
 
-    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "creation", "category", "event", "status", "originalPrice", "paidPrice", "discount", "vat", "reservationID", "Full Name", "First name", "Last name", "E-Mail", "locked", "Language");
+    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "creation", "category", "event", "status", "originalPrice", "paidPrice", "discount", "vat", "reservationID", "Full Name", "First Name", "Last Name", "E-Mail", "locked", "Language");
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
 
     @RequestMapping("/events/{eventName}/export.csv")
@@ -298,7 +298,7 @@ public class EventApiController {
                 Map<String, String> additionalValues = ticketFieldRepository.findAllValuesForTicketId(t.getId());
 
                 fields.stream().filter(contains.negate()).forEachOrdered(field -> {
-                    line.add(additionalValues.getOrDefault(field, ""));
+                    line.add(additionalValues.getOrDefault(field, "").replaceAll("\"", ""));
                 });
 
                 return line.toArray(new String[line.size()]);

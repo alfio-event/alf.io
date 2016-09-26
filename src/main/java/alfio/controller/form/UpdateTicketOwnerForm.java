@@ -18,6 +18,7 @@ package alfio.controller.form;
 
 import lombok.Data;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -29,5 +30,5 @@ public class UpdateTicketOwnerForm {
     private String userLanguage;
 
 
-    private Map<String, String> additional;
+    private Map<String, List<String>> additional;
 }

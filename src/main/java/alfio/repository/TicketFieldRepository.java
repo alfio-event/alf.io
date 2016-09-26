@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.model.*;
+import alfio.util.Json;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -56,14 +57,23 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query("select field_name, field_value from ticket_field_value inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where ticket_id_fk = :ticketId")
     List<FieldNameAndValue> findNameAndValue(@Bind("ticketId") int ticketId);
 
-    default void updateOrInsert(Map<String, String> values, Ticket ticket, Event event) {
+    default void updateOrInsert(Map<String, List<String>> values, Ticket ticket, Event event) {
         int ticketId = ticket.getId();
         int eventId = event.getId();
         Map<String, TicketFieldValue> toUpdate = findAllByTicketIdGroupedByName(ticketId);
         values = Optional.ofNullable(values).orElseGet(Collections::emptyMap);
         Map<String, Integer> fieldNameToId = findAdditionalFieldsForEvent(eventId).stream().collect(Collectors.toMap(TicketFieldConfiguration::getName, TicketFieldConfiguration::getId));
 
-        values.forEach((fieldName, fieldValue) -> {
+        values.forEach((fieldName, fieldValues) -> {
+            String fieldValue;
+            if(fieldValues.size() == 1) {
+                fieldValue = fieldValues.get(0);
+            } else if(fieldValues.stream().anyMatch(StringUtils::isNotBlank)) {
+                fieldValue = Json.toJson(fieldValues);
+            } else {
+                fieldValue = "";
+            }
+
             boolean isNotBlank = StringUtils.isNotBlank(fieldValue);
             if(toUpdate.containsKey(fieldName)) {
                 TicketFieldValue field = toUpdate.get(fieldName);

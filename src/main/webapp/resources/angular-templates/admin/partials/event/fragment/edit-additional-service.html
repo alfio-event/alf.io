@@ -38,6 +38,8 @@
                         <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.dateString" data-show-existing-errors="showExistingErrors"></field-error>
                     </div>
                 </div>
+            </div>
+            <div class="row">
                 <div class="col-sm-3">
                     <label class="control-label">Price policy</label>
                     <div class="form-group">
@@ -55,6 +57,11 @@
                             Price: <input type="number" min="0" class="form-control" data-ng-model="ctrl.item.price" required>
                         </label>
                         <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.price" data-show-existing-errors="ctrl.showExistingErrors"></field-error>
+                    </div>
+                </div>
+                <div class="col-sm-3" data-ng-if="ctrl.item.fixPrice">
+                    <div class="form-group" bs-form-error="ctrl.additionalServiceForm.maxQtyPerOrder">
+                        <label>Max qty per order: <input type="number" min="1" class="form-control" step="1" data-ng-model="ctrl.item.maxQtyPerOrder" required></label>
                     </div>
                 </div>
                 <div class="col-sm-3">

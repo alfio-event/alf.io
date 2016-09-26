@@ -16,21 +16,29 @@
  */
 package alfio.model;
 
+import alfio.util.Json;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @AllArgsConstructor
-public class TicketFieldConfigurationAndDescription {
+public class TicketFieldConfigurationDescriptionAndValue {
 
     @Delegate
     private final TicketFieldConfiguration ticketFieldConfiguration;
     @Delegate
     private final TicketFieldDescription ticketFieldDescription;
+    private final int count;
+    private final String value;
 
 
     public List<Pair<String, String>> getTranslatedRestrictedValue() {
@@ -40,4 +48,23 @@ public class TicketFieldConfigurationAndDescription {
             .map(val -> Pair.of(val, description.getOrDefault(val, "MISSING_DESCRIPTION")))
             .collect(Collectors.toList());
     }
+
+    public List<TicketFieldValue> getFields() {
+        if(count == 1) {
+            return Collections.singletonList(new TicketFieldValue(0, 1, value));
+        }
+        List<String> values = StringUtils.isBlank(value) ? Collections.emptyList() : Json.fromJson(value, new TypeReference<List<String>>() {});
+        return IntStream.range(0, count)
+            .mapToObj(i -> new TicketFieldValue(i, i+1, i < values.size() ? values.get(i) : ""))
+            .collect(Collectors.toList());
+
+    }
+
+    @RequiredArgsConstructor
+    private static class TicketFieldValue {
+        private final int fieldIndex;
+        private final int fieldCounter;
+        private final String fieldValue;
+    }
+
 }

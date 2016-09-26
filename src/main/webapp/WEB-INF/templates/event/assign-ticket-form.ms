@@ -84,39 +84,41 @@
     </div>
     <div {{#displayAssignForm}}class="collapsible"{{/displayAssignForm}}>
         {{#ticketFieldConfiguration}}
+            {{#fields}}
             <div class="form-group">
-                 <label class="col-sm-3 control-label" for="{{key.name}}-title-{{uuid}}">{{key.labelDescription}}</label>
+                 <label class="col-sm-3 control-label" for="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}">{{labelDescription}} {{^-first}}{{fieldCounter}}{{/-first}}</label>
                  <div class="col-sm-9">
-                    {{#key.inputField}}
-                        <input type="{{key.inputType}}" name="additional['{{key.name}}']" value="{{value}}" id="{{key.name}}-title-{{uuid}}" class="form-control"
-                            {{#key.placeholderDescriptionDefined}}placeholder="{{key.placeholderDescription}}"{{/key.placeholderDescriptionDefined}}
-                            {{#key.maxLengthDefined}}maxlength="{{key.maxLength}}"{{/key.maxLengthDefined}}
-                            {{#key.minLengthDefined}}minlength="{{key.minLength}}"{{/key.minLengthDefined}}
+                    {{#inputField}}
+                        <input type="{{inputType}}" name="additional['{{name}}'][{{fieldIndex}}]" value="{{fieldValue}}" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control"
+                            {{#placeholderDescriptionDefined}}placeholder="{{placeholderDescription}}"{{/placeholderDescriptionDefined}}
+                            {{#maxLengthDefined}}maxlength="{{maxLength}}"{{/maxLengthDefined}}
+                            {{#minLengthDefined}}minlength="{{minLength}}"{{/minLengthDefined}}
                         >
-                    {{/key.inputField}}
-                    {{#key.textareaField}}
-                        <textarea name="additional['{{key.name}}']" id="{{key.name}}-{{uuid}}" class="form-control"
-                            {{#key.placeholderDescriptionDefined}}placeholder="{{key.placeholderDescription}}"{{/key.placeholderDescriptionDefined}}
-                            {{#key.maxLengthDefined}}maxlength="{{key.maxLength}}"{{/key.maxLengthDefined}}
-                            {{#key.minLengthDefined}}minlength="{{key.minLength}}"{{/key.minLengthDefined}}
-                        >{{value}}</textarea>
-                    {{/key.textareaField}}
-                    {{#key.countryField}}
-                        <select name="additional['{{key.name}}']" value="{{value}}" id="{{key.name}}-{{uuid}}" class="form-control">
+                    {{/inputField}}
+                    {{#textareaField}}
+                        <textarea name="additional['{{name}}'][{{fieldIndex}}]" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control"
+                            {{#placeholderDescriptionDefined}}placeholder="{{placeholderDescription}}"{{/placeholderDescriptionDefined}}
+                            {{#maxLengthDefined}}maxlength="{{maxLength}}"{{/maxLengthDefined}}
+                            {{#minLengthDefined}}minlength="{{minLength}}"{{/minLengthDefined}}
+                        >{{fieldValue}}</textarea>
+                    {{/textareaField}}
+                    {{#countryField}}
+                        <select name="additional['{{name}}'][{{fieldIndex}}]" value="{{fieldValue}}" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control">
                             <option value=""></option>
                             {{#countries}}
                                 <option value="{{left}}">{{right}}</option>
                             {{/countries}}
                         </select>
-                    {{/key.countryField}}
-                    {{#key.selectField}}
-                        <select name="additional['{{key.name}}']" value="{{value}}" id="{{key.name}}-{{uuid}}" class="form-control">
+                    {{/countryField}}
+                    {{#selectField}}
+                        <select name="additional['{{name}}'][{{fieldIndex}}]" value="{{fieldValue}}" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control">
                             <option value=""></option>
-                            {{#key.translatedRestrictedValue}}<option value="{{key}}">{{value}}</option>{{/key.translatedRestrictedValue}}
+                            {{#translatedRestrictedValue}}<option value="{{key}}">{{value}}</option>{{/translatedRestrictedValue}}
                         </select>
-                    {{/key.selectField}}
+                    {{/selectField}}
                  </div>
             </div>
+            {{/fields}}
         {{/ticketFieldConfiguration}}
         <div class="form-group">
             <label class="col-sm-3 control-label" for="language-{{uuid}}">{{#i18n}}reservation-page-complete.language{{/i18n}}</label>
