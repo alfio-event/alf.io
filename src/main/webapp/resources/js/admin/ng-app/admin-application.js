@@ -1481,6 +1481,17 @@
         });
     }]);
 
+    admin.controller('LayoutController', ['$state', '$rootScope', function($state, $rootScope) {
+        var ctrl = this;
+        var checkSidebar = function() {
+            ctrl.displaySidebar = angular.isDefined($state.$current.data) && angular.isDefined($state.$current.data.view);
+        };
+        checkSidebar();
+        $rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+            checkSidebar();
+        })
+    }]);
+
     admin.run(function($rootScope, PriceCalculator) {
         $rootScope.evaluateBarType = function(index) {
             var barClasses = ['warning', 'info', 'success'];

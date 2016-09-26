@@ -81,14 +81,22 @@
             </div>
         </div>
     </div>
-    <div class="container-fluid menu-spacer">
-        <div class="row">
-            <div class="hidden-xs hidden-sm col-md-2 col-md-push-1">
-                <alfio-sidebar></alfio-sidebar>
+    <div data-ng-controller="LayoutController as ctrl" data-ng-switch="ctrl.displaySidebar">
+        <div class="container-fluid menu-spacer" data-ng-show="ctrl.displaySidebar">
+            <div class="row">
+                <div class="hidden-xs hidden-sm col-md-2 col-md-push-1">
+                    <alfio-sidebar></alfio-sidebar>
+                </div>
+                <div class="col-sm-12 col-xs-12 col-md-8 col-md-push-1">
+                    <div data-ui-view></div>
+                </div>
             </div>
-            <div class="col-sm-12 col-xs-12 col-md-8 col-md-push-1">
-                <div data-ui-view></div>
-            </div>
+        </div>
+        <div class="container-fluid menu-spacer" data-ng-if="!ctrl.displaySidebar">
+            <div data-ui-view></div>
+            <footer>
+                <h5 class="text-muted text-center">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{alfioVersion}}</h5>
+            </footer>
         </div>
     </div>
 </body>
