@@ -150,7 +150,7 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public int[] getAmountOfTickets() {
-        return new int[]{0, 1};
+        return DecoratorUtil.generateRangeOfTicketQuantity(additionalService.getMaxQtyPerOrder(), 100);
     }
 
     public boolean getSoldOut() {

@@ -157,15 +157,16 @@ public final class Validator {
                 continue;
             }
 
-            String formValue = form.getAdditional().get(fieldConf.getName());
+            form.getAdditional().get(fieldConf.getName()).forEach(formValue -> {
+                if(fieldConf.isMaxLengthDefined()) {
+                    validateMaxLength(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getMaxLength(), errors);
+                }
 
-            if(fieldConf.isMaxLengthDefined()) {
-                validateMaxLength(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getMaxLength(), errors);
-            }
+                if(!fieldConf.getRestrictedValues().isEmpty()) {
+                    validateRestrictedValue(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getRestrictedValues(), errors);
+                }
+            });
 
-            if(!fieldConf.getRestrictedValues().isEmpty()) {
-                validateRestrictedValue(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getRestrictedValues(), errors);
-            }
 
             //TODO: complete checks: min length, mandatory
         }

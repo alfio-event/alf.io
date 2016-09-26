@@ -83,15 +83,19 @@ public class TicketHelper {
         this.additionalServiceItemRepository = additionalServiceItemRepository;
     }
 
-    public List<Pair<TicketFieldConfigurationAndDescription, String>> findTicketFieldConfigurationAndValue(int eventId, Ticket ticket, Locale locale) {
+    public List<TicketFieldConfigurationDescriptionAndValue> findTicketFieldConfigurationAndValue(int eventId, Ticket ticket, Locale locale) {
         Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(locale, eventId);
         Map<String, TicketFieldValue> values = ticketFieldRepository.findAllByTicketIdGroupedByName(ticket.getId());
         Function<TicketFieldConfiguration, String> extractor = (f) -> Optional.ofNullable(values.get(f.getName())).map(TicketFieldValue::getValue).orElse("");
-        Set<Integer> additionalServiceIds = additionalServiceItemRepository.findByReservationUuid(ticket.getTicketsReservationId()).stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toSet());
+        List<AdditionalServiceItem> additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(ticket.getTicketsReservationId());
+        Set<Integer> additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toSet());
         return ticketFieldRepository.findAdditionalFieldsForEvent(eventId)
             .stream()
             .filter(f -> f.getContext() == ATTENDEE || Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
-            .map(f-> Pair.of(new TicketFieldConfigurationAndDescription(f, descriptions.getOrDefault(f.getId(), TicketFieldDescription.MISSING_FIELD)), extractor.apply(f)))
+            .map(f-> {
+                int count = Math.max(1, Optional.ofNullable(f.getAdditionalServiceId()).map(id -> (int) additionalServiceItems.stream().filter(i -> i.getAdditionalServiceId() == id).count()).orElse(1));
+                return new TicketFieldConfigurationDescriptionAndValue(f, descriptions.getOrDefault(f.getId(), TicketFieldDescription.MISSING_FIELD), count, extractor.apply(f));
+            })
             .collect(Collectors.toList());
     }
 
