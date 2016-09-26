@@ -22,7 +22,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.util.Json;
 import com.squareup.okhttp.*;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.codec.binary.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 
@@ -51,7 +50,7 @@ public class MailjetMailer implements Mailer  {
         Map<String, Object> mailPayload = new HashMap<>();
 
         mailPayload.put("FromEmail", fromEmail);
-        mailPayload.put("From", event.getDisplayName());
+        mailPayload.put("FromName", event.getDisplayName());
         mailPayload.put("Subject", subject);
         mailPayload.put("Text-part", text);
         html.ifPresent(h -> mailPayload.put("Html-part", h));
