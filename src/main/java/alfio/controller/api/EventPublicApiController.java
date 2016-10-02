@@ -89,6 +89,7 @@ public class EventPublicApiController {
         return eventRepository.findOptionalByShortName(shortName)
             .map(e -> {
                 List<PublicCategory> categories = ticketCategoryRepository.findAllTicketCategories(e.getId()).stream()
+                    .filter((c) -> !c.isAccessRestricted())
                     .map(c -> buildPublicCategory(c, e))
                     .collect(Collectors.toList());
                 return new ResponseEntity<>(new PublicEvent(e, request.getContextPath(), descriptionsLoader.eventDescriptions(), categories), getCorsHeaders(), HttpStatus.OK);
