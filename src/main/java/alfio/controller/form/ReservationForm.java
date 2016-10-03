@@ -35,6 +35,7 @@ import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -82,7 +83,7 @@ public class ReservationForm {
             .count();
     }
 
-    public Optional<Pair<List<TicketReservationWithOptionalCodeModification>, List<ASReservationWithOptionalCodeModification>>> validate(BindingResult bindingResult,
+    public Optional<Pair<List<TicketReservationWithOptionalCodeModification>, List<ASReservationWithOptionalCodeModification>>> validate(Errors bindingResult,
                                                                                                                                          TicketReservationManager tickReservationManager,
                                                                                                                                          TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
                                                                                                                                          AdditionalServiceRepository additionalServiceRepository,
@@ -144,7 +145,7 @@ public class ReservationForm {
         return bindingResult.hasErrors() ? Optional.empty() : Optional.of(Pair.of(res, additionalServices.stream().map(as -> new ASReservationWithOptionalCodeModification(as, specialCode)).collect(Collectors.toList())));
     }
 
-    private static void validateCategory(BindingResult bindingResult, TicketReservationManager tickReservationManager, TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository, EventManager eventManager,
+    private static void validateCategory(Errors bindingResult, TicketReservationManager tickReservationManager, TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository, EventManager eventManager,
                                          Event event, int maxAmountOfTicket, List<TicketReservationWithOptionalCodeModification> res,
                                          Optional<SpecialPrice> specialCode, ZonedDateTime now, TicketReservationModification r,
                                          Locale locale) {
