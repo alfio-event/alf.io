@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.controller.support.TemplateProcessor;
 import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.*;
 import alfio.manager.system.ConfigurationManager;
@@ -1038,7 +1037,7 @@ public class TicketReservationManager {
         }
         int result = ticketRepository.releaseTicket(ticketReservation.getId(), event.getId(), ticket.getId());
         Validate.isTrue(result == 1, String.format("Expected 1 row to be updated, got %d", result));
-        if(category.isAccessRestricted()) {
+        if(category.isAccessRestricted() || !category.isBounded()) {
             ticketRepository.unbindTicketsFromCategory(event.getId(), category.getId(), singletonList(ticket.getId()));
         }
         Organization organization = organizationRepository.getById(event.getOrganizationId());
