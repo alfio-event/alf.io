@@ -212,9 +212,9 @@ public class EventApiController {
         return OK;
     }
 
-    @RequestMapping(value = "/events/{id}/activate", method = PUT)
-    public String activateEvent(@PathVariable("id") int id, Principal principal) {
-        eventManager.activateEvent(id, principal.getName());
+    @RequestMapping(value = "/events/{id}/status", method = PUT)
+    public String activateEvent(@PathVariable("id") int id, @RequestParam("active") boolean active, Principal principal) {
+        eventManager.toggleActiveFlag(id, principal.getName(), active);
         return OK;
     }
 

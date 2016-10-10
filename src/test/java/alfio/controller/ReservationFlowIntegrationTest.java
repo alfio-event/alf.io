@@ -178,7 +178,7 @@ public class ReservationFlowIntegrationTest {
         String eventName = event.getShortName();
 
 
-        eventManager.activateEvent(event.getId(), user);
+        eventManager.toggleActiveFlag(event.getId(), user, true);
         // list events
         String eventList = eventController.listEvents(new BindingAwareModelMap(), Locale.ENGLISH);
         if(eventManager.getActiveEvents().size() == 1) {

@@ -1049,22 +1049,41 @@
         };
 
         $scope.activateEvent = function(id) {
-            EventService.activateEvent(id).then(function() {
+            EventService.toggleActivation(id, true).then(function() {
+                $scope.eventHasBeenActivated = true;
                 loadData();
             });
         };
 
-        var unbind = $rootScope.$on('SidebarCategoryFilterUpdated', function(e, categoryFilter) {
+        $scope.deactivateEvent = function(id) {
+            EventService.toggleActivation(id, false).then(function() {
+                $scope.eventHasBeenActivated = false;
+                loadData();
+            });
+        };
+
+        $scope.closeActivationAlert = function() {
+            $scope.eventHasBeenActivated = false;
+        };
+
+        var categoryFilterListener = $rootScope.$on('SidebarCategoryFilterUpdated', function(e, categoryFilter) {
             if(categoryFilter) {
                 $scope.selection.freeText = categoryFilter.freeText;
             }
+        });
+
+        var eventUpdateListener = $rootScope.$on('ReloadEvent', function() {
+            $scope.eventHasBeenActivated = false;
+            loadData();
         });
         
         $scope.updateSelectionText = function() {
             $rootScope.$emit('CategoryFilterUpdated', $scope.selection);
         };
 
-        $scope.$on('$destroy', unbind);
+        $scope.$on('$destroy', function() {
+            [categoryFilterListener, eventUpdateListener].forEach(function(f) {f();});
+        });
 
 
     });

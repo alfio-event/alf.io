@@ -684,6 +684,11 @@
                                     $state.go('index');
                                 });
                             };
+                            ctrl.deactivateEvent = function(e) {
+                                EventService.toggleActivation(e.id, false).then(function() {
+                                    $rootScope.$emit('ReloadEvent');
+                                })
+                            };
                             ctrl.openFieldSelectionModal = function() {
                                 EventService.exportAttendees(ctrl.event);
                             };

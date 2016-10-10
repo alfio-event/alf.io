@@ -54,8 +54,8 @@
             createEvent : function(event) {
                 return $http['post']('/admin/api/events/new', event).error(HttpErrorHandler.handle);
             },
-            activateEvent: function(id) {
-                return $http['put']('/admin/api/events/'+id+'/activate').error(HttpErrorHandler.handle);
+            toggleActivation: function(id, active) {
+                return $http['put']('/admin/api/events/'+id+'/status?active='+active).error(HttpErrorHandler.handle);
             },
             updateEventHeader: function(eventHeader) {
                 return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);

@@ -187,10 +187,10 @@ public class EventManager {
         initPlugins(event);
     }
 
-    public void activateEvent(int id, String username) {
+    public void toggleActiveFlag(int id, String username, boolean activate) {
         Event event = eventRepository.findById(id);
         checkOwnership(event, username, event.getOrganizationId());
-        eventRepository.activateEvent(id);
+        eventRepository.updateEventStatus(id, activate ? Event.Status.PUBLIC : Event.Status.DRAFT);
     }
 
     private void createAllAdditionalServices(int eventId, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId) {

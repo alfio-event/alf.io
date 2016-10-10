@@ -64,8 +64,8 @@ public interface EventRepository {
                                            @Bind("version") String version,
                                            @Bind("status") Event.Status status);
 
-    @Query("update event set status = 'PUBLIC' where id = :id")
-    int activateEvent(@Bind("id") int id);
+    @Query("update event set status = :status where id = :id")
+    int updateEventStatus(@Bind("id") int id, @Bind("status") Event.Status status);
 
     @Query("update event set display_name = :displayName, website_url = :websiteUrl, external_url = :externalUrl, website_t_c_url = :termsUrl, image_url = :imageUrl, file_blob_id = :fileBlobId, " +
             "location = :location, latitude = :latitude, longitude = :longitude, start_ts = :start_ts, " +
