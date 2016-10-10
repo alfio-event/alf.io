@@ -94,8 +94,9 @@
         </div>
         <div class="container-fluid menu-spacer" data-ng-if="!ctrl.displaySidebar">
             <div data-ui-view></div>
-            <footer>
-                <h5 class="text-muted text-center">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{alfioVersion}}</h5>
+            <footer class="text-center">
+                <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{alfioVersion}}</h5>
+                <small><a href="https://github.com/exteso/alf.io/issues" target="_blank">report an issue</a> or <a href="https://groups.google.com/d/forum/alfio" target="_blank">ask for help</a></small>
             </footer>
         </div>
     </div>
