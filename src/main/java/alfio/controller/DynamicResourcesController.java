@@ -65,7 +65,7 @@ public class DynamicResourcesController {
             Map<String, Object> model = new HashMap<>();
             model.put("clientId", trackingId);
             model.put("account", id.get());
-            script = templateManager.renderClassPathResource("/alfio/templates/google-analytics.ms", model, Locale.ENGLISH, TemplateManager.TemplateOutput.TEXT);
+            script = templateManager.renderTemplate(TemplateManager.TemplateResource.GOOGLE_ANALYTICS, model, Locale.ENGLISH, TemplateManager.TemplateOutput.TEXT);
         } else {
             script = id.map(x -> String.format(GOOGLE_ANALYTICS_SCRIPT, x)).orElse(EMPTY);
         }

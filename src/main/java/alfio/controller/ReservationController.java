@@ -463,7 +463,7 @@ public class ReservationController {
     private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         notificationManager.sendSimpleEmail(event, organization.getEmail(), "Reservation complete " + reservation.getId(), () -> {
-            return  templateManager.renderClassPathResource("/alfio/templates/confirmation-email-for-organizer-txt.ms", ticketReservationManager.prepareModelForReservationEmail(event, reservation),
+            return  templateManager.renderTemplate(event, TemplateManager.TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, ticketReservationManager.prepareModelForReservationEmail(event, reservation),
                 RequestContextUtils.getLocale(request), TemplateOutput.TEXT);
         });
     }
