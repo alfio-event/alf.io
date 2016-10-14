@@ -19,7 +19,10 @@ package alfio.controller.api.admin;
 import alfio.manager.EventManager;
 import alfio.manager.WaitingQueueManager;
 import alfio.model.WaitingQueueSubscription;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -27,9 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static alfio.util.OptionalWrapper.optionally;
 
@@ -66,5 +67,35 @@ public class AdminWaitingQueueApiController {
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         return Collections.emptyList();
     }
+
+    @RequestMapping(value = "/subscriber/{subscriberId}", method = RequestMethod.DELETE)
+    public ResponseEntity<Map<String, Object>> removeSubscriber(@PathVariable("eventName") String eventName,
+                                                                @PathVariable("subscriberId") int subscriberId,
+                                                                Principal principal) {
+        return performStatusModification(eventName, subscriberId, principal, WaitingQueueSubscription.Status.CANCELLED, WaitingQueueSubscription.Status.WAITING);
+    }
+
+    @RequestMapping(value = "/subscriber/{subscriberId}/restore", method = RequestMethod.PUT)
+    public ResponseEntity<Map<String, Object>> restoreSubscriber(@PathVariable("eventName") String eventName,
+                                                                     @PathVariable("subscriberId") int subscriberId,
+                                                                     Principal principal) {
+        return performStatusModification(eventName, subscriberId, principal, WaitingQueueSubscription.Status.WAITING, WaitingQueueSubscription.Status.CANCELLED);
+    }
+
+    private ResponseEntity<Map<String, Object>> performStatusModification(String eventName, int subscriberId,
+                                                                               Principal principal, WaitingQueueSubscription.Status newStatus,
+                                                                               WaitingQueueSubscription.Status currentStatus) {
+        return optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
+            .flatMap(e -> waitingQueueManager.updateSubscriptionStatus(subscriberId, newStatus, currentStatus).map(s -> Pair.of(s, e)))
+            .map(pair -> {
+                Map<String, Object> out = new HashMap<>();
+                out.put("modified", pair.getLeft());
+                out.put("list", waitingQueueManager.loadAllSubscriptionsForEvent(pair.getRight().getId()));
+                return out;
+            })
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> new ResponseEntity<>(HttpStatus.BAD_REQUEST));
+    }
+
 
 }

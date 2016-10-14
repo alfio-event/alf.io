@@ -27,7 +27,7 @@ import java.util.Optional;
 public class WaitingQueueSubscription {
 
     public enum Status {
-        WAITING, PENDING, ACQUIRED, EXPIRED
+        WAITING, PENDING, ACQUIRED, EXPIRED, CANCELLED
     }
 
     public enum Type {

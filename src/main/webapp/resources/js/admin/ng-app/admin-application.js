@@ -1498,6 +1498,24 @@
             ctrl.subscriptions = result;
             ctrl.loading = false;
         });
+        ctrl.removeSubscriber = function(subscriber) {
+            WaitingQueueService.removeSubscriber(ctrl.eventName, subscriber).success(function(result) {
+                ctrl.subscriber = result.modified;
+                ctrl.subscriptions = result.list;
+                ctrl.showConfirmation = true;
+            });
+        };
+        ctrl.restoreSubscriber = function(subscriber) {
+            WaitingQueueService.restoreSubscriber(ctrl.eventName, subscriber).success(function(result) {
+                ctrl.subscriber = result.modified;
+                ctrl.subscriptions = result.list;
+                ctrl.showConfirmation = true;
+            });
+        };
+
+        ctrl.dismissMessage = function() {
+            ctrl.showConfirmation = false;
+        };
     }]);
 
     admin.controller('LayoutController', ['$state', '$rootScope', function($state, $rootScope) {

@@ -153,6 +153,12 @@ public class WaitingQueueManager {
         return waitingQueueRepository.loadAllWaiting(eventId);
     }
 
+    public Optional<WaitingQueueSubscription> updateSubscriptionStatus(int id, WaitingQueueSubscription.Status newStatus, WaitingQueueSubscription.Status currentStatus) {
+        return Optional.of(waitingQueueRepository.updateStatus(id, newStatus, currentStatus))
+            .filter(i -> i > 0)
+            .map(i -> waitingQueueRepository.loadById(id));
+    }
+
     public int countSubscribers(int eventId) {
         return waitingQueueRepository.countWaitingPeople(eventId);
     }

@@ -34,8 +34,9 @@
 
 
             $("select").map(function() {
-                if($(this).attr('value').length > 0) {
-                    $(this).find("option[value="+$(this).attr('value')+"]").attr('selected','selected');
+                var value = $(this).attr('value');
+                if(value && value.length > 0) {
+                    $(this).find("option[value="+value+"]").attr('selected','selected');
                 }
             });
 

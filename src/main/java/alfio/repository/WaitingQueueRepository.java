@@ -55,4 +55,7 @@ public interface WaitingQueueRepository {
 
     @Query("update waiting_queue set ticket_reservation_id = :ticketReservationId, status = 'PENDING' where id = :id")
     int flagAsPending(@Bind("ticketReservationId") String ticketReservationId, @Bind("id") int id);
+
+    @Query("update waiting_queue set status = :newStatus where id = :id and status = :expectedStatus")
+    int updateStatus(@Bind("id") int id, @Bind("newStatus") WaitingQueueSubscription.Status newStatus, @Bind("expectedStatus") WaitingQueueSubscription.Status expectedStatus);
 }

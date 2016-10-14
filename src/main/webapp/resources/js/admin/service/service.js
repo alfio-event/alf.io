@@ -373,6 +373,12 @@
             },
             loadAllSubscribers: function(eventName) {
                 return $http.get('/admin/api/event/'+eventName+'/waiting-queue/load').error(HttpErrorHandler.handle);
+            },
+            removeSubscriber: function(eventName, subscriber) {
+                return $http['delete']('/admin/api/event/'+eventName+'/waiting-queue/subscriber/'+subscriber.id).error(HttpErrorHandler.handle);
+            },
+            restoreSubscriber: function(eventName, subscriber) {
+                return $http['put']('/admin/api/event/'+eventName+'/waiting-queue/subscriber/'+subscriber.id+'/restore').error(HttpErrorHandler.handle);
             }
         };
     }]);
