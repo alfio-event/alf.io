@@ -96,7 +96,7 @@ public class WaitingQueueSubscriptionProcessor {
             notificationManager.sendSimpleEmail(event,
                     subscription.getEmailAddress(),
                     subject,
-                    () -> templateManager.renderClassPathResource("/alfio/templates/waiting-queue-reservation-email-txt.ms", model, locale, TemplateManager.TemplateOutput.TEXT));
+                    () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.WAITING_QUEUE_RESERVATION_EMAIL, model, locale, TemplateManager.TemplateOutput.TEXT));
             waitingQueueRepository.flagAsPending(reservationId, subscription.getId());
         });
     }

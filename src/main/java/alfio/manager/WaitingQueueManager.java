@@ -121,7 +121,7 @@ public class WaitingQueueManager {
         model.put("fullName", name.getFullName());
         model.put("organization", organization);
         notificationManager.sendSimpleEmail(event, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getDisplayName()}, userLanguage),
-                () -> templateManager.renderClassPathResource("/alfio/templates/waiting-queue-joined.ms", model, userLanguage, TemplateManager.TemplateOutput.TEXT));
+                () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.WAITING_QUEUE_JOINED, model, userLanguage, TemplateManager.TemplateOutput.TEXT));
         if(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE_NOTIFICATION), false)) {
             String adminTemplate = messageSource.getMessage("email-waiting-queue.subscribed.admin.text",
                     new Object[] {subscriptionType, event.getDisplayName()}, Locale.ENGLISH);

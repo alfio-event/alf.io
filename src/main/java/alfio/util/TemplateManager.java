@@ -18,6 +18,7 @@ package alfio.util;
 
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
+import alfio.model.Event;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
 import com.samskivert.mustache.Mustache.Formatter;
@@ -50,6 +51,38 @@ import java.util.regex.Pattern;
  * For hiding the uglyness :)
  * */
 public class TemplateManager {
+
+    public enum TemplateResource {
+        GOOGLE_ANALYTICS("/alfio/templates/google-analytics.ms"),
+        CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer-txt.ms"),
+        SEND_RESERVED_CODE("/alfio/templates/send-reserved-code-txt.ms"),
+        CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms"),
+        OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms"),
+        REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms"),
+        REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms"),
+        REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms"),
+
+
+        TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms"),
+        TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms"),
+
+        TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms"),
+        TICKET_PDF("/alfio/templates/ticket.ms"),
+        RECEIPT_PDF("/alfio/templates/receipt.ms"),
+
+        WAITING_QUEUE_JOINED("/alfio/templates/waiting-queue-joined.ms"),
+        WAITING_QUEUE_RESERVATION_EMAIL("/alfio/templates/waiting-queue-reservation-email-txt.ms");
+
+        TemplateResource(String classPathUrl) {
+            this.classPathUrl = classPathUrl;
+        }
+
+        private final String classPathUrl;
+
+        String classPath() {
+            return classPathUrl;
+        }
+    }
 
     private final MessageSource messageSource;
     private final boolean cache;
@@ -90,14 +123,19 @@ public class TemplateManager {
                 .withLoader(templateLoader));
     }
 
-    public String renderClassPathResource(String classPathResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-        return render(new ClassPathResource(classPathResource), classPathResource, model, locale, templateOutput, true);
+    public String renderTemplate(TemplateResource templateResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+        return render(new ClassPathResource(templateResource.classPath()), templateResource.classPath(), model, locale, templateOutput, true);
+    }
+
+    public String renderTemplate(Event event, TemplateResource templateResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+        return renderTemplate(templateResource, model, locale, templateOutput);
     }
 
     public String renderString(String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
         return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), "", model, locale, templateOutput, false);
     }
 
+    //TODO: to be removed when only the rest api will be exposed
     public String renderServletContextResource(String servletContextResource, Map<String, Object> model, HttpServletRequest request, TemplateOutput templateOutput) {
         model.put("request", request);
         model.put(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
