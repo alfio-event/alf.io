@@ -681,7 +681,11 @@ public class TicketReservationManager {
 
         summary.addAll(collectAdditionalServiceItems(reservationId, event)
             .map(entry -> {
-                AdditionalServiceText title = additionalServiceTextRepository.findByLocaleAndType(entry.getKey().getId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE);
+                String language = locale.getLanguage();
+                AdditionalServiceText title = additionalServiceTextRepository.findBestMatchByLocaleAndType(entry.getKey().getId(), language, AdditionalServiceText.TextType.TITLE);
+                if(!title.getLocale().equals(language) || title.getId() == -1) {
+                    log.debug("additional service {}: title not found for locale {}", title.getAdditionalServiceId(), language);
+                }
                 List<AdditionalServiceItemPriceContainer> prices = generateASIPriceContainers(event, null).apply(entry).collect(toList());
                 AdditionalServiceItemPriceContainer first = prices.get(0);
                 final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();

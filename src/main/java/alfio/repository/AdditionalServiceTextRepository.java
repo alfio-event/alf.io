@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface AdditionalServiceTextRepository {
@@ -32,14 +33,25 @@ public interface AdditionalServiceTextRepository {
     @Query("delete from additional_service_description where additional_service_id_fk = :additionalServiceId")
     int deleteAdditionalServiceTexts(@Bind("additionalServiceId") int additionalServiceId);
 
+    @Query("select id, additional_service_id_fk, locale, type, value from additional_service_description where additional_service_id_fk = :additionalServiceId and type = :type")
+    List<AdditionalServiceText> findAllByAdditionalServiceIdAndType(@Bind("additionalServiceId") int additionalServiceId, @Bind("type") AdditionalServiceText.TextType type);
+
     @Query("select id, additional_service_id_fk, locale, type, value from additional_service_description where additional_service_id_fk = :additionalServiceId and locale = :locale and type = :type")
-    AdditionalServiceText findByLocaleAndType(@Bind("additionalServiceId") int additionalServiceId, @Bind("locale") String locale, @Bind("type") AdditionalServiceText.TextType type);
+    Optional<AdditionalServiceText> findByLocaleAndType(@Bind("additionalServiceId") int additionalServiceId, @Bind("locale") String locale, @Bind("type") AdditionalServiceText.TextType type);
 
     @Query("insert into additional_service_description(additional_service_id_fk, locale, type, value) values(:additionalServiceId, :locale, :type, :value)")
     int insert(@Bind("additionalServiceId") int additionalServiceId, @Bind("locale") String locale, @Bind("type") AdditionalServiceText.TextType type, @Bind("value") String value);
 
     @Query("update additional_service_description set locale = :locale, type = :type, value = :value where id = :id")
     int update(@Bind("id") int id, @Bind("locale") String locale, @Bind("type") AdditionalServiceText.TextType type, @Bind("value") String value);
+
+    default AdditionalServiceText findBestMatchByLocaleAndType(int additionalServiceId, String locale, AdditionalServiceText.TextType type) {
+        return findByLocaleAndType(additionalServiceId, locale, type)
+            .orElseGet(() -> {
+                List<AdditionalServiceText> texts = findAllByAdditionalServiceIdAndType(additionalServiceId, type);
+                return texts.size() > 0 ? texts.get(0) : new AdditionalServiceText(-1, additionalServiceId, locale, type, "N/A");
+            });
+    }
 
 
 }

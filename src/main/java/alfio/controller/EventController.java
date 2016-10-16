@@ -327,7 +327,8 @@ public class EventController {
     }
 
     private SaleableAdditionalService getSaleableAdditionalService(Event event, Locale locale, AdditionalService as, PromoCodeDiscount promoCodeDiscount) {
-        return new SaleableAdditionalService(event, as, additionalServiceTextRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE).getValue(), additionalServiceTextRepository.findByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.DESCRIPTION).getValue(), promoCodeDiscount);
+        return new SaleableAdditionalService(event, as, additionalServiceTextRepository.findBestMatchByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE).getValue(),
+            additionalServiceTextRepository.findBestMatchByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.DESCRIPTION).getValue(), promoCodeDiscount);
     }
 
     private static boolean shouldApplyDiscount(PromoCodeDiscount promoCodeDiscount, TicketCategory ticketCategory) {
