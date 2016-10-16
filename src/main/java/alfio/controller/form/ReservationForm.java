@@ -34,7 +34,6 @@ import alfio.util.OptionalWrapper;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 
 import java.math.BigDecimal;
@@ -98,15 +97,10 @@ public class ReservationForm {
             return Optional.empty();
         }
 
-        final int maxAmountOfTicket = tickReservationManager.maxAmountOfTickets(event);
-
-        if (selectionCount > maxAmountOfTicket) {
-            bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM, new Object[] { maxAmountOfTicket }, null);
-            return Optional.empty();
-        }
-
-        Optional<Pair<TicketReservationModification, Integer>> error = selected().stream()
+        List<Pair<TicketReservationModification, Integer>> maxTicketsByTicketReservation = selected().stream()
             .map(r -> Pair.of(r, tickReservationManager.maxAmountOfTicketsForCategory(event.getOrganizationId(), event.getId(), r.getTicketCategoryId())))
+            .collect(toList());
+        Optional<Pair<TicketReservationModification, Integer>> error = maxTicketsByTicketReservation.stream()
             .filter(p -> p.getKey().getAmount() > p.getValue())
             .findAny();
 
@@ -141,7 +135,7 @@ public class ReservationForm {
                 (trimmedCode) -> OptionalWrapper.optionally(() -> tickReservationManager.getSpecialPriceByCode(trimmedCode)));
         //
         final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        categories.forEach((r) -> validateCategory(bindingResult, tickReservationManager, ticketCategoryDescriptionRepository, eventManager, event, maxAmountOfTicket, res, specialCode, now, r, locale));
+        maxTicketsByTicketReservation.forEach((pair) -> validateCategory(bindingResult, tickReservationManager, ticketCategoryDescriptionRepository, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft(), locale));
         return bindingResult.hasErrors() ? Optional.empty() : Optional.of(Pair.of(res, additionalServices.stream().map(as -> new ASReservationWithOptionalCodeModification(as, specialCode)).collect(Collectors.toList())));
     }
 
