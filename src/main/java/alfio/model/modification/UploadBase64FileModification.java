@@ -20,6 +20,8 @@ import lombok.Data;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 public class UploadBase64FileModification {
@@ -27,8 +29,13 @@ public class UploadBase64FileModification {
     private byte[] file;
     private String type;
     private String name;
+    private Map<String, String> attributes;
 
     public InputStream getInputStream() {
         return new ByteArrayInputStream(file);
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes != null ? attributes : new HashMap<>(0);
     }
 }

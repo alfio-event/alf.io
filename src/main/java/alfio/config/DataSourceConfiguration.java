@@ -167,8 +167,8 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     }
 
     @Bean
-    public TemplateManager getTemplateManager(Environment environment) {
-        return new TemplateManager(environment, getTemplateLoader(), messageSource());
+    public TemplateManager getTemplateManager() {
+        return new TemplateManager(getTemplateLoader(), messageSource());
     }
 
     @Bean
