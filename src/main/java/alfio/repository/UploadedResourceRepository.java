@@ -45,6 +45,20 @@ public interface UploadedResourceRepository {
     })
     boolean hasResource(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("name") String name);
 
+
+
+    @Query("select name, content_size, content_type, creation_time, attributes, null as organization_id_fk, null as event_id_fk  from resource_global where name = :name")
+    UploadedResource get(@Bind("name") String name);
+
+    @Query("select name, content_size, content_type, creation_time, attributes, organization_id_fk, null as event_id_fk from resource_organizer where organization_id_fk = :organizationId  and name = :name")
+    UploadedResource get(@Bind("organizationId") int organizationId, @Bind("name") String name);
+
+    @Query("select name, content_size, content_type, creation_time, attributes, organization_id_fk, event_id_fk from resource_event where organization_id_fk = :organizationId  and event_id_fk = :eventId and name = :name")
+    UploadedResource get(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("name") String name);
+
+
+
+
     @Query("select name, content_size, content_type, creation_time, attributes, null as organization_id_fk, null as event_id_fk  from resource_global order by name asc")
     List<UploadedResource> findAll();
 
@@ -53,6 +67,7 @@ public interface UploadedResourceRepository {
 
     @Query("select name, content_size, content_type, creation_time, attributes, organization_id_fk, event_id_fk from resource_event where organization_id_fk = :organizationId  and event_id_fk = :eventId order by name asc")
     List<UploadedResource> findAll(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId);
+
 
 
     @Query("delete from resource_global where name = :name")
@@ -65,6 +80,7 @@ public interface UploadedResourceRepository {
     int delete(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("name") String name);
 
 
+
     @Query(type = QueryType.TEMPLATE, value = "select content from resource_global where name = :name")
     String fileContentTemplate(String name);
 
@@ -73,6 +89,9 @@ public interface UploadedResourceRepository {
 
     @Query(type = QueryType.TEMPLATE, value = "select content from resource_event where name = :name and organization_id_fk = :organizationId and event_id_fk = :eventId")
     String fileContentTemplate(int organizationId, int eventId, String name);
+
+
+
 
     @Query(type = QueryType.TEMPLATE, value = "insert into resource_global (name, content_size, content, content_type, attributes) " +
         "values(?, ?, ?, ?, ?)")
@@ -85,4 +104,5 @@ public interface UploadedResourceRepository {
     @Query(type = QueryType.TEMPLATE, value = "insert into resource_event (name, organization_id_fk, event_id_fk, content_size, content, content_type, attributes) " +
         "values(?, ?, ?, ?, ?, ?, ?)")
     String uploadTemplate(int organizationId, int eventId, String name);
+
 }

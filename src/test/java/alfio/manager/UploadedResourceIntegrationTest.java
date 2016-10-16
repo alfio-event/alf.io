@@ -113,6 +113,7 @@ public class UploadedResourceIntegrationTest {
 
         Assert.assertTrue(uploadedResourceManager.hasResource("file_name.txt"));
         Assert.assertEquals(1, uploadedResourceManager.findAll().size());
+        Assert.assertEquals(toSave.getName(), uploadedResourceManager.get("file_name.txt").getName());
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         uploadedResourceManager.outputResource("file_name.txt", baos);
@@ -140,6 +141,7 @@ public class UploadedResourceIntegrationTest {
 
         Assert.assertTrue(uploadedResourceManager.hasResource(orgId, "file_name.txt"));
         Assert.assertEquals(1, uploadedResourceManager.findAll(orgId).size());
+        Assert.assertEquals(toSave.getName(), uploadedResourceManager.get(orgId, "file_name.txt").getName());
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         uploadedResourceManager.outputResource(orgId, "file_name.txt", baos);
@@ -168,6 +170,7 @@ public class UploadedResourceIntegrationTest {
 
         Assert.assertTrue(uploadedResourceManager.hasResource(orgId, eventId, "file_name.txt"));
         Assert.assertEquals(1, uploadedResourceManager.findAll(orgId, eventId).size());
+        Assert.assertEquals(toSave.getName(), uploadedResourceManager.get(orgId, eventId, "file_name.txt").getName());
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         uploadedResourceManager.outputResource(orgId, eventId, "file_name.txt", baos);

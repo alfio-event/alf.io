@@ -91,6 +91,18 @@ public class UploadedResourceManager {
         return uploadedResourceRepository.hasResource(organizationId, eventId, name);
     }
 
+    public UploadedResource get(String name) {
+        return uploadedResourceRepository.get(name);
+    }
+
+    public UploadedResource get(int organizationId, String name) {
+        return uploadedResourceRepository.get(organizationId, name);
+    }
+
+    public UploadedResource get(int organizationId, int eventId, String name) {
+        return uploadedResourceRepository.get(organizationId, eventId, name);
+    }
+
 
     public void outputResource(String name, OutputStream out) {
         SqlParameterSource param = new MapSqlParameterSource("name", name);
