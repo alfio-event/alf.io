@@ -20,7 +20,8 @@ create table resource_global (
     content_size integer not null,
     content bytea not null,
     content_type varchar(255) not null,
-    creation_time timestamp default now() not null
+    creation_time timestamp default now() not null,
+    attributes text
 );
 
 create table resource_organizer (
@@ -29,7 +30,8 @@ create table resource_organizer (
     content_size integer not null,
     content bytea not null,
     content_type varchar(255) not null,
-    creation_time timestamp default now() not null
+    creation_time timestamp default now() not null,
+    attributes text
 );
 alter table resource_organizer add constraint unique_resource_organizer unique(name, organization_id_fk);
 alter table resource_organizer add foreign key(organization_id_fk) references organization(id);
@@ -41,7 +43,8 @@ create table resource_event (
     content_size integer not null,
     content bytea not null,
     content_type varchar(255) not null,
-    creation_time timestamp default now() not null
+    creation_time timestamp default now() not null,
+    attributes text
 );
 alter table resource_event add constraint unique_resource_event unique(name, organization_id_fk, event_id_fk);
 alter table resource_event add foreign key(organization_id_fk) references organization(id);

@@ -16,7 +16,6 @@
  */
 package alfio.util;
 
-import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
 import alfio.model.Event;
 import com.samskivert.mustache.Mustache;
@@ -25,7 +24,6 @@ import com.samskivert.mustache.Mustache.Formatter;
 import com.samskivert.mustache.Template;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
@@ -43,7 +41,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -85,10 +82,6 @@ public class TemplateManager {
     }
 
     private final MessageSource messageSource;
-    private final boolean cache;
-    private final Map<String, Template> templateCache = new ConcurrentHashMap<>(5); // 1 pdf, 2 email confirmation, 2 email
-                                                                                // ticket
-
     
     public enum TemplateOutput {
         TEXT, HTML
@@ -97,11 +90,9 @@ public class TemplateManager {
     private final Map<TemplateOutput, Compiler> compilers;
 
     @Autowired
-    public TemplateManager(Environment environment,
-                           JMustacheTemplateLoader templateLoader,
+    public TemplateManager(JMustacheTemplateLoader templateLoader,
                            MessageSource messageSource) {
         this.messageSource = messageSource;
-        this.cache = environment.acceptsProfiles(Initializer.PROFILE_LIVE);
         Formatter dateFormatter = (o) -> {
             return (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME
                     .format((ZonedDateTime) o) : String.valueOf(o);
@@ -147,18 +138,14 @@ public class TemplateManager {
             ModelAndView mv = new ModelAndView((String) null, model);
             mv.addObject("format-date", MustacheCustomTagInterceptor.FORMAT_DATE);
             mv.addObject(MustacheLocalizationMessageInterceptor.DEFAULT_MODEL_KEY, new CustomLocalizationMessageInterceptor(locale, messageSource).createTranslator());
-            Template tmpl = (cachingRequested && cache) ? templateCache.computeIfAbsent(key + templateOutput.toString(), k -> compile(resource, templateOutput))
-                    : compile(resource, templateOutput);
-            return tmpl.execute(mv.getModel());
+            return compile(resource, templateOutput).execute(mv.getModel());
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
     }
 
     private Template compile(AbstractResource resource, TemplateOutput templateOutput) {
-        try {
-            InputStreamReader tmpl = new InputStreamReader(resource.getInputStream(),
-                    StandardCharsets.UTF_8);
+        try (InputStreamReader tmpl = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {
             return compilers.get(templateOutput).compile(tmpl);
         } catch (IOException ioe) {
             throw new IllegalStateException(ioe);
