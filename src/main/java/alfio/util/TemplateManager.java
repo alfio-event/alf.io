@@ -14,6 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
+/**
+ * This file is part of alf.io.
+ * <p>
+ * alf.io is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * <p>
+ * alf.io is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * <p>
+ * You should have received a copy of the GNU General Public License
+ * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package alfio.util;
 
 import alfio.config.WebSecurityConfig;
@@ -22,6 +38,7 @@ import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
 import com.samskivert.mustache.Mustache.Formatter;
 import com.samskivert.mustache.Template;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.AbstractResource;
@@ -50,43 +67,49 @@ import java.util.regex.Pattern;
 public class TemplateManager {
 
     public enum TemplateResource {
-        GOOGLE_ANALYTICS("/alfio/templates/google-analytics.ms"),
-        CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer-txt.ms"),
-        SEND_RESERVED_CODE("/alfio/templates/send-reserved-code-txt.ms"),
-        CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms"),
-        OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms"),
-        REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms"),
-        REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms"),
-        REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms"),
+        GOOGLE_ANALYTICS("/alfio/templates/google-analytics.ms", false),
+        CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer-txt.ms", true),
+        SEND_RESERVED_CODE("/alfio/templates/send-reserved-code-txt.ms", true),
+        CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms", true),
+        OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms", true),
+        REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms", true),
+        REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms", true),
+        REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms", true),
 
 
-        TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms"),
-        TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms"),
+        TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true),
+        TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true),
 
-        TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms"),
-        TICKET_PDF("/alfio/templates/ticket.ms"),
-        RECEIPT_PDF("/alfio/templates/receipt.ms"),
+        TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms", true),
+        TICKET_PDF("/alfio/templates/ticket.ms", true),
+        RECEIPT_PDF("/alfio/templates/receipt.ms", true),
 
-        WAITING_QUEUE_JOINED("/alfio/templates/waiting-queue-joined.ms"),
-        WAITING_QUEUE_RESERVATION_EMAIL("/alfio/templates/waiting-queue-reservation-email-txt.ms");
+        WAITING_QUEUE_JOINED("/alfio/templates/waiting-queue-joined.ms", true),
+        WAITING_QUEUE_RESERVATION_EMAIL("/alfio/templates/waiting-queue-reservation-email-txt.ms", true);
 
-        TemplateResource(String classPathUrl) {
+        TemplateResource(String classPathUrl, boolean overridable) {
             this.classPathUrl = classPathUrl;
+            this.overridable = overridable;
         }
 
         private final String classPathUrl;
+        private final boolean overridable;
 
-        String classPath() {
+        public boolean overridable() {
+            return overridable;
+        }
+
+        public String classPath() {
             return classPathUrl;
         }
     }
 
     private final MessageSource messageSource;
-    
+
     public enum TemplateOutput {
         TEXT, HTML
     }
-    
+
     private final Map<TemplateOutput, Compiler> compilers;
 
     @Autowired
@@ -95,23 +118,23 @@ public class TemplateManager {
         this.messageSource = messageSource;
         Formatter dateFormatter = (o) -> {
             return (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME
-                    .format((ZonedDateTime) o) : String.valueOf(o);
+                .format((ZonedDateTime) o) : String.valueOf(o);
         };
         this.compilers = new EnumMap<>(TemplateOutput.class);
         this.compilers.put(TemplateOutput.TEXT, Mustache.compiler()
-                .escapeHTML(false)
-                .standardsMode(false)
-                .defaultValue("")
-                .nullValue("")
-                .withFormatter(dateFormatter)
-                .withLoader(templateLoader));
+            .escapeHTML(false)
+            .standardsMode(false)
+            .defaultValue("")
+            .nullValue("")
+            .withFormatter(dateFormatter)
+            .withLoader(templateLoader));
         this.compilers.put(TemplateOutput.HTML, Mustache.compiler()
-                .escapeHTML(true)
-                .standardsMode(false)
-                .defaultValue("")
-                .nullValue("")
-                .withFormatter(dateFormatter)
-                .withLoader(templateLoader));
+            .escapeHTML(true)
+            .standardsMode(false)
+            .defaultValue("")
+            .nullValue("")
+            .withFormatter(dateFormatter)
+            .withLoader(templateLoader));
     }
 
     public String renderTemplate(TemplateResource templateResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
@@ -205,5 +228,141 @@ public class TemplateManager {
             }
             return args;
         }
+    }
+
+    private static final String START_TAG = "{{#i18n}}";
+    private static final String END_TAG = "{{/i18n}}";
+
+    private enum ParserState {
+        START {
+            @Override
+            public Pair<ParserState, Integer> next(String template, int idx, AST ast) {
+                int startTagIdx = template.indexOf(START_TAG, idx);
+                if (startTagIdx == -1) {
+                    ast.addText(template);
+                    return Pair.of(END, idx);
+                } else {
+                    ast.addText(template.substring(0, startTagIdx));
+                    ast.addI18NNode(startTagIdx + START_TAG.length());
+                    return Pair.of(OPEN_TAG, startTagIdx + START_TAG.length());
+                }
+            }
+        }, OPEN_TAG {
+            @Override
+            public Pair<ParserState, Integer> next(String template, int idx, AST ast) {
+                int startTagIdx = template.indexOf(START_TAG, idx);
+                int endTagIdx = template.indexOf(END_TAG, idx);
+
+                if (endTagIdx != -1 && startTagIdx != -1 && startTagIdx < endTagIdx) {
+                    ast.addText(template.substring(idx, startTagIdx));
+                    int startTagIdxBoundary = startTagIdx + START_TAG.length();
+                    ast.addI18NNode(startTagIdxBoundary);
+                    return Pair.of(OPEN_TAG, startTagIdxBoundary);
+                } else if (endTagIdx == -1 && startTagIdx == -1) {
+                    ast.addText(template.substring(idx));
+                    return Pair.of(END, idx);
+                } else if (endTagIdx != -1) {
+                    ast.addText(template.substring(idx, endTagIdx));
+                    return Pair.of(CLOSE_TAG, endTagIdx);
+                } else {
+                    throw new IllegalStateException("should not be reached");
+                }
+            }
+        }, CLOSE_TAG {
+            @Override
+            public Pair<ParserState, Integer> next(String template, int idx, AST ast) {
+
+                //
+                I18NNode currentNode = (I18NNode)ast.currentLevel;
+                currentNode.text = template.substring(currentNode.startIdx, idx);
+                ast.focusToParent();
+                //
+                return Pair.of(OPEN_TAG, idx + END_TAG.length());
+            }
+        }, END {
+            @Override
+            public Pair<ParserState, Integer> next(String template, int idx, AST ast) {
+
+                if (ast.currentLevel != ast.root) {
+                    throw new IllegalStateException("unbalanced tags");
+                }
+
+                return Pair.of(END, idx);
+            }
+        };
+
+        public abstract Pair<ParserState, Integer> next(String template, int idx, AST ast);
+    }
+
+    static class AST {
+        Node root = new Node();
+        Node currentLevel = root;
+
+        void addChild(Node node) {
+            node.parent = currentLevel;
+            currentLevel.addChild(node);
+        }
+
+        void addText(String text) {
+            if(text.length() > 0) {
+                addChild(new TextNode(text));
+            }
+        }
+
+        void addI18NNode(int startIdx) {
+            addChild(new I18NNode(startIdx));
+            currentLevel = currentLevel.children.get(currentLevel.children.size() -1);
+        }
+
+        void focusToParent() {
+            currentLevel = currentLevel.parent;
+        }
+    }
+
+    static class Node {
+
+        Node parent;
+        List<Node> children = new ArrayList<>();
+
+        void addChild(Node node) {
+            children.add(node);
+        }
+    }
+
+    static class TextNode extends Node {
+        String text;
+
+        TextNode(String text) {
+            this.text = text;
+        }
+    }
+
+    static class I18NNode extends Node {
+        int startIdx;
+        String text;
+
+        I18NNode(int startIdx) {
+            this.startIdx = startIdx;
+        }
+    }
+
+    public static String translate(String template) {
+        StringBuilder sb = new StringBuilder(template.length());
+
+        AST ast = new AST();
+
+        ParserState state = ParserState.START;
+        int idx = 0;
+        while (true) {
+            Pair<ParserState, Integer> stateAndIdx = state.next(template, idx, ast);
+            state = stateAndIdx.getKey();
+            idx = stateAndIdx.getValue();
+            if (state == ParserState.END) {
+                break;
+            }
+        }
+        //FIXME evaluate ast...
+
+        return "";
     }
 }

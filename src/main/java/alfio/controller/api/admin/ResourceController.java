@@ -37,15 +37,25 @@ import alfio.manager.user.UserManager;
 import alfio.model.UploadedResource;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.repository.EventRepository;
+import alfio.util.TemplateManager.TemplateResource;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
@@ -57,14 +67,41 @@ public class ResourceController {
     private final UploadedResourceManager uploadedResourceManager;
     private final UserManager userManager;
     private final EventRepository eventRepository;
+    private final MessageSource messageSource;
 
 
     @Autowired
-    public ResourceController(UploadedResourceManager uploadedResourceManager, UserManager userManager, EventRepository eventRepository) {
+    public ResourceController(UploadedResourceManager uploadedResourceManager, UserManager userManager, EventRepository eventRepository, MessageSource messageSource) {
         this.uploadedResourceManager = uploadedResourceManager;
         this.userManager = userManager;
         this.eventRepository = eventRepository;
+        this.messageSource = messageSource;
     }
+
+    @RequestMapping(value = "/overridable-template/", method = RequestMethod.GET)
+    public List<TemplateResource> getOverridableTemplates() {
+        return Stream.of(TemplateResource.values()).filter(TemplateResource::overridable).collect(Collectors.toList());
+    }
+
+    @RequestMapping(value = "/overridable-template/{name}/{locale}", method = RequestMethod.GET)
+    public void getTemplate(@PathVariable("name") TemplateResource name, @PathVariable("locale") String locale, HttpServletResponse response) throws IOException {
+        response.setContentType("text/plain");
+        //FIXME need to replace i18n token with translated content!
+        // -> find {{#i18n}} and next matching {{/i18n}}
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        try (InputStream is = new ClassPathResource(name.classPath()).getInputStream()) {
+            StreamUtils.copy(is, os);
+        }
+        Locale loc = Locale.forLanguageTag(locale);
+        String template = new String(os.toByteArray(), StandardCharsets.UTF_8);
+
+
+
+
+        response.setContentType("text/plain");
+        response.getWriter().print("");
+    }
+
 
     //------------------
 
