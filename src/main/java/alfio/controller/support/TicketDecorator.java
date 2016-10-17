@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 
 public class TicketDecorator {
 
+    public static final Function<Ticket, String> EMPTY_PREFIX_GENERATOR = (t) -> "";
+
     @Delegate
     private final Ticket ticket;
     private final boolean freeCancellationEnabled;
@@ -33,13 +35,15 @@ public class TicketDecorator {
     private final String urlSuffix;
     private final List<TicketFieldConfigurationDescriptionAndValue> ticketFieldConfiguration;
     private final boolean forceDisplayAssignForm;
+    private final String elementNamePrefix;
 
     private TicketDecorator(Ticket ticket,
                             boolean freeCancellationEnabled,
                             boolean conditionsMet,
                             List<TicketFieldConfigurationDescriptionAndValue> ticketFieldConfiguration,
-                            boolean forceDisplayAssignForm) {
-        this(ticket, freeCancellationEnabled, conditionsMet, ticket.getUuid(), ticketFieldConfiguration, forceDisplayAssignForm);
+                            boolean forceDisplayAssignForm,
+                            String elementNamePrefix) {
+        this(ticket, freeCancellationEnabled, conditionsMet, ticket.getUuid(), ticketFieldConfiguration, forceDisplayAssignForm, elementNamePrefix);
     }
 
     public TicketDecorator(Ticket ticket,
@@ -47,13 +51,15 @@ public class TicketDecorator {
                            boolean conditionsMet,
                            String urlSuffix,
                            List<TicketFieldConfigurationDescriptionAndValue> ticketFieldConfiguration,
-                           boolean forceDisplayAssignForm) {
+                           boolean forceDisplayAssignForm,
+                           String elementNamePrefix) {
         this.ticket = ticket;
         this.freeCancellationEnabled = freeCancellationEnabled;
         this.conditionsMet = conditionsMet;
         this.urlSuffix = urlSuffix;
         this.ticketFieldConfiguration = ticketFieldConfiguration;
         this.forceDisplayAssignForm = forceDisplayAssignForm;
+        this.elementNamePrefix = elementNamePrefix;
     }
 
     public String getUrlSuffix() {
@@ -76,11 +82,23 @@ public class TicketDecorator {
         return ticketFieldConfiguration;
     }
 
+    public String getElementNamePrefix() {
+        return elementNamePrefix;
+    }
+
     public boolean getDisplayAssignForm() {
         return !getAssigned() || forceDisplayAssignForm;
     }
 
-    public static List<TicketDecorator> decorate(List<Ticket> tickets, boolean freeCancellationEnabled, Function<Ticket, Boolean> categoryEvaluator, Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> fieldsLoader, boolean forceDisplayAssignForm) {
-        return tickets.stream().map(t -> new TicketDecorator(t, freeCancellationEnabled, categoryEvaluator.apply(t), fieldsLoader.apply(t), forceDisplayAssignForm)).collect(Collectors.toList());
+    public static List<TicketDecorator> decorate(List<Ticket> tickets,
+                                                 boolean freeCancellationEnabled,
+                                                 Function<Ticket, Boolean> categoryEvaluator,
+                                                 Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> fieldsLoader,
+                                                 boolean forceDisplayAssignForm,
+                                                 Function<Ticket, String> elementNamePrefixGenerator) {
+        return tickets.stream()
+            .map(t -> new TicketDecorator(t, freeCancellationEnabled,
+                categoryEvaluator.apply(t), fieldsLoader.apply(t),
+                forceDisplayAssignForm, elementNamePrefixGenerator.apply(t))).collect(Collectors.toList());
     }
 }

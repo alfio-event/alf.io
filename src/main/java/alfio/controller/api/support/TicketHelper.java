@@ -109,23 +109,48 @@ public class TicketHelper {
                                                                            Optional<UserDetails> userDetails) {
 
         Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.fetchComplete(eventName, reservationId, ticketIdentifier)
-                .map(result -> {
-                    Ticket t = result.getRight();
-                    final Event event = result.getLeft();
-                    if(t.getLockedAssignment()) {
-                        //in case of locked assignment, fullName and Email will be overwritte
-                        updateTicketOwner.setFirstName(t.getFirstName());
-                        updateTicketOwner.setLastName(t.getLastName());
-                        updateTicketOwner.setFullName(t.getFullName());
-                        updateTicketOwner.setEmail(t.getEmail());
-                    }
+                .map(result -> assignTicket(updateTicketOwner, bindingResult, request, userDetails, result));
+        triple.ifPresent(reservationConsumer);
+        return triple;
+    }
 
-                    final TicketReservation ticketReservation = result.getMiddle();
-                    List<TicketFieldConfiguration> fieldConf = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-                    ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event)
-                            .ifSuccess(() -> updateTicketOwner(updateTicketOwner, request, t, event, ticketReservation, userDetails));
-                    return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
-                });
+    private Triple<ValidationResult, Event, Ticket> assignTicket(UpdateTicketOwnerForm updateTicketOwner,
+                                                                 Optional<Errors> bindingResult,
+                                                                 HttpServletRequest request,
+                                                                 Optional<UserDetails> userDetails,
+                                                                 Triple<Event, TicketReservation, Ticket> result) {
+        Ticket t = result.getRight();
+        final Event event = result.getLeft();
+        if(t.getLockedAssignment()) {
+            //in case of locked assignment, fullName and Email will be overwritten
+            updateTicketOwner.setFirstName(t.getFirstName());
+            updateTicketOwner.setLastName(t.getLastName());
+            updateTicketOwner.setFullName(t.getFullName());
+            updateTicketOwner.setEmail(t.getEmail());
+        }
+
+        final TicketReservation ticketReservation = result.getMiddle();
+        List<TicketFieldConfiguration> fieldConf = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
+        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event)
+                .ifSuccess(() -> updateTicketOwner(updateTicketOwner, request, t, event, ticketReservation, userDetails));
+        return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
+    }
+
+    /**
+     * This method has been implemented explicitly for PayPal, since we need to pre-assign tickets before payment, in order to keep the data inserted by the customer
+     */
+    public Optional<Triple<ValidationResult, Event, Ticket>> preAssignTicket(String eventName,
+                                                                          String reservationId,
+                                                                          String ticketIdentifier,
+                                                                          UpdateTicketOwnerForm updateTicketOwner,
+                                                                          Optional<Errors> bindingResult,
+                                                                          HttpServletRequest request,
+                                                                          Consumer<Triple<ValidationResult, Event, Ticket>> reservationConsumer,
+                                                                          Optional<UserDetails> userDetails) {
+
+        Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.from(eventName, reservationId, ticketIdentifier)
+            .filter(temp -> temp.getMiddle().getStatus() == TicketReservation.TicketReservationStatus.PENDING && temp.getRight().getStatus() == Ticket.TicketStatus.PENDING)
+            .map(result -> assignTicket(updateTicketOwner, bindingResult, request, userDetails, result));
         triple.ifPresent(reservationConsumer);
         return triple;
     }
@@ -142,7 +167,7 @@ public class TicketHelper {
             model.addAttribute("validationResult", t.getLeft());
             model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
             model.addAttribute("event", t.getMiddle());
-        }, Optional.<UserDetails>empty());
+        }, Optional.empty());
     }
 
     public Optional<Triple<ValidationResult, Event, Ticket>> directTicketAssignment(String eventName,

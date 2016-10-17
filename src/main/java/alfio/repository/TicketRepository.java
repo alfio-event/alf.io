@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @QueryRepository
 public interface TicketRepository {
@@ -195,5 +196,12 @@ public interface TicketRepository {
 
     @Query("select count(*) from ticket where event_id = :eventId and status <> 'INVALIDATED'")
     Integer countExistingTicketsForEvent(@Bind("eventId") int eventId);
+
+    @Query("select count(*) from ticket where tickets_reservation_id = :reservationId and uuid in (:uuids)")
+    Integer countFoundTicketsInReservation(@Bind("reservationId") String reservationId, @Bind("uuids") Set<String> uuids);
+
+    default boolean checkTicketUUIDs(String reservationId, Set<String> uuids) {
+        return countFoundTicketsInReservation(reservationId, uuids) == uuids.size();
+    }
 
 }

@@ -32,6 +32,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
@@ -79,6 +80,7 @@ public class ReservationController {
     private final TicketHelper ticketHelper;
     private final TicketFieldRepository ticketFieldRepository;
     private final PaymentManager paymentManager;
+    private final TicketRepository ticketRepository;
 
     @Autowired
     public ReservationController(EventRepository eventRepository,
@@ -93,7 +95,8 @@ public class ReservationController {
                                  TicketHelper ticketHelper,
                                  TicketFieldRepository ticketFieldRepository,
                                  PaypalManager paypalManager,
-                                 PaymentManager paymentManager) {
+                                 PaymentManager paymentManager,
+                                 TicketRepository ticketRepository) {
         this.eventRepository = eventRepository;
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
@@ -107,6 +110,7 @@ public class ReservationController {
         this.ticketFieldRepository = ticketFieldRepository;
         this.paypalManager = paypalManager;
         this.paymentManager = paymentManager;
+        this.ticketRepository = ticketRepository;
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
@@ -123,7 +127,7 @@ public class ReservationController {
                                   @RequestParam(value = "email", required = false) String email,
                                   @RequestParam(value = "billingAddress", required = false) String billingAddress,
                                   @RequestParam(value = "hmac", required = false) String hmac,
-                                  @RequestParam(value = "expressCheckoutRequested", required = false) Boolean expressCheckoutRequested,
+                                  @RequestParam(value = "postponeAssignment", required = false) Boolean postponeAssignment,
                                   Model model,
                                   Locale locale) {
 
@@ -145,9 +149,12 @@ public class ReservationController {
                             .addAttribute("email", email)
                             .addAttribute("billingAddress", billingAddress)
                             .addAttribute("hmac", hmac)
-                            .addAttribute("expressCheckoutRequested", expressCheckoutRequested == Boolean.TRUE);
+                            .addAttribute("postponeAssignment", Boolean.TRUE.equals(postponeAssignment) ? "checked" : "")
+                            .addAttribute("showPostpone", Boolean.TRUE.equals(postponeAssignment));
                     } else {
-                        model.addAttribute("paypalCheckoutConfirmation", false);
+                        model.addAttribute("paypalCheckoutConfirmation", false)
+                             .addAttribute("postponeAssignment", "")
+                             .addAttribute("showPostpone", true);
                     }
 
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
@@ -173,6 +180,19 @@ public class ReservationController {
                     Map<String, Object> modelMap = model.asMap();
                     modelMap.putIfAbsent("paymentForm", new PaymentForm());
                     modelMap.putIfAbsent("hasErrors", false);
+                    model.addAttribute(
+                        "ticketsByCategory",
+                        ticketReservationManager.findTicketsInReservation(reservationId).stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
+                            .map((e) -> {
+                                TicketCategory category = eventManager.getTicketCategoryById(e.getKey(), event.getId());
+                                List<TicketDecorator> decorators = TicketDecorator.decorate(e.getValue(),
+                                    configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false),
+                                    eventManager.checkTicketCancellationPrerequisites(),
+                                    ticket -> ticketHelper.findTicketFieldConfigurationAndValue(event.getId(), ticket, locale),
+                                    true, (t) -> "tickets['"+t.getUuid()+"'].");
+                                return Pair.of(category, decorators);
+                            })
+                            .collect(toList()));
                     return "/event/reservation-page";
                 }).orElseGet(() -> redirectReservation(Optional.empty(), eventName, reservationId)))
             .orElse("redirect:/");
@@ -213,7 +233,7 @@ public class ReservationController {
                                     configurationManager.getBooleanConfigValue(Configuration.from(ev.getOrganizationId(), ev.getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false),
                                     eventManager.checkTicketCancellationPrerequisites(),
                                     ticket -> ticketHelper.findTicketFieldConfigurationAndValue(ev.getId(), ticket, locale),
-                                    tickets.size() == 1);
+                                    tickets.size() == 1, TicketDecorator.EMPTY_PREFIX_GENERATOR);
                                 return Pair.of(category, decorators);
                             })
                             .collect(toList()));
@@ -374,7 +394,10 @@ public class ReservationController {
             bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
         }
         final TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        paymentForm.validate(bindingResult, reservationCost, event);
+        if(!paymentForm.isPostponeAssignment() && !ticketRepository.checkTicketUUIDs(reservationId, paymentForm.getTickets().keySet())) {
+            bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
+        }
+        paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()));
         if (bindingResult.hasErrors()) {
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
             return redirectReservation(ticketReservation, eventName, reservationId);
@@ -386,7 +409,9 @@ public class ReservationController {
         if(paymentForm.getPaymentMethod() == PaymentProxy.PAYPAL && !paymentForm.hasPaypalTokens()) {
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
             try {
-                String checkoutUrl = paypalManager.createCheckoutRequest(event, reservationId, orderSummary, customerName, paymentForm.getEmail(), paymentForm.getBillingAddress(),paymentForm.getExpressCheckoutRequested(), locale);
+                String checkoutUrl = paypalManager.createCheckoutRequest(event, reservationId, orderSummary, customerName,
+                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale, paymentForm.isPostponeAssignment(), paymentForm.getTickets());
+                assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
                 return "redirect:" + checkoutUrl;
             } catch (Exception e) {
                 bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
@@ -397,10 +422,9 @@ public class ReservationController {
         //
 
 
-        boolean directTicketAssignment = Optional.ofNullable(paymentForm.getExpressCheckoutRequested()).map(b -> Boolean.logicalAnd(b, isExpressCheckoutEnabled(event, ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale)))).orElse(false);
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaypalPayerID(), event, reservationId, paymentForm.getEmail(),
             customerName, locale, paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
-                Optional.ofNullable(paymentForm.getPaymentMethod()), directTicketAssignment);
+                Optional.ofNullable(paymentForm.getPaymentMethod()));
 
         if(!status.isSuccessful()) {
             String errorMessageCode = status.getErrorCode().get();
@@ -416,11 +440,25 @@ public class ReservationController {
         sendReservationCompleteEmailToOrganizer(request, event, reservation);
         //
 
-        if(directTicketAssignment) {
-            ticketHelper.directTicketAssignment(eventName, reservationId, paymentForm.getEmail(), paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), locale.getLanguage(), Optional.of(bindingResult), request, model);
+        if(paymentForm.getPaymentMethod() != PaymentProxy.PAYPAL) {
+            assignTickets(eventName, reservationId, paymentForm, bindingResult, request, false);
         }
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
+    }
+
+    private void assignTickets(String eventName, String reservationId, PaymentForm paymentForm, BindingResult bindingResult, HttpServletRequest request, boolean preAssign) {
+        if(!paymentForm.isPostponeAssignment()) {
+            paymentForm.getTickets().entrySet().forEach(t -> {
+                String ticketId = t.getKey();
+                UpdateTicketOwnerForm owner = t.getValue();
+                if(preAssign) {
+                    ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {}, Optional.empty());
+                } else {
+                    ticketHelper.assignTicket(eventName, reservationId, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {}, Optional.empty());
+                }
+            });
+        }
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/re-send-email", method = RequestMethod.POST)

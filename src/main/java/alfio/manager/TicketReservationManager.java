@@ -295,7 +295,7 @@ public class TicketReservationManager {
 
     public PaymentResult confirm(String gatewayToken, String payerId, Event event, String reservationId,
                                  String email, CustomerName customerName, Locale userLanguage, String billingAddress,
-                                 TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method, boolean directTicketAssignment) {
+                                 TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
         if(!initPaymentProcess(reservationCost, paymentProxy, reservationId, email, customerName, userLanguage, billingAddress)) {
             return PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION");
@@ -332,7 +332,7 @@ public class TicketReservationManager {
             } else {
                 paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
             }
-            completeReservation(event.getId(), reservationId, email, customerName, userLanguage, billingAddress, specialPriceSessionId, paymentProxy, directTicketAssignment);
+            completeReservation(event.getId(), reservationId, email, customerName, userLanguage, billingAddress, specialPriceSessionId, paymentProxy);
             return paymentResult;
         } catch(Exception ex) {
             //it is guaranteed that in this case we're dealing with "local" error (e.g. database failure),
@@ -503,13 +503,10 @@ public class TicketReservationManager {
 
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress/userLanguage.
-     * @param reservationId
-     * @param email
-     * @param customerName
-     * @param billingAddress
-     * @param specialPriceSessionId
      */
-    private void completeReservation(int eventId, String reservationId, String email, CustomerName customerName, Locale userLanguage, String billingAddress, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy, boolean directAssignment) {
+    private void completeReservation(int eventId, String reservationId, String email, CustomerName customerName,
+                                     Locale userLanguage, String billingAddress, Optional<String> specialPriceSessionId,
+                                     PaymentProxy paymentProxy) {
         if(paymentProxy != PaymentProxy.OFFLINE) {
             TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
             AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
@@ -518,7 +515,6 @@ public class TicketReservationManager {
         }
         //cleanup unused special price codes...
         specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
-        ticketReservationRepository.updateDirectAssignmentFlag(reservationId, directAssignment);
     }
 
     private void acquireItems(TicketStatus ticketStatus, AdditionalServiceItemStatus asStatus, PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName, String userLanguage, String billingAddress) {
@@ -531,6 +527,27 @@ public class TicketReservationManager {
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString());
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
         waitingQueueManager.fireReservationConfirmed(reservationId);
+        if(paymentProxy == PaymentProxy.PAYPAL) {
+            //we must notify the plugins about ticket assignment and send them by email
+            Event event = eventRepository.findByReservationId(reservationId);
+            TicketReservation reservation = findById(reservationId).orElseThrow(IllegalStateException::new);
+            findTicketsInReservation(reservationId).stream()
+                .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
+                .forEach(ticket -> {
+                    Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
+                    sendTicketByEmail(ticket, locale, event, (t) -> {
+                        Map<String, Object> model = new HashMap<>();
+                        model.put("organization", organizationRepository.getById(event.getOrganizationId()));
+                        model.put("event", event);
+                        model.put("ticketReservation", reservation);
+                        model.put("ticketUrl", ticketUpdateUrl(reservationId, event, t.getUuid()));
+                        model.put("ticket", t);
+                        return templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_EMAIL, model, locale, TemplateOutput.TEXT);
+                    });
+
+                });
+
+        }
     }
 
     void cleanupExpiredReservations(Date expirationDate) {
@@ -844,7 +861,8 @@ public class TicketReservationManager {
         ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket, event);
 
         Ticket newTicket = ticketRepository.findByUUID(ticket.getUuid());
-        if (!StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) || !StringUtils.equalsIgnoreCase(customerName.getFullName(), ticket.getFullName())) {
+        if (newTicket.getStatus() == TicketStatus.ACQUIRED
+            && (!StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) || !StringUtils.equalsIgnoreCase(customerName.getFullName(), ticket.getFullName()))) {
             sendTicketByEmail(newTicket, userLocale, event, confirmationTextBuilder);
         }
 
@@ -874,7 +892,6 @@ public class TicketReservationManager {
         try {
             TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
             TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
-            Organization organization = organizationRepository.getById(event.getOrganizationId());
             notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, reservation, ticketCategory);
         } catch (IOException e) {
             throw new IllegalStateException(e);

@@ -212,12 +212,61 @@
                 if(method === 'STRIPE') {
                     var inputFields = $('#payment-method-STRIPE').find('input');
                     inputFields.attr('required', true);
+                    var fullName = $.trim($.trim($('#first-name').val()) + ' ' + $.trim($('#last-name').val()));
+                    if(fullName === '') {
+                        fullName = $.trim($('#full-name').val());
+                    }
+                    $('#card-name').val(fullName);
                     inputFields.first().focus();
 
                 } else {
                     $('#payment-method-STRIPE').find('input').val('').removeAttr('required');
                 }
             });
+        }
+
+        $('#first-name, #last-name').change(function() {
+            fillAttendeeData($('#first-name').val(), $('#last-name').val());
+        });
+        $('#full-name').change(function() {
+            fillAttendeeData($(this).val());
+        });
+        $('#email').change(function() {
+            updateIfNotTouched($('#attendeesData').find('.attendee-email').first(), $(this).val());
+        });
+
+        $('#attendeesData').find('.attendee-full-name,.attendee-first-name,.attendee-last-name,.attendee-email').first()
+            .change(function() {
+                $(this).removeClass('untouched');
+            });
+
+        $('#postpone-assignment').change(function() {
+            var classes = 'hidden-xs hidden-sm hidden-md hidden-lg';
+            var element = $('#attendeesData');
+            if($(this).is(':checked')) {
+                element.find('.field-required').attr('required', false);
+                element.addClass(classes)
+            } else {
+                element.find('.field-required').attr('required', true);
+                element.removeClass(classes)
+            }
+        });
+
+        function fillAttendeeData(firstOrFullName, lastName) {
+            var useFullName = (typeof lastName == "undefined");
+            var element = $('#attendeesData');
+            if(useFullName) {
+                updateIfNotTouched(element.find('.attendee-full-name').first(), firstOrFullName);
+            } else {
+                updateIfNotTouched(element.find('.attendee-first-name').first(), firstOrFullName);
+                updateIfNotTouched(element.find('.attendee-last-name').first(), lastName);
+            }
+        }
+
+        function updateIfNotTouched(element, newValue) {
+            if(element.hasClass('untouched')) {
+                element.val(newValue);
+            }
         }
     });
 })();

@@ -20,14 +20,18 @@ import alfio.manager.PaypalManager;
 import alfio.manager.TicketReservationManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
+import alfio.model.TicketFieldConfiguration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ErrorsCode;
+import alfio.util.ValidationResult;
+import alfio.util.Validator;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -48,6 +52,8 @@ public class PaymentForm {
     private Boolean termAndConditionsAccepted;
     private PaymentProxy paymentMethod;
     private Boolean expressCheckoutRequested;
+    private boolean postponeAssignment = false;
+    private Map<String, UpdateTicketOwnerForm> tickets;
 
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
             String value, int maxLength) {
@@ -70,7 +76,8 @@ public class PaymentForm {
         return StringUtils.isNotBlank(paypalPayerID) && StringUtils.isNotBlank(paypalPaymentId);
     }
 
-    public void validate(BindingResult bindingResult, TicketReservationManager.TotalPrice reservationCost, Event event) {
+    public void validate(BindingResult bindingResult, TicketReservationManager.TotalPrice reservationCost, Event event,
+                         List<TicketFieldConfiguration> fieldConf) {
 
         List<PaymentProxy> allowedPaymentMethods = event.getAllowedPaymentProxies();
 
@@ -119,6 +126,17 @@ public class PaymentForm {
 
         if (hasPaypalTokens() && !PaypalManager.isValidHMAC(new CustomerName(fullName, firstName, lastName, event), email, billingAddress, hmac, event)) {
             bindingResult.reject(ErrorsCode.STEP_2_INVALID_HMAC);
+        }
+
+        if(!postponeAssignment) {
+            boolean success = Optional.ofNullable(tickets)
+                .filter(m -> !m.isEmpty())
+                .map(m -> m.entrySet().stream().map(e -> Validator.validateTicketAssignment(e.getValue(), fieldConf, Optional.empty(), event)))
+                .filter(s -> s.allMatch(ValidationResult::isSuccess))
+                .isPresent();
+            if(!success) {
+                bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
+            }
         }
     }
 

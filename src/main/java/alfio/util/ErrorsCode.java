@@ -54,4 +54,6 @@ public interface ErrorsCode {
     String STEP_2_MAX_LENGTH_LASTNAME = "error.STEP_2_MAX_LENGTH_LASTNAME";
     String STEP_2_EMPTY_LASTNAME = "error.STEP_2_EMPTY_LASTNAME";
 
+    String STEP_2_MISSING_ATTENDEE_DATA = "error.STEP_2_MISSING_ATTENDEE_DATA";
+
 }

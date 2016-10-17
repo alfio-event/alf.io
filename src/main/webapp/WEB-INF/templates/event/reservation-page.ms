@@ -27,6 +27,7 @@
     data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
 {{/includeStripe}}
  ></script>
+<script src="{{request.contextPath}}/resources/js/event/attendee-form.js"></script>
 {{>/event/header}}
 
 <div class="wizard wMarginBottom wMarginTop center">
@@ -101,12 +102,13 @@
         <input type="hidden" name="paymentMethod" value="PAYPAL">
         <input type="hidden" name="paypalPaymentId" value="{{paypalPaymentId}}">
         <input type="hidden" name="paypalPayerID" value="{{paypalPayerID}}">
-        <input type="hidden" name="expressCheckoutRequested" value="{{expressCheckoutRequested}}">
         <input type="hidden" name="termAndConditionsAccepted" value="true">
-        {{#i18n}}reservation-page.paypal.confirm{{/i18n}}
+    <div class="alert alert-success">
+        <h3><i class="fa fa-check"></i> {{#i18n}}reservation-page.paypal.confirm{{/i18n}}</h3>
+    </div>
+
     {{/paypalCheckoutConfirmation}}
     {{^paypalCheckoutConfirmation}}
-
 
     <h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
     {{#useFirstAndLastName}}
@@ -186,24 +188,47 @@
         {{/event.allowedPaymentProxies}}
     {{/orderSummary.free}}
 
-    {{#expressCheckoutEnabled}}
-    <div class="checkbox">
-        <label>
-            <input type="checkbox" name="expressCheckoutRequested" value="true">
-            {{#i18n}}reservation-page.express-checkout{{/i18n}}
-        </label>
-    </div>
-    {{/expressCheckoutEnabled}}
-
-    <div class="checkbox">
+    <div class="checkbox wMarginTop">
         <label>
             <input type="checkbox" required name="termAndConditionsAccepted" value="true">
             {{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termsAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
         </label>
     </div>
 
+    <hr/>
 
     {{/paypalCheckoutConfirmation}}
+    <h2>{{#i18n}}reservation-page.attendees{{/i18n}}</h2>
+
+    {{#showPostpone}}
+    <div class="checkbox">
+        <label>
+            <input type="checkbox" name="postponeAssignment" id="postpone-assignment" value="true" {{postponeAssignment}}>
+            {{#i18n}}reservation-page.postpone-assignment{{/i18n}}
+        </label>
+    </div>
+    {{/showPostpone}}
+
+    <div id="attendeesData">
+        <ul class="list-group">
+            {{#ticketsByCategory}}
+                {{#value}}
+                    <li class="list-group-item">
+                        <div class="wMarginBottom">
+                            <h3><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.ticket-nr{{/i18n}}<span class="ticket-counter"></span></h3>
+                        </div>
+                        {{#i18n}}reservation-page-complete.ticket-type{{/i18n}} <strong>{{key.name}}</strong>
+                        <div class="form-horizontal">
+                            <div data-collapse-enabled="true" class="collapsible-container">
+                                {{> /event/attendee-fields }}
+                            </div>
+                        </div>
+                    </li>
+                {{/value}}
+            {{/ticketsByCategory}}
+        </ul>
+    </div>
+    <div class="clearfix"></div>
 
     <hr />
 

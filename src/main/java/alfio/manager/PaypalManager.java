@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.support.OrderSummary;
 import alfio.manager.support.SummaryRow;
 import alfio.manager.system.ConfigurationManager;
@@ -24,10 +25,10 @@ import alfio.model.Event;
 import alfio.model.TicketReservation;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import com.paypal.api.payments.*;
 import com.paypal.base.rest.APIContext;
-
 import com.paypal.base.rest.PayPalRESTException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.HmacUtils;
@@ -42,8 +43,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 @Component
 @Log4j2
@@ -55,7 +54,10 @@ public class PaypalManager {
     private final TicketReservationRepository ticketReservationRepository;
 
     @Autowired
-    public PaypalManager(ConfigurationManager configurationManager, TicketReservationRepository ticketReservationRepository, MessageSource messageSource) {
+    public PaypalManager(ConfigurationManager configurationManager,
+                         TicketReservationRepository ticketReservationRepository,
+                         MessageSource messageSource,
+                         TicketRepository ticketRepository) {
         this.configurationManager = configurationManager;
         this.messageSource = messageSource;
         this.ticketReservationRepository = ticketReservationRepository;
@@ -134,7 +136,9 @@ public class PaypalManager {
         return new Item(summaryRow.getName(), quantity, price, event.getCurrency());
     }
 
-    public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary, CustomerName customerName, String email, String billingAddress, Boolean expressCheckoutRequested, Locale locale) throws Exception {
+    public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary, CustomerName customerName,
+                                        String email, String billingAddress, Locale locale, boolean postponeAssignment,
+                                        Map<String, UpdateTicketOwnerForm> tickets) throws Exception {
 
         Optional<String> experienceProfileId = getOrCreateWebProfile(event, locale);
 
@@ -159,7 +163,7 @@ public class PaypalManager {
             .queryParam("lastName", customerName.getLastName())
             .queryParam("email", email)
             .queryParam("billingAddress", billingAddress)
-            .queryParam("expressCheckoutRequested", expressCheckoutRequested)
+            .queryParam("postponeAssignment", postponeAssignment)
             .queryParam("hmac", computeHMAC(customerName, email, billingAddress, event));
         String finalUrl = bookUrlBuilder.toUriString();
 
