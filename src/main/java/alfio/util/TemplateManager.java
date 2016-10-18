@@ -1,16 +1,16 @@
 /**
  * This file is part of alf.io.
- *
+ * <p>
  * alf.io is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * <p>
  * alf.io is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -287,14 +287,14 @@ public class TemplateManager {
         }
 
         void addText(String text) {
-            if(text.length() > 0) {
+            if (text.length() > 0) {
                 addChild(new TextNode(text));
             }
         }
 
         void addI18NNode(int startIdx) {
             addChild(new I18NNode(startIdx));
-            currentLevel = currentLevel.children.get(currentLevel.children.size() -1);
+            currentLevel = currentLevel.children.get(currentLevel.children.size() - 1);
         }
 
         void focusToParent() {
@@ -316,7 +316,7 @@ public class TemplateManager {
         }
 
         public void visit(StringBuilder sb, Locale locale, MessageSource messageSource) {
-            for(Node node : children) {
+            for (Node node : children) {
                 node.visit(sb, locale, messageSource);
             }
         }
@@ -345,7 +345,7 @@ public class TemplateManager {
         @Override
         public void visit(StringBuilder sb, Locale locale, MessageSource messageSource) {
             StringBuilder internal = new StringBuilder();
-            for(Node node : children) {
+            for (Node node : children) {
                 node.visit(internal, locale, messageSource);
             }
 
@@ -354,10 +354,7 @@ public class TemplateManager {
             List<String> args = extractParameters(childTemplate);
             String text = messageSource.getMessage(key, args.toArray(), locale);
 
-            //
-            //FIXME add support for parameters :)
             sb.append(text);
-            //
         }
     }
 
