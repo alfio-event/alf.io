@@ -17,43 +17,61 @@
 package alfio.util;
 
 
+import org.junit.Assert;
 import org.junit.Test;
+import org.springframework.context.support.StaticMessageSource;
+
+import java.util.Locale;
 
 public class TemplateManagerTest {
 
+    private static StaticMessageSource messageSource = new StaticMessageSource();
+    static {
+        messageSource.addMessage("locale", Locale.ENGLISH, "en");
+        messageSource.addMessage("middle", Locale.ENGLISH, "middle-en");
+
+        messageSource.addMessage("middle1", Locale.ENGLISH, "middle-1-resolved");
+        messageSource.addMessage("middle2", Locale.ENGLISH, "middle-2-resolved");
+
+        messageSource.addMessage("nested", Locale.ENGLISH, "nested-1");
+        messageSource.addMessage("nested-1", Locale.ENGLISH, "nested-resolved");
+        messageSource.addMessage("a", Locale.ENGLISH, "a-resolved");
+        messageSource.addMessage("b", Locale.ENGLISH, "b-resolved");
+        messageSource.addMessage("1a-resolved-middle-b-resolved2", Locale.ENGLISH, "complete-resolved");
+    }
+
     @Test
     public void parseEmptyString() {
-        TemplateManager.translate("");
+        Assert.assertEquals("", TemplateManager.translate("", Locale.ENGLISH, messageSource));
     }
 
     @Test
     public void parseString() {
-        TemplateManager.translate("test");
+        Assert.assertEquals("test", TemplateManager.translate("test", Locale.ENGLISH, messageSource));
     }
 
     @Test
     public void parseOnlyI18N() {
-        TemplateManager.translate("{{#i18n}}{{/i18n}}");
+        Assert.assertEquals("en", TemplateManager.translate("{{#i18n}}locale{{/i18n}}", Locale.ENGLISH, messageSource));
     }
 
     @Test
     public void parseMixedI18N() {
-        TemplateManager.translate("before{{#i18n}}middle{{/i18n}}after");
+        Assert.assertEquals("before middle-en after", TemplateManager.translate("before {{#i18n}}middle{{/i18n}} after", Locale.ENGLISH, messageSource));
     }
 
     @Test
     public void parseMultipleMixedI18N() {
-        TemplateManager.translate("before1{{#i18n}}middle1{{/i18n}}after1 before2{{#i18n}}middle2{{/i18n}}after2");
+        Assert.assertEquals("before1middle-1-resolvedafter1before2middle-2-resolvedafter2", TemplateManager.translate("before1{{#i18n}}middle1{{/i18n}}after1before2{{#i18n}}middle2{{/i18n}}after2", Locale.ENGLISH, messageSource));
     }
-
 
     @Test
     public void parseNestedI18N() {
-        TemplateManager.translate("{{#i18n}}{{#i18n}}{{/i18n}}{{/i18n}}");
+        Assert.assertEquals("nested-resolved", TemplateManager.translate("{{#i18n}}{{#i18n}}nested{{/i18n}}{{/i18n}}", Locale.ENGLISH, messageSource));
     }
 
     @Test
     public void parseNested2I18N() {
-        TemplateManager.translate("0{{#i18n}}1{{#i18n}}a{{/i18n}}-middle-{{#i18n}}b{{/i18n}}2{{/i18n}}3");
+        Assert.assertEquals("0complete-resolved3", TemplateManager.translate("0{{#i18n}}1{{#i18n}}a{{/i18n}}-middle-{{#i18n}}b{{/i18n}}2{{/i18n}}3", Locale.ENGLISH, messageSource));
     }
 }

@@ -159,10 +159,43 @@ public class TemplateManager {
         }
     }
 
+    private static final Pattern KEY_PATTERN = Pattern.compile("(.*?)[\\s\\[]");
+    private static final Pattern ARGS_PATTERN = Pattern.compile("\\[(.*?)\\]");
+
+    /**
+     * Split key from (optional) arguments.
+     *
+     * @param key
+     * @return localization key
+     */
+    private static String extractKey(String key) {
+        Matcher matcher = KEY_PATTERN.matcher(key);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        return key;
+    }
+
+    /**
+     * Split args from input string.
+     * <p/>
+     * localization_key [param1] [param2] [param3]
+     *
+     * @param key
+     * @return List of extracted parameters
+     */
+    private static List<String> extractParameters(String key) {
+        final Matcher matcher = ARGS_PATTERN.matcher(key);
+        final List<String> args = new ArrayList<>();
+        while (matcher.find()) {
+            args.add(matcher.group(1));
+        }
+        return args;
+    }
+
     private static class CustomLocalizationMessageInterceptor {
 
-        private static final Pattern KEY_PATTERN = Pattern.compile("(.*?)[\\s\\[]");
-        private static final Pattern ARGS_PATTERN = Pattern.compile("\\[(.*?)\\]");
         private final Locale locale;
         private final MessageSource messageSource;
 
@@ -179,38 +212,6 @@ public class TemplateManager {
                 final String text = messageSource.getMessage(key, args.toArray(), locale);
                 out.write(text);
             };
-        }
-
-        /**
-         * Split key from (optional) arguments.
-         *
-         * @param key
-         * @return localization key
-         */
-        private String extractKey(String key) {
-            Matcher matcher = KEY_PATTERN.matcher(key);
-            if (matcher.find()) {
-                return matcher.group(1);
-            }
-
-            return key;
-        }
-
-        /**
-         * Split args from input string.
-         * <p/>
-         * localization_key [param1] [param2] [param3]
-         *
-         * @param key
-         * @return List of extracted parameters
-         */
-        private List<String> extractParameters(String key) {
-            final Matcher matcher = ARGS_PATTERN.matcher(key);
-            final List<String> args = new ArrayList<>();
-            while (matcher.find()) {
-                args.add(matcher.group(1));
-            }
-            return args;
         }
     }
 
@@ -301,15 +302,25 @@ public class TemplateManager {
         void focusToParent() {
             currentLevel = currentLevel.parent;
         }
+
+        public void visit(StringBuilder sb, Locale locale, MessageSource messageSource) {
+            root.visit(sb, locale, messageSource);
+        }
     }
 
     static class Node {
 
         Node parent;
-        List<Node> children = new ArrayList<>();
+        List<Node> children = new ArrayList<>(1);
 
         void addChild(Node node) {
             children.add(node);
+        }
+
+        public void visit(StringBuilder sb, Locale locale, MessageSource messageSource) {
+            for(Node node : children) {
+                node.visit(sb, locale, messageSource);
+            }
         }
     }
 
@@ -318,6 +329,11 @@ public class TemplateManager {
 
         TextNode(String text) {
             this.text = text;
+        }
+
+        @Override
+        public void visit(StringBuilder sb, Locale locale, MessageSource messageSource) {
+            sb.append(text);
         }
     }
 
@@ -328,9 +344,21 @@ public class TemplateManager {
         I18NNode(int startIdx) {
             this.startIdx = startIdx;
         }
+
+        @Override
+        public void visit(StringBuilder sb, Locale locale, MessageSource messageSource) {
+            StringBuilder internal = new StringBuilder();
+            for(Node node : children) {
+                node.visit(internal, locale, messageSource);
+            }
+            //
+            //FIXME add support for parameters :)
+            sb.append(messageSource.getMessage(internal.toString(), null, locale));
+            //
+        }
     }
 
-    public static String translate(String template) {
+    public static String translate(String template, Locale locale, MessageSource messageSource) {
         StringBuilder sb = new StringBuilder(template.length());
 
         AST ast = new AST();
@@ -345,8 +373,9 @@ public class TemplateManager {
                 break;
             }
         }
-        //FIXME evaluate ast...
 
-        return "";
+        ast.visit(sb, locale, messageSource);
+
+        return sb.toString();
     }
 }
