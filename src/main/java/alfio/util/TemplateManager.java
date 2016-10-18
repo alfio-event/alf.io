@@ -122,25 +122,26 @@ public class TemplateManager {
     }
 
     public String renderTemplate(TemplateResource templateResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-        return render(new ClassPathResource(templateResource.classPath()), templateResource.classPath(), model, locale, templateOutput, true);
+        return render(new ClassPathResource(templateResource.classPath()), model, locale, templateOutput);
     }
 
     public String renderTemplate(Event event, TemplateResource templateResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+        //FIXME add here cascading logic for finding the template
         return renderTemplate(templateResource, model, locale, templateOutput);
     }
 
     public String renderString(String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-        return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), "", model, locale, templateOutput, false);
+        return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), model, locale, templateOutput);
     }
 
     //TODO: to be removed when only the rest api will be exposed
     public String renderServletContextResource(String servletContextResource, Map<String, Object> model, HttpServletRequest request, TemplateOutput templateOutput) {
         model.put("request", request);
         model.put(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
-        return render(new ServletContextResource(request.getServletContext(), servletContextResource), servletContextResource, model, RequestContextUtils.getLocale(request), templateOutput, true);
+        return render(new ServletContextResource(request.getServletContext(), servletContextResource), model, RequestContextUtils.getLocale(request), templateOutput);
     }
 
-    private String render(AbstractResource resource, String key, Map<String, Object> model, Locale locale, TemplateOutput templateOutput, boolean cachingRequested) {
+    private String render(AbstractResource resource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
         try {
             ModelAndView mv = new ModelAndView((String) null, model);
             mv.addObject("format-date", MustacheCustomTagInterceptor.FORMAT_DATE);
