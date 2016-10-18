@@ -149,11 +149,11 @@ public class ReservationController {
                             .addAttribute("email", email)
                             .addAttribute("billingAddress", billingAddress)
                             .addAttribute("hmac", hmac)
-                            .addAttribute("postponeAssignment", Boolean.TRUE.equals(postponeAssignment) ? "checked" : "")
+                            .addAttribute("postponeAssignment", Boolean.TRUE.equals(postponeAssignment))
                             .addAttribute("showPostpone", Boolean.TRUE.equals(postponeAssignment));
                     } else {
                         model.addAttribute("paypalCheckoutConfirmation", false)
-                             .addAttribute("postponeAssignment", "")
+                             .addAttribute("postponeAssignment", false)
                              .addAttribute("showPostpone", true);
                     }
 

@@ -203,13 +203,13 @@
     {{#showPostpone}}
     <div class="checkbox">
         <label>
-            <input type="checkbox" name="postponeAssignment" id="postpone-assignment" value="true" {{postponeAssignment}}>
+            <input type="checkbox" name="postponeAssignment" id="postpone-assignment" value="true" {{#postponeAssignment}}checked="checked"{{/postponeAssignment}}>
             {{#i18n}}reservation-page.postpone-assignment{{/i18n}}
         </label>
     </div>
     {{/showPostpone}}
 
-    <div id="attendeesData">
+    <div id="attendeesData" {{#postponeAssignment}}class="hidden-xs hidden-sm hidden-md hidden-lg"{{/postponeAssignment}}>
         <ul class="list-group">
             {{#ticketsByCategory}}
                 {{#value}}
