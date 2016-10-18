@@ -38,6 +38,8 @@ public class TemplateManagerTest {
         messageSource.addMessage("a", Locale.ENGLISH, "a-resolved");
         messageSource.addMessage("b", Locale.ENGLISH, "b-resolved");
         messageSource.addMessage("1a-resolved-middle-b-resolved2", Locale.ENGLISH, "complete-resolved");
+
+        messageSource.addMessage("parameter", Locale.ENGLISH, "{2}-{1}-{0}");
     }
 
     @Test
@@ -73,5 +75,10 @@ public class TemplateManagerTest {
     @Test
     public void parseNested2I18N() {
         Assert.assertEquals("0complete-resolved3", TemplateManager.translate("0{{#i18n}}1{{#i18n}}a{{/i18n}}-middle-{{#i18n}}b{{/i18n}}2{{/i18n}}3", Locale.ENGLISH, messageSource));
+    }
+
+    @Test
+    public void simpleParams() {
+        Assert.assertEquals("3-2-1", TemplateManager.translate("{{#i18n}}parameter [1] [2] [3]{{/i18n}}", Locale.ENGLISH, messageSource));
     }
 }

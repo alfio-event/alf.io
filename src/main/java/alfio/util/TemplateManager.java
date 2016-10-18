@@ -258,8 +258,6 @@ public class TemplateManager {
             public Pair<ParserState, Integer> next(String template, int idx, AST ast) {
 
                 //
-                I18NNode currentNode = (I18NNode)ast.currentLevel;
-                currentNode.text = template.substring(currentNode.startIdx, idx);
                 ast.focusToParent();
                 //
                 return Pair.of(OPEN_TAG, idx + END_TAG.length());
@@ -339,7 +337,6 @@ public class TemplateManager {
 
     static class I18NNode extends Node {
         int startIdx;
-        String text;
 
         I18NNode(int startIdx) {
             this.startIdx = startIdx;
@@ -351,9 +348,15 @@ public class TemplateManager {
             for(Node node : children) {
                 node.visit(internal, locale, messageSource);
             }
+
+            String childTemplate = internal.toString();
+            String key = extractKey(childTemplate);
+            List<String> args = extractParameters(childTemplate);
+            String text = messageSource.getMessage(key, args.toArray(), locale);
+
             //
             //FIXME add support for parameters :)
-            sb.append(messageSource.getMessage(internal.toString(), null, locale));
+            sb.append(text);
             //
         }
     }

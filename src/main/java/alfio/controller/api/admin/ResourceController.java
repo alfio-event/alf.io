@@ -37,6 +37,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.UploadedResource;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.repository.EventRepository;
+import alfio.util.TemplateManager;
 import alfio.util.TemplateManager.TemplateResource;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -95,11 +96,8 @@ public class ResourceController {
         Locale loc = Locale.forLanguageTag(locale);
         String template = new String(os.toByteArray(), StandardCharsets.UTF_8);
 
-
-
-
         response.setContentType("text/plain");
-        response.getWriter().print("");
+        response.getWriter().print(TemplateManager.translate(template, loc, messageSource));
     }
 
 
