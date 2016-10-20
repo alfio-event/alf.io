@@ -122,25 +122,26 @@ public class TemplateManager {
     }
 
     public String renderTemplate(TemplateResource templateResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-        return render(new ClassPathResource(templateResource.classPath()), templateResource.classPath(), model, locale, templateOutput, true);
+        return render(new ClassPathResource(templateResource.classPath()), model, locale, templateOutput);
     }
 
     public String renderTemplate(Event event, TemplateResource templateResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+        //FIXME add here cascading logic for finding the template
         return renderTemplate(templateResource, model, locale, templateOutput);
     }
 
     public String renderString(String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-        return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), "", model, locale, templateOutput, false);
+        return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), model, locale, templateOutput);
     }
 
     //TODO: to be removed when only the rest api will be exposed
     public String renderServletContextResource(String servletContextResource, Map<String, Object> model, HttpServletRequest request, TemplateOutput templateOutput) {
         model.put("request", request);
         model.put(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
-        return render(new ServletContextResource(request.getServletContext(), servletContextResource), servletContextResource, model, RequestContextUtils.getLocale(request), templateOutput, true);
+        return render(new ServletContextResource(request.getServletContext(), servletContextResource), model, RequestContextUtils.getLocale(request), templateOutput);
     }
 
-    private String render(AbstractResource resource, String key, Map<String, Object> model, Locale locale, TemplateOutput templateOutput, boolean cachingRequested) {
+    private String render(AbstractResource resource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
         try {
             ModelAndView mv = new ModelAndView((String) null, model);
             mv.addObject("format-date", MustacheCustomTagInterceptor.FORMAT_DATE);
@@ -159,10 +160,43 @@ public class TemplateManager {
         }
     }
 
+    private static final Pattern KEY_PATTERN = Pattern.compile("(.*?)[\\s\\[]");
+    private static final Pattern ARGS_PATTERN = Pattern.compile("\\[(.*?)\\]");
+
+    /**
+     * Split key from (optional) arguments.
+     *
+     * @param key
+     * @return localization key
+     */
+    private static String extractKey(String key) {
+        Matcher matcher = KEY_PATTERN.matcher(key);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        return key;
+    }
+
+    /**
+     * Split args from input string.
+     * <p/>
+     * localization_key [param1] [param2] [param3]
+     *
+     * @param key
+     * @return List of extracted parameters
+     */
+    private static List<String> extractParameters(String key) {
+        final Matcher matcher = ARGS_PATTERN.matcher(key);
+        final List<String> args = new ArrayList<>();
+        while (matcher.find()) {
+            args.add(matcher.group(1));
+        }
+        return args;
+    }
+
     private static class CustomLocalizationMessageInterceptor {
 
-        private static final Pattern KEY_PATTERN = Pattern.compile("(.*?)[\\s\\[]");
-        private static final Pattern ARGS_PATTERN = Pattern.compile("\\[(.*?)\\]");
         private final Locale locale;
         private final MessageSource messageSource;
 
@@ -179,38 +213,6 @@ public class TemplateManager {
                 final String text = messageSource.getMessage(key, args.toArray(), locale);
                 out.write(text);
             };
-        }
-
-        /**
-         * Split key from (optional) arguments.
-         *
-         * @param key
-         * @return localization key
-         */
-        private String extractKey(String key) {
-            Matcher matcher = KEY_PATTERN.matcher(key);
-            if (matcher.find()) {
-                return matcher.group(1);
-            }
-
-            return key;
-        }
-
-        /**
-         * Split args from input string.
-         * <p/>
-         * localization_key [param1] [param2] [param3]
-         *
-         * @param key
-         * @return List of extracted parameters
-         */
-        private List<String> extractParameters(String key) {
-            final Matcher matcher = ARGS_PATTERN.matcher(key);
-            final List<String> args = new ArrayList<>();
-            while (matcher.find()) {
-                args.add(matcher.group(1));
-            }
-            return args;
         }
     }
 
@@ -257,8 +259,6 @@ public class TemplateManager {
             public Pair<ParserState, Integer> next(String template, int idx, AST ast) {
 
                 //
-                I18NNode currentNode = (I18NNode)ast.currentLevel;
-                currentNode.text = template.substring(currentNode.startIdx, idx);
                 ast.focusToParent();
                 //
                 return Pair.of(OPEN_TAG, idx + END_TAG.length());
@@ -288,28 +288,38 @@ public class TemplateManager {
         }
 
         void addText(String text) {
-            if(text.length() > 0) {
+            if (text.length() > 0) {
                 addChild(new TextNode(text));
             }
         }
 
         void addI18NNode(int startIdx) {
             addChild(new I18NNode(startIdx));
-            currentLevel = currentLevel.children.get(currentLevel.children.size() -1);
+            currentLevel = currentLevel.children.get(currentLevel.children.size() - 1);
         }
 
         void focusToParent() {
             currentLevel = currentLevel.parent;
+        }
+
+        public void visit(StringBuilder sb, Locale locale, MessageSource messageSource) {
+            root.visit(sb, locale, messageSource);
         }
     }
 
     static class Node {
 
         Node parent;
-        List<Node> children = new ArrayList<>();
+        List<Node> children = new ArrayList<>(1);
 
         void addChild(Node node) {
             children.add(node);
+        }
+
+        public void visit(StringBuilder sb, Locale locale, MessageSource messageSource) {
+            for (Node node : children) {
+                node.visit(sb, locale, messageSource);
+            }
         }
     }
 
@@ -319,18 +329,37 @@ public class TemplateManager {
         TextNode(String text) {
             this.text = text;
         }
+
+        @Override
+        public void visit(StringBuilder sb, Locale locale, MessageSource messageSource) {
+            sb.append(text);
+        }
     }
 
     static class I18NNode extends Node {
         int startIdx;
-        String text;
 
         I18NNode(int startIdx) {
             this.startIdx = startIdx;
         }
+
+        @Override
+        public void visit(StringBuilder sb, Locale locale, MessageSource messageSource) {
+            StringBuilder internal = new StringBuilder();
+            for (Node node : children) {
+                node.visit(internal, locale, messageSource);
+            }
+
+            String childTemplate = internal.toString();
+            String key = extractKey(childTemplate);
+            List<String> args = extractParameters(childTemplate);
+            String text = messageSource.getMessage(key, args.toArray(), locale);
+
+            sb.append(text);
+        }
     }
 
-    public static String translate(String template) {
+    public static String translate(String template, Locale locale, MessageSource messageSource) {
         StringBuilder sb = new StringBuilder(template.length());
 
         AST ast = new AST();
@@ -345,8 +374,9 @@ public class TemplateManager {
                 break;
             }
         }
-        //FIXME evaluate ast...
 
-        return "";
+        ast.visit(sb, locale, messageSource);
+
+        return sb.toString();
     }
 }

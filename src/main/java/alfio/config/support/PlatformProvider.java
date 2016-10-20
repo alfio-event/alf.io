@@ -16,7 +16,6 @@
  */
 package alfio.config.support;
 
-import org.apache.tomcat.jdbc.pool.PoolProperties;
 import org.springframework.core.env.Environment;
 
 import java.net.URI;
@@ -43,10 +42,6 @@ public enum PlatformProvider {
     // https://developers.openshift.com/external-services/elephantsql.html
     // http://docs.run.pivotal.io/marketplace/services/elephantsql.html
     ELEPHANTSQL {
-        @Override
-        public String getDriveClassName(Environment env) {
-            return POSTGRESQL_DRIVER;
-        }
 
         @Override
         public String getUrl(Environment env) {
@@ -69,11 +64,6 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getValidationQuery(Environment env) {
-            return "SELECT 1";
-        }
-
-        @Override
         public String getDialect(Environment env) {
             return PGSQL;
         }
@@ -93,10 +83,6 @@ public enum PlatformProvider {
      * See https://developers.openshift.com/en/managing-environment-variables.html
      **/
     OPENSHIFT {
-        @Override
-        public String getDriveClassName(Environment env) {
-            return POSTGRESQL_DRIVER;
-        }
 
         @Override
         public String getUrl(Environment env) {
@@ -119,11 +105,6 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getValidationQuery(Environment env) {
-            return "SELECT 1";
-        }
-
-        @Override
         public String getDialect(Environment env) {
             return PGSQL;
         }
@@ -143,11 +124,6 @@ public enum PlatformProvider {
     CLOUD_FOUNDRY {
 
         @Override
-        public String getDriveClassName(Environment env) {
-            return isMySql(env) ? MYSQL_DRIVER : POSTGRESQL_DRIVER;
-        }
-
-        @Override
         public String getUrl(Environment env) { return ""; }
 
         @Override
@@ -158,11 +134,6 @@ public enum PlatformProvider {
         @Override
         public String getPassword(Environment env) {
             return "";
-        }
-
-        @Override
-        public String getValidationQuery(Environment env) {
-            return "SELECT 1";
         }
 
         @Override
@@ -191,10 +162,6 @@ public enum PlatformProvider {
     },
 
     HEROKU {
-        @Override
-        public String getDriveClassName(Environment env) {
-            return POSTGRESQL_DRIVER;
-        }
 
         @Override
         public String getUrl(Environment env) {
@@ -214,11 +181,6 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getValidationQuery(Environment env) {
-            return "SELECT 1";
-        }
-
-        @Override
         public String getDialect(Environment env) {
             return PGSQL;
         }
@@ -235,10 +197,6 @@ public enum PlatformProvider {
     },
 
     DOCKER {
-        @Override
-        public String getDriveClassName(Environment env) {
-            return POSTGRESQL_DRIVER;
-        }
 
         @Override
         public String getUrl(Environment env) {
@@ -260,11 +218,6 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getValidationQuery(Environment env) {
-            return "SELECT 1";
-        }
-
-        @Override
         public String getDialect(Environment env) {
             return PGSQL;
         }
@@ -276,10 +229,6 @@ public enum PlatformProvider {
     },
 
     AWS_BEANSTALK {
-        @Override
-        public String getDriveClassName(Environment env) {
-            return isMySql(env) ? MYSQL_DRIVER : POSTGRESQL_DRIVER;
-        }
 
         @Override
         public String getUrl(Environment env) {
@@ -298,11 +247,6 @@ public enum PlatformProvider {
         @Override
         public String getPassword(Environment env) {
             return env.getRequiredProperty("RDS_PASSWORD");
-        }
-
-        @Override
-        public String getValidationQuery(Environment env) {
-            return "SELECT 1";
         }
 
         @Override
@@ -328,10 +272,6 @@ public enum PlatformProvider {
     public static final String MYSQL = "MYSQL";
 
 
-    public String getDriveClassName(Environment env) {
-        return env.getRequiredProperty("datasource.driver");
-    }
-
     public String getUrl(Environment env) {
         return env.getRequiredProperty("datasource.url");
     }
@@ -344,9 +284,6 @@ public enum PlatformProvider {
         return env.getRequiredProperty("datasource.password");
     }
 
-    public String getValidationQuery(Environment env) {
-        return env.getRequiredProperty("datasource.validationQuery");
-    }
 
     public String getDialect(Environment env) {
         return env.getRequiredProperty("datasource.dialect");
@@ -355,7 +292,7 @@ public enum PlatformProvider {
     public int getMaxActive(Environment env) {
         return ofNullable(env.getProperty("datasource.connections.max-active"))
             .map(Integer::parseInt)
-            .orElse(PoolProperties.DEFAULT_MAX_ACTIVE);
+            .orElse(10);//
     }
 
     public boolean isHosting(Environment env) {

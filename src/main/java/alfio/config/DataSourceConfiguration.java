@@ -27,6 +27,7 @@ import alfio.util.TemplateManager;
 import ch.digitalfondue.npjt.QueryFactory;
 import ch.digitalfondue.npjt.QueryRepositoryScanner;
 import ch.digitalfondue.npjt.mapper.ZonedDateTimeMapper;
+import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.log4j.Log4j2;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
@@ -92,22 +93,15 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 
     @Bean(destroyMethod = "close")
     public DataSource getDataSource(Environment env, PlatformProvider platform) throws URISyntaxException {
-        org.apache.tomcat.jdbc.pool.DataSource dataSource = new org.apache.tomcat.jdbc.pool.DataSource();
-        dataSource.setDriverClassName(platform.getDriveClassName(env));
-        dataSource.setUrl(platform.getUrl(env));
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(platform.getUrl(env));
         dataSource.setUsername(platform.getUsername(env));
         dataSource.setPassword(platform.getPassword(env));
-        dataSource.setValidationQuery(platform.getValidationQuery(env));
-        dataSource.setTestOnBorrow(true);
-        dataSource.setTestOnConnect(true);
-        dataSource.setTestWhileIdle(true);
         int maxActive = platform.getMaxActive(env);
-        dataSource.setMaxActive(maxActive);
-        dataSource.setMaxIdle(maxActive);
-        if(dataSource.getInitialSize() > maxActive) {
-            dataSource.setInitialSize(maxActive);
-        }
-        log.debug("Connection pool properties: max active {}, initial size {}", maxActive, dataSource.getInitialSize());
+
+        dataSource.setMaximumPoolSize(maxActive);
+
+        log.debug("Connection pool properties: max active {}, initial size {}", maxActive, dataSource.getMinimumIdle());
         return dataSource;
     }
 
