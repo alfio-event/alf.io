@@ -544,7 +544,7 @@ public class TicketReservationManager {
                         model.put("ticket", t);
                         return templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_EMAIL, model, locale, TemplateOutput.TEXT);
                     });
-
+                    pluginManager.handleTicketAssignment(ticket);
                 });
 
         }
