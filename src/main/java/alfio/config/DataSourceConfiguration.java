@@ -18,6 +18,7 @@ package alfio.config;
 
 import alfio.config.support.PlatformProvider;
 import alfio.manager.Jobs.*;
+import alfio.manager.UploadedResourceManager;
 import alfio.plugin.PluginDataStorageProvider;
 import alfio.plugin.mailchimp.MailChimpPlugin;
 import alfio.repository.EventRepository;
@@ -161,8 +162,8 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     }
 
     @Bean
-    public TemplateManager getTemplateManager() {
-        return new TemplateManager(getTemplateLoader(), messageSource());
+    public TemplateManager getTemplateManager(UploadedResourceManager uploadedResourceManager) {
+        return new TemplateManager(getTemplateLoader(), messageSource(), uploadedResourceManager);
     }
 
     @Bean

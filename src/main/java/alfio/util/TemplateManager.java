@@ -17,6 +17,7 @@
 package alfio.util;
 
 import alfio.config.WebSecurityConfig;
+import alfio.manager.UploadedResourceManager;
 import alfio.model.Event;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
@@ -50,6 +51,9 @@ import java.util.regex.Pattern;
  * */
 public class TemplateManager {
 
+
+
+
     public enum TemplateResource {
         GOOGLE_ANALYTICS("/alfio/templates/google-analytics.ms", false),
         CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer-txt.ms", true),
@@ -76,6 +80,10 @@ public class TemplateManager {
             this.overridable = overridable;
         }
 
+        String getSavedName(Locale locale) {
+            return name() + "_" + locale.getLanguage() + ".ms";
+        }
+
         private final String classPathUrl;
         private final boolean overridable;
 
@@ -96,10 +104,14 @@ public class TemplateManager {
 
     private final Map<TemplateOutput, Compiler> compilers;
 
+    private final UploadedResourceManager uploadedResourceManager;
+
     @Autowired
     public TemplateManager(JMustacheTemplateLoader templateLoader,
-                           MessageSource messageSource) {
+                           MessageSource messageSource,
+                           UploadedResourceManager uploadedResourceManager) {
         this.messageSource = messageSource;
+        this.uploadedResourceManager = uploadedResourceManager;
         Formatter dateFormatter = (o) -> {
             return (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME
                 .format((ZonedDateTime) o) : String.valueOf(o);
@@ -126,8 +138,9 @@ public class TemplateManager {
     }
 
     public String renderTemplate(Event event, TemplateResource templateResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-        //FIXME add here cascading logic for finding the template
-        return renderTemplate(templateResource, model, locale, templateOutput);
+        return uploadedResourceManager.findCascading(event.getOrganizationId(), event.getId(), templateResource.getSavedName(locale))
+            .map(resource -> render(new ByteArrayResource(resource), model, locale, templateOutput))
+            .orElseGet(() -> renderTemplate(templateResource, model, locale, templateOutput));
     }
 
     public String renderString(String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {

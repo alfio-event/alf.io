@@ -52,15 +52,13 @@ import org.springframework.util.StreamUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 @Transactional
@@ -231,6 +229,22 @@ public class UploadedResourceManager {
         } catch (IOException e) {
             log.error("error while processing image: ", e);
             return file.getAttributes();
+        }
+    }
+
+    public Optional<byte[]> findCascading(int organizationId, int eventId, String savedName) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        if(hasResource(organizationId, eventId, savedName)) {
+            outputResource(organizationId, eventId, savedName, baos);
+            return Optional.of(baos.toByteArray());
+        } else if (hasResource(organizationId, savedName)) {
+            outputResource(organizationId, savedName, baos);
+            return Optional.of(baos.toByteArray());
+        } else if (hasResource(savedName)) {
+            outputResource(savedName, baos);
+            return Optional.of(baos.toByteArray());
+        } else {
+            return Optional.empty();
         }
     }
 }

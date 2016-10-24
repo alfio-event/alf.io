@@ -1,0 +1,7 @@
+<div class="page-header">
+    <h2>Resources</h2>
+</div>
+
+<ul>
+    <li ng-repeat="templateName in $ctrl.availableTemplates"><a ui-sref="events.single.edit-resources({event: $ctrl.event.shortName, resourceName: templateName})">{{templateName}}</a></li>
+</ul>

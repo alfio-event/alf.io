@@ -6,6 +6,7 @@
     <h4 class="text-muted">{{event.shortDescription}}</h4>
     <div data-ng-if="isInternal(event)" class="visible-xs visible-sm">
         <span><button class="btn btn-primary" type="button" data-ng-click="openFieldSelectionModal()" ><i class="fa fa-download"></i> download attendees' data</button></span>
+        <span><a class="btn btn-warning" data-ui-sref="events.single.show-resources({eventName: event.shortName})"><i class="fa fa-file-text-o" aria-hidden="true"></i> show/edit email and ticket templates</a></span>
         <span><a class="btn btn-warning" data-ui-sref="events.single.compose-custom-message({eventName: event.shortName})"><i class="fa fa-envelope"></i> send a message to attendees</a></span>
         <waiting-queue-display-counter data-event="event"></waiting-queue-display-counter>
         <span><a class="btn btn-warning" data-ng-click="downloadSponsorsScan()" ><i class="fa fa-download"></i> download sponsors scan</a></span>

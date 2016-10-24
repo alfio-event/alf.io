@@ -110,6 +110,21 @@
                 data: {
                     view: 'WAITING_QUEUE'
                 }
+            }).state('events.single.show-resources', {
+                url: '/show-resources',
+                template: '<resources-show event="ctrl.event"></resources-show>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                },
+                controllerAs: 'ctrl'
+            }).state('events.single.edit-resources', {
+                url: '/show-resources/:resourceName/',
+                template: '<resources-edit event="ctrl.event" resource-name="ctrl.resourceName"></resources-show>',
+                controller: function(getEvent, $state) {
+                    this.event = getEvent.data.event;
+                    this.resourceName = $state.params.resourceName;
+                },
+                controllerAs: 'ctrl'
             });
     });
 

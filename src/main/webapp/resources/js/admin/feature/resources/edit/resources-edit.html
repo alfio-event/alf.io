@@ -1,0 +1,23 @@
+<div class="page-header">
+    <h2>Edit resource: {{$ctrl.resourceName}}</h2>
+</div>
+
+<div class="row">
+    <div class="col-xs-12">
+        <uib-tabset>
+            <uib-tab data-ng-repeat="locale in $ctrl.locales">
+                <tab-heading>{{locale.locale}}</tab-heading>
+                <form ng-submit="$ctrl.saveFor(locale.locale)">
+                    <div class="form-group">
+                        <label for="resource-{{locale.locale}}">Resource</label>
+                        <textarea id="resource-{{locale.locale}}" ng-model="$ctrl.resources[locale.locale]" rows="20" class="form-control"></textarea>
+                    </div>
+                    <div class="pull-right">
+                        <button type="button" class="btn btn-lg btn-warning" ng-click="$ctrl.deleteFor(locale.locale)">Delete</button>
+                        <button type="submit" class="btn btn-lg btn-default">Save</button>
+                    </div>
+                </form>
+            </uib-tab>
+        </uib-tabset>
+    </div>
+</div>

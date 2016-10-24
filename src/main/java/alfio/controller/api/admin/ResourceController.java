@@ -44,6 +44,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -125,21 +127,33 @@ public class ResourceController {
     //------------------
 
     @RequestMapping(value = "/resource/{name}/metadata", method = RequestMethod.GET)
-    public UploadedResource getMetadata(@PathVariable("name") String name, Principal principal) {
+    public ResponseEntity<UploadedResource> getMetadata(@PathVariable("name") String name, Principal principal) {
         checkAccess(principal);
-        return uploadedResourceManager.get(name);
+        if (uploadedResourceManager.hasResource(name)) {
+            return new ResponseEntity<>(uploadedResourceManager.get(name), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     @RequestMapping(value = "/resource-organization/{organizationId}/{name}/metadata", method = RequestMethod.GET)
-    public UploadedResource getMetadata(@PathVariable("organizationId") int organizationId, @PathVariable("name") String name, Principal principal) {
+    public ResponseEntity<UploadedResource> getMetadata(@PathVariable("organizationId") int organizationId, @PathVariable("name") String name, Principal principal) {
         checkAccess(organizationId, principal);
-        return uploadedResourceManager.get(organizationId, name);
+        if (uploadedResourceManager.hasResource(organizationId, name)) {
+            return new ResponseEntity<>(uploadedResourceManager.get(organizationId, name), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     @RequestMapping(value = "/resource-event/{organizationId}/{eventId}/{name}/metadata", method = RequestMethod.GET)
-    public UploadedResource getMetadata(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId, @PathVariable("name") String name, Principal principal) {
+    public ResponseEntity<UploadedResource> getMetadata(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId, @PathVariable("name") String name, Principal principal) {
         checkAccess(organizationId, eventId, principal);
-        return uploadedResourceManager.get(organizationId, eventId, name);
+        if (uploadedResourceManager.hasResource(organizationId, eventId, name)) {
+            return new ResponseEntity<>(uploadedResourceManager.get(organizationId, eventId, name), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     //------------------
@@ -163,7 +177,7 @@ public class ResourceController {
     }
 
     //------------------
-    @RequestMapping(value = "/resource/{name}", method = RequestMethod.GET)
+    @RequestMapping(value = "/resource/{name:.*}", method = RequestMethod.GET)
     public void outputContent(@PathVariable("name") String name, Principal principal, HttpServletResponse response) throws IOException {
         checkAccess(principal);
         UploadedResource metadata = uploadedResourceManager.get(name);
@@ -174,7 +188,7 @@ public class ResourceController {
         }
     }
 
-    @RequestMapping(value = "/resource-organization/{organizationId}/{name}", method = RequestMethod.GET)
+    @RequestMapping(value = "/resource-organization/{organizationId}/{name:.*}", method = RequestMethod.GET)
     public void outputContent(@PathVariable("organizationId") int organizationId, @PathVariable("name") String name, Principal principal, HttpServletResponse response) throws IOException {
         checkAccess(organizationId, principal);
         UploadedResource metadata = uploadedResourceManager.get(organizationId, name);
@@ -185,7 +199,7 @@ public class ResourceController {
         }
     }
 
-    @RequestMapping(value = "/resource-event/{organizationId}/{eventId}/{name}", method = RequestMethod.GET)
+    @RequestMapping(value = "/resource-event/{organizationId}/{eventId}/{name:.*}", method = RequestMethod.GET)
     public void outputContent(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId, @PathVariable("name") String name, Principal principal, HttpServletResponse response) throws IOException {
         checkAccess(organizationId, eventId, principal);
         UploadedResource metadata = uploadedResourceManager.get(organizationId, eventId, name);
@@ -198,19 +212,19 @@ public class ResourceController {
 
     //------------------
 
-    @RequestMapping(value = "/resource/{name}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/resource/{name:.*}", method = RequestMethod.DELETE)
     public void delete(@PathVariable("name") String name, Principal principal) {
         checkAccess(principal);
         uploadedResourceManager.deleteResource(name);
     }
 
-    @RequestMapping(value = "/resource-organization/{organizationId}/{name}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/resource-organization/{organizationId}/{name:.*}", method = RequestMethod.DELETE)
     public void delete(@PathVariable("organizationId") int organizationId, @PathVariable("name") String name, Principal principal) {
         checkAccess(organizationId, principal);
         uploadedResourceManager.deleteResource(organizationId, name);
     }
 
-    @RequestMapping(value = "/resource-event/{organizationId}/{eventId}/{name}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/resource-event/{organizationId}/{eventId}/{name:.*}", method = RequestMethod.DELETE)
     public void delete(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId, @PathVariable("name") String name, Principal principal) {
         checkAccess(organizationId, eventId, principal);
         uploadedResourceManager.deleteResource(organizationId, eventId, name);
