@@ -22,8 +22,8 @@ import alfio.manager.i18n.I18nManager;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.Ticket;
+import alfio.model.result.ValidationResult;
 import alfio.util.TemplateManager;
-import alfio.util.ValidationResult;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -91,7 +91,7 @@ public class ReservationApiController {
         if(validationResult.isPresent() && validationResult.get().isSuccess()) {
             result.put("partial", templateManager.renderServletContextResource("/WEB-INF/templates/event/assign-ticket-result.ms", model.asMap(), request, TemplateManager.TemplateOutput.HTML));
         }
-        result.put("validationResult", validationResult.orElse(ValidationResult.failed(new ValidationResult.ValidationError("fullName", "error.fullname"))));
+        result.put("validationResult", validationResult.orElse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("fullName", "error.fullname"))));
         return result;
     }
 }

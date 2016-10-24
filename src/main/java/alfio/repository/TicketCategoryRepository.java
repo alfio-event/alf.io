@@ -74,4 +74,11 @@ public interface TicketCategoryRepository {
 
     @Query("update ticket_category set inception = :inception, expiration = :expiration where id = :id")
     int fixDates(@Bind("id") int id, @Bind("inception") ZonedDateTime inception, @Bind("expiration") ZonedDateTime expiration);
+
+    default int getTicketAllocation(int eventId) {
+        return findByEventId(eventId).stream()
+            .filter(TicketCategory::isBounded)
+            .mapToInt(TicketCategory::getMaxTickets)
+            .sum();
+    }
 }

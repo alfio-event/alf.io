@@ -19,9 +19,9 @@ package alfio.controller.api;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.manager.WaitingQueueManager;
 import alfio.model.Event;
+import alfio.model.result.ValidationResult;
 import alfio.repository.EventRepository;
 import alfio.util.TemplateManager;
-import alfio.util.ValidationResult;
 import alfio.util.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
@@ -65,7 +65,7 @@ public class WaitingQueueApiController {
         Map<String, Object> result = new HashMap<>();
         if(!optional.isPresent()) {
             bindingResult.reject("");
-            result.put("validationResult", ValidationResult.failed(new ValidationResult.ValidationError("shortName", "error.shortName")));
+            result.put("validationResult", ValidationResult.failed(new ValidationResult.ErrorDescriptor("shortName", "error.shortName")));
             return result;
         }
 

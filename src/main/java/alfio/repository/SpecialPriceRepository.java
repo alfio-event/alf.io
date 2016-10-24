@@ -34,6 +34,9 @@ public interface SpecialPriceRepository {
     @Query("select * from special_price where ticket_category_id = :ticketCategoryId and status = 'FREE'")
     List<SpecialPrice> findActiveByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
 
+    @Query("select * from special_price where ticket_category_id = :ticketCategoryId and status = 'FREE' and recipient_name is null and recipient_email is null")
+    List<SpecialPrice> findActiveNotAssignedByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
+
     @Query("update special_price set sent_ts = :timestamp, recipient_name = :recipientName, recipient_email = :recipientAddress where code = :code")
     int markAsSent(@Bind("timestamp") ZonedDateTime timestamp, @Bind("recipientName") String recipientName, @Bind("recipientAddress") String recipientAddress, @Bind("code") String code);
 

@@ -21,6 +21,7 @@ import alfio.model.AdditionalServiceText;
 import alfio.model.ContentLanguage;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
+import alfio.model.result.ValidationResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

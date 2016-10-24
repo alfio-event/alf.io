@@ -24,6 +24,7 @@ import alfio.model.TicketFieldConfiguration;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
+import alfio.model.result.ValidationResult;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -119,7 +120,7 @@ public final class Validator {
     public static ValidationResult evaluateValidationResult(Errors errors) {
         if (errors.hasFieldErrors()) {
             return ValidationResult.failed(errors.getFieldErrors()
-                    .stream().map(ValidationResult.ValidationError::fromFieldError)
+                    .stream().map(ValidationResult.ErrorDescriptor::fromFieldError)
                     .collect(Collectors.toList()));
         }
         return ValidationResult.success();

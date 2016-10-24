@@ -27,6 +27,8 @@ import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketFieldConfiguration.Context;
 import alfio.model.modification.*;
 import alfio.model.modification.EventModification.AdditionalField;
+import alfio.model.result.ErrorCode;
+import alfio.model.result.Result;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
@@ -63,6 +65,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static alfio.util.EventUtil.*;
+import static alfio.util.OptionalWrapper.optionally;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
@@ -302,35 +305,73 @@ public class EventManager {
         }
     }
 
+    /**
+     * This method has been modified to use the new Result<T> mechanism.
+     * It will be replaced by {@link #insertCategory(Event, TicketCategoryModification, String)} in the next releases
+     */
     public void insertCategory(int eventId, TicketCategoryModification tcm, String username) {
         final Event event = eventRepository.findById(eventId);
-        checkOwnership(event, username, event.getOrganizationId());
-        int sum = ticketCategoryRepository.findByEventId(eventId).stream()
-                .filter(IS_CATEGORY_BOUNDED)
-                .mapToInt(TicketCategory::getMaxTickets)
-                .sum();
-        int notBoundedTickets = ticketRepository.countFreeTicketsForUnbounded(eventId);
-        int requestedTickets = tcm.isBounded() ? tcm.getMaxTickets() : 1;
-        Validate.isTrue(sum + requestedTickets <= event.getAvailableSeats(), "Not enough seats");
-        Validate.isTrue(requestedTickets <= notBoundedTickets, "All the tickets have already been assigned to a category. Try increasing the total seats number.");
-        Validate.isTrue(tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), "expiration must be before the end of the event");
-        insertCategory(tcm, event);
+        Result<Integer> result = insertCategory(event, tcm, username);
+        failIfError(result);
     }
 
+    public Result<Integer> insertCategory(Event event, TicketCategoryModification tcm, String username) {
+        return optionally(() -> {
+            checkOwnership(event, username, event.getOrganizationId());
+            return true;
+        }).map(b -> {
+            int eventId = event.getId();
+            int sum = ticketCategoryRepository.getTicketAllocation(eventId);
+            int notBoundedTickets = ticketRepository.countFreeTicketsForUnbounded(eventId);
+            int requestedTickets = tcm.isBounded() ? tcm.getMaxTickets() : 1;
+            Validate.isTrue(sum + requestedTickets <= event.getAvailableSeats(), "Not enough seats");
+            Validate.isTrue(requestedTickets <= notBoundedTickets, "All the tickets have already been assigned to a category. Try increasing the total seats number.");
+            Validate.isTrue(tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), "expiration must be before the end of the event");
+            return new Result.Builder<>(() -> insertCategory(tcm, event))
+                .ifConditionMet(() -> sum + requestedTickets <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
+                .ifConditionMet(() -> requestedTickets <= notBoundedTickets, ErrorCode.CategoryError.ALL_TICKETS_ASSIGNED)
+                .ifConditionMet(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
+                .build();
+        }).orElseGet(() -> Result.error(Collections.singletonList(ErrorCode.EventError.ACCESS_DENIED)));
+    }
+
+    /**
+     * This method has been modified to use the new Result<T> mechanism.
+     * It will be replaced by {@link #insertCategory(Event, TicketCategoryModification, String)} in the next releases
+     */
     public void updateCategory(int categoryId, int eventId, TicketCategoryModification tcm, String username) {
         final Event event = eventRepository.findById(eventId);
         checkOwnership(event, username, event.getOrganizationId());
+        Result<TicketCategory> result = updateCategory(categoryId, event, tcm, username);
+        failIfError(result);
+    }
+
+    private <T> void failIfError(Result<T> result) {
+        if(!result.isSuccess()) {
+            Optional<ErrorCode> firstError = result.getErrors().stream().findFirst();
+            if(firstError.isPresent()) {
+                throw new IllegalArgumentException(firstError.get().getDescription());
+            }
+            throw new IllegalArgumentException("unknown error");
+        }
+    }
+
+    public Result<TicketCategory> updateCategory(int categoryId, Event event, TicketCategoryModification tcm, String username) {
+        checkOwnership(event, username, event.getOrganizationId());
+        int eventId = event.getId();
         final List<TicketCategory> categories = ticketCategoryRepository.findByEventId(eventId);
-        final TicketCategory existing = categories.stream().filter(tc -> tc.getId() == categoryId).findFirst().orElseThrow(IllegalArgumentException::new);
-        Validate.isTrue(tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), "expiration must be before the end of the event");
-        Validate.isTrue(tcm.getMaxTickets() - existing.getMaxTickets() + categories.stream().mapToInt(TicketCategory::getMaxTickets).sum() <= event.getAvailableSeats(), "not enough seats");
-        if((tcm.isTokenGenerationRequested() ^ existing.isAccessRestricted()) && ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) > 0) {
-            throw new IllegalStateException("cannot update the category. There are tickets already sold.");
-        }
-        if(tcm.isBounded() ^ existing.isBounded()) {
-            throw new IllegalStateException("Bounded flag modification not yet implemented.");
-        }
-        updateCategory(tcm, event.getVat(), event.isVatIncluded(), event.isFreeOfCharge(), event.getZoneId(), event);
+        return categories.stream().filter(tc -> tc.getId() == categoryId).findFirst()
+            .map(existing -> new Result.Builder<>(() -> {
+                    updateCategory(tcm, event.getVat(), event.isVatIncluded(), event.isFreeOfCharge(), event.getZoneId(), event);
+                    return ticketCategoryRepository.getById(categoryId, eventId);
+                })
+                .ifConditionMet(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
+                .ifConditionMet(() -> tcm.getMaxTickets() - existing.getMaxTickets() + categories.stream().mapToInt(TicketCategory::getMaxTickets).sum() <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
+                .ifConditionMet(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
+                .ifConditionMet(() -> tcm.isBounded() == existing.isBounded(), ErrorCode.custom("", "Bounded flag modification not yet implemented."))
+                .build()
+             )
+            .orElseGet(() -> Result.error(Collections.singletonList(ErrorCode.CategoryError.NOT_FOUND)));
     }
 
     void fixOutOfRangeCategories(EventModification em, String username, ZoneId zoneId, ZonedDateTime end) {
@@ -450,7 +491,7 @@ public class EventManager {
         });
     }
 
-    private void insertCategory(TicketCategoryModification tc, Event event) {
+    private Integer insertCategory(TicketCategoryModification tc, Event event) {
         ZoneId zoneId = event.getZoneId();
         int eventId = event.getId();
         final int price = evaluatePrice(tc.getPriceInCents(), event.isFreeOfCharge());
@@ -466,7 +507,7 @@ public class EventManager {
         }
 
         insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
-
+        return category.getKey();
     }
 
     private void insertTokens(TicketCategory ticketCategory) {

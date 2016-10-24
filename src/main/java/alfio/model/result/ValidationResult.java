@@ -14,10 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.util;
+package alfio.model.result;
 
 import lombok.Getter;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,29 +28,29 @@ import java.util.List;
 @Getter
 public final class ValidationResult {
 
-    private static final ValidationResult SUCCESS = new ValidationResult(Collections.<ValidationError>emptyList());
+    private static final ValidationResult SUCCESS = new ValidationResult(Collections.<ErrorDescriptor>emptyList());
 
-    private final List<ValidationError> validationErrors;
+    private final List<ErrorDescriptor> errorDescriptors;
     private final int errorCount;
 
-    private ValidationResult(List<ValidationError> validationErrors) {
-        this.validationErrors = validationErrors;
-        this.errorCount = validationErrors.size();
+    private ValidationResult(List<ErrorDescriptor> errorDescriptors) {
+        this.errorDescriptors = errorDescriptors;
+        this.errorCount = errorDescriptors.size();
     }
 
     public static ValidationResult success() {
         return SUCCESS;
     }
 
-    public static ValidationResult failed(List<ValidationError> errors) {
+    public static ValidationResult failed(List<ErrorDescriptor> errors) {
         return new ValidationResult(errors);
     }
 
-    public static ValidationResult failed(ValidationError... errors) {
+    public static ValidationResult failed(ErrorDescriptor... errors) {
         return failed(Arrays.asList(errors));
     }
 
-    public static ValidationResult of(List<ValidationError> errors) {
+    public static ValidationResult of(List<ErrorDescriptor> errors) {
         if(errors.size() > 0) {
             return failed(errors);
         }
@@ -65,9 +66,9 @@ public final class ValidationResult {
 
     public ValidationResult or(ValidationResult second) {
         if(!isSuccess()) {
-            List<ValidationError> joined = new ArrayList<>();
-            joined.addAll(validationErrors);
-            joined.addAll(second.getValidationErrors());
+            List<ErrorDescriptor> joined = new ArrayList<>();
+            joined.addAll(errorDescriptors);
+            joined.addAll(second.getErrorDescriptors());
             return new ValidationResult(joined);
         }
         return second;
@@ -78,17 +79,42 @@ public final class ValidationResult {
     }
 
     @Getter
-    public static final class ValidationError {
+    public static final class ErrorDescriptor implements ErrorCode {
         private final String fieldName;
         private final String message;
+        private final String code;
 
-        public ValidationError(String fieldName, String message) {
-            this.fieldName = fieldName;
-            this.message = message;
+        public ErrorDescriptor(String fieldName, String message) {
+            this(fieldName, message, null);
         }
 
-        public static ValidationError fromFieldError(FieldError fieldError) {
-            return new ValidationError(fieldError.getField(), fieldError.getCode());
+        public ErrorDescriptor(String fieldName, String message, String code) {
+            this.fieldName = fieldName;
+            this.message = message;
+            this.code = code;
+        }
+
+        @Override
+        public String getLocation() {
+            return fieldName;
+        }
+
+        @Override
+        public String getCode() {
+            return "";
+        }
+
+        @Override
+        public String getDescription() {
+            return message;
+        }
+
+        public static ErrorDescriptor fromFieldError(FieldError fieldError) {
+            return new ErrorDescriptor(fieldError.getField(), fieldError.getCode());
+        }
+
+        public static ErrorDescriptor fromObjectError(ObjectError objectError) {
+            return new ErrorDescriptor("", objectError.getObjectName());
         }
     }
 

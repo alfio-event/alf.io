@@ -16,13 +16,13 @@
  */
 package alfio.manager.user;
 
+import alfio.model.result.ValidationResult;
 import alfio.model.user.*;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.PasswordGenerator;
-import alfio.util.ValidationResult;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -154,7 +154,7 @@ public class UserManager {
                 .filter(o -> o.getId() != orgId)
                 .count();
         if(existing > 0) {
-            return ValidationResult.failed(new ValidationResult.ValidationError("name", "There is already another organization with the same name."));
+            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("name", "There is already another organization with the same name."));
         }
         Validate.notBlank(name, "name can't be empty");
         Validate.notBlank(email, "email can't be empty");
@@ -218,11 +218,11 @@ public class UserManager {
                 .filter(u -> u.getId() != userId)
                 .count();
         if(existing > 0) {
-            return ValidationResult.failed(new ValidationResult.ValidationError("username", "There is already another user with the same username."));
+            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("username", "There is already another user with the same username."));
         }
         return ValidationResult.of(Stream.of(Pair.of(firstName, "firstName"), Pair.of(lastName, "lastName"), Pair.of(emailAddress, "emailAddress"))
             .filter(p -> StringUtils.isEmpty(p.getKey()))
-            .map(p -> new ValidationResult.ValidationError(p.getKey(), p.getValue() + " is required"))
+            .map(p -> new ValidationResult.ErrorDescriptor(p.getKey(), p.getValue() + " is required"))
             .collect(toList()));
     }
 
@@ -231,16 +231,16 @@ public class UserManager {
             .stream()
             .findFirst()
             .map(u -> {
-                List<ValidationResult.ValidationError> errors = new ArrayList<>();
+                List<ValidationResult.ErrorDescriptor> errors = new ArrayList<>();
                 Optional<String> password = userRepository.findPasswordByUsername(username);
                 if(!password.filter(p -> passwordEncoder.matches(oldPassword, p)).isPresent()) {
-                    errors.add(new ValidationResult.ValidationError("alfio.old-password-invalid", "wrong password"));
+                    errors.add(new ValidationResult.ErrorDescriptor("alfio.old-password-invalid", "wrong password"));
                 }
                 if(!PasswordGenerator.isValid(newPassword)) {
-                    errors.add(new ValidationResult.ValidationError("alfio.new-password-invalid", "new password is not strong enough"));
+                    errors.add(new ValidationResult.ErrorDescriptor("alfio.new-password-invalid", "new password is not strong enough"));
                 }
                 if(!StringUtils.equals(newPassword, newPasswordConfirm)) {
-                    errors.add(new ValidationResult.ValidationError("alfio.new-password-does-not-match", "new password has not been confirmed"));
+                    errors.add(new ValidationResult.ErrorDescriptor("alfio.new-password-does-not-match", "new password has not been confirmed"));
                 }
                 return ValidationResult.of(errors);
             })

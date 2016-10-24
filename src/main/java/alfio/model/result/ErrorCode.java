@@ -1,0 +1,66 @@
+/**
+ * This file is part of alf.io.
+ *
+ * alf.io is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * alf.io is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package alfio.model.result;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+public interface ErrorCode {
+
+    default String getLocation() {
+        return "";
+    }
+
+    String getCode();
+    String getDescription();
+
+    @RequiredArgsConstructor
+    @Getter
+    enum CategoryError implements ErrorCode {
+        NOT_FOUND("not_found", "Category not found"),
+        NOT_ENOUGH_SEATS("not_enough_tickets", "Not enough seats"),
+        ALL_TICKETS_ASSIGNED("all_tickets_assigned", "All the tickets have already been assigned to a category. Try increasing the total seats number."),
+        EXPIRATION_AFTER_EVENT_END("expiration_after_event_end", "expiration must be before the end of the event");
+
+        private final String code;
+        private final String description;
+    }
+
+    @RequiredArgsConstructor
+    @Getter
+    enum EventError implements ErrorCode {
+        NOT_FOUND("not_found", "No event has been found"),
+        ACCESS_DENIED("access_denied", "Access is denied");
+
+        private final String code;
+        private final String description;
+    }
+
+    static ErrorCode custom(String code, String description) {
+        return new ErrorCode() {
+            @Override
+            public String getCode() {
+                return code;
+            }
+
+            @Override
+            public String getDescription() {
+                return description;
+            }
+        };
+    }
+}

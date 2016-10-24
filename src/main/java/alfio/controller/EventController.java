@@ -29,6 +29,7 @@ import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.support.LocationDescriptor;
+import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
@@ -36,7 +37,6 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.EventUtil;
-import alfio.util.ValidationResult;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -153,7 +153,7 @@ public class EventController {
 
         Optional<Event> optional = eventRepository.findOptionalByShortName(eventName);
         if(!optional.isPresent()) {
-            return ValidationResult.failed(new ValidationResult.ValidationError("event", ""));
+            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("event", ""));
         }
         Event event = optional.get();
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
@@ -163,17 +163,17 @@ public class EventController {
         
         if(specialCode.isPresent()) {
             if (!optionally(() -> eventManager.getTicketCategoryById(specialCode.get().getTicketCategoryId(), event.getId())).isPresent()) {
-                return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
+                return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
             }
             
             if (specialCode.get().getStatus() != SpecialPrice.Status.FREE) {
-                return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
+                return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
             }
             
         } else if (promotionCodeDiscount.isPresent() && !promotionCodeDiscount.get().isCurrentlyValid(event.getZoneId(), now)) {
-            return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
+            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
         } else if(!specialCode.isPresent() && !promotionCodeDiscount.isPresent()) {
-            return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
+            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
         }
 
         if(maybeSpecialCode.isPresent() && !model.asMap().containsKey("hasErrors")) {
@@ -184,7 +184,7 @@ public class EventController {
             }
             return ValidationResult.success();
         }
-        return ValidationResult.failed(new ValidationResult.ValidationError("promoCode", ""));
+        return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
     }
 
     @RequestMapping(value = "/event/{eventName}", method = {RequestMethod.GET, RequestMethod.HEAD})
