@@ -1,5 +1,38 @@
 # Change Log
 
+## [1.7.1](https://github.com/exteso/alf.io/tree/1.7.1) (2016-02-16)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.7...1.7.1)
+
+**Fixed bugs:**
+
+- regression: cloud foundry support is broken [\#101](https://github.com/exteso/alf.io/issues/101)
+
+## [1.7](https://github.com/exteso/alf.io/tree/1.7) (2016-02-13)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.6.2...1.7)
+
+**Implemented enhancements:**
+
+- mysql porting [\#90](https://github.com/exteso/alf.io/issues/90)
+
+**Closed issues:**
+
+- simplify/fix email handling [\#93](https://github.com/exteso/alf.io/issues/93)
+
+## [1.6.2](https://github.com/exteso/alf.io/tree/1.6.2) (2016-01-28)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.6.1...1.6.2)
+
+**Closed issues:**
+
+- Video source is empty in online checkin [\#96](https://github.com/exteso/alf.io/issues/96)
+- Search [\#94](https://github.com/exteso/alf.io/issues/94)
+
+**Merged pull requests:**
+
+- Dutch lang [\#95](https://github.com/exteso/alf.io/pull/95) ([mg-1999](https://github.com/mg-1999))
+
+## [1.6.1](https://github.com/exteso/alf.io/tree/1.6.1) (2015-11-28)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.6...1.6.1)
+
 ## [1.6](https://github.com/exteso/alf.io/tree/1.6) (2015-11-22)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.5.2...1.6)
 
@@ -9,14 +42,16 @@
 - Create link to external events [\#85](https://github.com/exteso/alf.io/issues/85)
 - GUI support for multitenancy [\#62](https://github.com/exteso/alf.io/issues/62)
 - support generic input/textarea field when assigning a ticket [\#46](https://github.com/exteso/alf.io/issues/46)
-- lock the ticket during check-in process [\#89](https://github.com/exteso/alf.io/issues/89)
-- Add "express checkout" option [\#55](https://github.com/exteso/alf.io/issues/55)
 
 **Fixed bugs:**
 
 - PostSQL error [\#82](https://github.com/exteso/alf.io/issues/82)
 - Cant load scan page video source [\#79](https://github.com/exteso/alf.io/issues/79)
 
+**Closed issues:**
+
+- lock the ticket during check-in process [\#89](https://github.com/exteso/alf.io/issues/89)
+- Add "express checkout" option [\#55](https://github.com/exteso/alf.io/issues/55)
 
 ## [1.5.2](https://github.com/exteso/alf.io/tree/1.5.2) (2015-10-20)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.5.1...1.5.2)

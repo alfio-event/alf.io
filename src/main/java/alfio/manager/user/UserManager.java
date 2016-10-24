@@ -32,7 +32,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
-import org.springframework.validation.ValidationUtils;
 
 import java.util.*;
 import java.util.function.Function;
@@ -88,7 +87,7 @@ public class UserManager {
     public Collection<Role> getAvailableRoles(String username) {
         User user = findUserByUsername(username);
         if(isAdmin(user)) {
-            return EnumSet.of(Role.OWNER, Role.OPERATOR);
+            return EnumSet.of(Role.OWNER, Role.OPERATOR, Role.SPONSOR);
         }
         if(isOwner(user)) {
             return EnumSet.of(Role.OPERATOR);

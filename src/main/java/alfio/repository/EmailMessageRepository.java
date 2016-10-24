@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,7 +35,7 @@ public interface EmailMessageRepository {
      * @param checksum
      * @return
      */
-    @Query("select id, event_id, status, recipient, subject, message, null as attachments, checksum, request_ts, sent_ts from email_message where event_id = :eventId and checksum = :checksum limit 1")
+    @Query("select id, event_id, status, recipient, subject, message, null as attachments, checksum, request_ts, sent_ts, attempts from email_message where event_id = :eventId and checksum = :checksum limit 1")
     Optional<EmailMessage> findByEventIdAndChecksum(@Bind("eventId") int eventId, @Bind("checksum") String checksum);
 
     @Query("insert into email_message (event_id, status, recipient, subject, message, attachments, checksum, request_ts) values(:eventId, 'WAITING', :recipient, :subject, :message, :attachments, :checksum, :timestamp)")
@@ -53,20 +54,24 @@ public interface EmailMessageRepository {
     @Query("update email_message set status = :status where id = :messageId and event_id = :eventId")
     int updateStatus(@Bind("eventId") int eventId, @Bind("status") String status, @Bind("messageId") int messageId);
 
-    @Query("update email_message set status = 'RETRY', request_ts = :requestTs where status in ('WAITING', 'ERROR', 'RETRY') and request_ts > :expiration")
-    int updateStatusForRetry(@Bind("requestTs") ZonedDateTime now, @Bind("expiration") ZonedDateTime expiration);
+    @Query("update email_message set status = :status, attempts = :attempts where id = :messageId and status in (:expectedStatuses) ")
+    int updateStatusAndAttempts(@Bind("messageId") int messageId, @Bind("status") String status, @Bind("attempts") int attempts, @Bind("expectedStatuses") List<String> expectedStatuses);
 
-    @Query("select id, event_id, status, recipient, subject, message, attachments, checksum, request_ts, sent_ts from email_message where event_id = :eventId and status = 'WAITING' for update")
-    List<EmailMessage> loadWaitingForProcessing(@Bind("eventId") int eventId);
+    @Query("update email_message set status = :status, attempts = :attempts, request_ts = :nextDate where id = :messageId and status in (:expectedStatuses) ")
+    int updateStatusAndAttempts(@Bind("messageId") int messageId, @Bind("status") String status, @Bind("nextDate") Date date, @Bind("attempts") int attempts, @Bind("expectedStatuses") List<String> expectedStatuses);
 
-    @Query("select id, event_id, status, recipient, subject, message, attachments, checksum, request_ts, sent_ts from email_message where event_id = :eventId and status = 'RETRY' for update")
-    List<EmailMessage> loadRetryForProcessing(@Bind("eventId") int eventId);
+
+    @Query("select id from email_message where event_id = :eventId and (status = 'WAITING' or status = 'RETRY') and request_ts <= :date for update")
+    List<Integer> loadIdsWaitingForProcessing(@Bind("eventId") int eventId, @Bind("date") Date date);
 
     @Query("update email_message set status = 'SENT', sent_ts = :sentTimestamp where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatusToSent(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("sentTimestamp") ZonedDateTime sentTimestamp, @Bind("expectedStatuses") List<String> expectedStatuses);
 
     @Query("select * from email_message where event_id = :eventId")
     List<EmailMessage> findByEventId(@Bind("eventId") int eventId);
+
+    @Query("select * from email_message where id = :id")
+    EmailMessage findById(@Bind("id") int id);
 
     @Query("select * from email_message where id = :messageId and event_id = :eventId")
     Optional<EmailMessage> findByEventIdAndMessageId(@Bind("eventId") int eventId, @Bind("messageId") int messageId);

@@ -33,7 +33,7 @@ import com.google.gson.*;
 import com.lowagie.text.DocumentException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.codec.Hex;
@@ -136,27 +136,23 @@ public class NotificationManager {
     }
 
     void sendWaitingMessages() {
+        Date now = new Date();
         eventRepository.findAllActiveIds(ZonedDateTime.now(UTC))
             .stream()
-            .flatMap(id -> emailMessageRepository.loadWaitingForProcessing(id).stream())
+            .flatMap(id -> emailMessageRepository.loadIdsWaitingForProcessing(id, now).stream())
             .distinct()
             .forEach(this::processMessage);
     }
 
-    void processNotSentEmail() {
-        ZonedDateTime now = ZonedDateTime.now(UTC);
-        ZonedDateTime expiration = now.minusMinutes(5);
-        eventRepository.findAllActiveIds(now).stream()
-            .map(id -> Pair.of(id, tx.execute(status -> emailMessageRepository.updateStatusForRetry(now, expiration))))
-            .filter(p -> p.getValue() > 0)
-            .forEach(p -> {
-                int eventId = p.getKey();
-                log.debug("found {} expired messages for event {}", p.getValue(), eventId);
-                emailMessageRepository.loadRetryForProcessing(eventId).forEach(this::processMessage);
-            });
-    }
+    private void processMessage(int messageId) {
+        EmailMessage message = emailMessageRepository.findById(messageId);
+        if(message.getAttempts() >= 10) { //FIXME move to conf
+            tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(messageId, ERROR.name(), message.getAttempts(), Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
+            log.warn("Message with id " + messageId + " will be discarded");
+            return;
+        }
 
-    private void processMessage(EmailMessage message) {
+
         try {
             int result = tx.execute(status -> emailMessageRepository.updateStatus(message.getEventId(), message.getChecksum(), IN_PROCESS.name(), Arrays.asList(WAITING.name(), RETRY.name())));
             if(result > 0) {
@@ -168,6 +164,7 @@ public class NotificationManager {
                 log.debug("no messages have been updated on DB for the following criteria: eventId: {}, checksum: {}", message.getEventId(), message.getChecksum());
             }
         } catch(Exception e) {
+            tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(message.getId(), RETRY.name(), DateUtils.addMinutes(new Date(), message.getAttempts() + 1), message.getAttempts() + 1, Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
             log.warn("could not send message: ",e);
         }
     }

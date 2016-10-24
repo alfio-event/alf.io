@@ -43,10 +43,10 @@ please be aware that since this file could contain sensitive information (such a
 
 
 ## Docker images
-Alf.io is also offered has a 3 tier application using 3 docker images:
+Alf.io is also offered as a 3 tier application using 3 docker images:
 
  * postgres --> docker official image for PostgreSQL database
- * exteso/alfio-web --> application runtime. Docker image is generate from this project (see below). 
+ * exteso/alfio-web --> application runtime. Docker image is generated from this project (see below). 
  * tutum/haproxy --> front layer proxy, force redirect to https and support load-balancing if multiple alfio-web instances are running
 
 ### Generate a new version of the exteso/alfio-web docker image
@@ -58,7 +58,7 @@ Alf.io is also offered has a 3 tier application using 3 docker images:
 TODO
 
 ### Launch alf.io container instances
- * define local directory for database data (on docker host, in order for data to survive postgres image restarts):  /path/to/local/data = /data/postgres/alfio
+ * define local directory for database data (on docker host, for data to survive postgres image restarts):  /path/to/local/data = /data/postgres/alfio
  * define a local directory for logs: /path/to/logs = /home/alfio/logs
  * docker run --name alfio-db -e POSTGRES_DB=postgres -e POSTGRES_USERNAME=postgres -e POSTGRES_PASSWORD=alfiopassword --restart=always -d -v /path/to/local/data:/var/lib/postgresql/data postgres
     * Note: on Mac volumes don't work (see https://jhipster.github.io/installation.html for a possible workaround), launch the above command without the -v parameter (data are lost at every restart)
@@ -70,5 +70,5 @@ TODO
  * Copy admin password in a secure place
  * Get IP of your docker container: (only on Mac/Windows, on linux the proxy will bind directly on your public IP)
     * "boot2docker ip" on Mac/Windows
- * Open browser at: https://<DOCKER_IP>/admin
+ * Open browser at: https://DOCKER_IP/admin
  * Insert user admin and the password you just copied 

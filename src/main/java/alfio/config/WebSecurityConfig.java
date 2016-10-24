@@ -45,10 +45,10 @@ public class WebSecurityConfig {
     public static final String ADMIN_API = "/admin/api";
     public static final String CSRF_SESSION_ATTRIBUTE = "CSRF_SESSION_ATTRIBUTE";
     public static final String CSRF_PARAM_NAME = "_csrf";
+    public static final String OPERATOR = "OPERATOR";
+    public static final String SPONSOR = "SPONSOR";
     private static final String ADMIN = "ADMIN";
     private static final String OWNER = "OWNER";
-    private static final String OPERATOR = "OPERATOR";
-    private static final String SPONSOR = "SPONSOR";
 
 
 
@@ -84,6 +84,7 @@ public class WebSecurityConfig {
             .authorizeRequests()
             .antMatchers(ADMIN_API + "/check-in/**").hasRole(OPERATOR)
             .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SPONSOR)
+            .antMatchers(ADMIN_API + "/user-type").hasAnyRole(OPERATOR, SPONSOR)
             .antMatchers(ADMIN_API + "/**").denyAll()
             .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
             .antMatchers("/**").authenticated()

@@ -27,10 +27,11 @@ import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TicketDecorator;
-import alfio.manager.CheckInManager;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.support.CheckInStatus;
+import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
@@ -42,7 +43,6 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.TemplateManager;
-import com.opencsv.CSVParser;
 import com.opencsv.CSVReader;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
@@ -61,7 +61,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
-import org.springframework.ui.ModelMap;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.support.BindingAwareModelMap;
@@ -80,9 +79,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
-import static alfio.test.util.IntegrationTestUtil.initEvent;
-import static alfio.test.util.IntegrationTestUtil.initSystemProperties;
+import static alfio.test.util.IntegrationTestUtil.*;
 
 /**
  *
@@ -290,15 +287,15 @@ public class ReservationFlowIntegrationTest {
 
         //--- check in sequence
         String ticketCode = ticketDecorator.ticketCode(event.getPrivateKey());
-        CheckInManager.TicketAndCheckInResult ticketAndCheckInResult = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
-        Assert.assertEquals(CheckInManager.CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult.getResult().getStatus());
+        TicketAndCheckInResult ticketAndCheckInResult = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
+        Assert.assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult.getResult().getStatus());
         CheckInApiController.TicketCode tc = new CheckInApiController.TicketCode();
         tc.setCode(ticketCode);
-        Assert.assertEquals(CheckInManager.CheckInStatus.SUCCESS, checkInApiController.checkIn(event.getId(), ticketIdentifier, tc).getResult().getStatus());
+        Assert.assertEquals(CheckInStatus.SUCCESS, checkInApiController.checkIn(event.getId(), ticketIdentifier, tc).getResult().getStatus());
 
 
-        CheckInManager.TicketAndCheckInResult ticketAndCheckInResultOk = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
-        Assert.assertEquals(CheckInManager.CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
+        TicketAndCheckInResult ticketAndCheckInResultOk = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
+        Assert.assertEquals(CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
 
     }
 

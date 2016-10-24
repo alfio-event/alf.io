@@ -82,10 +82,6 @@ public class Jobs {
         notificationManager.sendWaitingMessages();
     }
 
-    public void enqueueNotSentEmail() {
-        notificationManager.processNotSentEmail();
-    }
-
     public void processReleasedTickets() {
         waitingQueueSubscriptionProcessor.handleWaitingTickets();
     }
@@ -172,22 +168,6 @@ public class Jobs {
         public void execute(JobExecutionContext context) throws JobExecutionException {
             log.debug("running job " + getClass().getSimpleName());
             jobs.sendEmails();
-        }
-    }
-
-    @DisallowConcurrentExecution
-    @Log4j2
-    public static class EnqueueNotSentEmail implements Job {
-
-        public static long INTERVAL = ONE_MINUTE;
-
-        @Autowired
-        private Jobs jobs;
-
-        @Override
-        public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.debug("running job " + getClass().getSimpleName());
-            jobs.enqueueNotSentEmail();
         }
     }
 

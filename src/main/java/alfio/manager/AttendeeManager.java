@@ -16,11 +16,15 @@
  */
 package alfio.manager;
 
+import alfio.manager.support.CheckInStatus;
+import alfio.manager.support.DefaultCheckInResult;
+import alfio.manager.support.TicketAndCheckInResult;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.repository.EventRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -35,22 +39,39 @@ public class AttendeeManager {
     private final SponsorScanRepository sponsorScanRepository;
     private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public AttendeeManager(SponsorScanRepository sponsorScanRepository, EventRepository eventRepository, TicketRepository ticketRepository) {
+    public AttendeeManager(SponsorScanRepository sponsorScanRepository,
+                           EventRepository eventRepository,
+                           TicketRepository ticketRepository,
+                           UserRepository userRepository) {
         this.sponsorScanRepository = sponsorScanRepository;
         this.eventRepository = eventRepository;
         this.ticketRepository = ticketRepository;
+        this.userRepository = userRepository;
     }
 
-    public Optional<ZonedDateTime> registerSponsorScan(int eventId, String ticketUid) {
-        Event event = optionally(() -> eventRepository.findById(eventId)).orElseThrow(IllegalArgumentException::new);
-        Ticket ticket = optionally(() -> ticketRepository.findByUUID(ticketUid)).orElseThrow(IllegalArgumentException::new);
-        Optional<ZonedDateTime> existingRegistration = sponsorScanRepository.getRegistrationTimestamp(event.getId(), ticket.getUuid());
-        if(!existingRegistration.isPresent()) {
-            sponsorScanRepository.insert(ZonedDateTime.now(event.getZoneId()), event.getId(), ticket.getUuid());
-            return Optional.empty();
+    public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String username) {
+        int userId = userRepository.getByUsername(username).getId();
+        Optional<Event> maybeEvent = eventRepository.findOptionalByShortName(eventShortName);
+        if(!maybeEvent.isPresent()) {
+            return new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.EVENT_NOT_FOUND, "event not found"));
         }
-        return existingRegistration.map(d -> d.withZoneSameInstant(event.getZoneId()));
+        Event event = maybeEvent.get();
+        Optional<Ticket> maybeTicket = optionally(() -> ticketRepository.findByUUID(ticketUid));
+        if(!maybeTicket.isPresent()) {
+            return new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.TICKET_NOT_FOUND, "ticket not found"));
+        }
+        Ticket ticket = maybeTicket.get();
+        if(ticket.getStatus() != Ticket.TicketStatus.CHECKED_IN) {
+            return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(CheckInStatus.INVALID_TICKET_STATE, "not checked-in"));
+        }
+        Optional<ZonedDateTime> existingRegistration = sponsorScanRepository.getRegistrationTimestamp(userId, event.getId(), ticket.getId());
+        if(!existingRegistration.isPresent()) {
+            sponsorScanRepository.insert(userId, ZonedDateTime.now(event.getZoneId()), event.getId(), ticket.getId());
+        }
+        return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(CheckInStatus.SUCCESS, "success"));
     }
+
 }

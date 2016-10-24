@@ -26,9 +26,9 @@ import java.util.Optional;
 @QueryRepository
 public interface SponsorScanRepository {
 
-    @Query("select creation from sponsor_scan where event_id = :eventId and ticket_id = :ticketId")
-    Optional<ZonedDateTime> getRegistrationTimestamp(@Bind("eventId") int eventId, @Bind("ticketId") String ticketId);
+    @Query("select creation from sponsor_scan where user_id = :userId and event_id = :eventId and ticket_id = :ticketId")
+    Optional<ZonedDateTime> getRegistrationTimestamp(@Bind("userId") int userId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
 
-    @Query("insert into sponsor_scan (creation, event_id, ticket_id) values(:creation, :eventId, :ticketId)")
-    int insert(@Bind("creation") ZonedDateTime creation, @Bind("eventId") int eventId, @Bind("ticketId") String ticketId);
+    @Query("insert into sponsor_scan (user_id, creation, event_id, ticket_id) values(:userId, :creation, :eventId, :ticketId)")
+    int insert(@Bind("userId") int userId, @Bind("creation") ZonedDateTime creation, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
 }

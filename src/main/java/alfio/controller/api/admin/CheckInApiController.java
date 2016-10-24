@@ -17,7 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.CheckInManager;
-import alfio.manager.CheckInManager.TicketAndCheckInResult;
+import alfio.manager.support.TicketAndCheckInResult;
 import alfio.model.FullTicketInfo;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -52,15 +52,32 @@ public class CheckInApiController {
         return checkInManager.evaluateTicketStatus(eventId, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
+    @RequestMapping(value = "/check-in/event/{eventName}/ticket/{ticketIdentifier}", method = GET)
+    public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode) {
+        return checkInManager.evaluateTicketStatus(eventName, ticketIdentifier, Optional.ofNullable(qrCode));
+    }
+
     @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}", method = POST)
     public TicketAndCheckInResult checkIn(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestBody TicketCode ticketCode) {
         return checkInManager.checkIn(eventId, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode));
+    }
+
+    @RequestMapping(value = "/check-in/event/{eventName}/ticket/{ticketIdentifier}", method = POST)
+    public TicketAndCheckInResult checkIn(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestBody TicketCode ticketCode) {
+        return checkInManager.checkIn(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode));
     }
 
     @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/manual-check-in", method = POST)
     public boolean manualCheckIn(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
         log.warn("for event id : {} and ticket : {}, a manual check in has been done", eventId, ticketIdentifier);
         return checkInManager.manualCheckIn(ticketIdentifier);
+    }
+
+    @RequestMapping(value = "/check-in/event/{eventName}/ticket/{ticketIdentifier}/confirm-on-site-payment", method = POST)
+    public TicketAndCheckInResult confirmOnSitePayment(@PathVariable("eventName") String eventName,
+                                                       @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                                       @RequestBody TicketCode ticketCode) {
+        return checkInManager.confirmOnSitePayment(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode));
     }
     
     @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment", method = POST)
