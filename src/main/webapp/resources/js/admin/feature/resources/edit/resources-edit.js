@@ -16,6 +16,7 @@ function ResourcesEditCtrl(ResourceService, EventService) {
 
     ctrl.saveFor = saveFor;
     ctrl.deleteFor = deleteFor;
+    ctrl.resetFor = resetFor;
 
     ctrl.$onInit = function() {
         loadAll()
@@ -31,10 +32,15 @@ function ResourcesEditCtrl(ResourceService, EventService) {
         ResourceService.deleteFile(ctrl.event.organizationId, ctrl.event.id, getFileName(locale)).then(loadAll);
     }
 
+    function resetFor(locale) {
+        ctrl.resources[locale] = ctrl.originalResources[locale] || ctrl.templateBodies[locale];
+    }
+
     function loadAll() {
         ctrl.templateBodies = {};
         ctrl.resources = {};
         ctrl.resourcesMetadata = {};
+        ctrl.originalResources = {};
 
 
         EventService.getSelectedLanguages(ctrl.event.shortName).then(function(lang) {
@@ -54,6 +60,7 @@ function ResourcesEditCtrl(ResourceService, EventService) {
                     ctrl.resourcesMetadata[locale] = res.data;
                     ResourceService.getEventResource(ctrl.event.organizationId, ctrl.event.id, getFileName(locale)).then(function(resource) {
                         ctrl.resources[locale] = resource.data;
+                        ctrl.originalResources[locale] = resource.data;
                     })
                 }, function() {
                     //if there is no file for the given locale, use the template instead
