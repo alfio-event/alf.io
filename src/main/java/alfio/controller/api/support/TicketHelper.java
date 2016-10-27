@@ -214,11 +214,15 @@ public class TicketHelper {
     }
 
     private PartialTicketTextGenerator getOwnerChangeTextBuilder(HttpServletRequest request, Ticket t, Event event) {
-        return TemplateProcessor.buildEmailForOwnerChange(event, t, organizationRepository, ticketReservationManager, templateManager, LocaleUtil.getTicketLanguage(t, request));
+        Organization organization = organizationRepository.getById(event.getOrganizationId());
+        String ticketUrl = ticketReservationManager.ticketUpdateUrl(t.getTicketsReservationId(), event, t.getUuid());
+        return TemplateProcessor.buildEmailForOwnerChange(event, t, organization, ticketUrl, templateManager, LocaleUtil.getTicketLanguage(t, request));
     }
 
     private PartialTicketTextGenerator getConfirmationTextBuilder(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {
-        return TemplateProcessor.buildPartialEmail(event, organizationRepository, ticketReservation, templateManager, ticketReservationManager.ticketUpdateUrl(ticketReservation.getId(), event, ticket.getUuid()), request);
+        Organization organization = organizationRepository.getById(event.getOrganizationId());
+        String ticketUrl = ticketReservationManager.ticketUpdateUrl(ticketReservation.getId(), event, ticket.getUuid());
+        return TemplateProcessor.buildPartialEmail(event, organization, ticketReservation, templateManager, ticketUrl, request);
     }
 
     private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {

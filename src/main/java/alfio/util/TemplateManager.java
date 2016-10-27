@@ -65,7 +65,14 @@ public class TemplateManager {
         REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms", true, "text/plain", TemplateOutput.TEXT),
 
 
-        TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true, "text/plain", TemplateOutput.TEXT),
+        TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true, "text/plain", TemplateOutput.TEXT) {
+
+
+            public Map<String,Object> prepareModel() {
+                Map<String, Object> m  = new HashMap<>();
+                return m;
+            }
+        },
         TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true, "text/plain", TemplateOutput.TEXT),
 
         TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms", true, "text/plain", TemplateOutput.TEXT),
@@ -91,14 +98,16 @@ public class TemplateManager {
             return name() + "_" + locale.getLanguage() + ".ms";
         }
 
-
-
         public boolean overridable() {
             return overridable;
         }
 
         public String classPath() {
             return classPathUrl;
+        }
+
+        public TemplateOutput getTemplateOutput() {
+            return templateOutput;
         }
     }
 

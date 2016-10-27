@@ -71,14 +71,20 @@ public class ResourceController {
     private final UserManager userManager;
     private final EventRepository eventRepository;
     private final MessageSource messageSource;
+    private final TemplateManager templateManager;
 
 
     @Autowired
-    public ResourceController(UploadedResourceManager uploadedResourceManager, UserManager userManager, EventRepository eventRepository, MessageSource messageSource) {
+    public ResourceController(UploadedResourceManager uploadedResourceManager,
+                              UserManager userManager,
+                              EventRepository eventRepository,
+                              MessageSource messageSource,
+                              TemplateManager templateManager) {
         this.uploadedResourceManager = uploadedResourceManager;
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.messageSource = messageSource;
+        this.templateManager = templateManager;
     }
 
     @RequestMapping(value = "/overridable-template/", method = RequestMethod.GET)
@@ -89,8 +95,6 @@ public class ResourceController {
     @RequestMapping(value = "/overridable-template/{name}/{locale}", method = RequestMethod.GET)
     public void getTemplate(@PathVariable("name") TemplateResource name, @PathVariable("locale") String locale, HttpServletResponse response) throws IOException {
         response.setContentType("text/plain");
-        //FIXME need to replace i18n token with translated content!
-        // -> find {{#i18n}} and next matching {{/i18n}}
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try (InputStream is = new ClassPathResource(name.classPath()).getInputStream()) {
             StreamUtils.copy(is, os);
@@ -110,7 +114,10 @@ public class ResourceController {
                                 Principal principal,
                                 HttpServletResponse response) {
 
-        
+
+        Locale loc = Locale.forLanguageTag(locale);
+
+        templateManager.renderString(template.getFileAsString(), null, loc, name.getTemplateOutput());
 
     }
 
