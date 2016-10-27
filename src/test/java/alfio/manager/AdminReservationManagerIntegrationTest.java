@@ -60,7 +60,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @Transactional
-public class CustomReservationManagerIntegrationTest {
+public class AdminReservationManagerIntegrationTest {
 
     @BeforeClass
     public static void initEnv() {
@@ -68,7 +68,7 @@ public class CustomReservationManagerIntegrationTest {
     }
 
     @Autowired
-    private CustomReservationManager customReservationManager;
+    private AdminReservationManager adminReservationManager;
     @Autowired
     private EventManager eventManager;
     @Autowired
@@ -160,7 +160,7 @@ public class CustomReservationManagerIntegrationTest {
         int attendees = AVAILABLE_SEATS;
         List<TicketsInfo> ticketsInfoList = Collections.singletonList(new TicketsInfo(category, generateAttendees(attendees), true));
         AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en");
-        Result<Pair<TicketReservation, List<Ticket>>> result = customReservationManager.createReservation(modification, event.getShortName(), username);
+        Result<Pair<TicketReservation, List<Ticket>>> result = adminReservationManager.createReservation(modification, event.getShortName(), username);
         assertTrue(result.isSuccess());
         Pair<TicketReservation, List<Ticket>> data = result.getData();
         List<Ticket> tickets = data.getRight();
@@ -192,7 +192,7 @@ public class CustomReservationManagerIntegrationTest {
                 return new TicketsInfo(category, attendees, addSeatsIfNotAvailable);
             }).collect(toList());
         AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en");
-        Result<Pair<TicketReservation, List<Ticket>>> result = customReservationManager.createReservation(modification, event.getShortName(), username);
+        Result<Pair<TicketReservation, List<Ticket>>> result = adminReservationManager.createReservation(modification, event.getShortName(), username);
         if(expectSuccess) {
             validateSuccess(bounded, attendeesNr, event, username, existingCategories, result, allAttendees);
         } else {
@@ -219,7 +219,7 @@ public class CustomReservationManagerIntegrationTest {
         for (int i = 0; i < tickets.size(); i++) {
             Attendee attendee = allAttendees.get(i);
             if(!attendee.isEmpty()) {
-                Ticket ticket = tickets.get(i);
+                Ticket ticket = data.getRight().get(i);
                 assertTrue(ticket.getAssigned());
                 assertEquals(attendee.getFullName(), ticket.getFullName());
                 assertEquals(attendee.getEmailAddress(), ticket.getEmail());

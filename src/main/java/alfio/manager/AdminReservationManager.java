@@ -48,7 +48,7 @@ import static java.util.stream.Collectors.toList;
 
 @Component
 @Log4j2
-public class CustomReservationManager {
+public class AdminReservationManager {
 
     private final EventManager eventManager;
     private final TicketReservationManager ticketReservationManager;
@@ -61,15 +61,15 @@ public class CustomReservationManager {
     private final PlatformTransactionManager transactionManager;
 
     @Autowired
-    public CustomReservationManager(EventManager eventManager,
-                                    TicketReservationManager ticketReservationManager,
-                                    PlatformTransactionManager transactionManager,
-                                    TicketCategoryRepository ticketCategoryRepository,
-                                    TicketRepository ticketRepository,
-                                    NamedParameterJdbcTemplate jdbc,
-                                    SpecialPriceRepository specialPriceRepository,
-                                    TicketReservationRepository ticketReservationRepository,
-                                    EventRepository eventRepository) {
+    public AdminReservationManager(EventManager eventManager,
+                                   TicketReservationManager ticketReservationManager,
+                                   PlatformTransactionManager transactionManager,
+                                   TicketCategoryRepository ticketCategoryRepository,
+                                   TicketRepository ticketRepository,
+                                   NamedParameterJdbcTemplate jdbc,
+                                   SpecialPriceRepository specialPriceRepository,
+                                   TicketReservationRepository ticketReservationRepository,
+                                   EventRepository eventRepository) {
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryRepository = ticketCategoryRepository;
