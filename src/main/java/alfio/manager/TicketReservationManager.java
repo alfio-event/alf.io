@@ -389,8 +389,6 @@ public class TicketReservationManager {
         OrderSummary summary = orderSummaryForReservationId(reservationId, event, language);
 
         Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
-        ZonedDateTime confirmationTimestamp = Optional.ofNullable(ticketReservation.getConfirmationTimestamp()).orElseGet(ZonedDateTime::now);
-        reservationEmailModel.put("confirmationDate", confirmationTimestamp.withZoneSameInstant(event.getZoneId()));
         List<Mailer.Attachment> attachments = new ArrayList<>(1);
         if(!summary.getNotYetPaid()) {
             Map<String, String> model = new HashMap<>();
@@ -424,21 +422,13 @@ public class TicketReservationManager {
 
     @Transactional(readOnly = true)
     public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation) {
-        Map<String, Object> model = new HashMap<>();
-        model.put("organization", organizationRepository.getById(event.getOrganizationId()));
-        model.put("event", event);
-        model.put("ticketReservation", reservation);
-
+        Organization organization = organizationRepository.getById(event.getOrganizationId());
         Optional<String> vat = getVAT(event);
-
-        model.put("hasVat", vat.isPresent());
-        model.put("vatNr", vat.orElse(""));
-
         OrderSummary orderSummary = orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage()));
-        model.put("tickets", findTicketsInReservation(reservation.getId()));
-        model.put("orderSummary", orderSummary);
-        model.put("reservationUrl", reservationUrl(reservation.getId()));
-        return model;
+        List<Ticket> tickets = findTicketsInReservation(reservation.getId());
+        String reservationUrl = reservationUrl(reservation.getId());
+        String reservationShortID = getShortReservationID(event, reservation.getId());
+        return TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortID);
     }
 
     private void transitionToInPayment(String reservationId, String email, CustomerName customerName, Locale userLanguage, String billingAddress) {
@@ -953,7 +943,6 @@ public class TicketReservationManager {
                     TicketReservation reservation = p.getLeft();
                     Event event = p.getMiddle();
                     Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
-                    model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
                     Locale locale = p.getRight();
                     ticketReservationRepository.flagAsOfflinePaymentReminderSent(reservation.getId());
                     notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{getShortReservationID(event, reservation.getId())}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
@@ -1020,7 +1009,6 @@ public class TicketReservationManager {
                         .map(Optional::get)
                         .forEach(reservation -> {
                             Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
-                            model.put("reservationShortID", getShortReservationID(event, reservation.getId()));
                             ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(eventZoneId));
                             Locale locale = findReservationLanguage(reservation.getId());
                             notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));

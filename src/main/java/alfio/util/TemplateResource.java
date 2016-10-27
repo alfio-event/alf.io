@@ -17,7 +17,15 @@
 
 package alfio.util;
 
-import java.util.Locale;
+import alfio.manager.support.OrderSummary;
+import alfio.model.Event;
+import alfio.model.Ticket;
+import alfio.model.TicketReservation;
+import alfio.model.modification.SendCodeModification;
+import alfio.model.user.Organization;
+
+import java.time.ZonedDateTime;
+import java.util.*;
 
 public enum TemplateResource {
     GOOGLE_ANALYTICS("/alfio/templates/google-analytics.ms", false, "text/plain", TemplateManager.TemplateOutput.TEXT),
@@ -66,5 +74,52 @@ public enum TemplateResource {
 
     public TemplateManager.TemplateOutput getTemplateOutput() {
         return templateOutput;
+    }
+
+    //used by multiple enum:
+    // - CONFIRMATION_EMAIL_FOR_ORGANIZER
+    // - OFFLINE_RESERVATION_EXPIRED_EMAIL
+    // - REMINDER_TICKETS_ASSIGNMENT_EMAIL
+    // - CONFIRMATION_EMAIL
+    // - REMINDER_EMAIL
+    public static Map<String, Object> prepareModelForConfirmationEmail(Organization organization,
+                                                                       Event event,
+                                                                       TicketReservation reservation,
+                                                                       Optional<String> vat,
+                                                                       List<Ticket> tickets,
+                                                                       OrderSummary orderSummary,
+                                                                       String reservationUrl,
+                                                                       String reservationShortID) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("organization", organization);
+        model.put("event", event);
+        model.put("ticketReservation", reservation);
+        model.put("hasVat", vat.isPresent());
+        model.put("vatNr", vat.orElse(""));
+        model.put("tickets", tickets);
+        model.put("orderSummary", orderSummary);
+        model.put("reservationUrl", reservationUrl);
+
+        ZonedDateTime confirmationTimestamp = Optional.ofNullable(reservation.getConfirmationTimestamp()).orElseGet(ZonedDateTime::now);
+        model.put("confirmationDate", confirmationTimestamp.withZoneSameInstant(event.getZoneId()));
+        model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
+
+        model.put("reservationShortID", reservationShortID);
+
+        return model;
+    }
+
+    // used by SEND_RESERVED_CODE
+    public static Map<String, Object> prepareModelForSendReservedCode(Organization organization,
+                                                                      Event event,
+                                                                      SendCodeModification m,
+                                                                      String eventPageUrl) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("code", m.getCode());
+        model.put("event", event);
+        model.put("organization", organization);
+        model.put("eventPage", eventPageUrl);
+        model.put("assignee", m.getAssignee());
+        return model;
     }
 }
