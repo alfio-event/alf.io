@@ -25,6 +25,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
 import com.openhtmltopdf.DOMBuilder;
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
@@ -69,7 +70,7 @@ public final class TemplateProcessor {
         return (ticket) -> {
             Map<String, Object> model = buildModelForTicketEmail(organization, event, ticketReservation, ticketURL, ticket);
             Locale language = LocaleUtil.getTicketLanguage(ticket, request);
-            return templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_EMAIL, model, language);
+            return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, language);
         };
     }
 
@@ -92,7 +93,7 @@ public final class TemplateProcessor {
                                                                       Locale language) {
         return (newTicket) -> {
             Map<String, Object> emailModel = buildModelForTicketHasChangedOwner(organization, e, oldTicket, newTicket, ticketUrl);
-            return templateManager.renderTemplate(e, TemplateManager.TemplateResource.TICKET_HAS_CHANGED_OWNER, emailModel, language);
+            return templateManager.renderTemplate(e, TemplateResource.TICKET_HAS_CHANGED_OWNER, emailModel, language);
         };
     }
 
@@ -125,7 +126,7 @@ public final class TemplateProcessor {
         
         return () -> {
             Map<String, Object> model = buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, fileUploadManager);
-            String page = templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_PDF, model, language);
+            String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
             return prepareItextRenderer(page);
         };
     }
@@ -187,7 +188,7 @@ public final class TemplateProcessor {
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        String page = templateManager.renderTemplate(event, TemplateManager.TemplateResource.RECEIPT_PDF, model, language);
+        String page = templateManager.renderTemplate(event, TemplateResource.RECEIPT_PDF, model, language);
         try {
             prepareItextRenderer(page).createPDF(baos);
             return Optional.of(baos.toByteArray());

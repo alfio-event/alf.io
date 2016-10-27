@@ -31,6 +31,7 @@ import alfio.repository.WaitingQueueRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.PreReservedTicketDistributor;
 import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
 import alfio.util.WorkingDaysAdjusters;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.extern.log4j.Log4j2;
@@ -121,7 +122,7 @@ public class WaitingQueueManager {
         model.put("fullName", name.getFullName());
         model.put("organization", organization);
         notificationManager.sendSimpleEmail(event, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getDisplayName()}, userLanguage),
-                () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.WAITING_QUEUE_JOINED, model, userLanguage));
+                () -> templateManager.renderTemplate(event, TemplateResource.WAITING_QUEUE_JOINED, model, userLanguage));
         if(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE_NOTIFICATION), false)) {
             String adminTemplate = messageSource.getMessage("email-waiting-queue.subscribed.admin.text",
                     new Object[] {subscriptionType, event.getDisplayName()}, Locale.ENGLISH);

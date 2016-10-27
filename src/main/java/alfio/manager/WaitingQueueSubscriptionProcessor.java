@@ -23,6 +23,7 @@ import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
 import alfio.repository.WaitingQueueRepository;
 import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
@@ -96,7 +97,7 @@ public class WaitingQueueSubscriptionProcessor {
             notificationManager.sendSimpleEmail(event,
                     subscription.getEmailAddress(),
                     subject,
-                    () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.WAITING_QUEUE_RESERVATION_EMAIL, model, locale));
+                    () -> templateManager.renderTemplate(event, TemplateResource.WAITING_QUEUE_RESERVATION_EMAIL, model, locale));
             waitingQueueRepository.flagAsPending(reservationId, subscription.getId());
         });
     }

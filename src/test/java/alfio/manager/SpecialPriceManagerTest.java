@@ -26,6 +26,7 @@ import alfio.model.modification.SendCodeModification;
 import alfio.model.user.Organization;
 import alfio.repository.SpecialPriceRepository;
 import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -133,7 +134,7 @@ public class SpecialPriceManagerTest {
         verify(notificationManager).sendSimpleEmail(eq(event), eq("me@domain.com"), anyString(), templateCaptor.capture());
         templateCaptor.getValue().generate();
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-        verify(templateManager).renderTemplate(any(Event.class), eq(TemplateManager.TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
+        verify(templateManager).renderTemplate(any(Event.class), eq(TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
         Map<String, Object> model = captor.getValue();
         assertEquals("123", model.get("code"));
         assertEquals(event, model.get("event"));
@@ -150,7 +151,7 @@ public class SpecialPriceManagerTest {
         verify(notificationManager).sendSimpleEmail(eq(event), eq("me@domain.com"), anyString(), templateCaptor.capture());
         templateCaptor.getValue().generate();
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-        verify(templateManager).renderTemplate(any(Event.class), eq(TemplateManager.TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
+        verify(templateManager).renderTemplate(any(Event.class), eq(TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
         Map<String, Object> model = captor.getValue();
         assertEquals("123", model.get("code"));
         assertEquals(event, model.get("event"));
