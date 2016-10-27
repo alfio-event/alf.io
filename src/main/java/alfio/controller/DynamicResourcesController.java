@@ -22,6 +22,7 @@ import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.ConfigurationPathKey;
 import alfio.repository.EventRepository;
 import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -65,7 +66,7 @@ public class DynamicResourcesController {
             Map<String, Object> model = new HashMap<>();
             model.put("clientId", trackingId);
             model.put("account", id.get());
-            script = templateManager.renderTemplate(TemplateManager.TemplateResource.GOOGLE_ANALYTICS, model, Locale.ENGLISH, TemplateManager.TemplateOutput.TEXT);
+            script = templateManager.renderTemplate(TemplateResource.GOOGLE_ANALYTICS, model, Locale.ENGLISH);
         } else {
             script = id.map(x -> String.format(GOOGLE_ANALYTICS_SCRIPT, x)).orElse(EMPTY);
         }

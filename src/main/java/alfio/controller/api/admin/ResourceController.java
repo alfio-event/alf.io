@@ -38,9 +38,8 @@ import alfio.model.UploadedResource;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.repository.EventRepository;
 import alfio.util.TemplateManager;
-import alfio.util.TemplateManager.TemplateResource;
+import alfio.util.TemplateResource;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ClassPathResource;
@@ -71,14 +70,20 @@ public class ResourceController {
     private final UserManager userManager;
     private final EventRepository eventRepository;
     private final MessageSource messageSource;
+    private final TemplateManager templateManager;
 
 
     @Autowired
-    public ResourceController(UploadedResourceManager uploadedResourceManager, UserManager userManager, EventRepository eventRepository, MessageSource messageSource) {
+    public ResourceController(UploadedResourceManager uploadedResourceManager,
+                              UserManager userManager,
+                              EventRepository eventRepository,
+                              MessageSource messageSource,
+                              TemplateManager templateManager) {
         this.uploadedResourceManager = uploadedResourceManager;
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.messageSource = messageSource;
+        this.templateManager = templateManager;
     }
 
     @RequestMapping(value = "/overridable-template/", method = RequestMethod.GET)
@@ -89,8 +94,6 @@ public class ResourceController {
     @RequestMapping(value = "/overridable-template/{name}/{locale}", method = RequestMethod.GET)
     public void getTemplate(@PathVariable("name") TemplateResource name, @PathVariable("locale") String locale, HttpServletResponse response) throws IOException {
         response.setContentType("text/plain");
-        //FIXME need to replace i18n token with translated content!
-        // -> find {{#i18n}} and next matching {{/i18n}}
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try (InputStream is = new ClassPathResource(name.classPath()).getInputStream()) {
             StreamUtils.copy(is, os);
@@ -100,6 +103,21 @@ public class ResourceController {
 
         response.setContentType("text/plain");
         response.getWriter().print(TemplateManager.translate(template, loc, messageSource));
+    }
+
+    @RequestMapping(value = "/overridable-template/{name}/{locale}/preview", method = RequestMethod.POST)
+    public void previewTemplate(@PathVariable("name") TemplateResource name, @PathVariable("locale") String locale,
+                                @RequestParam(required = false, value = "organizationId") Integer organizationId,
+                                @RequestParam(required = false, value = "eventId") Integer eventId,
+                                @RequestBody UploadBase64FileModification template,
+                                Principal principal,
+                                HttpServletResponse response) {
+
+
+        Locale loc = Locale.forLanguageTag(locale);
+
+        templateManager.renderString(template.getFileAsString(), null, loc, name.getTemplateOutput());
+
     }
 
 

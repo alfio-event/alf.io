@@ -17,17 +17,15 @@
 package alfio.controller.support;
 
 import alfio.manager.FileUploadManager;
-import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PDFTemplateGenerator;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
-import alfio.repository.user.OrganizationRepository;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
-import alfio.util.TemplateManager.TemplateOutput;
+import alfio.util.TemplateResource;
 import com.openhtmltopdf.DOMBuilder;
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
@@ -48,40 +46,73 @@ public final class TemplateProcessor {
 
     private TemplateProcessor() {}
 
+
+    public static Map<String, Object> buildModelForTicketEmail(Organization organization,
+                                                               Event event,
+                                                               TicketReservation ticketReservation,
+                                                               String ticketURL,
+                                                               Ticket ticket) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("organization", organization);
+        model.put("event", event);
+        model.put("ticketReservation", ticketReservation);
+        model.put("ticketUrl", ticketURL);
+        model.put("ticket", ticket);
+        return model;
+    }
+
     public static PartialTicketTextGenerator buildPartialEmail(Event event,
-                                                   OrganizationRepository organizationRepository,
-                                                   TicketReservation ticketReservation,
-                                                   TemplateManager templateManager,
-                                                   String ticketURL,
-                                                   HttpServletRequest request) {
+                                                               Organization organization,
+                                                               TicketReservation ticketReservation,
+                                                               TemplateManager templateManager,
+                                                               String ticketURL,
+                                                               HttpServletRequest request) {
         return (ticket) -> {
-            Map<String, Object> model = new HashMap<>();
-            model.put("organization", organizationRepository.getById(event.getOrganizationId()));
-            model.put("event", event);
-            model.put("ticketReservation", ticketReservation);
-            model.put("ticketUrl", ticketURL);
-            model.put("ticket", ticket);
+            Map<String, Object> model = buildModelForTicketEmail(organization, event, ticketReservation, ticketURL, ticket);
             Locale language = LocaleUtil.getTicketLanguage(ticket, request);
-            return templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_EMAIL, model, language, TemplateOutput.TEXT);
+            return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, language);
         };
     }
 
+    public static Map<String, Object> buildModelForTicketHasChangedOwner(Organization organization, Event e, Ticket oldTicket, Ticket newTicket, String ticketUrl) {
+        Map<String, Object> emailModel = new HashMap<>();
+        emailModel.put("ticket", oldTicket);
+        emailModel.put("organization", organization);
+        emailModel.put("eventName", e.getDisplayName());
+        emailModel.put("previousEmail", oldTicket.getEmail());
+        emailModel.put("newEmail", newTicket.getEmail());
+        emailModel.put("ticketUrl", ticketUrl);
+        return emailModel;
+    }
+
     public static PartialTicketTextGenerator buildEmailForOwnerChange(Event e,
-                                                                 Ticket oldTicket,
-                                                                 OrganizationRepository organizationRepository,
-                                                                 TicketReservationManager ticketReservationManager,
-                                                                 TemplateManager templateManager,
-                                                                 Locale language) {
+                                                                      Ticket oldTicket,
+                                                                      Organization organization,
+                                                                      String ticketUrl,
+                                                                      TemplateManager templateManager,
+                                                                      Locale language) {
         return (newTicket) -> {
-            Map<String, Object> emailModel = new HashMap<>();
-            emailModel.put("ticket", oldTicket);
-            emailModel.put("organization", organizationRepository.getById(e.getOrganizationId()));
-            emailModel.put("eventName", e.getDisplayName());
-            emailModel.put("previousEmail", oldTicket.getEmail());
-            emailModel.put("newEmail", newTicket.getEmail());
-            emailModel.put("ticketUrl", ticketReservationManager.ticketUpdateUrl(oldTicket.getTicketsReservationId(), e, oldTicket.getUuid()));
-            return templateManager.renderTemplate(e, TemplateManager.TemplateResource.TICKET_HAS_CHANGED_OWNER, emailModel, language, TemplateOutput.TEXT);
+            Map<String, Object> emailModel = buildModelForTicketHasChangedOwner(organization, e, oldTicket, newTicket, ticketUrl);
+            return templateManager.renderTemplate(e, TemplateResource.TICKET_HAS_CHANGED_OWNER, emailModel, language);
         };
+    }
+
+    public static Map<String, Object> buildModelForTicketPDF(Organization organization, Event event, TicketReservation ticketReservation, TicketCategory ticketCategory, Ticket ticket, FileUploadManager fileUploadManager) {
+        String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
+        //
+        Map<String, Object> model = new HashMap<>();
+        model.put("ticket", ticket);
+        model.put("reservation", ticketReservation);
+        model.put("ticketCategory", ticketCategory);
+        model.put("event", event);
+        model.put("organization", organization);
+
+        model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
+        if(event.getFileBlobIdIsPresent()) {
+            fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(m -> fillWithImageData(m, fileUploadManager, model));
+        }
+        model.put("deskPaymentRequired", Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired());
+        return model;
     }
 
     public static PDFTemplateGenerator buildPDFTicket(Locale language,
@@ -94,23 +125,8 @@ public final class TemplateProcessor {
                                                       FileUploadManager fileUploadManager) {
         
         return () -> {
-            String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
-            //
-            Map<String, Object> model = new HashMap<>();
-            model.put("ticket", ticket);
-            model.put("reservation", ticketReservation);
-            model.put("ticketCategory", ticketCategory);
-            model.put("event", event);
-            model.put("organization", organization);
-
-            model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
-            if(event.getFileBlobIdIsPresent()) {
-                fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(m -> fillWithImageData(m, fileUploadManager, model));
-            }
-            model.put("deskPaymentRequired", Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired());
-
-            String page = templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_PDF, model, language, TemplateOutput.HTML);
-
+            Map<String, Object> model = buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, fileUploadManager);
+            String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
             return prepareItextRenderer(page);
         };
     }
@@ -172,7 +188,7 @@ public final class TemplateProcessor {
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        String page = templateManager.renderTemplate(event, TemplateManager.TemplateResource.RECEIPT_PDF, model, language, TemplateOutput.HTML);
+        String page = templateManager.renderTemplate(event, TemplateResource.RECEIPT_PDF, model, language);
         try {
             prepareItextRenderer(page).createPDF(baos);
             return Optional.of(baos.toByteArray());

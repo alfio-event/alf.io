@@ -37,7 +37,7 @@ import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
-import alfio.util.TemplateManager.TemplateOutput;
+import alfio.util.TemplateResource;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -501,8 +501,8 @@ public class ReservationController {
     private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         notificationManager.sendSimpleEmail(event, organization.getEmail(), "Reservation complete " + reservation.getId(), () -> {
-            return  templateManager.renderTemplate(event, TemplateManager.TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, ticketReservationManager.prepareModelForReservationEmail(event, reservation),
-                RequestContextUtils.getLocale(request), TemplateOutput.TEXT);
+            return  templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, ticketReservationManager.prepareModelForReservationEmail(event, reservation),
+                RequestContextUtils.getLocale(request));
         });
     }
 

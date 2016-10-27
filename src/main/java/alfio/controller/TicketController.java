@@ -154,8 +154,9 @@ public class TicketController {
         Locale locale = LocaleUtil.getTicketLanguage(ticket, request);
 
         TicketReservation reservation = data.getMiddle();
+        Organization organization = organizationRepository.getById(event.getOrganizationId());
         notificationManager.sendTicketByEmail(ticket,
-            event, locale, TemplateProcessor.buildPartialEmail(event, organizationRepository, reservation, templateManager, ticketReservationManager.ticketUpdateUrl(reservation.getId(), event, ticket.getUuid()), request),
+            event, locale, TemplateProcessor.buildPartialEmail(event, organization, reservation, templateManager, ticketReservationManager.ticketUpdateUrl(reservation.getId(), event, ticket.getUuid()), request),
             reservation, ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId()));
         return "redirect:/event/" + eventName + "/reservation/" + reservationId
                 + ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "/success") + "?ticket-email-sent=true";

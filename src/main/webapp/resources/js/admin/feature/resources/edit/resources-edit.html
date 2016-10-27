@@ -14,6 +14,7 @@
                     </div>
                     <div class="pull-right">
                         <button ng-if="$ctrl.resourcesMetadata[locale.locale]" type="button" class="btn btn-lg btn-warning" ng-click="$ctrl.deleteFor(locale.locale)">Delete</button>
+                        <button type="button" ng-click="$ctrl.resetFor(locale.locale)" class="btn btn-lg">Reset</button>
                         <button type="submit" class="btn btn-lg btn-default">Save</button>
                     </div>
                 </form>
