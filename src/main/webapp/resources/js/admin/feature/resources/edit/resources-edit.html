@@ -13,7 +13,7 @@
                         <textarea id="resource-{{locale.locale}}" ng-model="$ctrl.resources[locale.locale]" rows="20" class="form-control"></textarea>
                     </div>
                     <div class="pull-right">
-                        <button type="button" class="btn btn-lg btn-warning" ng-click="$ctrl.deleteFor(locale.locale)">Delete</button>
+                        <button ng-if="$ctrl.resourcesMetadata[locale.locale]" type="button" class="btn btn-lg btn-warning" ng-click="$ctrl.deleteFor(locale.locale)">Delete</button>
                         <button type="submit" class="btn btn-lg btn-default">Save</button>
                     </div>
                 </form>

@@ -4,7 +4,6 @@
 
 angular.module('adminApplication').service('ResourceService', function($http) {
     return {
-
         listTemplates: function() {
             return $http.get('api/overridable-template/');
         },
@@ -19,6 +18,9 @@ angular.module('adminApplication').service('ResourceService', function($http) {
         },
         uploadFile: function(orgId, eventId, file) {
             return $http.post('api/resource-event/'+orgId+'/'+eventId+'/', file);
+        },
+        deleteFile: function(orgId, eventId, name) {
+            return $http.delete('api/resource-event/'+orgId+'/'+eventId+'/'+name);
         }
     };
 });

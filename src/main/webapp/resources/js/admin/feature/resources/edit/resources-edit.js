@@ -15,12 +15,9 @@ function ResourcesEditCtrl(ResourceService, EventService) {
     var ctrl = this;
 
     ctrl.saveFor = saveFor;
+    ctrl.deleteFor = deleteFor;
 
     ctrl.$onInit = function() {
-        ctrl.templateBodies = {};
-
-        ctrl.resources = {};
-
         loadAll()
     }
 
@@ -30,7 +27,16 @@ function ResourcesEditCtrl(ResourceService, EventService) {
         ResourceService.uploadFile(ctrl.event.organizationId, ctrl.event.id, {fileAsString: newText, name: getFileName(locale), type: 'text/plain'}).then(loadAll);
     }
 
+    function deleteFor(locale) {
+        ResourceService.deleteFile(ctrl.event.organizationId, ctrl.event.id, getFileName(locale)).then(loadAll);
+    }
+
     function loadAll() {
+        ctrl.templateBodies = {};
+        ctrl.resources = {};
+        ctrl.resourcesMetadata = {};
+
+
         EventService.getSelectedLanguages(ctrl.event.shortName).then(function(lang) {
             ctrl.locales = lang.data;
             return lang.data;
@@ -45,11 +51,12 @@ function ResourcesEditCtrl(ResourceService, EventService) {
                 });
 
                 ResourceService.getMetadataForEventResource(ctrl.event.organizationId, ctrl.event.id, getFileName(locale)).then(function(res) {
-                    ResourceService.getEventResource(ctrl.event.organizationId, ctrl.event.id, getFileName(locale)).then(function(res) {
-                        console.log(res);
-                        ctrl.resources[locale] = res.data;
+                    ctrl.resourcesMetadata[locale] = res.data;
+                    ResourceService.getEventResource(ctrl.event.organizationId, ctrl.event.id, getFileName(locale)).then(function(resource) {
+                        ctrl.resources[locale] = resource.data;
                     })
                 }, function() {
+                    //if there is no file for the given locale, use the template instead
                     p.then(function(data) {
                         ctrl.resources[locale] = data;
                     })
@@ -61,7 +68,6 @@ function ResourcesEditCtrl(ResourceService, EventService) {
     function getFileName(locale) {
         return ctrl.resourceName+'_'+locale+'.ms';
     }
-
 }
 
 })();
