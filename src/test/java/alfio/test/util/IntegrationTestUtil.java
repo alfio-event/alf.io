@@ -45,6 +45,8 @@ public class IntegrationTestUtil {
 
 
     private static final Map<String, Map<String, String>> DB_CONF = new HashMap<>();
+    public static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
+
     static {
         DB_CONF.put("HSQLDB", c("HSQLDB", "org.hsqldb.jdbcDriver", "jdbc:hsqldb:mem:alfio", "sa", "", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS"));
         DB_CONF.put("PGSQL", c("PGSQL", "org.postgresql.Driver", "jdbc:postgresql://localhost:5432/alfio", "postgres", "password", "SELECT 1"));

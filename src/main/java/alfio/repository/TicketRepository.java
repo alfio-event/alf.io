@@ -114,6 +114,9 @@ public interface TicketRepository {
     @Query("update ticket set email_address = :email, full_name = :fullName, first_name = :firstName, last_name = :lastName where uuid = :ticketIdentifier")
     int updateTicketOwner(@Bind("ticketIdentifier") String ticketIdentifier, @Bind("email") String email, @Bind("fullName") String fullName, @Bind("firstName") String firstName, @Bind("lastName") String lastName);
 
+    @Query("update ticket set email_address = :email, full_name = :fullName, first_name = :firstName, last_name = :lastName where id = :id")
+    int updateTicketOwnerById(@Bind("id") int id, @Bind("email") String email, @Bind("fullName") String fullName, @Bind("firstName") String firstName, @Bind("lastName") String lastName);
+
     @Query("update ticket set locked_assignment = :lockedAssignment where id = :id and category_id = :categoryId")
     int toggleTicketLocking(@Bind("id") int ticketId, @Bind("categoryId") int categoryId, @Bind("lockedAssignment") boolean locked);
     

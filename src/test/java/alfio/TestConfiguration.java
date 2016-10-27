@@ -32,7 +32,7 @@ public class TestConfiguration {
     @Bean
     public static PropertyPlaceholderConfigurer propConfig() {
         Properties properties = new Properties();
-        properties.put("alfio.version", "1.5-SNAPSHOT");
+        properties.put("alfio.version", "1.9-SNAPSHOT");
         properties.put("alfio.build-ts", ZonedDateTime.now(ZoneId.of("UTC")).minusDays(1).toString());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintWriter pw = new PrintWriter(out);

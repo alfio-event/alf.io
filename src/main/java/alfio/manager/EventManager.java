@@ -324,20 +324,17 @@ public class EventManager {
             int sum = ticketCategoryRepository.getTicketAllocation(eventId);
             int notBoundedTickets = ticketRepository.countFreeTicketsForUnbounded(eventId);
             int requestedTickets = tcm.isBounded() ? tcm.getMaxTickets() : 1;
-            Validate.isTrue(sum + requestedTickets <= event.getAvailableSeats(), "Not enough seats");
-            Validate.isTrue(requestedTickets <= notBoundedTickets, "All the tickets have already been assigned to a category. Try increasing the total seats number.");
-            Validate.isTrue(tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), "expiration must be before the end of the event");
             return new Result.Builder<>(() -> insertCategory(tcm, event))
                 .ifConditionMet(() -> sum + requestedTickets <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
                 .ifConditionMet(() -> requestedTickets <= notBoundedTickets, ErrorCode.CategoryError.ALL_TICKETS_ASSIGNED)
                 .ifConditionMet(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
                 .build();
-        }).orElseGet(() -> Result.error(Collections.singletonList(ErrorCode.EventError.ACCESS_DENIED)));
+        }).orElseGet(() -> Result.error(ErrorCode.EventError.ACCESS_DENIED));
     }
 
     /**
      * This method has been modified to use the new Result<T> mechanism.
-     * It will be replaced by {@link #insertCategory(Event, TicketCategoryModification, String)} in the next releases
+     * It will be replaced by {@link #updateCategory(int, Event, TicketCategoryModification, String)} in the next releases
      */
     public void updateCategory(int categoryId, int eventId, TicketCategoryModification tcm, String username) {
         final Event event = eventRepository.findById(eventId);
@@ -371,7 +368,7 @@ public class EventManager {
                 .ifConditionMet(() -> tcm.isBounded() == existing.isBounded(), ErrorCode.custom("", "Bounded flag modification not yet implemented."))
                 .build()
              )
-            .orElseGet(() -> Result.error(Collections.singletonList(ErrorCode.CategoryError.NOT_FOUND)));
+            .orElseGet(() -> Result.error(ErrorCode.CategoryError.NOT_FOUND));
     }
 
     void fixOutOfRangeCategories(EventModification em, String username, ZoneId zoneId, ZonedDateTime end) {

@@ -52,8 +52,6 @@ import static org.junit.Assert.*;
 @Transactional
 public class EventManagerIntegrationTest {
 
-    private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
-
     @BeforeClass
     public static void initEnv() {
         initSystemProperties();

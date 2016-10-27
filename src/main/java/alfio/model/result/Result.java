@@ -22,10 +22,7 @@ import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.ObjectError;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -51,6 +48,10 @@ public class Result<T> {
         return new Result<>(ResultStatus.ERROR, null, errorDescriptors);
     }
 
+    public static <T> Result<T> error(ErrorCode errorDescriptor) {
+        return error(Collections.singletonList(errorDescriptor));
+    }
+
     public boolean isSuccess() {
         return status == ResultStatus.OK;
     }
@@ -64,6 +65,13 @@ public class Result<T> {
     public <K> Result<K> map(Function<T, K> mapper) {
         if(isSuccess()) {
             return Result.success(mapper.apply(data));
+        }
+        return Result.error(this.errors);
+    }
+
+    public <K> Result<K> flatMap(Function<T, Result<K>> mapper) {
+        if(isSuccess()) {
+            return Objects.requireNonNull(mapper.apply(data), "this method does not allow null values");
         }
         return Result.error(this.errors);
     }

@@ -16,10 +16,10 @@
  */
 package alfio.model.modification;
 
-import alfio.model.TicketReservation;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -30,22 +30,16 @@ public class AdminReservationModification {
     private final DateTimeModification expiration;
     private final CustomerData customerData;
     private final List<TicketsInfo> ticketsInfo;
-    private final TicketReservation.TicketReservationStatus status;
-    private final Notification notification;
     private final String language;
 
     @JsonCreator
     public AdminReservationModification(@JsonProperty DateTimeModification expiration,
                                         @JsonProperty CustomerData customerData,
                                         @JsonProperty List<TicketsInfo> ticketsInfo,
-                                        @JsonProperty TicketReservation.TicketReservationStatus status,
-                                        @JsonProperty Notification notification,
                                         @JsonProperty String language) {
         this.expiration = expiration;
         this.customerData = customerData;
         this.ticketsInfo = ticketsInfo;
-        this.status = status;
-        this.notification = notification;
         this.language = language;
     }
 
@@ -99,6 +93,7 @@ public class AdminReservationModification {
         }
     }
 
+    @Getter
     public static class Attendee {
         private final String firstName;
         private final String lastName;
@@ -110,8 +105,17 @@ public class AdminReservationModification {
             this.lastName = lastName;
             this.emailAddress = emailAddress;
         }
+
+        public boolean isEmpty() {
+            return StringUtils.isAnyBlank(firstName, lastName, emailAddress);
+        }
+
+        public String getFullName() {
+            return firstName + " " + lastName;
+        }
     }
 
+    @Getter
     public static class Notification {
         private final boolean customer;
         private final boolean attendees;

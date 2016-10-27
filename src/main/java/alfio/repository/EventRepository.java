@@ -100,4 +100,12 @@ public interface EventRepository {
     @Query("select id from event where end_ts > :now")
     List<Integer> findAllActiveIds(@Bind("now") ZonedDateTime now);
 
+    @Query("select available_seats from event where id = :id")
+    Integer getAvailableSeats(@Bind("id") int eventId);
+
+    @Query("update event set available_seats = :newValue where id = :eventId")
+    int updateAvailableSeats(@Bind("eventId") int eventId, @Bind("newValue") int newValue);
+
+    @Query("select * from event where short_name = :name for update")
+    Optional<Event> findOptionalByShortNameForUpdate(@Bind("name") String shortName);
 }
