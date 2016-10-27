@@ -117,10 +117,7 @@ public class WaitingQueueManager {
 
     private void notifySubscription(Event event, CustomerName name, String email, Locale userLanguage, WaitingQueueSubscription.Type subscriptionType) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        Map<String, Object> model = new HashMap<>();
-        model.put("eventName", event.getDisplayName());
-        model.put("fullName", name.getFullName());
-        model.put("organization", organization);
+        Map<String, Object> model = TemplateResource.buildModelForWaitingQueueJoined(organization, event, name);
         notificationManager.sendSimpleEmail(event, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getDisplayName()}, userLanguage),
                 () -> templateManager.renderTemplate(event, TemplateResource.WAITING_QUEUE_JOINED, model, userLanguage));
         if(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE_NOTIFICATION), false)) {

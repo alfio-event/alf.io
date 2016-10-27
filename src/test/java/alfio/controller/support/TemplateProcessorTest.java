@@ -17,12 +17,14 @@
 package alfio.controller.support;
 
 import alfio.manager.FileUploadManager;
+import alfio.model.Event;
 import alfio.model.FileBlobMetadata;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Stream;
 
@@ -53,9 +55,13 @@ public class TemplateProcessorTest {
         parameters.put(FileUploadManager.ATTR_IMG_HEIGHT, p.getRight());
         FileBlobMetadata metadata = mock(FileBlobMetadata.class);
         when(metadata.getAttributes()).thenReturn(parameters);
-        Map<String,Object> model = new HashMap<>();
-        TemplateProcessor.fillWithImageData(metadata, mock(FileUploadManager.class), model);
-        assertTrue(Integer.parseInt(String.valueOf(model.get("imageWidth"))) <= 300);
-        assertTrue(Integer.parseInt(String.valueOf(model.get("imageHeight"))) <= 150);
+        Event e = mock(Event.class);
+        when(e.getFileBlobIdIsPresent()).thenReturn(true);
+        FileUploadManager fileUploadManager = mock(FileUploadManager.class);
+        when(fileUploadManager.findMetadata(e.getFileBlobId())).thenReturn(Optional.of(metadata));
+        TemplateProcessor.extractImageModel(e, fileUploadManager).ifPresent(imageData -> {
+            assertTrue(imageData.getImageWidth() <= 300);
+            assertTrue(imageData.getImageHeight() <= 150);
+        });
     }
 }

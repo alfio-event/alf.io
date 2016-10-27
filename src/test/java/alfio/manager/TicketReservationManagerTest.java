@@ -280,11 +280,13 @@ public class TicketReservationManagerTest {
         when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
         when(reservation.getId()).thenReturn("abcd");
         when(reservation.getUserLanguage()).thenReturn("en");
+        when(reservation.getValidity()).thenReturn(new Date());
         when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
 
         when(eventRepository.findByReservationId("abcd")).thenReturn(event);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
+
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(singletonList("abcd"));
         trm.sendReminderForTicketAssignment();
@@ -317,6 +319,7 @@ public class TicketReservationManagerTest {
         when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
         when(reservation.getId()).thenReturn("abcd");
         when(reservation.getUserLanguage()).thenReturn("en");
+        when(reservation.getValidity()).thenReturn(new Date());
         when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
 
         when(eventRepository.findByReservationId("abcd")).thenReturn(event);
@@ -720,6 +723,7 @@ public class TicketReservationManagerTest {
         when(reservation.getStatus()).thenReturn(OFFLINE_PAYMENT);
         when(reservation.getUserLanguage()).thenReturn("en");
         when(reservation.getFullName()).thenReturn("Full Name");
+        when(reservation.getValidity()).thenReturn(new Date());
         when(ticketReservationRepository.findReservationById(eq(RESERVATION_ID))).thenReturn(reservation);
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.OFFLINE.toString()))).thenReturn(1);
@@ -738,7 +742,7 @@ public class TicketReservationManagerTest {
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
         verify(configurationManager, atLeastOnce()).getStringConfigValue(any());
         verify(configurationManager, atLeastOnce()).getRequiredValue(any());
-        verify(configurationManager).getShortReservationID(eq(event), eq(RESERVATION_ID));
+        verify(configurationManager, atLeastOnce()).getShortReservationID(eq(event), eq(RESERVATION_ID));
         verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 
