@@ -133,7 +133,7 @@ public class SpecialPriceManagerTest {
         verify(notificationManager).sendSimpleEmail(eq(event), eq("me@domain.com"), anyString(), templateCaptor.capture());
         templateCaptor.getValue().generate();
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-        verify(templateManager).renderTemplate(any(Event.class), eq(TemplateManager.TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN), eq(TemplateManager.TemplateOutput.TEXT));
+        verify(templateManager).renderTemplate(any(Event.class), eq(TemplateManager.TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
         Map<String, Object> model = captor.getValue();
         assertEquals("123", model.get("code"));
         assertEquals(event, model.get("event"));
@@ -150,7 +150,7 @@ public class SpecialPriceManagerTest {
         verify(notificationManager).sendSimpleEmail(eq(event), eq("me@domain.com"), anyString(), templateCaptor.capture());
         templateCaptor.getValue().generate();
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-        verify(templateManager).renderTemplate(any(Event.class), eq(TemplateManager.TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN), eq(TemplateManager.TemplateOutput.TEXT));
+        verify(templateManager).renderTemplate(any(Event.class), eq(TemplateManager.TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
         Map<String, Object> model = captor.getValue();
         assertEquals("123", model.get("code"));
         assertEquals(event, model.get("event"));

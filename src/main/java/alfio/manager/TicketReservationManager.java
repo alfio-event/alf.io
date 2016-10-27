@@ -406,7 +406,7 @@ public class TicketReservationManager {
 
         notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
                 new Object[]{getShortReservationID(event, reservationId), event.getDisplayName()}, language),
-            () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language, TemplateOutput.TEXT), attachments);
+            () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language), attachments);
     }
 
     private Locale findReservationLanguage(String reservationId) {
@@ -421,7 +421,7 @@ public class TicketReservationManager {
         String subject = messageSource.getMessage("reservation-email-expired-subject", new Object[]{getShortReservationID(event, reservationId), event.getDisplayName()}, reservationLanguage);
         cancelReservation(reservationId, expired);
         notificationManager.sendSimpleEmail(event, reservation.getEmail(), subject,
-            () ->  templateManager.renderTemplate(event, TemplateManager.TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage, TemplateOutput.TEXT)
+            () ->  templateManager.renderTemplate(event, TemplateManager.TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
         );
     }
 
@@ -546,7 +546,7 @@ public class TicketReservationManager {
                         model.put("ticketReservation", reservation);
                         model.put("ticketUrl", ticketUpdateUrl(reservationId, event, t.getUuid()));
                         model.put("ticket", t);
-                        return templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_EMAIL, model, locale, TemplateOutput.TEXT);
+                        return templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_EMAIL, model, locale);
                     });
                     pluginManager.handleTicketAssignment(ticket);
                 });
@@ -959,7 +959,7 @@ public class TicketReservationManager {
                     model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
                     Locale locale = p.getRight();
                     ticketReservationRepository.flagAsOfflinePaymentReminderSent(reservation.getId());
-                    notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{getShortReservationID(event, reservation.getId())}, locale), () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.REMINDER_EMAIL, model, locale, TemplateOutput.TEXT));
+                    notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{getShortReservationID(event, reservation.getId())}, locale), () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.REMINDER_EMAIL, model, locale));
                 });
     }
 
@@ -995,7 +995,7 @@ public class TicketReservationManager {
                         model.put("organization", organizationRepository.getById(event.getOrganizationId()));
                         model.put("ticketURL", ticketUpdateUrl(t.getTicketsReservationId(), event, t.getUuid()));
                         Locale locale = Optional.ofNullable(t.getUserLanguage()).map(Locale::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
-                        notificationManager.sendSimpleEmail(event, t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale, TemplateOutput.TEXT));
+                        notificationManager.sendSimpleEmail(event, t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
                     });
             return null;
         });
@@ -1026,7 +1026,7 @@ public class TicketReservationManager {
                             model.put("reservationShortID", getShortReservationID(event, reservation.getId()));
                             ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(eventZoneId));
                             Locale locale = findReservationLanguage(reservation.getId());
-                            notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale, TemplateOutput.TEXT));
+                            notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));
                         });
                 return null;
             });
@@ -1073,7 +1073,7 @@ public class TicketReservationManager {
         Locale locale = Locale.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
         notificationManager.sendSimpleEmail(event, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
                 new Object[]{event.getDisplayName()}, locale),
-                () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale, TemplateOutput.TEXT));
+                () -> templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
 
         String ticketCategoryDescription = ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(category.getId(), ticket.getUserLanguage()).orElse("");
 

@@ -102,6 +102,18 @@ public class ResourceController {
         response.getWriter().print(TemplateManager.translate(template, loc, messageSource));
     }
 
+    @RequestMapping(value = "/overridable-template/{name}/{locale}/preview", method = RequestMethod.POST)
+    public void previewTemplate(@PathVariable("name") TemplateResource name, @PathVariable("locale") String locale,
+                                @RequestParam(required = false, value = "organizationId") Integer organizationId,
+                                @RequestParam(required = false, value = "eventId") Integer eventId,
+                                @RequestBody UploadBase64FileModification template,
+                                Principal principal,
+                                HttpServletResponse response) {
+
+        
+
+    }
+
 
     //------------------
 

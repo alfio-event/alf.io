@@ -55,37 +55,43 @@ public class TemplateManager {
 
 
     public enum TemplateResource {
-        GOOGLE_ANALYTICS("/alfio/templates/google-analytics.ms", false),
-        CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer-txt.ms", true),
-        SEND_RESERVED_CODE("/alfio/templates/send-reserved-code-txt.ms", true),
-        CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms", true),
-        OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms", true),
-        REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms", true),
-        REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms", true),
-        REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms", true),
+        GOOGLE_ANALYTICS("/alfio/templates/google-analytics.ms", false, "text/plain", TemplateOutput.TEXT),
+        CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer-txt.ms", true, "text/plain", TemplateOutput.TEXT),
+        SEND_RESERVED_CODE("/alfio/templates/send-reserved-code-txt.ms", true, "text/plain", TemplateOutput.TEXT),
+        CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms", true, "text/plain", TemplateOutput.TEXT),
+        OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms", true, "text/plain", TemplateOutput.TEXT),
+        REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms", true, "text/plain", TemplateOutput.TEXT),
+        REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms", true, "text/plain", TemplateOutput.TEXT),
+        REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms", true, "text/plain", TemplateOutput.TEXT),
 
 
-        TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true),
-        TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true),
+        TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true, "text/plain", TemplateOutput.TEXT),
+        TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true, "text/plain", TemplateOutput.TEXT),
 
-        TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms", true),
-        TICKET_PDF("/alfio/templates/ticket.ms", true),
-        RECEIPT_PDF("/alfio/templates/receipt.ms", true),
+        TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms", true, "text/plain", TemplateOutput.TEXT),
+        TICKET_PDF("/alfio/templates/ticket.ms", true, "application/pdf", TemplateOutput.HTML),
+        RECEIPT_PDF("/alfio/templates/receipt.ms", true, "application/pdf", TemplateOutput.HTML),
 
-        WAITING_QUEUE_JOINED("/alfio/templates/waiting-queue-joined.ms", true),
-        WAITING_QUEUE_RESERVATION_EMAIL("/alfio/templates/waiting-queue-reservation-email-txt.ms", true);
+        WAITING_QUEUE_JOINED("/alfio/templates/waiting-queue-joined.ms", true, "text/plain", TemplateOutput.TEXT),
+        WAITING_QUEUE_RESERVATION_EMAIL("/alfio/templates/waiting-queue-reservation-email-txt.ms", true, "text/plain", TemplateOutput.TEXT);
 
-        TemplateResource(String classPathUrl, boolean overridable) {
+        private final String classPathUrl;
+        private final boolean overridable;
+        private final String renderedContentType;
+        private final TemplateOutput templateOutput;
+
+        TemplateResource(String classPathUrl, boolean overridable, String renderedContentType, TemplateOutput templateOutput) {
             this.classPathUrl = classPathUrl;
             this.overridable = overridable;
+            this.renderedContentType = renderedContentType;
+            this.templateOutput = templateOutput;
         }
 
         String getSavedName(Locale locale) {
             return name() + "_" + locale.getLanguage() + ".ms";
         }
 
-        private final String classPathUrl;
-        private final boolean overridable;
+
 
         public boolean overridable() {
             return overridable;
@@ -133,14 +139,14 @@ public class TemplateManager {
             .withLoader(templateLoader));
     }
 
-    public String renderTemplate(TemplateResource templateResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-        return render(new ClassPathResource(templateResource.classPath()), model, locale, templateOutput);
+    public String renderTemplate(TemplateResource templateResource, Map<String, Object> model, Locale locale) {
+        return render(new ClassPathResource(templateResource.classPath()), model, locale, templateResource.templateOutput);
     }
 
-    public String renderTemplate(Event event, TemplateResource templateResource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+    public String renderTemplate(Event event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
         return uploadedResourceManager.findCascading(event.getOrganizationId(), event.getId(), templateResource.getSavedName(locale))
-            .map(resource -> render(new ByteArrayResource(resource), model, locale, templateOutput))
-            .orElseGet(() -> renderTemplate(templateResource, model, locale, templateOutput));
+            .map(resource -> render(new ByteArrayResource(resource), model, locale, templateResource.templateOutput))
+            .orElseGet(() -> renderTemplate(templateResource, model, locale));
     }
 
     public String renderString(String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {

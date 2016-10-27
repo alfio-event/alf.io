@@ -62,7 +62,7 @@ public final class TemplateProcessor {
             model.put("ticketUrl", ticketURL);
             model.put("ticket", ticket);
             Locale language = LocaleUtil.getTicketLanguage(ticket, request);
-            return templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_EMAIL, model, language, TemplateOutput.TEXT);
+            return templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_EMAIL, model, language);
         };
     }
 
@@ -80,7 +80,7 @@ public final class TemplateProcessor {
             emailModel.put("previousEmail", oldTicket.getEmail());
             emailModel.put("newEmail", newTicket.getEmail());
             emailModel.put("ticketUrl", ticketReservationManager.ticketUpdateUrl(oldTicket.getTicketsReservationId(), e, oldTicket.getUuid()));
-            return templateManager.renderTemplate(e, TemplateManager.TemplateResource.TICKET_HAS_CHANGED_OWNER, emailModel, language, TemplateOutput.TEXT);
+            return templateManager.renderTemplate(e, TemplateManager.TemplateResource.TICKET_HAS_CHANGED_OWNER, emailModel, language);
         };
     }
 
@@ -109,7 +109,7 @@ public final class TemplateProcessor {
             }
             model.put("deskPaymentRequired", Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired());
 
-            String page = templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_PDF, model, language, TemplateOutput.HTML);
+            String page = templateManager.renderTemplate(event, TemplateManager.TemplateResource.TICKET_PDF, model, language);
 
             return prepareItextRenderer(page);
         };
@@ -172,7 +172,7 @@ public final class TemplateProcessor {
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        String page = templateManager.renderTemplate(event, TemplateManager.TemplateResource.RECEIPT_PDF, model, language, TemplateOutput.HTML);
+        String page = templateManager.renderTemplate(event, TemplateManager.TemplateResource.RECEIPT_PDF, model, language);
         try {
             prepareItextRenderer(page).createPDF(baos);
             return Optional.of(baos.toByteArray());

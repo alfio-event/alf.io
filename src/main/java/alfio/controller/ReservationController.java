@@ -502,7 +502,7 @@ public class ReservationController {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         notificationManager.sendSimpleEmail(event, organization.getEmail(), "Reservation complete " + reservation.getId(), () -> {
             return  templateManager.renderTemplate(event, TemplateManager.TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, ticketReservationManager.prepareModelForReservationEmail(event, reservation),
-                RequestContextUtils.getLocale(request), TemplateOutput.TEXT);
+                RequestContextUtils.getLocale(request));
         });
     }
 
