@@ -17,10 +17,10 @@
 package alfio.controller.form;
 
 import alfio.manager.PaypalManager;
-import alfio.manager.TicketReservationManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.model.TicketFieldConfiguration;
+import alfio.model.TotalPrice;
 import alfio.model.result.ValidationResult;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ErrorsCode;
@@ -76,7 +76,7 @@ public class PaymentForm {
         return StringUtils.isNotBlank(paypalPayerID) && StringUtils.isNotBlank(paypalPaymentId);
     }
 
-    public void validate(BindingResult bindingResult, TicketReservationManager.TotalPrice reservationCost, Event event,
+    public void validate(BindingResult bindingResult, TotalPrice reservationCost, Event event,
                          List<TicketFieldConfiguration> fieldConf) {
 
         List<PaymentProxy> allowedPaymentMethods = event.getAllowedPaymentProxies();

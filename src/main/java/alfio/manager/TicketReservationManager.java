@@ -40,7 +40,6 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import alfio.util.TemplateManager.TemplateOutput;
-import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -123,14 +122,6 @@ public class TicketReservationManager {
 
     public static class InvalidSpecialPriceTokenException extends RuntimeException {
 
-    }
-
-    @Data
-    public static class TotalPrice {
-        private final int priceWithVAT;
-        private final int VAT;
-        private final int discount;
-        private final int discountAppliedCount;
     }
 
     @Autowired
@@ -704,8 +695,8 @@ public class TicketReservationManager {
             String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount()) : (promo.getDiscountAmount()+"%"));
             summary.add(new SummaryRow(formatPromoCode(promo, ticketRepository.findTicketsInReservation(reservationId)),
                 formattedSingleAmount,
-                reservationCost.discountAppliedCount,
-                formatCents(reservationCost.discount), reservationCost.discount, SummaryRow.SummaryType.PROMOTION_CODE));
+                reservationCost.getDiscountAppliedCount(),
+                formatCents(reservationCost.getDiscount()), reservationCost.getDiscount(), SummaryRow.SummaryType.PROMOTION_CODE));
         });
         return summary;
     }

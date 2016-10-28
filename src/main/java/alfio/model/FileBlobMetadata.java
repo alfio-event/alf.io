@@ -28,6 +28,9 @@ import java.util.Optional;
 @Getter
 public class FileBlobMetadata {
 
+    public static final String ATTR_IMG_WIDTH = "width";
+    public static final String ATTR_IMG_HEIGHT = "height";
+
     private final String id;
     private final String name;
     private final int contentSize;

@@ -51,8 +51,8 @@ public class TemplateProcessorTest {
     }
     private void assertDimensionsUnder300x150(Pair<String, String> p) {
         Map<String, String> parameters = new HashMap<>();
-        parameters.put(FileUploadManager.ATTR_IMG_WIDTH, p.getLeft());
-        parameters.put(FileUploadManager.ATTR_IMG_HEIGHT, p.getRight());
+        parameters.put(FileBlobMetadata.ATTR_IMG_WIDTH, p.getLeft());
+        parameters.put(FileBlobMetadata.ATTR_IMG_HEIGHT, p.getRight());
         FileBlobMetadata metadata = mock(FileBlobMetadata.class);
         when(metadata.getAttributes()).thenReturn(parameters);
         Event e = mock(Event.class);

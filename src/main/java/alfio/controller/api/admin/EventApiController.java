@@ -24,7 +24,7 @@ import alfio.manager.EventStatisticsManager;
 import alfio.manager.PaymentManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
-import alfio.manager.support.OrderSummary;
+import alfio.model.OrderSummary;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;

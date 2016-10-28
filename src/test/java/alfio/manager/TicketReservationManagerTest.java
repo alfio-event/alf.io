@@ -648,7 +648,7 @@ public class TicketReservationManagerTest {
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(),anyString(), anyString(), isNull(ZonedDateTime.class), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
         when(paymentManager.processPayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class),  anyString())).thenReturn(PaymentResult.successful(TRANSACTION_ID));
-        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event), Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
+        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event), Locale.ENGLISH, "", new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayTransactionId());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), anyString(),anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()));
@@ -669,7 +669,7 @@ public class TicketReservationManagerTest {
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), isNull(ZonedDateTime.class), eq(PaymentProxy.STRIPE.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()))).thenReturn(1);
         when(paymentManager.processPayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class), anyString())).thenReturn(PaymentResult.unsuccessful("error-code"));
-        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event), Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
+        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event), Locale.ENGLISH, "", new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
         assertFalse(result.isSuccessful());
         assertFalse(result.getGatewayTransactionId().isPresent());
         assertEquals(Optional.of("error-code"), result.getErrorCode());
@@ -686,7 +686,7 @@ public class TicketReservationManagerTest {
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()))).thenReturn(1);
         when(paymentManager.processPayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class), anyString())).thenReturn(PaymentResult.unsuccessful("error-code"));
-        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event), Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE));
+        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event), Locale.ENGLISH, "", new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE));
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayTransactionId());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()));
@@ -703,7 +703,7 @@ public class TicketReservationManagerTest {
     public void handleOfflinePaymentMethod() throws Exception {
         initConfirmReservation();
         when(ticketReservationRepository.postponePayment(eq(RESERVATION_ID), any(Date.class), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(1);
-        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event), Locale.ENGLISH, "", new TicketReservationManager.TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
+        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event), Locale.ENGLISH, "", new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayTransactionId());
         verify(waitingQueueManager, never()).fireReservationConfirmed(eq(RESERVATION_ID));

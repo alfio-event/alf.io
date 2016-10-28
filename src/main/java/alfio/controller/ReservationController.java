@@ -22,7 +22,7 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TicketDecorator;
 import alfio.manager.*;
-import alfio.manager.support.OrderSummary;
+import alfio.model.OrderSummary;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -393,7 +393,7 @@ public class ReservationController {
         if (!ticketReservation.get().getValidity().after(new Date())) {
             bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
         }
-        final TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         if(!paymentForm.isPostponeAssignment() && !ticketRepository.checkTicketUUIDs(reservationId, paymentForm.getTickets().keySet())) {
             bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
         }

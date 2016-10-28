@@ -14,22 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package alfio.util;
 
-import alfio.controller.support.TemplateProcessor;
-import alfio.manager.TicketReservationManager;
-import alfio.manager.support.OrderSummary;
-import alfio.manager.support.SummaryRow;
 import alfio.model.*;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 import java.time.ZonedDateTime;
 import java.util.*;
 
 import static alfio.util.ImageUtil.createQRCode;
+
 
 public enum TemplateResource {
     GOOGLE_ANALYTICS("/alfio/templates/google-analytics.ms", false, "text/plain", TemplateManager.TemplateOutput.TEXT),
@@ -141,7 +139,6 @@ public enum TemplateResource {
     }
 
 
-
     public String getSavedName(Locale locale) {
         return name() + "_" + locale.getLanguage() + ".ms";
     }
@@ -186,7 +183,7 @@ public enum TemplateResource {
         TicketReservation reservation = sampleTicketReservation();
         Optional<String> vat = Optional.of("VAT-NR");
         List<Ticket> tickets = Collections.singletonList(sampleTicket());
-        OrderSummary orderSummary = new OrderSummary(new TicketReservationManager.TotalPrice(1000, 80, 0, 0),
+        OrderSummary orderSummary = new OrderSummary(new TotalPrice(1000, 80, 0, 0),
             Collections.singletonList(new SummaryRow("Ticket", "10.00", 1, "10.00", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false);
         String reservationUrl = "http://your-domain.tld/reservation-url/";
         String reservationShortId = "597e7e7b";
@@ -221,7 +218,7 @@ public enum TemplateResource {
         ZonedDateTime confirmationTimestamp = Optional.ofNullable(reservation.getConfirmationTimestamp()).orElseGet(ZonedDateTime::now);
         model.put("confirmationDate", confirmationTimestamp.withZoneSameInstant(event.getZoneId()));
 
-        if(reservation.getValidity() != null) {
+        if (reservation.getValidity() != null) {
             model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
         }
 
@@ -295,8 +292,8 @@ public enum TemplateResource {
     }
 
     // used by TICKET_PDF
-    public static Map<String, Object> buildModelForTicketPDF(Organization organization, Event event, TicketReservation ticketReservation, TicketCategory ticketCategory, Ticket ticket, Optional<TemplateProcessor.ImageData> imageData) {
-        String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
+    public static Map<String, Object> buildModelForTicketPDF(Organization organization, Event event, TicketReservation ticketReservation, TicketCategory ticketCategory, Ticket ticket, Optional<ImageData> imageData) {
+        String qrCodeText = ticket.ticketCode(event.getPrivateKey());
         //
         Map<String, Object> model = new HashMap<>();
         model.put("ticket", ticket);
@@ -337,4 +334,34 @@ public enum TemplateResource {
         return model;
     }
 
+
+    public static ImageData fillWithImageData(FileBlobMetadata m, byte[] image) {
+
+        Map<String, String> attributes = m.getAttributes();
+        if (attributes.containsKey(FileBlobMetadata.ATTR_IMG_WIDTH) && attributes.containsKey(FileBlobMetadata.ATTR_IMG_HEIGHT)) {
+            final int width = Integer.parseInt(attributes.get(FileBlobMetadata.ATTR_IMG_WIDTH));
+            final int height = Integer.parseInt(attributes.get(FileBlobMetadata.ATTR_IMG_HEIGHT));
+            //in the PDF the image can be maximum 300x150
+            int resizedWidth = width;
+            int resizedHeight = height;
+            if (resizedHeight > 150) {
+                resizedHeight = 150;
+                resizedWidth = width * resizedHeight / height;
+            }
+            if (resizedWidth > 300) {
+                resizedWidth = 300;
+                resizedHeight = height * resizedWidth / width;
+            }
+            return new ImageData("data:" + m.getContentType() + ";base64," + Base64.getEncoder().encodeToString(image), resizedWidth, resizedHeight);
+        }
+        return new ImageData(null, null, null);
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class ImageData {
+        private final String eventImage;
+        private final Integer imageWidth;
+        private final Integer imageHeight;
+    }
 }

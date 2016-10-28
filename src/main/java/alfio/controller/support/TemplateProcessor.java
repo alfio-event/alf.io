@@ -28,8 +28,6 @@ import alfio.util.TemplateResource;
 import com.openhtmltopdf.DOMBuilder;
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.jsoup.Jsoup;
 import org.springframework.core.io.ClassPathResource;
@@ -81,7 +79,7 @@ public final class TemplateProcessor {
                                                       FileUploadManager fileUploadManager) {
         
         return () -> {
-            Optional<ImageData> imageData = extractImageModel(event, fileUploadManager);
+            Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
             Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData);
             String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
             return prepareItextRenderer(page);
@@ -103,46 +101,16 @@ public final class TemplateProcessor {
         return renderer;
     }
 
-    static Optional<ImageData> extractImageModel(Event event, FileUploadManager fileUploadManager) {
+    static Optional<TemplateResource.ImageData> extractImageModel(Event event, FileUploadManager fileUploadManager) {
         if(event.getFileBlobIdIsPresent()) {
             return fileUploadManager.findMetadata(event.getFileBlobId()).map((metadata) -> {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 fileUploadManager.outputFile(metadata.getId(), baos);
-                return fillWithImageData(metadata, baos.toByteArray());
+                return TemplateResource.fillWithImageData(metadata, baos.toByteArray());
             });
         } else {
             return Optional.empty();
         }
-    }
-
-    @Getter
-    @AllArgsConstructor
-    public static class ImageData {
-        private final String eventImage;
-        private final Integer imageWidth;
-        private final Integer imageHeight;
-    }
-
-    static ImageData fillWithImageData(FileBlobMetadata m, byte[] image) {
-
-        Map<String, String> attributes = m.getAttributes();
-        if (attributes.containsKey(FileUploadManager.ATTR_IMG_WIDTH) && attributes.containsKey(FileUploadManager.ATTR_IMG_HEIGHT)) {
-            final int width = Integer.parseInt(attributes.get(FileUploadManager.ATTR_IMG_WIDTH));
-            final int height = Integer.parseInt(attributes.get(FileUploadManager.ATTR_IMG_HEIGHT));
-            //in the PDF the image can be maximum 300x150
-            int resizedWidth = width;
-            int resizedHeight = height;
-            if (resizedHeight > 150) {
-                resizedHeight = 150;
-                resizedWidth = width * resizedHeight / height;
-            }
-            if (resizedWidth > 300) {
-                resizedWidth = 300;
-                resizedHeight = height * resizedWidth / width;
-            }
-            return new ImageData("data:" + m.getContentType() + ";base64," + Base64.getEncoder().encodeToString(image), resizedWidth, resizedHeight);
-        }
-        return new ImageData(null, null, null);
     }
 
     public static PartialTicketPDFGenerator buildPartialPDFTicket(Locale language,

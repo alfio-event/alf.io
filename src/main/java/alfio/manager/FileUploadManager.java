@@ -51,8 +51,6 @@ import java.util.*;
 @Log4j2
 public class FileUploadManager {
 
-    public static final String ATTR_IMG_WIDTH = "width";
-    public static final String ATTR_IMG_HEIGHT = "height";
     private final NamedParameterJdbcTemplate jdbc;
     private final FileUploadRepository repository;
 
@@ -117,8 +115,8 @@ public class FileUploadManager {
         try {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(file.getFile()));
             Map<String, String> attributes = new HashMap<>();
-            attributes.put(ATTR_IMG_WIDTH, String.valueOf(image.getWidth()));
-            attributes.put(ATTR_IMG_HEIGHT, String.valueOf(image.getHeight()));
+            attributes.put(FileBlobMetadata.ATTR_IMG_WIDTH, String.valueOf(image.getWidth()));
+            attributes.put(FileBlobMetadata.ATTR_IMG_HEIGHT, String.valueOf(image.getHeight()));
             return attributes;
         } catch (IOException e) {
             log.error("error while processing image: ", e);
