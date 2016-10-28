@@ -64,7 +64,12 @@ public enum TemplateResource {
             return prepareSampleDataForConfirmationEmail(organization, event);
         }
     },
-    REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
+    REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+            return prepareModelForReminderTicketAdditionalInfo(organization, event, sampleTicket(), "http://your-domain.tld/ticket-url");
+        }
+    },
     REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
@@ -73,14 +78,37 @@ public enum TemplateResource {
     },
 
 
-    TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
+    TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+            return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", sampleTicket());
+        }
+    },
+    TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+            return buildModelForTicketHasChangedOwner(organization, event, sampleTicket(), sampleTicket("NewFirstname", "NewLastname", "newemail@email.tld"), "http://your-domain.tld/ticket-url");
+        }
+    },
 
-    TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    TICKET_PDF("/alfio/templates/ticket.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML),
+    TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+            return buildModelForTicketHasBeenCancelled(organization, event, sampleTicket());
+        }
+    },
+    TICKET_PDF("/alfio/templates/ticket.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000);
+            //FIXME: add imagedata
+            return buildModelForTicketPDF(organization, event, sampleTicketReservation(), ticketCategory, sampleTicket(), Optional.empty());
+        }
+    },
     RECEIPT_PDF("/alfio/templates/receipt.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+            //FIXME: add imageData
             return prepareSampleDataForConfirmationEmail(organization, event);
         }
     },
@@ -138,15 +166,26 @@ public enum TemplateResource {
         return Collections.emptyMap();
     }
 
+    private static Ticket sampleTicket() {
+        return sampleTicket("Firstname", "Lastname", "email@email.tld");
+    }
 
-    private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {
-        TicketReservation reservation = new TicketReservation("597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", new Date(), TicketReservation.TicketReservationStatus.COMPLETE,
+    private static Ticket sampleTicket(String firstName, String lastName, String email) {
+        return new Ticket(0, "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", ZonedDateTime.now(), 0, "ACQUIRED", 0,
+            "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", firstName + " " + lastName, firstName, lastName, email, false, "en",
+            1000, 1000, 80, 0);
+    }
+
+    private static TicketReservation sampleTicketReservation() {
+        return new TicketReservation("597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", new Date(), TicketReservation.TicketReservationStatus.COMPLETE,
             "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(), ZonedDateTime.now(),
             PaymentProxy.STRIPE, true, null, false, "en", false);
+    }
+
+    private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {
+        TicketReservation reservation = sampleTicketReservation();
         Optional<String> vat = Optional.of("VAT-NR");
-        List<Ticket> tickets = Collections.singletonList(new Ticket(0, "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", ZonedDateTime.now(), 0, "ACQUIRED", 0,
-            "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", "Firstname Lastname", "Firstname", "Lastname", "email@email.tld", false, "en",
-            1000, 1000, 80, 0));
+        List<Ticket> tickets = Collections.singletonList(sampleTicket());
         OrderSummary orderSummary = new OrderSummary(new TicketReservationManager.TotalPrice(1000, 80, 0, 0),
             Collections.singletonList(new SummaryRow("Ticket", "10.00", 1, "10.00", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false);
         String reservationUrl = "http://your-domain.tld/reservation-url/";
