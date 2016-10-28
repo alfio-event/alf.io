@@ -25,9 +25,7 @@ function ResourcesEditCtrl(ResourceService, EventService) {
 
     function previewFor(locale) {
         var newText  = ctrl.resources[locale];
-        ResourceService.preview(ctrl.event.organizationId, ctrl.event.id, ctrl.resourceName, locale, {fileAsString: newText}).then(function(res) {
-            console.log(res);
-        });
+        ResourceService.preview(ctrl.event.organizationId, ctrl.event.id, ctrl.resourceName, locale, {fileAsString: newText});
     }
 
     function saveFor(locale) {
@@ -48,7 +46,6 @@ function ResourcesEditCtrl(ResourceService, EventService) {
         ctrl.resources = {};
         ctrl.resourcesMetadata = {};
         ctrl.originalResources = {};
-
 
         EventService.getSelectedLanguages(ctrl.event.shortName).then(function(lang) {
             ctrl.locales = lang.data;

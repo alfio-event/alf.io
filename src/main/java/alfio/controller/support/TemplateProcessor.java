@@ -88,7 +88,7 @@ public final class TemplateProcessor {
         };
     }
 
-    private static PdfBoxRenderer prepareItextRenderer(String page) {
+    public static PdfBoxRenderer prepareItextRenderer(String page) {
 
         PdfRendererBuilder builder = new PdfRendererBuilder();
 

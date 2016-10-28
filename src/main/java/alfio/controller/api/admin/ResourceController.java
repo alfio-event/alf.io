@@ -32,6 +32,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.controller.support.TemplateProcessor;
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
@@ -129,10 +130,17 @@ public class ResourceController {
             Map<String, Object> model = name.prepareSampleModel(organization, event);
             String renderedTemplate = templateManager.renderString(template.getFileAsString(), model, loc, name.getTemplateOutput());
             if("text/plain".equals(name.getRenderedContentType())) {
+                response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".txt");
                 response.setContentType("text/plain");
                 response.getWriter().print(renderedTemplate);
             } else if ("application/pdf".equals(name.getRenderedContentType())) {
-
+                response.setContentType("application/pdf");
+                response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".pdf");
+                try (OutputStream os = response.getOutputStream()) {
+                    TemplateProcessor.prepareItextRenderer(renderedTemplate).createPDF(os);
+                }
+            } else {
+                throw new IllegalStateException("cannot enter here!");
             }
         }
     }
