@@ -34,9 +34,12 @@ package alfio.controller.api.admin;
 
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.user.UserManager;
+import alfio.model.Event;
 import alfio.model.UploadedResource;
 import alfio.model.modification.UploadBase64FileModification;
+import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import org.apache.commons.lang3.Validate;
@@ -71,6 +74,7 @@ public class ResourceController {
     private final EventRepository eventRepository;
     private final MessageSource messageSource;
     private final TemplateManager templateManager;
+    private final OrganizationRepository organizationRepository;
 
 
     @Autowired
@@ -78,12 +82,14 @@ public class ResourceController {
                               UserManager userManager,
                               EventRepository eventRepository,
                               MessageSource messageSource,
-                              TemplateManager templateManager) {
+                              TemplateManager templateManager,
+                              OrganizationRepository organizationRepository) {
         this.uploadedResourceManager = uploadedResourceManager;
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.messageSource = messageSource;
         this.templateManager = templateManager;
+        this.organizationRepository = organizationRepository;
     }
 
     @RequestMapping(value = "/overridable-template/", method = RequestMethod.GET)
@@ -111,13 +117,24 @@ public class ResourceController {
                                 @RequestParam(required = false, value = "eventId") Integer eventId,
                                 @RequestBody UploadBase64FileModification template,
                                 Principal principal,
-                                HttpServletResponse response) {
+                                HttpServletResponse response) throws IOException {
 
 
         Locale loc = Locale.forLanguageTag(locale);
 
-        templateManager.renderString(template.getFileAsString(), null, loc, name.getTemplateOutput());
+        if(organizationId != null && eventId != null) {
+            checkAccess(organizationId, eventId, principal);
+            Event event = eventRepository.findById(eventId);
+            Organization organization = organizationRepository.getById(organizationId);
+            Map<String, Object> model = name.prepareSampleModel(organization, event);
+            String renderedTemplate = templateManager.renderString(template.getFileAsString(), model, loc, name.getTemplateOutput());
+            if("text/plain".equals(name.getRenderedContentType())) {
+                response.setContentType("text/plain");
+                response.getWriter().print(renderedTemplate);
+            } else if ("application/pdf".equals(name.getRenderedContentType())) {
 
+            }
+        }
     }
 
 

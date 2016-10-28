@@ -21,6 +21,9 @@ angular.module('adminApplication').service('ResourceService', function($http) {
         },
         deleteFile: function(orgId, eventId, name) {
             return $http.delete('api/resource-event/'+orgId+'/'+eventId+'/'+name);
+        },
+        preview: function(orgId, eventId, name, locale, file) {
+            return $http.post('api/overridable-template/'+name+'/'+locale+'/preview?organizationId='+orgId+"&eventId="+eventId, file);
         }
     };
 });

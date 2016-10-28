@@ -17,11 +17,18 @@ function ResourcesEditCtrl(ResourceService, EventService) {
     ctrl.saveFor = saveFor;
     ctrl.deleteFor = deleteFor;
     ctrl.resetFor = resetFor;
+    ctrl.previewFor = previewFor;
 
     ctrl.$onInit = function() {
         loadAll()
     }
 
+    function previewFor(locale) {
+        var newText  = ctrl.resources[locale];
+        ResourceService.preview(ctrl.event.organizationId, ctrl.event.id, ctrl.resourceName, locale, {fileAsString: newText}).then(function(res) {
+            console.log(res);
+        });
+    }
 
     function saveFor(locale) {
         var newText  = ctrl.resources[locale];

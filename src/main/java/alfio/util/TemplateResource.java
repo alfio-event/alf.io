@@ -18,7 +18,9 @@
 package alfio.util;
 
 import alfio.controller.support.TemplateProcessor;
+import alfio.manager.TicketReservationManager;
 import alfio.manager.support.OrderSummary;
+import alfio.manager.support.SummaryRow;
 import alfio.model.*;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.transaction.PaymentProxy;
@@ -31,13 +33,39 @@ import static alfio.util.ImageUtil.createQRCode;
 
 public enum TemplateResource {
     GOOGLE_ANALYTICS("/alfio/templates/google-analytics.ms", false, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
+
+    CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
     SEND_RESERVED_CODE("/alfio/templates/send-reserved-code-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
+    CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
+    OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
+    REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
     REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
+    REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
 
 
     TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
@@ -45,7 +73,12 @@ public enum TemplateResource {
 
     TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
     TICKET_PDF("/alfio/templates/ticket.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML),
-    RECEIPT_PDF("/alfio/templates/receipt.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML),
+    RECEIPT_PDF("/alfio/templates/receipt.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
 
     WAITING_QUEUE_JOINED("/alfio/templates/waiting-queue-joined.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
     WAITING_QUEUE_RESERVATION_EMAIL("/alfio/templates/waiting-queue-reservation-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT);
@@ -76,8 +109,32 @@ public enum TemplateResource {
         return classPathUrl;
     }
 
+    public String getRenderedContentType() {
+        return renderedContentType;
+    }
+
     public TemplateManager.TemplateOutput getTemplateOutput() {
         return templateOutput;
+    }
+
+    public Map<String, Object> prepareSampleModel(Organization organization, Event event) {
+        return Collections.emptyMap();
+    }
+
+
+    private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {
+        TicketReservation reservation = new TicketReservation("597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", new Date(), TicketReservation.TicketReservationStatus.COMPLETE,
+            "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(), ZonedDateTime.now(),
+            PaymentProxy.STRIPE, true, null, false, "en", false);
+        Optional<String> vat = Optional.of("VAT-NR");
+        List<Ticket> tickets = Collections.singletonList(new Ticket(0, "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", ZonedDateTime.now(), 0, "ACQUIRED", 0,
+            "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", "Firstname Lastname", "Firstname", "Lastname", "email@email.tld", false, "en",
+            1000, 1000, 80, 0));
+        OrderSummary orderSummary = new OrderSummary(new TicketReservationManager.TotalPrice(1000, 80, 0, 0),
+            Collections.singletonList(new SummaryRow("Ticket", "10.00", 1, "10.00", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false);
+        String reservationUrl = "http://your-domain.tld/reservation-url/";
+        String reservationShortId = "597e7e7b";
+        return prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortId);
     }
 
     //used by multiple enum:
