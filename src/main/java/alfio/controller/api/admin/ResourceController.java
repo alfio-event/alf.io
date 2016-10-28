@@ -33,6 +33,7 @@
 package alfio.controller.api.admin;
 
 import alfio.controller.support.TemplateProcessor;
+import alfio.manager.FileUploadManager;
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
@@ -59,7 +60,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -76,6 +80,7 @@ public class ResourceController {
     private final MessageSource messageSource;
     private final TemplateManager templateManager;
     private final OrganizationRepository organizationRepository;
+    private final FileUploadManager fileUploadManager;
 
 
     @Autowired
@@ -84,13 +89,15 @@ public class ResourceController {
                               EventRepository eventRepository,
                               MessageSource messageSource,
                               TemplateManager templateManager,
-                              OrganizationRepository organizationRepository) {
+                              OrganizationRepository organizationRepository,
+                              FileUploadManager fileUploadManager) {
         this.uploadedResourceManager = uploadedResourceManager;
         this.userManager = userManager;
         this.eventRepository = eventRepository;
         this.messageSource = messageSource;
         this.templateManager = templateManager;
         this.organizationRepository = organizationRepository;
+        this.fileUploadManager = fileUploadManager;
     }
 
     @RequestMapping(value = "/overridable-template/", method = RequestMethod.GET)
@@ -127,7 +134,8 @@ public class ResourceController {
             checkAccess(organizationId, eventId, principal);
             Event event = eventRepository.findById(eventId);
             Organization organization = organizationRepository.getById(organizationId);
-            Map<String, Object> model = name.prepareSampleModel(organization, event);
+            Optional<TemplateResource.ImageData> image = TemplateProcessor.extractImageModel(event, fileUploadManager);
+            Map<String, Object> model = name.prepareSampleModel(organization, event, image);
             String renderedTemplate = templateManager.renderString(template.getFileAsString(), model, loc, name.getTemplateOutput());
             if("text/plain".equals(name.getRenderedContentType())) {
                 response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".txt");

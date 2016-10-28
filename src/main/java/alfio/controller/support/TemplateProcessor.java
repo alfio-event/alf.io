@@ -101,7 +101,7 @@ public final class TemplateProcessor {
         return renderer;
     }
 
-    static Optional<TemplateResource.ImageData> extractImageModel(Event event, FileUploadManager fileUploadManager) {
+    public static Optional<TemplateResource.ImageData> extractImageModel(Event event, FileUploadManager fileUploadManager) {
         if(event.getFileBlobIdIsPresent()) {
             return fileUploadManager.findMetadata(event.getFileBlobId()).map((metadata) -> {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
