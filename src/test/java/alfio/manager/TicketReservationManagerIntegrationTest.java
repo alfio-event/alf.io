@@ -19,13 +19,10 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.manager.support.OrderSummary;
+import alfio.model.OrderSummary;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.user.UserManager;
-import alfio.model.CustomerName;
-import alfio.model.PromoCodeDiscount;
-import alfio.model.Ticket;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TicketRepository;
@@ -146,7 +143,7 @@ public class TicketReservationManagerIntegrationTest {
         assertEquals(1, tickets.size());
         assertTrue(tickets.stream().allMatch(t -> t.getCategoryId() == null));
 
-        TicketReservationManager.TotalPrice totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        TotalPrice totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
 
 
         assertEquals(0, ticketReservationManager.getPendingPayments(event).size());
@@ -206,7 +203,7 @@ public class TicketReservationManagerIntegrationTest {
 
         String reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.of("MYPROMOCODE"), Locale.ENGLISH, false);
 
-        TicketReservationManager.TotalPrice totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        TotalPrice totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
 
         // 3 * 10 chf is the normal price, 10% discount -> 300 discount
         Assert.assertEquals(2700, totalPrice.getPriceWithVAT());
@@ -227,7 +224,7 @@ public class TicketReservationManagerIntegrationTest {
 
         String reservationIdFixed = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(modFixed), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.of("MYFIXEDPROMO"), Locale.ENGLISH, false);
 
-        TicketReservationManager.TotalPrice totalPriceFixed = ticketReservationManager.totalReservationCostWithVAT(reservationIdFixed);
+        TotalPrice totalPriceFixed = ticketReservationManager.totalReservationCostWithVAT(reservationIdFixed);
 
         // 3 * 10 chf is the normal price, 3 * 5 is the discount
         Assert.assertEquals(2985, totalPriceFixed.getPriceWithVAT());
@@ -278,7 +275,7 @@ public class TicketReservationManagerIntegrationTest {
 
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
-        TicketReservationManager.TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", new CustomerName("full name", "full", "name", event.getEvent()), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
         ticketReservationManager.deleteOfflinePayment(event.getEvent(), reservationId, false);

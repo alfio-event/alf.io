@@ -14,16 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager.support;
+package alfio.model;
 
-import alfio.manager.TicketReservationManager;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
 public class OrderSummary {
-    private final TicketReservationManager.TotalPrice originalTotalPrice;
+    private final TotalPrice originalTotalPrice;
     private final List<SummaryRow> summary;
     private final boolean free;
     private final String totalPrice;

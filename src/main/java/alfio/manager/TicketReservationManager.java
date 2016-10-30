@@ -40,7 +40,6 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import alfio.util.TemplateManager.TemplateOutput;
-import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -123,14 +122,6 @@ public class TicketReservationManager {
 
     public static class InvalidSpecialPriceTokenException extends RuntimeException {
 
-    }
-
-    @Data
-    public static class TotalPrice {
-        private final int priceWithVAT;
-        private final int VAT;
-        private final int discount;
-        private final int discountAppliedCount;
     }
 
     @Autowired
@@ -704,8 +695,8 @@ public class TicketReservationManager {
             String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount()) : (promo.getDiscountAmount()+"%"));
             summary.add(new SummaryRow(formatPromoCode(promo, ticketRepository.findTicketsInReservation(reservationId)),
                 formattedSingleAmount,
-                reservationCost.discountAppliedCount,
-                formatCents(reservationCost.discount), reservationCost.discount, SummaryRow.SummaryType.PROMOTION_CODE));
+                reservationCost.getDiscountAppliedCount(),
+                formatCents(reservationCost.getDiscount()), reservationCost.getDiscount(), SummaryRow.SummaryType.PROMOTION_CODE));
         });
         return summary;
     }
@@ -975,11 +966,7 @@ public class TicketReservationManager {
                     .forEach(t -> {
                         int result = ticketRepository.flagTicketAsReminderSent(t.getId());
                         Validate.isTrue(result == 1);
-                        Map<String, Object> model = new HashMap<>();
-                        model.put("event", event);
-                        model.put("fullName", t.getFullName());
-                        model.put("organization", organizationRepository.getById(event.getOrganizationId()));
-                        model.put("ticketURL", ticketUpdateUrl(t.getTicketsReservationId(), event, t.getUuid()));
+                        Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ticketUpdateUrl(t.getTicketsReservationId(), event, t.getUuid()));
                         Locale locale = Optional.ofNullable(t.getUserLanguage()).map(Locale::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
                         notificationManager.sendSimpleEmail(event, t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
                     });
@@ -1051,10 +1038,7 @@ public class TicketReservationManager {
             ticketRepository.unbindTicketsFromCategory(event.getId(), category.getId(), singletonList(ticket.getId()));
         }
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        Map<String, Object> model = new HashMap<>();
-        model.put("eventName", event.getDisplayName());
-        model.put("ticket", ticket);
-        model.put("organization", organization);
+        Map<String, Object> model = TemplateResource.buildModelForTicketHasBeenCancelled(organization, event, ticket);
         Locale locale = Locale.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
         notificationManager.sendSimpleEmail(event, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
                 new Object[]{event.getDisplayName()}, locale),

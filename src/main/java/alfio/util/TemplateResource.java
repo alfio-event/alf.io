@@ -14,39 +14,121 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package alfio.util;
 
-import alfio.manager.support.OrderSummary;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.modification.SendCodeModification;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 import java.time.ZonedDateTime;
 import java.util.*;
 
+import static alfio.util.ImageUtil.createQRCode;
+
+
 public enum TemplateResource {
     GOOGLE_ANALYTICS("/alfio/templates/google-analytics.ms", false, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    SEND_RESERVED_CODE("/alfio/templates/send-reserved-code-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
+
+    CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
+    SEND_RESERVED_CODE("/alfio/templates/send-reserved-code-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareModelForSendReservedCode(organization, event, new SendCodeModification("CODE", "Firstname Lastname", "email@email.tld", "en"), "http://your-domain.tld/event-page");
+        }
+    },
+    CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
+    OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
+    REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
+    REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareModelForReminderTicketAdditionalInfo(organization, event, sampleTicket(), "http://your-domain.tld/ticket-url");
+        }
+    },
+    REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
 
 
-    TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
+    TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", sampleTicket());
+        }
+    },
+    TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return buildModelForTicketHasChangedOwner(organization, event, sampleTicket(), sampleTicket("NewFirstname", "NewLastname", "newemail@email.tld"), "http://your-domain.tld/ticket-url");
+        }
+    },
 
-    TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    TICKET_PDF("/alfio/templates/ticket.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML),
-    RECEIPT_PDF("/alfio/templates/receipt.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML),
+    TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return buildModelForTicketHasBeenCancelled(organization, event, sampleTicket());
+        }
+    },
+    TICKET_PDF("/alfio/templates/ticket.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000);
+            return buildModelForTicketPDF(organization, event, sampleTicketReservation(), ticketCategory, sampleTicket(), imageData);
+        }
+    },
+    RECEIPT_PDF("/alfio/templates/receipt.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            Map<String, Object> model = prepareSampleDataForConfirmationEmail(organization, event);
+            imageData.ifPresent(iData -> {
+                model.put("eventImage", iData.getEventImage());
+                model.put("imageWidth", iData.getImageWidth());
+                model.put("imageHeight", iData.getEventImage());
+            });
+            return model;
+        }
+    },
 
-    WAITING_QUEUE_JOINED("/alfio/templates/waiting-queue-joined.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT),
-    WAITING_QUEUE_RESERVATION_EMAIL("/alfio/templates/waiting-queue-reservation-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT);
+    WAITING_QUEUE_JOINED("/alfio/templates/waiting-queue-joined.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return buildModelForWaitingQueueJoined(organization, event, new CustomerName("Firstname Lastname", "Firstname", "Lastname", event));
+        }
+    },
+    WAITING_QUEUE_RESERVATION_EMAIL("/alfio/templates/waiting-queue-reservation-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            WaitingQueueSubscription subscription = new WaitingQueueSubscription(0, ZonedDateTime.now(), event.getId(), "ACQUIRED", "Firstname Lastname", "Firstname", "Lastname",
+                "email@email.tld", "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", "en", null, WaitingQueueSubscription.Type.PRE_SALES);
+            return buildModelForWaitingQueueReservationEmail(organization, event, subscription, "http://your-domain.tld/reservation-url", ZonedDateTime.now());
+        }
+    };
 
     private final String classPathUrl;
     private final boolean overridable;
@@ -60,6 +142,7 @@ public enum TemplateResource {
         this.templateOutput = templateOutput;
     }
 
+
     public String getSavedName(Locale locale) {
         return name() + "_" + locale.getLanguage() + ".ms";
     }
@@ -72,8 +155,43 @@ public enum TemplateResource {
         return classPathUrl;
     }
 
+    public String getRenderedContentType() {
+        return renderedContentType;
+    }
+
     public TemplateManager.TemplateOutput getTemplateOutput() {
         return templateOutput;
+    }
+
+    public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+        return Collections.emptyMap();
+    }
+
+    private static Ticket sampleTicket() {
+        return sampleTicket("Firstname", "Lastname", "email@email.tld");
+    }
+
+    private static Ticket sampleTicket(String firstName, String lastName, String email) {
+        return new Ticket(0, "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", ZonedDateTime.now(), 0, "ACQUIRED", 0,
+            "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", firstName + " " + lastName, firstName, lastName, email, false, "en",
+            1000, 1000, 80, 0);
+    }
+
+    private static TicketReservation sampleTicketReservation() {
+        return new TicketReservation("597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", new Date(), TicketReservation.TicketReservationStatus.COMPLETE,
+            "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(), ZonedDateTime.now(),
+            PaymentProxy.STRIPE, true, null, false, "en", false);
+    }
+
+    private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {
+        TicketReservation reservation = sampleTicketReservation();
+        Optional<String> vat = Optional.of("VAT-NR");
+        List<Ticket> tickets = Collections.singletonList(sampleTicket());
+        OrderSummary orderSummary = new OrderSummary(new TotalPrice(1000, 80, 0, 0),
+            Collections.singletonList(new SummaryRow("Ticket", "10.00", 1, "10.00", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false);
+        String reservationUrl = "http://your-domain.tld/reservation-url/";
+        String reservationShortId = "597e7e7b";
+        return prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortId);
     }
 
     //used by multiple enum:
@@ -82,6 +200,7 @@ public enum TemplateResource {
     // - REMINDER_TICKETS_ASSIGNMENT_EMAIL
     // - CONFIRMATION_EMAIL
     // - REMINDER_EMAIL
+    // - RECEIPT_PDF + ImageData
     public static Map<String, Object> prepareModelForConfirmationEmail(Organization organization,
                                                                        Event event,
                                                                        TicketReservation reservation,
@@ -102,7 +221,10 @@ public enum TemplateResource {
 
         ZonedDateTime confirmationTimestamp = Optional.ofNullable(reservation.getConfirmationTimestamp()).orElseGet(ZonedDateTime::now);
         model.put("confirmationDate", confirmationTimestamp.withZoneSameInstant(event.getZoneId()));
-        model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
+
+        if (reservation.getValidity() != null) {
+            model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
+        }
 
         model.put("reservationShortID", reservationShortID);
 
@@ -121,5 +243,129 @@ public enum TemplateResource {
         model.put("eventPage", eventPageUrl);
         model.put("assignee", m.getAssignee());
         return model;
+    }
+
+
+    // used by REMINDER_TICKET_ADDITIONAL_INFO
+    public static Map<String, Object> prepareModelForReminderTicketAdditionalInfo(Organization organization,
+                                                                                  Event event,
+                                                                                  Ticket ticket,
+                                                                                  String ticketUrl) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("event", event);
+        model.put("fullName", ticket.getFullName());
+        model.put("organization", organization);
+        model.put("ticketURL", ticketUrl);
+        return model;
+    }
+
+    // used by TICKET_EMAIL
+    public static Map<String, Object> buildModelForTicketEmail(Organization organization,
+                                                               Event event,
+                                                               TicketReservation ticketReservation,
+                                                               String ticketURL,
+                                                               Ticket ticket) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("organization", organization);
+        model.put("event", event);
+        model.put("ticketReservation", ticketReservation);
+        model.put("ticketUrl", ticketURL);
+        model.put("ticket", ticket);
+        return model;
+    }
+
+    // used by TICKET_HAS_CHANGED_OWNER
+    public static Map<String, Object> buildModelForTicketHasChangedOwner(Organization organization, Event e, Ticket oldTicket, Ticket newTicket, String ticketUrl) {
+        Map<String, Object> emailModel = new HashMap<>();
+        emailModel.put("ticket", oldTicket);
+        emailModel.put("organization", organization);
+        emailModel.put("eventName", e.getDisplayName());
+        emailModel.put("previousEmail", oldTicket.getEmail());
+        emailModel.put("newEmail", newTicket.getEmail());
+        emailModel.put("ticketUrl", ticketUrl);
+        return emailModel;
+    }
+
+    // used by TICKET_HAS_BEEN_CANCELLED
+    public static Map<String, Object> buildModelForTicketHasBeenCancelled(Organization organization, Event event, Ticket ticket) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("eventName", event.getDisplayName());
+        model.put("ticket", ticket);
+        model.put("organization", organization);
+        return model;
+    }
+
+    // used by TICKET_PDF
+    public static Map<String, Object> buildModelForTicketPDF(Organization organization, Event event, TicketReservation ticketReservation, TicketCategory ticketCategory, Ticket ticket, Optional<ImageData> imageData) {
+        String qrCodeText = ticket.ticketCode(event.getPrivateKey());
+        //
+        Map<String, Object> model = new HashMap<>();
+        model.put("ticket", ticket);
+        model.put("reservation", ticketReservation);
+        model.put("ticketCategory", ticketCategory);
+        model.put("event", event);
+        model.put("organization", organization);
+
+        model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
+
+        imageData.ifPresent(iData -> {
+            model.put("eventImage", iData.getEventImage());
+            model.put("imageWidth", iData.getImageWidth());
+            model.put("imageHeight", iData.getEventImage());
+        });
+
+        model.put("deskPaymentRequired", Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired());
+        return model;
+    }
+
+    // used by WAITING_QUEUE_JOINED
+    public static Map<String, Object> buildModelForWaitingQueueJoined(Organization organization, Event event, CustomerName name) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("eventName", event.getDisplayName());
+        model.put("fullName", name.getFullName());
+        model.put("organization", organization);
+        return model;
+    }
+
+    // used by WAITING_QUEUE_RESERVATION_EMAIL
+    public static Map<String, Object> buildModelForWaitingQueueReservationEmail(Organization organization, Event event, WaitingQueueSubscription subscription, String reservationUrl, ZonedDateTime expiration) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("event", event);
+        model.put("subscription", subscription);
+        model.put("reservationUrl", reservationUrl);
+        model.put("reservationTimeout", expiration);
+        model.put("organization", organization);
+        return model;
+    }
+
+
+    public static ImageData fillWithImageData(FileBlobMetadata m, byte[] image) {
+
+        Map<String, String> attributes = m.getAttributes();
+        if (attributes.containsKey(FileBlobMetadata.ATTR_IMG_WIDTH) && attributes.containsKey(FileBlobMetadata.ATTR_IMG_HEIGHT)) {
+            final int width = Integer.parseInt(attributes.get(FileBlobMetadata.ATTR_IMG_WIDTH));
+            final int height = Integer.parseInt(attributes.get(FileBlobMetadata.ATTR_IMG_HEIGHT));
+            //in the PDF the image can be maximum 300x150
+            int resizedWidth = width;
+            int resizedHeight = height;
+            if (resizedHeight > 150) {
+                resizedHeight = 150;
+                resizedWidth = width * resizedHeight / height;
+            }
+            if (resizedWidth > 300) {
+                resizedWidth = 300;
+                resizedHeight = height * resizedWidth / width;
+            }
+            return new ImageData("data:" + m.getContentType() + ";base64," + Base64.getEncoder().encodeToString(image), resizedWidth, resizedHeight);
+        }
+        return new ImageData(null, null, null);
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class ImageData {
+        private final String eventImage;
+        private final Integer imageWidth;
+        private final Integer imageHeight;
     }
 }

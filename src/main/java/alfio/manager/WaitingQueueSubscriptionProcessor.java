@@ -21,6 +21,7 @@ import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
+import alfio.model.user.Organization;
 import alfio.repository.WaitingQueueRepository;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
@@ -86,14 +87,11 @@ public class WaitingQueueSubscriptionProcessor {
             WaitingQueueSubscription subscription = triple.getLeft();
             Locale locale = subscription.getLocale();
             ZonedDateTime expiration = triple.getRight();
+            Organization organization = eventManager.loadOrganizerUsingSystemPrincipal(event);
             String reservationId = createReservation(event, triple.getMiddle(), expiration, locale);
             String subject = messageSource.getMessage("email-waiting-queue-acquired.subject", new Object[]{event.getDisplayName()}, locale);
-            Map<String, Object> model = new HashMap<>();
-            model.put("event", event);
-            model.put("subscription", subscription);
-            model.put("reservationUrl", ticketReservationManager.reservationUrl(reservationId, event));
-            model.put("reservationTimeout", expiration);
-            model.put("organization", eventManager.loadOrganizerUsingSystemPrincipal(event));
+            String reservationUrl = ticketReservationManager.reservationUrl(reservationId, event);
+            Map<String, Object> model = TemplateResource.buildModelForWaitingQueueReservationEmail(organization, event, subscription, reservationUrl, expiration);
             notificationManager.sendSimpleEmail(event,
                     subscription.getEmailAddress(),
                     subject,

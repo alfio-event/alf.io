@@ -17,8 +17,8 @@
 package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.manager.support.OrderSummary;
-import alfio.manager.support.SummaryRow;
+import alfio.model.OrderSummary;
+import alfio.model.SummaryRow;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
