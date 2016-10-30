@@ -25,6 +25,8 @@ import lombok.Getter;
 
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static alfio.util.ImageUtil.createQRCode;
 
@@ -95,6 +97,15 @@ public enum TemplateResource {
             return buildModelForTicketHasBeenCancelled(organization, event, sampleTicket());
         }
     },
+
+    TICKET_HAS_BEEN_CANCELLED_ADMIN("/alfio/templates/ticket-has-been-cancelled-admin-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return buildModelForTicketHasBeenCancelledAdmin(organization, event, sampleTicket(), "Category", Collections.emptyList(), asi -> Optional.empty());
+        }
+    },
+
+
     TICKET_PDF("/alfio/templates/ticket.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
@@ -292,6 +303,25 @@ public enum TemplateResource {
         model.put("eventName", event.getDisplayName());
         model.put("ticket", ticket);
         model.put("organization", organization);
+        return model;
+    }
+
+    // used by TICKET_HAS_BEEN_CANCELLED_ADMIN
+    public static Map<String, Object> buildModelForTicketHasBeenCancelledAdmin(Organization organization, Event event, Ticket ticket,
+                                                                               String ticketCategoryDescription,
+                                                                               List<AdditionalServiceItem> additionalServiceItems,
+                                                                               Function<AdditionalServiceItem, Optional<AdditionalServiceText>> titleFinder) {
+        Map<String, Object> model = buildModelForTicketHasBeenCancelled(organization, event, ticket);
+        model.put("ticketCategoryDescription", ticketCategoryDescription);
+        model.put("hasAdditionalServices", !additionalServiceItems.isEmpty());
+        model.put("additionalServices", additionalServiceItems.stream()
+            .map(asi -> {
+                Map<String, Object> data = new HashMap<>();
+                data.put("name", titleFinder.apply(asi).map(AdditionalServiceText::getValue).orElse("N/A"));
+                data.put("amount", MonetaryUtil.centsToUnit(asi.getFinalPriceCts()).toString() + event.getCurrency());
+                data.put("id", asi.getId());
+                return data;
+            }).collect(Collectors.toList()));
         return model;
     }
 

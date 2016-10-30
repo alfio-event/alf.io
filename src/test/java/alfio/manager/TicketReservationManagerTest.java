@@ -585,6 +585,7 @@ public class TicketReservationManagerTest {
         when(ticketCategory.isAccessRestricted()).thenReturn(false);
         List<String> expectedReservations = singletonList(RESERVATION_ID);
         when(ticketReservationRepository.remove(eq(expectedReservations))).thenReturn(1);
+        when(transactionRepository.loadOptionalByReservationId(anyString())).thenReturn(Optional.empty());
         trm.releaseTicket(event, ticketReservation, ticket);
         verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), eq(EVENT_ID), eq(TICKET_ID));
         verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_EMAIL), any(), any(TextTemplateGenerator.class));
@@ -613,6 +614,7 @@ public class TicketReservationManagerTest {
         when(ticketCategoryRepository.countUnboundedCategoriesByEventId(eq(EVENT_ID))).thenReturn(1);
         List<String> expectedReservations = singletonList(RESERVATION_ID);
         when(ticketReservationRepository.remove(eq(expectedReservations))).thenReturn(1);
+        when(transactionRepository.loadOptionalByReservationId(anyString())).thenReturn(Optional.empty());
         trm.releaseTicket(event, ticketReservation, ticket);
         verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), eq(EVENT_ID), eq(TICKET_ID));
         verify(ticketRepository).unbindTicketsFromCategory(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(singletonList(TICKET_ID)));

@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 @QueryRepository
 public interface TransactionRepository {
@@ -38,4 +39,7 @@ public interface TransactionRepository {
 
     @Query("select * from b_transaction where reservation_id = :reservationId")
     Transaction loadByReservationId(@Bind("reservationId") String reservationId);
+
+    @Query("select * from b_transaction where reservation_id = :reservationId")
+    Optional<Transaction> loadOptionalByReservationId(@Bind("reservationId") String reservationId);
 }

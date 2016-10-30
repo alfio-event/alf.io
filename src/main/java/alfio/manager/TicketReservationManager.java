@@ -18,7 +18,9 @@ package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.plugin.PluginManager;
-import alfio.manager.support.*;
+import alfio.manager.support.CategoryEvaluator;
+import alfio.manager.support.PartialTicketTextGenerator;
+import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
@@ -39,7 +41,6 @@ import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
-import alfio.util.TemplateManager.TemplateOutput;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -1032,7 +1033,8 @@ public class TicketReservationManager {
         if(!CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket)) {
             throw new IllegalStateException("Cannot release reserved tickets");
         }
-        int result = ticketRepository.releaseTicket(ticketReservation.getId(), event.getId(), ticket.getId());
+        String reservationId = ticketReservation.getId();
+        int result = ticketRepository.releaseTicket(reservationId, event.getId(), ticket.getId());
         Validate.isTrue(result == 1, String.format("Expected 1 row to be updated, got %d", result));
         if(category.isAccessRestricted() || !category.isBounded()) {
             ticketRepository.unbindTicketsFromCategory(event.getId(), category.getId(), singletonList(ticket.getId()));
@@ -1046,13 +1048,14 @@ public class TicketReservationManager {
 
         String ticketCategoryDescription = ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(category.getId(), ticket.getUserLanguage()).orElse("");
 
-        String adminTemplate = messageSource.getMessage("email-ticket-released.admin.text",
-                new Object[] {ticket.getId(), ticket.getUuid(), ticket.getFullName(), ticket.getEmail(), ticketCategoryDescription, category.getId()}, Locale.ENGLISH);
-        notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject",
-                new Object[]{ticket.getId(), event.getDisplayName()}, locale),
-                () -> templateManager.renderString(adminTemplate, model, Locale.ENGLISH, TemplateOutput.TEXT));
-        if(ticketRepository.countTicketsInReservation(ticketReservation.getId()) == 0) {
-            deleteReservations(singletonList(ticketReservation.getId()));
+        List<AdditionalServiceItem> additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservationId);
+        Map<String, Object> adminModel = TemplateResource.buildModelForTicketHasBeenCancelledAdmin(organization, event, ticket,
+            ticketCategoryDescription, additionalServiceItems, asi -> additionalServiceTextRepository.findByLocaleAndType(asi.getAdditionalServiceId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE));
+        notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject", new Object[]{ticket.getId(), event.getDisplayName()}, locale),
+            () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED_ADMIN, adminModel, locale));
+
+        if(ticketRepository.countTicketsInReservation(reservationId) == 0 && !transactionRepository.loadOptionalByReservationId(reservationId).isPresent()) {
+            deleteReservations(singletonList(reservationId));
         }
     }
 
