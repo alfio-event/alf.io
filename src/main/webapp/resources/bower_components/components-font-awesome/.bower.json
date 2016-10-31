@@ -6,14 +6,7 @@
     "url": "git://github.com/components/font-awesome.git"
   },
   "main": [
-    "css/font-awesome.css",
-    "css/font-awesome.css.map",
-    "scss/font-awesome.scss",
-    "fonts/fontawesome-webfont.eot",
-    "fonts/fontawesome-webfont.woff",
-    "fonts/fontawesome-webfont.woff2",
-    "fonts/fontawesome-webfont.ttf",
-    "fonts/fontawesome-webfont.svg"
+    "css/font-awesome.css"
   ],
   "license": [
     "MIT",
@@ -25,15 +18,15 @@
     "composer.json"
   ],
   "homepage": "https://github.com/components/font-awesome",
-  "version": "4.6.3",
-  "_release": "4.6.3",
+  "version": "4.7.0",
+  "_release": "4.7.0",
   "_resolution": {
     "type": "version",
-    "tag": "4.6.3",
-    "commit": "daa3ef598620217085dcb13ad11149e89a20a925"
+    "tag": "4.7.0",
+    "commit": "885308b939369d147bec93174722786bc2c4eedd"
   },
   "_source": "https://github.com/components/font-awesome.git",
-  "_target": "~4.6.3",
+  "_target": "^4.7.0",
   "_originalSource": "components-font-awesome",
   "_direct": true
 }
