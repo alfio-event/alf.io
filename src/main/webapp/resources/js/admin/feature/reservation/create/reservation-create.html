@@ -1,0 +1,181 @@
+<div class="container">
+    <form role="form" name="newReservation" ng-submit="$ctrl.submit(newReservation)" error-sensitive="newReservation" novalidate>
+        <div class="page-header">
+            <h1>Create reservation for {{$ctrl.event.displayName}}</h1>
+        </div>
+
+        <div class="page-header">
+            <h3>Contact info</h3>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12 col-sm-6">
+                <div class="form-group">
+                    <label for="customerFirstName">First name</label>
+                    <input class="form-control" id="customerFirstName" name="customerFirstName" ng-model="$ctrl.reservation.customerData.firstName">
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-6">
+                <div class="form-group">
+                    <label for="customerLastName">Last name</label>
+                    <input class="form-control" id="customerLastName" name="customerLastName" ng-model="$ctrl.reservation.customerData.lastName">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 col-sm-6">
+                <div class="form-group">
+                    <label for="customerEmailAddress">Email Address</label>
+                    <input type="email" class="form-control" id="customerEmailAddress" name="customerEmailAddress" ng-model="$ctrl.reservation.customerData.emailAddress">
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-6">
+                <div class="form-group">
+                    <label for="language">Language</label>
+                    <select class="form-control" id="language" ng-options="l.locale as l.displayLanguage for l in $ctrl.languages" name="language" ng-model="$ctrl.reservation.language"></select>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-header">
+            <h3>Reservation details</h3>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label for="expiration">Expiration</label>
+                    <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12">
+                <button class="btn btn-sm btn-success" ng-click="$ctrl.addTicketInfo()"><i class="fa fa-plus"></i> add new Ticket Info</button>
+            </div>
+        </div>
+        <hr>
+        <div class="panel panel-default" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
+            <div class="panel-heading">
+                <div class="panel-title">Ticket info {{$index + 1}}</div>
+            </div>
+            <div class="panel-body">
+                <h5><strong>Ticket Category</strong></h5>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="btn-group j-btn-group">
+                            <label class="btn btn-default" ng-model="ticketInfo.categoryType" uib-btn-radio="'existing'"><i class="fa fa-paperclip"></i> Use existing</label>
+                            <label class="btn btn-default" ng-model="ticketInfo.categoryType" uib-btn-radio="'custom'"><i class="fa fa-plus-square-o"></i> Create dedicated</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row wMarginTop10px" ng-switch="ticketInfo.categoryType">
+                    <div class="col-xs-12" ng-switch-when="existing">
+                        <div class="form-group">
+                            <label for="ticketInfo-{{$index}}-categoryType">Existing category</label>
+                            <select class="form-control" required ng-options="c.id as c.name for c in $ctrl.categories" ng-model="ticketInfo.category.existingCategoryId" id="ticketInfo-{{$index}}-categoryType"></select>
+                        </div>
+                    </div>
+                    <div class="col-xs-12" ng-switch-when="custom">
+                        <div class="row">
+                            <div class="col-xs-12 col-md-6">
+                                <div class="form-group">
+                                    <label for="ticketInfo-{{$index}}-name">Name</label>
+                                    <input type="text" class="form-control" ng-model="ticketInfo.category.name" required id="ticketInfo-{{$index}}-name" />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-md-6">
+                                <div class="form-group">
+                                    <label for="ticketInfo-{{$index}}-price">Price</label>
+                                    <input type="number" min="0" class="form-control" ng-model="ticketInfo.category.price" required id="ticketInfo-{{$index}}-price" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="checkbox">
+                            <label><input type="checkbox" ng-model="ticketInfo.addSeatsIfNotAvailable" id="ticketInfo-{{$index}}-addSeatsIfNotAvailable" value="true"> Add extra seats to Category and/or event if needed</label>
+                        </div>
+                    </div>
+                </div>
+                <hr/>
+                <h5><strong>Attendees</strong></h5>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="btn-group j-btn-group">
+                            <label class="btn btn-default" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'noData'"><i class="fa fa-user-times"></i> Do not specify attendees</label>
+                            <label class="btn btn-default" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'fullData'"><i class="fa fa-address-card"></i> Insert manually</label>
+                            <label class="btn btn-default" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'CSV'"><i class="fa fa-upload"></i> Upload CSV</label>
+                        </div>
+                    </div>
+                </div>
+                <!-- no data -->
+                <div class="row wMarginTop10px" ng-if="ticketInfo.attendeeStrategy == 'noData'">
+                    <div class="col-xs-12">
+                        <div class="form-group">
+                            <label for="ticketInfo-{{$index}}-currentAttendees">Nr. of attendees</label>
+                            <input type="number" class="form-control" id="ticketInfo-{{$index}}-currentAttendees" min="1" step="1" ng-change="$ctrl.updateAttendeesSize(ticketInfo)" ng-model="ticketInfo.currentAttendeesLength">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- upload CSV -->
+                <div class="wMarginTop10px" ng-if="ticketInfo.attendeeStrategy == 'CSV'">
+                    <h4>File Specifications:</h4>
+                    <h5><strong>General</strong></h5>
+                    <span>Please create a CSV file without header, using commas (<strong>,</strong>) as separator, double quotes (<strong>"</strong>) as quote character and backslash (<strong>\</strong>) as escaping character</span>
+                    <h5><strong>Row specification</strong></h5>
+                    <pre>
+                        <span class="text-info">FirstName</span>,<span class="text-danger">LastName</span><strong>,</strong><span class="text-warning">email@host.tld</span>
+
+                        where:
+
+                        <span class="text-info">FirstName</span> is the first name of the attendee
+                        <span class="text-danger">LastName</span> is the last name of the attendee
+                        <span class="text-warning">email@host.tld</span> is the email of the attendee (the ticket will be sent to this address)
+                    </pre>
+                </div>
+
+                <file-upload accept="'text/csv'" success-callback="ticketInfo.parseFileContent" direct-handling="true" ng-if="ticketInfo.attendeeStrategy == 'CSV'"></file-upload>
+
+            </div>
+
+            <!-- full data -->
+            <div class="row" ng-if="ticketInfo.attendeeStrategy == 'fullData'">
+                <div class="col-xs-12">
+                    <div class="container">
+                        <button class="btn btn-sm btn-success" ng-click="$ctrl.addAttendee(ticketInfo)"><i class="fa fa-plus"></i> add Attendee</button>
+                    </div>
+                </div>
+            </div>
+            <ul class="list-group wMarginTop10px" ng-if="ticketInfo.attendeeStrategy == 'fullData'">
+                <li class="list-group-item" ng-repeat="attendee in ticketInfo.attendees">
+                    <h4 class="list-group-item-heading">Attendee {{$index + 1}}</h4>
+                    <div class="list-group-item-text row">
+                        <div class="col-xs-12 col-md-4">
+                            <div class="form-group">
+                                <label for="attendee-{{$index}}-firstName">First name</label>
+                                <input type="text" class="form-control" id="attendee-{{$index}}-firstName" required name="attendee-{{$index}}-first" ng-model="attendee.firstName">
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-4">
+                            <div class="form-group">
+                                <label for="attendee-{{$index}}-lastName">Last name</label>
+                                <input type="text" class="form-control" id="attendee-{{$index}}-lastName" required name="attendee-{{$index}}-last" ng-model="attendee.lastName">
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-4">
+                            <div class="form-group">
+                                <label for="attendee-{{$index}}-emailAddress">E-Mail</label>
+                                <input type="text" class="form-control" id="attendee-{{$index}}-emailAddress" required name="attendee-{{$index}}-emailAddress" ng-model="attendee.emailAddress">
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <control-buttons data-form-obj="newReservation"></control-buttons>
+    </form>
+</div>

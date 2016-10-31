@@ -9,7 +9,8 @@
                     accept: '=',
                     targetUrl: '=',
                     successCallback: '=',
-                    errorCallback: '='
+                    errorCallback: '=',
+                    directHandling: '='
                 },
                 bindToController: true,
                 controller: FileUploadController,
@@ -19,7 +20,7 @@
         });
 
 
-    function FileUploadController($http) {
+    function FileUploadController($http, $window) {
         var ctrl = this;
         ctrl.selectedFile = undefined;
 
@@ -30,20 +31,24 @@
             var reader = new FileReader();
             reader.onload = function(e) {
                 var fileBase64 = e.target.result;
-                $http['post'](ctrl.targetUrl, {file : fileBase64.substring(fileBase64.indexOf('base64,') + 7), type : file.type, name : file.name})
-                    .success(function(data) {
-                        ctrl.successCallback(data);
-                    }).error(function(data) {
-                        if(ctrl.errorCallback) {
-                            ctrl.errorCallback(data);
-                        }
-                    });
+                if(ctrl.directHandling) {
+                    ctrl.successCallback($window.atob(fileBase64.substring(fileBase64.indexOf('base64,') + 7)));
+                } else {
+                    $http['post'](ctrl.targetUrl, {file : fileBase64.substring(fileBase64.indexOf('base64,') + 7), type : file.type, name : file.name})
+                        .success(function(data) {
+                            ctrl.successCallback(data);
+                        }).error(function(data) {
+                            if(ctrl.errorCallback) {
+                                ctrl.errorCallback(data);
+                            }
+                        });
+                }
             };
             reader.readAsDataURL(file);
         };
 
     }
 
-    FileUploadController.prototype.$inject = ['$http'];
+    FileUploadController.prototype.$inject = ['$http', '$window'];
 
 })();

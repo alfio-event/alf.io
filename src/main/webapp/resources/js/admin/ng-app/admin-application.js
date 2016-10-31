@@ -125,6 +125,16 @@
                     this.resourceName = $state.params.resourceName;
                 },
                 controllerAs: 'ctrl'
+            }).state('events.single.create-reservation', {
+                url:'/reservation/new',
+                template: '<reservation-create event="ctrl.event"></reservation-create>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                },
+                controllerAs: 'ctrl',
+                data: {
+                    view: 'CREATE_RESERVATION'
+                }
             });
     });
 

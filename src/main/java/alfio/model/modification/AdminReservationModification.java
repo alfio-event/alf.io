@@ -33,10 +33,10 @@ public class AdminReservationModification {
     private final String language;
 
     @JsonCreator
-    public AdminReservationModification(@JsonProperty DateTimeModification expiration,
-                                        @JsonProperty CustomerData customerData,
-                                        @JsonProperty List<TicketsInfo> ticketsInfo,
-                                        @JsonProperty String language) {
+    public AdminReservationModification(@JsonProperty("expiration") DateTimeModification expiration,
+                                        @JsonProperty("customerData") CustomerData customerData,
+                                        @JsonProperty("ticketsInfo") List<TicketsInfo> ticketsInfo,
+                                        @JsonProperty("language") String language) {
         this.expiration = expiration;
         this.customerData = customerData;
         this.ticketsInfo = ticketsInfo;
@@ -50,9 +50,9 @@ public class AdminReservationModification {
         private final String emailAddress;
 
         @JsonCreator
-        public CustomerData(@JsonProperty String firstName,
-                            @JsonProperty String lastName,
-                            @JsonProperty String emailAddress) {
+        public CustomerData(@JsonProperty("firstName") String firstName,
+                            @JsonProperty("lastName") String lastName,
+                            @JsonProperty("emailAddress") String emailAddress) {
             this.firstName = firstName;
             this.lastName = lastName;
             this.emailAddress = emailAddress;
@@ -66,9 +66,9 @@ public class AdminReservationModification {
         private final boolean addSeatsIfNotAvailable;
 
         @JsonCreator
-        public TicketsInfo(@JsonProperty Category category,
-                           @JsonProperty List<Attendee> attendees,
-                           @JsonProperty boolean addSeatsIfNotAvailable) {
+        public TicketsInfo(@JsonProperty("category") Category category,
+                           @JsonProperty("attendees") List<Attendee> attendees,
+                           @JsonProperty("addSeatsIfNotAvailable") boolean addSeatsIfNotAvailable) {
             this.category = category;
             this.attendees = attendees;
             this.addSeatsIfNotAvailable = addSeatsIfNotAvailable;
@@ -82,7 +82,9 @@ public class AdminReservationModification {
         private final BigDecimal price;
 
         @JsonCreator
-        public Category(@JsonProperty Integer existingCategoryId, @JsonProperty String name, @JsonProperty BigDecimal price) {
+        public Category(@JsonProperty("existingCategoryId") Integer existingCategoryId,
+                        @JsonProperty("name") String name,
+                        @JsonProperty("price") BigDecimal price) {
             this.existingCategoryId = existingCategoryId;
             this.name = name;
             this.price = price;
@@ -100,7 +102,9 @@ public class AdminReservationModification {
         private final String emailAddress;
 
         @JsonCreator
-        public Attendee(@JsonProperty String firstName, @JsonProperty String lastName, @JsonProperty String emailAddress) {
+        public Attendee(@JsonProperty("firstName") String firstName,
+                        @JsonProperty("lastName") String lastName,
+                        @JsonProperty("emailAddress") String emailAddress) {
             this.firstName = firstName;
             this.lastName = lastName;
             this.emailAddress = emailAddress;
@@ -121,7 +125,8 @@ public class AdminReservationModification {
         private final boolean attendees;
 
         @JsonCreator
-        public Notification(@JsonProperty boolean customer, @JsonProperty boolean attendees) {
+        public Notification(@JsonProperty("customer") boolean customer,
+                            @JsonProperty("attendees") boolean attendees) {
             this.customer = customer;
             this.attendees = attendees;
         }

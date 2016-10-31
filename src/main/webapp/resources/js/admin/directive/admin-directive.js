@@ -89,9 +89,7 @@
                 scope.startModelObj['date'] = startDate.format('YYYY-MM-DD');
                 scope.startModelObj['time'] = startDate.format('HH:mm');
 
-                scope.endModelObj['date'] = endDate.format('YYYY-MM-DD');
-                scope.endModelObj['time'] = endDate.format('HH:mm');
-                
+
                 function updateDates(picker, override) {
                 	if(angular.isDefined(picker)) {
                         scope.$apply(function() {
@@ -133,6 +131,107 @@
 
                 element.on('hide.daterangepicker', function(ev, picker) {
                 	updateDates(picker, true);
+                });
+
+            }
+        };
+    });
+
+    directives.directive('singleDate', function() {
+        return {
+            restrict: 'A',
+            scope: {
+                minDate: '=',
+                maxDate: '=',
+                startDate: '=',
+                startModelObj: '=startModel',
+                watchObj: '='
+            },
+            require: '^ngModel',
+            link: function(scope, element, attrs, ctrl) {
+                var dateFormat = 'YYYY-MM-DD HH:mm';
+                var fillDate = function(modelObject) {
+                    if(!angular.isDefined(modelObject.date)) {
+                        modelObject.date = {};
+                        modelObject.time = {};
+                    }
+                };
+
+                var getNowAtStartOfHour = function() {
+                    return moment().startOf('hour');
+                };
+
+                var initDateUsingNow = function(modelObj) {
+                    if(!angular.isDefined(modelObj) || !angular.isDefined(modelObj.date) || !angular.isDefined(modelObj.time)) {
+                        return getNowAtStartOfHour();
+                    }
+                    var date = moment(modelObj.date + 'T' + modelObj.time);
+                    return date.isValid() ? date : getNowAtStartOfHour();
+                };
+
+
+                var startDate = initDateUsingNow(scope.startModelObj);
+
+                var result = startDate.format(dateFormat);
+                ctrl.$setViewValue(result);
+                element.val(result);
+
+                var minDate = scope.minDate || getNowAtStartOfHour();
+
+                var pickerElement = element.daterangepicker({
+                    format: dateFormat,
+                    separator: ' / ',
+                    startDate: startDate,
+                    minDate: minDate,
+                    maxDate: scope.maxDate,
+                    timePicker: true,
+                    timePicker12Hour: false,
+                    timePickerIncrement: 1,
+                    singleDatePicker: true
+                });
+
+                scope.startModelObj['date'] = startDate.format('YYYY-MM-DD');
+                scope.startModelObj['time'] = startDate.format('HH:mm');
+
+
+                function updateDates(picker, override) {
+                    if(angular.isDefined(picker)) {
+                        scope.$apply(function() {
+                            updateInDigest(picker, override);
+                        });
+                    }
+                }
+
+                function updateInDigest(picker, override) {
+                    var start = picker.startDate;
+                    scope.startModelObj['date'] = start.format('YYYY-MM-DD');
+                    scope.startModelObj['time'] = start.format('HH:mm');
+                    if (override) {
+                        element.val(start.format(dateFormat))
+                    }
+                    ctrl.$setViewValue(element.val());
+                }
+
+                if(scope.watchObj) {
+                    var clearListener = scope.$watch('watchObj', function(newVal, oldVal) {
+                        if(newVal && newVal['date']) {
+                            var dr = pickerElement.data('daterangepicker');
+                            if(angular.equals({date: dr.endDate.format('YYYY-MM-DD'), time: dr.endDate.format('HH:mm')}, oldVal)) {
+                                dr.setCustomDates(dr.startDate, moment(newVal['date'] + 'T' + newVal['time']));
+                                updateInDigest(dr, true);
+                            } else {
+                                clearListener();
+                            }
+                        }
+                    }, true);
+                }
+
+                element.on('apply.daterangepicker', function(ev, picker) {
+                    updateDates(picker);
+                });
+
+                element.on('hide.daterangepicker', function(ev, picker) {
+                    updateDates(picker, true);
                 });
 
             }
