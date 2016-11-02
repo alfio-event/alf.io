@@ -154,8 +154,8 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events", method = GET)
-    public List<EventWithStatistics> getAllEvents(Principal principal) {
-        return eventStatisticsManager.getAllEventsWithStatistics(principal.getName()).stream()
+    public List<EventStatistic> getAllEvents(Principal principal) {
+        return eventStatisticsManager.getAllEventsWithStatistics(principal.getName()).stream().map(EventStatistic::new)
                 .sorted().collect(Collectors.toList());
     }
 
