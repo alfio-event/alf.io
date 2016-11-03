@@ -172,6 +172,7 @@ public class ReservationController {
                     model.addAttribute("activePaymentMethods", activePaymentMethods);
                     model.addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary));
                     model.addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName());
+                    model.addAttribute("countries", ticketHelper.getLocalizedCountries(locale));
                     boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
                     model.addAttribute("includeStripe", includeStripe);
                     if (includeStripe) {
