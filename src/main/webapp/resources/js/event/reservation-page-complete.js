@@ -71,6 +71,14 @@
                         var validationResult = result.validationResult;
                         if(validationResult.success) {
                             $('#ticket-detail-'+uuid).replaceWith(result.partial);
+                            $('#ticket-detail-'+uuid).find("select").each(function(index, select) {
+                                var $select = jQuery(select);
+                                var $selectValue = jQuery(select).attr('value');
+                                if($selectValue && $selectValue.length > 0) {
+                                    $select.find("option[value="+$selectValue+"]").attr('selected', 'selected')
+                                }
+
+                            });
                             initListeners();
                         } else {
                             validationResult.validationErrors.forEach(function(error) {

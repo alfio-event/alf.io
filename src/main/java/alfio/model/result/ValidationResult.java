@@ -38,6 +38,10 @@ public final class ValidationResult {
         this.errorCount = errorDescriptors.size();
     }
 
+    public List<ErrorDescriptor> getValidationErrors() {
+        return getErrorDescriptors();
+    }
+
     public static ValidationResult success() {
         return SUCCESS;
     }

@@ -140,7 +140,10 @@ public class ResourceController {
             if("text/plain".equals(name.getRenderedContentType())) {
                 response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".txt");
                 response.setContentType("text/plain");
-                response.getWriter().print(renderedTemplate);
+                response.setCharacterEncoding("UTF-8");
+                try(OutputStream os = response.getOutputStream()) {
+                    StreamUtils.copy(renderedTemplate,StandardCharsets.UTF_8, os);
+                }
             } else if ("application/pdf".equals(name.getRenderedContentType())) {
                 response.setContentType("application/pdf");
                 response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".pdf");

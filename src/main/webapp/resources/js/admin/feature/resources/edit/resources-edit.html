@@ -10,12 +10,14 @@
                 <form ng-submit="$ctrl.saveFor(locale.locale)">
                     <div class="form-group">
                         <label for="resource-{{locale.locale}}">Resource</label>
-                        <textarea id="resource-{{locale.locale}}" ng-model="$ctrl.resources[locale.locale]" rows="20" class="form-control"></textarea>
+                        <textarea id="resource-{{locale.locale}}" ng-model="$ctrl.resources[locale.locale]" rows="20" class="form-control" ng-show="!$ctrl.previewMode"></textarea>
+                        <pre ng-show="$ctrl.previewMode" ng-bind="$ctrl.previewedText"></pre>
                     </div>
                     <div class="pull-right">
                         <button ng-if="$ctrl.resourcesMetadata[locale.locale]" type="button" class="btn btn-lg btn-warning" ng-click="$ctrl.deleteFor(locale.locale)">Delete</button>
                         <button type="button" ng-click="$ctrl.resetFor(locale.locale)" class="btn btn-lg">Reset</button>
-                        <button type="button" ng-click="$ctrl.previewFor(locale.locale)" class="btn btn-lg">Preview</button>
+                        <button type="button" ng-click="$ctrl.previewFor(locale.locale)" class="btn btn-lg" ng-show="!$ctrl.previewMode">Preview</button>
+                        <button type="button" ng-click="$ctrl.previewMode = false" class="btn btn-lg" ng-show="$ctrl.previewMode">Close preview</button>
                         <button type="submit" class="btn btn-lg btn-default">Save</button>
                     </div>
                 </form>
