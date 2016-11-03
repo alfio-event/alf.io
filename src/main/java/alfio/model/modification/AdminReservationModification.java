@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Getter
 public class AdminReservationModification {
@@ -31,16 +32,22 @@ public class AdminReservationModification {
     private final CustomerData customerData;
     private final List<TicketsInfo> ticketsInfo;
     private final String language;
+    private final boolean updateContactData;
+    private final Notification notification;
 
     @JsonCreator
     public AdminReservationModification(@JsonProperty("expiration") DateTimeModification expiration,
                                         @JsonProperty("customerData") CustomerData customerData,
                                         @JsonProperty("ticketsInfo") List<TicketsInfo> ticketsInfo,
-                                        @JsonProperty("language") String language) {
+                                        @JsonProperty("language") String language,
+                                        @JsonProperty("updateContactData") boolean updateContactData,
+                                        @JsonProperty("notification") Notification notification) {
         this.expiration = expiration;
         this.customerData = customerData;
         this.ticketsInfo = ticketsInfo;
         this.language = language;
+        this.updateContactData = Optional.ofNullable(updateContactData).orElse(false);
+        this.notification = notification;
     }
 
     @Getter
@@ -57,6 +64,10 @@ public class AdminReservationModification {
             this.lastName = lastName;
             this.emailAddress = emailAddress;
         }
+
+        public String getFullName() {
+            return firstName + " " + lastName;
+        }
     }
 
     @Getter
@@ -64,14 +75,17 @@ public class AdminReservationModification {
         private final Category category;
         private final List<Attendee> attendees;
         private final boolean addSeatsIfNotAvailable;
+        private final boolean updateAttendees;
 
         @JsonCreator
         public TicketsInfo(@JsonProperty("category") Category category,
                            @JsonProperty("attendees") List<Attendee> attendees,
-                           @JsonProperty("addSeatsIfNotAvailable") boolean addSeatsIfNotAvailable) {
+                           @JsonProperty("addSeatsIfNotAvailable") boolean addSeatsIfNotAvailable,
+                           @JsonProperty("updateAttendees") Boolean updateAttendees) {
             this.category = category;
             this.attendees = attendees;
             this.addSeatsIfNotAvailable = addSeatsIfNotAvailable;
+            this.updateAttendees = Optional.ofNullable(updateAttendees).orElse(false);
         }
     }
 
@@ -97,14 +111,17 @@ public class AdminReservationModification {
 
     @Getter
     public static class Attendee {
+        private final Integer ticketId;
         private final String firstName;
         private final String lastName;
         private final String emailAddress;
 
         @JsonCreator
-        public Attendee(@JsonProperty("firstName") String firstName,
+        public Attendee(@JsonProperty("ticketId") Integer ticketId,
+                        @JsonProperty("firstName") String firstName,
                         @JsonProperty("lastName") String lastName,
                         @JsonProperty("emailAddress") String emailAddress) {
+            this.ticketId = ticketId;
             this.firstName = firstName;
             this.lastName = lastName;
             this.emailAddress = emailAddress;
@@ -116,6 +133,18 @@ public class AdminReservationModification {
 
         public String getFullName() {
             return firstName + " " + lastName;
+        }
+    }
+
+    @Getter
+    public static class Update {
+        private final DateTimeModification expiration;
+        private final Notification notification;
+
+        public Update(@JsonProperty("expiration") DateTimeModification expiration,
+                      @JsonProperty("notification") Notification notification) {
+            this.expiration = expiration;
+            this.notification = notification;
         }
     }
 

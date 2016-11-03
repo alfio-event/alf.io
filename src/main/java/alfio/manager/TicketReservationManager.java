@@ -382,7 +382,7 @@ public class TicketReservationManager {
 
         Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
         List<Mailer.Attachment> attachments = new ArrayList<>(1);
-        if(!summary.getNotYetPaid()) {
+        if(!summary.getNotYetPaid() && !summary.getFree()) {
             Map<String, String> model = new HashMap<>();
             model.put("reservationId", reservationId);
             model.put("eventId", Integer.toString(event.getId()));
@@ -518,19 +518,23 @@ public class TicketReservationManager {
                 .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
                 .forEach(ticket -> {
                     Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
-                    sendTicketByEmail(ticket, locale, event, (t) -> {
-                        Map<String, Object> model = new HashMap<>();
-                        model.put("organization", organizationRepository.getById(event.getOrganizationId()));
-                        model.put("event", event);
-                        model.put("ticketReservation", reservation);
-                        model.put("ticketUrl", ticketUpdateUrl(reservationId, event, t.getUuid()));
-                        model.put("ticket", t);
-                        return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, locale);
-                    });
+                    sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
                     pluginManager.handleTicketAssignment(ticket);
                 });
 
         }
+    }
+
+    PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation reservation, Locale locale) {
+        return (t) -> {
+            Map<String, Object> model = new HashMap<>();
+            model.put("organization", organizationRepository.getById(event.getOrganizationId()));
+            model.put("event", event);
+            model.put("ticketReservation", reservation);
+            model.put("ticketUrl", ticketUpdateUrl(reservation.getId(), event, t.getUuid()));
+            model.put("ticket", t);
+            return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, locale);
+        };
     }
 
     void cleanupExpiredReservations(Date expirationDate) {
@@ -871,7 +875,7 @@ public class TicketReservationManager {
         return userDetails.flatMap(u -> u.getAuthorities().stream().map(a -> Role.fromRoleName(a.getAuthority())).filter(Role.ADMIN::equals).findFirst()).isPresent();
     }
 
-    private void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder) {
+    void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder) {
         try {
             TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
             TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());

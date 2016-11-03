@@ -158,8 +158,8 @@ public class AdminReservationManagerIntegrationTest {
         CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch");
         Category category = new Category(null, "name", new BigDecimal("100.00"));
         int attendees = AVAILABLE_SEATS;
-        List<TicketsInfo> ticketsInfoList = Collections.singletonList(new TicketsInfo(category, generateAttendees(attendees), true));
-        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en");
+        List<TicketsInfo> ticketsInfoList = Collections.singletonList(new TicketsInfo(category, generateAttendees(attendees), true, updateAttendees));
+        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", updateContactData, notification);
         Result<Pair<TicketReservation, List<Ticket>>> result = adminReservationManager.createReservation(modification, event.getShortName(), username);
         assertTrue(result.isSuccess());
         Pair<TicketReservation, List<Ticket>> data = result.getData();
@@ -189,9 +189,9 @@ public class AdminReservationManagerIntegrationTest {
                 Category category = new Category(existingCategory.getId(), existingCategory.getName(), existingCategory.getPrice());
                 List<Attendee> attendees = generateAttendees(attendeesIterator.next());
                 allAttendees.addAll(attendees);
-                return new TicketsInfo(category, attendees, addSeatsIfNotAvailable);
+                return new TicketsInfo(category, attendees, addSeatsIfNotAvailable, updateAttendees);
             }).collect(toList());
-        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en");
+        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", updateContactData, notification);
         Result<Pair<TicketReservation, List<Ticket>>> result = adminReservationManager.createReservation(modification, event.getShortName(), username);
         if(expectSuccess) {
             validateSuccess(bounded, attendeesNr, event, username, existingCategories, result, allAttendees);
@@ -229,7 +229,7 @@ public class AdminReservationManagerIntegrationTest {
 
     private List<Attendee> generateAttendees(int count) {
         return IntStream.range(0, count)
-            .mapToObj(i -> new Attendee("Attendee "+i, "Test" + i, "attendee"+i+"@test.ch"))
+            .mapToObj(i -> new Attendee(ticketId, "Attendee "+i, "Test" + i, "attendee"+i+"@test.ch"))
             .collect(toList());
     }
 }

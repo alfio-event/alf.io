@@ -135,6 +135,22 @@
                 data: {
                     view: 'CREATE_RESERVATION'
                 }
+            }).state('events.single.view-reservation', {
+                url:'/reservation/:reservationId',
+                template: '<reservation-view event="ctrl.event" reservation-descriptor="ctrl.reservationDescriptor"></reservation-view>',
+                controller: function(getEvent, getReservationDescriptor) {
+                    this.event = getEvent.data.event;
+                    this.reservationDescriptor = getReservationDescriptor.data.data;
+                },
+                controllerAs: 'ctrl',
+                data: {
+                    view: 'VIEW_RESERVATION'
+                },
+                resolve: {
+                    'getReservationDescriptor': function(AdminReservationService, $stateParams) {
+                        return AdminReservationService.load($stateParams.eventName, $stateParams.reservationId);
+                    }
+                }
             });
     });
 

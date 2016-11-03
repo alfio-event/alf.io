@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.model.*;
+import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.AdminReservationModification.Attendee;
@@ -26,16 +27,19 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.Result.ResultStatus;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.util.MonetaryUtil;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.time.ZonedDateTime;
@@ -45,6 +49,7 @@ import static alfio.util.EventUtil.generateEmptyTickets;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Component
 @Log4j2
@@ -79,6 +84,118 @@ public class AdminReservationManager {
         this.specialPriceRepository = specialPriceRepository;
         this.ticketReservationRepository = ticketReservationRepository;
         this.eventRepository = eventRepository;
+    }
+
+    public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
+        DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
+        TransactionStatus status = transactionManager.getTransaction(definition);
+        try {
+            Result<Triple<TicketReservation, List<Ticket>, Event>> result = eventRepository.findOptionalByShortName(eventName)
+                .flatMap(e -> optionally(() -> {
+                    eventManager.checkOwnership(e, username, e.getOrganizationId());
+                    return e;
+                })).map(event -> ticketReservationRepository.findOptionalReservationById(reservationId)
+                    .filter(r -> r.getStatus() == TicketReservationStatus.PENDING)
+                    .map(r -> performConfirmation(reservationId, event, r))
+                    .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
+                ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
+            if(result.isSuccess()) {
+                transactionManager.commit(status);
+            }
+            return result;
+        } catch (Exception e) {
+            transactionManager.rollback(status);
+            return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
+        }
+    }
+
+    public Result<Boolean> updateReservation(String eventName, String reservationId, AdminReservationModification adminReservationModification, String username) {
+        DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
+        TransactionStatus status = transactionManager.getTransaction(definition);
+        try {
+            Result<Boolean> result = eventRepository.findOptionalByShortName(eventName)
+                .flatMap(e -> optionally(() -> {
+                    eventManager.checkOwnership(e, username, e.getOrganizationId());
+                    return e;
+                })).map(event -> ticketReservationRepository.findOptionalReservationById(reservationId)
+                    .map(r -> performUpdate(reservationId, event, r, adminReservationModification))
+                    .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
+                ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
+            result.ifSuccess((r) -> transactionManager.commit(status));
+            return result;
+        } catch (Exception e) {
+            transactionManager.rollback(status);
+            return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
+        }
+    }
+
+    @Transactional
+    public Result<Boolean> notify(String eventName, String reservationId, AdminReservationModification arm, String username) {
+        AdminReservationModification.Notification notification = arm.getNotification();
+        return eventRepository.findOptionalByShortName(eventName)
+            .flatMap(e -> optionally(() -> {
+                eventManager.checkOwnership(e, username, e.getOrganizationId());
+                return e;
+            }).flatMap(ev -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r))))
+            .map(pair -> {
+                Event event = pair.getLeft();
+                TicketReservation reservation = pair.getRight();
+                if(notification.isCustomer()){
+                    ticketReservationManager.sendConfirmationEmail(event, reservation, Locale.forLanguageTag(reservation.getUserLanguage()));
+                }
+                if(notification.isAttendees()) {
+                    ticketRepository.findTicketsInReservation(reservationId)
+                        .stream()
+                        .filter(Ticket::getAssigned)
+                        .forEach(t -> {
+                            Locale locale = Locale.forLanguageTag(t.getUserLanguage());
+                            ticketReservationManager.sendTicketByEmail(t, locale, event, ticketReservationManager.getTicketEmailGenerator(event, reservation, locale));
+                        });
+                }
+                return Result.success(true);
+            }).orElseGet(() -> Result.error(ErrorCode.EventError.NOT_FOUND));
+
+    }
+
+    private Result<Boolean> performUpdate(String reservationId, Event event, TicketReservation r, AdminReservationModification arm) {
+        ticketReservationRepository.updateValidity(reservationId, Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant()));
+        if(arm.isUpdateContactData()) {
+            AdminReservationModification.CustomerData customerData = arm.getCustomerData();
+            ticketReservationRepository.updateTicketReservation(reservationId, r.getStatus().name(), customerData.getEmailAddress(), customerData.getFullName(),
+                customerData.getFirstName(), customerData.getLastName(), r.getUserLanguage(), null, null, null);
+        }
+        arm.getTicketsInfo().stream()
+            .filter(TicketsInfo::isUpdateAttendees)
+            .flatMap(ti -> ti.getAttendees().stream())
+            .forEach(a -> ticketRepository.updateTicketOwnerById(a.getTicketId(), trimToNull(a.getEmailAddress()),
+                trimToNull(a.getFullName()), trimToNull(a.getFirstName()), trimToNull(a.getLastName())));
+        return Result.success(true);
+    }
+
+    @Transactional
+    public Result<Triple<TicketReservation, List<Ticket>, Event>> loadReservation(String eventName, String reservationId, String username) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .flatMap(e -> optionally(() -> {
+                eventManager.checkOwnership(e, username, e.getOrganizationId());
+                return e;
+            })).map(r -> loadReservation(reservationId))
+            .orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
+    }
+
+
+    private Result<Triple<TicketReservation, List<Ticket>, Event>> loadReservation(String reservationId) {
+        return ticketReservationRepository.findOptionalReservationById(reservationId)
+            .map(r -> Triple.of(r, ticketRepository.findTicketsInReservation(reservationId), eventRepository.findByReservationId(reservationId)))
+            .map(Result::success)
+            .orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
+    }
+
+    private Result<Triple<TicketReservation, List<Ticket>, Event>> performConfirmation(String reservationId, Event event, TicketReservation original) {
+        int result = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.name(), original.getEmail(), original.getFullName(), original.getFirstName(), original.getLastName(), original.getUserLanguage(), original.getBillingAddress(), ZonedDateTime.now(event.getZoneId()), PaymentProxy.ADMIN.name());
+        if(result == 1) {
+            return loadReservation(reservationId);
+        }
+        return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);
     }
 
     public Result<Pair<TicketReservation, List<Ticket>>> createReservation(AdminReservationModification input, String eventName, String username) {
@@ -143,6 +260,8 @@ public class AdminReservationManager {
             String specialPriceSessionId = UUID.randomUUID().toString();
             Date validity = Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant());
             ticketReservationRepository.createNewReservation(reservationId, validity, null, arm.getLanguage());
+            AdminReservationModification.CustomerData customerData = arm.getCustomerData();
+            ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.PENDING.name(), customerData.getEmailAddress(), customerData.getFullName(), customerData.getFirstName(), customerData.getLastName(), arm.getLanguage(), null, null, null);
             int categoryId = category.getId();
             List<Attendee> attendees = ticketsInfo.getAttendees();
             List<Integer> reservedForUpdate = ticketReservationManager.reserveTickets(event.getId(), categoryId, attendees.size(), singletonList(Ticket.TicketStatus.FREE));

@@ -28,6 +28,7 @@ public enum PaymentProxy {
     ON_SITE("on-site payment", true, true, Collections.emptySet()),
     OFFLINE("offline payment", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_OFFLINE)),
     NONE("no payment required", false, false, Collections.emptySet()),
+    ADMIN("manual", false, false, Collections.emptySet()),
     PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL));
 
     private final String description;

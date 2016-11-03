@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.*;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface TicketReservationRepository {
@@ -73,6 +74,9 @@ public interface TicketReservationRepository {
 
     @Query("select * from tickets_reservation where id = :id")
     TicketReservation findReservationById(@Bind("id") String id);
+
+    @Query("select * from tickets_reservation where id = :id")
+    Optional<TicketReservation> findOptionalReservationById(@Bind("id") String id);
 
     @Query("select id from tickets_reservation where validity < :date and status = 'PENDING'")
     List<String> findExpiredReservation(@Bind("date") Date date);

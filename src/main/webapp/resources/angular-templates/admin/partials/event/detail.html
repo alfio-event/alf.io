@@ -137,7 +137,7 @@
                                             <div class="list-group-item-text">
                                                 <dl class="dl-horizontal">
                                                     <dt>id</dt>
-                                                    <dd><a href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketReservation.id}}/" target="_blank">{{::ticket.uuid}}</a></dd>
+                                                    <dd><a data-ui-sref="events.single.view-reservation({eventName:event.shortName, reservationId: ticket.ticketReservation.id})" target="_blank">{{::ticket.uuid}}</a></dd>
                                                     <dt>Reservation by</dt>
                                                     <dd>{{::ticket.ticketReservation.fullName}} &lt;{{::ticket.ticketReservation.email}}&gt;</dd>
                                                     <dt data-ng-if="!ticket.pending">Confirmed on</dt>

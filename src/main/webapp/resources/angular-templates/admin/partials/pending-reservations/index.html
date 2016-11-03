@@ -26,7 +26,7 @@
                     </thead>
                     <tbody>
                         <tr data-ng-repeat="reservation in pendingReservations">
-                            <td data-ng-class-even="'active'">{{reservation.left.id}}</td>
+                            <td data-ng-class-even="'active'"><a data-ui-sref="events.single.view-reservation({eventName:eventName, reservationId: reservation.left.id})" target="_blank">{{reservation.left.id}}</a></td>
                             <td data-ng-class-even="'active'">{{reservation.left.validity | formatDate}}</td>
                             <td data-ng-class-even="'active'">{{reservation.right.totalPrice}}</td>
                             <td data-ng-class-even="'active'">{{reservation.left.fullName}}</td>

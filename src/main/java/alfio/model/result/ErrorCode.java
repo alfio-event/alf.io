@@ -50,6 +50,17 @@ public interface ErrorCode {
         private final String description;
     }
 
+    @RequiredArgsConstructor
+    @Getter
+    enum ReservationError implements ErrorCode {
+        NOT_FOUND("not_found", "No reservation has been found"),
+        UPDATE_FAILED("update_failed", "Update failed"),
+        ACCESS_DENIED("access_denied", "Access is denied");
+
+        private final String code;
+        private final String description;
+    }
+
     static ErrorCode custom(String code, String description) {
         return new ErrorCode() {
             @Override

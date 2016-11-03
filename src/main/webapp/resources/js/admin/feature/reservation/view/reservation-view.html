@@ -1,0 +1,123 @@
+<div class="container">
+    <form role="form" name="viewReservation" ng-submit="$ctrl.update(viewReservation)" error-sensitive="viewReservation" novalidate>
+        <div class="page-header">
+            <h1>View reservation for {{$ctrl.event.displayName}}</h1>
+            <small>Reservation ID: {{$ctrl.reservation.id}}</small>
+        </div>
+
+        <div class="page-header">
+            <h3>Contact info</h3>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="checkbox">
+                    <label><input type="checkbox" ng-model="$ctrl.reservation.updateContactData"> Edit contact info</label>
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-6">
+                <div class="form-group">
+                    <label for="customerFirstName">First name</label>
+                    <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.firstName}}</div>
+                    <input class="form-control" id="customerFirstName" ng-if="$ctrl.reservation.updateContactData" name="customerFirstName" ng-model="$ctrl.reservation.customerData.firstName">
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-6">
+                <div class="form-group">
+                    <label for="customerLastName">Last name</label>
+                    <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.lastName}}</div>
+                    <input class="form-control" id="customerLastName" ng-if="$ctrl.reservation.updateContactData" name="customerLastName" ng-model="$ctrl.reservation.customerData.lastName">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 col-sm-6">
+                <div class="form-group">
+                    <label for="customerEmailAddress">Email Address</label>
+                    <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.emailAddress}}</div>
+                    <input type="email" class="form-control" id="customerEmailAddress" ng-if="$ctrl.reservation.updateContactData" name="customerEmailAddress" ng-model="$ctrl.reservation.customerData.emailAddress">
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-6">
+                <div class="form-group">
+                    <label>Language</label>
+                    <div class="form-control-static">{{$ctrl.reservation.language}}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-header">
+            <h3>Reservation details</h3>
+        </div>
+
+        <div class="well">
+            <h4>URL to share: <a ng-href="{{$ctrl.reservationUrl}}" target="_blank">{{$ctrl.reservationUrl}}</a></h4>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-6">
+                <div class="form-group">
+                    <label>Status</label>
+                    <div class="form-control-static">{{$ctrl.reservation.status}}</div>
+                </div>
+                <button type="button" ng-if="$ctrl.reservation.status === 'PENDING'" class="btn btn-xs btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm(viewReservation)" style="margin-bottom:20px"><i class="fa fa-check"></i> Confirm</button>
+            </div>
+            <div class="col-xs-6" ng-if="$ctrl.reservation.status !== 'COMPLETE'">
+                <div class="form-group">
+                    <label>Expiration</label>
+                    <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration">
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="panel panel-default" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
+            <div class="panel-heading">
+                <div class="panel-title">Category {{ticketInfo.category.name}}</div>
+            </div>
+            <div class="panel-body">
+                <div class="checkbox">
+                    <label><input type="checkbox" ng-model="ticketInfo.updateAttendees"> Edit attendees</label>
+                </div>
+            </div>
+            <ul class="list-group wMarginTop10px">
+                <li class="list-group-item" ng-repeat="attendee in ticketInfo.attendees">
+                    <h4 class="list-group-item-heading">Attendee {{$index + 1}}</h4>
+                    <div class="list-group-item-text row">
+                        <div class="col-xs-12 col-md-4">
+                            <div class="form-group">
+                                <label for="attendee-{{$index}}-firstName">First name</label>
+                                <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-firstName" required name="attendee-{{$index}}-first" ng-model="attendee.firstName">
+                                <div ng-if="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.firstName}}</div>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-4">
+                            <div class="form-group">
+                                <label for="attendee-{{$index}}-lastName">Last name</label>
+                                <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-lastName" required name="attendee-{{$index}}-last" ng-model="attendee.lastName">
+                                <div ng-if="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.lastName}}</div>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-md-4">
+                            <div class="form-group">
+                                <label for="attendee-{{$index}}-emailAddress">E-Mail</label>
+                                <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-emailAddress" required name="attendee-{{$index}}-emailAddress" ng-model="attendee.emailAddress">
+                                <div ng-if="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.emailAddress}}</div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="pull-left" ng-if="$ctrl.reservation.status === 'COMPLETE'">
+            <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.notifyCustomer()"><i class="fa fa-envelope-o"></i> Send reservation via email</button>
+            <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.notifyAttendees()"><i class="fa fa-envelope-o"></i> Send tickets via email</button>
+        </div>
+        <div class="clearfix wMarginBottom"></div>
+        <div uib-alert type="success" close="$ctrl.hideMessages()" dismiss-on-timeout="2000" data-ng-if="$ctrl.confirmationMessage"><i class="fa fa-check"></i> {{$ctrl.confirmationMessage}}</div>
+        <div uib-alert type="danger" close="$ctrl.hideMessages()" dismiss-on-timeout="2000" data-ng-if="$ctrl.errorMessage"><i class="fa fa-times"></i> {{$ctrl.errorMessage}}</div>
+        <hr>
+        <div class="pull-right">
+            <button type="submit" class="btn btn-lg btn-warning" data-ng-disabled="viewReservation.$waiting" style="margin-bottom:20px">Update</button>
+        </div>
+    </form>
+</div>

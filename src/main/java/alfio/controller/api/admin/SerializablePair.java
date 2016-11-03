@@ -30,4 +30,8 @@ final class SerializablePair<L,R> {
     static <L,R> SerializablePair<L,R> fromPair(Pair<L,R> pair) {
         return new SerializablePair<>(pair);
     }
+
+    static <L,R> SerializablePair<L,R> of(L left, R right) {
+        return new SerializablePair<>(Pair.of(left, right));
+    }
 }

@@ -10,7 +10,7 @@
     });
 
 
-    function ReservationEditCtrl(AdminReservationService) {
+    function ReservationEditCtrl(AdminReservationService, $state) {
         var ctrl = this;
 
         ctrl.$onInit = function() {
@@ -28,7 +28,7 @@
             var ticketInfo = {
                 category: {},
                 attendees: [],
-                addSeatsIfNotAvailable: true,
+                addSeatsIfNotAvailable: false,
                 categoryType: 'existing',
                 attendeeStrategy: 'noData'
             };
@@ -60,8 +60,11 @@
 
         ctrl.submit = function(frm) {
             if(frm.$valid) {
-                AdminReservationService.createReservation(ctrl.event.shortName, ctrl.reservation).then(function(result) {
-                    console.log(result.data);
+                AdminReservationService.createReservation(ctrl.event.shortName, ctrl.reservation).then(function(r) {
+                    var result = r.data;
+                    if(result.success) {
+                        $state.go('events.single.view-reservation', {'reservationId': result.data, 'eventName': ctrl.event.shortName});
+                    }
                 });
             }
         };
