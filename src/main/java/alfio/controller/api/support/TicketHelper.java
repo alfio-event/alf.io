@@ -84,10 +84,17 @@ public class TicketHelper {
     }
 
     public List<TicketFieldConfigurationDescriptionAndValue> findTicketFieldConfigurationAndValue(int eventId, Ticket ticket, Locale locale) {
+
+        List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(ticket.getTicketsReservationId());
+        //WORKAROUND: we only add the additionalServiceItems related fields only if it's the _first_ ticket of the reservation
+        boolean isFirstTicket = ticketsInReservation.get(0).getId() == ticket.getId();
+
+
+
         Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(locale, eventId);
         Map<String, TicketFieldValue> values = ticketFieldRepository.findAllByTicketIdGroupedByName(ticket.getId());
         Function<TicketFieldConfiguration, String> extractor = (f) -> Optional.ofNullable(values.get(f.getName())).map(TicketFieldValue::getValue).orElse("");
-        List<AdditionalServiceItem> additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(ticket.getTicketsReservationId());
+        List<AdditionalServiceItem> additionalServiceItems = isFirstTicket ? additionalServiceItemRepository.findByReservationUuid(ticket.getTicketsReservationId()) : Collections.emptyList();
         Set<Integer> additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toSet());
         return ticketFieldRepository.findAdditionalFieldsForEvent(eventId)
             .stream()
