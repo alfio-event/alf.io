@@ -25,19 +25,27 @@ function ResourcesEditCtrl(ResourceService, EventService) {
 
     function previewFor(locale) {
         var newText  = ctrl.resources[locale];
-        ResourceService.preview(ctrl.event.organizationId, ctrl.event.id, ctrl.resourceName, locale, {fileAsString: newText});
+        ResourceService.preview(ctrl.event.organizationId, ctrl.event.id, ctrl.resourceName, locale, {fileAsString: newText}).then(function(res) {
+            if(!res.download) {
+                ctrl.previewedText = res.text;
+                ctrl.previewMode = true;
+            }
+        });
     }
 
     function saveFor(locale) {
+        ctrl.previewMode = false
         var newText  = ctrl.resources[locale];
         ResourceService.uploadFile(ctrl.event.organizationId, ctrl.event.id, {fileAsString: newText, name: getFileName(locale), type: 'text/plain'}).then(loadAll);
     }
 
     function deleteFor(locale) {
+        ctrl.previewMode = false
         ResourceService.deleteFile(ctrl.event.organizationId, ctrl.event.id, getFileName(locale)).then(loadAll);
     }
 
     function resetFor(locale) {
+        ctrl.previewMode = false
         ctrl.resources[locale] = ctrl.originalResources[locale] || ctrl.templateBodies[locale];
     }
 

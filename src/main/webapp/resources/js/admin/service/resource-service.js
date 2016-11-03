@@ -2,7 +2,7 @@
 
 'use strict';
 
-angular.module('adminApplication').service('ResourceService', function($http) {
+angular.module('adminApplication').service('ResourceService', function($http, $q) {
     return {
         listTemplates: function() {
             return $http.get('/admin/api/overridable-template/');
@@ -25,7 +25,20 @@ angular.module('adminApplication').service('ResourceService', function($http) {
         preview: function(orgId, eventId, name, locale, file) {
 
             return $http.post('/admin/api/overridable-template/'+name+'/'+locale+'/preview?organizationId='+orgId+"&eventId="+eventId, file, {responseType: 'blob'}).then(function(res) {
+
                 var contentType = res.headers('Content-Type');
+                if(contentType.startsWith('text/plain')) {
+                    var reader = new FileReader();
+
+                    var promise = $q(function(resolve, reject) {
+                        reader.onloadend = function() {
+                            resolve({download: false, text: reader.result})
+                        }
+                    });
+                    reader.readAsText(res.data);
+                    return promise;
+                }
+
                 var fileName = res.headers('content-disposition').match(/filename=(.*)$/)[1];
                 var finalFile = new File([res.data], fileName, {type: contentType});
                 var fileUrl = URL.createObjectURL(finalFile);
@@ -34,6 +47,8 @@ angular.module('adminApplication').service('ResourceService', function($http) {
                 a.href = fileUrl;
                 a.download = fileName;
                 a.click();
+
+                return {download: true}
             });
         }
     };
