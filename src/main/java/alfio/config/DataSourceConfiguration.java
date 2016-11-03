@@ -169,6 +169,8 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     @Bean
     public JMustacheTemplateLoader getTemplateLoader() {
         JMustacheTemplateLoader loader = new JMustacheTemplateLoader();
+        loader.setPrefix("/WEB-INF/templates");
+        loader.setSuffix(".ms");
         loader.setResourceLoader(resourceLoader);
         return loader;
     }

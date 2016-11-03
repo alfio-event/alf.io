@@ -83,6 +83,7 @@ public class ReservationApiController {
                     .map(ContentLanguage.toLanguage(requestLocale)).collect(Collectors.toList()));
             String uuid = t.getRight().getUuid();
             model.addAttribute("urlSuffix", singleTicket ? "ticket/"+uuid+"/view": uuid);
+            model.addAttribute("elementNamePrefix", "");
         }, userDetails);
         Map<String, Object> result = new HashMap<>();
         model.addAttribute("reservationId", reservationId);
