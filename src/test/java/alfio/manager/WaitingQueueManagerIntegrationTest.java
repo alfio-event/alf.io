@@ -45,6 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -268,14 +269,17 @@ public class WaitingQueueManagerIntegrationTest {
 
     @Test
     public void testAssignTicketToWaitingQueueUnboundedCategorySelected() {
+        LocalDateTime start = LocalDateTime.now().minusHours(1);
+        LocalDateTime end = LocalDateTime.now().plusHours(1);
+
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now().minusHours(1)),
-                new DateTimeModification(LocalDate.now(), LocalTime.now().plusHours(1)),
+                new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
+                new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false),
             new TicketCategoryModification(null, "default2", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now().minusHours(1)),
-                new DateTimeModification(LocalDate.now(), LocalTime.now().plusHours(1)),
+                new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
+                new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false));
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
