@@ -100,7 +100,6 @@
         ctrl.hideMessages = function() {
             delete ctrl.errorMessage;
             delete ctrl.confirmationMessage;
-
         };
 
         ctrl.notifyCustomer = function() {

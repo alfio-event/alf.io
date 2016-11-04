@@ -191,11 +191,13 @@ public class AdminReservationManager {
     }
 
     private Result<Triple<TicketReservation, List<Ticket>, Event>> performConfirmation(String reservationId, Event event, TicketReservation original) {
-        int result = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.name(), original.getEmail(), original.getFullName(), original.getFirstName(), original.getLastName(), original.getUserLanguage(), original.getBillingAddress(), ZonedDateTime.now(event.getZoneId()), PaymentProxy.ADMIN.name());
-        if(result == 1) {
+        try {
+            ticketReservationManager.completeReservation(event.getId(), reservationId, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event),
+                Locale.forLanguageTag(original.getUserLanguage()), original.getBillingAddress(), Optional.empty(), PaymentProxy.ADMIN);
             return loadReservation(reservationId);
+        } catch(Exception e) {
+            return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);
         }
-        return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);
     }
 
     public Result<Pair<TicketReservation, List<Ticket>>> createReservation(AdminReservationModification input, String eventName, String username) {

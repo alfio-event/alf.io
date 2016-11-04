@@ -38,6 +38,12 @@ public interface ErrorCode {
 
         private final String code;
         private final String description;
+
+
+        @Override
+        public String toString() {
+            return description;
+        }
     }
 
     @RequiredArgsConstructor
@@ -48,6 +54,12 @@ public interface ErrorCode {
 
         private final String code;
         private final String description;
+
+
+        @Override
+        public String toString() {
+            return description;
+        }
     }
 
     @RequiredArgsConstructor
@@ -59,6 +71,12 @@ public interface ErrorCode {
 
         private final String code;
         private final String description;
+
+
+        @Override
+        public String toString() {
+            return description;
+        }
     }
 
     static ErrorCode custom(String code, String description) {
@@ -70,6 +88,11 @@ public interface ErrorCode {
 
             @Override
             public String getDescription() {
+                return description;
+            }
+
+            @Override
+            public String toString() {
                 return description;
             }
         };

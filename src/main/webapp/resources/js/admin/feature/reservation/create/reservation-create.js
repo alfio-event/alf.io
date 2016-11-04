@@ -13,14 +13,30 @@
     function ReservationEditCtrl(AdminReservationService, $state) {
         var ctrl = this;
 
-        ctrl.$onInit = function() {
-            ctrl.languages = ctrl.event.contentLanguages;
+        var handleError = function(error) {
+            if($.isArray(error)) {
+                ctrl.errorMessage = error.join(',');
+            } else {
+                ctrl.errorMessage = error;
+            }
+        };
+
+        var init = function() {
+            var expiration = moment().add(1, 'days').endOf('day');
             ctrl.reservation = {
-                expiration: {},
+                expiration: {
+                    date: expiration.format('YYYY-MM-DD'),
+                    time: expiration.format('HH:mm')
+                },
                 customerData: {},
                 ticketsInfo: []
             };
             ctrl.addTicketInfo();
+        };
+
+        ctrl.$onInit = function() {
+            ctrl.languages = ctrl.event.contentLanguages;
+            init();
             ctrl.categories = ctrl.event.ticketCategories;
         };
 
@@ -58,15 +74,50 @@
             ticketInfo.currentAttendeesLength = ticketInfo.attendees.length;
         };
 
+        ctrl.resetCategory = function(ticketInfo) {
+            ticketInfo.category = {};
+        };
+
+        ctrl.removeTicketInfo = function(index) {
+            ctrl.reservation.ticketsInfo.splice(index, 1);
+        };
+
+        ctrl.removeAttendee = function(ticketInfo, index) {
+            ticketInfo.attendees.splice(index, 1);
+        };
+
+        ctrl.reinit = function() {
+            init();
+        };
+
         ctrl.submit = function(frm) {
             if(frm.$valid) {
+                ctrl.loading = true;
                 AdminReservationService.createReservation(ctrl.event.shortName, ctrl.reservation).then(function(r) {
                     var result = r.data;
                     if(result.success) {
                         $state.go('events.single.view-reservation', {'reservationId': result.data, 'eventName': ctrl.event.shortName});
+                    } else {
+                        handleError(result.errors);
                     }
+                    ctrl.loading = false;
+                }, function(error) {
+                    handleError('Unexpected error. Please retry and/or check the logs.');
+                    ctrl.loading = false;
                 });
             }
+        };
+
+        ctrl.getCategoryDescription = function(ticketInfo, index) {
+            if(angular.isDefined(ticketInfo.category.existingCategoryId)) {
+                var filtered = ctrl.categories.filter(function(c) {return c.id == ticketInfo.category.existingCategoryId;});
+                return filtered.length > 0 ? filtered[0].name : index;
+            }
+            return ticketInfo.category['name'] || index;
+        };
+
+        ctrl.hideMessages = function() {
+            delete ctrl.errorMessage;
         };
 
         var internalParseFileContent = function(content) {

@@ -32,10 +32,12 @@ import alfio.model.modification.AdminReservationModification.TicketsInfo;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.Result;
+import alfio.repository.EmailMessageRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -79,6 +81,8 @@ public class AdminReservationManagerIntegrationTest {
     private TicketCategoryRepository ticketCategoryRepository;
     @Autowired
     private TicketRepository ticketRepository;
+    @Autowired
+    private EmailMessageRepository emailMessageRepository;
 
     @Test
     public void testReserveFromExistingCategory() throws Exception {
@@ -174,7 +178,24 @@ public class AdminReservationManagerIntegrationTest {
         assertEquals(categoryModified.getMaxTickets(), attendees);
     }
 
-    private void performExistingCategoryTest(List<TicketCategoryModification> categories, boolean bounded, List<Integer> attendeesNr, boolean addSeatsIfNotAvailable, boolean expectSuccess) {
+    @Test
+    public void testConfirmReservation() throws Exception {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", 1,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", true));
+        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, Collections.singletonList(2), false, true);
+        assertNotNull(testResult);
+        Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.confirmReservation(testResult.getLeft().getShortName(), testResult.getRight().getId(), testResult.getMiddle());
+        assertTrue(result.isSuccess());
+        Triple<TicketReservation, List<Ticket>, Event> triple = result.getData();
+        assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, triple.getLeft().getStatus());
+        triple.getMiddle().forEach(t -> assertEquals(Ticket.TicketStatus.ACQUIRED, t.getStatus()));
+        assertTrue(emailMessageRepository.findByEventId(triple.getRight().getId()).isEmpty());
+    }
+
+    private Triple<Event, String, TicketReservation> performExistingCategoryTest(List<TicketCategoryModification> categories, boolean bounded, List<Integer> attendeesNr, boolean addSeatsIfNotAvailable, boolean expectSuccess) {
         assertEquals("Test error: categories' size must be equal to attendees' size", categories.size(), attendeesNr.size());
         Pair<Event, String> eventWithUsername = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = eventWithUsername.getKey();
@@ -197,7 +218,9 @@ public class AdminReservationManagerIntegrationTest {
             validateSuccess(bounded, attendeesNr, event, username, existingCategories, result, allAttendees);
         } else {
             assertFalse(result.isSuccess());
+            return null;
         }
+        return Triple.of(eventWithUsername.getLeft(), eventWithUsername.getRight(), result.getData().getKey());
     }
 
     private void validateSuccess(boolean bounded, List<Integer> attendeesNr, Event event, String username, List<TicketCategory> existingCategories, Result<Pair<TicketReservation, List<Ticket>>> result, List<Attendee> allAttendees) {

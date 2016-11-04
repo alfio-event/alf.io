@@ -487,7 +487,7 @@ public class TicketReservationManager {
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress/userLanguage.
      */
-    private void completeReservation(int eventId, String reservationId, String email, CustomerName customerName,
+    void completeReservation(int eventId, String reservationId, String email, CustomerName customerName,
                                      Locale userLanguage, String billingAddress, Optional<String> specialPriceSessionId,
                                      PaymentProxy paymentProxy) {
         if(paymentProxy != PaymentProxy.OFFLINE) {
@@ -510,7 +510,7 @@ public class TicketReservationManager {
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString());
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
         waitingQueueManager.fireReservationConfirmed(reservationId);
-        if(paymentProxy == PaymentProxy.PAYPAL) {
+        if(paymentProxy == PaymentProxy.PAYPAL || paymentProxy == PaymentProxy.ADMIN) {
             //we must notify the plugins about ticket assignment and send them by email
             Event event = eventRepository.findByReservationId(reservationId);
             TicketReservation reservation = findById(reservationId).orElseThrow(IllegalStateException::new);
@@ -518,7 +518,9 @@ public class TicketReservationManager {
                 .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
                 .forEach(ticket -> {
                     Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
-                    sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
+                    if(paymentProxy == PaymentProxy.PAYPAL) {
+                        sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
+                    }
                     pluginManager.handleTicketAssignment(ticket);
                 });
 
