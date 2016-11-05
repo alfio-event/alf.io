@@ -17,10 +17,7 @@
 package alfio.controller.form;
 
 import alfio.manager.PaypalManager;
-import alfio.model.CustomerName;
-import alfio.model.Event;
-import alfio.model.TicketFieldConfiguration;
-import alfio.model.TotalPrice;
+import alfio.model.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ErrorsCode;
@@ -142,5 +139,15 @@ public class PaymentForm {
 
     public Boolean shouldCancelReservation() {
         return Optional.ofNullable(cancelReservation).orElse(false);
+    }
+
+    public static PaymentForm fromExistingReservation(TicketReservation reservation) {
+        PaymentForm form = new PaymentForm();
+        form.setFirstName(reservation.getFirstName());
+        form.setLastName(reservation.getLastName());
+        form.setBillingAddress(reservation.getBillingAddress());
+        form.setEmail(reservation.getEmail());
+        form.setFullName(reservation.getFullName());
+        return form;
     }
 }
