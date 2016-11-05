@@ -165,10 +165,12 @@ public class WaitingQueueManagerIntegrationTest {
 
     @Test
     public void testAssignTicketToWaitingQueueUnboundedCategory() {
+        LocalDateTime start = LocalDateTime.now().minusMinutes(1);
+        LocalDateTime end = LocalDateTime.now().plusMinutes(20);
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now().minusMinutes(1)),
-                new DateTimeModification(LocalDate.now(), LocalTime.now().plusMinutes(20)),
+                new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
+                new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false));
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
@@ -217,10 +219,12 @@ public class WaitingQueueManagerIntegrationTest {
 
     @Test
     public void testAssignTicketToWaitingQueueBoundedCategory() {
+        LocalDateTime start = LocalDateTime.now().minusMinutes(2);
+        LocalDateTime end = LocalDateTime.now().plusMinutes(20);
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now().minusMinutes(3)),
-                new DateTimeModification(LocalDate.now(), LocalTime.now().plusMinutes(20)),
+                new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
+                new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
                 DESCRIPTION, BigDecimal.TEN, false, "", true));
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
@@ -346,9 +350,10 @@ public class WaitingQueueManagerIntegrationTest {
     }
 
     private List<TicketCategoryModification> getTicketCategoryModifications(boolean firstBounded, int firstSeats, boolean lastBounded, int lastSeats) {
+        LocalDateTime start = LocalDateTime.now().plusMinutes(4);
         return Arrays.asList(
             new TicketCategoryModification(null, "defaultFirst", firstSeats,
-                new DateTimeModification(LocalDate.now(), LocalTime.now().plusMinutes(4)),
+                new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", firstBounded),
             new TicketCategoryModification(null, "defaultLast", lastSeats,
