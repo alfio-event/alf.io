@@ -1,4 +1,4 @@
-{{#i18n}}email-ticket-released.admin.text [{{ticket.id}}, {{ticket.uuid}}, {{ticket.fullName}}, {{ticket.email}}, {{ticketCategoryDescription}}]{{/i18n}}
+{{#i18n}}email-ticket-released.admin.text [{{ticket.id}}] [{{ticket.uuid}}] [{{ticket.fullName}}] [{{ticket.email}}] [{{ticketCategoryDescription}}]{{/i18n}}
 {{#hasAdditionalServices}}
 
     ***** WARNING *****
