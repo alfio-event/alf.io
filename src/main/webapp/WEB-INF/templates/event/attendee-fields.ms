@@ -46,12 +46,7 @@
         {{/lockedAssignment}}
     </div>
 </div>
-<!-- optional values -->
-<div class="hidden toggle-collapse center wMarginBottom">
-    <span class="collapse-more"><a class="btn btn-primary btn-xs toggle-collapse"><i class="fa fa-arrow-circle-o-down"></i> {{#i18n}}show.optional.fields{{/i18n}}</a></span>
-    <span class="collapse-less collapse-toggle hidden"><a class="btn btn-primary btn-xs toggle-collapse"><i class="fa fa-arrow-circle-o-up"></i> {{#i18n}}hide.optional.fields{{/i18n}}</a></span>
-</div>
-<div {{#displayAssignForm}}class="collapsible"{{/displayAssignForm}}>
+<div>
     {{#ticketFieldConfiguration}}
         {{#fields}}
             <div class="form-group">
