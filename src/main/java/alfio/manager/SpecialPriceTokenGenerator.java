@@ -74,6 +74,10 @@ public class SpecialPriceTokenGenerator {
         log.trace("end. Took {} ms", stopWatch.getTime());
     }
 
+    void generatePendingCodesForCategory(int categoryId) {
+        specialPriceRepository.findWaitingElementsForCategory(categoryId).forEach(this::generateCode);
+    }
+
     private void generateCode(SpecialPrice specialPrice) {
 
         TicketCategory ticketCategory = ticketCategoryRepository.getById(specialPrice.getTicketCategoryId()).orElseThrow(IllegalStateException::new);

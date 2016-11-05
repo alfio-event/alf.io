@@ -64,6 +64,7 @@ public class AdminReservationManager {
     private final TicketReservationRepository ticketReservationRepository;
     private final EventRepository eventRepository;
     private final PlatformTransactionManager transactionManager;
+    private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
 
     @Autowired
     public AdminReservationManager(EventManager eventManager,
@@ -74,7 +75,8 @@ public class AdminReservationManager {
                                    NamedParameterJdbcTemplate jdbc,
                                    SpecialPriceRepository specialPriceRepository,
                                    TicketReservationRepository ticketReservationRepository,
-                                   EventRepository eventRepository) {
+                                   EventRepository eventRepository,
+                                   SpecialPriceTokenGenerator specialPriceTokenGenerator) {
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -84,6 +86,7 @@ public class AdminReservationManager {
         this.specialPriceRepository = specialPriceRepository;
         this.ticketReservationRepository = ticketReservationRepository;
         this.eventRepository = eventRepository;
+        this.specialPriceTokenGenerator = specialPriceTokenGenerator;
     }
 
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
@@ -274,23 +277,31 @@ public class AdminReservationManager {
             Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), categoryId);
             TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, event, null);
             ticketRepository.updateTicketPrice(reservedForUpdate, categoryId, event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
-            if(category.isAccessRestricted()) {
-                specialPriceRepository.findActiveNotAssignedByCategoryId(categoryId)
-                    .stream()
-                    .limit(attendees.size())
-                    .forEach(c -> specialPriceRepository.updateStatus(c.getId(), SpecialPrice.Status.PENDING.toString(), specialPriceSessionId));
-            }
-            assignTickets(attendees, reservedForUpdate);
+            List<SpecialPrice> codes = category.isAccessRestricted() ? bindSpecialPriceTokens(specialPriceSessionId, categoryId, attendees) : Collections.emptyList();
+            assignTickets(attendees, reservedForUpdate, codes, reservationId, arm.getLanguage(), category.getSrcPriceCts());
             List<Ticket> tickets = reservedForUpdate.stream().map(id -> ticketRepository.findById(id, categoryId)).collect(toList());
             return Result.success(Pair.of(ticketReservationRepository.findReservationById(reservationId), tickets));
         });
     }
 
-    private void assignTickets(List<Attendee> attendees, List<Integer> reservedForUpdate) {
+    private List<SpecialPrice> bindSpecialPriceTokens(String specialPriceSessionId, int categoryId, List<Attendee> attendees) {
+        specialPriceTokenGenerator.generatePendingCodesForCategory(categoryId);
+        List<SpecialPrice> codes = specialPriceRepository.findActiveNotAssignedByCategoryId(categoryId)
+            .stream()
+            .limit(attendees.size())
+            .collect(toList());
+        codes.forEach(c -> specialPriceRepository.updateStatus(c.getId(), SpecialPrice.Status.PENDING.toString(), specialPriceSessionId));
+        return codes;
+    }
+
+    private void assignTickets(List<Attendee> attendees, List<Integer> reservedForUpdate, List<SpecialPrice> codes, String reservationId, String userLanguage, int srcPriceCts) {
+        Optional<Iterator<SpecialPrice>> specialPriceIterator = Optional.of(codes).filter(c -> !c.isEmpty()).map(Collection::iterator);
         for(int i=0; i<reservedForUpdate.size(); i++) {
             Attendee attendee = attendees.get(i);
             if(!attendee.isEmpty()) {
-                ticketRepository.updateTicketOwnerById(reservedForUpdate.get(i), attendee.getEmailAddress(), null, attendee.getFirstName(), attendee.getLastName());
+                Integer ticketId = reservedForUpdate.get(i);
+                ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmailAddress(), null, attendee.getFirstName(), attendee.getLastName());
+                specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts));
             }
         }
     }
@@ -307,8 +318,8 @@ public class AdminReservationManager {
         int tickets = attendees.size();
         TicketCategoryModification tcm = new TicketCategoryModification(category.getExistingCategoryId(), category.getName(), tickets,
             inception, reservation.getExpiration(), Collections.emptyMap(), category.getPrice(), true, "", true);
-        int availableSeats = getAvailableSeats(event);
-        int missingTickets = Math.max(tickets - availableSeats, 0);
+        int notAllocated = getNotAllocatedTickets(event);
+        int missingTickets = Math.max(tickets - notAllocated, 0);
         Event modified = increaseSeatsIfNeeded(ti, event, missingTickets, event);
         return eventManager.insertCategory(modified, tcm, username).map(id -> ticketCategoryRepository.getById(id, event.getId()));
     }
@@ -324,9 +335,8 @@ public class AdminReservationManager {
         return modified;
     }
 
-    private int getAvailableSeats(Event event) {
-        int allocation = ticketCategoryRepository.getTicketAllocation(event.getId());
-        return event.getAvailableSeats() - allocation;
+    private int getNotAllocatedTickets(Event event) {
+        return ticketRepository.countFreeTicketsForUnbounded(event.getId());
     }
 
     private Result<TicketCategory> checkExistingCategory(TicketsInfo ti, Event event, String username) {
@@ -337,12 +347,11 @@ public class AdminReservationManager {
         TicketCategory existing = ticketCategoryRepository.getById(category.getExistingCategoryId(), eventId);
         int existingCategoryId = existing.getId();
         int freeTicketsInCategory = ticketRepository.countFreeTickets(eventId, existingCategoryId);
-        int availableSeats = getAvailableSeats(event);
-        int missingTickets = Math.max(tickets - (freeTicketsInCategory + availableSeats), 0);
+        int notAllocated = getNotAllocatedTickets(event);
+        int missingTickets = Math.max(tickets - (freeTicketsInCategory + notAllocated), 0);
         Event modified = increaseSeatsIfNeeded(ti, event, missingTickets, event);
         if(freeTicketsInCategory < tickets && existing.isBounded()) {
             int maxTickets = existing.getMaxTickets() + (tickets - freeTicketsInCategory);
-
             TicketCategoryModification tcm = new TicketCategoryModification(existingCategoryId, existing.getName(), maxTickets,
                 DateTimeModification.fromZonedDateTime(existing.getInception(modified.getZoneId())), DateTimeModification.fromZonedDateTime(existing.getExpiration(event.getZoneId())),
                 Collections.emptyMap(), existing.getPrice(), existing.isAccessRestricted(), "", true);

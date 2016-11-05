@@ -60,7 +60,7 @@
                     <label>Status</label>
                     <div class="form-control-static">{{$ctrl.reservation.status}}</div>
                 </div>
-                <button type="button" ng-if="$ctrl.reservation.status === 'PENDING'" class="btn btn-xs btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm(viewReservation)" style="margin-bottom:20px"><i class="fa fa-check"></i> Confirm</button>
+                <button type="button" ng-if="$ctrl.reservation.status === 'PENDING'" class="btn btn-xs btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Confirm</button>
             </div>
             <div class="col-xs-6" ng-if="$ctrl.reservation.status !== 'COMPLETE'">
                 <div class="form-group">

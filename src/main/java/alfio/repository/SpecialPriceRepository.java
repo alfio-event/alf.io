@@ -80,4 +80,7 @@ public interface SpecialPriceRepository {
 
     @Query("select * from special_price where status = 'WAITING' for update")
     List<SpecialPrice> findWaitingElements();
+
+    @Query("select * from special_price where status = 'WAITING' and ticket_category_id = :categoryId for update")
+    List<SpecialPrice> findWaitingElementsForCategory(@Bind("categoryId") int categoryId);
 }

@@ -110,12 +110,10 @@
             notify(false);
         };
 
-        ctrl.confirm = function(frm) {
-            if(frm.$valid) {
-                AdminReservationService.confirm(ctrl.event.shortName, ctrl.reservation.id).then(function() {
-                    $window.location.reload();
-                })
-            }
+        ctrl.confirm = function() {
+            AdminReservationService.confirm(ctrl.event.shortName, ctrl.reservation.id).then(function() {
+                $window.location.reload();
+            });
         };
     }
 
