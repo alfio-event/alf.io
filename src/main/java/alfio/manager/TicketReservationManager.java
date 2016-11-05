@@ -533,7 +533,7 @@ public class TicketReservationManager {
             model.put("organization", organizationRepository.getById(event.getOrganizationId()));
             model.put("event", event);
             model.put("ticketReservation", reservation);
-            model.put("ticketUrl", ticketUpdateUrl(reservation.getId(), event, t.getUuid()));
+            model.put("ticketUrl", ticketUpdateUrl(event, t.getUuid()));
             model.put("ticket", t);
             return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, locale);
         };
@@ -717,7 +717,7 @@ public class TicketReservationManager {
             .map(entry -> Pair.of(additionalServiceRepository.getById(entry.getKey(), event.getId()), entry.getValue()));
     }
 
-    public String reservationUrl(String reservationId) {
+    String reservationUrl(String reservationId) {
         return reservationUrl(reservationId, eventRepository.findByReservationId(reservationId));
     }
 
@@ -727,16 +727,16 @@ public class TicketReservationManager {
                 + "/event/" + event.getShortName() + "/reservation/" + reservationId + "?lang="+reservation.getUserLanguage();
     }
 
-    public String ticketUrl(String reservationId, Event event, String ticketId) {
+    String ticketUrl(Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
         return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/")
-                + "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/" + ticketId + "?lang=" + ticket.getUserLanguage();
+                + "/event/" + event.getShortName() + "/ticket/" + ticketId + "?lang=" + ticket.getUserLanguage();
     }
 
-    public String ticketUpdateUrl(String reservationId, Event event, String ticketId) {
+    public String ticketUpdateUrl(Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
         return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/")
-            + "/event/" + event.getShortName() + "/reservation/" + reservationId+ "/ticket/" + ticketId + "/update?lang="+ticket.getUserLanguage();
+            + "/event/" + event.getShortName() + "/ticket/" + ticketId + "/update?lang="+ticket.getUserLanguage();
     }
 
 
@@ -889,26 +889,27 @@ public class TicketReservationManager {
         }
     }
 
-    public Optional<Triple<Event, TicketReservation, Ticket>> fetchComplete(String eventName, String reservationId, String ticketIdentifier) {
-        return from(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
-            if(t.getMiddle().getStatus() == TicketReservationStatus.COMPLETE) {
-                return Optional.of(t);
-            } else {
-                return Optional.empty();
-            }
-        });
+    public Optional<Triple<Event, TicketReservation, Ticket>> fetchComplete(String eventName, String ticketIdentifier) {
+        return ticketRepository.findOptionalByUUID(ticketIdentifier)
+            .flatMap(ticket -> from(eventName, ticket.getTicketsReservationId(), ticketIdentifier)
+                .flatMap((triple) -> {
+                    if(triple.getMiddle().getStatus() == TicketReservationStatus.COMPLETE) {
+                        return Optional.of(triple);
+                    } else {
+                        return Optional.empty();
+                    }
+            }));
     }
 
     /**
      * Return a fully present triple only if the values are present (obviously) and the the reservation has a COMPLETE status and the ticket is considered assigned.
      *
      * @param eventName
-     * @param reservationId
      * @param ticketIdentifier
      * @return
      */
-    public Optional<Triple<Event, TicketReservation, Ticket>> fetchCompleteAndAssigned(String eventName, String reservationId, String ticketIdentifier) {
-        return fetchComplete(eventName, reservationId, ticketIdentifier).flatMap((t) -> {
+    public Optional<Triple<Event, TicketReservation, Ticket>> fetchCompleteAndAssigned(String eventName, String ticketIdentifier) {
+        return fetchComplete(eventName, ticketIdentifier).flatMap((t) -> {
             if (t.getRight().getAssigned()) {
                 return Optional.of(t);
             } else {
@@ -975,7 +976,7 @@ public class TicketReservationManager {
                     .forEach(t -> {
                         int result = ticketRepository.flagTicketAsReminderSent(t.getId());
                         Validate.isTrue(result == 1);
-                        Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ticketUpdateUrl(t.getTicketsReservationId(), event, t.getUuid()));
+                        Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ticketUpdateUrl(event, t.getUuid()));
                         Locale locale = Optional.ofNullable(t.getUserLanguage()).map(Locale::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
                         notificationManager.sendSimpleEmail(event, t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
                     });

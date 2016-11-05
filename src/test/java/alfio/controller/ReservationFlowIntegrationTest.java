@@ -39,6 +39,7 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.transaction.PaymentProxy;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
@@ -133,6 +134,8 @@ public class ReservationFlowIntegrationTest {
     private TicketHelper ticketHelper;
     @Autowired
     private I18nManager i18nManager;
+    @Autowired
+    private TicketReservationRepository ticketReservationRepository;
 
     private ReservationApiController reservationApiController;
 
@@ -242,8 +245,8 @@ public class ReservationFlowIntegrationTest {
 
 
         //ticket is still not assigned, will redirect
-        Assert.assertTrue(ticketController.showTicket(eventName, reservationIdentifier, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()).startsWith("redirect:/event/"));
-        Assert.assertTrue(ticketController.showTicketForUpdate(eventName, reservationIdentifier, ticketIdentifier, new BindingAwareModelMap(), Locale.ENGLISH).startsWith("redirect:/event/"));
+        Assert.assertTrue(ticketController.showTicket(eventName, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()).startsWith("redirect:/event/"));
+        Assert.assertTrue(ticketController.showTicketForUpdate(eventName, ticketIdentifier, new BindingAwareModelMap(), Locale.ENGLISH).startsWith("redirect:/event/"));
         //
 
         String fname1 = "Test";
@@ -252,10 +255,10 @@ public class ReservationFlowIntegrationTest {
         //assign ticket to person
         assignTicket(eventName, reservationIdentifier, ticketIdentifier, fname1, lname1);
 
-        Assert.assertEquals("/event/update-ticket", ticketController.showTicketForUpdate(eventName, reservationIdentifier, ticketIdentifier, new BindingAwareModelMap(), Locale.ENGLISH));
+        Assert.assertEquals("/event/update-ticket", ticketController.showTicketForUpdate(eventName, ticketIdentifier, new BindingAwareModelMap(), Locale.ENGLISH));
 
         //
-        Assert.assertEquals("/event/show-ticket", ticketController.showTicket(eventName, reservationIdentifier, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()));
+        Assert.assertEquals("/event/show-ticket", ticketController.showTicket(eventName, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()));
         //
         checkCSV(eventName, ticketIdentifier, fname1 + " " + lname1);
 
@@ -266,7 +269,7 @@ public class ReservationFlowIntegrationTest {
         updateTicketOwnerForm.setLastName("Testson");
         updateTicketOwnerForm.setEmail("testmctest@test.com");
         updateTicketOwnerForm.setUserLanguage("en");
-        reservationApiController.assignTicketToPerson(eventName, reservationIdentifier, ticketIdentifier, true,
+        reservationApiController.assignTicketToPerson(eventName, ticketIdentifier, true,
             updateTicketOwnerForm, new BeanPropertyBindingResult(updateTicketOwnerForm, "updateTicketForm"), new MockHttpServletRequest(), new BindingAwareModelMap(),
             null);
         checkCSV(eventName, ticketIdentifier, "Test Testson");

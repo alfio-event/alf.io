@@ -13,7 +13,7 @@
             {{>/event/event-details}}
         </div>
         <div class="col-xs-5">
-            <img src="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{ticket.uuid}}/code.png" class="img-responsive img-center">
+            <img src="{{request.contextPath}}/event/{{event.shortName}}/ticket/{{ticket.uuid}}/code.png" class="img-responsive img-center">
         </div>
     </div>
 
@@ -27,7 +27,7 @@
             <dt>{{#i18n}}ticket.reference-number{{/i18n}}</dt>
             <dd>{{ticket.uuid}}</dd>
             <dt>{{#i18n}}ticket.order-information{{/i18n}}</dt>
-            <dd>{{#i18n}}ticket.order-information-values [{{reservation.id}}] [{{reservation.fullName}}]{{/i18n}}</dd>
+            <dd>{{#i18n}}ticket.order-information-values [{{reservationId}}] [{{reservation.fullName}}]{{/i18n}}</dd>
         </dl>
     </div>
 
@@ -39,13 +39,12 @@
     {{/deskPaymentRequired}}
 
     <div class="hidden-print wMarginBottom wMarginTop">
-        <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{ticket.uuid}}/send-ticket-by-email">
+        <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/ticket/{{ticket.uuid}}/send-ticket-by-email">
             <input type="hidden" name="from" value="ticket">
             <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
             <div class="container-fluid ">
                 <div class="row">
-                    <div class="col-md-4 col-md-push-8 col-xs-12"><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{ticket.uuid}}/download-ticket" class="btn btn-success btn-block"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div>
-                    <div class="col-md-4 col-md-pull-4 col-xs-12"><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{backSuffix}}" class="btn btn-default btn-block go-back"><i class="fa fa-backward"></i> {{#i18n}}show-ticket.go-back-to-reservation{{/i18n}}</a></div>
+                    <div class="col-md-4 col-md-push-8 col-xs-12"><a href="{{request.contextPath}}/event/{{event.shortName}}/ticket/{{ticket.uuid}}/download-ticket" class="btn btn-success btn-block"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div>
                 </div>
             </div>
         </form>

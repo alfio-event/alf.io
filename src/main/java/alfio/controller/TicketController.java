@@ -44,10 +44,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -93,30 +90,47 @@ public class TicketController {
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.GET)
-    public String showTicket(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, 
+    public String showTicketOLD(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
+                             @PathVariable("ticketIdentifier") String ticketIdentifier) {
+        return "redirect:/event/"+eventName+"/ticket/"+ticketIdentifier;
+    }
+
+    @RequestMapping(value = "/event/{eventName}/ticket/{ticketIdentifier}", method = RequestMethod.GET)
+    public String showTicket(@PathVariable("eventName") String eventName,
             @PathVariable("ticketIdentifier") String ticketIdentifier,
             @RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
             Locale locale,
             Model model) {
-        return internalShowTicket(eventName, reservationId, ticketIdentifier, ticketEmailSent, model, "success", locale);
+        return internalShowTicket(eventName, ticketIdentifier, ticketEmailSent, model, "success", locale);
 
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/view", method = RequestMethod.GET)
-    public String showTicketFromTicketDetail(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
+    public String showTicketFromTicketDetailOLD(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
+                                             @PathVariable("ticketIdentifier") String ticketIdentifier) {
+        return "redirect:/event/"+eventName+"/ticket/"+ticketIdentifier+"/view";
+    }
+
+    @RequestMapping(value = "/event/{eventName}/ticket/{ticketIdentifier}/view", method = RequestMethod.GET)
+    public String showTicketFromTicketDetail(@PathVariable("eventName") String eventName,
                                              @PathVariable("ticketIdentifier") String ticketIdentifier,
                                              @RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
                                              Model model, Locale locale) {
-        return internalShowTicket(eventName, reservationId, ticketIdentifier, ticketEmailSent, model, "ticket/"+ticketIdentifier+"/update", locale);
+        return internalShowTicket(eventName, ticketIdentifier, ticketEmailSent, model, "ticket/"+ticketIdentifier+"/update", locale);
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/update", method = RequestMethod.GET)
-    public String showTicketForUpdate(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
+    public String showTicketForUpdateOLD(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
+                                      @PathVariable("ticketIdentifier") String ticketIdentifier) {
+        return "redirect:/event/"+eventName+"/ticket/"+ticketIdentifier+"/update";
+    }
+    @RequestMapping(value = "/event/{eventName}/ticket/{ticketIdentifier}/update", method = RequestMethod.GET)
+    public String showTicketForUpdate(@PathVariable("eventName") String eventName,
             @PathVariable("ticketIdentifier") String ticketIdentifier, Model model, Locale locale) {
 
-        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         if(!oData.isPresent()) {
-            return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+            return "redirect:/event/" + eventName;
         }
         Triple<Event, TicketReservation, Ticket> data = oData.get();
         Event event = data.getLeft();
@@ -127,6 +141,7 @@ public class TicketController {
         Ticket ticket = data.getRight();
         model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view", ticketHelper.findTicketFieldConfigurationAndValue(event.getId(), ticket, locale), true, "")))//
                 .addAttribute("reservation", data.getMiddle())//
+                .addAttribute("reservationId", ticketReservationManager.getShortReservationID(event, data.getMiddle().getId()))
                 .addAttribute("event", event)//
                 .addAttribute("ticketCategory", ticketCategory)//
                 .addAttribute("countries", ticketHelper.getLocalizedCountries(locale))
@@ -137,18 +152,22 @@ public class TicketController {
         return "/event/update-ticket";
     }
 
-    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}/send-ticket-by-email", method = RequestMethod.POST)
+
+    @RequestMapping(value = "/event/{eventName}/ticket/{ticketIdentifier}/send-ticket-by-email", method = RequestMethod.POST)
+    @ResponseBody
     public String sendTicketByEmail(@PathVariable("eventName") String eventName,
-                                    @PathVariable("reservationId") String reservationId,
                                     @PathVariable("ticketIdentifier") String ticketIdentifier,
                                     HttpServletRequest request) throws Exception {
-        
-        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+
+        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         if(!oData.isPresent()) {
-            return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+            return "redirect:/event/" + eventName;
         }
-        Triple<Event, TicketReservation, Ticket> data = oData.get();
-        
+        internalSendTicketByEmail(request, oData.get());
+        return "OK";
+    }
+
+    private Ticket internalSendTicketByEmail(HttpServletRequest request, Triple<Event, TicketReservation, Ticket> data) throws IOException {
         Ticket ticket = data.getRight();
         Event event = data.getLeft();
         Locale locale = LocaleUtil.getTicketLanguage(ticket, request);
@@ -156,19 +175,16 @@ public class TicketController {
         TicketReservation reservation = data.getMiddle();
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         notificationManager.sendTicketByEmail(ticket,
-            event, locale, TemplateProcessor.buildPartialEmail(event, organization, reservation, templateManager, ticketReservationManager.ticketUpdateUrl(reservation.getId(), event, ticket.getUuid()), request),
+            event, locale, TemplateProcessor.buildPartialEmail(event, organization, reservation, templateManager, ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid()), request),
             reservation, ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId()));
-        return "redirect:/event/" + eventName + "/reservation/" + reservationId
-                + ("ticket".equals(request.getParameter("from")) ? ("/" + ticket.getUuid()) : "/success") + "?ticket-email-sent=true";
+        return ticket;
     }
-    
 
-    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}/download-ticket", method = RequestMethod.GET)
+    @RequestMapping(value = "/event/{eventName}/ticket/{ticketIdentifier}/download-ticket", method = RequestMethod.GET)
     public void generateTicketPdf(@PathVariable("eventName") String eventName,
-            @PathVariable("reservationId") String reservationId,
             @PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletRequest request, HttpServletResponse response) throws IOException, WriterException {
 
-        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         if(!oData.isPresent()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
@@ -187,12 +203,11 @@ public class TicketController {
         }
     }
     
-    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}/code.png", method = RequestMethod.GET)
+    @RequestMapping(value = "/event/{eventName}/ticket/{ticketIdentifier}/code.png", method = RequestMethod.GET)
     public void generateTicketCode(@PathVariable("eventName") String eventName,
-            @PathVariable("reservationId") String reservationId,
             @PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response) throws IOException, WriterException {
         
-        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         if(!oData.isPresent()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
@@ -210,25 +225,26 @@ public class TicketController {
         
     }
 
-    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/cancel-ticket", method = RequestMethod.POST)
+    @RequestMapping(value = "/event/{eventName}/cancel-ticket", method = RequestMethod.POST)
     public String cancelTicket(@PathVariable("eventName") String eventName,
-                             @PathVariable("reservationId") String reservationId,
                              @RequestParam("ticketId") String ticketIdentifier) {
-        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         oData.ifPresent(triple -> ticketReservationManager.releaseTicket(triple.getLeft(), triple.getMiddle(), triple.getRight()));
-        return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+        return "redirect:/event/" + eventName;
     }
 
     private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
         TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation, ticketCategory, organization, templateManager, fileUploadManager);
+        String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation.getId());
+        return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation,
+            ticketCategory, organization, templateManager, fileUploadManager, reservationID);
     }
 
-    private String internalShowTicket(String eventName, String reservationId, String ticketIdentifier, boolean ticketEmailSent, Model model, String backSuffix, Locale locale) {
-        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, reservationId, ticketIdentifier);
+    private String internalShowTicket(String eventName, String ticketIdentifier, boolean ticketEmailSent, Model model, String backSuffix, Locale locale) {
+        Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         if(!oData.isPresent()) {
-            return "redirect:/event/" + eventName + "/reservation/" + reservationId;
+            return "redirect:/event/" + eventName;
         }
         Triple<Event, TicketReservation, Ticket> data = oData.get();
 
@@ -244,6 +260,7 @@ public class TicketController {
             .addAttribute("ticketCategory", ticketCategory)//
             .addAttribute("organization", organization)//
             .addAttribute("ticketEmailSent", ticketEmailSent)
+            .addAttribute("reservationId", ticketReservationManager.getShortReservationID(event, reservation.getId()))
             .addAttribute("deskPaymentRequired", Optional.ofNullable(reservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired())
             .addAttribute("backSuffix", backSuffix)
             .addAttribute("userLanguage", locale.getLanguage())

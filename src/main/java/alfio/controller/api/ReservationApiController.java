@@ -48,16 +48,17 @@ public class ReservationApiController {
     private final I18nManager i18nManager;
 
     @Autowired
-    public ReservationApiController(TicketHelper ticketHelper, TemplateManager templateManager, I18nManager i18nManager) {
+    public ReservationApiController(TicketHelper ticketHelper,
+                                    TemplateManager templateManager,
+                                    I18nManager i18nManager) {
         this.ticketHelper = ticketHelper;
         this.templateManager = templateManager;
         this.i18nManager = i18nManager;
     }
 
 
-    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/ticket/{ticketIdentifier}/assign", method = RequestMethod.POST, headers = "X-Requested-With=XMLHttpRequest")
+    @RequestMapping(value = "/event/{eventName}/ticket/{ticketIdentifier}/assign", method = RequestMethod.POST, headers = "X-Requested-With=XMLHttpRequest")
     public Map<String, Object> assignTicketToPerson(@PathVariable("eventName") String eventName,
-                                                    @PathVariable("reservationId") String reservationId,
                                                     @PathVariable("ticketIdentifier") String ticketIdentifier,
                                                     @RequestParam(value = "single-ticket", required = false, defaultValue = "false") boolean singleTicket,
                                                     UpdateTicketOwnerForm updateTicketOwner,
@@ -71,7 +72,7 @@ public class ReservationApiController {
                 .filter(UserDetails.class::isInstance)
                 .map(UserDetails.class::cast);
 
-        Optional<Triple<ValidationResult, Event, Ticket>> assignmentResult = ticketHelper.assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, Optional.of(bindingResult), request, t -> {
+        Optional<Triple<ValidationResult, Event, Ticket>> assignmentResult = ticketHelper.assignTicket(eventName, ticketIdentifier, updateTicketOwner, Optional.of(bindingResult), request, t -> {
             Locale requestLocale = RequestContextUtils.getLocale(request);
             model.addAttribute("ticketFieldConfiguration", ticketHelper.findTicketFieldConfigurationAndValue(t.getMiddle().getId(), t.getRight(), requestLocale));
             model.addAttribute("value", t.getRight());
@@ -86,7 +87,6 @@ public class ReservationApiController {
             model.addAttribute("elementNamePrefix", "");
         }, userDetails);
         Map<String, Object> result = new HashMap<>();
-        model.addAttribute("reservationId", reservationId);
 
         Optional<ValidationResult> validationResult = assignmentResult.map(Triple::getLeft);
         if(validationResult.isPresent() && validationResult.get().isSuccess()) {

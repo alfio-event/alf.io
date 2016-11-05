@@ -20,7 +20,10 @@ import alfio.manager.FileUploadManager;
 import alfio.manager.support.PDFTemplateGenerator;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
-import alfio.model.*;
+import alfio.model.Event;
+import alfio.model.Ticket;
+import alfio.model.TicketCategory;
+import alfio.model.TicketReservation;
 import alfio.model.user.Organization;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
@@ -36,7 +39,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 
 @Log4j2
 public final class TemplateProcessor {
@@ -76,11 +81,13 @@ public final class TemplateProcessor {
                                                       TicketCategory ticketCategory,
                                                       Organization organization,
                                                       TemplateManager templateManager,
-                                                      FileUploadManager fileUploadManager) {
+                                                      FileUploadManager fileUploadManager,
+                                                      String reservationID) {
         
         return () -> {
             Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
-            Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData);
+            Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID);
+
             String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
             return prepareItextRenderer(page);
         };
@@ -119,8 +126,9 @@ public final class TemplateProcessor {
                                                                   TicketCategory ticketCategory,
                                                                   Organization organization,
                                                                   TemplateManager templateManager,
-                                                                  FileUploadManager fileUploadManager) {
-        return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager, fileUploadManager).generate();
+                                                                  FileUploadManager fileUploadManager,
+                                                                  String reservationID) {
+        return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager, fileUploadManager, reservationID).generate();
     }
 
     public static Optional<byte[]> buildReceiptPdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {

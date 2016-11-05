@@ -16,9 +16,7 @@
  */
 package alfio.manager.support;
 
-import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EventManager;
-import alfio.manager.FileUploadManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.system.Mailer;
@@ -39,8 +37,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -106,7 +102,7 @@ public class CustomMessageManager {
                     model.addAttribute("organizationEmail", organization.getEmail());
                     model.addAttribute("reservationURL", ticketReservationManager.reservationUrl(t.getTicketsReservationId(), event));
                     model.addAttribute("reservationID", ticketReservationManager.getShortReservationID(event, t.getTicketsReservationId()));
-                    model.addAttribute("ticketURL", ticketReservationManager.ticketUpdateUrl(t.getTicketsReservationId(), event, t.getUuid()));
+                    model.addAttribute("ticketURL", ticketReservationManager.ticketUpdateUrl(event, t.getUuid()));
                     return Triple.of(t, t.getEmail(), model);
                 })
                 .forEach(triple -> {

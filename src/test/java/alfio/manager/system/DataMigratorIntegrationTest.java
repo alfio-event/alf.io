@@ -303,7 +303,9 @@ public class DataMigratorIntegrationTest {
 	        second.setEmail("email@email.ch");
 	        second.setFirstName("Full");
             second.setLastName("Name");
-	        PartialTicketPDFGenerator generator = TemplateProcessor.buildPartialPDFTicket(Locale.ITALIAN, event, ticketReservationManager.findById(reservationId).get(), ticketCategoryRepository.getById(tickets.get(0).getCategoryId(), event.getId()), organizationRepository.getById(event.getOrganizationId()), templateManager, fileUploadManager);
+	        PartialTicketPDFGenerator generator = TemplateProcessor.buildPartialPDFTicket(Locale.ITALIAN, event, ticketReservationManager.findById(reservationId).get(),
+                ticketCategoryRepository.getById(tickets.get(0).getCategoryId(), event.getId()), organizationRepository.getById(event.getOrganizationId()),
+                templateManager, fileUploadManager, "");
 	        ticketReservationManager.updateTicketOwner(tickets.get(0), Locale.ITALIAN, event, first, (t) -> "", (t) -> "", Optional.empty());
 	        ticketReservationManager.updateTicketOwner(tickets.get(1), Locale.ITALIAN, event, second, (t) -> "", (t) -> "", Optional.empty());
 	        //FIXME

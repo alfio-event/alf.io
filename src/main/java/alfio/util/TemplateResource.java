@@ -110,7 +110,7 @@ public enum TemplateResource {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000);
-            return buildModelForTicketPDF(organization, event, sampleTicketReservation(), ticketCategory, sampleTicket(), imageData);
+            return buildModelForTicketPDF(organization, event, sampleTicketReservation(), ticketCategory, sampleTicket(), imageData, "ABCD");
         }
     },
     RECEIPT_PDF("/alfio/templates/receipt.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
@@ -326,7 +326,7 @@ public enum TemplateResource {
     }
 
     // used by TICKET_PDF
-    public static Map<String, Object> buildModelForTicketPDF(Organization organization, Event event, TicketReservation ticketReservation, TicketCategory ticketCategory, Ticket ticket, Optional<ImageData> imageData) {
+    public static Map<String, Object> buildModelForTicketPDF(Organization organization, Event event, TicketReservation ticketReservation, TicketCategory ticketCategory, Ticket ticket, Optional<ImageData> imageData, String reservationId) {
         String qrCodeText = ticket.ticketCode(event.getPrivateKey());
         //
         Map<String, Object> model = new HashMap<>();
@@ -335,6 +335,7 @@ public enum TemplateResource {
         model.put("ticketCategory", ticketCategory);
         model.put("event", event);
         model.put("organization", organization);
+        model.put("reservationId", reservationId);
 
         model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
 

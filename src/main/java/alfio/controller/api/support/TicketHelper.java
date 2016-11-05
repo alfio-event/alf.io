@@ -20,7 +20,6 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
-import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
 import alfio.model.result.ValidationResult;
@@ -107,7 +106,6 @@ public class TicketHelper {
     }
 
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
-                                                                           String reservationId,
                                                                            String ticketIdentifier,
                                                                            UpdateTicketOwnerForm updateTicketOwner,
                                                                            Optional<Errors> bindingResult,
@@ -115,7 +113,7 @@ public class TicketHelper {
                                                                            Consumer<Triple<ValidationResult, Event, Ticket>> reservationConsumer,
                                                                            Optional<UserDetails> userDetails) {
 
-        Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.fetchComplete(eventName, reservationId, ticketIdentifier)
+        Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.fetchComplete(eventName, ticketIdentifier)
                 .map(result -> assignTicket(updateTicketOwner, bindingResult, request, userDetails, result));
         triple.ifPresent(reservationConsumer);
         return triple;
@@ -169,7 +167,7 @@ public class TicketHelper {
                                                                           Optional<Errors> bindingResult,
                                                                           HttpServletRequest request,
                                                                           Model model) {
-        return assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, bindingResult, request, t -> {
+        return assignTicket(eventName, ticketIdentifier, updateTicketOwner, bindingResult, request, t -> {
             model.addAttribute("value", t.getRight());
             model.addAttribute("validationResult", t.getLeft());
             model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
@@ -222,19 +220,14 @@ public class TicketHelper {
 
     private PartialTicketTextGenerator getOwnerChangeTextBuilder(HttpServletRequest request, Ticket t, Event event) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        String ticketUrl = ticketReservationManager.ticketUpdateUrl(t.getTicketsReservationId(), event, t.getUuid());
+        String ticketUrl = ticketReservationManager.ticketUpdateUrl(event, t.getUuid());
         return TemplateProcessor.buildEmailForOwnerChange(event, t, organization, ticketUrl, templateManager, LocaleUtil.getTicketLanguage(t, request));
     }
 
     private PartialTicketTextGenerator getConfirmationTextBuilder(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        String ticketUrl = ticketReservationManager.ticketUpdateUrl(ticketReservation.getId(), event, ticket.getUuid());
+        String ticketUrl = ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid());
         return TemplateProcessor.buildPartialEmail(event, organization, ticketReservation, templateManager, ticketUrl, request);
     }
 
-    private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {
-        TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
-        Organization organization = organizationRepository.getById(event.getOrganizationId());
-        return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation, ticketCategory, organization, templateManager, fileUploadManager);
-    }
 }

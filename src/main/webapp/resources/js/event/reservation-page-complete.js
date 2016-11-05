@@ -107,6 +107,35 @@
                 return false;
             });
 
+            $('.send-ticket-by-email').click(function() {
+                var frm = $(this.form);
+                var action = frm.attr('action');
+                var uuid = frm.attr('data-ticket-uuid');
+                frm.find('.has-error').removeClass('has-error');
+                $('#success-'+uuid).removeClass('show');
+                $('#error-'+uuid).removeClass('show');
+                $('#loading-'+uuid).show();
+                jQuery.ajax({
+                    url: action,
+                    type: 'POST',
+                    data: frm.serialize(),
+                    success: function(result) {
+                        $('#success-'+uuid).removeClass('hidden');
+                        $('#error-'+uuid).addClass('hidden');
+                    },
+                    error: function(xhr, textStatus, errorThrown) {
+                        $('#success-'+uuid).addClass('hidden');
+                        $('#error-'+uuid).removeClass('hidden');
+                    },
+                    complete: function(xhr) {
+                        xhr.done(function() {
+                            $('#loading-'+uuid).hide();
+                        });
+                    }
+                });
+                return false;
+            });
+
         };
 
         initListeners();

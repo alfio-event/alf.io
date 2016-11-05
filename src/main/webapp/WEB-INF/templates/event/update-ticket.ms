@@ -34,7 +34,7 @@
 </ul>
 <div class="clearfix wMarginBottom"></div>
 <div class="text-center">
-    {{#i18n}}reservation-page-complete.order-information [{{reservation.id}}] [{{reservation.fullName}}]{{/i18n}}
+    {{#i18n}}reservation-page-complete.order-information [{{reservationId}}] [{{reservation.fullName}}]{{/i18n}}
 </div>
 
 <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>

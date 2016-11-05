@@ -762,9 +762,9 @@ public class TicketReservationManagerTest {
         //generate the reservationUrl from RESERVATION_ID and event
         assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(RESERVATION_ID, event));
         //generate the ticket URL
-        assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID+"/ticketId?lang=it", trm.ticketUrl(RESERVATION_ID, event, ticketId));
+        assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId?lang=it", trm.ticketUrl(event, ticketId));
         //generate the ticket update URL
-        assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "/ticket/ticketId/update?lang=it", trm.ticketUpdateUrl(RESERVATION_ID, event, "ticketId"));
+        assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId/update?lang=it", trm.ticketUpdateUrl(event, "ticketId"));
     }
 
     //sendReminderForOptionalInfo

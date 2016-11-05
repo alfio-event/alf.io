@@ -455,7 +455,7 @@ public class ReservationController {
                 if(preAssign) {
                     ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {}, Optional.empty());
                 } else {
-                    ticketHelper.assignTicket(eventName, reservationId, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {}, Optional.empty());
+                    ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {}, Optional.empty());
                 }
             });
         }

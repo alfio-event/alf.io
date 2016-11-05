@@ -3,7 +3,7 @@
         <p>{{#i18n}}reservation-page-complete.assigned-to [{{fullName}}] [{{email}}]{{/i18n}} {{#cancellationEnabled}}<a href="#unbind-form-{{uuid}}" id="unbind-{{uuid}}" class="btn btn-xs btn-danger unbind-btn" data-ticket-uid="{{uuid}}"><i class="fa fa-eraser"></i> {{#i18n}}reservation-page-complete.release-button.text{{/i18n}}</a>{{/cancellationEnabled}}</p>
         {{#cancellationEnabled}}
         <div class="hide-by-default" id="unbind-form-{{uuid}}" tabindex="-1" role="dialog" aria-labelledby="modalTitle" aria-hidden="true" data-cancel-ticket="">
-            <form name="cancel-ticket" method="POST" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/cancel-ticket">
+            <form name="cancel-ticket" method="POST" action="{{request.contextPath}}/event/{{event.shortName}}/cancel-ticket">
                 <input type="hidden" name="ticketId" value="{{uuid}}" />
                 <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}" />
                 <div class="alert alert-danger">
@@ -16,10 +16,18 @@
         </div>
         {{/cancellationEnabled}}
         <div class="row">
-            <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{urlSuffix}}" class="btn btn-primary btn-block"><i class="fa fa-search-plus"></i> {{#i18n}}reservation-page-complete.show-ticket{{/i18n}}</a></div>
-            <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/download-ticket" class="btn btn-primary btn-block"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div>
-            <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/{{uuid}}/send-ticket-by-email" class="form-inline"><button type="submit" class="btn btn-primary btn-block"><i class="fa fa-envelope-o"></i> {{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{email}}]{{/i18n}}</button><input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}"></form></div>
+            <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="{{request.contextPath}}/event/{{event.shortName}}/ticket/{{uuid}}/view" target="_blank" class="btn btn-primary btn-block"><i class="fa fa-search-plus"></i> {{#i18n}}reservation-page-complete.show-ticket{{/i18n}}</a></div>
+            <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="{{request.contextPath}}/event/{{event.shortName}}/ticket/{{uuid}}/download-ticket" class="btn btn-primary btn-block"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div>
+            <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/ticket/{{uuid}}/send-ticket-by-email" class="form-inline" data-ticket-uuid="{{uuid}}"><button type="button" class="btn btn-primary btn-block send-ticket-by-email"><i class="fa fa-envelope-o"></i> {{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{email}}]{{/i18n}}</button><input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}"></form></div>
             <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="#ticket-{{uuid}}" class="btn btn-primary btn-block update-ticket-owner"><i class="fa fa-edit"></i> {{#i18n}}reservation-page-complete.update-ticket-owner{{/i18n}}</a></div>
+        </div>
+        <div id="success-{{uuid}}" class="alert alert-success wMarginTop wMarginBottom hidden alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            <strong>{{#i18n}}email.ticket-email-sent{{/i18n}}</strong>
+        </div>
+        <div id="error-{{uuid}}" class="alert alert-danger wMarginTop wMarginBottom hidden alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            <strong>{{#i18n}}email.ticket-email-sent{{/i18n}}</strong>
         </div>
     </div>
 {{/assigned}}
@@ -28,7 +36,7 @@
         <div class="alert alert-danger wMarginTop wMarginBottom">{{#i18n}}reservation-page-complete.please-check-input-fields{{/i18n}}</div>
     {{/isSuccess}}
 {{/validationResult}}
-<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/ticket/{{uuid}}/assign" class="form-horizontal {{#displayAssignForm}}show-by-default{{/displayAssignForm}} {{^displayAssignForm}}hide-by-default{{/displayAssignForm}} {{^assigned}}not-assigned{{/assigned}}" id="ticket-{{uuid}}" data-ticket-uuid="{{uuid}}">
+<form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/ticket/{{uuid}}/assign" class="form-horizontal {{#displayAssignForm}}show-by-default{{/displayAssignForm}} {{^displayAssignForm}}hide-by-default{{/displayAssignForm}} {{^assigned}}not-assigned{{/assigned}}" id="ticket-{{uuid}}" data-ticket-uuid="{{uuid}}">
 
 {{> /event/attendee-fields }}
 
