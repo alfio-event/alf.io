@@ -12,13 +12,13 @@
             <div class="col-xs-12 col-sm-6">
                 <div class="form-group">
                     <label for="customerFirstName">First name</label>
-                    <input class="form-control" id="customerFirstName" name="customerFirstName" ng-model="$ctrl.reservation.customerData.firstName">
+                    <input class="form-control" id="customerFirstName" name="customerFirstName" ng-model="$ctrl.reservation.customerData.firstName" required>
                 </div>
             </div>
             <div class="col-xs-12 col-sm-6">
                 <div class="form-group">
                     <label for="customerLastName">Last name</label>
-                    <input class="form-control" id="customerLastName" name="customerLastName" ng-model="$ctrl.reservation.customerData.lastName">
+                    <input class="form-control" id="customerLastName" name="customerLastName" ng-model="$ctrl.reservation.customerData.lastName" required>
                 </div>
             </div>
         </div>
@@ -26,13 +26,13 @@
             <div class="col-xs-12 col-sm-6">
                 <div class="form-group">
                     <label for="customerEmailAddress">Email Address</label>
-                    <input type="email" class="form-control" id="customerEmailAddress" name="customerEmailAddress" ng-model="$ctrl.reservation.customerData.emailAddress">
+                    <input type="email" class="form-control" id="customerEmailAddress" name="customerEmailAddress" ng-model="$ctrl.reservation.customerData.emailAddress" required>
                 </div>
             </div>
             <div class="col-xs-12 col-sm-6">
                 <div class="form-group">
                     <label for="language">Language</label>
-                    <select class="form-control" id="language" ng-options="l.locale as l.displayLanguage for l in $ctrl.languages" name="language" ng-model="$ctrl.reservation.language"></select>
+                    <select class="form-control" id="language" ng-options="l.locale as l.displayLanguage for l in $ctrl.languages" name="language" ng-model="$ctrl.reservation.language" required></select>
                 </div>
             </div>
         </div>
@@ -46,7 +46,7 @@
             <div class="col-xs-12 col-sm-6">
                 <div class="form-group">
                     <label for="expiration">Expiration</label>
-                    <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration">
+                    <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration" required>
                 </div>
             </div>
             <div class="hidden-xs col-sm-6">
@@ -152,7 +152,7 @@
                     <div class="col-xs-12">
                         <div class="form-group">
                             <label for="ticketInfo-{{$index}}-currentAttendees">Nr. of seats</label>
-                            <input type="number" class="form-control" id="ticketInfo-{{$index}}-currentAttendees" min="1" step="1" ng-change="$ctrl.updateAttendeesSize(ticketInfo)" ng-model="ticketInfo.currentAttendeesLength">
+                            <input type="number" class="form-control" id="ticketInfo-{{$index}}-currentAttendees" min="1" step="1" ng-change="$ctrl.updateAttendeesSize(ticketInfo)" ng-model="ticketInfo.currentAttendeesLength"  required>
                         </div>
                     </div>
                 </div>
