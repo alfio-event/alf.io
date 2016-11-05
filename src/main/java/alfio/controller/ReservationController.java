@@ -22,7 +22,6 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TicketDecorator;
 import alfio.manager.*;
-import alfio.model.OrderSummary;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -179,7 +178,7 @@ public class ReservationController {
                         model.addAttribute("stripe_p_key", stripeManager.getPublicKey(event));
                     }
                     Map<String, Object> modelMap = model.asMap();
-                    modelMap.putIfAbsent("paymentForm", new PaymentForm());
+                    modelMap.putIfAbsent("paymentForm", PaymentForm.fromExistingReservation(reservation));
                     modelMap.putIfAbsent("hasErrors", false);
                     model.addAttribute(
                         "ticketsByCategory",
