@@ -780,6 +780,8 @@ public class TicketReservationManager {
     }
 
     private void deleteReservations(List<String> reservationIdsToRemove) {
+        //handle removal of ticket
+        waitingQueueManager.cleanExpiredReservations(reservationIdsToRemove);
         int removedReservation = ticketReservationRepository.remove(reservationIdsToRemove);
         Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);
     }
