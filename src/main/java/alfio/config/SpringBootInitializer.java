@@ -17,9 +17,12 @@
 package alfio.config;
 
 import com.openhtmltopdf.util.XRLog;
+import lombok.extern.log4j.Log4j2;
+import org.eclipse.jetty.server.session.HashSessionIdManager;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 import org.springframework.boot.context.embedded.MimeMappings;
+import org.springframework.boot.context.embedded.jetty.JettyEmbeddedServletContainerFactory;
 import org.springframework.boot.web.servlet.ErrorPage;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
@@ -34,6 +37,7 @@ import javax.servlet.Filter;
 import javax.servlet.SessionCookieConfig;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
@@ -45,6 +49,7 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
         org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration.class})
 @Configuration
 @Profile(Initializer.PROFILE_SPRING_BOOT)
+@Log4j2
 public class SpringBootInitializer {
 
     private static final ServletContextInitializer SERVLET_CONTEXT_INITIALIZER = servletContext -> {
@@ -83,8 +88,18 @@ public class SpringBootInitializer {
             mimeMappings.put("svg", "image/svg+xml");
             container.setSessionTimeout(2, TimeUnit.HOURS);
             container.setMimeMappings(new MimeMappings(mimeMappings));
-
             container.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/404-not-found"), new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/500-internal-server-error"), new ErrorPage("/session-expired"));
+
+            Optional.ofNullable(System.getProperty("alfio.worker.name")).ifPresent(workerName -> {
+                ((JettyEmbeddedServletContainerFactory)container).addServerCustomizers(server -> {
+                    log.info("Configuring session manager using worker name {}", workerName);
+                    HashSessionIdManager sessionIdManager = new HashSessionIdManager();
+                    sessionIdManager.setWorkerName(workerName);
+                    server.setSessionIdManager(sessionIdManager);
+                });
+            });
+
+
         };
     }
 }
