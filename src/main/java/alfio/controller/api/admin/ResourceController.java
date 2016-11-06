@@ -44,6 +44,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
+import com.samskivert.mustache.MustacheException;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -98,6 +99,16 @@ public class ResourceController {
         this.templateManager = templateManager;
         this.organizationRepository = organizationRepository;
         this.fileUploadManager = fileUploadManager;
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String handleSyntaxError(Exception ex) {
+        Optional<String> cause = Optional.ofNullable(ex.getCause()).filter(MustacheException.class::isInstance).map(Throwable::getMessage);
+        if(cause.isPresent()) {
+            return cause.get();
+        }
+        return "Something went wrong. Please check the syntax and retry";
     }
 
     @RequestMapping(value = "/overridable-template/", method = RequestMethod.GET)

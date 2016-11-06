@@ -11,7 +11,7 @@
     })
 
 
-function ResourcesEditCtrl(ResourceService, EventService) {
+function ResourcesEditCtrl(ResourceService, EventService, $q) {
     var ctrl = this;
 
     ctrl.saveFor = saveFor;
@@ -21,31 +21,51 @@ function ResourcesEditCtrl(ResourceService, EventService) {
 
     ctrl.$onInit = function() {
         loadAll()
-    }
+    };
+
+    var errorHandler = function(err) {
+        var reader = new FileReader();
+        var promise = $q(function(resolve, reject) {
+            reader.onloadend = function() {
+                resolve({download: false, text: reader.result})
+            }
+        });
+        reader.readAsText(err.data);
+        promise.then(function(res) {
+            try {
+                ctrl.error = JSON.parse(res.text);
+            } catch(e) {
+                ctrl.error = res.text;
+            }
+        });
+    };
 
     function previewFor(locale) {
+        delete ctrl.error;
         var newText  = ctrl.resources[locale];
         ResourceService.preview(ctrl.event.organizationId, ctrl.event.id, ctrl.resourceName, locale, {fileAsString: newText}).then(function(res) {
             if(!res.download) {
                 ctrl.previewedText = res.text;
                 ctrl.previewMode = true;
             }
-        });
+        }, errorHandler);
     }
 
     function saveFor(locale) {
-        ctrl.previewMode = false
+        delete ctrl.error;
+        ctrl.previewMode = false;
         var newText  = ctrl.resources[locale];
-        ResourceService.uploadFile(ctrl.event.organizationId, ctrl.event.id, {fileAsString: newText, name: getFileName(locale), type: 'text/plain'}).then(loadAll);
+        ResourceService.uploadFile(ctrl.event.organizationId, ctrl.event.id, {fileAsString: newText, name: getFileName(locale), type: 'text/plain'}).then(loadAll, errorHandler);
     }
 
     function deleteFor(locale) {
+        delete ctrl.error;
         ctrl.previewMode = false
-        ResourceService.deleteFile(ctrl.event.organizationId, ctrl.event.id, getFileName(locale)).then(loadAll);
+        ResourceService.deleteFile(ctrl.event.organizationId, ctrl.event.id, getFileName(locale)).then(loadAll, errorHandler);
     }
 
     function resetFor(locale) {
-        ctrl.previewMode = false
+        ctrl.previewMode = false;
         ctrl.resources[locale] = ctrl.originalResources[locale] || ctrl.templateBodies[locale];
     }
 

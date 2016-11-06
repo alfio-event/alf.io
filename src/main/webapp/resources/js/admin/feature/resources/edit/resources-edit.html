@@ -1,7 +1,7 @@
 <div class="page-header">
     <h2>Edit resource: {{$ctrl.resourceName}}</h2>
 </div>
-
+<div uib-alert type="danger" close="closeAlert()" data-ng-if="$ctrl.error"><h4><i class="fa fa-warning"></i> {{$ctrl.error}}</h4></div>
 <div class="row">
     <div class="col-xs-12">
         <uib-tabset>
@@ -13,12 +13,14 @@
                         <textarea id="resource-{{locale.locale}}" ng-model="$ctrl.resources[locale.locale]" rows="20" class="form-control" ng-show="!$ctrl.previewMode"></textarea>
                         <pre ng-show="$ctrl.previewMode" ng-bind="$ctrl.previewedText"></pre>
                     </div>
+                    <div class="pull-left" ng-if="$ctrl.resourcesMetadata[locale.locale]">
+                        <button type="button" class="btn btn-lg btn-default" ng-click="$ctrl.deleteFor(locale.locale)">Delete</button>
+                    </div>
                     <div class="pull-right">
-                        <button ng-if="$ctrl.resourcesMetadata[locale.locale]" type="button" class="btn btn-lg btn-warning" ng-click="$ctrl.deleteFor(locale.locale)">Delete</button>
-                        <button type="button" ng-click="$ctrl.resetFor(locale.locale)" class="btn btn-lg">Reset</button>
-                        <button type="button" ng-click="$ctrl.previewFor(locale.locale)" class="btn btn-lg" ng-show="!$ctrl.previewMode">Preview</button>
-                        <button type="button" ng-click="$ctrl.previewMode = false" class="btn btn-lg" ng-show="$ctrl.previewMode">Close preview</button>
-                        <button type="submit" class="btn btn-lg btn-default">Save</button>
+                        <button type="button" ng-click="$ctrl.resetFor(locale.locale)" class="btn btn-default btn-lg">Reset</button>
+                        <button type="button" ng-click="$ctrl.previewFor(locale.locale)" class="btn btn-warning btn-lg" ng-show="!$ctrl.previewMode">Preview</button>
+                        <button type="button" ng-click="$ctrl.previewMode = false" class="btn btn-lg btn-default" ng-show="$ctrl.previewMode">Close preview</button>
+                        <button type="submit" class="btn btn-lg btn-warning" ng-show="$ctrl.previewMode">Save</button>
                     </div>
                 </form>
             </uib-tab>
