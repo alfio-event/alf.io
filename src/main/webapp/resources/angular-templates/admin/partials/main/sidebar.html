@@ -4,9 +4,9 @@
             <li role="presentation" data-uib-dropdown data-ng-if="ctrl.internal">
                 <a data-uib-dropdown-toggle id="actions-dpdwn" class="btn btn-default"><i class="fa fa-pencil"></i> Actions <span class="caret"></span></a>
                 <ul class="dropdown-menu" data-uib-dropdown-menu role="menu" aria-labelledby="actions-dpdwn">
-                    <li role="menuitem" data-ui-sref-active="active"><a data-ui-sref="events.single.create-reservation({eventName: ctrl.event.shortName})"><i class="fa fa-file-text-o"></i> create reservation</a></li>
+                    <li role="menuitem" data-ui-sref-active="active"><a data-ui-sref="events.single.create-reservation({eventName: ctrl.event.shortName})"><i class="fa fa-magic"></i> create reservation</a></li>
                     <li role="menuitem" data-ui-sref-active="active"><a data-ui-sref="events.single.configuration({eventName: ctrl.event.shortName})"><i class="fa fa-wrench"></i> edit configuration</a></li>
-                    <li role="menuitem" data-ui-sref-active="active"><a data-ui-sref="events.single.show-resources({eventName: ctrl.event.shortName})"><i class="fa fa-file-text-o" aria-hidden="true"></i> show/edit email and ticket templates</a></li>
+                    <li role="menuitem" data-ui-sref-active="active"><a data-ui-sref="events.single.show-resources({eventName: ctrl.event.shortName})"><i class="fa fa-file-text-o" aria-hidden="true"></i> customize templates</a></li>
                     <li role="menuitem" data-ui-sref-active="active"><a data-ui-sref="events.single.compose-custom-message({eventName: ctrl.event.shortName})"><i class="fa fa-envelope"></i> compose message</a></li>
                     <li role="menuitem" ng-if="ctrl.event.status === 'PUBLIC'"><a ng-click="ctrl.deactivateEvent(ctrl.event)"><i class="fa fa-eye-slash"></i> hide from list</a></li>
                     <li role="menuitem" data-ui-sref-active="active" data-ng-if="!ctrl.event.expired"><a data-ui-sref="events.single.checkIn({eventName: ctrl.event.shortName})"><i class="fa fa-check"></i> Check-in</a></li>
