@@ -6,6 +6,41 @@
         </div>
 
         <div class="page-header">
+            <h3>Reservation details</h3>
+        </div>
+
+        <div class="well">
+            <h4>URL to share: <a ng-href="{{$ctrl.reservationUrl}}" target="_blank">{{$ctrl.reservationUrl}}</a></h4>
+        </div>
+
+        <div class="row wMarginBottom">
+            <div class="col-xs-12">
+                <small><i class="fa fa-info-circle"></i> <span class="text-muted">Once the reservation has been created, you can choose whether to confirm it or to leave it pending and send the link to the contact person for the payment.</span></small>
+                <small><span class="text-muted">Being in control of the expiration date can be really useful in case you want to give more time for the payment.</span></small>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-3">
+                <div class="form-group">
+                    <label>Status</label>
+                    <div class="input-group">
+                        <div class="form-control-static">{{$ctrl.reservation.status}}</div>
+                        <div class="input-group-addon" style="padding: 0; background-color: transparent; border: 0">
+                            <button type="button" ng-if="$ctrl.reservation.status === 'PENDING'" class="btn btn-sm btn-success pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-3 col-xs-push-3" ng-if="$ctrl.reservation.status !== 'COMPLETE'">
+                <div class="form-group">
+                    <label for="expiration">Expiration</label>
+                    <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration" required>
+                </div>
+            </div>
+        </div>
+        <hr>
+
+        <div class="page-header">
             <h3>Contact info</h3>
         </div>
 
@@ -46,33 +81,10 @@
             </div>
         </div>
 
-        <div class="page-header">
-            <h3>Reservation details</h3>
-        </div>
-
-        <div class="well">
-            <h4>URL to share: <a ng-href="{{$ctrl.reservationUrl}}" target="_blank">{{$ctrl.reservationUrl}}</a></h4>
-        </div>
-
-        <div class="row">
-            <div class="col-xs-6">
-                <div class="form-group">
-                    <label>Status</label>
-                    <div class="form-control-static">{{$ctrl.reservation.status}}</div>
-                </div>
-                <button type="button" ng-if="$ctrl.reservation.status === 'PENDING'" class="btn btn-xs btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Confirm</button>
-            </div>
-            <div class="col-xs-6" ng-if="$ctrl.reservation.status !== 'COMPLETE'">
-                <div class="form-group">
-                    <label>Expiration</label>
-                    <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration">
-                </div>
-            </div>
-        </div>
         <hr>
         <div class="panel panel-default" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
             <div class="panel-heading">
-                <div class="panel-title">Category {{ticketInfo.category.name}}</div>
+                <div class="panel-title">Attendees for Category {{ticketInfo.category.name}}</div>
             </div>
             <div class="panel-body">
                 <div class="checkbox">
@@ -81,11 +93,10 @@
             </div>
             <ul class="list-group wMarginTop10px">
                 <li class="list-group-item" ng-repeat="attendee in ticketInfo.attendees">
-                    <h4 class="list-group-item-heading">Attendee {{$index + 1}}</h4>
                     <div class="list-group-item-text row">
                         <div class="col-xs-12 col-md-4">
                             <div class="form-group">
-                                <label for="attendee-{{$index}}-firstName">First name</label>
+                                <label for="attendee-{{$index}}-firstName">Attendee {{$index + 1}} First name</label>
                                 <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-firstName" required name="attendee-{{$index}}-first" ng-model="attendee.firstName">
                                 <div ng-if="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.firstName}}</div>
                             </div>

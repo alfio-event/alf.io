@@ -46,7 +46,7 @@
                 attendees: [],
                 addSeatsIfNotAvailable: false,
                 categoryType: 'existing',
-                attendeeStrategy: 'noData'
+                attendeeStrategy: 'fullData'
             };
             ticketInfo.parseFileContent = angular.bind(ticketInfo, internalParseFileContent);
             ctrl.reservation.ticketsInfo.push(ticketInfo);

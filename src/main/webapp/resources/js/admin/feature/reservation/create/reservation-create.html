@@ -42,108 +42,32 @@
             <small class="text-muted">You can create tickets for one or more <i>Ticket Category</i>, either existing or dedicated (new).</small>
         </div>
 
-        <div class="row">
-            <div class="col-xs-12 col-sm-6">
-                <div class="form-group">
-                    <label for="expiration">Expiration</label>
-                    <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration" required>
-                </div>
-            </div>
-            <div class="hidden-xs col-sm-6">
-                <p><i class="fa fa-info-circle"></i> <span class="text-muted">Once the reservation has been created, you can choose to confirm it or to leave it pending and send the link to the contact person for the payment.</span></p>
-                <p><span class="text-muted">Being in control of the expiration date can be really useful in case you want to give more time for the payment.</span></p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-xs-12">
-                <button class="btn btn-sm btn-success" ng-click="$ctrl.addTicketInfo()"><i class="fa fa-plus"></i> add Tickets for another Category</button>
-            </div>
-        </div>
-        <hr>
         <div class="panel panel-default wMarginBottom" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
             <div class="panel-heading">
                 <div class="row">
-                    <div class="col-xs-9"><div class="panel-title">Tickets for Category {{ $ctrl.getCategoryDescription(ticketInfo, ($index + 1))}}</div></div>
+                    <div class="col-xs-9"><div class="panel-title">Attendees for Category {{ $ctrl.getCategoryDescription(ticketInfo, ($index + 1))}}</div></div>
                     <div class="col-xs-3" ng-if="!$first">
                         <div class="pull-right"><button class="btn btn-sm btn-default" ng-click="$ctrl.removeTicketInfo($index)"><i class="fa fa-trash"></i> delete</button></div>
                     </div>
                 </div>
             </div>
             <div class="panel-body">
-                <h5><strong>Ticket Category</strong> <a class="btn btn-xs btn-default" ng-click="ticketInfo.ticketInfoHelpExpanded = !ticketInfo.ticketInfoHelpExpanded"><i class="fa fa-info-circle"></i> help</a></h5>
-                <div uib-collapse="!ticketInfo.ticketInfoHelpExpanded" class="panel">
-                    <h4>Attendees:</h4>
-                    <p>You can choose whether to assign <strong>existing</strong> tickets belonging to a particular category or to create a new, <strong>restricted</strong> category just for this tickets.</p>
-                    <h5><strong>Use Existing</strong></h5>
-                    <p>You'll reserve existing seats from an existing category. If the number of attendees exceeds the number of available seats in the category</p>
-                    <ol>
-                        <li><strong>and</strong> there are still tickets not allocated to other categories, then the number of seats of the category will be increased accordingly.</li>
-                        <li><strong>and</strong> the "add extra seats..." option has been selected, then the number of seats of the event will be increased accordingly.</li>
-                    </ol>
-                    <p>if none of the conditions are met, the reservation will not be created.</p>
-
-                    <h5><strong>Create dedicated</strong></h5>
-                    <p>A new restricted category will be created specifically for this category. The system will check if there are enough available seats in the event.</p>
-                    <p>If that's not the case, <strong>and</strong> the "add extra seats..." option has been selected, then the number of seats of the event will be increased accordingly.
-                        Otherwise the reservation will not be created.</p>
-                </div>
-                <div class="row">
-                    <div class="col-xs-12">
-                        <div class="btn-group j-btn-group">
-                            <label class="btn btn-default" ng-model="ticketInfo.categoryType" uib-btn-radio="'existing'" ng-click="$ctrl.resetCategory(ticketInfo)"><i class="fa fa-paperclip"></i> Use existing</label>
-                            <label class="btn btn-default" ng-model="ticketInfo.categoryType" uib-btn-radio="'custom'" ng-click="$ctrl.resetCategory(ticketInfo)"><i class="fa fa-plus-square-o"></i> Create dedicated</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="row wMarginTop10px" ng-switch="ticketInfo.categoryType">
-                    <div class="col-xs-12" ng-switch-when="existing">
-                        <div class="form-group">
-                            <label for="ticketInfo-{{$index}}-categoryType">Existing category</label>
-                            <select class="form-control" required ng-options="c.id as c.name for c in $ctrl.categories" ng-model="ticketInfo.category.existingCategoryId" id="ticketInfo-{{$index}}-categoryType"></select>
-                        </div>
-                    </div>
-                    <div class="col-xs-12" ng-switch-when="custom">
-                        <div class="row">
-                            <div class="col-xs-12 col-md-6">
-                                <div class="form-group">
-                                    <label for="ticketInfo-{{$index}}-name">Name</label>
-                                    <input type="text" class="form-control" ng-model="ticketInfo.category.name" required id="ticketInfo-{{$index}}-name" />
-                                </div>
-                            </div>
-                            <div class="col-xs-12 col-md-6">
-                                <div class="form-group">
-                                    <label for="ticketInfo-{{$index}}-price">Price</label>
-                                    <input type="number" min="0" class="form-control" ng-model="ticketInfo.category.price" required id="ticketInfo-{{$index}}-price" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-xs-12">
-                        <div class="checkbox">
-                            <label><input type="checkbox" ng-model="ticketInfo.addSeatsIfNotAvailable" id="ticketInfo-{{$index}}-addSeatsIfNotAvailable" value="true"> Add extra seats to Category and/or event if needed</label>
-                        </div>
-                        <div class="alert alert-warning" ng-if="ticketInfo.addSeatsIfNotAvailable && ticketInfo.category.existingCategoryId"><i class="fa fa-warning"></i> If you add tickets to a public category and the reservation expires, any added seats will be released to the public.</div>
-                    </div>
-                </div>
-                <hr/>
-                <h5><strong>Attendees</strong>  <a class="btn btn-xs btn-default" ng-click="ticketInfo.attendeesHelpExpanded = !ticketInfo.attendeesHelpExpanded"><i class="fa fa-info-circle"></i> help</a></h5>
+                <h4>Insert Attendees <a class="btn btn-xs btn-default" ng-click="ticketInfo.attendeesHelpExpanded = !ticketInfo.attendeesHelpExpanded"><i class="fa fa-info-circle"></i> help</a></h4>
                 <div uib-collapse="!ticketInfo.attendeesHelpExpanded" class="panel">
                     <h4>Attendees:</h4>
                     <p>You can handle attendees' data in different ways</p>
                     <ul>
-                        <li><strong>Reserve empty seats</strong>: create the reservation without specifying who will attend the event.</li>
                         <li><strong>Insert attendees manually</strong>: add attendees' data, one by one.</li>
                         <li><strong>Upload CSV</strong>: import attendees' data using a CSV file.</li>
+                        <li><strong>Reserve empty seats</strong>: create the reservation without specifying who will attend the event. This could be useful if you want to send the reservation link to the contact person for filling the data.</li>
                     </ul>
                 </div>
                 <div class="row">
                     <div class="col-xs-12">
                         <div class="btn-group j-btn-group">
-                            <label class="btn btn-default" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'noData'"><i class="fa fa-user-times"></i> Reserve empty seats</label>
                             <label class="btn btn-default" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'fullData'"><i class="fa fa-address-card"></i> Insert attendees manually</label>
                             <label class="btn btn-default" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'CSV'"><i class="fa fa-upload"></i> Upload CSV</label>
+                            <label class="btn btn-default" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'noData'"><i class="fa fa-user-times"></i> Reserve empty seats</label>
                         </div>
                     </div>
                 </div>
@@ -179,20 +103,12 @@
             </div>
 
             <!-- full data -->
-            <div class="row" ng-if="ticketInfo.attendeeStrategy == 'fullData'">
-                <div class="col-xs-12">
-                    <div class="container">
-                        <button class="btn btn-sm btn-success" ng-click="$ctrl.addAttendee(ticketInfo)"><i class="fa fa-plus"></i> add Attendee</button>
-                    </div>
-                </div>
-            </div>
             <ul class="list-group wMarginTop10px" ng-if="ticketInfo.attendeeStrategy == 'fullData'">
                 <li class="list-group-item" ng-repeat="attendee in ticketInfo.attendees">
-                    <h4 class="list-group-item-heading">Attendee {{$index + 1}}</h4>
                     <div class="list-group-item-text row">
                         <div class="col-xs-12 col-md-4">
                             <div class="form-group">
-                                <label for="attendee-{{$index}}-firstName">First name</label>
+                                <label for="attendee-{{$index}}-firstName">Attendee {{$index + 1}} First name</label>
                                 <input type="text" class="form-control" id="attendee-{{$index}}-firstName" required name="attendee-{{$index}}-first" ng-model="attendee.firstName">
                             </div>
                         </div>
@@ -208,16 +124,86 @@
                                 <input type="text" class="form-control" id="attendee-{{$index}}-emailAddress" required name="attendee-{{$index}}-emailAddress" ng-model="attendee.emailAddress">
                             </div>
                         </div>
-                        <div class="col-xs-12" ng-if="!$first">
-                            <div class="pull-right"><button class="btn btn-sm btn-default pull-right" ng-click="$ctrl.removeAttendee(ticketInfo, $index)"><i class="fa fa-trash"></i> delete</button></div>
+                        <div class="col-xs-12">
+                            <div class="pull-right">
+                                <button class="btn btn-sm btn-default" ng-click="$ctrl.removeAttendee(ticketInfo, $index)" ng-if="!$first"><i class="fa fa-trash"></i> delete</button>
+                                <button class="btn btn-sm btn-success" ng-click="$ctrl.addAttendee(ticketInfo)" ng-if="$last"><i class="fa fa-plus"></i> add Attendee</button>
+                            </div>
                         </div>
                     </div>
                 </li>
             </ul>
+
+            <div class="panel-body">
+                <h4>Assign attendees to a Ticket Category <a class="btn btn-xs btn-default" ng-click="ticketInfo.ticketInfoHelpExpanded = !ticketInfo.ticketInfoHelpExpanded"><i class="fa fa-info-circle"></i> help</a></h4>
+                <div uib-collapse="!ticketInfo.ticketInfoHelpExpanded" class="panel">
+                    <p>You can choose whether to assign attendees to <strong>existing</strong> tickets belonging to an existing category or to create a new, <strong>restricted</strong> category just for those attendees.</p>
+                    <h5><strong>Use Existing</strong></h5>
+                    <p>You'll reserve existing seats from an existing category. If the number of attendees exceeds the number of available seats in the category</p>
+                    <ol>
+                        <li><strong>and</strong> there are still tickets not allocated to other categories, then the number of seats of the category will be increased accordingly.</li>
+                        <li><strong>and</strong> the "add extra seats..." option has been selected, then the number of seats of the event will be increased accordingly.</li>
+                    </ol>
+                    <p>if none of the conditions are met, the reservation will not be created.</p>
+
+                    <h5><strong>Create new</strong></h5>
+                    <p>A new restricted category will be created specifically for this category. The system will check if there are enough available seats in the event.</p>
+                    <p>If that's not the case, <strong>and</strong> the "add extra seats..." option has been selected, then the number of seats of the event will be increased accordingly.
+                        Otherwise the reservation will not be created.</p>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="btn-group j-btn-group">
+                            <label class="btn btn-default" ng-model="ticketInfo.categoryType" uib-btn-radio="'existing'" ng-click="$ctrl.resetCategory(ticketInfo)"><i class="fa fa-paperclip"></i> Use existing</label>
+                            <label class="btn btn-default" ng-model="ticketInfo.categoryType" uib-btn-radio="'custom'" ng-click="$ctrl.resetCategory(ticketInfo)"><i class="fa fa-plus-square-o"></i> Create new</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row wMarginTop10px" ng-switch="ticketInfo.categoryType">
+                    <div class="col-xs-12" ng-switch-when="existing">
+                        <div class="form-group">
+                            <label for="ticketInfo-{{$index}}-categoryType">Existing category</label>
+                            <select class="form-control" required ng-options="c.id as c.name for c in $ctrl.categories" ng-model="ticketInfo.category.existingCategoryId" id="ticketInfo-{{$index}}-categoryType"></select>
+                        </div>
+                    </div>
+                    <div class="col-xs-12" ng-switch-when="custom">
+                        <div class="row">
+                            <div class="col-xs-12 col-md-6">
+                                <div class="form-group">
+                                    <label for="ticketInfo-{{$index}}-name">Name</label>
+                                    <input type="text" class="form-control" ng-model="ticketInfo.category.name" required id="ticketInfo-{{$index}}-name" />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-md-6">
+                                <div class="form-group">
+                                    <label for="ticketInfo-{{$index}}-price">Price</label>
+                                    <input type="number" min="0" class="form-control" ng-model="ticketInfo.category.price" required id="ticketInfo-{{$index}}-price" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="checkbox">
+                            <label><input type="checkbox" ng-model="ticketInfo.addSeatsIfNotAvailable" id="ticketInfo-{{$index}}-addSeatsIfNotAvailable" value="true"> Add extra seats to event if needed</label>
+                        </div>
+                        <div class="alert alert-warning" ng-if="ticketInfo.addSeatsIfNotAvailable && ticketInfo.category.existingCategoryId"><i class="fa fa-warning"></i> If you add tickets to a public category and the reservation expires, any added seats will be released to the public.</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div uib-alert type="danger" close="$ctrl.hideMessages()" dismiss-on-timeout="2000" data-ng-if="$ctrl.errorMessage"><i class="fa fa-times"></i> {{$ctrl.errorMessage}}</div>
+        <div class="row">
+            <div class="col-xs-12">
+                <button class="btn btn-sm btn-success pull-right" ng-click="$ctrl.addTicketInfo()"><i class="fa fa-plus"></i> add Attendees for another Category</button>
+            </div>
+        </div>
 
-        <control-buttons data-form-obj="newReservation" cancel-handler="$ctrl.reinit"></control-buttons>
+        <div uib-alert type="danger" close="$ctrl.hideMessages()" data-ng-if="$ctrl.errorMessage"><i class="fa fa-times"></i> {{$ctrl.errorMessage}}</div>
+
+        <hr>
+
+        <control-buttons data-form-obj="newReservation" cancel-handler="$ctrl.reinit" success-text="Save and continue"></control-buttons>
     </form>
 </div>
