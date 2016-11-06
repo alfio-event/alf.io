@@ -193,6 +193,47 @@ public class AdminReservationManagerIntegrationTest {
     }
 
     @Test
+    public void testReserveMixed() throws Exception {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", 1,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false));
+        Pair<Event, String> eventWithUsername = initEvent(categories, organizationRepository, userManager, eventManager);
+        Event event = eventWithUsername.getKey();
+        String username = eventWithUsername.getValue();
+        DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
+        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch");
+
+        TicketCategory existingCategory = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+
+
+        Category resExistingCategory = new Category(existingCategory.getId(), "", existingCategory.getPrice());
+        Category resNewCategory = new Category(null, "name", new BigDecimal("100.00"));
+        int attendees = 1;
+        List<TicketsInfo> ticketsInfoList = Arrays.asList(new TicketsInfo(resExistingCategory, generateAttendees(attendees), false, false), new TicketsInfo(resNewCategory, generateAttendees(attendees), false, false),new TicketsInfo(resExistingCategory, generateAttendees(attendees), false, false));
+        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false, null);
+        Result<Pair<TicketReservation, List<Ticket>>> result = adminReservationManager.createReservation(modification, event.getShortName(), username);
+        assertTrue(result.isSuccess());
+        Pair<TicketReservation, List<Ticket>> data = result.getData();
+        List<Ticket> tickets = data.getRight();
+        assertTrue(tickets.size() == 3);
+        assertNotNull(data.getLeft());
+        assertTrue(tickets.stream().allMatch(t -> t.getTicketsReservationId().equals(data.getKey().getId())));
+        int resExistingCategoryId = tickets.get(0).getCategoryId();
+        int resNewCategoryId = tickets.get(2).getCategoryId();
+
+        Event modified = eventManager.getSingleEvent(event.getShortName(), username);
+        assertEquals(AVAILABLE_SEATS, modified.getAvailableSeats());
+        assertEquals(3, ticketRepository.findPendingTicketsInCategories(Arrays.asList(resExistingCategoryId, resNewCategoryId)).size());
+        assertEquals(3, ticketRepository.findTicketsInReservation(data.getLeft().getId()).size());
+
+        ticketCategoryRepository.findByEventId(event.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.PENDING)));
+        adminReservationManager.confirmReservation(event.getShortName(), data.getLeft().getId(), username);
+        ticketCategoryRepository.findByEventId(event.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.TAKEN)));
+    }
+
+    @Test
     public void testConfirmReservation() throws Exception {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", 1,
@@ -274,6 +315,7 @@ public class AdminReservationManagerIntegrationTest {
                 assertTrue(ticket.getAssigned());
                 assertEquals(attendee.getFullName(), ticket.getFullName());
                 assertEquals(attendee.getEmailAddress(), ticket.getEmail());
+                assertEquals(data.getLeft().getId(), ticket.getTicketsReservationId());
             }
         }
         ticketCategoryRepository.findByEventId(modified.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.PENDING)));

@@ -21,6 +21,7 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.AdminReservationModification.Attendee;
+import alfio.model.modification.AdminReservationModification.Category;
 import alfio.model.modification.AdminReservationModification.TicketsInfo;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -44,10 +45,13 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 import static alfio.util.EventUtil.generateEmptyTickets;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
@@ -231,57 +235,94 @@ public class AdminReservationManager {
 
     private Result<Pair<TicketReservation, List<Ticket>>> processReservation(AdminReservationModification input, String username, Event event) {
         return input.getTicketsInfo().stream()
-            .map(ti -> checkCategoryCapacity(ti, event, input, username).map(c -> Pair.of(ti, c)))
-            .map(t -> createReservation(t, event, input))
-            .reduce((r1, r2) -> {
-                boolean successful = r1.isSuccess() && r2.isSuccess();
-                ResultStatus global = r1.isSuccess() ? r2.getStatus() : r1.getStatus();
-                List<ErrorCode> errors = new ArrayList<>();
-                if(!successful) {
-                    errors.addAll(r1.getErrors());
-                    errors.addAll(r2.getErrors());
-                }
-                return new Result<>(global, joinData(r1, r2), errors);
-            }).orElseGet(() -> Result.error(singletonList(ErrorCode.custom("", "something went wrong..."))));
+            .map(ti -> checkCategoryCapacity(ti, event, input, username))
+            .reduce((r1, r2) -> reduceResults(r1, r2, this::joinData))
+            .map(r -> createReservation(r, event, input))
+            .orElseGet(() -> Result.error(singletonList(ErrorCode.custom("", "something went wrong..."))));
     }
 
-    private Pair<TicketReservation, List<Ticket>> joinData(Result<Pair<TicketReservation, List<Ticket>>> t1, Result<Pair<TicketReservation, List<Ticket>>> t2) {
-        if(!t1.isSuccess() || !t2.isSuccess()) {
-            return null;
-        }
-        List<Ticket> tickets = new ArrayList<>();
-        Pair<TicketReservation, List<Ticket>> data1 = t1.getData();
-        tickets.addAll(data1.getRight());
-        Pair<TicketReservation, List<Ticket>> data2 = t2.getData();
-        tickets.addAll(data2.getRight());
-        return Pair.of(data1.getLeft(), tickets);
+    private List<TicketsInfo> joinData(List<TicketsInfo> t1, List<TicketsInfo> t2) {
+        List<TicketsInfo> join = new ArrayList<>();
+        join.addAll(t1);
+        join.addAll(t2);
+        return join;
     }
 
-    private Result<Pair<TicketReservation, List<Ticket>>> createReservation(Result<Pair<TicketsInfo, TicketCategory>> input, Event event, AdminReservationModification arm) {
+    private Result<Pair<TicketReservation, List<Ticket>>> createReservation(Result<List<TicketsInfo>> input, Event event, AdminReservationModification arm) {
+        final TicketsInfo empty = new TicketsInfo(null, null, false, false);
         return input.flatMap(t -> {
-            TicketCategory category = t.getRight();
-            TicketsInfo ticketsInfo = t.getLeft();
             String reservationId = UUID.randomUUID().toString();
             String specialPriceSessionId = UUID.randomUUID().toString();
             Date validity = Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant());
             ticketReservationRepository.createNewReservation(reservationId, validity, null, arm.getLanguage());
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
             ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.PENDING.name(), customerData.getEmailAddress(), customerData.getFullName(), customerData.getFirstName(), customerData.getLastName(), arm.getLanguage(), null, null, null);
-            int categoryId = category.getId();
-            List<Attendee> attendees = ticketsInfo.getAttendees();
-            List<Integer> reservedForUpdate = ticketReservationManager.reserveTickets(event.getId(), categoryId, attendees.size(), singletonList(Ticket.TicketStatus.FREE));
-            if(reservedForUpdate.size() != attendees.size()) {
-                return Result.error(ErrorCode.CategoryError.NOT_ENOUGH_SEATS);
-            }
-            ticketRepository.reserveTickets(reservationId, reservedForUpdate, categoryId, arm.getLanguage(), category.getSrcPriceCts());
-            Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), categoryId);
-            TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, event, null);
-            ticketRepository.updateTicketPrice(reservedForUpdate, categoryId, event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
-            List<SpecialPrice> codes = category.isAccessRestricted() ? bindSpecialPriceTokens(specialPriceSessionId, categoryId, attendees) : Collections.emptyList();
-            assignTickets(attendees, reservedForUpdate, codes, reservationId, arm.getLanguage(), category.getSrcPriceCts());
-            List<Ticket> tickets = reservedForUpdate.stream().map(id -> ticketRepository.findById(id, categoryId)).collect(toList());
-            return Result.success(Pair.of(ticketReservationRepository.findReservationById(reservationId), tickets));
+
+            Result<List<Ticket>> result = flattenTicketsInfo(event, empty, t)
+                .map(pair -> reserveForTicketsInfo(event, arm, reservationId, specialPriceSessionId, pair))
+                .reduce(this::reduceReservationResults)
+                .orElseGet(() -> Result.error(ErrorCode.custom("", "unknown error")));
+            return result.map(list -> Pair.of(ticketReservationRepository.findReservationById(reservationId), list));
         });
+    }
+
+    private Result<List<Ticket>> reserveForTicketsInfo(Event event, AdminReservationModification arm, String reservationId, String specialPriceSessionId, Pair<TicketCategory, TicketsInfo> pair) {
+        TicketCategory category = pair.getLeft();
+        TicketsInfo ticketsInfo = pair.getRight();
+        int categoryId = category.getId();
+        List<Attendee> attendees = ticketsInfo.getAttendees();
+        List<Integer> reservedForUpdate = ticketReservationManager.reserveTickets(event.getId(), categoryId, attendees.size(), singletonList(Ticket.TicketStatus.FREE));
+        if (reservedForUpdate.size() != attendees.size()) {
+            return Result.error(ErrorCode.CategoryError.NOT_ENOUGH_SEATS);
+        }
+        ticketRepository.reserveTickets(reservationId, reservedForUpdate, categoryId, arm.getLanguage(), category.getSrcPriceCts());
+        Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), categoryId);
+        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, event, null);
+        ticketRepository.updateTicketPrice(reservedForUpdate, categoryId, event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
+        List<SpecialPrice> codes = category.isAccessRestricted() ? bindSpecialPriceTokens(specialPriceSessionId, categoryId, attendees) : Collections.emptyList();
+        assignTickets(attendees, reservedForUpdate, codes, reservationId, arm.getLanguage(), category.getSrcPriceCts());
+        List<Ticket> tickets = reservedForUpdate.stream().map(id -> ticketRepository.findById(id, categoryId)).collect(toList());
+        return Result.success(tickets);
+    }
+
+    private Result<List<Ticket>> reduceReservationResults(Result<List<Ticket>> r1, Result<List<Ticket>> r2) {
+        return reduceResults(r1, r2, this::joinCreateReservationResults);
+    }
+
+    private List<Ticket> joinCreateReservationResults(List<Ticket> r1, List<Ticket> r2) {
+        List<Ticket> data = new ArrayList<>(r1);
+        data.addAll(r2);
+        return data;
+    }
+
+    private <T> Result<T> reduceResults(Result<T> r1, Result<T> r2, BiFunction<T, T, T> processData) {
+        boolean successful = r1.isSuccess() && r2.isSuccess();
+        ResultStatus global = r1.isSuccess() ? r2.getStatus() : r1.getStatus();
+        List<ErrorCode> errors = new ArrayList<>();
+        if(!successful) {
+            errors.addAll(r1.getErrors());
+            errors.addAll(r2.getErrors());
+            return new Result<>(global, null, errors);
+        } else {
+            return new Result<>(global, processData.apply(r1.getData(), r2.getData()), errors);
+        }
+    }
+
+    private Stream<Pair<TicketCategory, TicketsInfo>> flattenTicketsInfo(Event event, TicketsInfo empty, List<TicketsInfo> t) {
+        return t.stream()
+            .collect(groupingBy(ti -> ti.getCategory().getExistingCategoryId()))
+            .entrySet()
+            .stream()
+            .map(entry -> {
+                TicketsInfo ticketsInfo = entry.getValue()
+                    .stream()
+                    .reduce((ti1, ti2) -> {
+                        List<Attendee> attendees = new ArrayList<>(ti1.getAttendees());
+                        attendees.addAll(ti2.getAttendees());
+                        return new TicketsInfo(ti1.getCategory(), attendees, ti1.isAddSeatsIfNotAvailable() && ti2.isAddSeatsIfNotAvailable(), ti1.isUpdateAttendees() && ti2.isUpdateAttendees());
+                    }).orElse(empty);
+                return Pair.of(ticketCategoryRepository.getById(entry.getKey(), event.getId()), ticketsInfo);
+            });
     }
 
     private List<SpecialPrice> bindSpecialPriceTokens(String specialPriceSessionId, int categoryId, List<Attendee> attendees) {
@@ -306,12 +347,14 @@ public class AdminReservationManager {
         }
     }
 
-    private Result<TicketCategory> checkCategoryCapacity(TicketsInfo ti, Event event, AdminReservationModification reservation, String username) {
-        return ti.getCategory().isExisting() ? checkExistingCategory(ti, event, username) : createCategory(ti, event, reservation, username);
+    private Result<List<TicketsInfo>> checkCategoryCapacity(TicketsInfo ti, Event event, AdminReservationModification reservation, String username) {
+        Result<TicketCategory> ticketCategoryResult = ti.getCategory().isExisting() ? checkExistingCategory(ti, event, username) : createCategory(ti, event, reservation, username);
+        return ticketCategoryResult
+            .map(tc -> Collections.singletonList(new TicketsInfo(new Category(tc.getId(), tc.getName(), tc.getPrice()), ti.getAttendees(), ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees())));
     }
 
     private Result<TicketCategory> createCategory(TicketsInfo ti, Event event, AdminReservationModification reservation, String username) {
-        AdminReservationModification.Category category = ti.getCategory();
+        Category category = ti.getCategory();
         List<Attendee> attendees = ti.getAttendees();
         DateTimeModification inception = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(event.getZoneId()));
 
@@ -340,7 +383,7 @@ public class AdminReservationManager {
     }
 
     private Result<TicketCategory> checkExistingCategory(TicketsInfo ti, Event event, String username) {
-        AdminReservationModification.Category category = ti.getCategory();
+        Category category = ti.getCategory();
         List<Attendee> attendees = ti.getAttendees();
         int tickets = attendees.size();
         int eventId = event.getId();
