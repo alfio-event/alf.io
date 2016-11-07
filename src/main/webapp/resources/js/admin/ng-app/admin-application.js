@@ -136,7 +136,7 @@
                     view: 'CREATE_RESERVATION'
                 }
             }).state('events.single.view-reservation', {
-                url:'/reservation/:reservationId',
+                url:'/reservation/:reservationId?fromCreation',
                 template: '<reservation-view event="ctrl.event" reservation-descriptor="ctrl.reservationDescriptor"></reservation-view>',
                 controller: function(getEvent, getReservationDescriptor) {
                     this.event = getEvent.data.event;

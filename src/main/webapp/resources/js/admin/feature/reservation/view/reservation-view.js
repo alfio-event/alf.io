@@ -11,7 +11,7 @@
     });
 
 
-    function ReservationViewCtrl(AdminReservationService, $window) {
+    function ReservationViewCtrl(AdminReservationService, $window, $stateParams) {
         var ctrl = this;
 
         ctrl.notification = {
@@ -25,6 +25,12 @@
                 error: false,
                 success: false
             }
+        };
+
+        ctrl.displayCreationWarning = angular.isDefined($stateParams.fromCreation) && $stateParams.fromCreation;
+
+        ctrl.hideCreationWarning = function() {
+            ctrl.displayCreationWarning = false;
         };
 
         ctrl.$onInit = function() {

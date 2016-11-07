@@ -5,6 +5,17 @@
             <small>Reservation ID: {{$ctrl.reservation.id}}</small>
         </div>
 
+        <div uib-alert type="success" close="$ctrl.hideCreationWarning()" data-ng-if="$ctrl.displayCreationWarning">
+            <div class="row">
+                <div class="col-xs-2 text-center">
+                    <i class="fa fa-check-circle fa-5x"></i>
+                </div>
+                <div class="col-xs-10">
+                    <h4>The reservation has been successfully created. Please note that nobody has been notified yet.<br/> <strong>You must send the notifications manually, using the buttons at the end of this page</strong></h4>
+                </div>
+            </div>
+        </div>
+
         <div class="page-header">
             <h3>Reservation details</h3>
         </div>
@@ -119,9 +130,9 @@
                 </li>
             </ul>
         </div>
-        <div class="pull-left" ng-if="$ctrl.reservation.status === 'COMPLETE'">
+        <div class="pull-left">
             <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.notifyCustomer()"><i class="fa fa-envelope-o"></i> Send reservation via email</button>
-            <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.notifyAttendees()"><i class="fa fa-envelope-o"></i> Send tickets via email</button>
+            <button class="btn btn-sm btn-default" ng-if="$ctrl.reservation.status === 'COMPLETE'" type="button" ng-click="$ctrl.notifyAttendees()"><i class="fa fa-envelope-o"></i> Send tickets via email</button>
         </div>
         <div class="clearfix wMarginBottom"></div>
         <div uib-alert type="success" close="$ctrl.hideMessages()" dismiss-on-timeout="2000" data-ng-if="$ctrl.confirmationMessage"><i class="fa fa-check"></i> {{$ctrl.confirmationMessage}}</div>

@@ -15,9 +15,9 @@
 
         var handleError = function(error) {
             if($.isArray(error)) {
-                ctrl.errorMessage = error.join(',');
+                ctrl.errorMessage = error.map(function(e) {return e.description;}).join(',');
             } else {
-                ctrl.errorMessage = error;
+                ctrl.errorMessage = angular.isDefined(error.description) ? error.description : error;
             }
         };
 

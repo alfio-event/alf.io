@@ -16,9 +16,11 @@
  */
 package alfio.model.result;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+@JsonSerialize(using=ErrorCodeSerializer.class)
 public interface ErrorCode {
 
     default String getLocation() {
