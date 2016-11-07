@@ -49,6 +49,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.datasource.AbstractDataSource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -64,6 +65,8 @@ import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplate
 
 import javax.sql.DataSource;
 import java.net.URISyntaxException;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.EnumSet;
 import java.util.Properties;
@@ -92,19 +95,23 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         return current;
     }
 
-    @Bean(destroyMethod = "close")
+    @Bean
     public DataSource getDataSource(Environment env, PlatformProvider platform) throws URISyntaxException {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(platform.getUrl(env));
-        dataSource.setUsername(platform.getUsername(env));
-        dataSource.setPassword(platform.getPassword(env));
-        dataSource.setDriverClassName(platform.getDriveClassName(env));
-        int maxActive = platform.getMaxActive(env);
+        if(platform == PlatformProvider.CLOUD_FOUNDRY) {
+            return new FakeCFDataSource();
+        } else {
+            HikariDataSource dataSource = new HikariDataSource();
+            dataSource.setJdbcUrl(platform.getUrl(env));
+            dataSource.setUsername(platform.getUsername(env));
+            dataSource.setPassword(platform.getPassword(env));
+            dataSource.setDriverClassName(platform.getDriveClassName(env));
+            int maxActive = platform.getMaxActive(env);
 
-        dataSource.setMaximumPoolSize(maxActive);
+            dataSource.setMaximumPoolSize(maxActive);
 
-        log.debug("Connection pool properties: max active {}, initial size {}", maxActive, dataSource.getMinimumIdle());
-        return dataSource;
+            log.debug("Connection pool properties: max active {}, initial size {}", maxActive, dataSource.getMinimumIdle());
+            return dataSource;
+        }
     }
 
     @Bean
@@ -299,5 +306,20 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     @Override
     public void setResourceLoader(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
+    }
+
+    /**
+     * Fake DataSource used on Cloud Foundry. Oh yeah.
+     */
+    private static class FakeCFDataSource extends AbstractDataSource {
+        @Override
+        public Connection getConnection() throws SQLException {
+            return null;
+        }
+
+        @Override
+        public Connection getConnection(String username, String password) throws SQLException {
+            return null;
+        }
     }
 }

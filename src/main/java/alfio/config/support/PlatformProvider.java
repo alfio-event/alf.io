@@ -134,7 +134,7 @@ public enum PlatformProvider {
     CLOUD_FOUNDRY {
 
         @Override
-        public String getUrl(Environment env) { return ""; }
+        public String getUrl(Environment env) { return "url"; }
 
         @Override
         public String getUsername(Environment env) {
