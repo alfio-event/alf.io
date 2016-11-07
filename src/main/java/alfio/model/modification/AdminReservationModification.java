@@ -16,6 +16,7 @@
  */
 package alfio.model.modification;
 
+import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -24,6 +25,8 @@ import org.apache.commons.lang3.StringUtils;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+
+import static java.util.stream.Collectors.toList;
 
 @Getter
 public class AdminReservationModification {
@@ -159,6 +162,31 @@ public class AdminReservationModification {
             this.customer = customer;
             this.attendees = attendees;
         }
+    }
+
+    public static String summary(AdminReservationModification src) {
+        try {
+            List<TicketsInfo> ticketsInfo = src.ticketsInfo.stream().map(ti -> {
+                List<Attendee> attendees = ti.getAttendees()
+                    .stream()
+                    .map(a -> new Attendee(a.ticketId, placeholderIfNotEmpty(a.firstName), placeholderIfNotEmpty(a.lastName), placeholderIfNotEmpty(a.emailAddress))).collect(toList());
+                return new TicketsInfo(ti.getCategory(), attendees, ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees());
+            }).collect(toList());
+            return Json.toJson(new AdminReservationModification(src.expiration, summaryForCustomerData(src.customerData), ticketsInfo, src.getLanguage(), src.updateContactData, src.notification));
+        } catch(Exception e) {
+            return e.toString();
+        }
+    }
+
+    private static CustomerData summaryForCustomerData(CustomerData in) {
+        if(in != null) {
+            return new CustomerData(placeholderIfNotEmpty(in.firstName), placeholderIfNotEmpty(in.lastName), placeholderIfNotEmpty(in.emailAddress));
+        }
+        else return null;
+    }
+
+    private static String placeholderIfNotEmpty(String in) {
+        return StringUtils.isNotEmpty(in) ? "xxx" : null;
     }
 }
 

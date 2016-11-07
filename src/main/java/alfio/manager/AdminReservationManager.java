@@ -108,9 +108,13 @@ public class AdminReservationManager {
                 ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
             if(result.isSuccess()) {
                 transactionManager.commit(status);
+            } else {
+                log.debug("Reservation confirmation failed for eventName: {} reservationId: {}, username: {}", eventName, reservationId, username);
+                transactionManager.rollback(status);
             }
             return result;
         } catch (Exception e) {
+            log.error("Error during confirmation of reservation eventName: {} reservationId: {}, username: {}", eventName, reservationId, username);
             transactionManager.rollback(status);
             return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
         }
@@ -128,9 +132,15 @@ public class AdminReservationManager {
                     .map(r -> performUpdate(reservationId, event, r, adminReservationModification))
                     .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
                 ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
-            result.ifSuccess((r) -> transactionManager.commit(status));
+            if(result.isSuccess()) {
+                transactionManager.commit(status);
+            } else {
+                log.debug("Application error detected eventName: {} reservationId: {}, username: {}, reservation: {}", eventName, reservationId, username, AdminReservationModification.summary(adminReservationModification));
+                transactionManager.rollback(status);
+            }
             return result;
         } catch (Exception e) {
+            log.error("Error during update of reservation eventName: {} reservationId: {}, username: {}, reservation: {}", eventName, reservationId, username, AdminReservationModification.summary(adminReservationModification));
             transactionManager.rollback(status);
             return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
         }
@@ -215,10 +225,12 @@ public class AdminReservationManager {
             if(result.isSuccess()) {
                 transactionManager.commit(status);
             } else {
+                log.debug("Error during update of reservation eventName: {}, username: {}, reservation: {}", eventName, username, AdminReservationModification.summary(input));
                 transactionManager.rollback(status);
             }
             return result;
         } catch(Exception e) {
+            log.error("Error during update of reservation eventName: {}, username: {}, reservation: {}", eventName, username, AdminReservationModification.summary(input));
             transactionManager.rollback(status);
             return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
         }

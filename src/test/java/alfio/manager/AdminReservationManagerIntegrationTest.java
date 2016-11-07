@@ -315,6 +315,7 @@ public class AdminReservationManagerIntegrationTest {
                 assertTrue(ticket.getAssigned());
                 assertEquals(attendee.getFullName(), ticket.getFullName());
                 assertEquals(attendee.getEmailAddress(), ticket.getEmail());
+                assertEquals(Ticket.TicketStatus.PENDING, ticket.getStatus());
                 assertEquals(data.getLeft().getId(), ticket.getTicketsReservationId());
             }
         }
