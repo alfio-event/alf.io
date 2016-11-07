@@ -1,7 +1,69 @@
 # Change Log
 
+## [1.9](https://github.com/exteso/alf.io/tree/1.9) (2016-11-07)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.8.2...1.9)
+
+**Implemented enhancements:**
+
+- Allow event organizer to postpone the expiration date for pending tickets [\#218](https://github.com/exteso/alf.io/issues/218)
+- Enable jetty WorkerName [\#242](https://github.com/exteso/alf.io/issues/242)
+- Add link to GitHub Issues in footer [\#227](https://github.com/exteso/alf.io/issues/227)
+- Possibility to remove people/tickets in a waiting queue  [\#226](https://github.com/exteso/alf.io/issues/226)
+- Un-publish events [\#225](https://github.com/exteso/alf.io/issues/225)
+- Email templates should be user editable [\#213](https://github.com/exteso/alf.io/issues/213)
+- Ask for attendee's data and additional fields in the checkout form [\#212](https://github.com/exteso/alf.io/issues/212)
+- Ability to unmark a ticket as checked-in [\#195](https://github.com/exteso/alf.io/issues/195)
+
+**Fixed bugs:**
+
+- optimize //admin/api/events.json call [\#237](https://github.com/exteso/alf.io/issues/237)
+- Max tickets defined at category level not working [\#229](https://github.com/exteso/alf.io/issues/229)
+
+**Closed issues:**
+
+- Create Reservation: clarify price is per ticket [\#245](https://github.com/exteso/alf.io/issues/245)
+- Validation error message when assigning tickets [\#238](https://github.com/exteso/alf.io/issues/238)
+- Add tickets/reservations from admin [\#234](https://github.com/exteso/alf.io/issues/234)
+- Add an option to customize the ticket template [\#88](https://github.com/exteso/alf.io/issues/88)
+
+**Merged pull requests:**
+
+- Update language [\#236](https://github.com/exteso/alf.io/pull/236) ([mg-1999](https://github.com/mg-1999))
+
+## [1.8.2](https://github.com/exteso/alf.io/tree/1.8.2) (2016-10-18)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.8.1...1.8.2)
+
+**Closed issues:**
+
+- Event time zone  issue [\#228](https://github.com/exteso/alf.io/issues/228)
+- Add a button to unpublish an event [\#224](https://github.com/exteso/alf.io/issues/224)
+
+## [1.8.1](https://github.com/exteso/alf.io/tree/1.8.1) (2016-09-27)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.8...1.8.1)
+
+**Implemented enhancements:**
+
+- Organizations may define an Admin user [\#222](https://github.com/exteso/alf.io/issues/222)
+- Optional field subordinate to donation options [\#215](https://github.com/exteso/alf.io/issues/215)
+- Allow multiple option purchase [\#211](https://github.com/exteso/alf.io/issues/211)
+- improve bulk email handling [\#203](https://github.com/exteso/alf.io/issues/203)
+
+**Fixed bugs:**
+
+- Wrong default value for category end date [\#179](https://github.com/exteso/alf.io/issues/179)
+- Dashboard view should use the blank space on the left of the window [\#221](https://github.com/exteso/alf.io/issues/221)
+- Allow title and description modification in Edit Donation Option [\#210](https://github.com/exteso/alf.io/issues/210)
+
+**Closed issues:**
+
+- Check-in operators shouldn't access the admin GUI [\#216](https://github.com/exteso/alf.io/issues/216)
+- ERR\_TOO\_MANY\_REDIRECTS [\#206](https://github.com/exteso/alf.io/issues/206)
+- Cannot create new event, error on form?? [\#205](https://github.com/exteso/alf.io/issues/205)
+- admin: delete config doesn't work [\#204](https://github.com/exteso/alf.io/issues/204)
+- additional email handling work [\#99](https://github.com/exteso/alf.io/issues/99)
+
 ## [1.8](https://github.com/exteso/alf.io/tree/1.8) (2016-09-12)
-[Full Changelog](https://github.com/exteso/alf.io/compare/1.7.4...1.8)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.8-RC2...1.8)
 
 **Implemented enhancements:**
 
@@ -41,9 +103,6 @@
 - bug in master: cannot change price of category [\#160](https://github.com/exteso/alf.io/issues/160)
 - Cannot edit an event containing strange characters in the url [\#150](https://github.com/exteso/alf.io/issues/150)
 - Show contextualized error message when ticket purchase doesn't work [\#147](https://github.com/exteso/alf.io/issues/147)
-- Warning message to select an organizer althought it is already selected [\#166](https://github.com/exteso/alf.io/issues/166)
-- "ticket-has-changed-owner" email is sent unexpectedly [\#151](https://github.com/exteso/alf.io/issues/151)
-- TicketReservationManager.countAvailableTickets count tickets with "PENDING" status as available [\#144](https://github.com/exteso/alf.io/issues/144)
 
 **Closed issues:**
 
@@ -58,7 +117,30 @@
 - add an additional field while editing an event [\#91](https://github.com/exteso/alf.io/issues/91)
 - Mention contributors on the website [\#87](https://github.com/exteso/alf.io/issues/87)
 - Updated Tutorial/Instructions [\#74](https://github.com/exteso/alf.io/issues/74)
+
+## [1.8-RC2](https://github.com/exteso/alf.io/tree/1.8-RC2) (2016-09-05)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.8-RC1...1.8-RC2)
+
+**Closed issues:**
+
 - "An unexpected error has occurred. Please try again." trying to buy a paid ticket [\#193](https://github.com/exteso/alf.io/issues/193)
+
+**Merged pull requests:**
+
+- Add AWS Beanstalk support [\#187](https://github.com/exteso/alf.io/pull/187) ([madama](https://github.com/madama))
+- Calendar fix [\#183](https://github.com/exteso/alf.io/pull/183) ([yankedev](https://github.com/yankedev))
+
+## [1.8-RC1](https://github.com/exteso/alf.io/tree/1.8-RC1) (2016-08-28)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.7.4...1.8-RC1)
+
+**Fixed bugs:**
+
+- Warning message to select an organizer althought it is already selected [\#166](https://github.com/exteso/alf.io/issues/166)
+- "ticket-has-changed-owner" email is sent unexpectedly [\#151](https://github.com/exteso/alf.io/issues/151)
+- TicketReservationManager.countAvailableTickets count tickets with "PENDING" status as available [\#144](https://github.com/exteso/alf.io/issues/144)
+
+**Closed issues:**
+
 - Mysql errror : alter event table not working [\#165](https://github.com/exteso/alf.io/issues/165)
 - Unable to create new event without image [\#157](https://github.com/exteso/alf.io/issues/157)
 - More info about pending reservations [\#155](https://github.com/exteso/alf.io/issues/155)
@@ -72,15 +154,12 @@
 
 **Merged pull requests:**
 
-- Add AWS Beanstalk support [\#187](https://github.com/exteso/alf.io/pull/187) ([madama](https://github.com/madama))
-- Calendar fix [\#183](https://github.com/exteso/alf.io/pull/183) ([yankedev](https://github.com/yankedev))
 - \#128 upload file lime 1mb added [\#164](https://github.com/exteso/alf.io/pull/164) ([Praitheesh](https://github.com/Praitheesh))
 - split fullname \#102 [\#163](https://github.com/exteso/alf.io/pull/163) ([syjer](https://github.com/syjer))
 - fix \#148: Improve VAT/Price management [\#149](https://github.com/exteso/alf.io/pull/149) ([cbellone](https://github.com/cbellone))
 - replace data-tooltip with data-uib-tooltip \#138 [\#142](https://github.com/exteso/alf.io/pull/142) ([BunsenMcDubbs](https://github.com/BunsenMcDubbs))
 - Allow markdown noop \#139 [\#141](https://github.com/exteso/alf.io/pull/141) ([BunsenMcDubbs](https://github.com/BunsenMcDubbs))
 - \#131 \#136 \#137 [\#132](https://github.com/exteso/alf.io/pull/132) ([BunsenMcDubbs](https://github.com/BunsenMcDubbs))
-
 
 ## [1.7.4](https://github.com/exteso/alf.io/tree/1.7.4) (2016-06-29)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.7.3...1.7.4)
