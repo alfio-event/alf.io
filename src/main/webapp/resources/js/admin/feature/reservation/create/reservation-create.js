@@ -10,7 +10,7 @@
     });
 
 
-    function ReservationEditCtrl(AdminReservationService, $state) {
+    function ReservationEditCtrl(AdminReservationService, $state, PriceCalculator) {
         var ctrl = this;
 
         var handleError = function(error) {
@@ -88,6 +88,16 @@
 
         ctrl.reinit = function() {
             init();
+        };
+
+        ctrl.calculateTotalPrice = function(price) {
+            if(angular.isDefined(price)) {
+                if(!ctrl.event.vatIncluded) {
+                    var vat = PriceCalculator.applyPercentage(price, ctrl.event.vatPercentage);
+                    return numeral(vat.add(price).format('0.00')).value()
+                }
+                return numeral(price).format('0.00').value();
+            }
         };
 
         ctrl.submit = function(frm) {
