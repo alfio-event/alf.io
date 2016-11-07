@@ -69,6 +69,11 @@ public enum PlatformProvider {
         }
 
         @Override
+        public String getDriveClassName(Environment env) {
+            return POSTGRESQL_DRIVER;
+        }
+
+        @Override
         public boolean isHosting(Environment env) {
             return ofNullable(env.getProperty("ELEPHANTSQL_URI")).isPresent() || ofNullable(env.getProperty("VCAP_SERVICES")).filter(s -> s.contains("elephantsql")).isPresent();
         }
@@ -110,6 +115,11 @@ public enum PlatformProvider {
         }
 
         @Override
+        public String getDriveClassName(Environment env) {
+            return POSTGRESQL_DRIVER;
+        }
+
+        @Override
         public boolean isHosting(Environment env) {
             return ofNullable(env.getProperty("OPENSHIFT_APP_NAME")).isPresent();
         }
@@ -139,6 +149,11 @@ public enum PlatformProvider {
         @Override
         public String getDialect(Environment env) {
             return isMySql(env) ? MYSQL : PGSQL;
+        }
+
+        @Override
+        public String getDriveClassName(Environment env) {
+            return isMySql(env) ? MYSQL_DRIVER : POSTGRESQL_DRIVER;
         }
 
         @Override
@@ -186,6 +201,11 @@ public enum PlatformProvider {
         }
 
         @Override
+        public String getDriveClassName(Environment env) {
+            return POSTGRESQL_DRIVER;
+        }
+
+        @Override
         public boolean isHosting(Environment env) {
             return ofNullable(env.getProperty("DYNO")).isPresent();
         }
@@ -220,6 +240,12 @@ public enum PlatformProvider {
         @Override
         public String getDialect(Environment env) {
             return PGSQL;
+        }
+
+
+        @Override
+        public String getDriveClassName(Environment env) {
+            return POSTGRESQL_DRIVER;
         }
 
         @Override
@@ -263,6 +289,11 @@ public enum PlatformProvider {
             return ofNullable(env.getProperty("RDS_PORT")).filter("3306"::equals).isPresent();
         }
 
+        @Override
+        public String getDriveClassName(Environment env) {
+            return isMySql(env) ? MYSQL_DRIVER : POSTGRESQL_DRIVER;
+        }
+
     };
 
     private static final String POSTGRESQL_DRIVER = "org.postgresql.Driver";
@@ -284,6 +315,9 @@ public enum PlatformProvider {
         return env.getRequiredProperty("datasource.password");
     }
 
+    public String getDriveClassName(Environment env) {
+        return env.getRequiredProperty("datasource.driver");
+    }
 
     public String getDialect(Environment env) {
         return env.getRequiredProperty("datasource.dialect");

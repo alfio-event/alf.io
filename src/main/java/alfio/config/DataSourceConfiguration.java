@@ -98,6 +98,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         dataSource.setJdbcUrl(platform.getUrl(env));
         dataSource.setUsername(platform.getUsername(env));
         dataSource.setPassword(platform.getPassword(env));
+        dataSource.setDriverClassName(platform.getDriveClassName(env));
         int maxActive = platform.getMaxActive(env);
 
         dataSource.setMaximumPoolSize(maxActive);
