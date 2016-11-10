@@ -353,7 +353,7 @@ public class AdminReservationManager {
             Attendee attendee = attendees.get(i);
             if(!attendee.isEmpty()) {
                 Integer ticketId = reservedForUpdate.get(i);
-                ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmailAddress(), null, attendee.getFirstName(), attendee.getLastName());
+                ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmailAddress(), attendee.getFullName(), attendee.getFirstName(), attendee.getLastName());
                 specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts));
             }
         }
