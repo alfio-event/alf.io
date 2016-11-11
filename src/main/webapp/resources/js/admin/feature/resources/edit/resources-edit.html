@@ -9,8 +9,11 @@
                 <tab-heading>{{locale.locale}}</tab-heading>
                 <form ng-submit="$ctrl.saveFor(locale.locale)">
                     <div class="form-group">
-                        <label for="resource-{{locale.locale}}">Resource</label>
-                        <textarea id="resource-{{locale.locale}}" ng-model="$ctrl.resources[locale.locale]" rows="20" class="form-control" ng-show="!$ctrl.previewMode"></textarea>
+                        <div ui-ace="{
+                          mode: 'handlebars',
+                          firstLineNumber: 1,
+                          onLoad: $ctrl.initLoadListener(locale)
+                        }" ng-if="$ctrl.resources[locale.locale] && !$ctrl.previewMode"></div>
                         <pre ng-show="$ctrl.previewMode" ng-bind="$ctrl.previewedText"></pre>
                     </div>
                     <div class="pull-left" ng-if="$ctrl.resourcesMetadata[locale.locale]">

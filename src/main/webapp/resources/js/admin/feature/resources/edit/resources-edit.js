@@ -23,6 +23,25 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
         loadAll()
     };
 
+    ctrl.initLoadListener = function(locale) {
+        var key = locale.locale;
+        return function(editor) {
+            var session = editor.getSession();
+
+            // Options
+            session.setUndoManager(new ace.UndoManager());
+
+            session.on("change", function(event, editor) {
+                var newVal = editor.getValue();
+                var currVal = ctrl.resources[key];
+                if(newVal != currVal) {
+                    ctrl.resources[key] = newVal;
+                }
+            });
+            editor.setValue(ctrl.resources[key], 0);
+        }
+    };
+
     var errorHandler = function(err) {
         var reader = new FileReader();
         var promise = $q(function(resolve, reject) {

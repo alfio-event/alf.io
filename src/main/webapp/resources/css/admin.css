@@ -407,3 +407,12 @@ a.emulate-nav-pills-link {
 .markdown-help a {
     font-size: 12px;
 }
+
+.ace_editor {
+    border-left: 1px solid #f0f0f0;
+    border-right: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+    margin-top: 5px;
+    width: 100%;
+    height: 500px;
+}

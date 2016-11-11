@@ -45,3 +45,7 @@
 /chartist-plugin-accessibility/dist/chartist-plugin-accessibility.js
 /chartist-plugin-tooltip/tasks/**
 /chartist-plugin-tooltip/dist/chartist-plugin-tooltip.js
+/ace-builds/src/**
+/ace-builds/src-min/**
+/ace-builds/src-noconflict/**
+/ace-builds/textarea/**
