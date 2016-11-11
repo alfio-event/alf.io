@@ -95,4 +95,12 @@ public class EventStatistic implements StatisticsContainer {
     public int getDynamicAllocation() {
         return eventWithStatistics.getDynamicAllocation();
     }
+
+    public int getOrganizationId() {
+        return eventWithStatistics.getOrganizationId();
+    }
+
+    public int getId() {
+        return eventWithStatistics.getId();
+    }
 }
