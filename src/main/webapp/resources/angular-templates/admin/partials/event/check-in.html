@@ -80,8 +80,6 @@
                     <thead>
                     <th>Status</th>
                     <th>Holder's name</th>
-                    <th ng-show="event.useFirstAndLastName">Holder's first name</th>
-                    <th ng-show="event.useFirstAndLastName">Holder's last name</th>
                     <th>Holder's e-mail</th>
                     <th>Type</th>
                     <th>Reference Number</th>
@@ -92,8 +90,6 @@
                     <tr data-ng-repeat="ticket in tickets | filter: toBeCheckedIn | filter: selection.freeText | filter: advancedSearch | orderBy: ['timestamp', 'ticketReservationId' , 'uuid'] as filterResult">
                         <td data-ng-class-even="'active'" data-label="Status">{{::ticket.status | statusText}}</td>
                         <td data-ng-class-even="'active'" data-label="Holder's name">{{::ticket.fullName}}</td>
-                        <td data-ng-class-even="'active'" data-label="Holder's first name" ng-show="event.useFirstAndLastName">{{::ticket.firstName}}</td>
-                        <td data-ng-class-even="'active'" data-label="Holder's last name" ng-show="event.useFirstAndLastName">{{::ticket.lastName}}</td>
                         <td data-ng-class-even="'active'" data-label="Holder's e-mail">{{::ticket.email}}</td>
                         <td data-ng-class-even="'active'" data-label="Type">{{::ticket.ticketCategory.name}}</td>
                         <td data-ng-class-even="'active'" data-label="Reference Number"><a data-ng-href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketsReservationId}}/{{::ticket.uuid}}">{{::ticket.uuid}}</a></td>
