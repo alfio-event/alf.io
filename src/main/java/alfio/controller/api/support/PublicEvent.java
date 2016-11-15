@@ -18,6 +18,7 @@ package alfio.controller.api.support;
 
 import alfio.model.Event;
 import alfio.model.EventDescription;
+import alfio.model.user.Organization;
 
 import java.util.List;
 
@@ -26,10 +27,12 @@ import static java.util.stream.Collectors.toList;
 public class PublicEvent extends EventListItem {
 
     private final List<PublicCategory> categories;
+    private final Organization organization;
 
-    public PublicEvent(Event event, String requestContextPath, DataLoader<Event, EventDescription> eventDescriptionsLoader, List<PublicCategory> categories) {
+    public PublicEvent(Event event, String requestContextPath, DataLoader<Event, EventDescription> eventDescriptionsLoader, List<PublicCategory> categories, Organization organization) {
         super(event, requestContextPath, eventDescriptionsLoader);
         this.categories = categories;
+        this.organization = organization;
     }
 
     public List<PublicCategory> getActiveCategories() {
@@ -44,6 +47,14 @@ public class PublicEvent extends EventListItem {
             .filter(c -> !c.isAccessRestricted() && !c.isActive())
             .sorted(PublicCategory.SORT_BY_DATE)
             .collect(toList());
+    }
+
+    public String getOrganizationName() {
+        return organization.getName();
+    }
+
+    public String getOrganizationEmail() {
+        return organization.getEmail();
     }
 
 }

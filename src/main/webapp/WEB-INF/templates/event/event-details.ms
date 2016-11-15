@@ -28,7 +28,7 @@
         <i class="fa fa-info-circle text-info tooltip-handler hidden-print" title="{{#i18n}}show-event.timezone.warn [{{event.timeZone}}]{{/i18n}}"></i>
     </li>
         <li class="hidden-print">
-            <i class="fa fa-calendar-plus-o"></i> <span>{{#i18n}}show-event.add-to-calendar{{/i18n}}</span> <a title="{{#i18n}}show-event.add-to-calendar{{/i18n}} google" href="{{request.contextPath}}/event/{{event.shortName}}/calendar/locale/{{userLanguage}}?type=google"><i class="fa fa-google-plus-square"></i></a> <a title="{{#i18n}}show-event.add-to-calendar{{/i18n}} iCalendar" href="{{request.contextPath}}/event/{{event.shortName}}/calendar/locale/{{userLanguage}}"><i class="fa fa-calendar-check-o"></i></a>
+            <i class="fa fa-calendar-plus-o"></i> <span>{{#i18n}}show-event.add-to-calendar{{/i18n}}</span> <a title="{{#i18n}}show-event.add-to-calendar{{/i18n}} google" target="_blank" href="{{request.contextPath}}/event/{{event.shortName}}/calendar/locale/{{userLanguage}}?type=google"><i class="fa fa-google-plus-square"></i></a> <a title="{{#i18n}}show-event.add-to-calendar{{/i18n}} iCalendar" href="{{request.contextPath}}/event/{{event.shortName}}/calendar/locale/{{userLanguage}}"><i class="fa fa-calendar-check-o"></i></a>
         </li>
         <li>
             <i class="fa fa-compass"></i> {{event.location}}

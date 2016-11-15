@@ -27,8 +27,10 @@ import alfio.model.Event;
 import alfio.model.TicketCategory;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
+import alfio.repository.user.OrganizationRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -49,6 +51,7 @@ import java.util.stream.Collectors;
 public class EventPublicApiController {
 
     private final EventManager eventManager;
+    private final OrganizationRepository organizationRepository;
     private final EventRepository eventRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketReservationManager ticketReservationManager;
@@ -57,12 +60,14 @@ public class EventPublicApiController {
 
     @Autowired
     public EventPublicApiController(EventManager eventManager,
+                                    OrganizationRepository organizationRepository,
                                     EventRepository eventRepository,
                                     TicketCategoryRepository ticketCategoryRepository,
                                     TicketReservationManager ticketReservationManager,
                                     ConfigurationManager configurationManager,
                                     DescriptionsLoader descriptionsLoader) {
         this.eventManager = eventManager;
+        this.organizationRepository = organizationRepository;
         this.eventRepository = eventRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.ticketReservationManager = ticketReservationManager;
@@ -92,7 +97,8 @@ public class EventPublicApiController {
                     .filter((c) -> !c.isAccessRestricted())
                     .map(c -> buildPublicCategory(c, e))
                     .collect(Collectors.toList());
-                return new ResponseEntity<>(new PublicEvent(e, request.getContextPath(), descriptionsLoader.eventDescriptions(), categories), getCorsHeaders(), HttpStatus.OK);
+                Organization organization = organizationRepository.getById(e.getOrganizationId());
+                return new ResponseEntity<>(new PublicEvent(e, request.getContextPath(), descriptionsLoader.eventDescriptions(), categories, organization), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> new ResponseEntity<>(getCorsHeaders(), HttpStatus.NOT_FOUND));
     }
