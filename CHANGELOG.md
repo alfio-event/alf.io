@@ -1,5 +1,15 @@
 # Change Log
 
+## [1.9.2](https://github.com/exteso/alf.io/tree/1.9.2) (2016-11-14)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.9.1...1.9.2)
+
+**Fixed bugs:**
+
+- Admin reservations are wrongly notified [\#246](https://github.com/exteso/alf.io/issues/246)
+
+## [1.9.1](https://github.com/exteso/alf.io/tree/1.9.1) (2016-11-07)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.9...1.9.1)
+
 ## [1.9](https://github.com/exteso/alf.io/tree/1.9) (2016-11-07)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.8.2...1.9)
 
