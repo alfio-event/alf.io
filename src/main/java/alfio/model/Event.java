@@ -22,7 +22,6 @@ import biweekly.ICalVersion;
 import biweekly.ICalendar;
 import biweekly.component.VEvent;
 import biweekly.io.text.ICalWriter;
-import biweekly.property.Organizer;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
@@ -254,7 +253,7 @@ public class Event implements EventHiddenFieldContainer {
 
     @Override
     @JsonIgnore
-    public Optional<byte[]> getIcal(String description, String organizerName, String organizerEmail) {
+    public Optional<byte[]> getIcal(String description) {
         ICalendar ical = new ICalendar();
         VEvent vEvent = new VEvent();
         vEvent.setSummary(getDisplayName());
@@ -263,7 +262,6 @@ public class Event implements EventHiddenFieldContainer {
         vEvent.setDateStart(Date.from(getBegin().toInstant()));
         vEvent.setDateEnd(Date.from(getEnd().toInstant()));
         vEvent.setUrl(getWebsiteUrl());
-        vEvent.setOrganizer(new Organizer(organizerName, organizerEmail));
         ical.addEvent(vEvent);
         StringWriter strWriter = new StringWriter();
         try (ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V2_0)) {
