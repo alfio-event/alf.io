@@ -32,7 +32,6 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
@@ -264,8 +263,7 @@ public class EventController {
         if("google".equals(calendarType)) {
             response.sendRedirect(ev.getGoogleCalendarUrl(description));
         } else {
-            Organization organization = organizationRepository.getById(ev.getOrganizationId());
-            Optional<byte[]> ical = ev.getIcal(description, organization.getName(), organization.getEmail());
+            Optional<byte[]> ical = ev.getIcal(description);
             //meh, checked exceptions don't work well with Function & co :(
             if(ical.isPresent()) {
                 response.setContentType("text/calendar");
