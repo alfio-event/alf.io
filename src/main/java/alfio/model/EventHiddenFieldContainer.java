@@ -43,5 +43,5 @@ public interface EventHiddenFieldContainer {
     String getGoogleCalendarUrl(String description);
 
     @JsonIgnore
-    Optional<byte[]> getIcal(String description, String organizerName, String organizerEmail);
+    Optional<byte[]> getIcal(String description);
 }
