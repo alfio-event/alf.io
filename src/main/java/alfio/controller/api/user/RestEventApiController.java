@@ -30,7 +30,9 @@ import alfio.model.TicketCategory;
 import alfio.model.result.Result;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.user.Organization;
 import alfio.repository.*;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -54,6 +56,7 @@ import static alfio.util.OptionalWrapper.optionally;
 public class RestEventApiController {
 
     private final EventManager eventManager;
+    private final OrganizationRepository organizationRepository;
     private final EventRepository eventRepository;
     private final DescriptionsLoader descriptionsLoader;
     private final TicketReservationManager ticketReservationManager;
@@ -66,6 +69,7 @@ public class RestEventApiController {
 
     @Autowired
     public RestEventApiController(EventManager eventManager,
+                                  OrganizationRepository organizationRepository,
                                   EventRepository eventRepository,
                                   DescriptionsLoader descriptionsLoader,
                                   TicketReservationManager ticketReservationManager,
@@ -75,6 +79,7 @@ public class RestEventApiController {
                                   TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
                                   AdditionalServiceRepository additionalServiceRepository) {
         this.eventManager = eventManager;
+        this.organizationRepository = organizationRepository;
         this.eventRepository = eventRepository;
         this.descriptionsLoader = descriptionsLoader;
         this.ticketReservationManager = ticketReservationManager;
@@ -103,7 +108,9 @@ public class RestEventApiController {
                 .filter((c) -> !c.isAccessRestricted() || (specialCode.filter(sc -> sc.getTicketCategoryId() == c.getId()).isPresent()))
                 .map(c -> buildPublicCategory(c, e))
                 .collect(Collectors.toList());
-            return new ResponseEntity<>(new PublicEvent(e, request.getContextPath(), descriptionsLoader.eventDescriptions(), categories), HttpStatus.OK);
+            Organization organization = organizationRepository.getById(e.getOrganizationId());
+
+            return new ResponseEntity<>(new PublicEvent(e, request.getContextPath(), descriptionsLoader.eventDescriptions(), categories, organization), HttpStatus.OK);
         }).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
