@@ -104,8 +104,7 @@ public class NotificationManager {
             Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
             Locale locale = Json.fromJson(model.get("locale"), Locale.class);
             String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
-            Organization organization = organizationRepository.getById(event.getOrganizationId());
-            return event.getIcal(description, organization.getName(), organization.getEmail()).orElse(null);
+            return event.getIcal(description).orElse(null);
         });
 
         attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, (model) -> {
