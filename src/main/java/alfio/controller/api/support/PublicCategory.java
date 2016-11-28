@@ -58,6 +58,10 @@ public class PublicCategory implements PriceContainer {
         return category.getUtcInception().isBefore(now) && now.isBefore(category.getUtcExpiration());
     }
 
+    public int getTicketCategoryId() {
+        return category.getId();
+    }
+
     public boolean isTicketsAvailable() {
         return isActive() && availableTickets > 0;
     }
