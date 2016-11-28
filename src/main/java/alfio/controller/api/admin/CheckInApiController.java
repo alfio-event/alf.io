@@ -24,7 +24,9 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
@@ -96,6 +98,11 @@ public class CheckInApiController {
     @RequestMapping(value = "/check-in/{eventId}/ticket", method = GET)
     public List<FullTicketInfo> listAllTickets(@PathVariable("eventId") int eventId) {
         return checkInManager.findAllFullTicketInfo(eventId);
+    }
+
+    @RequestMapping(value = "/check-in/{eventId}/offline", method = RequestMethod.GET)
+    public Map<String, String> getOfflineEncryptedInfo(@PathVariable("eventId") int eventId) {
+        return checkInManager.getEncryptedAttendeesInformations(eventId, Collections.singleton("company"));
     }
 
     @Data

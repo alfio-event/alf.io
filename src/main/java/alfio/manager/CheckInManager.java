@@ -27,10 +27,15 @@ import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
+import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
+import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import lombok.extern.log4j.Log4j2;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -40,6 +45,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static alfio.manager.support.CheckInStatus.*;
 import static alfio.util.OptionalWrapper.optionally;
@@ -52,12 +61,17 @@ public class CheckInManager {
     private final TicketRepository ticketRepository;
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
+    private final TicketFieldRepository ticketFieldRepository;
 
     @Autowired
-    public CheckInManager(TicketRepository ticketRepository, EventRepository eventRepository, TicketReservationRepository ticketReservationRepository) {
+    public CheckInManager(TicketRepository ticketRepository,
+                          EventRepository eventRepository,
+                          TicketReservationRepository ticketReservationRepository,
+                          TicketFieldRepository ticketFieldRepository) {
         this.ticketRepository = ticketRepository;
         this.eventRepository = eventRepository;
         this.ticketReservationRepository = ticketReservationRepository;
+        this.ticketFieldRepository = ticketFieldRepository;
     }
 
 
@@ -185,5 +199,27 @@ public class CheckInManager {
         }
 
         return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(OK_READY_TO_BE_CHECKED_IN, "Ready to be checked in"));
+    }
+
+    public Map<String,String> getEncryptedAttendeesInformations(int eventId, Set<String> additionalFields) {
+        String eventKey = eventRepository.findById(eventId).getPrivateKey();
+        Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
+        //FIXME -> encrypt using uuid as a key
+
+        Function<FullTicketInfo, String> encryptedBody = ticket -> {
+            Map<String, String> info = new HashMap<>();
+            info.put("firstName", ticket.getFirstName());
+            info.put("lastName", ticket.getLastName());
+            info.put("fullName", ticket.getFullName());
+            if(!additionalFields.isEmpty()) {
+                ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields)
+                    .stream()
+                    .forEach(field -> info.put(field.getName(), field.getValue()));
+            }
+            return Base64.encodeBase64URLSafeString(Json.toJson(info).getBytes(StandardCharsets.UTF_8));
+        };
+        return ticketRepository.findAllFullTicketInfoAssignedByEventId(eventId)
+            .stream()
+            .collect(Collectors.toMap(hashedHMAC, encryptedBody));
     }
 }
