@@ -114,8 +114,11 @@ public class Ticket {
      * @return
      */
     public String ticketCode(String eventKey) {
-        String code = StringUtils.join(new String[]{ticketsReservationId , uuid, getFullName(), email}, '/');
-        return uuid + '/' + hmacSHA256Base64(eventKey, code);
+        return uuid + '/' + hmacTicketInfo(eventKey);
+    }
+
+    public String hmacTicketInfo(String eventKey) {
+        return hmacSHA256Base64(eventKey, StringUtils.join(new String[]{ticketsReservationId , uuid, getFullName(), email}, '/'));
     }
 
     public boolean hasBeenSold() {
