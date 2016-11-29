@@ -43,11 +43,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Optional;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static alfio.manager.support.CheckInStatus.*;
@@ -201,10 +210,52 @@ public class CheckInManager {
         return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(OK_READY_TO_BE_CHECKED_IN, "Ready to be checked in"));
     }
 
+    private static Pair<Cipher, SecretKeySpec>  getCypher(String key) {
+        try {
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+            int iterations = 1000;
+            int keyLength = 256;
+            PBEKeySpec spec = new PBEKeySpec(key.toCharArray(), key.getBytes(StandardCharsets.UTF_8), iterations, keyLength);
+            SecretKey secretKey = factory.generateSecret(spec);
+            SecretKeySpec secret = new SecretKeySpec(secretKey.getEncoded(), "AES");
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            return Pair.of(cipher, secret);
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static String encrypt(String key, String payload)  {
+        try {
+            Pair<Cipher, SecretKeySpec> cipherAndSecret = getCypher(key);
+            Cipher cipher = cipherAndSecret.getKey();
+            cipher.init(Cipher.ENCRYPT_MODE, cipherAndSecret.getRight());
+            byte[] data = cipher.doFinal(payload.getBytes(StandardCharsets.UTF_8));
+            byte[] iv = cipher.getIV();
+            return Base64.encodeBase64URLSafeString(iv) + "|" + Base64.encodeBase64URLSafeString(data);
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static String decrypt(String key, String payload) {
+        try {
+            Pair<Cipher, SecretKeySpec> cipherAndSecret = getCypher(key);
+            Cipher cipher = cipherAndSecret.getKey();
+            String[] splitted = payload.split(Pattern.quote("|"));
+            byte[] iv = Base64.decodeBase64(splitted[0]);
+            byte[] body = Base64.decodeBase64(splitted[1]);
+            cipher.init(Cipher.DECRYPT_MODE, cipherAndSecret.getRight(), new IvParameterSpec(iv));
+            byte[] decrypted = cipher.doFinal(body);
+            return new String(decrypted, StandardCharsets.UTF_8);
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     public Map<String,String> getEncryptedAttendeesInformations(int eventId, Set<String> additionalFields) {
         String eventKey = eventRepository.findById(eventId).getPrivateKey();
         Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
-        //FIXME -> encrypt using uuid as a key
 
         Function<FullTicketInfo, String> encryptedBody = ticket -> {
             Map<String, String> info = new HashMap<>();
@@ -216,7 +267,13 @@ public class CheckInManager {
                     .stream()
                     .forEach(field -> info.put(field.getName(), field.getValue()));
             }
-            return Base64.encodeBase64URLSafeString(Json.toJson(info).getBytes(StandardCharsets.UTF_8));
+
+            String key = ticket.ticketCode(eventKey);
+            String payload = Json.toJson(info);
+            String encrypted = encrypt(key, Json.toJson(info));
+            //String decrypted = decrypt(key, encrypted);
+
+            return encrypted;
         };
         return ticketRepository.findAllFullTicketInfoAssignedByEventId(eventId)
             .stream()
