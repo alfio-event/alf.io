@@ -262,6 +262,9 @@ public class CheckInManager {
             info.put("firstName", ticket.getFirstName());
             info.put("lastName", ticket.getLastName());
             info.put("fullName", ticket.getFullName());
+            info.put("email", ticket.getEmail());
+            info.put("status", ticket.getStatus().toString());
+            info.put("uuid", ticket.getUuid());
             if(!additionalFields.isEmpty()) {
                 ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields)
                     .stream()
