@@ -17,14 +17,20 @@
 package alfio.repository.user;
 
 import alfio.model.user.Authority;
-import ch.digitalfondue.npjt.Bind;
-import ch.digitalfondue.npjt.Query;
-import ch.digitalfondue.npjt.QueryRepository;
+import ch.digitalfondue.npjt.*;
 
 import java.util.List;
+import java.util.Set;
 
 @QueryRepository
 public interface AuthorityRepository {
+
+    String checkRole = "select exists(select * from authority where username = :username and role in (:roles)) as res";
+    @Query(checkRole)
+    @QueriesOverride({
+        @QueryOverride(value = checkRole + " from (values(0))", db = "HSQLDB")
+    })
+    boolean checkRole(@Bind("username") String username, @Bind("roles") Set<String> roles);
 
     @Query("SELECT * from authority where username = :username")
     List<Authority> findGrantedAuthorities(@Bind("username") String username);

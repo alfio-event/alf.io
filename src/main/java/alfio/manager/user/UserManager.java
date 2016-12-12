@@ -36,6 +36,7 @@ import org.springframework.util.Assert;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
@@ -64,7 +65,7 @@ public class UserManager {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public List<Authority> getUserAuthorities(User user) {
+    private List<Authority> getUserAuthorities(User user) {
         return authorityRepository.findGrantedAuthorities(user.getUsername());
     }
 
@@ -122,19 +123,20 @@ public class UserManager {
     }
 
     public boolean isAdmin(User user) {
-        return checkRole(user, a -> a.getRole().equals(Role.ADMIN));
+        return checkRole(user, Collections.singleton(Role.ADMIN));
     }
 
     public boolean isOwner(User user) {
-        return checkRole(user, a -> a.getRole().equals(Role.ADMIN) || a.getRole().equals(Role.OWNER));
+        return checkRole(user, EnumSet.of(Role.ADMIN, Role.OWNER));
     }
 
     public boolean isOwnerOfOrganization(User user, int organizationId) {
         return isAdmin(user) || (isOwner(user) && userOrganizationRepository.findByUserId(user.getId()).stream().anyMatch(uo -> uo.getOrganizationId() == organizationId));
     }
 
-    private boolean checkRole(User user, Predicate<Authority> matcher) {
-        return getUserAuthorities(user).stream().anyMatch(matcher);
+    private boolean checkRole(User user, Set<Role> expectedRoles) {
+        Set<String> roleNames = expectedRoles.stream().map(Role::getRoleName).collect(Collectors.toSet());
+        return authorityRepository.checkRole(user.getUsername(), roleNames);
     }
 
     @Transactional
