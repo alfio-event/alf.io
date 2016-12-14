@@ -100,9 +100,9 @@ public class CheckInApiController {
         return checkInManager.findAllFullTicketInfo(eventId);
     }
 
-    @RequestMapping(value = "/check-in/{eventId}/offline", method = RequestMethod.GET)
-    public Map<String, String> getOfflineEncryptedInfo(@PathVariable("eventId") int eventId) {
-        return checkInManager.getEncryptedAttendeesInformations(eventId, Collections.singleton("company"));
+    @RequestMapping(value = "/check-in/{eventName}/offline", method = RequestMethod.GET)
+    public Map<String, String> getOfflineEncryptedInfo(@PathVariable("eventName") String eventName) {
+        return checkInManager.getEncryptedAttendeesInformation(eventName, Collections.singleton("company"));
     }
 
     @Data

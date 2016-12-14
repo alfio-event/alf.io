@@ -33,7 +33,6 @@ import alfio.repository.TicketReservationRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import lombok.extern.log4j.Log4j2;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -49,11 +48,8 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.Optional;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -253,33 +249,30 @@ public class CheckInManager {
         }
     }
 
-    public Map<String,String> getEncryptedAttendeesInformations(int eventId, Set<String> additionalFields) {
-        String eventKey = eventRepository.findById(eventId).getPrivateKey();
-        Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
+    public Map<String,String> getEncryptedAttendeesInformation(String eventName, Set<String> additionalFields) {
+        return eventRepository.findOptionalByShortName(eventName).map(event -> {
+            String eventKey = event.getPrivateKey();
+            Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
 
-        Function<FullTicketInfo, String> encryptedBody = ticket -> {
-            Map<String, String> info = new HashMap<>();
-            info.put("firstName", ticket.getFirstName());
-            info.put("lastName", ticket.getLastName());
-            info.put("fullName", ticket.getFullName());
-            info.put("email", ticket.getEmail());
-            info.put("status", ticket.getStatus().toString());
-            info.put("uuid", ticket.getUuid());
-            if(!additionalFields.isEmpty()) {
-                ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields)
-                    .stream()
-                    .forEach(field -> info.put(field.getName(), field.getValue()));
-            }
+            Function<FullTicketInfo, String> encryptedBody = ticket -> {
+                Map<String, String> info = new HashMap<>();
+                info.put("firstName", ticket.getFirstName());
+                info.put("lastName", ticket.getLastName());
+                info.put("fullName", ticket.getFullName());
+                info.put("email", ticket.getEmail());
+                info.put("status", ticket.getStatus().toString());
+                info.put("uuid", ticket.getUuid());
+                if(!additionalFields.isEmpty()) {
+                    ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields)
+                        .forEach(field -> info.put(field.getName(), field.getValue()));
+                }
+                String key = ticket.ticketCode(eventKey);
+                return encrypt(key, Json.toJson(info));
+            };
+            return ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId())
+                .stream()
+                .collect(Collectors.toMap(hashedHMAC, encryptedBody));
 
-            String key = ticket.ticketCode(eventKey);
-            String payload = Json.toJson(info);
-            String encrypted = encrypt(key, Json.toJson(info));
-            //String decrypted = decrypt(key, encrypted);
-
-            return encrypted;
-        };
-        return ticketRepository.findAllFullTicketInfoAssignedByEventId(eventId)
-            .stream()
-            .collect(Collectors.toMap(hashedHMAC, encryptedBody));
+        }).orElse(Collections.emptyMap());
     }
 }
