@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.model.Event;
+import alfio.model.EventStatisticView;
 import alfio.model.PriceContainer;
 import alfio.util.OptionalWrapper;
 import ch.digitalfondue.npjt.*;
@@ -25,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @QueryRepository
 public interface EventRepository {
@@ -108,4 +110,7 @@ public interface EventRepository {
 
     @Query("select * from event where short_name = :name for update")
     Optional<Event> findOptionalByShortNameForUpdate(@Bind("name") String shortName);
+
+    @Query("select * from events_statistics where id in (:ids)")
+    List<EventStatisticView> findStatisticsFor(@Bind("ids") Set<Integer> integers);
 }

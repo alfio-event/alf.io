@@ -80,7 +80,9 @@ create view events_statistics as (select
         allocated_count - sold_tickets_count_bounded - checked_in_count_bounded - pending_count
       else
         allocated_count - sold_tickets_count - stats.checked_in_count - pending_count
-      end as not_sold_tickets
+      end as not_sold_tickets,
+      is_containing_orphan_tickets_count > 0 as is_containing_orphan_tickets,
+      is_containing_stuck_tickets_count > 0 as is_containing_stuck_tickets_count
 
 from
 (select
@@ -94,5 +96,7 @@ from
 	sum(case (bounded = false) when true then sold_tickets_count else 0 end) as sold_tickets_count_unbounded,
 	sum(case (bounded) when true then pending_count else 0 end) as pending_count_unbounded,
 	count(bounded = false) > 0 contains_unbounded_categories,
+	count(is_containing_orphan_tickets) is_containing_orphan_tickets_count,
+    count(is_containing_stuck_tickets) is_containing_stuck_tickets_count,
 	event_id from ticket_category_statistics group by event_id) as stats
 inner join event on event_id = event.id);

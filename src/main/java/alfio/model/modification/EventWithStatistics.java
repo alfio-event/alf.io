@@ -80,11 +80,11 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
         return getEnd().format(JSON_DATE_FORMATTER);
     }
 
-    private boolean containsOrphanTickets() {
+    boolean containsOrphanTickets() {
         return ticketCategories.stream().anyMatch(TicketCategoryWithStatistic::isContainingOrphans);
     }
 
-    private boolean containsStuckReservations() {
+    boolean containsStuckReservations() {
         return ticketCategories.stream().anyMatch(TicketCategoryWithStatistic::isContainingStuckTickets);
     }
 
