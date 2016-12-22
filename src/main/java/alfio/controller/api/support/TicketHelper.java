@@ -54,6 +54,8 @@ import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
 @Component
 public class TicketHelper {
 
+    private static Set<TicketReservation.TicketReservationStatus> PENDING_RESERVATION_STATUSES = EnumSet.of(TicketReservation.TicketReservationStatus.PENDING, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
+
     private final TicketReservationManager ticketReservationManager;
     private final OrganizationRepository organizationRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
@@ -154,7 +156,7 @@ public class TicketHelper {
                                                                           Optional<UserDetails> userDetails) {
 
         Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.from(eventName, reservationId, ticketIdentifier)
-            .filter(temp -> temp.getMiddle().getStatus() == TicketReservation.TicketReservationStatus.PENDING && temp.getRight().getStatus() == Ticket.TicketStatus.PENDING)
+            .filter(temp -> PENDING_RESERVATION_STATUSES.contains(temp.getMiddle().getStatus()) && temp.getRight().getStatus() == Ticket.TicketStatus.PENDING)
             .map(result -> assignTicket(updateTicketOwner, bindingResult, request, userDetails, result));
         triple.ifPresent(reservationConsumer);
         return triple;

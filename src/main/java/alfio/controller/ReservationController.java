@@ -441,7 +441,7 @@ public class ReservationController {
         //
 
         if(paymentForm.getPaymentMethod() != PaymentProxy.PAYPAL) {
-            assignTickets(eventName, reservationId, paymentForm, bindingResult, request, false);
+            assignTickets(eventName, reservationId, paymentForm, bindingResult, request, paymentForm.getPaymentMethod() == PaymentProxy.OFFLINE);
         }
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
