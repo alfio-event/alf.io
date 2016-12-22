@@ -21,6 +21,8 @@ import alfio.model.modification.StatisticsContainer;
 import alfio.model.transaction.PaymentProxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 
@@ -28,79 +30,83 @@ public class EventStatistic implements StatisticsContainer {
 
 
     @JsonIgnore
-    private final EventWithStatistics eventWithStatistics;
+    private final Event event;
 
-    public EventStatistic(EventWithStatistics eventWithStatistics) {
-        this.eventWithStatistics = eventWithStatistics;
+    @JsonIgnore
+    private final EventStatisticView eventStatisticView;
+
+    public EventStatistic(Event event, EventStatisticView eventStatisticView) {
+        this.event = event;
+        this.eventStatisticView = eventStatisticView;
     }
 
     public List<PaymentProxy> getAllowedPaymentProxies() {
-        return eventWithStatistics.getAllowedPaymentProxies();
+        return event.getAllowedPaymentProxies();
     }
 
     public boolean isWarningNeeded() {
-        return eventWithStatistics.isWarningNeeded();
+        return !isExpired() && (eventStatisticView.isContainsOrphanTickets() || eventStatisticView.isContainsStuckReservations());
     }
 
     public int getAvailableSeats() {
-        return eventWithStatistics.getAvailableSeats();
+        return event.getAvailableSeats();
     }
 
     public String getFormattedBegin() {
-        return eventWithStatistics.getFormattedBegin();
+        return event.getBegin().format(EventWithStatistics.JSON_DATE_FORMATTER);
     }
 
     public String getFormattedEnd() {
-        return eventWithStatistics.getFormattedEnd();
+        return event.getEnd().format(EventWithStatistics.JSON_DATE_FORMATTER);
     }
 
     public boolean isExpired() {
-        return eventWithStatistics.isExpired();
+        return ZonedDateTime.now(event.getZoneId()).truncatedTo(ChronoUnit.DAYS).isAfter(event.getEnd().truncatedTo(ChronoUnit.DAYS));
     }
 
     public String getShortName() {
-        return eventWithStatistics.getShortName();
+        return event.getShortName();
     }
 
     public String getDisplayName() {
-        return eventWithStatistics.getDisplayName();
+        return event.getDisplayName();
     }
 
     @Override
     public int getNotSoldTickets() {
-        return eventWithStatistics.getNotSoldTickets();
+        return eventStatisticView.getNotSoldTickets();
     }
 
     @Override
     public int getSoldTickets() {
-        return eventWithStatistics.getSoldTickets();
+        return eventStatisticView.getSoldTickets();
     }
 
     @Override
     public int getCheckedInTickets() {
-        return eventWithStatistics.getCheckedInTickets();
+        return eventStatisticView.getCheckedInTickets();
     }
 
     @Override
     public int getNotAllocatedTickets() {
-        return eventWithStatistics.getNotAllocatedTickets();
+        return eventStatisticView.getNotAllocatedTickets();
     }
 
     @Override
     public int getPendingTickets() {
-        return eventWithStatistics.getPendingTickets();
+        return eventStatisticView.getPendingTickets();
     }
 
     @Override
     public int getDynamicAllocation() {
-        return eventWithStatistics.getDynamicAllocation();
+        return eventStatisticView.getDynamicAllocation();
     }
 
     public int getOrganizationId() {
-        return eventWithStatistics.getOrganizationId();
+        return event.getOrganizationId();
     }
 
     public int getId() {
-        return eventWithStatistics.getId();
+        return event.getId();
     }
 }

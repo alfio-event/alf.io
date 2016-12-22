@@ -17,9 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
-import alfio.model.TicketCategory;
-import alfio.model.TicketCategoryDescription;
+import alfio.model.*;
 import alfio.model.modification.EventWithStatistics;
 import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketWithStatistic;
@@ -30,9 +28,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static alfio.util.OptionalWrapper.optionally;
@@ -84,10 +85,15 @@ public class EventStatisticsManager {
     }
 
     @Cacheable
-    public List<EventWithStatistics> getAllEventsWithStatistics(String username) {
-        return getAllEvents(username).stream()
-                .map(this::fillWithStatistics)
-                .collect(toList());
+    public List<EventStatistic> getAllEventsWithStatistics(String username) {
+        List<Event> events = getAllEvents(username);
+        Map<Integer, Event> mappedEvent = events.stream().collect(Collectors.toMap(Event::getId, Function.identity()));
+        if(!mappedEvent.isEmpty()) {
+            List<EventStatisticView> stats = eventRepository.findStatisticsFor(mappedEvent.keySet());
+            return stats.stream().map(stat -> new EventStatistic(mappedEvent.get(stat.getEventId()), stat)).collect(Collectors.toList());
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     TicketCategoryWithStatistic loadTicketCategoryWithStats(int categoryId, Event event) {
