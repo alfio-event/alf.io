@@ -20,13 +20,15 @@ import alfio.model.modification.EventWithStatistics;
 import alfio.model.modification.StatisticsContainer;
 import alfio.model.transaction.PaymentProxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 
-public class EventStatistic implements StatisticsContainer {
+public class EventStatistic implements StatisticsContainer, Comparable<EventStatistic> {
 
 
     @JsonIgnore
@@ -108,5 +110,11 @@ public class EventStatistic implements StatisticsContainer {
 
     public int getId() {
         return event.getId();
+    }
+
+    @Override
+    public int compareTo(EventStatistic o) {
+        CompareToBuilder builder = new CompareToBuilder();
+        return builder.append(isExpired(), o.isExpired()).append(event.getBegin().withZoneSameInstant(ZoneId.systemDefault()), o.event.getBegin().withZoneSameInstant(ZoneId.systemDefault())).build();
     }
 }
