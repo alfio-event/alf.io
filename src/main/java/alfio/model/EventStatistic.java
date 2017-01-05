@@ -112,6 +112,10 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
         return event.getId();
     }
 
+    public Event.Status getStatus() {
+        return event.getStatus();
+    }
+
     @Override
     public int compareTo(EventStatistic o) {
         CompareToBuilder builder = new CompareToBuilder();
