@@ -140,9 +140,9 @@ dependencies {
     compile "javax.mail:mail:1.5.0-b01"
     compile "org.quartz-scheduler:quartz:2.2.3"
     /**/
-    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC5"
-    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC5"
-    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC5"
+    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC8"
+    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC8"
+    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC8"
     /**/
     compile "com.google.zxing:core:3.3.0"
     compile "com.google.zxing:javase:3.3.0"
