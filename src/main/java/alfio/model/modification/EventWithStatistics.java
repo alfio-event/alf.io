@@ -131,8 +131,9 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
         return allocatedTickets - soldTickets - checkedInTickets - pendingTickets;
     }
 
+
     public boolean isExpired() {
-        return ZonedDateTime.now(event.getZoneId()).truncatedTo(ChronoUnit.DAYS).isAfter(event.getEnd().truncatedTo(ChronoUnit.DAYS));
+        return event.expired();
     }
 
     @Override

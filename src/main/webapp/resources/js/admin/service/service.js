@@ -38,6 +38,12 @@
             getAllEvents : function() {
                 return $http.get('/admin/api/events.json').error(HttpErrorHandler.handle);
             },
+            getAllActiveEvents : function() {
+                return $http.get('/admin/api/active-events.json').error(HttpErrorHandler.handle);
+            },
+            getAllExpiredEvents : function() {
+                return $http.get('/admin/api/expired-events.json').error(HttpErrorHandler.handle);
+            },
             getEvent: function(name) {
                 return $http.get('/admin/api/events/'+name+'.json').success(function(result) {
                     $rootScope.$emit('EventLoaded', result.event);

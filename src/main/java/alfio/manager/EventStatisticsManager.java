@@ -84,16 +84,21 @@ public class EventStatisticsManager {
                 .collect(Collectors.toList());
     }
 
-    @Cacheable
-    public List<EventStatistic> getAllEventsWithStatistics(String username) {
-        List<Event> events = getAllEvents(username);
+
+    public List<EventStatistic> getAllEventsWithStatisticsFilteredBy(String username, Predicate<Event> predicate) {
+        List<Event> events = getAllEvents(username).stream().filter(predicate).collect(toList());
         Map<Integer, Event> mappedEvent = events.stream().collect(Collectors.toMap(Event::getId, Function.identity()));
         if(!mappedEvent.isEmpty()) {
             List<EventStatisticView> stats = eventRepository.findStatisticsFor(mappedEvent.keySet());
-            return stats.stream().map(stat -> new EventStatistic(mappedEvent.get(stat.getEventId()), stat)).collect(Collectors.toList());
+            return stats.stream().map(stat -> new EventStatistic(mappedEvent.get(stat.getEventId()), stat)).sorted().collect(Collectors.toList());
         } else {
             return Collections.emptyList();
         }
+    }
+
+    @Cacheable
+    public List<EventStatistic> getAllEventsWithStatistics(String username) {
+        return getAllEventsWithStatisticsFilteredBy(username, (e) -> true);
     }
 
     TicketCategoryWithStatistic loadTicketCategoryWithStats(int categoryId, Event event) {

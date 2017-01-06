@@ -155,7 +155,17 @@ public class EventApiController {
 
     @RequestMapping(value = "/events", method = GET)
     public List<EventStatistic> getAllEvents(Principal principal) {
-        return eventStatisticsManager.getAllEventsWithStatistics(principal.getName()).stream().sorted().collect(Collectors.toList());
+        return eventStatisticsManager.getAllEventsWithStatistics(principal.getName());
+    }
+
+    @RequestMapping(value = "/active-events", method = GET)
+    public List<EventStatistic> getAllActiveEvents(Principal principal) {
+        return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> !event.expired());
+    }
+
+    @RequestMapping(value = "/expired-events", method = GET)
+    public List<EventStatistic> getAllExpiredEvents(Principal principal) {
+        return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), Event::expired);
     }
 
     @RequestMapping(value = "/events/{name}", method = GET)

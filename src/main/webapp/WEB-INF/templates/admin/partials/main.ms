@@ -35,4 +35,9 @@
             </div>
         </div>
     </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <expired-events-list></expired-events-list>
+        </div>
+    </div>
 </div>

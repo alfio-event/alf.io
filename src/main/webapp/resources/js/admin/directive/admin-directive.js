@@ -18,7 +18,7 @@
 
                 $scope.loading = true;
 
-                EventService.getAllEvents().success(function(data) {
+                EventService.getAllActiveEvents().success(function(data) {
                     $scope.events = data;
                     $scope.loading = false;
                 });

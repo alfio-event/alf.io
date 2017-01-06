@@ -63,7 +63,7 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
     }
 
     public boolean isExpired() {
-        return ZonedDateTime.now(event.getZoneId()).truncatedTo(ChronoUnit.DAYS).isAfter(event.getEnd().truncatedTo(ChronoUnit.DAYS));
+        return event.expired();
     }
 
     public String getShortName() {

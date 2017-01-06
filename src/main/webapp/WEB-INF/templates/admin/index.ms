@@ -42,6 +42,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/additional-service/additional-service.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/expired-events-list/expired-events-list.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/resources/show/resources-show.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/resources/edit/resources-edit.js"></script>

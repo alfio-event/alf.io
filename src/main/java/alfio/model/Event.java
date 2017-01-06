@@ -292,4 +292,8 @@ public class Event implements EventHiddenFieldContainer {
         }
         return MigrationVersion.fromVersion(event.getVersion()).compareTo(MigrationVersion.fromVersion(VERSION_FOR_FIRST_AND_LAST_NAME)) >= 0;
     }
+
+    public boolean expired() {
+        return ZonedDateTime.now(getZoneId()).truncatedTo(ChronoUnit.DAYS).isAfter(getEnd().truncatedTo(ChronoUnit.DAYS));
+    }
 }
