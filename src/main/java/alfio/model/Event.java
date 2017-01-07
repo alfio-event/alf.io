@@ -294,6 +294,10 @@ public class Event implements EventHiddenFieldContainer {
     }
 
     public boolean expired() {
-        return ZonedDateTime.now(getZoneId()).truncatedTo(ChronoUnit.DAYS).isAfter(getEnd().truncatedTo(ChronoUnit.DAYS));
+        return expiredSince(0);
+    }
+
+    public boolean expiredSince(int days) {
+        return ZonedDateTime.now(getZoneId()).truncatedTo(ChronoUnit.DAYS).minusDays(days).isAfter(getEnd().truncatedTo(ChronoUnit.DAYS));
     }
 }

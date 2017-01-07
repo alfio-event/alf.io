@@ -160,12 +160,12 @@ public class EventApiController {
 
     @RequestMapping(value = "/active-events", method = GET)
     public List<EventStatistic> getAllActiveEvents(Principal principal) {
-        return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> !event.expired());
+        return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> !event.expiredSince(14));
     }
 
     @RequestMapping(value = "/expired-events", method = GET)
     public List<EventStatistic> getAllExpiredEvents(Principal principal) {
-        return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), Event::expired);
+        return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> event.expiredSince(14));
     }
 
     @RequestMapping(value = "/events/{name}", method = GET)
