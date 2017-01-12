@@ -166,10 +166,14 @@ public final class Validator {
                 if(!fieldConf.getRestrictedValues().isEmpty()) {
                     validateRestrictedValue(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getRestrictedValues(), errors);
                 }
+
+                if(fieldConf.isRequired() && StringUtils.isBlank(formValue)){
+                    errors.rejectValue("additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName());
+                }
             });
 
 
-            //TODO: complete checks: min length, mandatory
+            //TODO: complete checks: min length
         }
 
         return evaluateValidationResult(errors);

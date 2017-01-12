@@ -336,14 +336,14 @@
             }
             var nameExists = angular.isDefined(_.find(event.ticketFields, function(f) { return f.name === template.name;}));
             event.ticketFields.push({
-                required:false,
                 name: nameExists ? '' : template.name,
                 order: event.ticketFields.length+1,
                 type: template.type,
                 restrictedValues: _.map(template.restrictedValues, function(v) {return {value: v}}),
                 description: template.description,
                 maxLength: template.maxLength,
-                minLength: template.minLength
+                minLength: template.minLength,
+                required: template.required
             });
         };
 
@@ -1037,6 +1037,7 @@
                 		$scope.field.description = template.description;
                 		$scope.field.maxLength = template.maxLength;
                 		$scope.field.minLength = template.minLength;
+                        $scope.field.required = template.required;
                 	}
 
                 	//
