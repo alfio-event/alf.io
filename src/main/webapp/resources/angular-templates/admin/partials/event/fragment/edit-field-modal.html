@@ -67,6 +67,11 @@
                             <input ng-model="field.description[lang.locale].placeholder" type="text" placeholder="placeholder" class="form-control" data-ng-if="addNewField">
                             <input ng-model="field.description[lang.locale].description.placeholder" type="text" placeholder="placeholder" class="form-control" data-ng-if="!addNewField">
                         </div>
+                        <div class="form-group">
+                            <label>Required</label>
+                            <input type="checkbox" data-ng-model="field.required" name="fieldRequired" id="fieldRequired" data-ng-if="addNewField">
+                            <pre class="form-control-static" data-ng-if="!addNewField">{{field.required}}</pre>
+                        </div>
                     </div>
                 </div>
             </div>
