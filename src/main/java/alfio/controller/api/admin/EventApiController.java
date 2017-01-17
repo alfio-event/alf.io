@@ -261,7 +261,7 @@ public class EventApiController {
         return OK;
     }
 
-    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "creation", "category", "event", "status", "originalPrice", "paidPrice", "discount", "vat", "reservationID", "Full Name", "First Name", "Last Name", "E-Mail", "locked", "Language");
+    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Creation", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation");
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
 
     @RequestMapping("/events/{eventName}/export.csv")
@@ -287,21 +287,22 @@ public class EventApiController {
             eventManager.findAllConfirmedTickets(eventName, principal.getName()).stream().map(t -> {
                 List<String> line = new ArrayList<>();
                 if(fields.contains("ID")) {line.add(t.getUuid());}
-                if(fields.contains("creation")) {line.add(t.getCreation().withZoneSameInstant(eventZoneId).toString());}
-                if(fields.contains("category")) {line.add(categoriesMap.get(t.getCategoryId()).getName());}
-                if(fields.contains("event")) {line.add(eventName);}
-                if(fields.contains("status")) {line.add(t.getStatus().toString());}
-                if(fields.contains("originalPrice")) {line.add(MonetaryUtil.centsToUnit(t.getSrcPriceCts()).toString());}
-                if(fields.contains("paidPrice")) {line.add(MonetaryUtil.centsToUnit(t.getFinalPriceCts()).toString());}
-                if(fields.contains("discount")) {line.add(MonetaryUtil.centsToUnit(t.getDiscountCts()).toString());}
-                if(fields.contains("vat")) {line.add(MonetaryUtil.centsToUnit(t.getVatCts()).toString());}
-                if(fields.contains("reservationID")) {line.add(t.getTicketsReservationId());}
+                if(fields.contains("Creation")) {line.add(t.getCreation().withZoneSameInstant(eventZoneId).toString());}
+                if(fields.contains("Category")) {line.add(categoriesMap.get(t.getCategoryId()).getName());}
+                if(fields.contains("Event")) {line.add(eventName);}
+                if(fields.contains("Status")) {line.add(t.getStatus().toString());}
+                if(fields.contains("OriginalPrice")) {line.add(MonetaryUtil.centsToUnit(t.getSrcPriceCts()).toString());}
+                if(fields.contains("PaidPrice")) {line.add(MonetaryUtil.centsToUnit(t.getFinalPriceCts()).toString());}
+                if(fields.contains("Discount")) {line.add(MonetaryUtil.centsToUnit(t.getDiscountCts()).toString());}
+                if(fields.contains("VAT")) {line.add(MonetaryUtil.centsToUnit(t.getVatCts()).toString());}
+                if(fields.contains("ReservationID")) {line.add(t.getTicketsReservationId());}
                 if(fields.contains("Full Name")) {line.add(t.getFullName());}
                 if(fields.contains("First Name")) {line.add(t.getFirstName());}
                 if(fields.contains("Last Name")) {line.add(t.getLastName());}
                 if(fields.contains("E-Mail")) {line.add(t.getEmail());}
-                if(fields.contains("locked")) {line.add(String.valueOf(t.getLockedAssignment()));}
+                if(fields.contains("Locked")) {line.add(String.valueOf(t.getLockedAssignment()));}
                 if(fields.contains("Language")) {line.add(String.valueOf(t.getUserLanguage()));}
+                if(fields.contains("Confirmation")) {line.add(t.getTicketReservation().getConfirmationTimestamp().withZoneSameInstant(eventZoneId).toString());}
 
                 //obviously not optimized
                 Map<String, String> additionalValues = ticketFieldRepository.findAllValuesForTicketId(t.getId());
