@@ -17,5 +17,5 @@
 package alfio.model.system;
 
 public enum ComponentType {
-    TEXT, BOOLEAN, LIST
+    TEXT, BOOLEAN, LIST, TEXTAREA
 }

@@ -782,6 +782,7 @@ public class EventManager {
 		eventDeleterRepository.deleteTicketCategoryText(eventId);
 		eventDeleterRepository.deleteTicketCategory(eventId);
 		eventDeleterRepository.deleteEventDescription(eventId);
+        eventDeleterRepository.deleteInvoiceSequence(eventId);
 
         eventDeleterRepository.deleteResources(eventId);
 		

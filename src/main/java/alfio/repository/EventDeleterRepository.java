@@ -86,6 +86,9 @@ public interface EventDeleterRepository {
 	
 	@Query("delete from event_description_text where event_id_fk  = :eventId")
 	int deleteEventDescription(@Bind("eventId") int eventId);
+
+    @Query("delete from invoice_sequences where event_id_fk  = :eventId")
+	int deleteInvoiceSequence(@Bind("eventId") int eventId);
 	
 	@Query("delete from event where id = :eventId")
 	int deleteEvent(@Bind("eventId") int eventId);

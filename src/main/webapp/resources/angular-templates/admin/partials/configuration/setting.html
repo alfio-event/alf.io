@@ -2,9 +2,15 @@
     <label for="{{setting.key}}">{{setting.description}}</label>
     <div data-ng-class="{'input-group': displayDelete && setting.componentType === 'TEXT' && setting.id > -1}" data-ng-switch="setting.componentType">
         <input data-ng-switch-when="TEXT" class="form-control" data-ng-model="setting.value" name="{{setting.key}}" id="{{setting.key}}">
+        <textarea ng-switch-when="TEXTAREA" class="form-control" ng-model="setting.value" name="{{setting.key}}" id="{{setting.key}}" rows="6"></textarea>
         <nz-toggle tri-toggle ng-model="setting.value" val-true="'true'" val-false="'false'" val-null="null" id="{{setting.key}}" data-ng-switch-when="BOOLEAN"></nz-toggle>
-        <div class="input-group-btn" data-ng-if="displayDelete && setting.componentType === 'TEXT' && setting.id > -1">
+        <div class="input-group-btn" data-ng-if="displayDelete && (setting.componentType === 'TEXT') && setting.id > -1">
             <button class="btn btn-danger" data-ng-click="removeConfiguration(setting)" type="button"><i class="fa fa-trash" data-uib-tooltip="Delete"></i></button>
+        </div>
+        <div>
+        <p ng-if="displayDelete && (setting.componentType === 'TEXTAREA') && setting.id > -1">
+            <button class="btn btn-danger pull-right" data-ng-click="removeConfiguration(setting)" type="button"><i class="fa fa-trash" data-uib-tooltip="Delete"></i></button>
+        </p>
         </div>
     </div>
 </div>

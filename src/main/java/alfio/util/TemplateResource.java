@@ -126,6 +126,19 @@ public enum TemplateResource {
         }
     },
 
+    INVOICE_PDF("/alfio/templates/invoice.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            Map<String, Object> model = prepareSampleDataForConfirmationEmail(organization, event);
+            imageData.ifPresent(iData -> {
+                model.put("eventImage", iData.getEventImage());
+                model.put("imageWidth", iData.getImageWidth());
+                model.put("imageHeight", iData.getEventImage());
+            });
+            return model;
+        }
+    },
+
     WAITING_QUEUE_JOINED("/alfio/templates/waiting-queue-joined.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
