@@ -23,10 +23,10 @@ import ch.digitalfondue.npjt.QueryRepository;
 @QueryRepository
 public interface InvoiceSequencesRepository {
 
-    @Query("select invoice_sequences.sequence from invoice_sequences where event_id_fk = :eventId for update")
+    @Query("select sequence from invoice_sequences where event_id_fk = :eventId for update")
     int lockReservationForUpdate(@Bind("eventId") int eventId);
 
-    @Query("update invoice_sequences set invoice_sequences.sequence = invoice_sequences.sequence + 1 where event_id_fk = :eventId")
+    @Query("update invoice_sequences set sequence = sequence + 1 where event_id_fk = :eventId")
     int incrementSequenceFor(@Bind("eventId") int eventId);
 
     @Query("insert into invoice_sequences(event_id_fk, sequence) values (:eventId, 0)")
