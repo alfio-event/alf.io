@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.*;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @QueryRepository
@@ -95,4 +96,10 @@ public interface TicketReservationRepository {
 
     @Query("update tickets_reservation set direct_assignment = :directAssignment where id = :reservationId")
     int updateDirectAssignmentFlag(@Bind("reservationId") String reservationId, @Bind("directAssignment") boolean directAssignment);
+
+    @Query("update tickets_reservation set invoice_model = :invoiceModel where id = :reservationId")
+    int addReservationInvoiceOrReceiptModel(@Bind("reservationId") String reservationId, @Bind("invoiceModel") String invoiceModel);
+
+    @Query("update tickets_reservation set invoice_number = :invoiceNumber where id = :reservationId")
+    int setInvoiceNumber(@Bind("reservationId") String reservationId, @Bind("invoiceNumber") String invoiceNumber);
 }

@@ -120,7 +120,7 @@ public enum TemplateResource {
             imageData.ifPresent(iData -> {
                 model.put("eventImage", iData.getEventImage());
                 model.put("imageWidth", iData.getImageWidth());
-                model.put("imageHeight", iData.getEventImage());
+                model.put("imageHeight", iData.getImageHeight());
             });
             return model;
         }
@@ -133,7 +133,7 @@ public enum TemplateResource {
             imageData.ifPresent(iData -> {
                 model.put("eventImage", iData.getEventImage());
                 model.put("imageWidth", iData.getImageWidth());
-                model.put("imageHeight", iData.getEventImage());
+                model.put("imageHeight", iData.getImageHeight());
             });
             return model;
         }
@@ -225,6 +225,7 @@ public enum TemplateResource {
     // - CONFIRMATION_EMAIL
     // - REMINDER_EMAIL
     // - RECEIPT_PDF + ImageData
+    // - INVOICE_PDF + ImageData
     public static Map<String, Object> prepareModelForConfirmationEmail(Organization organization,
                                                                        Event event,
                                                                        TicketReservation reservation,

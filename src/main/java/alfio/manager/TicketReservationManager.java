@@ -112,6 +112,7 @@ public class TicketReservationManager {
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
+    private final InvoiceSequencesRepository invoiceSequencesRepository;
 
 
     public static class NotEnoughTicketsException extends RuntimeException {
@@ -147,7 +148,8 @@ public class TicketReservationManager {
                                     TicketFieldRepository ticketFieldRepository,
                                     AdditionalServiceRepository additionalServiceRepository,
                                     AdditionalServiceItemRepository additionalServiceItemRepository,
-                                    AdditionalServiceTextRepository additionalServiceTextRepository) {
+                                    AdditionalServiceTextRepository additionalServiceTextRepository,
+                                    InvoiceSequencesRepository invoiceSequencesRepository) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -169,6 +171,7 @@ public class TicketReservationManager {
         this.additionalServiceRepository = additionalServiceRepository;
         this.additionalServiceItemRepository = additionalServiceItemRepository;
         this.additionalServiceTextRepository = additionalServiceTextRepository;
+        this.invoiceSequencesRepository = invoiceSequencesRepository;
     }
     
     /**
@@ -196,6 +199,12 @@ public class TicketReservationManager {
         ticketReservationRepository.createNewReservation(reservationId, reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null), locale.getLanguage());
         list.forEach(t -> reserveTicketsForCategory(event, specialPriceSessionId, reservationId, t, locale, forWaitingQueue, discount.orElse(null)));
         additionalServices.forEach(as -> reserveAdditionalServicesForReservation(event.getId(), reservationId, as, locale, discount.orElse(null)));
+
+        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+
+        OrderSummary orderSummary = orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage()));
+        ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
+
         return reservationId;
     }
 
@@ -297,6 +306,12 @@ public class TicketReservationManager {
             PaymentResult paymentResult;
             ticketReservationRepository.lockReservationForUpdate(reservationId);
             if(reservationCost.getPriceWithVAT() > 0) {
+                if(configurationManager.hasAllConfigurationsForInvoice(event)) {
+                    int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(event.getId());
+                    invoiceSequencesRepository.incrementSequenceFor(event.getId());
+                    String pattern = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
+                    ticketReservationRepository.setInvoiceNumber(reservationId, String.format(pattern, invoiceSequence));
+                }
                 switch(paymentProxy) {
                     case STRIPE:
                         paymentResult = paymentManager.processPayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
@@ -416,11 +431,11 @@ public class TicketReservationManager {
     public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         Optional<String> vat = getVAT(event);
-        OrderSummary orderSummary = orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage()));
+        OrderSummary summary = orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage()));
         List<Ticket> tickets = findTicketsInReservation(reservation.getId());
         String reservationUrl = reservationUrl(reservation.getId());
         String reservationShortID = getShortReservationID(event, reservation.getId());
-        return TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortID);
+        return TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, summary, reservationUrl, reservationShortID);
     }
 
     private void transitionToInPayment(String reservationId, String email, CustomerName customerName, Locale userLanguage, String billingAddress) {

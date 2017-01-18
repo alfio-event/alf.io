@@ -76,6 +76,10 @@ public class IntegrationTestUtil {
 
         configurationRepository.insert(ConfigurationKeys.BASE_URL.getValue(), "http://localhost:8080", "");
         configurationRepository.insert(ConfigurationKeys.SUPPORTED_LANGUAGES.getValue(), "7", "");
+
+
+        configurationRepository.insert(ConfigurationKeys.INVOICE_ADDRESS.getValue(), "INVOICE_ADDRESS", "");
+        configurationRepository.insert(ConfigurationKeys.VAT_NR.getValue(), "42", "");
     }
 
     public static Pair<Event, String> initEvent(List<TicketCategoryModification> categories,

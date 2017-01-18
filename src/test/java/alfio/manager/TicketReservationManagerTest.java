@@ -126,6 +126,8 @@ public class TicketReservationManagerTest {
     private AdditionalServiceTextRepository additionalServiceTextRepository;
     @Mock
     private AdditionalServiceItemRepository additionalServiceItemRepository;
+    @Mock
+    private InvoiceSequencesRepository invoiceSequencesRepository;
 
 
     @Mock
@@ -166,7 +168,8 @@ public class TicketReservationManagerTest {
             ticketFieldRepository,
             additionalServiceRepository,
             additionalServiceItemRepository,
-            additionalServiceTextRepository);
+            additionalServiceTextRepository,
+            invoiceSequencesRepository);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(1);
@@ -177,6 +180,7 @@ public class TicketReservationManagerTest {
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
         when(eventRepository.findAll()).thenReturn(Collections.singletonList(event));
         when(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL))).thenReturn(BASE_URL);
+        when(configurationManager.hasAllConfigurationsForInvoice(eq(event))).thenReturn(false);
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
         when(ticket.getId()).thenReturn(TICKET_ID);
         when(ticket.getSrcPriceCts()).thenReturn(10);
@@ -662,6 +666,7 @@ public class TicketReservationManagerTest {
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(pluginManager).handleReservationConfirmation(ticketReservation, EVENT_ID);
         verify(ticketReservationRepository).findReservationById(RESERVATION_ID);
+        verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 
@@ -679,6 +684,7 @@ public class TicketReservationManagerTest {
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(paymentManager).processPayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class), anyString());
         verify(ticketReservationRepository).updateTicketStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()));
+        verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 
@@ -698,6 +704,7 @@ public class TicketReservationManagerTest {
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(pluginManager).handleReservationConfirmation(ticketReservation, EVENT_ID);
         verify(ticketReservationRepository).findReservationById(RESERVATION_ID);
+        verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 
@@ -712,6 +719,7 @@ public class TicketReservationManagerTest {
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(ticketReservationRepository).postponePayment(eq(RESERVATION_ID), any(Date.class), any(), anyString(), anyString(), anyString(), anyString());
         verify(configurationManager).getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_PAYMENT_DAYS)), eq(5));
+        verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 

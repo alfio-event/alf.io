@@ -390,4 +390,9 @@ public class ConfigurationManager {
     public String getShortReservationID(Event event, String reservationId) {
         return StringUtils.substring(reservationId, 0, getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), PARTIAL_RESERVATION_ID_LENGTH), 8)).toUpperCase();
     }
+
+    public boolean hasAllConfigurationsForInvoice(Event event) {
+        return getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_ADDRESS)).isPresent() &&
+            getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.VAT_NR)).isPresent();
+    }
 }

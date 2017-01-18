@@ -94,6 +94,7 @@ public class EventManager {
     private final EventDeleterRepository eventDeleterRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
+    private final InvoiceSequencesRepository invoiceSequencesRepository;
     private final Flyway flyway;
 
     @Autowired
@@ -113,6 +114,7 @@ public class EventManager {
                         TicketFieldRepository ticketFieldRepository,
                         EventDeleterRepository eventDeleterRepository,
                         AdditionalServiceRepository additionalServiceRepository, AdditionalServiceTextRepository additionalServiceTextRepository,
+                        InvoiceSequencesRepository invoiceSequencesRepository,
                         Flyway flyway) {
         this.userManager = userManager;
         this.eventRepository = eventRepository;
@@ -131,6 +133,7 @@ public class EventManager {
         this.eventDeleterRepository = eventDeleterRepository;
         this.additionalServiceRepository = additionalServiceRepository;
         this.additionalServiceTextRepository = additionalServiceTextRepository;
+        this.invoiceSequencesRepository = invoiceSequencesRepository;
         this.flyway = flyway;
     }
 
@@ -182,6 +185,7 @@ public class EventManager {
     public void createEvent(EventModification em) {
         int eventId = insertEvent(em);
         Event event = eventRepository.findById(eventId);
+        invoiceSequencesRepository.initFor(eventId);
         createOrUpdateEventDescription(eventId, em);
         createAllAdditionalServices(eventId, em.getAdditionalServices(), event.getZoneId());
         createAdditionalFields(event, em);
