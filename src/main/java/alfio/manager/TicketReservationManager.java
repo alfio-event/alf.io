@@ -307,8 +307,8 @@ public class TicketReservationManager {
             ticketReservationRepository.lockReservationForUpdate(reservationId);
             if(reservationCost.getPriceWithVAT() > 0) {
                 if(configurationManager.hasAllConfigurationsForInvoice(event)) {
-                    int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(event.getId());
-                    invoiceSequencesRepository.incrementSequenceFor(event.getId());
+                    int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(event.getOrganizationId());
+                    invoiceSequencesRepository.incrementSequenceFor(event.getOrganizationId());
                     String pattern = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
                     ticketReservationRepository.setInvoiceNumber(reservationId, String.format(pattern, invoiceSequence));
                 }

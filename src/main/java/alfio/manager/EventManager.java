@@ -185,7 +185,6 @@ public class EventManager {
     public void createEvent(EventModification em) {
         int eventId = insertEvent(em);
         Event event = eventRepository.findById(eventId);
-        invoiceSequencesRepository.initFor(eventId);
         createOrUpdateEventDescription(eventId, em);
         createAllAdditionalServices(eventId, em.getAdditionalServices(), event.getZoneId());
         createAdditionalFields(event, em);
@@ -786,7 +785,6 @@ public class EventManager {
 		eventDeleterRepository.deleteTicketCategoryText(eventId);
 		eventDeleterRepository.deleteTicketCategory(eventId);
 		eventDeleterRepository.deleteEventDescription(eventId);
-        eventDeleterRepository.deleteInvoiceSequence(eventId);
 
         eventDeleterRepository.deleteResources(eventId);
 		

@@ -91,7 +91,7 @@ public class IntegrationTestUtil {
         String username = UUID.randomUUID().toString();
         String eventName = UUID.randomUUID().toString();
 
-        organizationRepository.create(organizationName, "org", "email@example.com");
+        userManager.createOrganization(organizationName, "org", "email@example.com");
         Organization organization = organizationRepository.findByName(organizationName).get(0);
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR);
         userManager.insertUser(organization.getId(), username+"_owner", "test", "test", "test@example.com", Role.OWNER);

@@ -18,6 +18,7 @@ package alfio.manager.user;
 
 import alfio.model.result.ValidationResult;
 import alfio.model.user.*;
+import alfio.repository.InvoiceSequencesRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
@@ -51,18 +52,21 @@ public class UserManager {
     private final UserOrganizationRepository userOrganizationRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final InvoiceSequencesRepository invoiceSequencesRepository;
 
     @Autowired
     public UserManager(AuthorityRepository authorityRepository,
                        OrganizationRepository organizationRepository,
                        UserOrganizationRepository userOrganizationRepository,
                        UserRepository userRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       InvoiceSequencesRepository invoiceSequencesRepository) {
         this.authorityRepository = authorityRepository;
         this.organizationRepository = organizationRepository;
         this.userOrganizationRepository = userOrganizationRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.invoiceSequencesRepository = invoiceSequencesRepository;
     }
 
     private List<Authority> getUserAuthorities(User user) {
@@ -142,6 +146,8 @@ public class UserManager {
     @Transactional
     public void createOrganization(String name, String description, String email) {
         organizationRepository.create(name, description, email);
+        int orgId = organizationRepository.findByName(name).stream().findFirst().orElseThrow(IllegalStateException::new).getId();
+        invoiceSequencesRepository.initFor(orgId);
     }
 
     @Transactional
