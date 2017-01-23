@@ -49,6 +49,8 @@ public class TicketReservation {
     private final boolean automatic;
     private final String userLanguage;
     private final boolean directAssignmentRequested;
+    private final String invoiceNumber;
+    private final String invoiceModel;
 
     public TicketReservation(@Column("id") String id,
                              @Column("validity") Date validity,
@@ -65,7 +67,9 @@ public class TicketReservation {
                              @Column("promo_code_id_fk") Integer promoCodeDiscountId,
                              @Column("automatic") boolean automatic,
                              @Column("user_language") String userLanguage,
-                             @Column("direct_assignment") boolean directAssignmentRequested) {
+                             @Column("direct_assignment") boolean directAssignmentRequested,
+                             @Column("invoice_number") String invoiceNumber,
+                             @Column("invoice_model") String invoiceModel) {
         this.id = id;
         this.validity = validity;
         this.status = status;
@@ -82,6 +86,8 @@ public class TicketReservation {
         this.automatic = automatic;
         this.userLanguage = userLanguage;
         this.directAssignmentRequested = directAssignmentRequested;
+        this.invoiceNumber = invoiceNumber;
+        this.invoiceModel = invoiceModel;
     }
 
     public boolean isStuck() {

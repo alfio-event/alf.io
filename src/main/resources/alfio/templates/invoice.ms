@@ -45,7 +45,7 @@
         <td style="text-align: center; vertical-align: middle;"><h1>{{event.displayName}}</h1></td>
     </tr>
 </table>
-<h2>{{#i18n}}receipt.receipt{{/i18n}}</h2>
+<h2>INVOICE: TBD: {{#i18n}}receipt.receipt{{/i18n}}</h2>
 
 <h3>{{#i18n}}receipt.order-information{{/i18n}} {{ticketReservation.id}}</h3>
 

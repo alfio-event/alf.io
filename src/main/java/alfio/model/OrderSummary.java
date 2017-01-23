@@ -29,6 +29,7 @@ public class OrderSummary {
     private final String totalVAT;
     private final boolean waitingForPayment;
     private final boolean cashPayment;
+    private final String vatPercentage;
 
     /* lol jmustache */
     public boolean getFree() {

@@ -204,7 +204,7 @@ public enum TemplateResource {
     private static TicketReservation sampleTicketReservation() {
         return new TicketReservation("597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", new Date(), TicketReservation.TicketReservationStatus.COMPLETE,
             "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(), ZonedDateTime.now(),
-            PaymentProxy.STRIPE, true, null, false, "en", false);
+            PaymentProxy.STRIPE, true, null, false, "en", false, null, null);
     }
 
     private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {
@@ -212,7 +212,7 @@ public enum TemplateResource {
         Optional<String> vat = Optional.of("VAT-NR");
         List<Ticket> tickets = Collections.singletonList(sampleTicket());
         OrderSummary orderSummary = new OrderSummary(new TotalPrice(1000, 80, 0, 0),
-            Collections.singletonList(new SummaryRow("Ticket", "10.00", 1, "10.00", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false);
+            Collections.singletonList(new SummaryRow("Ticket", "10.00", 1, "10.00", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false, "8");
         String reservationUrl = "http://your-domain.tld/reservation-url/";
         String reservationShortId = "597e7e7b";
         return prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortId);

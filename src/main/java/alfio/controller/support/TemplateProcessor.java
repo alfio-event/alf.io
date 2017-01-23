@@ -131,8 +131,7 @@ public final class TemplateProcessor {
         return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager, fileUploadManager, reservationID).generate();
     }
 
-    public static Optional<byte[]> buildReceiptPdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
-
+    private static Optional<byte[]> buildReceiptOrInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {
         extractImageModel(event, fileUploadManager).ifPresent(imageData -> {
             model.put("eventImage", imageData.getEventImage());
             model.put("imageWidth", imageData.getImageWidth());
@@ -140,12 +139,21 @@ public final class TemplateProcessor {
         });
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        String page = templateManager.renderTemplate(event, TemplateResource.RECEIPT_PDF, model, language);
+        String page = templateManager.renderTemplate(event, templateResource, model, language);
         try {
             prepareItextRenderer(page).createPDF(baos);
             return Optional.of(baos.toByteArray());
         } catch (IOException ioe) {
             return Optional.empty();
         }
+    }
+
+
+    public static Optional<byte[]> buildReceiptPdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
+        return buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, TemplateResource.RECEIPT_PDF);
+    }
+
+    public static Optional<byte[]> buildInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
+        return buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, TemplateResource.INVOICE_PDF);
     }
 }

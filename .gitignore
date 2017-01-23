@@ -16,3 +16,4 @@ classes/
 logs/
 /bin/
 .DS_Store
+out/

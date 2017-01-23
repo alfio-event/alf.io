@@ -428,14 +428,19 @@ public class TicketReservationManager {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation) {
+    public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation, Optional<String> vat, OrderSummary summary) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        Optional<String> vat = getVAT(event);
-        OrderSummary summary = orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage()));
         List<Ticket> tickets = findTicketsInReservation(reservation.getId());
         String reservationUrl = reservationUrl(reservation.getId());
         String reservationShortID = getShortReservationID(event, reservation.getId());
         return TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, summary, reservationUrl, reservationShortID);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation) {
+        Optional<String> vat = getVAT(event);
+        OrderSummary summary = orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage()));
+        return prepareModelForReservationEmail(event, reservation, vat, summary);
     }
 
     private void transitionToInPayment(String reservationId, String email, CustomerName customerName, Locale userLanguage, String billingAddress) {
@@ -679,12 +684,13 @@ public class TicketReservationManager {
         PromoCodeDiscount discount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById).orElse(null);
         //
         boolean free = reservationCost.getPriceWithVAT() == 0;
+        String vat = getVAT(event).orElse(null);
         
         return new OrderSummary(reservationCost,
                 extractSummary(reservationId, event, locale, discount, reservationCost), free,
                 formatCents(reservationCost.getPriceWithVAT()), formatCents(reservationCost.getVAT()),
                 reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
-                reservation.getPaymentMethod() == PaymentProxy.ON_SITE);
+                reservation.getPaymentMethod() == PaymentProxy.ON_SITE, vat);
     }
     
     List<SummaryRow> extractSummary(String reservationId, Event event, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
