@@ -96,7 +96,7 @@
                     var vat = PriceCalculator.applyPercentage(price, ctrl.event.vatPercentage);
                     return numeral(vat.add(price).format('0.00')).value()
                 }
-                return numeral(price).format('0.00').value();
+                return numeral(price).format('0.00');
             }
         };
 
