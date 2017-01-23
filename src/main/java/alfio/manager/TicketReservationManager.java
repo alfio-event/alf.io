@@ -403,7 +403,12 @@ public class TicketReservationManager {
             model.put("eventId", Integer.toString(event.getId()));
             model.put("language", Json.toJson(language));
             model.put("reservationEmailModel", Json.toJson(reservationEmailModel));
-            attachments.add(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
+            if(ticketReservation.getHasInvoiceNumber()) {
+                attachments.add(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
+            } else {
+                attachments.add(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
+            }
+
         }
 
         notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",

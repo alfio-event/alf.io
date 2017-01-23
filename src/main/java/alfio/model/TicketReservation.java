@@ -109,4 +109,8 @@ public class TicketReservation {
     public String getFullName() {
         return (firstName != null && lastName != null) ? (firstName + " " + lastName) : fullName;
     }
+
+    public boolean getHasInvoiceNumber() {
+        return invoiceNumber != null;
+    }
 }
