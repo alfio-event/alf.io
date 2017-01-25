@@ -17,7 +17,7 @@
 package alfio.model;
 
 import alfio.model.transaction.PaymentProxy;
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 
@@ -32,44 +32,46 @@ public class TicketCSVInfo {
 
     private final TicketReservation ticketReservation;
 
-    public TicketCSVInfo(@ConstructorAnnotationRowMapper.Column("t_id") int id,
-                         @ConstructorAnnotationRowMapper.Column("t_uuid") String uuid,
-                         @ConstructorAnnotationRowMapper.Column("t_creation") ZonedDateTime creation,
-                         @ConstructorAnnotationRowMapper.Column("t_category_id") int categoryId,
-                         @ConstructorAnnotationRowMapper.Column("t_status") String status,
-                         @ConstructorAnnotationRowMapper.Column("t_event_id") int eventId,
-                         @ConstructorAnnotationRowMapper.Column("t_src_price_cts") int ticketSrcPriceCts,
-                         @ConstructorAnnotationRowMapper.Column("t_final_price_cts") int ticketFinalPriceCts,
-                         @ConstructorAnnotationRowMapper.Column("t_vat_cts") int ticketVatCts,
-                         @ConstructorAnnotationRowMapper.Column("t_discount_cts") int ticketDiscountCts,
-                         @ConstructorAnnotationRowMapper.Column("t_tickets_reservation_id") String ticketsReservationId,
-                         @ConstructorAnnotationRowMapper.Column("t_full_name") String fullName,
-                         @ConstructorAnnotationRowMapper.Column("t_first_name") String firstName,
-                         @ConstructorAnnotationRowMapper.Column("t_last_name") String lastName,
-                         @ConstructorAnnotationRowMapper.Column("t_email_address") String email,
-                         @ConstructorAnnotationRowMapper.Column("t_locked_assignment") boolean lockedAssignment,
-                         @ConstructorAnnotationRowMapper.Column("t_user_language") String userLanguage,
+    public TicketCSVInfo(@Column("t_id") int id,
+                         @Column("t_uuid") String uuid,
+                         @Column("t_creation") ZonedDateTime creation,
+                         @Column("t_category_id") int categoryId,
+                         @Column("t_status") String status,
+                         @Column("t_event_id") int eventId,
+                         @Column("t_src_price_cts") int ticketSrcPriceCts,
+                         @Column("t_final_price_cts") int ticketFinalPriceCts,
+                         @Column("t_vat_cts") int ticketVatCts,
+                         @Column("t_discount_cts") int ticketDiscountCts,
+                         @Column("t_tickets_reservation_id") String ticketsReservationId,
+                         @Column("t_full_name") String fullName,
+                         @Column("t_first_name") String firstName,
+                         @Column("t_last_name") String lastName,
+                         @Column("t_email_address") String email,
+                         @Column("t_locked_assignment") boolean lockedAssignment,
+                         @Column("t_user_language") String userLanguage,
                          //
-                         @ConstructorAnnotationRowMapper.Column("tr_id") String trId,
-                         @ConstructorAnnotationRowMapper.Column("tr_validity") Date trValidity,
-                         @ConstructorAnnotationRowMapper.Column("tr_status") TicketReservation.TicketReservationStatus trStatus,
-                         @ConstructorAnnotationRowMapper.Column("tr_full_name") String trFullName,
-                         @ConstructorAnnotationRowMapper.Column("tr_first_name") String trFirstName,
-                         @ConstructorAnnotationRowMapper.Column("tr_last_name") String trLastName,
-                         @ConstructorAnnotationRowMapper.Column("tr_email_address") String trEmail,
-                         @ConstructorAnnotationRowMapper.Column("tr_billing_address") String trBillingAddress,
-                         @ConstructorAnnotationRowMapper.Column("tr_confirmation_ts") ZonedDateTime trConfirmationTimestamp,
-                         @ConstructorAnnotationRowMapper.Column("tr_latest_reminder_ts") ZonedDateTime trLatestReminder,
-                         @ConstructorAnnotationRowMapper.Column("tr_payment_method") PaymentProxy trPaymentMethod,
-                         @ConstructorAnnotationRowMapper.Column("tr_offline_payment_reminder_sent") Boolean trReminderSent,
-                         @ConstructorAnnotationRowMapper.Column("tr_promo_code_id_fk") Integer trPromoCodeDiscountId,
-                         @ConstructorAnnotationRowMapper.Column("tr_automatic") boolean trAutomatic,
-                         @ConstructorAnnotationRowMapper.Column("tr_user_language") String resUserLanguage,
-                         @ConstructorAnnotationRowMapper.Column("tr_direct_assignment") boolean directAssignment) {
+                         @Column("tr_id") String trId,
+                         @Column("tr_validity") Date trValidity,
+                         @Column("tr_status") TicketReservation.TicketReservationStatus trStatus,
+                         @Column("tr_full_name") String trFullName,
+                         @Column("tr_first_name") String trFirstName,
+                         @Column("tr_last_name") String trLastName,
+                         @Column("tr_email_address") String trEmail,
+                         @Column("tr_billing_address") String trBillingAddress,
+                         @Column("tr_confirmation_ts") ZonedDateTime trConfirmationTimestamp,
+                         @Column("tr_latest_reminder_ts") ZonedDateTime trLatestReminder,
+                         @Column("tr_payment_method") PaymentProxy trPaymentMethod,
+                         @Column("tr_offline_payment_reminder_sent") Boolean trReminderSent,
+                         @Column("tr_promo_code_id_fk") Integer trPromoCodeDiscountId,
+                         @Column("tr_automatic") boolean trAutomatic,
+                         @Column("tr_user_language") String resUserLanguage,
+                         @Column("tr_direct_assignment") boolean directAssignment,
+                         @Column("tr_invoice_number") String invoiceNumber,
+                         @Column("tr_invoice_model") String invoiceModel) {
 
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email,
             lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trFirstName, trLastName, trEmail, trBillingAddress,
-            trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage, directAssignment);
+            trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage, directAssignment, invoiceNumber, invoiceModel);
     }
 }
