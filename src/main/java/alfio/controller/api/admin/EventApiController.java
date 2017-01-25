@@ -24,7 +24,6 @@ import alfio.manager.EventStatisticsManager;
 import alfio.manager.PaymentManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
-import alfio.model.OrderSummary;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
@@ -261,7 +260,7 @@ public class EventApiController {
         return OK;
     }
 
-    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Creation", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation");
+    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Creation", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address");
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
 
     @RequestMapping("/events/{eventName}/export.csv")
@@ -284,7 +283,7 @@ public class EventApiController {
             
             writer.writeNext(fields.toArray(new String[fields.size()]));
 
-            eventManager.findAllConfirmedTickets(eventName, principal.getName()).stream().map(t -> {
+            eventManager.findAllConfirmedTicketsForCSV(eventName, principal.getName()).stream().map(t -> {
                 List<String> line = new ArrayList<>();
                 if(fields.contains("ID")) {line.add(t.getUuid());}
                 if(fields.contains("Creation")) {line.add(t.getCreation().withZoneSameInstant(eventZoneId).toString());}
@@ -303,6 +302,7 @@ public class EventApiController {
                 if(fields.contains("Locked")) {line.add(String.valueOf(t.getLockedAssignment()));}
                 if(fields.contains("Language")) {line.add(String.valueOf(t.getUserLanguage()));}
                 if(fields.contains("Confirmation")) {line.add(t.getTicketReservation().getConfirmationTimestamp().withZoneSameInstant(eventZoneId).toString());}
+                if(fields.contains("Billing Address")) {line.add(t.getTicketReservation().getBillingAddress());}
 
                 //obviously not optimized
                 Map<String, String> additionalValues = ticketFieldRepository.findAllValuesForTicketId(t.getId());
