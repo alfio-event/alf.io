@@ -18,6 +18,7 @@ package alfio.repository;
 
 import alfio.model.FullTicketInfo;
 import alfio.model.Ticket;
+import alfio.model.TicketCSVInfo;
 import ch.digitalfondue.npjt.*;
 
 import java.util.List;
@@ -155,6 +156,16 @@ public interface TicketRepository {
             " inner join ticket_category tc on t.category_id = tc.id " +
             " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null")
     List<FullTicketInfo> findAllFullTicketInfoAssignedByEventId(@Bind("eventId") int eventId);
+
+    @Query("select " +
+        " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
+        " t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id," +
+        " t.full_name t_full_name, t.first_name t_first_name, t.last_name t_last_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment," +
+        " t.user_language t_user_language," +
+        " tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address," +
+        " tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language, tr.direct_assignment tr_direct_assignment " +
+        " from ticket t, tickets_reservation tr where t.event_id = :eventId and t.status in(" + CONFIRMED + ") and t.tickets_reservation_id = tr.id order by tr.confirmation_ts")
+    List<TicketCSVInfo> findAllConfirmedForCSV(@Bind("eventId") int eventId);
 
     @Query("select a.*, b.confirmation_ts from ticket a, tickets_reservation b where a.event_id = :eventId and a.status in(" + CONFIRMED + ") and a.tickets_reservation_id = b.id order by b.confirmation_ts")
     List<Ticket> findAllConfirmed(@Bind("eventId") int eventId);

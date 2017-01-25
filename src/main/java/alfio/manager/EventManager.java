@@ -692,10 +692,10 @@ public class EventManager {
         return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/") + "/event/" + event.getShortName() + "/";
     }
 
-    public List<Ticket> findAllConfirmedTickets(String eventName, String username) {
+    public List<TicketCSVInfo> findAllConfirmedTickets(String eventName, String username) {
         Event event = getSingleEvent(eventName, username);
         checkOwnership(event, username, event.getOrganizationId());
-        return ticketRepository.findAllConfirmed(event.getId());
+        return ticketRepository.findAllConfirmedForCSV(event.getId());
     }
 
     public List<Event> getPublishedEvents() {
