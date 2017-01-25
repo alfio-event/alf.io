@@ -39,6 +39,7 @@ import com.google.gson.*;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.codec.Hex;
@@ -107,21 +108,19 @@ public class NotificationManager {
             return event.getIcal(description).orElse(null);
         });
 
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, (model) -> {
-            String reservationId = model.get("reservationId");
-            Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
-            Locale language = Json.fromJson(model.get("language"), Locale.class);
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, receiptOrInvoiceFactory(
+            payload -> TemplateProcessor.buildReceiptPdf(payload.getLeft(),
+                fileUploadManager,
+                payload.getMiddle(),
+                templateManager,
+                payload.getRight())));
 
-            Map<String, Object> reservationEmailModel = Json.fromJson(model.get("reservationEmailModel"), new TypeReference<Map<String, Object>>() {});
-            //FIXME hack: reservationEmailModel should be a minimal and typed container
-            reservationEmailModel.put("event", event);
-            Optional<byte[]> receipt = TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationEmailModel);
-
-            if(!receipt.isPresent()) {
-                log.warn("was not able to generate the bill for reservation id " + reservationId + " for locale " + language);
-            }
-            return receipt.orElse(null);
-        });
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.INVOICE_PDF, receiptOrInvoiceFactory(
+            payload -> TemplateProcessor.buildInvoicePdf(payload.getLeft(),
+                fileUploadManager,
+                payload.getMiddle(),
+                templateManager,
+                payload.getRight())));
 
         attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, (model) -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -139,6 +138,24 @@ public class NotificationManager {
             }
             return baos.toByteArray();
         });
+    }
+
+    public Function<Map<String, String>, byte[]> receiptOrInvoiceFactory(Function<Triple<Event, Locale, Map<String, Object>>, Optional<byte[]>> pdfGenerator) {
+        return (model) -> {
+            String reservationId = model.get("reservationId");
+            Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
+            Locale language = Json.fromJson(model.get("language"), Locale.class);
+
+            Map<String, Object> reservationEmailModel = Json.fromJson(model.get("reservationEmailModel"), new TypeReference<Map<String, Object>>() {});
+            //FIXME hack: reservationEmailModel should be a minimal and typed container
+            reservationEmailModel.put("event", event);
+            Optional<byte[]> receipt = pdfGenerator.apply(Triple.of(event, language, reservationEmailModel));
+
+            if(!receipt.isPresent()) {
+                log.warn("was not able to generate the receipt for reservation id " + reservationId + " for locale " + language);
+            }
+            return receipt.orElse(null);
+        };
     }
 
     public void sendTicketByEmail(Ticket ticket, Event event, Locale locale, PartialTicketTextGenerator textBuilder, TicketReservation reservation, TicketCategory ticketCategory) throws IOException {

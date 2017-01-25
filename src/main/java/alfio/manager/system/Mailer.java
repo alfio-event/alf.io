@@ -40,6 +40,6 @@ public interface Mailer {
 
 
     enum AttachmentIdentifier {
-        TICKET_PDF, CALENDAR_ICS, RECEIPT_PDF
+        TICKET_PDF, CALENDAR_ICS, INVOICE_PDF, RECEIPT_PDF
     }
 }
