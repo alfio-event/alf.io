@@ -88,7 +88,7 @@ public class Result<T> {
             this.valueSupplier = valueSupplier;
         }
 
-        public Builder<T> ifConditionMet(ConditionValidator validator, ErrorCode error) {
+        public Builder<T> addValidation(ConditionValidator validator, ErrorCode error) {
             this.validators.add(Pair.of(validator, error));
             return this;
         }

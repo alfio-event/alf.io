@@ -328,9 +328,9 @@ public class EventManager {
             int notBoundedTickets = ticketRepository.countFreeTicketsForUnbounded(eventId);
             int requestedTickets = tcm.isBounded() ? tcm.getMaxTickets() : 1;
             return new Result.Builder<>(() -> insertCategory(tcm, event))
-                .ifConditionMet(() -> sum + requestedTickets <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
-                .ifConditionMet(() -> requestedTickets <= notBoundedTickets, ErrorCode.CategoryError.ALL_TICKETS_ASSIGNED)
-                .ifConditionMet(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
+                .addValidation(() -> sum + requestedTickets <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
+                .addValidation(() -> requestedTickets <= notBoundedTickets, ErrorCode.CategoryError.ALL_TICKETS_ASSIGNED)
+                .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
                 .build();
         }).orElseGet(() -> Result.error(ErrorCode.EventError.ACCESS_DENIED));
     }
@@ -365,10 +365,10 @@ public class EventManager {
                     updateCategory(tcm, event.getVat(), event.isVatIncluded(), event.isFreeOfCharge(), event.getZoneId(), event);
                     return ticketCategoryRepository.getById(categoryId, eventId);
                 })
-                .ifConditionMet(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
-                .ifConditionMet(() -> tcm.getMaxTickets() - existing.getMaxTickets() + categories.stream().mapToInt(TicketCategory::getMaxTickets).sum() <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
-                .ifConditionMet(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
-                .ifConditionMet(() -> tcm.isBounded() == existing.isBounded(), ErrorCode.custom("", "Bounded flag modification not yet implemented."))
+                .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
+                .addValidation(() -> tcm.getMaxTickets() - existing.getMaxTickets() + categories.stream().mapToInt(TicketCategory::getMaxTickets).sum() <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
+                .addValidation(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
+                .addValidation(() -> tcm.isBounded() == existing.isBounded(), ErrorCode.custom("", "Bounded flag modification not yet implemented."))
                 .build()
              )
             .orElseGet(() -> Result.error(ErrorCode.CategoryError.NOT_FOUND));
