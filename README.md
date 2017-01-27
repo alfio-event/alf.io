@@ -65,7 +65,6 @@ Importing the Gradle project into Intellij and Eclipse both work.
 
 **Note**: this project uses [Project Lombok](https://projectlombok.org/). You will need to install the corresponding Lombok plugin for integration into your IDE.
 
-**Note:** Intellij has trouble recognizing the Spring Bean context in this project and shows "errors" in the `@Autowired` annotation on constructors. These do not block compilation and can be ignored. If you find a way to eliminate the warnings, please [let us know](https://groups.google.com/d/msg/alfio/F6BPMOwsX48/Idd6X6z4BAAJ)!
 ## Docker images
 Alf.io is also offered as a 3 tier application using 3 docker images:
 
