@@ -688,7 +688,9 @@
                 }
             });
             editEventHeader.result.then(function() {
-                loadData();
+                loadData().then(function(res) {
+                    $rootScope.$emit('ReloadEventPie', res.data.event);
+                });
             });
         };
 
@@ -753,7 +755,9 @@
                         }
                         EventService.saveTicketCategory(event, category).then(function(result) {
                             validationErrorHandler(result, form, form).then(function() {
-                                loadData();
+                                loadData().then(function(res) {
+                                    $rootScope.$emit('ReloadEventPie', res.data.event);
+                                });
                                 $scope.$close(true);
                             });
                         }, errorHandler);
@@ -764,9 +768,7 @@
         };
 
         $scope.addCategory = function(event) {
-            openCategoryDialog(createCategoryValidUntil(true, event.begin), event).then(function() {
-                loadData();
-            });
+            openCategoryDialog(createCategoryValidUntil(true, event.begin), event);
         };
 
         $scope.openConfiguration = function(event, category) {

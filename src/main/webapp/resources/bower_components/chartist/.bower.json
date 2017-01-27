@@ -1,8 +1,8 @@
 {
   "name": "chartist",
   "main": [
-    "./dist/chartist.min.js",
-    "./dist/chartist.min.css"
+    "./dist/chartist.js",
+    "./dist/chartist.css"
   ],
   "devDependencies": {
     "snap.svg": "~0.3.0",
@@ -18,7 +18,8 @@
     "chartist-plugin-threshold": "~0.0.1",
     "chartist-plugin-fill-donut": "~0.0.1",
     "chartist-plugin-zoom": "~0.2.1",
-    "matchMedia": "~0.2.0"
+    "matchMedia": "~0.2.0",
+    "moment": "^2.14.1"
   },
   "ignore": [
     ".*",
@@ -35,15 +36,15 @@
     "chartist": "~0.9.0"
   },
   "homepage": "https://github.com/gionkunz/chartist-js",
-  "version": "0.9.8",
-  "_release": "0.9.8",
+  "version": "0.10.1",
+  "_release": "0.10.1",
   "_resolution": {
     "type": "version",
-    "tag": "v0.9.8",
-    "commit": "beabb2793ab67da84cadc0b91d5fd509f2cdfc55"
+    "tag": "v0.10.1",
+    "commit": "1c2b5dc55b33d92ed17a96d0bbe8f172f2221187"
   },
   "_source": "https://github.com/gionkunz/chartist-js.git",
-  "_target": "^0.9.8",
+  "_target": "^0.10.1",
   "_originalSource": "chartist",
   "_direct": true
 }

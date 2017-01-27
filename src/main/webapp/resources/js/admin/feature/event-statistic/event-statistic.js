@@ -40,7 +40,7 @@
                 }
             }
         }])
-        .directive('eventTicketsPie', [function() {
+        .directive('eventTicketsPie', ['$rootScope', function($rootScope) {
             return {
                 scope: {
                     event: '='
@@ -51,63 +51,75 @@
                 controller: function() {},
                 link: function($scope, element, attrs) {
                     var event = $scope.ctrl.event;
-                    var series = _.filter([{
-                        value: event.checkedInTickets,
-                        name: 'Checked in',
-                        className: 'slice-success',
-                        meta: 'Checked in tickets  ('+event.checkedInTickets+')'
-                    },{
-                        value: event.soldTickets,
-                        name: 'Sold',
-                        className: 'slice-warning',
-                        meta: 'Sold tickets ('+event.soldTickets+')'
-                    },{
-                        value: event.pendingTickets,
-                        name: 'Reservation in progress',
-                        className: 'slice-pending',
-                        meta: 'Reservation in progress ('+event.pendingTickets+')'
-                    },{
-                        value: event.notSoldTickets,
-                        name: 'Still Available',
-                        className: 'slice-info',
-                        meta: 'Tickets still available ('+event.notSoldTickets+')'
-                    }, {
-                        value: event.notAllocatedTickets,
-                        name: 'Not yet allocated',
-                        className: 'slice-danger',
-                        meta: 'Tickets not yet allocated ('+event.notAllocatedTickets+')'
-                    }, {
-                        value: event.dynamicAllocation,
-                        name: 'Dinamically allocated',
-                        className: 'slice-default',
-                        meta: 'Tickets dinamically allocated ('+event.dynamicAllocation+')'
-                    }], function(s) {return s.value > 0});
+                    var buildSeries = function(event) {
+                        return _.filter([{
+                            value: event.checkedInTickets,
+                            name: 'Checked in',
+                            className: 'slice-success',
+                            meta: 'Checked in tickets  ('+event.checkedInTickets+')'
+                        },{
+                            value: event.soldTickets,
+                            name: 'Sold',
+                            className: 'slice-warning',
+                            meta: 'Sold tickets ('+event.soldTickets+')'
+                        },{
+                            value: event.pendingTickets,
+                            name: 'Reservation in progress',
+                            className: 'slice-pending',
+                            meta: 'Reservation in progress ('+event.pendingTickets+')'
+                        },{
+                            value: event.notSoldTickets,
+                            name: 'Still Available',
+                            className: 'slice-info',
+                            meta: 'Tickets still available ('+event.notSoldTickets+')'
+                        }, {
+                            value: event.notAllocatedTickets,
+                            name: 'Not yet allocated',
+                            className: 'slice-danger',
+                            meta: 'Tickets not yet allocated ('+event.notAllocatedTickets+')'
+                        }, {
+                            value: event.dynamicAllocation,
+                            name: 'Dinamically allocated',
+                            className: 'slice-default',
+                            meta: 'Tickets dinamically allocated ('+event.dynamicAllocation+')'
+                        }], function(s) {return s.value > 0});
+                    };
+                    var buildOptions = function(series) {
+                        return {
+                            total: _.reduce(series, function(x, y) {return x + y.value;} , 0),
+                            fullWidth: true,
+                            showLabel: false,
+                            plugins: [
+                                Chartist.plugins.ctAccessibility({
+                                    caption: 'Event Tickets status',
+                                    seriesHeader: 'Ticket Category',
+                                    summary: 'Represents the current status of the event. How many seats still available, how many tickets sold and so on',
+                                    valueTransform: function(value) {
+                                        return value + ' tickets';
+                                    }
+                                }),
+                                Chartist.plugins.tooltip({
+                                    tooltipOffset: {
+                                        x: 0,
+                                        y: -20
+                                    },
+                                    appendToBody: true
+                                })
+                            ]
+                        };
+                    };
+                    var series = buildSeries(event);
                     $scope.ctrl.series = series;
 
-                    new Chartist.Pie(element.find('.event-pie').get(0), {
+                    var pie = new Chartist.Pie(element.find('.event-pie').get(0), {
                         series: series
-                    }, {
-                        total: _.reduce(series, function(x, y) {return x + y.value;} , 0),
-                        fullWidth: true,
-                        showLabel: false,
-                        plugins: [
-                            Chartist.plugins.ctAccessibility({
-                                caption: 'Event Tickets status',
-                                seriesHeader: 'Ticket Category',
-                                summary: 'Represents the current status of the event. How many seats still available, how many tickets sold and so on',
-                                valueTransform: function(value) {
-                                    return value + ' tickets';
-                                }
-                            }),
-                            Chartist.plugins.tooltip({
-                                tooltipOffset: {
-                                    x: 0,
-                                    y: -20
-                                },
-                                appendToBody: true
-                            })
-                        ]
+                    }, buildOptions(series));
+                    var clearListener = $rootScope.$on('ReloadEventPie', function(e, event) {
+                        var s = buildSeries(event);
+                        pie.update({series: s}, {total: _.reduce(s, function(x, y) {return x + y.value;} , 0)}, true);
+                        $scope.ctrl.series = s;
                     });
+                    $scope.$on('$destroy', clearListener);
                 }
             }
         }])

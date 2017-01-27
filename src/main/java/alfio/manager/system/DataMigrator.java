@@ -173,7 +173,7 @@ public class DataMigrator {
     private void fillDescriptions(Event event) {
         int result = eventRepository.fillDisplayNameIfRequired(event.getId());
         if(result > 0) {
-            log.info("Event {} didn't have displayName, filled with shortName", event.getShortName());
+            log.debug("Event {} didn't have displayName, filled with shortName", event.getShortName());
         }
     }
 

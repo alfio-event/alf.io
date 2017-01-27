@@ -46,9 +46,9 @@ public class CleanupJobs {
     @Scheduled(cron = "0 0 0 * * *", zone = "GMT")
     public void vacuumQuartzTables() {
         if(PlatformProvider.PGSQL.equals(platform.getDialect(environment))) {
-            log.info("vacuuming quartz tables");
+            log.debug("vacuuming quartz tables");
             vacuumQuartzTables.vacuumQuartzTables();
-            log.info("end vacuuming quartz tables");
+            log.debug("end vacuuming quartz tables");
         }
     }
 }

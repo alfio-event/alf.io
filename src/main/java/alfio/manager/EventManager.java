@@ -368,7 +368,17 @@ public class EventManager {
                 .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
                 .addValidation(() -> tcm.getMaxTickets() - existing.getMaxTickets() + categories.stream().mapToInt(TicketCategory::getMaxTickets).sum() <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
                 .addValidation(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
-                .addValidation(() -> tcm.isBounded() == existing.isBounded(), ErrorCode.custom("", "Bounded flag modification not yet implemented."))
+                .addValidation(() -> tcm.isBounded() == existing.isBounded() || ticketRepository.countPendingOrReleasedForCategory(eventId, existing.getId()) == 0, ErrorCode.custom("", "It is not safe to change allocation strategy right now because there are pending reservations."))
+                .addValidation(() -> !existing.isAccessRestricted() || tcm.isBounded() == existing.isAccessRestricted(), ErrorCode.custom("", "Dynamic allocation is not compatible with restricted access"))
+                .addValidation(() -> {
+                    if(tcm.isBounded() && !existing.isBounded()) {
+                        int newSize = tcm.getMaxTickets();
+                        int confirmed = ticketRepository.countConfirmedForCategory(eventId, existing.getId());
+                        return newSize >= confirmed;
+                    } else {
+                        return true;
+                    }
+                }, ErrorCode.custom("", "Not enough tickets"))
                 .build()
              )
             .orElseGet(() -> Result.error(ErrorCode.CategoryError.NOT_FOUND));
@@ -401,7 +411,7 @@ public class EventManager {
     void reallocateTickets(TicketCategoryWithStatistic src, Optional<TicketCategory> target, Event event) {
         int notSoldTickets = src.getNotSoldTickets();
         if(notSoldTickets == 0) {
-            log.info("since all the ticket have been sold, ticket moving is not needed anymore.");
+            log.debug("since all the ticket have been sold, ticket moving is not needed anymore.");
             return;
         }
         List<Integer> lockedTickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), src.getId(), notSoldTickets, singletonList(TicketStatus.FREE.name()));
@@ -427,7 +437,7 @@ public class EventManager {
         Validate.isTrue(ticketCategoryRepository.countUnboundedCategoriesByEventId(event.getId()) > 0, "cannot unbind tickets: there aren't any unbounded categories");
         TicketCategoryWithStatistic ticketCategory = eventStatisticsManager.loadTicketCategoryWithStats(categoryId, event);
         Validate.isTrue(ticketCategory.isBounded(), "cannot unbind tickets from an unbounded category!");
-        reallocateTickets(ticketCategory, Optional.<TicketCategory>empty(), event);
+        reallocateTickets(ticketCategory, Optional.empty(), event);
     }
 
     MapSqlParameterSource[] prepareTicketsBulkInsertParameters(ZonedDateTime creation,
@@ -538,12 +548,34 @@ public class EventManager {
         ticketCategoryRepository.update(tc.getId(), tc.getName(), tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getMaxTickets(), tc.isTokenGenerationRequested(), price);
         TicketCategory updated = ticketCategoryRepository.getById(tc.getId(), eventId);
-        int addedTickets = updated.getMaxTickets() - original.getMaxTickets();
-        handleTicketNumberModification(event, original, updated, addedTickets);
-        handlePriceChange(event, original, updated);
+        int addedTickets = 0;
+        if(original.isBounded() ^ tc.isBounded()) {
+            handleTicketAllocationStrategyChange(event, original, tc);
+        } else {
+            addedTickets = updated.getMaxTickets() - original.getMaxTickets();
+            handleTicketNumberModification(event, original, updated, addedTickets);
+        }
         handleTokenModification(original, updated, addedTickets);
+        handlePriceChange(event, original, updated);
 
         insertOrUpdateTicketCategoryDescription(tc.getId(), tc, event);
+    }
+
+    private void handleTicketAllocationStrategyChange(Event event, TicketCategory original, TicketCategoryModification updated) {
+        if(updated.isBounded()) {
+            //the ticket allocation strategy has been changed to "bounded",
+            //therefore we have to link the tickets which have not yet been acquired to this category
+            int eventId = event.getId();
+            int newSize = updated.getMaxTickets();
+            int confirmed = ticketRepository.countConfirmedForCategory(eventId, original.getId());
+            int addedTickets = newSize - confirmed;
+            List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, addedTickets, singletonList(TicketStatus.FREE.name()));
+            Validate.isTrue(ids.size() == addedTickets, "not enough tickets");
+            Validate.isTrue(ticketRepository.moveToAnotherCategory(ids, original.getId(), updated.getPriceInCents()) == ids.size(), "not enough tickets");
+        } else {
+            reallocateTickets(eventStatisticsManager.loadTicketCategoryWithStats(original.getId(), event), Optional.empty(), event);
+        }
+        ticketCategoryRepository.updateBoundedFlag(original.getId(), updated.isBounded());
     }
 
     void handlePriceChange(Event event, TicketCategory original, TicketCategory updated) {
@@ -585,7 +617,7 @@ public class EventManager {
             return;
         }
 
-        log.info("modification detected in ticket number. The difference is: {}", addedTickets);
+        log.debug("modification detected in ticket number. The difference is: {}", addedTickets);
 
         if(addedTickets > 0) {
             //the updated category contains more tickets than the older one

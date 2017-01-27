@@ -16,15 +16,15 @@
     "test"
   ],
   "homepage": "https://github.com/Globegitter/chartist-plugin-tooltip",
-  "version": "0.0.15",
-  "_release": "0.0.15",
+  "version": "0.0.17",
+  "_release": "0.0.17",
   "_resolution": {
     "type": "version",
-    "tag": "v0.0.15",
-    "commit": "32ef6af961db55aeb27441dc3b8e532663cb56dd"
+    "tag": "v0.0.17",
+    "commit": "7667bc167e7562f7c432a4290f295a55957847c0"
   },
   "_source": "https://github.com/Globegitter/chartist-plugin-tooltip.git",
-  "_target": "^0.0.15",
-  "_originalSource": "https://github.com/Globegitter/chartist-plugin-tooltip.git",
+  "_target": "^0.0.17",
+  "_originalSource": "chartist-plugin-tooltip",
   "_direct": true
 }

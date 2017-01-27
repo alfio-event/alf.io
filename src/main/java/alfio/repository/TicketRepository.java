@@ -54,8 +54,14 @@ public interface TicketRepository {
     @Query("select * from ticket where status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and category_id = :categoryId and event_id = :eventId")
     List<Ticket> findAllModifiedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
-    @Query("select count(*) from ticket where status in ('ACQUIRED', 'CHECKED_IN', 'PENDING') and category_id = :categoryId and event_id = :eventId")
+    @Query("select count(*) from ticket where status in ("+CONFIRMED+", 'PENDING') and category_id = :categoryId and event_id = :eventId")
     Integer countConfirmedAndPendingTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
+
+    @Query("select count(*) from ticket where status in ("+CONFIRMED+") and category_id = :categoryId and event_id = :eventId")
+    Integer countConfirmedForCategory(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
+
+    @Query("select count(*) from ticket where status in ('PENDING', 'RELEASED') and category_id = :categoryId and event_id = :eventId")
+    Integer countPendingOrReleasedForCategory(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
     
     @Query("select count(*) from ticket where status = 'FREE'  and category_id = :categoryId and event_id = :eventId")
     Integer countFreeTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);

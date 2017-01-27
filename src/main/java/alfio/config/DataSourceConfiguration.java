@@ -134,7 +134,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     }
 
     @Bean
-    public QueryRepositoryScanner queryRepositoryScanner(QueryFactory queryFactory) {
+    public static QueryRepositoryScanner queryRepositoryScanner(QueryFactory queryFactory) {
         return new QueryRepositoryScanner(queryFactory, "alfio.repository");
     }
 
