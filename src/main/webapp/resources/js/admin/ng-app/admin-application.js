@@ -768,7 +768,8 @@
         };
 
         $scope.addCategory = function(event) {
-            openCategoryDialog(createCategoryValidUntil(true, event.begin), event);
+            var eventBegin = moment(event.begin);
+            openCategoryDialog(createCategoryValidUntil(true, {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}), event);
         };
 
         $scope.openConfiguration = function(event, category) {
