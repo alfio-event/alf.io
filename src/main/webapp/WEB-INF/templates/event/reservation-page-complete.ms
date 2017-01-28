@@ -98,6 +98,7 @@
 <div class="text-center">
     {{#i18n}}reservation-page-complete.order-information [{{reservation.id}}] [{{reservation.fullName}}]{{/i18n}}
 </div>
+{{#reservation.hasInvoiceOrReceiptDocument}}
 <div class="text-center">
     {{#reservation.hasInvoiceNumber}}
         <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/invoice" target="_blank">{{#i18n}}reservation-page-complete.download-your-invoice{{/i18n}}</a>
@@ -106,6 +107,7 @@
         <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/receipt" target="_blank">{{#i18n}}reservation-page-complete.download-your-receipt{{/i18n}}</a>
     {{/reservation.hasInvoiceNumber}}
 </div>
+{{/reservation.hasInvoiceOrReceiptDocument}}
 <div class="text-center wMarginTop30px">
     <span class="text-muted"><a href="https://alf.io" title="{{#i18n}}alfio.credits{{/i18n}}" target="_blank">{{#i18n}}alfio.credits{{/i18n}}</a></span>
 </div>

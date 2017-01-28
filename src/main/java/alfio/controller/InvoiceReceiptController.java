@@ -60,7 +60,7 @@ public class InvoiceReceiptController {
     }
 
     private ResponseEntity<Void> handleReservationWith(String eventName, String reservationId, HttpServletResponse response, BiFunction<Event, TicketReservation, ResponseEntity<Void>> with) {
-        ResponseEntity<Void> notFound = ResponseEntity.<Void>notFound().build();
+        ResponseEntity<Void> notFound = ResponseEntity.notFound().build();
         return eventRepository.findOptionalByShortName(eventName).map(event -> {
             return ticketReservationManager.findById(reservationId).map(ticketReservation -> {
                 return with.apply(event, ticketReservation);
@@ -93,7 +93,7 @@ public class InvoiceReceiptController {
                                      @PathVariable("reservationId") String reservationId,
                                      HttpServletResponse response) {
         return handleReservationWith(eventName, reservationId, response, (event, reservation) -> {
-            if(reservation.getInvoiceNumber() != null) {
+            if(reservation.getInvoiceNumber() != null || !reservation.getHasInvoiceOrReceiptDocument()) {
                 return ResponseEntity.notFound().build();
             }
 
@@ -108,7 +108,7 @@ public class InvoiceReceiptController {
                            @PathVariable("reservationId") String reservationId,
                            HttpServletResponse response) {
         handleReservationWith(eventName, reservationId, response, (event, reservation) -> {
-            if(reservation.getInvoiceNumber() == null) {
+            if(reservation.getInvoiceNumber() == null || !reservation.getHasInvoiceOrReceiptDocument()) {
                 return ResponseEntity.notFound().build();
             }
 

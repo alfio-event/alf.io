@@ -113,4 +113,8 @@ public class TicketReservation {
     public boolean getHasInvoiceNumber() {
         return invoiceNumber != null;
     }
+
+    public boolean getHasInvoiceOrReceiptDocument() {
+        return invoiceModel != null;
+    }
 }
