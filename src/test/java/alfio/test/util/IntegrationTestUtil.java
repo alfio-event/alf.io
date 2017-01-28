@@ -78,7 +78,9 @@ public class IntegrationTestUtil {
         configurationRepository.insert(ConfigurationKeys.SUPPORTED_LANGUAGES.getValue(), "7", "");
 
 
+        configurationRepository.deleteByKey(ConfigurationKeys.INVOICE_ADDRESS.getValue());
         configurationRepository.insert(ConfigurationKeys.INVOICE_ADDRESS.getValue(), "INVOICE_ADDRESS", "");
+        configurationRepository.deleteByKey(ConfigurationKeys.VAT_NR.getValue());
         configurationRepository.insert(ConfigurationKeys.VAT_NR.getValue(), "42", "");
     }
 
