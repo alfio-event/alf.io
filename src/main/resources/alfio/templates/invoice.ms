@@ -4,20 +4,13 @@
 		<style>
 			body {
 				font-family:"DejaVu Sans Mono";
+				font-size:12pt;
 			}
 			h1,h2,p {margin:0;}
-			h1 {
-				font-size:160%;
-			}
-
-            pre {
-                font-size:
-            }
 
 			h2 {
 				font-size:120%;
 				font-weight:normal;
-				border-bottom:1px solid black;
 				margin-bottom:10px;
 			}
 
@@ -36,6 +29,14 @@
 			.text-right {
                 text-align:right;
             }
+
+            .margin-bottom-line {
+                margin-bottom:1em;
+            }
+
+            .border-bottom {
+                border-bottom:1px solid black;
+            }
 		</style>
 	</head>
 	<body>
@@ -45,23 +46,45 @@
         <td style="text-align: center; vertical-align: middle;"><h1>{{event.displayName}}</h1></td>
     </tr>
 </table>
-<h2>{{#i18n}}invoice.invoice{{/i18n}}</h2>
-
-<h3>{{#i18n}}invoice.order-information{{/i18n}} {{ticketReservation.id}}</h3>
-
-<div>{{#i18n}}invoice.date{{/i18n}} {{#format-date}}{{confirmationDate}} EEE dd MMM yyyy HH:mm (z) locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</div>
 
 
-<div>{{#i18n}}invoice.buyer{{/i18n}}</div>
-<pre style="font-size: 110%">
-{{ticketReservation.fullName}}
-{{#ticketReservation.hasBillingAddress}}
-{{ticketReservation.billingAddress}}
-{{/ticketReservation.hasBillingAddress}}
-{{ticketReservation.email}}
-</pre>
+<table style="width:100%">
+    <tr>
+        <td style="width:60%">
+            <p style="font-size:80%;margin-bottom:2em;">{{invoiceAddress}}</p>
+            <p class="margin-bottom-line">{{#i18n}}invoice.to{{/i18n}}</p>
+            {{#ticketReservation.hasBillingAddress}}
+            {{#ticketReservation.lineSplittedBillingAddress}}
+            <p>{{.}}</p>
+            {{/ticketReservation.lineSplittedBillingAddress}}
+            {{/ticketReservation.hasBillingAddress}}
+        </td>
+        <td style="width:40%">
+            <p class="margin-bottom-line">{{#i18n}}invoice.from{{/i18n}}</p>
+            {{#invoiceAddressAsList}}
+            <p>{{.}}</p>
+            {{/invoiceAddressAsList}}
+            <p>{{#i18n}}invoice.vat{{/i18n}} {{vatNr}}</p>
+        </td>
+    </tr>
+</table>
 
-<h3>{{#i18n}}email-confirmation.reservation-summary{{/i18n}}</h3>
+<h2 class="border-bottom">VAT Invoice</h2>
+
+<table style="width:100%">
+    <tr>
+        <td style="width:60%">
+            {{#i18n}}invoice.number{{/i18n}} {{ticketReservation.invoiceNumber}}
+        </td>
+        <td>{{#i18n}}invoice.date{{/i18n}} {{#format-date}}{{confirmationDate}} dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</td>
+    </tr>
+</table>
+
+<h3 class="border-bottom">{{#i18n}}invoice.buyer{{/i18n}}</h3>
+<p>{{ticketReservation.fullName}}</p>
+<p>{{ticketReservation.email}}</p>
+
+<h3  class="border-bottom">{{#i18n}}email-confirmation.reservation-summary{{/i18n}}</h3>
 <table style="width:100%">
     <thead>
         <tr>
@@ -96,8 +119,9 @@
         {{/orderSummary.free}}
     </tfoot>
 </table>
-<p>{{#hasVat}}{{#i18n}}email-confirmation.vatNr [{{vatNr}}]{{/i18n}}{{/hasVat}}</p>
 
+
+<p>{{#i18n}}invoice.order-information{{/i18n}} {{ticketReservation.id}}</p>
 
     </body>
 </html>

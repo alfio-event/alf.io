@@ -22,6 +22,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -215,7 +216,7 @@ public enum TemplateResource {
             Collections.singletonList(new SummaryRow("Ticket", "10.00", 1, "10.00", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false, "8");
         String reservationUrl = "http://your-domain.tld/reservation-url/";
         String reservationShortId = "597e7e7b";
-        return prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortId);
+        return prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortId, Optional.empty());
     }
 
     //used by multiple enum:
@@ -233,7 +234,8 @@ public enum TemplateResource {
                                                                        List<Ticket> tickets,
                                                                        OrderSummary orderSummary,
                                                                        String reservationUrl,
-                                                                       String reservationShortID) {
+                                                                       String reservationShortID,
+                                                                       Optional<String> invoiceAddress) {
         Map<String, Object> model = new HashMap<>();
         model.put("organization", organization);
         model.put("event", event);
@@ -252,6 +254,13 @@ public enum TemplateResource {
         }
 
         model.put("reservationShortID", reservationShortID);
+
+        model.put("hasInvoiceAddress", invoiceAddress.isPresent());
+        invoiceAddress.ifPresent(addr -> {
+            model.put("invoiceAddress", StringUtils.replace(addr, "\n", ", "));
+            model.put("invoiceAddressAsList", Arrays.asList(StringUtils.split(addr, '\n')));
+        });
+
 
         return model;
     }

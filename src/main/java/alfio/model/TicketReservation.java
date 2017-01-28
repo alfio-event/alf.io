@@ -23,8 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.Optional;
+import java.util.*;
 
 @Getter
 public class TicketReservation {
@@ -116,5 +115,12 @@ public class TicketReservation {
 
     public boolean getHasInvoiceOrReceiptDocument() {
         return invoiceModel != null;
+    }
+
+    public List<String> getLineSplittedBillingAddress() {
+        if(billingAddress == null) {
+            return Collections.emptyList();
+        }
+        return Arrays.asList(StringUtils.split(billingAddress, '\n'));
     }
 }

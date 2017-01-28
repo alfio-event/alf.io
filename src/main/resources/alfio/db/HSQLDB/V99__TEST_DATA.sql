@@ -82,7 +82,12 @@ insert into configuration (c_key, c_value, description) values
   ('SUPPORTED_LANGUAGES', '7', 'supported languages'),
   ('PAYPAL_CLIENT_ID', 'AQkquBDf1zctJOWGKWUEtKXm6qVhueUEMvXO_-MCI4DQQ4-LWvkDLIN2fGsd', 'Paypal REST API client ID'),
   ('PAYPAL_CLIENT_SECRET','EL1tVxAjhT7cJimnz5-Nsx9k2reTKSVfErNQF-CmrwJgxRtylkGTKlU4RvrX', 'Paypal REST API client secret'),
-  ('PAYPAL_LIVE_MODE', 'false', 'Enable live mode for Paypal');
+  ('PAYPAL_LIVE_MODE', 'false', 'Enable live mode for Paypal'),
+  ('VAT_NR', '424242', 'VAT number'),
+  ('INVOICE_ADDRESS', U&'My Company\000AMy Street\000AMy City\000AMy Country', 'Invoice address'),
+  ('OFFLINE_PAYMENT_DAYS', '42', 'Maximum number of days allowed to pay an offline ticket'),
+  ('OFFLINE_REMINDER_HOURS', '42', 'How many hours before expiration should be sent a reminder e-mail for offline payments?'),
+  ('BANK_ACCOUNT_NR', '4242424242', 'Bank Account number');
 
 
 -- create fields configuration
