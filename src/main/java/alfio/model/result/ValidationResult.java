@@ -105,7 +105,7 @@ public final class ValidationResult {
 
         @Override
         public String getCode() {
-            return "";
+            return code;
         }
 
         @Override
@@ -114,7 +114,7 @@ public final class ValidationResult {
         }
 
         public static ErrorDescriptor fromFieldError(FieldError fieldError) {
-            return new ErrorDescriptor(fieldError.getField(), fieldError.getCode());
+            return new ErrorDescriptor(fieldError.getField(), "", fieldError.getCode());
         }
 
         public static ErrorDescriptor fromObjectError(ObjectError objectError) {

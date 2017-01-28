@@ -6,6 +6,7 @@
 
     //
     var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
+    var ERROR_CODES = { DUPLICATE:'duplicate', MAX_LENGTH:'maxlength', MIN_LENGTH:'minlength'};
     
     var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-users', 'alfio-additional-services', 'alfio-event-statistic', 'ui.ace']);
 
@@ -645,8 +646,13 @@
                     _.forEach(result.data.validationErrors, function(error) {
                         var field = fieldsContainer[error.fieldName];
                         if(angular.isDefined(field)) {
-                            field.$setValidity('required', false);
-                            field.$setTouched();
+                            if (error.code == ERROR_CODES.DUPLICATE) {
+                                field.$setValidity(ERROR_CODES.DUPLICATE, false);
+                                field.$setTouched();
+                            } else {
+                                field.$setValidity('required', false);
+                                field.$setTouched();
+                            }
                         }
                     });
                     reject('validation error');
@@ -1060,21 +1066,34 @@
                     $scope.isLanguageSelected = function(lang, selectedLanguages) {
                         return (selectedLanguages & lang) > 0;
                     };
-                    
-                    $scope.editField = function(form, field) {
-                        var promise;
-                        if(angular.isDefined(field.id)) {
-                            promise = EventService.saveFieldDescription($stateParams.eventName, field.description);
+
+                    $scope.editField = function (form, field) {
+                        if (angular.isDefined(field.id)) {
+                            EventService.saveFieldDescription($stateParams.eventName, field.description).then(function () {
+                                return loadData();
+                            }).then(function () {
+                                $scope.$close(true);
+                            });
                         } else {
-                            promise = EventService.addField($stateParams.eventName, field);
+                            var duplicate = false;
+                            angular.forEach(parentScope.additionalFields, function (f) {
+                                if (f.name == field.name) {
+                                    form['name'].$setValidity(ERROR_CODES.DUPLICATE, false);
+                                    form['name'].$setTouched();
+                                    duplicate = true;
+                                }
+                            })
+                            if (!duplicate) {
+                                EventService.addField($stateParams.eventName, field).then(function (result) {
+                                    validationErrorHandler(result, form, form).then(function () {
+                                        $scope.$close(true);
+                                    });
+                                }, errorHandler).then(loadData);
+                            }
                         }
-                    	promise.then(function(result) {
-                    		return loadData();
-                    	}).then(function() {
-                    		$scope.$close(true);
-                    	});
                     };
-                }});
+                }
+            });
         };
 
         $scope.goToAdditionalService = function(id) {

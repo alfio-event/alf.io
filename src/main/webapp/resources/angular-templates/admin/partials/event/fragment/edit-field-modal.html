@@ -5,9 +5,10 @@
 <div class="modal-body">
         <div class="row">
             <div class="col-md-4">
-                <div class="form-group">
+                <div class="form-group" bs-form-error="editFieldForm.name">
                     <label>Field name</label>
-                    <input type="input" ng-model="field.name" class="form-control" required data-ng-if="addNewField">
+                    <input type="input" name="name" ng-model="field.name" class="form-control" required data-ng-if="addNewField">
+                    <field-error data-form-obj="editFieldForm" data-field-obj="editFieldForm.name" data-field-label="'Field name'" data-show-existing-errors="showExistingErrors"></field-error>
                     <pre class="form-control-static" data-ng-if="!addNewField">{{field.name}}</pre>
                 </div>
                 <div class="form-group">

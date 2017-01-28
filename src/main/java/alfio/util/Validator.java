@@ -24,6 +24,7 @@ import alfio.model.TicketFieldConfiguration;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
+import alfio.model.result.ErrorCode;
 import alfio.model.result.ValidationResult;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.Errors;
@@ -266,5 +267,13 @@ public final class Validator {
 
     private static boolean validateDescriptionList(List<EventModification.AdditionalServiceText> descriptions) {
         return descriptions.stream().allMatch(t -> StringUtils.isNotBlank(t.getValue()));
+    }
+
+    public static ValidationResult validateAdditionalFields(List<TicketFieldConfiguration> fieldConf, EventModification.AdditionalField field, Errors errors){
+        String duplicateName = fieldConf.stream().filter(f->f.getName().equalsIgnoreCase(field.getName())).map(TicketFieldConfiguration::getName).findAny().orElse("");
+        if(StringUtils.isNotBlank(duplicateName)){
+            errors.rejectValue("name", ErrorCode.DUPLICATE);
+        }
+        return evaluateValidationResult(errors);
     }
 }

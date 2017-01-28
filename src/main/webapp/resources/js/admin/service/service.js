@@ -145,10 +145,10 @@
                 return $http.get('/admin/api/events/'+eventName+'/additional-field');
             },
             saveFieldDescription: function(eventName, fieldDescription) {
-                return $http.post('/admin/api/events/'+eventName+'/additional-field/descriptions', fieldDescription)
+                return $http.post('/admin/api/events/'+eventName+'/additional-field/descriptions', fieldDescription);
             },
             addField: function(eventName, field) {
-            	return $http.post('/admin/api/events/'+eventName+'/additional-field/new', field);
+            	return $http.post('/admin/api/events/'+eventName+'/additional-field/new', field).error(HttpErrorHandler.handle);
             },
             deleteField: function(eventName, id) {
             	return $http['delete']('/admin/api/events/'+eventName+'/additional-field/'+id);
