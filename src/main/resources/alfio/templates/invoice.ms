@@ -45,14 +45,14 @@
         <td style="text-align: center; vertical-align: middle;"><h1>{{event.displayName}}</h1></td>
     </tr>
 </table>
-<h2>INVOICE: TBD: {{#i18n}}receipt.receipt{{/i18n}}</h2>
+<h2>{{#i18n}}invoice.invoice{{/i18n}}</h2>
 
-<h3>{{#i18n}}receipt.order-information{{/i18n}} {{ticketReservation.id}}</h3>
+<h3>{{#i18n}}invoice.order-information{{/i18n}} {{ticketReservation.id}}</h3>
 
-<div>{{#i18n}}receipt.date{{/i18n}} {{#format-date}}{{confirmationDate}} EEE dd MMM yyyy HH:mm (z) locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</div>
+<div>{{#i18n}}invoice.date{{/i18n}} {{#format-date}}{{confirmationDate}} EEE dd MMM yyyy HH:mm (z) locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</div>
 
 
-<div>{{#i18n}}receipt.buyer{{/i18n}}</div>
+<div>{{#i18n}}invoice.buyer{{/i18n}}</div>
 <pre style="font-size: 110%">
 {{ticketReservation.fullName}}
 {{#ticketReservation.hasBillingAddress}}
