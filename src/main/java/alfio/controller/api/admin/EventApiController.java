@@ -19,10 +19,8 @@ package alfio.controller.api.admin;
 import alfio.controller.api.support.DescriptionsLoader;
 import alfio.controller.api.support.EventListItem;
 import alfio.controller.api.support.TicketHelper;
-import alfio.manager.EventManager;
-import alfio.manager.EventStatisticsManager;
-import alfio.manager.PaymentManager;
-import alfio.manager.TicketReservationManager;
+import alfio.controller.support.TemplateProcessor;
+import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
@@ -34,7 +32,9 @@ import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.repository.TicketFieldRepository;
+import alfio.util.Json;
 import alfio.util.MonetaryUtil;
+import alfio.util.TemplateManager;
 import alfio.util.Validator;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
@@ -47,6 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.ui.Model;
+import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,6 +56,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -64,6 +66,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static alfio.util.OptionalWrapper.optionally;
 import static alfio.util.Validator.*;
@@ -87,6 +91,8 @@ public class EventApiController {
     private final UserManager userManager;
     private final SponsorScanRepository sponsorScanRepository;
     private final PaymentManager paymentManager;
+    private final TemplateManager templateManager;
+    private final FileUploadManager fileUploadManager;
 
     @Autowired
     public EventApiController(EventManager eventManager,
@@ -100,7 +106,9 @@ public class EventApiController {
                               DynamicFieldTemplateRepository dynamicFieldTemplateRepository,
                               UserManager userManager,
                               SponsorScanRepository sponsorScanRepository,
-                              PaymentManager paymentManager) {
+                              PaymentManager paymentManager,
+                              TemplateManager templateManager,
+                              FileUploadManager fileUploadManager) {
         this.eventManager = eventManager;
         this.eventStatisticsManager = eventStatisticsManager;
         this.i18nManager = i18nManager;
@@ -113,6 +121,8 @@ public class EventApiController {
         this.userManager = userManager;
         this.sponsorScanRepository = sponsorScanRepository;
         this.paymentManager = paymentManager;
+        this.templateManager = templateManager;
+        this.fileUploadManager = fileUploadManager;
     }
 
     @ExceptionHandler(DataAccessException.class)
@@ -463,6 +473,28 @@ public class EventApiController {
     @RequestMapping(value = "/events/{eventName}/languages", method = GET)
     public List<ContentLanguage> getAvailableLocales(@PathVariable("eventName") String eventName) {
         return i18nManager.getEventLanguages(eventName);
+    }
+
+    @RequestMapping(value = "/events/{eventName}/all-invoices", method = GET)
+    public void getAllInvoices(@PathVariable("eventName") String eventName, HttpServletResponse response, Principal principal) throws  IOException {
+        Event event = loadEvent(eventName, principal);
+
+        response.setContentType("application/zip");
+        response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-invoices.zip");
+
+        try(OutputStream os = response.getOutputStream(); ZipOutputStream zipOS = new ZipOutputStream(os)) {
+            for (TicketReservation reservation : ticketReservationManager.findAllInvoices(event.getId())) {
+                OrderSummary orderSummary = Json.fromJson(reservation.getInvoiceModel(), OrderSummary.class);
+                Optional<String> vat = Optional.ofNullable(orderSummary.getVatPercentage());
+                Map<String, Object> reservationModel = ticketReservationManager.prepareModelForReservationEmail(event, reservation, vat, orderSummary);
+                Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, reservationModel);
+
+                if(pdf.isPresent()) {
+                    zipOS.putNextEntry(new ZipEntry("invoice-" + eventName + "-id-" + reservation.getId() + "-invoice-nr-" + reservation.getInvoiceNumber() + ".pdf"));
+                    StreamUtils.copy(pdf.get(), zipOS);
+                }
+            }
+        }
     }
 
     @RequestMapping(value = "/events-all-languages", method = GET)

@@ -794,6 +794,9 @@
                             ctrl.downloadSponsorsScan = function() {
                                 $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export.csv");
                             };
+                            ctrl.downloadInvoices = function() {
+                                $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/all-invoices");
+                            };
                             ctrl.goToCategory = function(category) {
                                 ctrl.navigateTo('ticket-category-'+category.id);
                             };

@@ -114,7 +114,6 @@ public class TicketReservationManager {
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final InvoiceSequencesRepository invoiceSequencesRepository;
 
-
     public static class NotEnoughTicketsException extends RuntimeException {
 
     }
@@ -1121,5 +1120,9 @@ public class TicketReservationManager {
                 .distinct()
                 .collect(toList());
         return fetchWaitingForPayment(reservationIds, event, Locale.ENGLISH);
+    }
+
+    public List<TicketReservation> findAllInvoices(int eventId) {
+        return ticketReservationRepository.findAllReservationsWithInvoices(eventId);
     }
 }

@@ -102,4 +102,9 @@ public interface TicketReservationRepository {
 
     @Query("update tickets_reservation set invoice_number = :invoiceNumber where id = :reservationId")
     int setInvoiceNumber(@Bind("reservationId") String reservationId, @Bind("invoiceNumber") String invoiceNumber);
+
+    @Query("select distinct tickets_reservation.* from  tickets_reservation " +
+        " inner join ticket on tickets_reservation_id = tickets_reservation.id " +
+        " where invoice_number is not null and event_id = :eventId")
+    List<TicketReservation> findAllReservationsWithInvoices(@Bind("eventId") int eventId);
 }
