@@ -4,7 +4,7 @@
 		<style>
 			body {
 				font-family:"DejaVu Sans Mono";
-				font-size:12pt;
+				font-size:11pt;
 			}
 			h1,h2,p {margin:0;}
 
@@ -69,7 +69,7 @@
     </tr>
 </table>
 
-<h2 class="border-bottom">VAT Invoice</h2>
+<h2 class="border-bottom">{{#i18n}}invoice.vat-invoice{{/i18n}}</h2>
 
 <table style="width:100%">
     <tr>
