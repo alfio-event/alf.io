@@ -19,6 +19,7 @@ package alfio.controller;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.config.RepositoryConfiguration;
 import alfio.controller.api.ReservationApiController;
 import alfio.controller.api.admin.CheckInApiController;
 import alfio.controller.api.admin.EventApiController;
@@ -35,11 +36,13 @@ import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
+import alfio.model.audit.ScanAudit;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TicketReservationRepository;
+import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
@@ -57,6 +60,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -81,12 +85,13 @@ import java.util.Locale;
 import java.util.Map;
 
 import static alfio.test.util.IntegrationTestUtil.*;
+import static org.junit.Assert.*;
 
 /**
  *
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
+@ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @Transactional
 public class ReservationFlowIntegrationTest {
@@ -136,6 +141,8 @@ public class ReservationFlowIntegrationTest {
     private I18nManager i18nManager;
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
+    @Autowired
+    private ScanAuditRepository scanAuditRepository;
 
     private ReservationApiController reservationApiController;
 
@@ -187,13 +194,13 @@ public class ReservationFlowIntegrationTest {
         if(eventManager.getActiveEvents().size() == 1) {
             Assert.assertTrue(eventList.startsWith("redirect:/"));
         } else {
-            Assert.assertEquals("/event/event-list", eventList);
+            assertEquals("/event/event-list", eventList);
         }
         //
 
         // show event
         String showEvent = eventController.showEvent(eventName, new BindingAwareModelMap(), new MockHttpServletRequest(), Locale.ENGLISH);
-        Assert.assertEquals("/event/show-event", showEvent);
+        assertEquals("/event/show-event", showEvent);
         //
 
         // check calendar
@@ -213,12 +220,12 @@ public class ReservationFlowIntegrationTest {
 
         // check that the payment page is shown
         String reservationPage = reservationController.showPaymentPage(eventName, reservationIdentifier, null, null, null, null, null, null, null, null, null, null, null, new BindingAwareModelMap(), Locale.ENGLISH);
-        Assert.assertEquals("/event/reservation-page", reservationPage);
+        assertEquals("/event/reservation-page", reservationPage);
         //
 
         // pay offline
         String successPage = payOffline(eventName, reservationIdentifier);
-        Assert.assertEquals("redirect:/event/" + eventName + "/reservation/" + reservationIdentifier + "/success", successPage);
+        assertEquals("redirect:/event/" + eventName + "/reservation/" + reservationIdentifier + "/success", successPage);
         //
 
         //go to success page, payment is still pending
@@ -226,7 +233,7 @@ public class ReservationFlowIntegrationTest {
         Assert.assertTrue(confirmationPage.endsWith("/waitingPayment"));
 
 
-        Assert.assertEquals("/event/reservation-waiting-for-payment", reservationController.showWaitingPaymentPage(eventName, reservationIdentifier, new BindingAwareModelMap(), Locale.ENGLISH));
+        assertEquals("/event/reservation-waiting-for-payment", reservationController.showWaitingPaymentPage(eventName, reservationIdentifier, new BindingAwareModelMap(), Locale.ENGLISH));
 
         //
         validatePayment(eventName, reservationIdentifier);
@@ -255,10 +262,10 @@ public class ReservationFlowIntegrationTest {
         //assign ticket to person
         assignTicket(eventName, reservationIdentifier, ticketIdentifier, fname1, lname1);
 
-        Assert.assertEquals("/event/update-ticket", ticketController.showTicketForUpdate(eventName, ticketIdentifier, new BindingAwareModelMap(), Locale.ENGLISH));
+        assertEquals("/event/update-ticket", ticketController.showTicketForUpdate(eventName, ticketIdentifier, new BindingAwareModelMap(), Locale.ENGLISH));
 
         //
-        Assert.assertEquals("/event/show-ticket", ticketController.showTicket(eventName, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()));
+        assertEquals("/event/show-ticket", ticketController.showTicket(eventName, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()));
         //
         checkCSV(eventName, ticketIdentifier, fname1 + " " + lname1);
 
@@ -295,14 +302,17 @@ public class ReservationFlowIntegrationTest {
         //--- check in sequence
         String ticketCode = ticketDecorator.ticketCode(event.getPrivateKey());
         TicketAndCheckInResult ticketAndCheckInResult = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
-        Assert.assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult.getResult().getStatus());
+        assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult.getResult().getStatus());
         CheckInApiController.TicketCode tc = new CheckInApiController.TicketCode();
         tc.setCode(ticketCode);
-        Assert.assertEquals(CheckInStatus.SUCCESS, checkInApiController.checkIn(event.getId(), ticketIdentifier, tc).getResult().getStatus());
+        assertEquals(CheckInStatus.SUCCESS, checkInApiController.checkIn(event.getId(), ticketIdentifier, tc, new TestingAuthenticationToken("ciccio","ciccio")).getResult().getStatus());
+        List<ScanAudit> audits = scanAuditRepository.findAllForEvent(event.getId());
+        assertFalse(audits.isEmpty());
+        assertTrue(audits.stream().anyMatch(sa -> sa.getTicketUuid().equals(ticketIdentifier)));
 
 
         TicketAndCheckInResult ticketAndCheckInResultOk = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
-        Assert.assertEquals(CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
+        assertEquals(CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
         
         //
         
@@ -313,7 +323,7 @@ public class ReservationFlowIntegrationTest {
     private void checkCalendar(String eventName) throws IOException {
         MockHttpServletResponse resIcal = new MockHttpServletResponse();
         eventController.calendar(eventName, "en", null, resIcal);
-        Assert.assertEquals("text/calendar", resIcal.getContentType());
+        assertEquals("text/calendar", resIcal.getContentType());
 
         MockHttpServletResponse resGoogleCal = new MockHttpServletResponse();
         eventController.calendar(eventName, "en", "google", resGoogleCal);
@@ -323,10 +333,10 @@ public class ReservationFlowIntegrationTest {
     private TicketDecorator checkReservationComplete(String eventName, String reservationIdentifier) {
         Model confirmationPageModel = new BindingAwareModelMap();
         String confirmationPageSuccess = reservationController.showConfirmationPage(eventName, reservationIdentifier, false, false, confirmationPageModel, Locale.ENGLISH, new MockHttpServletRequest());
-        Assert.assertEquals("/event/reservation-page-complete", confirmationPageSuccess);
+        assertEquals("/event/reservation-page-complete", confirmationPageSuccess);
         List<Pair<?, List<TicketDecorator>>> tickets = (List<Pair<?, List<TicketDecorator>>>) confirmationPageModel.asMap().get("ticketsByCategory");
-        Assert.assertEquals(1, tickets.size());
-        Assert.assertEquals(1, tickets.get(0).getRight().size());
+        assertEquals(1, tickets.size());
+        assertEquals(1, tickets.get(0).getRight().size());
         return tickets.get(0).getRight().get(0);
     }
 
@@ -350,19 +360,19 @@ public class ReservationFlowIntegrationTest {
         eventApiController.downloadAllTicketsCSV(eventName, request, response, principal);
         CSVReader csvReader = new CSVReader(new StringReader(response.getContentAsString()));
         List<String[]> csv = csvReader.readAll();
-        Assert.assertEquals(2, csv.size());
-        Assert.assertEquals(ticketIdentifier, csv.get(1)[0]);
-        Assert.assertEquals("default", csv.get(1)[2]);
-        Assert.assertEquals("ACQUIRED", csv.get(1)[4]);
-        Assert.assertEquals(fullName, csv.get(1)[10]);
+        assertEquals(2, csv.size());
+        assertEquals(ticketIdentifier, csv.get(1)[0]);
+        assertEquals("default", csv.get(1)[2]);
+        assertEquals("ACQUIRED", csv.get(1)[4]);
+        assertEquals(fullName, csv.get(1)[10]);
     }
 
     private void validatePayment(String eventName, String reservationIdentifier) {
         Principal principal = Mockito.mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(user);
-        Assert.assertEquals(1, eventApiController.getPendingPayments(eventName, principal).size());
-        Assert.assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal, new BindingAwareModelMap(), new MockHttpServletRequest()));
-        Assert.assertEquals(0, eventApiController.getPendingPayments(eventName, principal).size());
+        assertEquals(1, eventApiController.getPendingPayments(eventName, principal).size());
+        assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal, new BindingAwareModelMap(), new MockHttpServletRequest()));
+        assertEquals(0, eventApiController.getPendingPayments(eventName, principal).size());
     }
 
     private String payOffline(String eventName, String reservationIdentifier) {

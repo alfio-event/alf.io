@@ -20,6 +20,7 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.config.RepositoryConfiguration;
 import alfio.model.FileBlobMetadata;
 import alfio.model.modification.UploadBase64FileModification;
 import org.junit.Assert;
@@ -39,7 +40,7 @@ import java.util.Optional;
 import static alfio.test.util.IntegrationTestUtil.initSystemProperties;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
+@ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @Transactional
 public class FileUploadManagerIntegrationTest {

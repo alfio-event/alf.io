@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.config.RepositoryConfiguration;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
@@ -56,7 +57,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
+@ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @Transactional
 public class AdminReservationManagerIntegrationTest {
