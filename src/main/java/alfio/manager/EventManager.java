@@ -819,6 +819,7 @@ public class EventManager {
 		eventDeleterRepository.deleteEventDescription(eventId);
 
         eventDeleterRepository.deleteResources(eventId);
+        eventDeleterRepository.deleteScanAudit(eventId);
 		
 		eventDeleterRepository.deleteEvent(eventId);
 		

@@ -21,9 +21,11 @@ import alfio.manager.support.TicketAndCheckInResult;
 import alfio.model.FullTicketInfo;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -60,32 +62,47 @@ public class CheckInApiController {
     }
 
     @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}", method = POST)
-    public TicketAndCheckInResult checkIn(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestBody TicketCode ticketCode) {
-        return checkInManager.checkIn(eventId, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode));
+    public TicketAndCheckInResult checkIn(@PathVariable("eventId") int eventId,
+                                          @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                          @RequestBody TicketCode ticketCode,
+                                          Principal principal) {
+        return checkInManager.checkIn(eventId, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), principal.getName());
     }
 
     @RequestMapping(value = "/check-in/event/{eventName}/ticket/{ticketIdentifier}", method = POST)
-    public TicketAndCheckInResult checkIn(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestBody TicketCode ticketCode) {
-        return checkInManager.checkIn(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode));
+    public TicketAndCheckInResult checkIn(@PathVariable("eventName") String eventName,
+                                          @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                          @RequestBody TicketCode ticketCode,
+                                          @RequestParam(value = "offlineUser", required = false) String offlineUser,
+                                          Principal principal) {
+        String user = StringUtils.defaultIfBlank(offlineUser, principal.getName());
+        return checkInManager.checkIn(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), user);
     }
 
     @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/manual-check-in", method = POST)
-    public boolean manualCheckIn(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
+    public boolean manualCheckIn(@PathVariable("eventId") int eventId,
+                                 @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                 Principal principal) {
         log.warn("for event id : {} and ticket : {}, a manual check in has been done", eventId, ticketIdentifier);
-        return checkInManager.manualCheckIn(ticketIdentifier);
+        return checkInManager.manualCheckIn(eventId, ticketIdentifier, principal.getName());
     }
 
     @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/revert-check-in", method = POST)
-    public boolean revertCheckIn(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
+    public boolean revertCheckIn(@PathVariable("eventId") int eventId,
+                                 @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                 Principal principal) {
         log.warn("for event id : {} and ticket : {}, a revert of the check in has been done", eventId, ticketIdentifier);
-        return checkInManager.revertCheckIn(ticketIdentifier);
+        return checkInManager.revertCheckIn(eventId, ticketIdentifier, principal.getName());
     }
 
     @RequestMapping(value = "/check-in/event/{eventName}/ticket/{ticketIdentifier}/confirm-on-site-payment", method = POST)
     public TicketAndCheckInResult confirmOnSitePayment(@PathVariable("eventName") String eventName,
                                                        @PathVariable("ticketIdentifier") String ticketIdentifier,
-                                                       @RequestBody TicketCode ticketCode) {
-        return checkInManager.confirmOnSitePayment(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode));
+                                                       @RequestBody TicketCode ticketCode,
+                                                       @RequestParam(value = "offlineUser", required = false) String offlineUser,
+                                                       Principal principal) {
+        String user = StringUtils.defaultIfBlank(offlineUser, principal.getName());
+        return checkInManager.confirmOnSitePayment(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), user);
     }
     
     @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment", method = POST)

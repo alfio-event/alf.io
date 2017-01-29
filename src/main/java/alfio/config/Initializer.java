@@ -97,7 +97,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 
     @Override
     protected Class<?>[] getRootConfigClasses() {
-        return new Class<?>[] { ApplicationPropertiesConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class };
+        return new Class<?>[] { ApplicationPropertiesConfiguration.class, RepositoryConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class };
     }
 
     @Override

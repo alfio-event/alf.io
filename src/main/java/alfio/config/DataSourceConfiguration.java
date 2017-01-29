@@ -26,7 +26,6 @@ import alfio.repository.plugin.PluginConfigurationRepository;
 import alfio.repository.plugin.PluginLogRepository;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.npjt.QueryFactory;
-import ch.digitalfondue.npjt.QueryRepositoryScanner;
 import ch.digitalfondue.npjt.mapper.ZonedDateTimeMapper;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.log4j.Log4j2;
@@ -41,10 +40,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.MessageSource;
 import org.springframework.context.ResourceLoaderAware;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.*;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
@@ -72,6 +68,7 @@ import java.util.EnumSet;
 import java.util.Properties;
 import java.util.Set;
 
+@Configuration
 @EnableTransactionManagement
 @EnableScheduling
 @EnableAsync
@@ -131,11 +128,6 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         qf.addColumnMapperFactory(new ZonedDateTimeMapper.Factory());
         qf.addParameterConverters(new ZonedDateTimeMapper.Converter());
         return qf;
-    }
-
-    @Bean
-    public static QueryRepositoryScanner queryRepositoryScanner(QueryFactory queryFactory) {
-        return new QueryRepositoryScanner(queryFactory, "alfio.repository");
     }
 
     @Bean

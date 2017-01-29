@@ -73,16 +73,24 @@ import static alfio.model.system.ConfigurationKeys.GOOGLE_ANALYTICS_KEY;
 @EnableWebMvc
 public class MvcConfiguration extends WebMvcConfigurerAdapter {
 
+    private final MessageSource messageSource;
+    private final JMustacheTemplateLoader templateLoader;
+    private final I18nManager i18nManager;
+    private final ConfigurationManager configurationManager;
+    private final Environment environment;
+
     @Autowired
-    private MessageSource messageSource;
-    @Autowired
-    private JMustacheTemplateLoader templateLoader;
-    @Autowired
-    private I18nManager i18nManager;
-    @Autowired
-    private ConfigurationManager configurationManager;
-    @Autowired
-    private Environment environment;
+    public MvcConfiguration(MessageSource messageSource,
+                            JMustacheTemplateLoader templateLoader,
+                            I18nManager i18nManager,
+                            ConfigurationManager configurationManager,
+                            Environment environment) {
+        this.messageSource = messageSource;
+        this.templateLoader = templateLoader;
+        this.i18nManager = i18nManager;
+        this.configurationManager = configurationManager;
+        this.environment = environment;
+    }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
