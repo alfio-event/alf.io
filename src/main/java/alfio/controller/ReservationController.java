@@ -37,6 +37,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +61,7 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
 import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
+import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
 import static java.util.stream.Collectors.toList;
 
 @Controller
@@ -338,6 +340,12 @@ public class ReservationController {
             model.addAttribute("paymentReason", ev.getShortName() + " " + ticketReservationManager.getShortReservationID(ev, reservationId));
             model.addAttribute("pageTitle", "reservation-page-waiting.header.title");
             model.addAttribute("bankAccount", configurationManager.getStringConfigValue(Configuration.from(ev.getOrganizationId(), ev.getId(), BANK_ACCOUNT_NR)).orElse(""));
+
+
+            Optional<String> maybeAccountOwner = configurationManager.getStringConfigValue(Configuration.from(ev.getOrganizationId(), ev.getId(), BANK_ACCOUNT_OWNER));
+            model.addAttribute("hasBankAccountOwnerSet", maybeAccountOwner.isPresent());
+            model.addAttribute("bankAccountOwner", Arrays.asList(maybeAccountOwner.orElse("").split("\n")));
+
             model.addAttribute("expires", ZonedDateTime.ofInstant(ticketReservation.getValidity().toInstant(), ev.getZoneId()));
             model.addAttribute("event", ev);
             return "/event/reservation-waiting-for-payment";

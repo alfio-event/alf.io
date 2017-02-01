@@ -37,6 +37,16 @@
             .border-bottom {
                 border-bottom:1px solid black;
             }
+
+            table.summary {
+                border-collapse:collapse;
+            }
+
+            table.summary, table.summary th, table.summary td {
+                border: 1px solid #aaa;
+                padding:0;
+                margin:0;
+            }
 		</style>
 	</head>
 	<body>
@@ -85,7 +95,7 @@
 <p>{{ticketReservation.email}}</p>
 
 <h3  class="border-bottom">{{#i18n}}email-confirmation.reservation-summary{{/i18n}}</h3>
-<table style="width:100%">
+<table style="width:100%" class="summary">
     <thead>
         <tr>
             <th>{{#i18n}}reservation-page.category{{/i18n}}</th>

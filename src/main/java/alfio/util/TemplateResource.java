@@ -216,7 +216,7 @@ public enum TemplateResource {
             Collections.singletonList(new SummaryRow("Ticket", "10.00", 1, "10.00", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false, "8");
         String reservationUrl = "http://your-domain.tld/reservation-url/";
         String reservationShortId = "597e7e7b";
-        return prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortId, Optional.empty());
+        return prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortId, Optional.of("My Invoice\nAddress"), Optional.empty(), Optional.empty());
     }
 
     //used by multiple enum:
@@ -235,7 +235,9 @@ public enum TemplateResource {
                                                                        OrderSummary orderSummary,
                                                                        String reservationUrl,
                                                                        String reservationShortID,
-                                                                       Optional<String> invoiceAddress) {
+                                                                       Optional<String> invoiceAddress,
+                                                                       Optional<String> bankAccountNr,
+                                                                       Optional<String> bankAccountOwner) {
         Map<String, Object> model = new HashMap<>();
         model.put("organization", organization);
         model.put("event", event);
@@ -261,6 +263,17 @@ public enum TemplateResource {
             model.put("invoiceAddressAsList", Arrays.asList(StringUtils.split(addr, '\n')));
         });
 
+        model.put("hasBankAccountNr", bankAccountNr.isPresent());
+        bankAccountNr.ifPresent(nr -> {
+            model.put("bankAccountNr", nr);
+        });
+
+        model.put("isOfflinePayment", reservation.getStatus() == TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
+        model.put("hasBankAccountOnwer", bankAccountOwner.isPresent());
+        bankAccountOwner.ifPresent(owner -> {
+            model.put("bankAccountOnwer", StringUtils.replace(owner, "\n", ", "));
+            model.put("bankAccountOnwerAsList", Arrays.asList(StringUtils.split(owner, '\n')));
+        });
 
         return model;
     }
