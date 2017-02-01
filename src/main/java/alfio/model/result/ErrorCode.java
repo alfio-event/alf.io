@@ -23,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 @JsonSerialize(using=ErrorCodeSerializer.class)
 public interface ErrorCode {
 
+    String DUPLICATE = "duplicate";
+
     default String getLocation() {
         return "";
     }

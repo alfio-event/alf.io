@@ -291,7 +291,8 @@
                 maxChar: '=',
                 requiredPattern: '=',
                 showExistingErrors: '=',
-                editMode: '='
+                editMode: '=',
+                fieldLabel: '='
             },
             link:angular.noop
         };
@@ -880,7 +881,7 @@
                     };
 
                     var hasErrors = function(target) {
-                        return ['minlength','maxlength','pattern','email','url'].filter(function(k) {
+                        return ['minlength','maxlength','pattern','email','url','duplicate'].filter(function(k) {
                             return target[k] && target[k] !== '';
                         }).length > 0;
                     };

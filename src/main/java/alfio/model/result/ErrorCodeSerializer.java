@@ -27,6 +27,7 @@ class ErrorCodeSerializer extends JsonSerializer<ErrorCode> {
     @Override
     public void serialize(ErrorCode value, JsonGenerator gen, SerializerProvider serializers) throws IOException, JsonProcessingException {
         gen.writeStartObject();
+        gen.writeStringField("fieldName", value.getLocation());
         gen.writeStringField("code", value.getCode());
         gen.writeStringField("description", value.getDescription());
         gen.writeEndObject();
