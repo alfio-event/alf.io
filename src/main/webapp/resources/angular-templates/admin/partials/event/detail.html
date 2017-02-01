@@ -12,8 +12,8 @@
             <div class="page-header visible-sm visible-xs" data-ng-if="isInternal(event) && pendingReservations.length > 0">
                 <h3>Payments to be confirmed</h3>
                 <h5>There are reservations for which a payment has not yet confirmed.</h5>
-                <a class="btn btn-warning" data-ui-sref="events.single.pending-reservations({eventName: event.shortName})">
-                    <i class="fa fa-dollar"></i> Pending payments <pending-reservations-badge data-event-name="{{event.shortName}}"></pending-reservations-badge>
+                <a class="btn btn-warning" data-ui-sref="events.single.pending-payments({eventName: event.shortName})">
+                    <i class="fa fa-dollar"></i> Pending payments <pending-payments-badge data-event-name="{{event.shortName}}"></pending-payments-badge>
                 </a>
             </div>
 

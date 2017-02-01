@@ -518,7 +518,7 @@
         };
     });
 
-    directives.directive('pendingReservationsLink', ['$rootScope', '$interval', 'EventService', function($rootScope, $interval, EventService) {
+    directives.directive('pendingPaymentsLink', ['$rootScope', '$interval', 'EventService', function($rootScope, $interval, EventService) {
         return {
             restrict: 'E',
             scope: {
@@ -527,7 +527,7 @@
             },
             bindToController: true,
             controllerAs: 'ctrl',
-            template: '<a ng-class="ctrl.styleClass" data-ui-sref="events.single.pending-reservations({eventName: ctrl.event.shortName})"><i class="fa fa-dollar"></i> Pending Reservations <pending-reservations-badge event-name="{{ctrl.event.shortName}}"></pending-reservations-badge></a>',
+            template: '<a ng-class="ctrl.styleClass" data-ui-sref="events.single.pending-payments({eventName: ctrl.event.shortName})"><i class="fa fa-dollar"></i> Pending Payments <pending-payments-badge event-name="{{ctrl.event.shortName}}"></pending-payments-badge></a>',
             controller: ['$scope', function($scope) {
                 var ctrl = this;
                 var eventName = ctrl.event.shortName;
@@ -548,7 +548,7 @@
         }
     }]);
 
-    directives.directive('pendingReservationsBadge', function($rootScope, $interval, EventService) {
+    directives.directive('pendingPaymentsBadge', function($rootScope, $interval, EventService) {
         return {
             restrict: 'E',
             scope: false,

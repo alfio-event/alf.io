@@ -39,8 +39,8 @@
                 <a class="btn btn-primary btn-xs" data-ng-if="!event.expired" data-ui-sref="events.single.checkIn({eventName: event.shortName})">
                     <i class="fa fa-check"></i> Check-In
                 </a>
-                <a data-ng-if="supportsOfflinePayments(event)" class="btn btn-warning btn-xs" data-ui-sref="events.single.pending-reservations({eventName: event.shortName})">
-                    <i class="fa fa-dollar"></i> Pending payments <pending-reservations-badge data-event-name="{{event.shortName}}"></pending-reservations-badge>
+                <a data-ng-if="supportsOfflinePayments(event)" class="btn btn-warning btn-xs" data-ui-sref="events.single.pending-payments({eventName: event.shortName})">
+                    <i class="fa fa-dollar"></i> Pending payments <pending-payments-badge data-event-name="{{event.shortName}}"></pending-payments-badge>
                 </a>
             </td>
         </tr>

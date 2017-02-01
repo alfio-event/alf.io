@@ -88,10 +88,10 @@
                     view: 'SEND_INVITATIONS'
                 }
             })
-            .state('events.single.pending-reservations', {
-                url: '/pending-reservations/',
-                templateUrl: BASE_STATIC_URL + '/pending-reservations/index.html',
-                controller: 'PendingReservationsController',
+            .state('events.single.pending-payments', {
+                url: '/pending-payments/',
+                templateUrl: BASE_STATIC_URL + '/pending-payments/index.html',
+                controller: 'PendingPaymentsController',
                 data: {
                     view: 'PENDING_RESERVATIONS'
                 }
@@ -1425,7 +1425,7 @@
         });
     });
 
-    admin.controller('PendingReservationsController', function($scope, EventService, $stateParams, $log, $window) {
+    admin.controller('PendingPaymentsController', function($scope, EventService, $stateParams, $log, $window) {
 
         EventService.getEvent($stateParams.eventName).then(function(result) {
             $scope.event = result.data.event;
