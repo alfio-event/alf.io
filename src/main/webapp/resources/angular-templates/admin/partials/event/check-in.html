@@ -78,23 +78,27 @@
                 </div>
                 <table class="table check-in-data">
                     <thead>
-                    <th>Status</th>
-                    <th>Holder's name</th>
-                    <th>Holder's e-mail</th>
-                    <th>Type</th>
-                    <th>Reference Number</th>
-                    <th data-ng-if="!event.freeOfCharge">Payment Type</th>
-                    <th data-ng-if="filterResult.length == 1">Manual Check-In</th>
+                    <tr>
+                        <th><span class="sr-only">Status</span></th>
+                        <th>Holder's name</th>
+                        <th>Holder's e-mail</th>
+                        <th>Type</th>
+                        <th>Reference Number</th>
+                        <th data-ng-if="!event.freeOfCharge">Payment Type</th>
+                        <th><span class="sr-only">Display QR Code</span></th>
+                        <th><span class="sr-only">Manual Check-In</span></th>
+                    </tr>
                     </thead>
                     <tbody>
                     <tr data-ng-repeat="ticket in tickets | filter: toBeCheckedIn | filter: selection.freeText | filter: advancedSearch | orderBy: ['timestamp', 'ticketReservationId' , 'uuid'] as filterResult">
-                        <td data-ng-class-even="'active'" data-label="Status">{{::ticket.status | statusText}}</td>
+                        <td data-ng-class-even="'active'" data-label="Status"><i data-ng-class="evaluateTicketStatus(ticket.status)" title="{{::ticket.status | statusText}}"></i></td>
                         <td data-ng-class-even="'active'" data-label="Holder's name">{{::ticket.fullName}}</td>
                         <td data-ng-class-even="'active'" data-label="Holder's e-mail">{{::ticket.email}}</td>
-                        <td data-ng-class-even="'active'" data-label="Type">{{::ticket.ticketCategory.name}}</td>
+                        <td data-ng-class-even="'active'" data-label="Type">{{::ticket.ticketCategory.name | limitTo:10}}{{::ticket.ticketCategory.name.length > 10 ? '...':''}}</td>
                         <td data-ng-class-even="'active'" data-label="Reference Number"><a data-ng-href="/event/{{::event.shortName}}/reservation/{{::ticket.ticketsReservationId}}/{{::ticket.uuid}}">{{::ticket.uuid}}</a></td>
                         <td data-ng-class-even="'active'" data-ng-if="!event.freeOfCharge" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
-                        <td data-ng-class-even="'active'" data-label="Manual Check-In"><button type="button" class="btn btn-primary btn-xs" data-ng-click="manualCheckIn(ticket)">Check-In</button></td>
+                        <td data-ng-class-even="'active'" data-label="Display QR-Code"><button type="button" class="btn btn-primary btn-xs" data-ng-click="showQrCode(ticket, event)"><i class="fa fa-qrcode"></i> QR-Code</button></td>
+                        <td data-ng-class-even="'active'" data-label="Manual Check-In"><button type="button" class="btn btn-primary btn-xs" data-ng-click="manualCheckIn(ticket)"><i class="fa fa-check"></i> Check-In</button></td>
                     </tr>
                     </tbody>
                 </table>

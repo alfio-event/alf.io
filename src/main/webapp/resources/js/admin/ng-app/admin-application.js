@@ -600,25 +600,6 @@
             category.isTicketViewExpanded = !category.isTicketViewExpanded;
         };
 
-        $scope.evaluateTicketStatus = function(status) {
-            var cls = 'fa ';
-
-            switch(status) {
-                case 'PENDING':
-                    return cls + 'fa-warning text-warning';
-                case 'ACQUIRED':
-                    return cls + 'fa-bookmark text-success';
-                case 'TO_BE_PAID':
-                    return cls + 'fa-bookmark-o text-success';
-                case 'CHECKED_IN':
-                    return cls + 'fa-check-circle text-success';
-                case 'CANCELLED':
-                    return cls + 'fa-close text-danger';
-            }
-
-            return cls + 'fa-cog';
-        };
-
         $scope.isPending = function(token) {
             return token.status === 'WAITING';
         };
@@ -1197,7 +1178,7 @@
         $scope.uploadUrl = '/admin/api/events/'+$stateParams.eventName+'/categories/'+$stateParams.categoryId+'/link-codes';
     });
     
-    admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService) {
+    admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService, $uibModal) {
 
         $scope.selection = {};
         $scope.checkedInSelection = {};
@@ -1241,6 +1222,23 @@
         $scope.manualCheckIn = function(ticket) {
             CheckInService.manualCheckIn(ticket).then($scope.reloadTickets).then(function() {
                 $scope.selection = {};
+            });
+        };
+
+        $scope.showQrCode = function(ticket, event) {
+            var modal = $uibModal.open({
+                size:'sm',
+                templateUrl:BASE_STATIC_URL + '/event/qr-code.html',
+                backdrop: 'static',
+                controllerAs: 'ctrl',
+                controller: function($scope) {
+                    var ctrl = this;
+                    ctrl.event = event;
+                    ctrl.ticket = ticket;
+                    ctrl.close = function() {
+                        modal.close();
+                    }
+                }
             });
         };
 
@@ -1600,6 +1598,25 @@
                 return barClasses[index];
             }
             return index % 2 == 0 ? 'info' : 'success';
+        };
+
+        $rootScope.evaluateTicketStatus = function(status) {
+            var cls = 'fa ';
+
+            switch(status) {
+                case 'PENDING':
+                    return cls + 'fa-warning text-warning';
+                case 'ACQUIRED':
+                    return cls + 'fa-bookmark text-success';
+                case 'TO_BE_PAID':
+                    return cls + 'fa-bookmark-o text-success';
+                case 'CHECKED_IN':
+                    return cls + 'fa-check-circle text-success';
+                case 'CANCELLED':
+                    return cls + 'fa-close text-danger';
+            }
+
+            return cls + 'fa-cog';
         };
 
         $rootScope.calcBarValue = PriceCalculator.calcBarValue;
