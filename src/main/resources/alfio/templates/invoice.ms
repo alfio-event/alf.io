@@ -81,6 +81,14 @@
                 margin-bottom: 3em;
             }
 
+            .mt {
+                margin-top: 3em;
+            }
+
+            .mb2 {
+                margin-bottom: 6em;
+            }
+
             .no-padding {
                 padding: 0 !important;
             }
@@ -110,7 +118,7 @@
                     <p>{{#i18n}}invoice.date{{/i18n}} {{#format-date}}{{confirmationDate}} dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</p>
                 </td>
             </tr>
-            <tr>
+            <tr class="mt">
                 <td style="width:60%">
                     &nbsp;
                 </td>
@@ -161,7 +169,7 @@
             </tfoot>
         </table>
 
-        <div class="small mb" style="margin-top:1em">
+        <div class="small mb2" style="margin-top:1em">
             <p class="strong">{{#i18n}}invoice.order-information{{/i18n}}</p>
             <p>{{ticketReservation.id}}</p>
             <p>{{#i18n}}invoice.buyer{{/i18n}} {{ticketReservation.fullName}} &lt;{{ticketReservation.email}}&gt;</p>

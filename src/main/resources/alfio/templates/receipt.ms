@@ -10,11 +10,7 @@
 				font-size:160%;
 			}
 
-            pre {
-                font-size:
-            }
-
-			h2 {
+            h2 {
 				font-size:120%;
 				font-weight:normal;
 				border-bottom:1px solid black;
