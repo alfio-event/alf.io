@@ -29,6 +29,6 @@ public interface InvoiceSequencesRepository {
     @Query("update invoice_sequences set invoice_sequence = invoice_sequence + 1 where organization_id_fk = :orgId")
     int incrementSequenceFor(@Bind("orgId") int orgId);
 
-    @Query("insert into invoice_sequences(organization_id_fk, invoice_sequence) values (:orgId, 0)")
+    @Query("insert into invoice_sequences(organization_id_fk, invoice_sequence) values (:orgId, 1)")
     int initFor(@Bind("orgId") int orgId);
 }
