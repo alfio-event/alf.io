@@ -146,22 +146,17 @@
                 <tr>
                     <td class="text-center">{{amount}}</td>
                     <td>{{name}}</td>
-                    <td class="text-right">{{price}}</td>
-                    <td class="text-right">{{subTotal}}</td>
+                    <td class="text-right">{{priceBeforeVat}}</td>
+                    <td class="text-right">{{subTotalBeforeVat}}</td>
                 </tr>
         {{/orderSummary.summary}}
             </tbody>
             <tfoot>
                 {{^orderSummary.free}}
-                {{^event.vatIncluded}}
-                    <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</th><th class="text-right">{{orderSummary.totalVAT}}</th></tr>
-                {{/event.vatIncluded}}
+                <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</th><th class="text-right">{{orderSummary.totalVAT}}</th></tr>
                 {{/orderSummary.free}}
                 <tr><th colspan="3" class="strong" class="no-padding">{{#i18n}}reservation-page.total{{/i18n}}</th><th class="text-right strong">{{event.currency}} {{orderSummary.totalPrice}}</th></tr>
                 {{^orderSummary.free}}
-                {{#event.vatIncluded}}
-                    <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}</th><th class="text-right">{{orderSummary.totalVAT}}</th></tr>
-                {{/event.vatIncluded}}
                 {{/orderSummary.free}}
             </tfoot>
         </table>

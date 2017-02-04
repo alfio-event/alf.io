@@ -22,8 +22,10 @@ import lombok.Data;
 public class SummaryRow {
     private final String name;
     private final String price;
+    private final String priceBeforeVat;
     private final int amount;
     private final String subTotal;
+    private final String subTotalBeforeVat;
     private final int originalSubTotal;
     private final SummaryType type;
 

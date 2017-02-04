@@ -60,9 +60,16 @@
     <div class="row">
         <div class="col-sm-12">
         <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/re-send-email" method="post" class="form-inline text-align-right">
-            <button type="submit" class="btn btn-default">{{#i18n}}reservation-page-complete.resend-reservation-email{{/i18n}}</button>
+            <button type="submit" class="btn btn-default"><i class="fa fa-envelope-o"></i> {{#i18n}}reservation-page-complete.resend-reservation-email{{/i18n}}</button>
+            {{#reservation.hasInvoiceNumber}}
+                <a class="btn btn-default" href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/invoice" target="_blank"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-your-invoice{{/i18n}}</a>
+            {{/reservation.hasInvoiceNumber}}
+            {{^reservation.hasInvoiceNumber}}
+                <a class="btn btn-default" href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/receipt" target="_blank"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-your-receipt{{/i18n}}</a>
+            {{/reservation.hasInvoiceNumber}}
             <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
         </form>
+
         </div>
     </div>
 </div>
@@ -98,16 +105,6 @@
 <div class="text-center">
     {{#i18n}}reservation-page-complete.order-information [{{reservation.id}}] [{{reservation.fullName}}]{{/i18n}}
 </div>
-{{#reservation.hasInvoiceOrReceiptDocument}}
-<div class="text-center">
-    {{#reservation.hasInvoiceNumber}}
-        <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/invoice" target="_blank">{{#i18n}}reservation-page-complete.download-your-invoice{{/i18n}}</a>
-    {{/reservation.hasInvoiceNumber}}
-    {{^reservation.hasInvoiceNumber}}
-        <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/receipt" target="_blank">{{#i18n}}reservation-page-complete.download-your-receipt{{/i18n}}</a>
-    {{/reservation.hasInvoiceNumber}}
-</div>
-{{/reservation.hasInvoiceOrReceiptDocument}}
 <div class="text-center wMarginTop30px">
     <span class="text-muted"><a href="https://alf.io" title="{{#i18n}}alfio.credits{{/i18n}}" target="_blank">{{#i18n}}alfio.credits{{/i18n}}</a></span>
 </div>

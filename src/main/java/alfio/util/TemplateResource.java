@@ -213,7 +213,7 @@ public enum TemplateResource {
         Optional<String> vat = Optional.of("VAT-NR");
         List<Ticket> tickets = Collections.singletonList(sampleTicket());
         OrderSummary orderSummary = new OrderSummary(new TotalPrice(1000, 80, 0, 0),
-            Collections.singletonList(new SummaryRow("Ticket", "10.00", 1, "10.00", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false, "8");
+            Collections.singletonList(new SummaryRow("Ticket", "10.00", "9.20", 1, "9.20", "9.20", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false, "8");
         String reservationUrl = "http://your-domain.tld/reservation-url/";
         String reservationShortId = "597e7e7b";
         return prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortId, Optional.of("My Invoice\nAddress"), Optional.empty(), Optional.empty());

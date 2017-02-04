@@ -708,9 +708,12 @@ public class TicketReservationManager {
             .collect(Collectors.groupingBy(TicketPriceContainer::getCategoryId))
             .forEach((categoryId, ticketsByCategory) -> {
                 final int subTotal = ticketsByCategory.stream().mapToInt(TicketPriceContainer::getSrcPriceCts).sum();
-                final int ticketPriceCts = ticketsByCategory.get(0).getSrcPriceCts();
+                final int subTotalBeforeVat = ticketsByCategory.stream().mapToInt(t -> t.getFinalPriceCts() - t.getVatCts()).sum();
+                TicketPriceContainer firstTicket = ticketsByCategory.get(0);
+                final int ticketPriceCts = firstTicket.getSrcPriceCts();
+                final int priceBeforeVat = firstTicket.getFinalPriceCts() - firstTicket.getVatCts();
                 String categoryName = ticketCategoryRepository.getById(categoryId, event.getId()).getName();
-                summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts), ticketsByCategory.size(), formatCents(subTotal), subTotal, SummaryRow.SummaryType.TICKET));
+                summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts), formatCents(priceBeforeVat), ticketsByCategory.size(), formatCents(subTotal), formatCents(subTotalBeforeVat), subTotal, SummaryRow.SummaryType.TICKET));
             });
 
         summary.addAll(collectAdditionalServiceItems(reservationId, event)
@@ -723,15 +726,16 @@ public class TicketReservationManager {
                 List<AdditionalServiceItemPriceContainer> prices = generateASIPriceContainers(event, null).apply(entry).collect(toList());
                 AdditionalServiceItemPriceContainer first = prices.get(0);
                 final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();
-                return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts()), prices.size(), formatCents(subtotal), subtotal, SummaryRow.SummaryType.ADDITIONAL_SERVICE);
+                return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts()), formatCents(first.getSrcPriceCts()), prices.size(), formatCents(subtotal), formatCents(subtotal), subtotal, SummaryRow.SummaryType.ADDITIONAL_SERVICE);
             }).collect(Collectors.toList()));
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {
             String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount()) : (promo.getDiscountAmount()+"%"));
             summary.add(new SummaryRow(formatPromoCode(promo, ticketRepository.findTicketsInReservation(reservationId)),
                 formattedSingleAmount,
+                formattedSingleAmount,
                 reservationCost.getDiscountAppliedCount(),
-                formatCents(reservationCost.getDiscount()), reservationCost.getDiscount(), SummaryRow.SummaryType.PROMOTION_CODE));
+                formatCents(reservationCost.getDiscount()), formatCents(reservationCost.getDiscount()), reservationCost.getDiscount(), SummaryRow.SummaryType.PROMOTION_CODE));
         });
         return summary;
     }
