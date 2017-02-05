@@ -175,6 +175,22 @@
             <p>{{#i18n}}invoice.buyer{{/i18n}} {{ticketReservation.fullName}} &lt;{{ticketReservation.email}}&gt;</p>
         </div>
 
+        {{#isOfflinePayment}}
+        <div class="small mb2" style="margin-top:1em">
+            <p class="strong">{{#i18n}}invoice.payment-instruction{{/i18n}}</p>
+            <p>{{#i18n}}invoice.payment-instruction-no-later-than [{{#format-date}}{{expirationDate}} {{#i18n}}datetime.pattern{{/i18n}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}</p>
+            <p>{{#i18n}}invoice.account-number [{{bankAccountNr}}]{{/i18n}}</p>
+            {{#hasBankAccountOnwer}}
+                <p>{{#i18n}}invoice.payment-to{{/i18n}}</p>
+                {{#bankAccountOnwerAsList}}
+                <p style="padding-left:1em">{{.}}</p>
+                {{/bankAccountOnwerAsList}}
+            {{/hasBankAccountOnwer}}
+            <p>{{#i18n}}invoice.payment-reason [{{paymentReason}}]{{/i18n}}</p>
+            <p style="margin-top:1em">{{#i18n}}invoice.payment-contact [{{organization.email}}]{{/i18n}}</p>
+        </div>
+        {{/isOfflinePayment}}
+
         <p>{{#i18n}}invoice.regards{{/i18n}}</p>
         <p>{{organization.name}}</p>
 

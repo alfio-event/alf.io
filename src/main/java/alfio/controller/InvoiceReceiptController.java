@@ -78,7 +78,7 @@ public class InvoiceReceiptController {
     private static boolean sendPdf(Optional<byte[]> res, HttpServletResponse response, String eventName, String reservationId, String type) {
         return res.map(pdf -> {
             try {
-                response.setHeader("Content-Disposition", "inline; filename=\"" + type+  "-" + eventName + "-" + reservationId + ".pdf\"");
+                response.setHeader("Content-Disposition", "attachment; filename=\"" + type+  "-" + eventName + "-" + reservationId + ".pdf\"");
                 response.setContentType("application/pdf");
                 response.getOutputStream().write(pdf);
                 return true;

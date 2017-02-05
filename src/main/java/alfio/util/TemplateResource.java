@@ -247,6 +247,7 @@ public enum TemplateResource {
         model.put("tickets", tickets);
         model.put("orderSummary", orderSummary);
         model.put("reservationUrl", reservationUrl);
+        model.put("locale", reservation.getUserLanguage());
 
         ZonedDateTime confirmationTimestamp = Optional.ofNullable(reservation.getConfirmationTimestamp()).orElseGet(ZonedDateTime::now);
         model.put("confirmationDate", confirmationTimestamp.withZoneSameInstant(event.getZoneId()));
@@ -269,6 +270,7 @@ public enum TemplateResource {
         });
 
         model.put("isOfflinePayment", reservation.getStatus() == TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
+        model.put("paymentReason", event.getShortName() + " " + reservationShortID);
         model.put("hasBankAccountOnwer", bankAccountOwner.isPresent());
         bankAccountOwner.ifPresent(owner -> {
             model.put("bankAccountOnwer", StringUtils.replace(owner, "\n", ", "));

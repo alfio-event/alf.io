@@ -87,7 +87,8 @@ insert into configuration (c_key, c_value, description) values
   ('INVOICE_ADDRESS', U&'My Company\000AMy Street\000AMy City\000AMy Country', 'Invoice address'),
   ('OFFLINE_PAYMENT_DAYS', '42', 'Maximum number of days allowed to pay an offline ticket'),
   ('OFFLINE_REMINDER_HOURS', '42', 'How many hours before expiration should be sent a reminder e-mail for offline payments?'),
-  ('BANK_ACCOUNT_NR', '4242424242', 'Bank Account number');
+  ('BANK_ACCOUNT_NR', '4242424242', 'Bank Account number'),
+  ('BANK_ACCOUNT_OWNER', U&'My Name\000ABla Bla', 'Bank Account owner');
 
 
 -- create fields configuration
