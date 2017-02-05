@@ -11,7 +11,16 @@
 <div class="wMarginBottom wMarginTop center-block">
     <h4>{{#i18n}}reservation-page-waiting.required-steps{{/i18n}}</h4>
     <ol>
+        {{#hasBankAccountOwnerSet}}
+        <li>
+            <p class="no-margin-bottom">{{#i18n}}reservation-page-waiting.required-steps.1.with-bank-account-owner [{{event.currency}} {{totalPrice}}] [{{bankAccount}}]{{/i18n}}</p>
+            {{#bankAccountOwner}}<p class="bank-account-owner-info">{{.}}</p>{{/bankAccountOwner}}
+            <p class="no-margin-bottom">{{#i18n}}reservation-page-waiting.required-steps.1.with-bank-account-owner.2 [<mark>{{paymentReason}}</mark>]{{/i18n}}</p>
+        </li>
+        {{/hasBankAccountOwnerSet}}
+        {{^hasBankAccountOwnerSet}}
         <li>{{#i18n}}reservation-page-waiting.required-steps.1 [{{event.currency}} {{totalPrice}}] [{{bankAccount}}] [<mark>{{paymentReason}}</mark>]{{/i18n}}</li>
+        {{/hasBankAccountOwnerSet}}
         <li>{{#i18n}}reservation-page-waiting.required-steps.2 [{{emailAddress}}] [{{reservation.id}}]{{/i18n}}</li>
         <li>{{#i18n}}reservation-page-waiting.required-steps.3{{/i18n}}</li>
     </ol>

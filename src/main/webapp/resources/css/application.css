@@ -57,6 +57,15 @@ p.ticket-info {
 
 }
 
+.no-margin-bottom {
+    margin-bottom:0;
+}
+
+.bank-account-owner-info {
+    padding-left:1em;
+    margin-bottom:0;
+}
+
 
 .list-group-item {
     border-left:none;
