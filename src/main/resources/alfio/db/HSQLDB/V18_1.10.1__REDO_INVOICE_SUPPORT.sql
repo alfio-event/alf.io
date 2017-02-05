@@ -24,4 +24,4 @@ create table invoice_sequences (
 
 alter table invoice_sequences add foreign key(organization_id_fk) references organization(id);
 
-insert into invoice_sequences select id, 0 from organization;
+insert into invoice_sequences select id, 1 from organization;
