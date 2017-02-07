@@ -115,7 +115,8 @@
                     <p>{{invoiceAddress}}</p>
                     <p>{{#i18n}}invoice.vat{{/i18n}} {{vatNr}}</p>
                     <p class="strong">{{#i18n}}invoice.number{{/i18n}} {{ticketReservation.invoiceNumber}}</p>
-                    <p>{{#i18n}}invoice.date{{/i18n}} {{#format-date}}{{confirmationDate}} dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</p>
+                    <p>{{#i18n}}invoice.date{{/i18n}} {{#format-date}}{{confirmationDate}} dd/MM/yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</p>
+                    {{#isOfflinePayment}}<p class="strong">{{#i18n}}reservation-page-waiting.title [{{#format-date}}{{expirationDate}} {{#i18n}}datetime.pattern{{/i18n}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}</p>{{/isOfflinePayment}}
                 </td>
             </tr>
             <tr class="mt">
@@ -123,7 +124,6 @@
                     &nbsp;
                 </td>
                 <td style="width:40%">
-                    <p class="margin-bottom-line">{{#i18n}}invoice.to{{/i18n}}</p>
                     {{#ticketReservation.hasBillingAddress}}
                     {{#ticketReservation.lineSplittedBillingAddress}}
                     <p>{{.}}</p>
@@ -169,26 +169,27 @@
             </tfoot>
         </table>
 
-        <div class="small mb2" style="margin-top:1em">
+        <div class="small {{^isOfflinePayment}}mb{{/isOfflinePayment}}" style="margin-top:1em">
             <p class="strong">{{#i18n}}invoice.order-information{{/i18n}}</p>
             <p>{{ticketReservation.id}}</p>
             <p>{{#i18n}}invoice.buyer{{/i18n}} {{ticketReservation.fullName}} &lt;{{ticketReservation.email}}&gt;</p>
         </div>
 
         {{#isOfflinePayment}}
-        <div class="small mb2" style="margin-top:1em">
-            <p class="strong">{{#i18n}}invoice.payment-instruction{{/i18n}}</p>
-            <p>{{#i18n}}invoice.payment-instruction-no-later-than [{{#format-date}}{{expirationDate}} {{#i18n}}datetime.pattern{{/i18n}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}</p>
-            <p>{{#i18n}}invoice.account-number [{{bankAccountNr}}]{{/i18n}}</p>
-            {{#hasBankAccountOnwer}}
-                <p>{{#i18n}}invoice.payment-to{{/i18n}}</p>
-                {{#bankAccountOnwerAsList}}
-                <p style="padding-left:1em">{{.}}</p>
-                {{/bankAccountOnwerAsList}}
-            {{/hasBankAccountOnwer}}
-            <p>{{#i18n}}invoice.payment-reason [{{paymentReason}}]{{/i18n}}</p>
-            <p style="margin-top:1em">{{#i18n}}invoice.payment-contact [{{organization.email}}]{{/i18n}}</p>
-        </div>
+            <div class="mb" style="margin-top: 1em">
+                <p>{{#i18n}}invoice.payment-instruction-no-later-than [{{#format-date}}{{expirationDate}} {{#i18n}}datetime.pattern{{/i18n}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}</p>
+                <br/>
+                <p class="strong">{{#i18n}}invoice.payment-instruction{{/i18n}}</p>
+                <p>{{#i18n}}invoice.account-number [{{bankAccountNr}}]{{/i18n}}</p>
+                {{#hasBankAccountOnwer}}
+                    <p style="margin-bottom:0.5em">{{#i18n}}invoice.payment-to{{/i18n}}</p>
+                    {{#bankAccountOnwerAsList}}
+                        <p style="padding-left:1em">{{.}}</p>
+                    {{/bankAccountOnwerAsList}}
+                {{/hasBankAccountOnwer}}
+                <p style="margin-top: 0.5em">{{#i18n}}invoice.payment-reason [{{paymentReason}}]{{/i18n}}</p>
+                <p style="margin-top:0.5em">{{#i18n}}invoice.payment-contact [{{organization.email}}]{{/i18n}}</p>
+            </div>
         {{/isOfflinePayment}}
 
         <p>{{#i18n}}invoice.regards{{/i18n}}</p>

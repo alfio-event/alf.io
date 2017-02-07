@@ -28,21 +28,14 @@
 <div class="text-center wMarginTop">
     <h4>{{#i18n}}reservation-page-waiting.questions [{{emailAddress}}] [{{reservation.id}}]{{/i18n}}</h4>
 </div>
-{{#reservation.hasInvoiceOrReceiptDocument}}
-<div class="text-center">
-    <h4>
-    {{#reservation.hasInvoiceNumber}}
-        <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/invoice" target="_blank">{{#i18n}}reservation-page-complete.download-your-invoice{{/i18n}}</a>
-    {{/reservation.hasInvoiceNumber}}
-    {{^reservation.hasInvoiceNumber}}
-        <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/receipt" target="_blank">{{#i18n}}reservation-page-complete.download-your-receipt{{/i18n}}</a>
-    {{/reservation.hasInvoiceNumber}}
-    </h4>
-</div>
-{{/reservation.hasInvoiceOrReceiptDocument}}
 <div class="wMarginBottom">&nbsp;</div>
 <div class="container-fluid" id="back-to-event-site">
     <div class="pull-left"><a href="{{event.websiteUrl}}" class="btn btn-default">{{#i18n}}to-event-site{{/i18n}}</a></div>
+    {{#reservation.hasInvoiceNumber}}
+        <div class="pull-right">
+            <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/invoice" class="btn btn-success" target="_blank">{{#i18n}}reservation-page-complete.download-your-invoice{{/i18n}}</a>
+        </div>
+    {{/reservation.hasInvoiceNumber}}
 </div>
 <div class="clearfix wMarginBottom"></div>
 <div class="text-center">
