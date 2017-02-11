@@ -87,8 +87,10 @@ public class CheckInManager {
 
 
     private void checkIn(String uuid) {
-        Validate.isTrue(ticketRepository.findByUUID(uuid).getStatus() == TicketStatus.ACQUIRED);
+        Ticket ticket = ticketRepository.findByUUID(uuid);
+        Validate.isTrue(ticket.getStatus() == TicketStatus.ACQUIRED);
         ticketRepository.updateTicketStatusWithUUID(uuid, TicketStatus.CHECKED_IN.toString());
+        ticketRepository.toggleTicketLocking(ticket.getId(), ticket.getCategoryId(), true);
     }
 
     private void acquire(String uuid) {
