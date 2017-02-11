@@ -19,42 +19,61 @@ package alfio.manager.support;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.repository.TicketCategoryRepository;
-import com.insightfullogic.lambdabehave.JunitSuiteRunner;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import static com.insightfullogic.lambdabehave.Suite.describe;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(JunitSuiteRunner.class)
-public class CategoryEvaluatorTest {{
+@RunWith(MockitoJUnitRunner.class)
+public class CategoryEvaluatorTest {
 
-    describe("CategoryEvaluator", it -> {
+    @Mock
+    private Ticket ticket;
+    @Mock
+    private TicketCategory category;
+    @Mock
+    private TicketCategoryRepository tcr;
+    private final int eventId = 2;
+
+    @Before
+    public void init() {
         int categoryId = 1;
-        int eventId = 2;
-        Ticket ticket = mock(Ticket.class);
         when(ticket.getCategoryId()).thenReturn(categoryId);
         when(ticket.getEventId()).thenReturn(eventId);
-        TicketCategoryRepository tcr = mock(TicketCategoryRepository.class);
-        TicketCategory category = it.usesMock(TicketCategory.class);
+        when(ticket.getStatus()).thenReturn(Ticket.TicketStatus.ACQUIRED);
         when(tcr.getById(eq(categoryId), eq(eventId))).thenReturn(category);
-        it.should("allow a cancellation of a ticket if it belongs to a public category", expect -> {
-            when(category.isAccessRestricted()).thenReturn(false);
-            expect.that(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket)).is(true);
-        });
+    }
 
-        it.should("not allow a cancellation of a ticket if it belongs to a restricted category and there aren't any unbounded categories", expect -> {
-            when(category.isAccessRestricted()).thenReturn(true);
-            when(tcr.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(0);
-            expect.that(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket)).is(false);
-        });
+    @Test
+    public void allowTicketCancellationIfItBelongsToAPublicCategory() {
+        when(category.isAccessRestricted()).thenReturn(false);
+        assertTrue(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket));
+    }
 
-        it.should("allow a cancellation of a ticket if it belongs to a restricted category and there is at least one unbounded category", expect -> {
-            when(category.isAccessRestricted()).thenReturn(true);
-            when(tcr.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(1);
-            expect.that(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket)).is(true);
-        });
-    });
+    @Test
+    public void doNotAllowCancellationIfCategoryAllBounded() {
+        when(category.isAccessRestricted()).thenReturn(true);
+        when(tcr.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(0);
+        assertFalse(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket));
+    }
 
-}}
+    @Test
+    public void allowCancellationOnRestrictedCategoryIfAtLeastOneBounded() {
+        when(category.isAccessRestricted()).thenReturn(true);
+        when(tcr.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(1);
+        assertTrue(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket));
+    }
+
+    @Test
+    public void doNotAllowCancellationIfTicketStatusIsNotAcquired() throws Exception {
+        when(category.isAccessRestricted()).thenReturn(false);
+        when(ticket.getStatus()).thenReturn(Ticket.TicketStatus.CHECKED_IN);
+        assertFalse(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket));
+    }
+}
