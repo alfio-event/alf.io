@@ -78,6 +78,7 @@ public class TicketReservationManagerTest {
     private static final String TRANSACTION_ID = "transaction-id";
     private static final String GATEWAY_TOKEN = "token";
     private static final String BASE_URL = "http://my-website/";
+    public static final String ORG_EMAIL = "org@org.org";
 
 
     private TicketReservationManager trm;
@@ -172,7 +173,7 @@ public class TicketReservationManagerTest {
             invoiceSequencesRepository);
 
         when(event.getId()).thenReturn(EVENT_ID);
-        when(event.getOrganizationId()).thenReturn(1);
+        when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
         when(event.mustUseFirstAndLastName()).thenReturn(false);
         when(ticketCategoryRepository.getById(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(specialPrice.getCode()).thenReturn(SPECIAL_PRICE_CODE);
@@ -185,6 +186,9 @@ public class TicketReservationManagerTest {
         when(ticket.getId()).thenReturn(TICKET_ID);
         when(ticket.getSrcPriceCts()).thenReturn(10);
         when(ticketCategory.getId()).thenReturn(TICKET_CATEGORY_ID);
+        when(organizationRepository.getById(eq(ORGANIZATION_ID))).thenReturn(organization);
+        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
     }
 
     private void initUpdateTicketOwner(Ticket original, Ticket modified, String ticketId, String originalEmail, String originalName, UpdateTicketOwnerForm form) {
@@ -195,6 +199,7 @@ public class TicketReservationManagerTest {
         form.setEmail("new@email.tld");
         form.setFullName(originalName);
         form.setUserLanguage(USER_LANGUAGE);
+        when(organization.getEmail()).thenReturn(ORG_EMAIL);
     }
 
     @Test
@@ -233,6 +238,27 @@ public class TicketReservationManagerTest {
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
         verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ITALIAN));
         verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(originalEmail), anyString(), any(TextTemplateGenerator.class));
+    }
+
+    @Test
+    public void sendWarningEmailToOrganizer() {
+        final String ticketId = "abcde";
+        final String originalEmail = "me@myaddress.com";
+        final String originalName = "First Last";
+        Ticket original = mock(Ticket.class);
+        when(original.getStatus()).thenReturn(TicketStatus.ACQUIRED);
+        Ticket modified = mock(Ticket.class);
+        UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
+        when(event.getShortName()).thenReturn("short-name");
+        initUpdateTicketOwner(original, modified, ticketId, originalEmail, originalName, form);
+        PartialTicketTextGenerator ownerChangeTextBuilder = mock(PartialTicketTextGenerator.class);
+        when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn("Hello, world");
+        when(original.getUserLanguage()).thenReturn(USER_LANGUAGE);
+        when(event.getBegin()).thenReturn(ZonedDateTime.now().minusSeconds(1));
+        trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
+        verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ITALIAN));
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(originalEmail), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(ORG_EMAIL), anyString(), any(TextTemplateGenerator.class));
     }
 
     // check we don't send the ticket-has-changed-owner email if the originalEmail and name are present and the status is not ACQUIRED
@@ -288,8 +314,6 @@ public class TicketReservationManagerTest {
         when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
 
         when(eventRepository.findByReservationId("abcd")).thenReturn(event);
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
 
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(singletonList("abcd"));
