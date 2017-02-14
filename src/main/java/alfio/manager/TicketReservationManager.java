@@ -895,6 +895,10 @@ public class TicketReservationManager {
             Locale oldUserLocale = Locale.forLanguageTag(ticket.getUserLanguage());
             String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
             notificationManager.sendSimpleEmail(event, ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
+            if(event.getBegin().isBefore(ZonedDateTime.now(event.getZoneId()))) {
+                Organization organization = organizationRepository.getById(event.getOrganizationId());
+                notificationManager.sendSimpleEmail(event, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", () -> ownerChangeTextBuilder.generate(newTicket));
+            }
         }
 
         if(admin) {
