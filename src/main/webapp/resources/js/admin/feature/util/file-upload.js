@@ -10,7 +10,8 @@
                     targetUrl: '=',
                     successCallback: '=',
                     errorCallback: '=',
-                    directHandling: '='
+                    directHandling: '=',
+                    readAsText:'='
                 },
                 bindToController: true,
                 controller: FileUploadController,
@@ -30,11 +31,19 @@
             }
             var reader = new FileReader();
             reader.onload = function(e) {
-                var fileBase64 = e.target.result;
+
+                var fileContent = e.target.result;
+                if(!ctrl.readAsText) {
+                    fileContent = fileBase64.substring(fileBase64.indexOf('base64,') + 7);
+                    if(ctrl.directHandling) {
+                        fileContent = $window.atob(fileContent)
+                    }
+                }
+
                 if(ctrl.directHandling) {
-                    ctrl.successCallback($window.atob(fileBase64.substring(fileBase64.indexOf('base64,') + 7)));
+                    ctrl.successCallback(fileContent);
                 } else {
-                    $http['post'](ctrl.targetUrl, {file : fileBase64.substring(fileBase64.indexOf('base64,') + 7), type : file.type, name : file.name})
+                    $http['post'](ctrl.targetUrl, {file : fileContent, type : file.type, name : file.name})
                         .success(function(data) {
                             ctrl.successCallback(data);
                         }).error(function(data) {
@@ -44,7 +53,13 @@
                         });
                 }
             };
-            reader.readAsDataURL(file);
+
+            if(ctrl.readAsText) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsDataURL(file);
+            }
+
         };
 
     }

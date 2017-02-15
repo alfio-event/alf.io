@@ -98,7 +98,7 @@
                     </pre>
                 </div>
 
-                <file-upload accept="'text/csv'" success-callback="ticketInfo.parseFileContent" direct-handling="true" ng-if="ticketInfo.attendeeStrategy == 'CSV'"></file-upload>
+                <file-upload accept="'text/csv'" read-as-text="true" success-callback="ticketInfo.parseFileContent" direct-handling="true" ng-if="ticketInfo.attendeeStrategy == 'CSV'"></file-upload>
 
             </div>
 
