@@ -34,7 +34,7 @@
 
                 var fileContent = e.target.result;
                 if(!ctrl.readAsText) {
-                    fileContent = fileBase64.substring(fileBase64.indexOf('base64,') + 7);
+                    fileContent = fileContent.substring(fileContent.indexOf('base64,') + 7);
                     if(ctrl.directHandling) {
                         fileContent = $window.atob(fileContent)
                     }
