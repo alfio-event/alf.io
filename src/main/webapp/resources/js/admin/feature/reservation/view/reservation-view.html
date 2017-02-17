@@ -144,6 +144,8 @@
         <div uib-alert type="danger" close="$ctrl.hideMessages()" dismiss-on-timeout="2000" data-ng-if="$ctrl.errorMessage"><i class="fa fa-times"></i> {{$ctrl.errorMessage}}</div>
         <hr>
         <div class="pull-right">
+            <button type="button" ng-if="$ctrl.onClose" ng-click="$ctrl.onClose()" class="btn btn-lg" style="margin-bottom:20px">Close</button>
+            <button type="button" ng-if="$ctrl.reservation.status === 'PENDING'" class="btn btn-lg btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
             <button type="submit" class="btn btn-lg btn-warning" data-ng-disabled="viewReservation.$waiting" style="margin-bottom:20px">Update</button>
         </div>
     </form>

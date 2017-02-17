@@ -5,7 +5,8 @@
         bindings: {
             event:'<',
             reservationDescriptor: '<',
-            onUpdate: '<'
+            onUpdate: '<',
+            onClose: '<'
         },
         controller: ReservationViewCtrl,
         templateUrl: '../resources/js/admin/feature/reservation/view/reservation-view.html'

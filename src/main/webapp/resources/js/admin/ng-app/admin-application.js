@@ -1212,12 +1212,47 @@
             return  ['TO_BE_PAID', 'ACQUIRED'].indexOf(ticket.status) >= 0;
         };
 
-        
-        $scope.reloadTickets = function() {
+
+        function reloadTickets() {
             CheckInService.findAllTickets($scope.event.id).success(function(tickets) {
                 $scope.tickets = tickets;
             });
-        };
+        }
+        
+        $scope.reloadTickets = reloadTickets;
+
+        $scope.showReservationModal = function showReservationModal(event, ticket) {
+            var modal = $uibModal.open({
+                size:'min-1200',
+                templateUrl: BASE_STATIC_URL + '/event/show-reservation-modal.html',
+                backdrop: 'static',
+                controllerAs: 'ctrl',
+                controller: function($scope) {
+                    var ctrl = this;
+                    ctrl.event = event;
+                    ctrl.resetReservationView = false;
+                    ctrl.showReservation = false;
+                    var reservationInfo = {eventName: event.shortName, reservationId: ticket.ticketsReservationId}
+                    AdminReservationService.load(reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
+                        ctrl.reservationDescriptor = reservationDescriptor.data.data;
+                        ctrl.showReservation = true;
+                    });
+
+                    ctrl.onClose = function() {
+                        modal.close();
+                    }
+
+                    ctrl.onUpdate = function(reservationInfo) {
+                        ctrl.resetReservationView = true;
+                        reloadTickets();
+                        AdminReservationService.load(reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
+                            ctrl.reservationDescriptor = reservationDescriptor.data.data;
+                            ctrl.resetReservationView = false;
+                        })
+                    }
+                }
+            })
+        }
 
         $scope.newReservationsModal = function newReservationsModal(event) {
             var modal = $uibModal.open({
