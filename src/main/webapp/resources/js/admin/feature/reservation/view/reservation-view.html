@@ -37,7 +37,7 @@
                     <label>Status</label>
                     <div class="input-group">
                         <div class="form-control-static">{{$ctrl.reservation.status}}</div>
-                        <div class="input-group-addon" style="padding: 0; background-color: transparent; border: 0">
+                        <div class="input-group-addon" style="padding: 0; background-color: transparent; border: 0" ng-if="!$ctrl.onUpdate">
                             <button type="button" ng-if="$ctrl.reservation.status === 'PENDING'" class="btn btn-sm btn-success pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
                         </div>
                     </div>
@@ -145,7 +145,7 @@
         <hr>
         <div class="pull-right">
             <button type="button" ng-if="$ctrl.onClose" ng-click="$ctrl.onClose()" class="btn btn-lg" style="margin-bottom:20px">Close</button>
-            <button type="button" ng-if="$ctrl.reservation.status === 'PENDING'" class="btn btn-lg btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
+            <button type="button" ng-if="$ctrl.reservation.status === 'PENDING' && $ctrl.onUpdate" class="btn btn-lg btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
             <button type="submit" class="btn btn-lg btn-warning" data-ng-disabled="viewReservation.$waiting" style="margin-bottom:20px">Update</button>
         </div>
     </form>

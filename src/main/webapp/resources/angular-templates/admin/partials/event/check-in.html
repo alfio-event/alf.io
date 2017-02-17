@@ -96,7 +96,7 @@
                         <td data-ng-class-even="'active'" data-label="Holder's name">{{::ticket.fullName}}</td>
                         <td data-ng-class-even="'active'" data-label="Holder's e-mail">{{::ticket.email}}</td>
                         <td data-ng-class-even="'active'" data-label="Type">{{::ticket.ticketCategory.name | limitTo:10}}{{::ticket.ticketCategory.name.length > 10 ? '...':''}}</td>
-                        <td data-ng-class-even="'active'" data-label="Reference Number"><button ng-click="showReservationModal(event, ticket)" class="btn btn-xs btn-primary">{{::ticket.uuid}}</button></td>
+                        <td data-ng-class-even="'active'" data-label="Reference Number"><button ng-click="showReservationModal(event, ticket)" class="btn btn-xs btn-link">{{::ticket.uuid}}</button></td>
                         <td data-ng-class-even="'active'" data-ng-if="!event.freeOfCharge" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
                         <td data-ng-class-even="'active'" data-label="Display QR-Code"><button type="button" class="btn btn-primary btn-xs" data-ng-click="showQrCode(ticket, event)"><i class="fa fa-qrcode"></i> QR-Code</button></td>
                         <td data-ng-class-even="'active'" data-label="Manual Check-In"><button type="button" class="btn btn-primary btn-xs" data-ng-click="manualCheckIn(ticket)"><i class="fa fa-check"></i> Check-In</button></td>
@@ -143,7 +143,7 @@
                         <td data-ng-class-even="'active'" data-label="Owner's last name" ng-show="event.useFirstAndLastName">{{::ticket.lastName}}</td>
                         <td data-ng-class-even="'active'" data-label="Owner's e-mail">{{::ticket.email}}</td>
                         <td data-ng-class-even="'active'" data-label="Type">{{::ticket.ticketCategory.name}}</td>
-                        <td data-ng-class-even="'active'" data-label="Reference Number"><button ng-click="showReservationModal(event, ticket)" class="btn btn-xs btn-primary">{{::ticket.uuid}}</button></td>
+                        <td data-ng-class-even="'active'" data-label="Reference Number"><button ng-click="showReservationModal(event, ticket)" class="btn btn-xs btn-link">{{::ticket.uuid}}</button></td>
                         <td data-ng-class-even="'active'" data-label="Customer's name">{{::ticket.ticketReservation.fullName}}</td>
                         <td data-ng-class-even="'active'" data-label="Customer's e-mail">{{::ticket.ticketReservation.email}}</td>
                         <td data-ng-class-even="'active'" data-label="Order identifier">{{::ticket.ticketsReservationId}}</td>
