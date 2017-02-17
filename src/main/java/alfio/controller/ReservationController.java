@@ -37,7 +37,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
-import org.apache.commons.lang3.StringUtils;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,12 +59,11 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
-import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
-import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
+import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
 
 @Controller
+@Log4j2
 public class ReservationController {
 
     private final EventRepository eventRepository;
@@ -158,17 +157,26 @@ public class ReservationController {
                              .addAttribute("showPostpone", true);
                     }
 
+                    try {
+                        model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
+                    } catch (TicketReservationManager.OfflinePaymentException e) {
+                        if(event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
+                            log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName() , e);
+                        }
+                        model.addAttribute("delayForOfflinePayment", 0);
+                    }
+
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
                     List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
                         .stream()
-                        .filter(p -> p.isActive() && event.getAllowedPaymentProxies().contains(p.getPaymentProxy()))
+                        .filter(p -> p.isActive() && event.getAllowedPaymentProxies().contains(p.getPaymentProxy()) && !p.getPaymentProxy().equals(PaymentProxy.OFFLINE) || (p.getPaymentProxy().equals(PaymentProxy.OFFLINE) && p.isActive() && event.getAllowedPaymentProxies().contains(p.getPaymentProxy()) && TicketReservationManager.hasValidOfflinePaymentWaitingPeriod(event, configurationManager)))
                         .map(PaymentManager.PaymentMethod::getPaymentProxy)
                         .collect(toList());
+                    model.addAttribute("multiplePaymentMethods" , activePaymentMethods.size() > 1 );
                     model.addAttribute("orderSummary", orderSummary);
                     model.addAttribute("reservationId", reservationId);
                     model.addAttribute("reservation", reservation);
                     model.addAttribute("pageTitle", "reservation-page.header.title");
-                    model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
                     model.addAttribute("event", event);
                     model.addAttribute("activePaymentMethods", activePaymentMethods);
                     model.addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary));
