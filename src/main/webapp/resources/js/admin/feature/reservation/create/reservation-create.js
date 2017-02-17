@@ -5,7 +5,8 @@
         bindings: {
             event:'<',
             onCancel:'<',
-            onCreation:'<'
+            onCreation:'<',
+            fastCreation: '<'
         },
         controller: ReservationEditCtrl,
         templateUrl: '../resources/js/admin/feature/reservation/create/reservation-create.html'
@@ -39,6 +40,11 @@
         ctrl.$onInit = function() {
             ctrl.languages = ctrl.event.contentLanguages;
             init();
+
+            if(ctrl.languages.length === 1) {
+                ctrl.reservation.language = ctrl.languages[0].locale;
+            }
+
             ctrl.categories = ctrl.event.ticketCategories;
         };
 
@@ -109,6 +115,15 @@
         ctrl.submit = function(frm) {
             if(frm.$valid) {
                 ctrl.loading = true;
+
+                if(ctrl.fastCreation) {
+
+                    var firstTicket = ctrl.reservation.ticketsInfo[0].attendees[0];
+                    ctrl.reservation.customerData.firstName = firstTicket.firstName;
+                    ctrl.reservation.customerData.lastName = firstTicket.lastName;
+                    ctrl.reservation.customerData.emailAddress = firstTicket.emailAddress;
+                }
+
                 AdminReservationService.createReservation(ctrl.event.shortName, ctrl.reservation).then(function(r) {
                     var result = r.data;
                     if(result.success) {

@@ -4,35 +4,47 @@
             <h1>Create reservation for {{$ctrl.event.displayName}}</h1>
         </div>
 
-        <div class="page-header">
-            <h3>Contact info</h3>
-        </div>
+        <div ng-if="!$ctrl.fastCreation">
+            <div class="page-header">
+                <h3>Contact info</h3>
+            </div>
 
-        <div class="row">
-            <div class="col-xs-12 col-sm-6">
-                <div class="form-group">
-                    <label for="customerFirstName">First name</label>
-                    <input class="form-control" id="customerFirstName" name="customerFirstName" ng-model="$ctrl.reservation.customerData.firstName" required>
+            <div class="row">
+                <div class="col-xs-12 col-sm-6">
+                    <div class="form-group">
+                        <label for="customerFirstName">First name</label>
+                        <input class="form-control" id="customerFirstName" name="customerFirstName" ng-model="$ctrl.reservation.customerData.firstName" required>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-6">
+                    <div class="form-group">
+                        <label for="customerLastName">Last name</label>
+                        <input class="form-control" id="customerLastName" name="customerLastName" ng-model="$ctrl.reservation.customerData.lastName" required>
+                    </div>
                 </div>
             </div>
-            <div class="col-xs-12 col-sm-6">
-                <div class="form-group">
-                    <label for="customerLastName">Last name</label>
-                    <input class="form-control" id="customerLastName" name="customerLastName" ng-model="$ctrl.reservation.customerData.lastName" required>
+            <div class="row">
+                <div class="col-xs-12 col-sm-6">
+                    <div class="form-group">
+                        <label for="customerEmailAddress">Email Address</label>
+                        <input type="email" class="form-control" id="customerEmailAddress" name="customerEmailAddress" ng-model="$ctrl.reservation.customerData.emailAddress" required>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-6">
+                    <div class="form-group">
+                        <label for="language">Language</label>
+                        <select class="form-control" id="language" ng-options="l.locale as l.displayLanguage for l in $ctrl.languages" name="language" ng-model="$ctrl.reservation.language" required></select>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-xs-12 col-sm-6">
-                <div class="form-group">
-                    <label for="customerEmailAddress">Email Address</label>
-                    <input type="email" class="form-control" id="customerEmailAddress" name="customerEmailAddress" ng-model="$ctrl.reservation.customerData.emailAddress" required>
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-6">
-                <div class="form-group">
-                    <label for="language">Language</label>
-                    <select class="form-control" id="language" ng-options="l.locale as l.displayLanguage for l in $ctrl.languages" name="language" ng-model="$ctrl.reservation.language" required></select>
+        <div ng-if="$ctrl.fastCreation && $ctrl.languages.length > 1">
+            <div class="row">
+                <div class="col-xs-12 col-sm-6">
+                    <div class="form-group">
+                        <label for="language">Language</label>
+                        <select class="form-control" id="language" ng-options="l.locale as l.displayLanguage for l in $ctrl.languages" name="language" ng-model="$ctrl.reservation.language" required></select>
+                    </div>
                 </div>
             </div>
         </div>

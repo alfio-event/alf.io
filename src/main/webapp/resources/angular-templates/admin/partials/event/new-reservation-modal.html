@@ -1,4 +1,4 @@
 <div class="modal-body">
-    <div ng-if="!ctrl.showReservation"><reservation-create event="ctrl.event" on-cancel="ctrl.close" on-creation="ctrl.onCreation"></reservation-create></div>
+    <div ng-if="!ctrl.showReservation"><reservation-create event="ctrl.event" on-cancel="ctrl.close" on-creation="ctrl.onCreation" fast-creation="true"></reservation-create></div>
     <div ng-if="ctrl.showReservation && !ctrl.resetReservationView"><reservation-view event="ctrl.event" reservation-descriptor="ctrl.reservationDescriptor" on-update="ctrl.onUpdate"></reservation-view></div>
 </div>
