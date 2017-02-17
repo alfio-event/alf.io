@@ -1254,6 +1254,8 @@
             })
         }
 
+        var parentScope = $scope;
+
         $scope.newReservationsModal = function newReservationsModal(event) {
             var modal = $uibModal.open({
                 size:'min-1200',
@@ -1280,6 +1282,12 @@
                             ctrl.reservationDescriptor = reservationDescriptor.data.data;
                             ctrl.resetReservationView = false;
                         })
+                    }
+
+                    ctrl.onConfirm = function(reservationInfo) {
+                        reloadTickets();
+                        modal.close();
+                        parentScope.selection.freeText = reservationInfo.reservationId;
                     }
                 }
             });

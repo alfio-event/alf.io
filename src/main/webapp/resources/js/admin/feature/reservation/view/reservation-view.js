@@ -6,7 +6,8 @@
             event:'<',
             reservationDescriptor: '<',
             onUpdate: '<',
-            onClose: '<'
+            onClose: '<',
+            onConfirm: '<'
         },
         controller: ReservationViewCtrl,
         templateUrl: '../resources/js/admin/feature/reservation/view/reservation-view.html'
@@ -120,7 +121,7 @@
 
         ctrl.confirm = function() {
             AdminReservationService.confirm(ctrl.event.shortName, ctrl.reservation.id).then(function() {
-                $window.location.reload();
+                if(ctrl.onConfirm) {ctrl.onConfirm({eventName: ctrl.event.shortName, reservationId: ctrl.reservation.id})} else {$window.location.reload();}
             });
         };
     }
