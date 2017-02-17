@@ -4,7 +4,8 @@
     angular.module('adminApplication').component('reservationView', {
         bindings: {
             event:'<',
-            reservationDescriptor: '<'
+            reservationDescriptor: '<',
+            onUpdate: '<'
         },
         controller: ReservationViewCtrl,
         templateUrl: '../resources/js/admin/feature/reservation/view/reservation-view.html'
@@ -75,7 +76,7 @@
         ctrl.update = function(frm) {
             if(frm.$valid) {
                 AdminReservationService.updateReservation(ctrl.event.shortName, ctrl.reservation.id, ctrl.reservation).then(function() {
-                    $window.location.reload();
+                    if(ctrl.onUpdate) {ctrl.onUpdate({eventName: ctrl.event.shortName, reservationId: ctrl.reservation.id});} else {$window.location.reload();}
                 })
             }
         };

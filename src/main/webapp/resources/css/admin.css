@@ -416,3 +416,7 @@ a.emulate-nav-pills-link {
     width: 100%;
     height: 500px;
 }
+
+.modal-min-1200 {
+    min-width:1200px;
+}

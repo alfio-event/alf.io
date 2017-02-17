@@ -3,7 +3,9 @@
 
     angular.module('adminApplication').component('reservationCreate', {
         bindings: {
-            event:'<'
+            event:'<',
+            onCancel:'<',
+            onCreation:'<'
         },
         controller: ReservationEditCtrl,
         templateUrl: '../resources/js/admin/feature/reservation/create/reservation-create.html'
@@ -86,9 +88,13 @@
             ticketInfo.attendees.splice(index, 1);
         };
 
-        ctrl.reinit = function() {
-            init();
-        };
+        if(ctrl.onCancel) {
+            ctrl.reinit = ctrl.onCancel;
+        } else {
+            ctrl.reinit = function() {init();};
+        }
+
+
 
         ctrl.calculateTotalPrice = function(price) {
             if(angular.isDefined(price)) {
@@ -106,7 +112,12 @@
                 AdminReservationService.createReservation(ctrl.event.shortName, ctrl.reservation).then(function(r) {
                     var result = r.data;
                     if(result.success) {
-                        $state.go('events.single.view-reservation', {'reservationId': result.data, 'eventName': ctrl.event.shortName});
+                        var reservationInfo = {'reservationId': result.data, 'eventName': ctrl.event.shortName};
+                        if(ctrl.onCreation) {
+                            ctrl.onCreation(reservationInfo);
+                        } else {
+                            $state.go('events.single.view-reservation', reservationInfo);
+                        }
                     } else {
                         handleError(result.errors);
                     }

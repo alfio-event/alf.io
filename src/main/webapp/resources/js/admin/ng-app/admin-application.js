@@ -1178,7 +1178,7 @@
         $scope.uploadUrl = '/admin/api/events/'+$stateParams.eventName+'/categories/'+$stateParams.categoryId+'/link-codes';
     });
     
-    admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService, $uibModal) {
+    admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService, AdminReservationService, $uibModal) {
 
         $scope.selection = {};
         $scope.checkedInSelection = {};
@@ -1216,6 +1216,37 @@
         $scope.reloadTickets = function() {
             CheckInService.findAllTickets($scope.event.id).success(function(tickets) {
                 $scope.tickets = tickets;
+            });
+        };
+
+        $scope.newReservationsModal = function newReservationsModal(event) {
+            var modal = $uibModal.open({
+                size:'min-1200',
+                templateUrl: BASE_STATIC_URL + '/event/new-reservation-modal.html',
+                backdrop: 'static',
+                controllerAs: 'ctrl',
+                controller: function($scope) {
+                    var ctrl = this;
+                    ctrl.resetReservationView = false;
+                    ctrl.showReservation = false;
+                    ctrl.event = event;
+                    ctrl.close = function() {
+                        modal.close();
+                    }
+                    ctrl.onCreation = function(reservationInfo) {
+                        AdminReservationService.load(reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
+                            ctrl.reservationDescriptor = reservationDescriptor.data.data;
+                            ctrl.showReservation = true;
+                        })
+                    }
+                    ctrl.onUpdate = function(reservationInfo) {
+                        ctrl.resetReservationView = true;
+                        AdminReservationService.load(reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
+                            ctrl.reservationDescriptor = reservationDescriptor.data.data;
+                            ctrl.resetReservationView = false;
+                        })
+                    }
+                }
             });
         };
 
