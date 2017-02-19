@@ -70,6 +70,9 @@
             <div class="page-header">
                 <h2>Invoice settings</h2>
             </div>
+            <div class="alert alert-info"><i class="fa fa-info-circle"></i> You must fill all the fields below (<i>VAT number, Invoice number pattern, Invoice address</i>), otherwise invoices won't be generated.
+                <p>Invoice number pattern follows the <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html#syntax" target="_blank">Java (tm) string formatting syntax</a></p>
+            </div>
             <div>
                 <div data-ng-repeat="setting in eventConf.settings.INVOICE">
                     <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
