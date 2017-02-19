@@ -12,9 +12,9 @@
             <uib-tab-heading>
                 <i class="fa fa-qrcode"></i> To be checked in <span class="badge">{{(tickets | filter: toBeCheckedIn).length}}</span>
             </uib-tab-heading>
-            <div style="margin: 15px 15px 15px 0;">
+            <div style="margin: 15px 0 15px 0;">
                 <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button>
-                <button ng-click="newReservationsModal(event)" class="btn btn-default" type="button"><i class="fa fa-ticket"></i> Add new reservations</button>
+                <button ng-click="newReservationsModal(event)" class="btn btn-success pull-right" type="button"><i class="fa fa-plus"></i> Add new attendees</button>
             </div>
             <div>
                 <div class="input-group wMarginBottom">
@@ -84,7 +84,7 @@
                         <th>Holder's name</th>
                         <th>Holder's e-mail</th>
                         <th>Type</th>
-                        <th>Reference Number</th>
+                        <th>Ref Nr.</th>
                         <th data-ng-if="!event.freeOfCharge">Payment Type</th>
                         <th><span class="sr-only">Display QR Code</span></th>
                         <th><span class="sr-only">Manual Check-In</span></th>
@@ -96,7 +96,7 @@
                         <td data-ng-class-even="'active'" data-label="Holder's name">{{::ticket.fullName}}</td>
                         <td data-ng-class-even="'active'" data-label="Holder's e-mail">{{::ticket.email}}</td>
                         <td data-ng-class-even="'active'" data-label="Type">{{::ticket.ticketCategory.name | limitTo:10}}{{::ticket.ticketCategory.name.length > 10 ? '...':''}}</td>
-                        <td data-ng-class-even="'active'" data-label="Reference Number"><button ng-click="showReservationModal(event, ticket)" class="btn btn-xs btn-link">{{::ticket.uuid}}</button></td>
+                        <td data-ng-class-even="'active'" data-label="Reference Number"><button ng-click="showReservationModal(event, ticket)" class="btn btn-xs btn-link">{{::ticket.uuid | limitTo:8}}</button></td>
                         <td data-ng-class-even="'active'" data-ng-if="!event.freeOfCharge" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
                         <td data-ng-class-even="'active'" data-label="Display QR-Code"><button type="button" class="btn btn-primary btn-xs" data-ng-click="showQrCode(ticket, event)"><i class="fa fa-qrcode"></i> QR-Code</button></td>
                         <td data-ng-class-even="'active'" data-label="Manual Check-In"><button type="button" class="btn btn-primary btn-xs" data-ng-click="manualCheckIn(ticket)"><i class="fa fa-check"></i> Check-In</button></td>
