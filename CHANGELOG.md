@@ -1,5 +1,43 @@
 # Change Log
 
+## [1.10](https://github.com/exteso/alf.io/tree/1.10) (2017-02-19)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.9.3...1.10)
+
+**Implemented enhancements:**
+
+- simplified reservation creation at check in [\#261](https://github.com/exteso/alf.io/issues/261)
+- Send Invoice for pending reservations [\#219](https://github.com/exteso/alf.io/issues/219)
+
+**Fixed bugs:**
+
+- csv create reservation has an encoding issue [\#260](https://github.com/exteso/alf.io/issues/260)
+
+**Closed issues:**
+
+- Hide expired events after 2 weeks from end date [\#233](https://github.com/exteso/alf.io/issues/233)
+- For unpublished events, add a yellow icon before event name in the dashboard [\#232](https://github.com/exteso/alf.io/issues/232)
+- Show "Confirmation Date" in the attendee's data CSV report [\#207](https://github.com/exteso/alf.io/issues/207)
+- Additional fields: optional/mandatory [\#153](https://github.com/exteso/alf.io/issues/153)
+- Print badges during check-in [\#134](https://github.com/exteso/alf.io/issues/134)
+- Offline-mode check-in [\#133](https://github.com/exteso/alf.io/issues/133)
+
+**Merged pull requests:**
+
+- \#175 duplicate additional-field.name validation added  [\#256](https://github.com/exteso/alf.io/pull/256) ([Praitheesh](https://github.com/Praitheesh))
+- \#207 add Confirmation date column into export csv.  [\#255](https://github.com/exteso/alf.io/pull/255) ([Praitheesh](https://github.com/Praitheesh))
+- \#153 optional/mandatory validation added for additional fields [\#254](https://github.com/exteso/alf.io/pull/254) ([Praitheesh](https://github.com/Praitheesh))
+
+## [1.9.3](https://github.com/exteso/alf.io/tree/1.9.3) (2017-01-05)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.9.2...1.9.3)
+
+**Fixed bugs:**
+
+- Offline payment: assignee data is not saved [\#251](https://github.com/exteso/alf.io/issues/251)
+
+**Closed issues:**
+
+- make "Add to my calendar" link open in new tab. [\#248](https://github.com/exteso/alf.io/issues/248)
+
 ## [1.9.2](https://github.com/exteso/alf.io/tree/1.9.2) (2016-11-14)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.9.1...1.9.2)
 
