@@ -7,19 +7,16 @@
 
 - simplified reservation creation at check in [\#261](https://github.com/exteso/alf.io/issues/261)
 - Send Invoice for pending reservations [\#219](https://github.com/exteso/alf.io/issues/219)
-
-**Fixed bugs:**
-
-- csv create reservation has an encoding issue [\#260](https://github.com/exteso/alf.io/issues/260)
-
-**Closed issues:**
-
 - Hide expired events after 2 weeks from end date [\#233](https://github.com/exteso/alf.io/issues/233)
 - For unpublished events, add a yellow icon before event name in the dashboard [\#232](https://github.com/exteso/alf.io/issues/232)
 - Show "Confirmation Date" in the attendee's data CSV report [\#207](https://github.com/exteso/alf.io/issues/207)
 - Additional fields: optional/mandatory [\#153](https://github.com/exteso/alf.io/issues/153)
 - Print badges during check-in [\#134](https://github.com/exteso/alf.io/issues/134)
 - Offline-mode check-in [\#133](https://github.com/exteso/alf.io/issues/133)
+
+**Fixed bugs:**
+
+- csv create reservation has an encoding issue [\#260](https://github.com/exteso/alf.io/issues/260)
 
 **Merged pull requests:**
 
