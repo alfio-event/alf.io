@@ -15,6 +15,13 @@
 
             $(document).ready(function() {
                 $(":input:not(input[type=button],input[type=submit],button):visible:first").focus();
+                $("select").map(function() {
+                    var value = $(this).attr('value');
+                    if(value && value.length > 0) {
+                        $(this).find("option[value="+value+"]").attr('selected','selected');
+                    }
+                });
+
             });
             
             $(".update-ticket-owner,.unbind-btn").click(function() {
