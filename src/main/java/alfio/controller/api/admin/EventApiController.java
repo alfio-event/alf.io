@@ -46,6 +46,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
@@ -157,7 +158,7 @@ public class EventApiController {
         List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).collect(Collectors.toList());
         return eventManager.getActiveEvents().stream()
             .filter(e -> userOrganizations.contains(e.getOrganizationId()))
-            .sorted((e1, e2) -> e1.getBegin().withZoneSameInstant(ZoneId.systemDefault()).compareTo(e2.getBegin().withZoneSameInstant(ZoneId.systemDefault())))
+            .sorted(Comparator.comparing(e -> e.getBegin().withZoneSameInstant(ZoneId.systemDefault())))
             .map(s -> new EventListItem(s, request.getContextPath(), descriptionsLoader.eventDescriptions()))
             .collect(Collectors.toList());
     }
@@ -178,13 +179,15 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{name}", method = GET)
-    public Map<String, Object> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
-        Map<String, Object> out = new HashMap<>();
+    public ResponseEntity<Map<String, Object>> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
         final String username = principal.getName();
-        final EventWithStatistics event = eventStatisticsManager.getSingleEventWithStatistics(eventName, username);
-        out.put("event", event);
-        out.put("organization", eventManager.loadOrganizer(event.getEvent(), username));
-        return out;
+        return optionally(() -> eventStatisticsManager.getSingleEventWithStatistics(eventName, username))
+            .map(event -> {
+                Map<String, Object> out = new HashMap<>();
+                out.put("event", event);
+                out.put("organization", eventManager.loadOrganizer(event.getEvent(), username));
+                return ResponseEntity.ok(out);
+            }).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
     
     @RequestMapping(value ="/events/{eventId}", method = DELETE)
@@ -199,8 +202,8 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/check", method = POST)
     public ValidationResult validateEvent(@RequestBody EventModification eventModification, Errors errors) {
-        ValidationResult base = validateEventHeader(Optional.<Event>empty(), eventModification, errors)
-            .or(validateEventPrices(Optional.<Event>empty(), eventModification, errors))
+        ValidationResult base = validateEventHeader(Optional.empty(), eventModification, errors)
+            .or(validateEventPrices(Optional.empty(), eventModification, errors))
             .or(eventModification.getAdditionalServices().stream().map(as -> validateAdditionalService(as, eventModification, errors)).reduce(ValidationResult::or).orElse(ValidationResult.success()));
         AtomicInteger counter = new AtomicInteger();
         return base.or(eventModification.getTicketCategories().stream()
