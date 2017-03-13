@@ -566,6 +566,7 @@ public class TicketReservationManager {
         };
     }
 
+    @Transactional
     void cleanupExpiredReservations(Date expirationDate) {
         List<String> expiredReservationIds = ticketReservationRepository.findExpiredReservation(expirationDate);
         if(expiredReservationIds.isEmpty()) {
@@ -574,6 +575,7 @@ public class TicketReservationManager {
         
         specialPriceRepository.updateStatusForReservation(expiredReservationIds, Status.FREE.toString());
         ticketRepository.resetCategoryIdForUnboundedCategories(expiredReservationIds);
+        ticketFieldRepository.deleteAllValuesForReservations(expiredReservationIds);
         ticketRepository.freeFromReservation(expiredReservationIds);
         waitingQueueManager.cleanExpiredReservations(expiredReservationIds);
         ticketReservationRepository.remove(expiredReservationIds);
@@ -803,6 +805,7 @@ public class TicketReservationManager {
         List<String> reservationIdsToRemove = singletonList(reservationId);
         specialPriceRepository.updateStatusForReservation(reservationIdsToRemove, Status.FREE.toString());
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
+        ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
         Event event = eventRepository.findByReservationId(reservationId);
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
         int updatedTickets = ticketRepository.findTicketsInReservation(reservationId).stream().mapToInt(t -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), t.getId())).sum();
@@ -1098,6 +1101,9 @@ public class TicketReservationManager {
             ticketCategoryDescription, additionalServiceItems, asi -> additionalServiceTextRepository.findByLocaleAndType(asi.getAdditionalServiceId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE));
         notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject", new Object[]{ticket.getId(), event.getDisplayName()}, locale),
             () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED_ADMIN, adminModel, locale));
+
+        int deletedValues = ticketFieldRepository.deleteAllValuesForTicket(ticket.getId());
+        log.debug("deleting {} field values for ticket {}", deletedValues, ticket.getId());
 
         if(ticketRepository.countTicketsInReservation(reservationId) == 0 && !transactionRepository.loadOptionalByReservationId(reservationId).isPresent()) {
             deleteReservations(singletonList(reservationId));

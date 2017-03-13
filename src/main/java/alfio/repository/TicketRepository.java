@@ -194,7 +194,7 @@ public interface TicketRepository {
     @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, full_name = null, first_name = null, last_name = null, email_address = null where id = :ticketId and status = 'ACQUIRED' and tickets_reservation_id = :reservationId and event_id = :eventId")
     int releaseTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
 
-    @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, special_price_id_fk = null where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
+    @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, special_price_id_fk = null, full_name = null, first_name = null, last_name = null, email_address = null where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
     int releaseExpiredTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
 
     @Query("select count(*) from ticket where status = 'RELEASED' and event_id = :eventId")
