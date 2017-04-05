@@ -30,6 +30,7 @@ import alfio.model.result.Result;
 import alfio.model.result.Result.ResultStatus;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
+import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
@@ -274,6 +275,10 @@ public class AdminReservationManager {
                 .map(pair -> reserveForTicketsInfo(event, arm, reservationId, specialPriceSessionId, pair))
                 .reduce(this::reduceReservationResults)
                 .orElseGet(() -> Result.error(ErrorCode.custom("", "unknown error")));
+
+            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, Locale.forLanguageTag(arm.getLanguage()));
+            ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
+
             return result.map(list -> Pair.of(ticketReservationRepository.findReservationById(reservationId), list));
         });
     }
