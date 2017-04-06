@@ -167,7 +167,9 @@ dependencies {
     testCompile "org.springframework:spring-test:$springVersion"
     testCompile "com.insightfullogic:lambda-behave:0.3"
 
-    compileOnly "org.projectlombok:lombok:1.16.4"
+    compileOnly "org.projectlombok:lombok:1.16.16"
+    testCompile "org.projectlombok:lombok:1.16.16"
+
     compileOnly "javax.servlet:javax.servlet-api:3.1.0"
     testCompile "javax.servlet:javax.servlet-api:3.1.0"
     testCompile "org.springframework.boot:spring-boot-starter-test"
@@ -180,26 +182,6 @@ dependencies {
     providedCompile "org.springframework.boot:spring-boot-autoconfigure@jar"
     providedCompile "org.springframework.boot:spring-boot-starter-jetty"
     providedRuntime "org.springframework.boot:spring-boot-starter-jetty"
-}
-
-sourceSets {
-    main {
-        compileClasspath += configurations.compileOnly
-    }
-    test {
-        compileClasspath += configurations.testCompileOnly
-    }
-}
-
-javadoc {
-    classpath += configurations.compileOnly
-}
-
-idea {
-    module {
-        scopes.PROVIDED.plus += [configurations.compileOnly]
-        scopes.PROVIDED.plus += [configurations.testCompileOnly]
-    }
 }
 
 // -- license configuration
