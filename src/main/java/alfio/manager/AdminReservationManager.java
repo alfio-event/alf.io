@@ -180,7 +180,7 @@ public class AdminReservationManager {
         if(arm.isUpdateContactData()) {
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
             ticketReservationRepository.updateTicketReservation(reservationId, r.getStatus().name(), customerData.getEmailAddress(), customerData.getFullName(),
-                customerData.getFirstName(), customerData.getLastName(), r.getUserLanguage(), null, null, null);
+                customerData.getFirstName(), customerData.getLastName(), r.getUserLanguage(), r.getBillingAddress(), r.getConfirmationTimestamp(), Optional.ofNullable(r.getPaymentMethod()).map(PaymentProxy::name).orElse(null));
         }
         arm.getTicketsInfo().stream()
             .filter(TicketsInfo::isUpdateAttendees)
