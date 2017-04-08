@@ -95,6 +95,12 @@
 {{/displayWaitingQueueForm}}
 
 <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reserve-tickets" class="form-horizontal">
+{{^validPaymentMethodAvailable}}
+    <div class="alert alert-warning">
+        <h3>{{#i18n}}show-event.offline-payment-not-available{{/i18n}}</h3>
+    </div>
+{{/validPaymentMethodAvailable}}
+{{#validPaymentMethodAvailable}}
     <ul class="list-group">
     {{#ticketCategories}}
         {{> /event/ticket-category.ms }}
@@ -178,7 +184,7 @@
     </div>
 </div>
 {{/hasAccessPromotions}}
-
+{{/validPaymentMethodAvailable}}
     <hr/>
 
     <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">

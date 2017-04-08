@@ -439,7 +439,7 @@ public class TicketReservationManagerTest {
         assertEquals(true, offlinePaymentDeadline.isAfter(ZonedDateTime.now()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = TicketReservationManager.OfflinePaymentException.class)
     public void throwExceptionAfterEventStart() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().minusDays(1));

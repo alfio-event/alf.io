@@ -125,6 +125,10 @@ public class TicketReservationManager {
 
     }
 
+    public static class OfflinePaymentException extends RuntimeException {
+        public OfflinePaymentException(String message){ super(message); }
+    }
+
     @Autowired
     public TicketReservationManager(EventRepository eventRepository,
                                     OrganizationRepository organizationRepository,
@@ -482,9 +486,32 @@ public class TicketReservationManager {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         ZonedDateTime eventBegin = event.getBegin();
         int daysToBegin = (int) ChronoUnit.DAYS.between(now.toLocalDate(), eventBegin.toLocalDate());
-        Validate.isTrue(daysToBegin >= 0, "Cannot confirm an offline reservation after event start");
+        if (daysToBegin < 0) {
+            throw new OfflinePaymentException("Cannot confirm an offline reservation after event start");
+        }
         int waitingPeriod = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_PAYMENT_DAYS), 5);
         return Math.min(daysToBegin, waitingPeriod);
+    }
+
+    public static boolean hasValidOfflinePaymentWaitingPeriod(Event event, ConfigurationManager configurationManager) {
+        try {
+            return getOfflinePaymentWaitingPeriod(event, configurationManager) >= 0;
+        } catch (OfflinePaymentException e) {
+            return false;
+        }
+    }
+
+
+    /**
+     * ValidPaymentMethod should be configured in organisation and event. And if even already started then event should not have PaymentProxy.OFFLINE as only payment method
+     *
+     * @param paymentMethod
+     * @param event
+     * @param configurationManager
+     * @return
+     */
+    public static boolean isValidPaymentMethod(PaymentManager.PaymentMethod paymentMethod, Event event, ConfigurationManager configurationManager) {
+        return paymentMethod.isActive() && event.getAllowedPaymentProxies().contains(paymentMethod.getPaymentProxy()) && (!paymentMethod.getPaymentProxy().equals(PaymentProxy.OFFLINE) || hasValidOfflinePaymentWaitingPeriod(event, configurationManager));
     }
 
     private void reTransitionToPending(String reservationId) {
