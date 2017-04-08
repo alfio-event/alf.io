@@ -169,7 +169,7 @@ public class ReservationController {
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
                     List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
                         .stream()
-                        .filter(p -> p.isActive() && event.getAllowedPaymentProxies().contains(p.getPaymentProxy()) && !p.getPaymentProxy().equals(PaymentProxy.OFFLINE) || (p.getPaymentProxy().equals(PaymentProxy.OFFLINE) && p.isActive() && event.getAllowedPaymentProxies().contains(p.getPaymentProxy()) && TicketReservationManager.hasValidOfflinePaymentWaitingPeriod(event, configurationManager)))
+                        .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
                         .map(PaymentManager.PaymentMethod::getPaymentProxy)
                         .collect(toList());
                     model.addAttribute("multiplePaymentMethods" , activePaymentMethods.size() > 1 );

@@ -221,7 +221,7 @@ public class EventController {
             List<SaleableTicketCategory> validCategories = ticketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
             List<SaleableAdditionalService> additionalServices = additionalServiceRepository.loadAllForEvent(event.getId()).stream().map((as) -> getSaleableAdditionalService(event, locale, as, promoCodeDiscount.orElse(null))).collect(Collectors.toList());
             Predicate<SaleableTicketCategory> waitingQueueTargetCategory = tc -> !tc.getExpired() && !tc.isBounded();
-            boolean inValidOfflinePayment = event.getAllowedPaymentProxies().size() == 1 && event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE) && !TicketReservationManager.hasValidOfflinePaymentWaitingPeriod(event, configurationManager);
+            boolean validPaymentConfigured = isEventHasValidPaymentConfigurations(event, configurationManager);
             model.addAttribute("event", eventDescriptor)//
                 .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
                 .addAttribute("ticketCategories", validCategories)//
@@ -242,9 +242,9 @@ public class EventController {
                 .addAttribute("showAdditionalServices", !additionalServices.isEmpty())
                 .addAttribute("enabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isNotExpired).collect(Collectors.toList()))
                 .addAttribute("disabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isExpired).collect(Collectors.toList()))
-                .addAttribute("forwardButtonDisabled", (ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable)) || inValidOfflinePayment)
+                .addAttribute("forwardButtonDisabled", (ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable)) || !validPaymentConfigured)
                 .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
-                .addAttribute("validPaymentMethodAvailable", !inValidOfflinePayment);
+                .addAttribute("validPaymentMethodAvailable", validPaymentConfigured);
 
             model.asMap().putIfAbsent("hasErrors", false);//
             return "/event/show-event";
@@ -335,6 +335,17 @@ public class EventController {
 
     private static boolean shouldApplyDiscount(PromoCodeDiscount promoCodeDiscount, TicketCategory ticketCategory) {
         return promoCodeDiscount.getCategories().isEmpty() || promoCodeDiscount.getCategories().contains(ticketCategory.getId());
+    }
+
+    private boolean isEventHasValidPaymentConfigurations(Event event, ConfigurationManager configurationManager) {
+        if (event.isFreeOfCharge()) {
+            return true;
+        } else if (event.getAllowedPaymentProxies().size() == 0) {
+            return false;
+        } else {
+            //Check whether event already started and it has only PaymentProxy.OFFLINE as payment method
+            return !(event.getAllowedPaymentProxies().size() == 1 && event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE) && !TicketReservationManager.hasValidOfflinePaymentWaitingPeriod(event, configurationManager));
+        }
     }
 
 }
