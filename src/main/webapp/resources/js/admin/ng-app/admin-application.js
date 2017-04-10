@@ -1396,7 +1396,15 @@
             var endVideoStream = function () {
                 processingScannedImage = false;
                 if (!!$scope.stream) {
-                    $scope.stream.stop();
+                    var stream = $scope.stream;
+                    if (stream.getVideoTracks) {
+                        var track = stream.getVideoTracks();
+                        if (track && track[0] && track[0].stop) {
+                            track[0].stop()
+                        } else if (stream.stop) {
+                            stream.stop()
+                        }
+                    }
                 }
             }
 
@@ -1442,7 +1450,7 @@
             navigator.mediaDevices.enumerateDevices().then(function(sources) {
                 var videos = [];
                 angular.forEach(sources, function(v,i) {
-                    if(v.kind === 'video') {
+                    if(v.kind === 'videoinput') {
                         videos.push({ source: v, label: (v.label || 'camera ' + i)});
                     }
                 });
