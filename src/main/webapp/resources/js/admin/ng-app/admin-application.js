@@ -1326,7 +1326,7 @@
         $scope.scanning = {visible : false, ticket : {}};
 
 
-        var canReadCamera = MediaStreamTrack.getSources !== undefined;
+        var canReadCamera = navigator.mediaDevices !== undefined;
 
         $scope.goToScanPage = function() {
             $state.go('events.single.checkInScan', $stateParams);
@@ -1439,7 +1439,7 @@
                 });
             };
 
-            MediaStreamTrack.getSources(function(sources) {
+            navigator.mediaDevices.enumerateDevices().then(function(sources) {
                 var videos = [];
                 angular.forEach(sources, function(v,i) {
                     if(v.kind === 'video') {
