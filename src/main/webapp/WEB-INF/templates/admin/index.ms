@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-csp.css"/>
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.css"/>
+    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.css"/>
     <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/lodash/lodash.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
@@ -29,6 +30,8 @@
     <script src="{{request.contextPath}}/resources/bower_components/chartist-plugin-accessibility/dist/chartist-plugin-accessibility.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/angular-animate/angular-animate.min.js"></script>
     <script src="{{request.contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/ng-app/admin-application.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/directive/admin-directive.js"></script>
@@ -94,6 +97,7 @@
             </div>
         </div>
     </div>
+    <div growl></div>
     <div data-ng-controller="LayoutController as ctrl" data-ng-switch="ctrl.displaySidebar">
         <div class="container-fluid menu-spacer" data-ng-show="ctrl.displaySidebar">
             <div class="row">

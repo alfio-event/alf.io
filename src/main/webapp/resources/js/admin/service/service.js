@@ -1,6 +1,6 @@
 (function () {
     "use strict";
-    var baseServices = angular.module('adminServices', []);
+    var baseServices = angular.module('adminServices', ['angular-growl' , 'ngAnimate']);
 
     baseServices.config(['$httpProvider', function($httpProvider) {
         var token = $("meta[name='_csrf']").attr("content");
@@ -262,6 +262,25 @@
             }
         };
     });
+
+    baseServices.service("NotificationHandler", ["growl", function (growl) {
+        var config = {ttl: 5000, disableCountDown: true};
+        return {
+            showSuccess: function (message) {
+                growl.success(message, config);
+            },
+            showWarning: function (message) {
+                growl.warning(message, config);
+            },
+            showInfo : function (message) {
+                growl.info(message, config);
+            },
+            showError : function (message) {
+                growl.error(message, config);
+            }
+        }
+
+    }]);
 
     baseServices.service("PriceCalculator", function() {
         var instance = {

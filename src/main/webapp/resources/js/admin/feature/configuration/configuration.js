@@ -143,7 +143,7 @@
 
     ConfigurationController.$inject = ['OrganizationService', 'EventService', '$q', '$rootScope'];
 
-    function SystemConfigurationController(ConfigurationService, EventService, $rootScope, $q) {
+    function SystemConfigurationController(ConfigurationService, EventService, NotificationHandler, $rootScope, $q) {
         var systemConf = this;
         systemConf.loading = true;
 
@@ -168,7 +168,9 @@
             systemConf.loading = true;
             ConfigurationService.bulkUpdate(systemConf.settings).then(function() {
                 loadAll();
+                NotificationHandler.showSuccess("Configurations have been saved successfully");
             }, function(e) {
+                NotificationHandler.showError("Unable to save the configuration");
                 alert(e.data);
                 systemConf.loading = false;
             });
@@ -187,7 +189,7 @@
         });
     }
 
-    SystemConfigurationController.$inject = ['ConfigurationService', 'EventService', '$rootScope', '$q'];
+    SystemConfigurationController.$inject = ['ConfigurationService', 'EventService', 'NotificationHandler', '$rootScope', '$q'];
 
     function OrganizationConfigurationController(ConfigurationService, OrganizationService, $stateParams, $q, $rootScope) {
         var organizationConf = this;
