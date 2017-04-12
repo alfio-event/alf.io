@@ -11,10 +11,10 @@ plugins {
     id 'java'
     id 'idea'
     id 'jacoco'
-    id 'com.github.kt3k.coveralls' version '2.4.0'
+    id 'com.github.kt3k.coveralls' version '2.8.1'
     id 'com.github.ben-manes.versions' version '0.14.0'
     id 'com.github.hierynomus.license' version '0.11.0'
-    id 'net.researchgate.release' version '2.3.0'
+    id 'net.researchgate.release' version '2.6.0'
 }
 
 apply plugin: 'war'
@@ -136,7 +136,7 @@ dependencies {
     compile "org.springframework.security:spring-security-config:$springSecurityConfigVersion"
     compile "ch.digitalfondue.npjt-extra:npjt-extra:1.1.2"
     compile "com.samskivert:jmustache:1.13"
-    compile "com.github.sps.mustache:mustache-spring-view:1.3"
+    compile "com.github.sps.mustache:mustache-spring-view:1.4"
     compile "javax.mail:mail:1.5.0-b01"
     compile "org.quartz-scheduler:quartz:2.2.3"
     /**/
@@ -149,7 +149,7 @@ dependencies {
     compile "org.flywaydb:flyway-core:4.1.2"
     compile "org.postgresql:postgresql:9.4.1211"
     compile 'mysql:mysql-connector-java:5.1.40'
-    compile "com.zaxxer:HikariCP:2.5.1"
+    compile "com.zaxxer:HikariCP:2.6.1"
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-core:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-jcl:$log4jVersion"
@@ -206,17 +206,20 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-processResources << {
+processResources {
 
-    final gradleProperties = new File(( File ) it.destinationDir, 'application.properties' )
-    final properties       = new Properties()
+    doLast {
 
-    assert gradleProperties.file
+        final gradleProperties = new File((File) it.destinationDir, 'application.properties')
+        final properties = new Properties()
 
-    gradleProperties.withReader { properties.load( it ) }
-    properties[ 'alfio.version' ] = project.version
-    properties[ 'alfio.build-ts' ] = ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
-    gradleProperties.withWriter { properties.store( it, null )}
+        assert gradleProperties.file
+
+        gradleProperties.withReader { properties.load(it) }
+        properties['alfio.version'] = project.version
+        properties['alfio.build-ts'] = ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
+        gradleProperties.withWriter { properties.store(it, null) }
+    }
 }
 
 compileJava {
