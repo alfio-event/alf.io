@@ -65,6 +65,10 @@ Importing the Gradle project into Intellij and Eclipse both work.
 
 **Note**: this project uses [Project Lombok](https://projectlombok.org/). You will need to install the corresponding Lombok plugin for integration into your IDE.
 
+## Check dependencies to update
+
+`./gradlew dependencyUpdates`
+
 ## Docker images
 Alf.io is also offered as a 3 tier application using 3 docker images:
 
