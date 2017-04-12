@@ -777,8 +777,8 @@ public class EventManager {
 	public void swapAdditionalFieldPosition(int eventId, int id1, int id2) {
 		TicketFieldConfiguration field1 = ticketFieldRepository.findById(id1);
 		TicketFieldConfiguration field2 = ticketFieldRepository.findById(id2);
-		Assert.isTrue(eventId == field1.getEventId());
-		Assert.isTrue(eventId == field2.getEventId());
+		Assert.isTrue(eventId == field1.getEventId(), "eventId does not match field1.eventId");
+		Assert.isTrue(eventId == field2.getEventId(), "eventId does not match field2.eventId");
 		ticketFieldRepository.updateFieldOrder(id1, field2.getOrder());
 		ticketFieldRepository.updateFieldOrder(id2, field1.getOrder());
 	}
