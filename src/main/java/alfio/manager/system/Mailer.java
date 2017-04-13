@@ -19,8 +19,7 @@ package alfio.manager.system;
 import alfio.model.Event;
 import lombok.Data;
 
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public interface Mailer {
 
@@ -40,6 +39,43 @@ public interface Mailer {
 
 
     enum AttachmentIdentifier {
-        TICKET_PDF, CALENDAR_ICS, INVOICE_PDF, RECEIPT_PDF
+        TICKET_PDF {
+            @Override
+            public List<AttachmentIdentifier> reinterpretAs() {
+                return Arrays.asList(PASSBOOK, CALENDAR_ICS);
+            }
+        }, CALENDAR_ICS {
+            @Override
+            public String fileName(String fileName) {
+                return "calendar.ics";
+            }
+
+            @Override
+            public String contentType(String contentType) {
+                return "text/calendar";
+            }
+        }, INVOICE_PDF, RECEIPT_PDF, PASSBOOK {
+            @Override
+            public String fileName(String fileName) {
+                return "Passbook.pkpass";
+            }
+
+            @Override
+            public String contentType(String contentType) {
+                return "application/vnd.apple.pkpass";
+            }
+        };
+
+        public List<AttachmentIdentifier> reinterpretAs() {
+            return Collections.emptyList();
+        }
+
+        public String contentType(String contentType) {
+            return contentType;
+        }
+
+        public String fileName(String fileName) {
+            return fileName;
+        }
     }
 }

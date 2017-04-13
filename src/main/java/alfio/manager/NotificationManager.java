@@ -57,6 +57,7 @@ import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static alfio.model.EmailMessage.Status.*;
 
@@ -102,8 +103,17 @@ public class NotificationManager {
 
 
         attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, (model) -> {
-            Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
-            Locale locale = Json.fromJson(model.get("locale"), Locale.class);
+            Event event;
+            Locale locale;
+            if(model.containsKey("eventId")) {
+                //legacy branch, now we generate the ics as a reinterpreted ticket
+                event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
+                locale = Json.fromJson(model.get("locale"), Locale.class);
+            } else {
+                Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
+                event = eventRepository.findById(ticket.getEventId());
+                locale = Locale.forLanguageTag(ticket.getUserLanguage());
+            }
             String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
             return event.getIcal(description).orElse(null);
         });
@@ -121,6 +131,11 @@ public class NotificationManager {
                 payload.getMiddle(),
                 templateManager,
                 payload.getRight())));
+
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, (model) -> {
+            //FIXME implement
+            return null;
+        });
 
         attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, (model) -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -164,11 +179,6 @@ public class NotificationManager {
 
         List<Mailer.Attachment> attachments = new ArrayList<>();
         attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization));
-
-        Map<String, String> icsModel = new HashMap<>();
-        icsModel.put("eventId", Integer.toString(event.getId()));
-        icsModel.put("locale", Json.toJson(locale));
-        attachments.add(new Mailer.Attachment("calendar.ics", null, "text/calendar", icsModel, Mailer.AttachmentIdentifier.CALENDAR_ICS));
 
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[attachments.size()]));
         String subject = messageSource.getMessage("ticket-email-subject", new Object[]{event.getDisplayName()}, locale);
@@ -257,13 +267,34 @@ public class NotificationManager {
             return new Mailer.Attachment[0];
         }
         Mailer.Attachment[] attachments = gson.fromJson(input, Mailer.Attachment[].class);
-        return Arrays.stream(attachments).map(this::transformAttachment).toArray(size -> new Mailer.Attachment[size]);
+
+        Set<Mailer.AttachmentIdentifier> alreadyPresents = Arrays.stream(attachments).map(Mailer.Attachment::getIdentifier).filter(Objects::nonNull).collect(Collectors.toSet());
+        //
+        List<Mailer.Attachment> toReinterpret = Arrays.stream(attachments)
+            .filter(attachment -> attachment.getIdentifier() != null && !attachment.getIdentifier().reinterpretAs().isEmpty())
+            .collect(Collectors.toList());
+
+        List<Mailer.Attachment> generated = new ArrayList<>(Arrays.stream(attachments)
+            .map(attachment -> this.transformAttachment(attachment, attachment.getIdentifier()))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList()));
+
+        List<Mailer.Attachment> reinterpreted = new ArrayList<>();
+        toReinterpret.forEach(attachment ->
+            attachment.getIdentifier().reinterpretAs().stream()
+                .filter(identifier -> !alreadyPresents.contains(identifier))
+                .forEach(identifier -> reinterpreted.add(this.transformAttachment(attachment, identifier))
+            )
+        );
+
+        generated.addAll(reinterpreted.stream().filter(Objects::nonNull).collect(Collectors.toList()));
+        return generated.toArray(new Mailer.Attachment[generated.size()]);
     }
 
-    private Mailer.Attachment transformAttachment(Mailer.Attachment attachment) {
-        if(attachment.getIdentifier() != null) {
-            byte[] result = attachmentTransformer.get(attachment.getIdentifier()).apply(attachment.getModel());
-            return new Mailer.Attachment(attachment.getFilename(), result, attachment.getContentType(), null, null);
+    private Mailer.Attachment transformAttachment(Mailer.Attachment attachment, Mailer.AttachmentIdentifier identifier) {
+        if(identifier != null) {
+            byte[] result = attachmentTransformer.get(identifier).apply(attachment.getModel());
+            return result == null ? null : new Mailer.Attachment(identifier.fileName(attachment.getFilename()), result, identifier.contentType(attachment.getContentType()), null, null);
         } else {
             return attachment;
         }
