@@ -24,6 +24,7 @@ import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
+import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
@@ -35,27 +36,43 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.*;
+import com.ryantenney.passkit4j.Pass;
+import com.ryantenney.passkit4j.PassResource;
+import com.ryantenney.passkit4j.PassSerializer;
+import com.ryantenney.passkit4j.model.*;
+import com.ryantenney.passkit4j.model.Color;
+import com.ryantenney.passkit4j.model.TextField;
+import com.ryantenney.passkit4j.sign.PassSigner;
+import com.ryantenney.passkit4j.sign.PassSignerImpl;
+import com.ryantenney.passkit4j.sign.PassSigningException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -74,6 +91,10 @@ public class NotificationManager {
     private final OrganizationRepository organizationRepository;
     private final ConfigurationManager configurationManager;
     private final Gson gson;
+    private final Cache<String, Optional<byte[]>> passbookLogoCache = Caffeine.newBuilder()
+        .maximumSize(20)
+        .expireAfterWrite(20, TimeUnit.MINUTES)
+        .build();
 
     private final EnumMap<Mailer.AttachmentIdentifier, Function<Map<String, String>, byte[]>> attachmentTransformer;
 
@@ -133,8 +154,89 @@ public class NotificationManager {
                 payload.getRight())));
 
         attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, (model) -> {
-            //FIXME implement
-            return null;
+            Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
+            int eventId = ticket.getEventId();
+            Event event = eventRepository.findById(eventId);
+            Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
+            int organizationId = organization.getId();
+
+            Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(organizationId, eventId);
+            Map<ConfigurationKeys, Optional<String>> pbookConf = configurationManager.getStringConfigValueFrom(
+                partial.apply(ConfigurationKeys.PASSBOOK_TYPE_IDENTIFIER),
+                partial.apply(ConfigurationKeys.PASSBOOK_KEYSTORE),
+                partial.apply(ConfigurationKeys.PASSBOOK_KEYSTORE_PASSWORD),
+                partial.apply(ConfigurationKeys.PASSBOOK_TEAM_IDENTIFIER));
+            //check if all are set
+            if(pbookConf.values().stream().anyMatch(o -> !o.isPresent())) {
+                log.warn("Missing configuration keys, check if all 4 are presents");
+                return null;
+            }
+
+            //
+            String teamIdentifier = pbookConf.get(ConfigurationKeys.PASSBOOK_TEAM_IDENTIFIER).orElseThrow(IllegalStateException::new);
+            String typeIdentifier = pbookConf.get(ConfigurationKeys.PASSBOOK_TYPE_IDENTIFIER).orElseThrow(IllegalStateException::new);
+            byte[] keystoreRaw = Base64.getDecoder().decode(pbookConf.get(ConfigurationKeys.PASSBOOK_KEYSTORE).orElseThrow(IllegalStateException::new));
+            String keystorePwd = pbookConf.get(ConfigurationKeys.PASSBOOK_KEYSTORE_PASSWORD).orElseThrow(IllegalStateException::new);
+
+            //ugly, find an alternative way?
+            Optional<KeyStore> ksJks = loadKeyStore(keystoreRaw, "jks");
+            Optional<KeyStore> ksP12 = loadKeyStore(keystoreRaw, "pkcs12");
+            if(!ksJks.isPresent() && !ksP12.isPresent()) {
+                log.warn("Not able to load keystore, check");
+                return null;
+            }
+            KeyStore keyStore = ksJks.orElseGet(() -> ksP12.orElseThrow(IllegalStateException::new));
+
+            // from example: https://github.com/ryantenney/passkit4j/blob/master/src/test/java/com/ryantenney/passkit4j/EventTicketExample.java
+            Pass pass = new Pass()
+                .teamIdentifier(teamIdentifier)
+                .passTypeIdentifier(typeIdentifier)
+                .organizationName(event.getDisplayName())
+                .description(event.getDisplayName())
+                .serialNumber(ticket.getUuid())
+                .relevantDate(Date.from(event.getBegin().toInstant()))
+                .expirationDate(Date.from(event.getEnd().toInstant()))
+                .locations(
+                    new Location(Double.parseDouble(event.getLatitude()), Double.parseDouble(event.getLongitude()))
+                )
+                .barcode(new Barcode(BarcodeFormat.QR, ticket.ticketCode(event.getPrivateKey())))
+                .foregroundColor(Color.WHITE)
+                .backgroundColor(Color.WHITE)
+                .passInformation(
+                    new EventTicket()
+                        .primaryFields(new TextField("event", "EVENT", event.getDisplayName()))
+                        .secondaryFields(new TextField("loc", "LOCATION", event.getLocation()))
+                );
+
+            if(event.getFileBlobIdIsPresent()) {
+            }
+
+            fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(metadata -> {
+                if(metadata.getContentType().equals("image/png") || metadata.getContentType().equals("image/jpeg")) {
+                    Optional<byte[]> cachedLogo = passbookLogoCache.get(event.getFileBlobId(), (id) -> {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        fileUploadManager.outputFile(event.getFileBlobId(), baos);
+                        return readAndConvertImage(baos);
+                    });
+
+                    cachedLogo.ifPresent(logo -> {
+                        pass.files(new PassResource("logo.png", logo));
+                    });
+                }
+            });
+            try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                InputStream appleCert = new ClassPathResource("/alfio/certificates/AppleWWDRCA.cer").getInputStream()) {
+                PassSigner signer = PassSignerImpl.builder()
+                    .keystore(keyStore, keystorePwd)
+                    .intermediateCertificate(appleCert)
+                    .build();
+                PassSerializer.writePkPassArchive(pass, signer, baos);
+                //PassSerializer.writePkPassArchive(pass, signer, new FileOutputStream("/tmp/Passbook.pkpass"));
+                return baos.toByteArray();
+            } catch (IOException | PassSigningException e) {
+                log.warn("was not able to generate the passbook file", e);
+                return null;
+            }
         });
 
         attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, (model) -> {
@@ -153,6 +255,36 @@ public class NotificationManager {
             }
             return baos.toByteArray();
         });
+    }
+
+    //"jks" "pkcs12"
+    private static Optional<KeyStore> loadKeyStore(byte[] k, String type) {
+        try {
+            KeyStore ks = KeyStore.getInstance(type);
+            ks.load(new ByteArrayInputStream(k), null);
+            return Optional.of(ks);
+        } catch (GeneralSecurityException | IOException e) {
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<byte[]> readAndConvertImage(ByteArrayOutputStream baos) {
+        try {
+            BufferedImage sourceImage = ImageIO.read(new ByteArrayInputStream(baos.toByteArray()));
+            boolean isWider = sourceImage.getWidth() > sourceImage.getHeight();
+            // as defined in https://developer.apple.com/library/content/documentation/UserExperience/Conceptual/PassKit_PG/Creating.html#//apple_ref/doc/uid/TP40012195-CH4-SW8
+            // logo max 160*50
+            int finalWidth = isWider ? 160 : -1;
+            int finalHeight = !isWider ? 50 : -1;
+            Image thumb = sourceImage.getScaledInstance(finalWidth, finalHeight, Image.SCALE_SMOOTH);
+            BufferedImage bufferedThumbnail = new BufferedImage(thumb.getWidth(null), thumb.getHeight(null), BufferedImage.TYPE_INT_RGB);
+            bufferedThumbnail.getGraphics().drawImage(thumb, 0, 0, null);
+            ByteArrayOutputStream logoPng = new ByteArrayOutputStream();
+            ImageIO.write(bufferedThumbnail, "png", logoPng);
+            return Optional.of(logoPng.toByteArray());
+        } catch (IOException e) {
+            return Optional.empty();
+        }
     }
 
     public Function<Map<String, String>, byte[]> receiptOrInvoiceFactory(Function<Triple<Event, Locale, Map<String, Object>>, Optional<byte[]>> pdfGenerator) {

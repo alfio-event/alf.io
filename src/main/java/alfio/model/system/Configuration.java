@@ -26,6 +26,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.function.Function;
 
 @Getter
 public class Configuration implements Comparable<Configuration> {
@@ -202,6 +203,10 @@ public class Configuration implements Comparable<Configuration> {
 
     public static ConfigurationPathKey from(int organizationId, int eventId, ConfigurationKeys key) {
         return from(Optional.of(organizationId), Optional.of(eventId), Optional.empty(), key);
+    }
+
+    public static Function<ConfigurationKeys, ConfigurationPathKey> from(int organizationId, int eventId) {
+        return (p) -> from(organizationId, eventId, p);
     }
 
     public static ConfigurationPathKey from(int organizationId, int eventId, int ticketCategoryId, ConfigurationKeys key) {

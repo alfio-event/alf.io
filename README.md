@@ -123,3 +123,8 @@ TODO
     * `boot2docker ip` on Mac/Windows
  * Open browser at: `https://DOCKER_IP/admin`
  * Insert user admin and the password you just copied
+
+### About the included AppleWWDRCA.cer
+
+The certificate at src/main/resources/alfio/certificates/AppleWWDRCA.cer has been imported for https://github.com/ryantenney/passkit4j#usage functionality.
+It will expire the 02/07/23 (as https://www.apple.com/certificateauthority/).

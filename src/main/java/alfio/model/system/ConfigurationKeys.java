@@ -102,9 +102,15 @@ public enum ConfigurationKeys {
     //
     VAT_NR("VAT number", false, SettingCategory.INVOICE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION), true),
     INVOICE_NUMBER_PATTERN("Invoice number pattern, example: INVOICE-%d", false, SettingCategory.INVOICE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), true),
-    INVOICE_ADDRESS("Invoice address", false, SettingCategory.INVOICE, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), true);
+    INVOICE_ADDRESS("Invoice address", false, SettingCategory.INVOICE, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), true),
     //
-    
+
+    //PASSBOOK
+    PASSBOOK_TYPE_IDENTIFIER("Passbook type identifier", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), false),
+    PASSBOOK_TEAM_IDENTIFIER("Passbook team identifier", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), false),
+    PASSBOOK_KEYSTORE("Passbook keystore(base64 encoded keystore)", false, SettingCategory.GENERAL, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), false),
+    PASSBOOK_KEYSTORE_PASSWORD("Passbook keystore password", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), false);
+
 
     @Getter
     public enum SettingCategory {
