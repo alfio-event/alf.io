@@ -58,14 +58,20 @@ public class AdminReservationModification {
         private final String firstName;
         private final String lastName;
         private final String emailAddress;
+        private final String billingAddress;
+        private final String userLanguage;
 
         @JsonCreator
         public CustomerData(@JsonProperty("firstName") String firstName,
                             @JsonProperty("lastName") String lastName,
-                            @JsonProperty("emailAddress") String emailAddress) {
+                            @JsonProperty("emailAddress") String emailAddress,
+                            @JsonProperty("billingAddress") String billingAddress,
+                            @JsonProperty("userLanguage") String userLanguage) {
             this.firstName = firstName;
             this.lastName = lastName;
             this.emailAddress = emailAddress;
+            this.billingAddress = billingAddress;
+            this.userLanguage = userLanguage;
         }
 
         public String getFullName() {
@@ -180,7 +186,11 @@ public class AdminReservationModification {
 
     private static CustomerData summaryForCustomerData(CustomerData in) {
         if(in != null) {
-            return new CustomerData(placeholderIfNotEmpty(in.firstName), placeholderIfNotEmpty(in.lastName), placeholderIfNotEmpty(in.emailAddress));
+            return new CustomerData(placeholderIfNotEmpty(in.firstName),
+                placeholderIfNotEmpty(in.lastName),
+                placeholderIfNotEmpty(in.emailAddress),
+                placeholderIfNotEmpty(in.billingAddress),
+                placeholderIfNotEmpty(in.userLanguage));
         }
         else return null;
     }

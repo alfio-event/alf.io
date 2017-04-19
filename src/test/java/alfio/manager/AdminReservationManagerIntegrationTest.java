@@ -171,7 +171,7 @@ public class AdminReservationManagerIntegrationTest {
         Event event = eventWithUsername.getKey();
         String username = eventWithUsername.getValue();
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
-        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch");
+        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "en");
         Category category = new Category(null, "name", new BigDecimal("100.00"));
         int attendees = AVAILABLE_SEATS;
         List<TicketsInfo> ticketsInfoList = Collections.singletonList(new TicketsInfo(category, generateAttendees(attendees), true, false));
@@ -205,7 +205,7 @@ public class AdminReservationManagerIntegrationTest {
         Event event = eventWithUsername.getKey();
         String username = eventWithUsername.getValue();
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
-        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch");
+        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "en");
 
         TicketCategory existingCategory = ticketCategoryRepository.findByEventId(event.getId()).get(0);
 
@@ -263,7 +263,7 @@ public class AdminReservationManagerIntegrationTest {
         Event event = eventWithUsername.getKey();
         String username = eventWithUsername.getValue();
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
-        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch");
+        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "en");
         Iterator<Integer> attendeesIterator = attendeesNr.iterator();
         List<TicketCategory> existingCategories = ticketCategoryRepository.findByEventId(event.getId());
         List<Attendee> allAttendees = new ArrayList<>();

@@ -14,7 +14,7 @@
     });
 
 
-    function ReservationViewCtrl(AdminReservationService, $window, $stateParams) {
+    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams) {
         var ctrl = this;
 
         ctrl.notification = {
@@ -37,6 +37,9 @@
         };
 
         ctrl.$onInit = function() {
+            EventService.getAllLanguages().then(function(allLangs) {
+               ctrl.allLanguages = allLangs.data;
+            });
             var src = ctrl.reservationDescriptor.reservation;
             var currentURL = $window.location.href;
             ctrl.reservationUrl = (currentURL.substring(0, currentURL.indexOf('/admin')) + '/event/'+ ctrl.event.shortName + '/reservation/' + src.id+'?lang='+src.userLanguage);
@@ -51,7 +54,9 @@
                 customerData: {
                     firstName: src.firstName,
                     lastName: src.lastName,
-                    emailAddress: src.email
+                    emailAddress: src.email,
+                    billingAddress: src.billingAddress,
+                    userLanguage: src.userLanguage
                 },
                 language: src.userLanguage
             };
