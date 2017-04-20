@@ -149,7 +149,7 @@ public class EventManager {
         return event;
     }
 
-    void checkOwnership(Event event, String username, int organizationId) {
+    public void checkOwnership(Event event, String username, int organizationId) {
         Validate.isTrue(organizationId == event.getOrganizationId(), "invalid organizationId");
         userManager.findUserOrganizations(username)
                 .stream()

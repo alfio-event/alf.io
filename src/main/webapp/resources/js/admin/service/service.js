@@ -156,7 +156,9 @@
             swapFieldPosition: function(eventName, id1, id2) {
             	return $http.post('/admin/api/events/'+eventName+'/additional-field/swap-position/'+id1+'/'+id2);
             },
-
+            findAllReservations: function(eventName) {
+                return $http.get('/admin/api/reservation/event/'+eventName+'/reservations/list');
+            },
             deleteEvent: function(event) {
                 var modal = $uibModal.open({
                     size:'lg',

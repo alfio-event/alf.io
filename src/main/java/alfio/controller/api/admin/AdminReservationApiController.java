@@ -22,6 +22,7 @@ import alfio.manager.TicketReservationManager;
 import alfio.model.*;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.result.Result;
+import alfio.repository.EventRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Triple;
@@ -38,20 +39,30 @@ import java.util.stream.Collectors;
 public class AdminReservationApiController {
     private final AdminReservationManager adminReservationManager;
     private final EventManager eventManager;
+    private final EventRepository eventRepository;
     private final TicketReservationManager ticketReservationManager;
 
     @Autowired
     public AdminReservationApiController(AdminReservationManager adminReservationManager,
                                          EventManager eventManager,
+                                         EventRepository eventRepository,
                                          TicketReservationManager ticketReservationManager) {
         this.adminReservationManager = adminReservationManager;
         this.eventManager = eventManager;
+        this.eventRepository = eventRepository;
         this.ticketReservationManager = ticketReservationManager;
     }
 
     @RequestMapping(value = "/event/{eventName}/new", method = RequestMethod.POST)
     public Result<String> createNew(@PathVariable("eventName") String eventName, @RequestBody AdminReservationModification reservation, Principal principal) {
         return adminReservationManager.createReservation(reservation, eventName, principal.getName()).map(r -> r.getLeft().getId());
+    }
+
+    @RequestMapping(value = "/event/{eventName}/reservations/list", method = RequestMethod.GET)
+    public List<TicketReservation> findAll(@PathVariable("eventName") String eventName, Principal principal) {
+        Event event = eventRepository.findByShortName(eventName);
+        eventManager.checkOwnership(event, principal.getName(), event.getOrganizationId());
+        return ticketReservationManager.findAllReservationsInEvent(event.getId());
     }
 
     @RequestMapping(value = "/event/{eventName}/{reservationId}/confirm", method = RequestMethod.PUT)

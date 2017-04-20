@@ -5,13 +5,19 @@
         bindings: {
             event: '<'
         },
-        controller: [ReservationsListCtrl],
+        controller: ['EventService', ReservationsListCtrl],
         templateUrl: '../resources/js/admin/feature/reservations-list/reservations-list.html'
     });
     
     
     
-    function ReservationsListCtrl() {
-        console.log('yooo');
+    function ReservationsListCtrl(EventService) {
+        var ctrl = this;
+
+        this.$onInit = function() {
+            EventService.findAllReservations(ctrl.event.shortName).then(function(res) {
+                ctrl.reservations = res.data;
+            })
+        }
     }
 })();
