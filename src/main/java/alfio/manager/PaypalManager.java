@@ -16,9 +16,7 @@
  */
 package alfio.manager;
 
-import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.model.OrderSummary;
-import alfio.model.SummaryRow;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
@@ -214,5 +212,18 @@ public class PaypalManager {
             .map(Sale::getId)
             .filter(Objects::nonNull)
             .findFirst().orElseThrow(IllegalStateException::new);
+    }
+
+    public boolean fullRefund(String paymentId, Event event) {
+        try {
+            log.info("Paypal: trying to do a full refund for payment {}", paymentId);
+            Capture capture = Capture.get(getApiContext(event), paymentId);
+            capture.refund(getApiContext(event), new RefundRequest());
+            log.info("Paypal: full refund for payment {} executed with success", paymentId);
+            return true;
+        } catch(PayPalRESTException ex) {
+            log.warn("Paypal: was not able to refund payment with id " + paymentId, ex);
+            return false;
+        }
     }
 }

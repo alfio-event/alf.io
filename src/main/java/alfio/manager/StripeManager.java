@@ -23,12 +23,14 @@ import alfio.model.system.Configuration;
 import alfio.repository.TicketRepository;
 import com.stripe.exception.*;
 import com.stripe.model.Charge;
+import com.stripe.model.Refund;
 import com.stripe.net.RequestOptions;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -96,7 +98,28 @@ public class StripeManager {
             initialMetadata.put("billingAddress", billingAddress);
         }
         chargeParams.put("metadata", initialMetadata);
-        return Charge.create(chargeParams, RequestOptions.builder().setApiKey(getSecretKey(event)).build());
+        return Charge.create(chargeParams, options(event));
+    }
+
+    private RequestOptions options(Event event) {
+        return RequestOptions.builder().setApiKey(getSecretKey(event)).build();
+    }
+
+    public boolean fullRefund(String chargeId, Event event) {
+        try {
+            log.info("Stripe: trying to do a full refund for payment {}", chargeId);
+            Refund r = Refund.create(Collections.singletonMap("charge", chargeId), options(event));
+            if("succeeded".equals(r.getStatus())) {
+                log.info("Stripe: full refund for payment {} executed with success", chargeId);
+                return true;
+            } else {
+                log.warn("Stripe: was not able to refund payment with id {}, returned status is not 'succeded' but {}", chargeId, r.getStatus());
+                return false;
+            }
+        } catch (StripeException e) {
+            log.warn("Stripe: was not able to refund payment with id " + chargeId, e);
+            return false;
+        }
     }
 
     public String handleException(StripeException exc) {
