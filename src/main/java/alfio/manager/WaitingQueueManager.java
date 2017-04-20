@@ -171,12 +171,12 @@ public class WaitingQueueManager {
         } else if (waitingPeople > 0 && waitingTickets > 0) {
             return distributeAvailableSeats(event, waitingPeople, waitingTickets);
         } else if(subscriptions.stream().anyMatch(WaitingQueueSubscription::isPreSales) && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false)) {
-            return handlePreReservation(event, waitingPeople, waitingTickets);
+            return handlePreReservation(event, waitingPeople);
         }
         return Stream.empty();
     }
 
-    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> handlePreReservation(Event event, int waitingPeople, int waitingTickets) {
+    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> handlePreReservation(Event event, int waitingPeople) {
         List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         // Given that this Job runs more than once in a minute, in order to ensure that all the waiting queue subscribers would get a seat *before*
         // all other people, we must process their a little bit before the sale period starts

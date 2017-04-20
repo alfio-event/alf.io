@@ -30,9 +30,6 @@ public interface PluginLogRepository {
     @Query("insert into plugin_log (plugin_id, event_id, description, type, event_ts) values(:pluginId, :eventId, :description, :type, :eventTs)")
     int insertEvent(@Bind("pluginId") String pluginId, @Bind("eventId") int eventId, @Bind("description") String description, @Bind("type") PluginLog.Type type, @Bind("eventTs") ZonedDateTime timestamp);
 
-    @Query("select pl.id, pl.plugin_id, pl.event_id, pl.description, pl.type, pl.event_ts, e.short_name from plugin_log pl, event e where pl.event_id = e.id order by pl.event_ts asc")
-    List<PluginLog> loadAll();
-
     @Query("select pl.id, pl.plugin_id, pl.event_id, pl.description, pl.type, pl.event_ts, e.short_name from plugin_log pl, event e where pl.event_id = :eventId and pl.event_id = e.id  order by pl.event_ts asc")
     List<PluginLog> loadByEventId(@Bind("eventId") int eventId);
 }

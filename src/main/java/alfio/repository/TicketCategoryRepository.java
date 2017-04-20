@@ -78,9 +78,6 @@ public interface TicketCategoryRepository {
     @Query("update ticket_category set inception = :inception, expiration = :expiration where id = :id")
     int fixDates(@Bind("id") int id, @Bind("inception") ZonedDateTime inception, @Bind("expiration") ZonedDateTime expiration);
 
-    @Query("update ticket_category set supports_waiting_queue = :supportsWaitingQueue where id = :id")
-    int setSupportsWaitingQueue(@Bind("id") int id, @Bind("supportsWaitingQueue") boolean supportsWaitingQueue);
-
     default int getTicketAllocation(int eventId) {
         return findByEventId(eventId).stream()
             .filter(TicketCategory::isBounded)

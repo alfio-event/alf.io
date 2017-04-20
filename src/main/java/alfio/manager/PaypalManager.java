@@ -130,15 +130,8 @@ public class PaypalManager {
         return transactions;
     }
 
-    private static Item fromSummaryRow(SummaryRow summaryRow, Event event) {
-        String quantity = Integer.toString(summaryRow.getAmount());
-        String price = summaryRow.getType() == SummaryRow.SummaryType.PROMOTION_CODE ? summaryRow.getSubTotal() : summaryRow.getPrice();
-        return new Item(summaryRow.getName(), quantity, price, event.getCurrency());
-    }
-
     public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary, CustomerName customerName,
-                                        String email, String billingAddress, Locale locale, boolean postponeAssignment,
-                                        Map<String, UpdateTicketOwnerForm> tickets) throws Exception {
+                                        String email, String billingAddress, Locale locale, boolean postponeAssignment) throws Exception {
 
         Optional<String> experienceProfileId = getOrCreateWebProfile(event, locale);
 

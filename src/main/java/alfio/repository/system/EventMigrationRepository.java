@@ -29,9 +29,6 @@ public interface EventMigrationRepository {
     @Query("select * from event_migration where event_id = :eventId")
     EventMigration loadEventMigration(@Bind("eventId") int eventId);
 
-    @Query("select * from event_migration where id = :id for update")
-    EventMigration lockEventMigrationForUpdate(@Bind("id") int id);
-
     @Query("update event_migration set current_version = :currentVersion, build_ts = :currentTimestamp, status = :status where id = :id")
     int updateMigrationData(@Bind("id") int id, @Bind("currentVersion") String currentVersion, @Bind("currentTimestamp") ZonedDateTime currentTimestamp, @Bind("status") String status);
 

@@ -28,9 +28,6 @@ import java.util.Optional;
 @QueryRepository
 public interface PluginConfigurationRepository {
 
-    @Query("select * from plugin_configuration")
-    List<PluginConfigOption> loadAll();
-
     @Query("select * from plugin_configuration where plugin_id = :pluginId and event_id = :eventId")
     List<PluginConfigOption> loadByPluginIdAndEventId(@Bind("pluginId") String pluginId, @Bind("eventId") int eventId);
 

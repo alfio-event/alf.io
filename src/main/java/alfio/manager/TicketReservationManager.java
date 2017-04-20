@@ -633,7 +633,7 @@ public class TicketReservationManager {
         final List<String> stuckReservations = ticketReservationRepository.findStuckReservations(expirationDate);
         stuckReservations.forEach(reservationId -> ticketReservationRepository.updateTicketStatus(reservationId, TicketReservationStatus.STUCK.name()));
         stuckReservations.stream()
-                .map(id -> ticketRepository.findTicketsInReservation(id).stream().findFirst())
+                .map(id -> ticketRepository.findFirstTicketInReservation(id))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .mapToInt(Ticket::getEventId)
@@ -644,15 +644,6 @@ public class TicketReservationManager {
                                 STUCK_TICKETS_SUBJECT,
                                 () -> String.format(STUCK_TICKETS_MSG, pair.getLeft().getShortName()))
                 );
-    }
-
-    public List<TicketWithStatistic> loadModifiedTickets(int eventId, int categoryId) {
-        Event event = eventRepository.findById(eventId);
-        return ticketRepository.findAllModifiedTickets(eventId, categoryId).stream()
-                .map(t -> new TicketWithStatistic(t, event, ticketReservationRepository.findReservationById(t.getTicketsReservationId()),
-                        event.getZoneId(), optionally(() -> transactionRepository.loadByReservationId(t.getTicketsReservationId()))))
-                .sorted()
-                .collect(Collectors.toList());
     }
 
     static TotalPrice totalReservationCostWithVAT(PromoCodeDiscount promoCodeDiscount, Event event, List<Ticket> tickets, Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems) {
@@ -798,11 +789,6 @@ public class TicketReservationManager {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
         return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/")
             + "/event/" + event.getShortName() + "/ticket/" + ticketId + "/update?lang="+ticket.getUserLanguage();
-    }
-
-
-    public int maxAmountOfTickets(Event event) {
-        return configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5);
     }
 
     public int maxAmountOfTicketsForCategory(int organizationId, int eventId, int ticketCategoryId) {
@@ -995,7 +981,7 @@ public class TicketReservationManager {
         Date expiration = truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(OFFLINE_REMINDER_HOURS), 24)), Calendar.DATE);
         ticketReservationRepository.findAllOfflinePaymentReservationForNotification(expiration).stream()
                 .map(reservation -> {
-                    Optional<Ticket> ticket = ticketRepository.findTicketsInReservation(reservation.getId()).stream().findFirst();
+                    Optional<Ticket> ticket = ticketRepository.findFirstTicketInReservation(reservation.getId());
                     Optional<Event> event = ticket.map(t -> eventRepository.findById(t.getEventId()));
                     Optional<Locale> locale = ticket.map(t -> Locale.forLanguageTag(t.getUserLanguage()));
                     return Triple.of(reservation, event, locale);

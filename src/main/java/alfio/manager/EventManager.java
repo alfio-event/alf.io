@@ -362,7 +362,7 @@ public class EventManager {
         final List<TicketCategory> categories = ticketCategoryRepository.findByEventId(eventId);
         return categories.stream().filter(tc -> tc.getId() == categoryId).findFirst()
             .map(existing -> new Result.Builder<>(() -> {
-                    updateCategory(tcm, event.getVat(), event.isVatIncluded(), event.isFreeOfCharge(), event.getZoneId(), event);
+                    updateCategory(tcm, event.isFreeOfCharge(), event.getZoneId(), event);
                     return ticketCategoryRepository.getById(categoryId, eventId);
                 })
                 .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
@@ -473,7 +473,6 @@ public class EventManager {
 
     private void createCategoriesForEvent(EventModification em, Event event) {
         boolean freeOfCharge = em.isFreeOfCharge();
-        boolean vatIncluded = em.isVatIncluded();
         ZoneId zoneId = TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
         int eventId = event.getId();
 
@@ -541,7 +540,7 @@ public class EventManager {
         }));
     }
 
-    private void updateCategory(TicketCategoryModification tc, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge, ZoneId zoneId, Event event) {
+    private void updateCategory(TicketCategoryModification tc, boolean freeOfCharge, ZoneId zoneId, Event event) {
         int eventId = event.getId();
         final int price = evaluatePrice(tc.getPriceInCents(), freeOfCharge);
         TicketCategory original = ticketCategoryRepository.getById(tc.getId(), eventId);

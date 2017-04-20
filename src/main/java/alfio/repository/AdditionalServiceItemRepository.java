@@ -33,9 +33,6 @@ public interface AdditionalServiceItemRepository {
                                            @Bind("additionalServiceId") int additionalServiceId, @Bind("status") AdditionalServiceItemStatus status, @Bind("eventId") int eventId,
                                            @Bind("srcPriceCts") Integer srcPriceCts, @Bind("finalPriceCts") Integer finalPriceCts, @Bind("vatCts") Integer vatCts, @Bind("discountCts") Integer discountCts);
 
-    @Query("select * from additional_service_item where id = :id")
-    AdditionalServiceItem getById(@Bind("id") int id);
-
     @Query("select * from additional_service_item where tickets_reservation_uuid = :reservationUuid")
     List<AdditionalServiceItem> findByReservationUuid(@Bind("reservationUuid") String reservationUuid);
 

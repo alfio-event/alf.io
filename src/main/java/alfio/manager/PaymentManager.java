@@ -97,12 +97,6 @@ public class PaymentManager {
 
     }
 
-    public PaymentResult processOfflinePayment(String reservationId, int price, Event event) {
-        String transactionId = UUID.randomUUID().toString();
-        transactionRepository.insert(transactionId, reservationId, ZonedDateTime.now(event.getZoneId()), price, event.getCurrency(), "Offline payment confirmation", PaymentProxy.OFFLINE.toString());
-        return PaymentResult.successful(transactionId);
-    }
-
     public PaymentResult processPaypalPayment(String reservationId, String token, String payerId, int price, Event event) {
         try {
             String transactionId = paypalManager.commitPayment(reservationId, token, payerId, event);

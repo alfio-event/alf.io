@@ -109,7 +109,10 @@ public interface TicketRepository {
     @Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc")
     List<Ticket> findTicketsInReservation(@Bind("reservationId") String reservationId);
 
-    @Query("select count(*) from ticket where tickets_reservation_id = :reservationId")
+    @Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc LIMIT 1 OFFSET 0")
+    Optional<Ticket> findFirstTicketInReservation(@Bind("reservationId") String reservationId);
+
+    @Query("select count(*) from ticket where tickets_reservation_id = :reservationId ")
     Integer countTicketsInReservation(@Bind("reservationId") String reservationId);
     
     @Query("select * from ticket where uuid = :uuid")
@@ -144,9 +147,6 @@ public interface TicketRepository {
 
     @Query("select * from ticket where category_id in (:categories) and status = 'PENDING'")
     List<Ticket> findPendingTicketsInCategories(@Bind("categories") List<Integer> categories);
-
-    @Query("select distinct tickets_reservation_id from ticket where event_id = :eventId and status = 'PENDING'")
-    List<String> findPendingReservationsForEvent(@Bind("eventId") int eventId);
     
     @Query("select " +
             " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +

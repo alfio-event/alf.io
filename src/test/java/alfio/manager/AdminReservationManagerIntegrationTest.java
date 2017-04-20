@@ -230,6 +230,10 @@ public class AdminReservationManagerIntegrationTest {
         assertEquals(3, ticketRepository.findPendingTicketsInCategories(Arrays.asList(resExistingCategoryId, resNewCategoryId)).size());
         assertEquals(3, ticketRepository.findTicketsInReservation(data.getLeft().getId()).size());
 
+        String reservationId = data.getLeft().getId();
+        assertEquals(ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().get().getId(),
+            ticketRepository.findFirstTicketInReservation(reservationId).get().getId());
+
         ticketCategoryRepository.findByEventId(event.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.PENDING)));
         adminReservationManager.confirmReservation(event.getShortName(), data.getLeft().getId(), username);
         ticketCategoryRepository.findByEventId(event.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.TAKEN)));
