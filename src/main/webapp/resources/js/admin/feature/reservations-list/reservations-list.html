@@ -3,8 +3,30 @@
         <h3>Reservations</h3>
     </div>
 
-    <pre ng-repeat="r in $ctrl.reservations">
-        {{r}}
-    </pre>
-
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>id</th>
+                    <th>Customer's name</th>
+                    <th>Customer's email</th>
+                    <th>Status</th>
+                    <th>Payment method</th>
+                    <th>Expiration</th>
+                    <th>Confirmation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="r in $ctrl.reservations">
+                    <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="r.id"></a> </td>
+                    <td ng-bind="$ctrl.formatFullName(r)"></td>
+                    <td ng-bind="r.email"></td>
+                    <td ng-bind="r.status"></td>
+                    <td ng-bind="r.paymentMethod"></td>
+                    <td ng-bind="r.validity | formatDate"></td>
+                    <td ng-bind="r.confirmationTimestamp | formatDate"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
