@@ -211,6 +211,10 @@ public class TicketReservationManager {
         return reservationId;
     }
 
+    public List<TicketReservation> findAllReservationsInEvent(int eventId) {
+        return ticketReservationRepository.findAllReservationsInEvent(eventId);
+    }
+
     void reserveTicketsForCategory(Event event, Optional<String> specialPriceSessionId, String transactionId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale, boolean forWaitingQueue, PromoCodeDiscount discount) {
         //first check if there is another pending special price token bound to the current sessionId
         Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), event.getId(), specialPriceSessionId, ticketReservation);

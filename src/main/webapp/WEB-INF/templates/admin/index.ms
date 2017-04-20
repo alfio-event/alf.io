@@ -53,6 +53,9 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/reservation.service.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/view/reservation-view.js"></script>
+
+    <script src="{{request.contextPath}}/resources/js/admin/feature/reservations-list/reservations-list.js"></script>
+
     <link rel="stylesheet" href="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />
 
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>

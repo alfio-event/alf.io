@@ -104,4 +104,9 @@ public interface TicketReservationRepository {
         " inner join ticket on tickets_reservation_id = tickets_reservation.id " +
         " where invoice_number is not null and event_id = :eventId")
     List<TicketReservation> findAllReservationsWithInvoices(@Bind("eventId") int eventId);
+
+    @Query("select tickets_reservation.* from tickets_reservation inner join " +
+            "(select distinct tickets_reservation_id from ticket inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where event_id = :eventId) b " +
+            " on tickets_reservation.id = b.tickets_reservation_id order by confirmation_ts desc, validity desc")
+    List<TicketReservation> findAllReservationsInEvent(@Bind("eventId") int eventId);
 }

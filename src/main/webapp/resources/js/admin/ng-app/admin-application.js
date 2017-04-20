@@ -88,6 +88,14 @@
                     view: 'SEND_INVITATIONS'
                 }
             })
+            .state('events.single.reservationsList', {
+                url: '/reservations/',
+                template: '<reservations-list event="ctrl.event"></reservations-list>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                },
+                controllerAs: 'ctrl'
+            })
             .state('events.single.pending-payments', {
                 url: '/pending-payments/',
                 templateUrl: BASE_STATIC_URL + '/pending-payments/index.html',

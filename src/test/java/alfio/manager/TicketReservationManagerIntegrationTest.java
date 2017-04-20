@@ -136,6 +136,11 @@ public class TicketReservationManagerIntegrationTest {
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         TicketReservationWithOptionalCodeModification mod2 = new TicketReservationWithOptionalCodeModification(tr2, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Arrays.asList(mod, mod2), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+
+        List<TicketReservation> reservations = ticketReservationManager.findAllReservationsInEvent(event.getId());
+        assertTrue(reservations.size() == 1);
+        assertEquals(reservationId, reservations.get(0).getId());
+
         List<Ticket> pendingTickets = ticketRepository.findPendingTicketsInCategories(Arrays.asList(bounded.getId(), unbounded.getId()));
         assertEquals(19, pendingTickets.size());
         pendingTickets.forEach(t -> assertEquals(1000, t.getFinalPriceCts()));
