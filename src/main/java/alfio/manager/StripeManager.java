@@ -21,6 +21,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.repository.TicketRepository;
+import alfio.util.MonetaryUtil;
 import com.stripe.exception.*;
 import com.stripe.model.Charge;
 import com.stripe.model.Refund;
@@ -105,12 +106,17 @@ public class StripeManager {
         return RequestOptions.builder().setApiKey(getSecretKey(event)).build();
     }
 
-    public boolean fullRefund(String chargeId, Event event) {
+    // https://stripe.com/docs/api#create_refund
+    public boolean refund(String chargeId, Event event, Optional<Integer> amount) {
         try {
-            log.info("Stripe: trying to do a full refund for payment {}", chargeId);
-            Refund r = Refund.create(Collections.singletonMap("charge", chargeId), options(event));
+            String amountOrFull = amount.map(MonetaryUtil::formatCents).orElse("full");
+            log.info("Stripe: trying to do a refund for payment {} with amount: {}", chargeId, amountOrFull);
+            Map<String, Object> params = new HashMap<>();
+            params.put("charge", chargeId);
+            amount.ifPresent(a -> params.put("amount", a));
+            Refund r = Refund.create(params, options(event));
             if("succeeded".equals(r.getStatus())) {
-                log.info("Stripe: full refund for payment {} executed with success", chargeId);
+                log.info("Stripe: refund for payment {} executed with success for amount: {}", chargeId, amountOrFull);
                 return true;
             } else {
                 log.warn("Stripe: was not able to refund payment with id {}, returned status is not 'succeded' but {}", chargeId, r.getStatus());

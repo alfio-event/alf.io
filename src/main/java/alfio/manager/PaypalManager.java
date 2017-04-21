@@ -25,6 +25,7 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
+import alfio.util.MonetaryUtil;
 import com.paypal.api.payments.*;
 import com.paypal.base.rest.APIContext;
 import com.paypal.base.rest.PayPalRESTException;
@@ -41,6 +42,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static alfio.util.MonetaryUtil.formatCents;
 
 @Component
 @Log4j2
@@ -214,12 +217,15 @@ public class PaypalManager {
             .findFirst().orElseThrow(IllegalStateException::new);
     }
 
-    public boolean fullRefund(String paymentId, Event event) {
+    public boolean refund(String paymentId, Event event, Optional<Integer> amount) {
         try {
-            log.info("Paypal: trying to do a full refund for payment {}", paymentId);
+            String amountOrFull = amount.map(MonetaryUtil::formatCents).orElse("full");
+            log.info("Paypal: trying to do a refund for payment {} with amount: {}", paymentId, amountOrFull);
             Capture capture = Capture.get(getApiContext(event), paymentId);
-            capture.refund(getApiContext(event), new RefundRequest());
-            log.info("Paypal: full refund for payment {} executed with success", paymentId);
+            RefundRequest refundRequest = new RefundRequest();
+            amount.ifPresent(a -> refundRequest.setAmount(new Amount(capture.getAmount().getCurrency(), formatCents(a))));
+            capture.refund(getApiContext(event), refundRequest);
+            log.info("Paypal: refund for payment {} executed with success for amount: {}", paymentId, amountOrFull);
             return true;
         } catch(PayPalRESTException ex) {
             log.warn("Paypal: was not able to refund payment with id " + paymentId, ex);
