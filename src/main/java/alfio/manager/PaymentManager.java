@@ -20,9 +20,12 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
+import alfio.model.OrderSummary;
+import alfio.model.TicketReservation;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.Transaction;
 import alfio.repository.TransactionRepository;
 import alfio.util.ErrorsCode;
 import com.paypal.base.rest.PayPalRESTException;
@@ -36,6 +39,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -121,6 +126,26 @@ public class PaymentManager {
                 return new PaymentMethod(p, status);
             })
             .collect(Collectors.toList());
+    }
+
+    public String getStripePublicKey(Event event) {
+        return stripeManager.getPublicKey(event);
+    }
+
+    public String createPaypalCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary, CustomerName customerName, String email, String billingAddress, Locale locale, boolean postponeAssignment) throws Exception {
+        return paypalManager.createCheckoutRequest(event, reservationId, orderSummary, customerName, email, billingAddress, locale, postponeAssignment);
+    }
+
+    public boolean refund(TicketReservation reservation, Event event, Optional<Integer> amount) {
+        Transaction transaction = transactionRepository.loadByReservationId(reservation.getId());
+        switch(reservation.getPaymentMethod()) {
+            case PAYPAL:
+                return paypalManager.refund(transaction.getTransactionId(), event, amount);
+            case STRIPE:
+                return stripeManager.refund(transaction.getTransactionId(), event, amount);
+            default:
+                throw new IllegalStateException("Cannot refund ");
+        }
     }
 
     @Data

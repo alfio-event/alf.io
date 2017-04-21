@@ -71,8 +71,6 @@ public class ReservationController {
     private final TicketReservationManager ticketReservationManager;
     private final OrganizationRepository organizationRepository;
 
-    private final StripeManager stripeManager;
-    private final PaypalManager paypalManager;
     private final TemplateManager templateManager;
     private final MessageSource messageSource;
     private final ConfigurationManager configurationManager;
@@ -87,28 +85,24 @@ public class ReservationController {
                                  EventManager eventManager,
                                  TicketReservationManager ticketReservationManager,
                                  OrganizationRepository organizationRepository,
-                                 StripeManager stripeManager,
                                  TemplateManager templateManager,
                                  MessageSource messageSource,
                                  ConfigurationManager configurationManager,
                                  NotificationManager notificationManager,
                                  TicketHelper ticketHelper,
                                  TicketFieldRepository ticketFieldRepository,
-                                 PaypalManager paypalManager,
                                  PaymentManager paymentManager,
                                  TicketRepository ticketRepository) {
         this.eventRepository = eventRepository;
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
         this.organizationRepository = organizationRepository;
-        this.stripeManager = stripeManager;
         this.templateManager = templateManager;
         this.messageSource = messageSource;
         this.configurationManager = configurationManager;
         this.notificationManager = notificationManager;
         this.ticketHelper = ticketHelper;
         this.ticketFieldRepository = ticketFieldRepository;
-        this.paypalManager = paypalManager;
         this.paymentManager = paymentManager;
         this.ticketRepository = ticketRepository;
     }
@@ -185,7 +179,7 @@ public class ReservationController {
                     boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
                     model.addAttribute("includeStripe", includeStripe);
                     if (includeStripe) {
-                        model.addAttribute("stripe_p_key", stripeManager.getPublicKey(event));
+                        model.addAttribute("stripe_p_key", paymentManager.getStripePublicKey(event));
                     }
                     Map<String, Object> modelMap = model.asMap();
                     modelMap.putIfAbsent("paymentForm", PaymentForm.fromExistingReservation(reservation));
@@ -425,7 +419,7 @@ public class ReservationController {
         if(paymentForm.getPaymentMethod() == PaymentProxy.PAYPAL && !paymentForm.hasPaypalTokens()) {
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
             try {
-                String checkoutUrl = paypalManager.createCheckoutRequest(event, reservationId, orderSummary, customerName,
+                String checkoutUrl = paymentManager.createPaypalCheckoutRequest(event, reservationId, orderSummary, customerName,
                     paymentForm.getEmail(), paymentForm.getBillingAddress(), locale, paymentForm.isPostponeAssignment());
                 assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
                 return "redirect:" + checkoutUrl;
