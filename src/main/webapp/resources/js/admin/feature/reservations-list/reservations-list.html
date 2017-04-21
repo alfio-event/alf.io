@@ -6,7 +6,10 @@
     <div class="form-inline">
         <label>
             <div class="input-group">
-                <select class="form-control input-sm" ng-options="s.value as s.label for s in $ctrl.allStatus" ng-model="$ctrl.statusFilter">
+                <select class="form-control input-sm"
+                        ng-options="s.value as s.label for s in $ctrl.allStatus"
+                        ng-model="$ctrl.statusFilter"
+                        ng-change="$ctrl.updateFilteredData()">
                 </select>
             </div>
         </label>
@@ -15,12 +18,12 @@
                 <div class="input-group-addon">
                     <i class="fa fa-search"></i>
                 </div>
-                <input type="text" class="form-control input-sm" ng-model="$ctrl.toSearch">
+                <input type="text" class="form-control input-sm" ng-model="$ctrl.toSearch" ng-change="$ctrl.updateFilteredData()">
             </div>
         </label>
     </div>
     <div class="table-responsive">
-        <table class="table">
+        <table class="table table-striped">
             <thead>
                 <tr>
                     <th>Id</th>
@@ -33,8 +36,8 @@
                 </tr>
             </thead>
             <tbody>
-                <tr ng-repeat="r in $ctrl.reservations | filter: $ctrl.toSearch | filter : {status: $ctrl.statusFilter}">
-                    <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="r.id"></a> </td>
+                <tr ng-repeat="r in $ctrl.filteredReservations | limitTo: $ctrl.itemsPerPage : $ctrl.itemsPerPage * ($ctrl.currentPage - 1)">
+                    <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="r.id"></a></td>
                     <td ng-bind="$ctrl.formatFullName(r)"></td>
                     <td ng-bind="r.email"></td>
                     <td ng-bind="r.status"></td>
@@ -44,5 +47,8 @@
                 </tr>
             </tbody>
         </table>
+        <div class="text-center wMarginBottom">
+            <uib-pagination total-items="$ctrl.filteredReservations.length" ng-model="$ctrl.currentPage" items-per-page="$ctrl.itemsPerPage"></uib-pagination>
+        </div>
     </div>
 </div>
