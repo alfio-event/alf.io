@@ -3,11 +3,27 @@
         <h3>Reservations for {{$ctrl.event.displayName}}</h3>
     </div>
 
+    <div class="form-inline">
+        <label>
+            <div class="input-group">
+                <select class="form-control input-sm" ng-options="s.value as s.label for s in $ctrl.allStatus" ng-model="$ctrl.statusFilter">
+                </select>
+            </div>
+        </label>
+        <label>
+            <div class="input-group">
+                <div class="input-group-addon">
+                    <i class="fa fa-search"></i>
+                </div>
+                <input type="text" class="form-control input-sm" ng-model="$ctrl.toSearch">
+            </div>
+        </label>
+    </div>
     <div class="table-responsive">
         <table class="table">
             <thead>
                 <tr>
-                    <th>id</th>
+                    <th>Id</th>
                     <th>Customer's name</th>
                     <th>Customer's email</th>
                     <th>Status</th>
@@ -17,7 +33,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr ng-repeat="r in $ctrl.reservations">
+                <tr ng-repeat="r in $ctrl.reservations | filter: $ctrl.toSearch | filter : {status: $ctrl.statusFilter}">
                     <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="r.id"></a> </td>
                     <td ng-bind="$ctrl.formatFullName(r)"></td>
                     <td ng-bind="r.email"></td>

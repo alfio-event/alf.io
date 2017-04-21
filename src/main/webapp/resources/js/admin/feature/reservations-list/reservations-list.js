@@ -13,11 +13,20 @@
     
     function ReservationsListCtrl(EventService) {
         var ctrl = this;
+
+        ctrl.statusFilter = '';
         ctrl.formatFullName = formatFullName;
 
         this.$onInit = function() {
+
             EventService.findAllReservations(ctrl.event.shortName).then(function(res) {
+                var statuses = {};
                 ctrl.reservations = res.data;
+                angular.forEach(res.data, function(r) {
+                    statuses[r.status] = true;
+                });
+                ctrl.allStatus = Object.keys(statuses).sort().map(function(v) {return {value: v, label: v}});
+                ctrl.allStatus.unshift({value: '', label: 'Show all'});
             })
         }
 
