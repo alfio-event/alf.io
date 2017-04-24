@@ -47,6 +47,8 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/expired-events-list/expired-events-list.js"></script>
 
+    <script src="{{request.contextPath}}/resources/js/admin/feature/organizations/organizations.js"></script
+
     <script src="{{request.contextPath}}/resources/js/admin/feature/resources/show/resources-show.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/resources/edit/resources-edit.js"></script>
 
@@ -81,6 +83,8 @@
                         <div class="collapse navbar-collapse" data-uib-collapse="ctrl.menuCollapsed">
                             <ul class="nav navbar-nav">
                                 <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="organizations">Organizations</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="users">Users</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="configuration.system">Configuration</a></li>
                                 <li class="nav-divider"></li>
                                 <li class="visible-xs navbar-text"><i class="fa fa-user"></i> Logged in as {{username}}</li>

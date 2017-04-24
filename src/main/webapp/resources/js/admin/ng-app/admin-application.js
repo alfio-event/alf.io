@@ -17,6 +17,14 @@
                 url: "/",
                 templateUrl: BASE_TEMPLATE_URL + "/index.html"
             })
+            .state('organizations', {
+                url: "/organizations",
+                template: "<organizations></organizations>"
+            })
+            .state('users', {
+                url: "/users",
+                template: "<users></users>"
+            })
             .state('events', {
                 abstract: true,
                 url: '/events',

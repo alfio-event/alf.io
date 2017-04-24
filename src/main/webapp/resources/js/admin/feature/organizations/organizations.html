@@ -1,0 +1,36 @@
+<div class="container">
+    <h1>Organizations</h1>
+    <hr>
+    <div class="col-sm-12 col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h1 class="panel-title">Existing Organizations</h1>
+            </div>
+            <div class="panel-body">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>name</th>
+                        <th class="hidden-xs" width="35%">description</th>
+                        <th width="30%">e-mail</th>
+                        <th width="10%">actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-if="!$ctrl.organizations || $ctrl.organizations.length == 0">
+                        <td colspan="4">no organizations have been found. <a data-ui-sref="index.new-organization">Insert a new one</a></td>
+                    </tr>
+                    <tr ng-repeat="organization in $ctrl.organizations">
+                        <td>{{organization.name}}</td>
+                        <td class="hidden-xs"><div class="organization-description" data-uib-tooltip="{{organization.description}}">{{organization.description}}</div></td>
+                        <td>{{organization.email}}</td>
+                        <td class="text-center">
+                            <a class="btn btn-xs btn-default" data-ui-sref="index.edit-organization({organizationId:organization.id})" data-uib-tooltip="Edit"><i class="fa fa-edit"></i><span class="sr-only">Edit</span></a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
