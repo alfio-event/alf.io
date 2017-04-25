@@ -11,10 +11,16 @@
     function OrganizationsCtrl(OrganizationService) {
         var ctrl = this;
 
+        ctrl.load = load;
+
         this.$onInit = function() {
+            load();
+        };
+
+        function load() {
             OrganizationService.getAllOrganizations().then(function(result) {
                 ctrl.organizations = result.data;
             });
-        };
+        }
     }
 })();

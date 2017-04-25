@@ -18,8 +18,26 @@
                 templateUrl: BASE_TEMPLATE_URL + "/index.html"
             })
             .state('organizations', {
-                url: "/organizations",
+                url: "/organizations/",
                 template: "<organizations></organizations>"
+            })
+            .state('organizations.new', {
+                url: "new",
+                views: {
+                    "newOrganization": {
+                        template: "<organization-edit type='new'></organization-edit>",
+                    }
+                }
+            })
+            .state('organizations.edit', {
+                url: ":organizationId/edit",
+                views: {
+                    "newOrganization": {
+                        template: "<organization-edit type='edit' organization-id='$ctrl.$state.params.organizationId'></organization-edit>",
+                        controller: ['$state', function($state) {this.$state = $state;}],
+                        controllerAs: '$ctrl'
+                    }
+                }
             })
             .state('users', {
                 url: "/users",

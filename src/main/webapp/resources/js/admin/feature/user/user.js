@@ -3,26 +3,6 @@
     angular.module('alfio-users', ['adminServices'])
         .config(['$stateProvider', function($stateProvider) {
             $stateProvider
-                .state('index.new-organization', {
-                    url: "organizations/new",
-                    views: {
-                        "newOrganization": {
-                            templateUrl: "/resources/angular-templates/admin/partials/main/edit-organization.html",
-                            controller: 'EditOrganizationController',
-                            controllerAs: 'editOrg'
-                        }
-                    }
-                })
-                .state('index.edit-organization', {
-                    url: "organizations/:organizationId/edit",
-                    views: {
-                        "newOrganization": {
-                            templateUrl: "/resources/angular-templates/admin/partials/main/edit-organization.html",
-                            controller: 'EditOrganizationController',
-                            controllerAs: 'editOrg'
-                        }
-                    }
-                })
                 .state('index.new-user', {
                     url: "users/new",
                     views: {
@@ -57,46 +37,11 @@
                     }
                 })
         }])
-        .controller('EditOrganizationController', EditOrganizationController)
         .controller('EditUserController', EditUserController)
         .controller('EditCurrentUserController', EditCurrentUserController)
-        .controller('OrganizationListController', OrganizationListController)
         .controller('UsersListController', UsersListController)
-        .service('OrganizationService', OrganizationService)
         .service('UserService', UserService)
-        .directive("organizationsList", organizationList)
         .directive("usersList", usersList);
-
-    function EditOrganizationController($state, $stateParams, $rootScope, $q, OrganizationService, ValidationService) {
-
-        var self = this;
-
-        var updateOrAction = OrganizationService.createOrganization;
-
-        if(angular.isDefined($stateParams.organizationId)) {
-            updateOrAction = OrganizationService.updateOrganization;
-            OrganizationService.getOrganization($stateParams.organizationId).success(function(result) {
-                self.organization = result;
-            });
-        }
-        self.organization = {};
-        self.save = function(form, organization) {
-            if(!form.$valid) {
-                return;
-            }
-            ValidationService.validationPerformer($q, OrganizationService.checkOrganization, organization, form).then(function() {
-                updateOrAction(organization).success(function() {
-                    $rootScope.$emit('ReloadOrganizations', {});
-                    $state.go('index');
-                });
-            }, angular.noop);
-        };
-        self.cancel = function() {
-            $state.go('index');
-        };
-    }
-
-    EditOrganizationController.$inject = ['$state', '$stateParams', '$rootScope', '$q', 'OrganizationService', 'ValidationService'];
 
     function EditUserController($state, $stateParams, $rootScope, $q, OrganizationService, UserService, ValidationService) {
         var self = this;
@@ -210,27 +155,6 @@
 
     EditCurrentUserController.$inject = ['$state', 'user', 'UserService', '$timeout'];
 
-    function OrganizationService($http, HttpErrorHandler) {
-        return {
-            getAllOrganizations : function() {
-                return $http.get('/admin/api/organizations.json').error(HttpErrorHandler.handle);
-            },
-            getOrganization: function(id) {
-                return $http.get('/admin/api/organizations/'+id+'.json').error(HttpErrorHandler.handle);
-            },
-            createOrganization : function(organization) {
-                return $http['post']('/admin/api/organizations/new', organization).error(HttpErrorHandler.handle);
-            },
-            updateOrganization : function(organization) {
-                return $http['post']('/admin/api/organizations/update', organization).error(HttpErrorHandler.handle);
-            },
-            checkOrganization : function(organization) {
-                return $http['post']('/admin/api/organizations/check', organization).error(HttpErrorHandler.handle);
-            }
-        };
-    }
-
-    OrganizationService.$inject = ['$http', 'HttpErrorHandler'];
 
     function UserService($http, $uibModal, $window, HttpErrorHandler) {
         return {
@@ -281,33 +205,6 @@
     }
 
     UserService.$inject = ['$http', '$uibModal', '$window', 'HttpErrorHandler'];
-
-    function organizationList() {
-        return {
-            scope: true,
-            templateUrl: '/resources/angular-templates/admin/partials/main/organizations.html',
-            controller: 'OrganizationListController',
-            controllerAs: 'orgList'
-        };
-    }
-
-    function OrganizationListController($rootScope, OrganizationService) {
-        var self = this;
-        var loadOrganizations = function() {
-            self.loading = true;
-            OrganizationService.getAllOrganizations().success(function(result) {
-                self.organizations = result;
-                self.loading = false;
-            });
-        };
-        $rootScope.$on('ReloadOrganizations', function(e) {
-            loadOrganizations();
-        });
-        self.organizations = [];
-        loadOrganizations();
-    }
-
-    OrganizationListController.$inject = ['$rootScope', 'OrganizationService'];
 
     function usersList() {
         return {
