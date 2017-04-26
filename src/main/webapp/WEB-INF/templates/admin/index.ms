@@ -48,6 +48,8 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/expired-events-list/expired-events-list.js"></script>
 
+    <script src="{{request.contextPath}}/resources/js/admin/feature/users/users.js"></script>
+
     <script src="{{request.contextPath}}/resources/js/admin/feature/organizations/organizations.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/organization-edit/organization-edit.js"></script>
 

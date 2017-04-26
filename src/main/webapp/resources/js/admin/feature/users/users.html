@@ -1,0 +1,33 @@
+<div class="container">
+    <h1>Users</h1>
+    <hr>
+    <div>
+        <a ui-sref="index.new-user">add new user</a>
+    </div>
+    <div class="text-center text-muted" data-ng-if="$ctrl.loading">
+        <div class="wMarginTop">
+            <i class="fa fa-cog fa-spin fa-3x"></i>
+        </div>
+    </div>
+    <div class="table-responsive" data-ng-if="!$ctrl.loading">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th width="70%">username</th>
+                <th>actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="user in $ctrl.users" data-ng-class-even="active">
+                <td><a ui-sref="index.edit-user({userId:user.id})">{{user.username}}</a></td>
+                <td>
+                    <a class="btn btn-xs btn-default" data-ui-sref="index.edit-user({userId:user.id})" data-uib-tooltip="Edit"><i class="fa fa-edit"></i><span class="sr-only">Edit</span></a>
+                    <button class="btn btn-xs btn-warning" ng-click="$ctrl.resetPassword(user)" data-uib-tooltip="Reset Password"><i class="fa fa-refresh"></i><span class="sr-only">Reset Password</span></button>
+                    <button class="btn btn-xs btn-danger" ng-click="$ctrl.deleteUser(user)"  data-uib-tooltip="Delete"><i class="fa fa-trash"></i><span class="sr-only">Delete</span></button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div data-ui-view="editUser"></div>
+</div>
