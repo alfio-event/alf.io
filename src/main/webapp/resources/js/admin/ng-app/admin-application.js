@@ -98,6 +98,7 @@
                 controllerAs: 'ctrl',
                 controller: function(getEvent, $state) {
                     $state.current.data['event'] = getEvent.data.event;
+                    this.event = getEvent.data.event;
                 },
                 data: {
                     displayEventData: true,
@@ -111,6 +112,10 @@
                 data: {
                     view: 'EVENT_DETAIL'
                 }
+            })
+            .state('events.single.promoCodes', {
+                url:'/promo-codes',
+                template:'<event-promo-codes event="ctrl.event"></event-promo-codes>'
             })
             .state('events.single.checkIn', {
                 url: '/check-in',
@@ -532,7 +537,6 @@
     admin.controller('EventDetailController', function ($scope,
                                                         $stateParams,
                                                         OrganizationService,
-                                                        PromoCodeService,
                                                         EventService,
                                                         LocationService,
                                                         $rootScope,
@@ -578,18 +582,6 @@
                         timeZone: result.event.timeZone
                     };
                     $scope.loadingMap = false;
-                });
-
-
-                PromoCodeService.list(result.event.id).success(function(list) {
-                    $scope.promocodes = list;
-                    angular.forEach($scope.promocodes, function(v) {
-                        (function(v) {
-                            PromoCodeService.countUse(result.event.id, v.promoCode).then(function(val) {
-                                v.useCount = parseInt(val.data, 10);
-                            });
-                        })(v);
-                    });
                 });
 
                 $scope.unbindTickets = function(event , category) {
@@ -903,94 +895,6 @@
         };
         
         //
-        
-        $scope.deletePromocode = function(promocode) {
-            if($window.confirm('Delete promo code ' + promocode.promoCode + '?')) {
-                PromoCodeService.remove($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
-            }
-        };
-        
-        $scope.disablePromocode = function(promocode) {
-            if($window.confirm('Disable promo code ' + promocode.promoCode + '?')) {
-                PromoCodeService.disable($scope.event.id, promocode.promoCode).then(loadData, errorHandler);
-            }
-        };
-
-
-        //FIXME
-        $scope.changeDate = function(promocode) {
-
-            var eventId = $scope.event.id;
-
-            $uibModal.open({
-                size: 'lg',
-                templateUrl: BASE_STATIC_URL + '/event/fragment/edit-date-promo-code-modal.html',
-                backdrop: 'static',
-                controller: function($scope) {
-                    $scope.cancel = function() {$scope.$dismiss('canceled');};
-                    var start = moment(promocode.formattedStart);
-                    var end = moment(promocode.formattedEnd);
-                    $scope.promocode = {start: {date: start.format('YYYY-MM-DD'), time: start.format('HH:mm')}, end: {date: end.format('YYYY-MM-DD'), time: end.format('HH:mm')}};
-                    $scope.update = function(toUpdate) {
-                        PromoCodeService.update(eventId, promocode.promoCode, toUpdate).then(function() {
-                            $scope.$close(true);
-                        }).then(loadData);
-                    };
-                }
-            });
-        };
-
-
-        //
-        $scope.addPromoCode = function(event) {
-            $uibModal.open({
-                size:'lg',
-                templateUrl:BASE_STATIC_URL + '/event/fragment/edit-promo-code-modal.html',
-                backdrop: 'static',
-                controller: function($scope) {
-
-                    $scope.event = event;
-                    
-                    var now = moment();
-                    var eventBegin = moment(event.formattedBegin);
-
-                    $scope.validCategories = _.filter(event.ticketCategories, function(tc) {
-                        return !tc.expired;
-                    });
-                    
-                    $scope.promocode = {discountType :'PERCENTAGE', start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')}, end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}, categories:[]};
-
-                    $scope.addCategory = function addCategory(index, value) {
-                        $scope.promocode.categories[index] = value;
-                    };
-                    
-                    $scope.$watch('promocode.promoCode', function(newVal) {
-                        if(newVal) {
-                            $scope.promocode.promoCode = newVal.toUpperCase();
-                        }
-                    });
-                    
-                    $scope.cancel = function() {
-                        $scope.$dismiss('canceled');
-                    };
-                    $scope.update = function(form, promocode, event) {
-                        if(!form.$valid) {
-                            return;
-                        }
-                        $scope.$close(true);
-
-
-                        promocode.categories = _.filter(promocode.categories, function(i) {return i != null;});
-                        
-                        PromoCodeService.add(event.id, promocode).then(function(result) {
-                            validationErrorHandler(result, form, form.promocode).then(function() {
-                                $scope.$close(true);
-                            });
-                        }, errorHandler).then(loadData);
-                    };
-                }
-            });
-        };
 
         $scope.countActive = function(categories) {
             return _.countBy(categories, 'expired')['false'] || '0';
