@@ -123,6 +123,13 @@
                     view: 'EVENT_DETAIL'
                 }
             })
+            .state('events.single.dataToCollect', {
+                url:'/attendee-data-to-collect',
+                template:'<event-data-to-collect event="$ctrl.loadEvent"></event-data-to-collect>',
+                controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent
+            })
             .state('events.single.promoCodes', {
                 url:'/promo-codes',
                 template:'<event-promo-codes event="$ctrl.loadEvent"></event-promo-codes>',
@@ -609,13 +616,6 @@
                         loadData();
                     });
                 };
-
-                EventService.getAdditionalFields($stateParams.eventName).success(function(result) {
-                    $scope.additionalFields = result;
-                });
-                AdditionalServiceManager.loadAll(result.event.id).then(function(services) {
-                    result.event.additionalServices = services.data;
-                });
             });
         };
         loadData().then(function() {
@@ -931,146 +931,6 @@
 
         $scope.downloadSponsorsScan = function() {
             $window.open($window.location.pathname+"/api/events/"+parentScope.event.shortName+"/sponsor-scan/export.csv");
-        };
-
-        $scope.prepareFieldDescriptionEdit = function(baseObject, field) {
-            angular.copy(field, baseObject);
-        };
-
-        $scope.saveFieldDescription = function(description) {
-            EventService.saveFieldDescription($scope.event.shortName, description).then(loadData);
-        };
-        
-        $scope.deleteFieldModal = function(field) {
-        	$uibModal.open({
-        		size: 'lg',
-        		templateUrl: BASE_STATIC_URL + '/event/fragment/delete-field-modal.html',
-        		controller: function($scope) {
-        			$scope.field = field;
-        			$scope.deleteField = function(id) {
-        				EventService.deleteField($stateParams.eventName, id).then(function() {
-        					return loadData();
-                    	}).then(function() {
-                    		$scope.$close(true);
-                    	});
-        			}
-        		}
-        	});
-        };
-        
-        
-        $scope.fieldUp = function(index) {
-        	var targetId = $scope.additionalFields[index].id;
-        	var prevTargetId = $scope.additionalFields[index-1].id;
-        	EventService.swapFieldPosition($stateParams.eventName, targetId, prevTargetId).then(function(result) {
-        		return EventService.getAdditionalFields($stateParams.eventName);
-        	}).then(function (result) {
-        		$scope.additionalFields = result.data;
-        	});
-        };
-        
-        $scope.fieldDown = function(index) {
-        	var targetId = $scope.additionalFields[index].id;
-        	var nextTargetId = $scope.additionalFields[index+1].id;
-        	EventService.swapFieldPosition($stateParams.eventName, targetId, nextTargetId).then(function(result) {
-        		return EventService.getAdditionalFields($stateParams.eventName);
-        	}).then(function (result) {
-        		$scope.additionalFields = result.data;
-        	});
-        }
-        
-        $scope.editField = function(event, addNew, field) {
-        	$uibModal.open({
-                size:'lg',
-                templateUrl: BASE_STATIC_URL + '/event/fragment/edit-field-modal.html',
-                backdrop: 'static',
-                controller: function($scope) {
-                	$scope.event = event;
-                    $scope.addNewField = addNew;
-                	$scope.field = addNew ? {} : angular.copy(field);
-                	$scope.fieldTypes = FIELD_TYPES;
-                    $scope.joinTitle = function(titles) {
-                        return titles.map(function(t) { return t.value;}).join(' / ')
-                    };
-                    $scope.cancel = function() {
-                        $scope.$dismiss();
-                    };
-
-                	EventService.getDynamicFieldTemplates().success(function(result) {
-                        $scope.dynamicFieldTemplates = result;
-                    });
-                	
-                	$scope.addFromTemplate = function(template) {
-                		$scope.field.name = template.name;
-                		$scope.field.type = template.type;
-                		$scope.field.restrictedValues = _.map(template.restrictedValues, function(v) {return {value: v}});
-                		$scope.field.description = template.description;
-                		$scope.field.maxLength = template.maxLength;
-                		$scope.field.minLength = template.minLength;
-                        $scope.field.required = template.required;
-                	}
-
-                	//
-                	EventService.getSupportedLanguages().success(function(result) {
-                        $scope.allLanguages = result;
-                        $scope.allLanguagesMapping = {};
-                        angular.forEach(result, function(r) {
-                            $scope.allLanguagesMapping[r.value] = r;
-                        });
-                    });
-                	
-                	//
-                	
-                	$scope.addRestrictedValue = function() {
-                		var field = $scope.field;
-                        var arr = field.restrictedValues || [];
-                        arr.push({});
-                        field.restrictedValues = arr;
-                    };
-                    $scope.isLanguageSelected = function(lang, selectedLanguages) {
-                        return (selectedLanguages & lang) > 0;
-                    };
-
-                    $scope.editField = function (form, field) {
-                        if (angular.isDefined(field.id)) {
-                            EventService.saveFieldDescription($stateParams.eventName, field.description).then(function () {
-                                return loadData();
-                            }).then(function () {
-                                $scope.$close(true);
-                            });
-                        } else {
-                            var duplicate = false;
-                            angular.forEach(parentScope.additionalFields, function (f) {
-                                if (f.name == field.name) {
-                                    form['name'].$setValidity(ERROR_CODES.DUPLICATE, false);
-                                    form['name'].$setTouched();
-                                    duplicate = true;
-                                }
-                            })
-                            if (!duplicate) {
-                                EventService.addField($stateParams.eventName, field).then(function (result) {
-                                    validationErrorHandler(result, form, form).then(function () {
-                                        $scope.$close(true);
-                                    });
-                                }, errorHandler).then(loadData);
-                            }
-                        }
-                    };
-                }
-            });
-        };
-
-        $scope.goToAdditionalService = function(id) {
-            $location.hash('additional-service-'+id);
-            $anchorScroll();
-        };
-
-        $scope.additionalServiceDescription = function(event, id) {
-            var service = _.find(event.additionalServices, function (as) { return as.id === id;});
-            if(service) {
-                return service.title.map(function(t) { return t.value; }).join(' / ');
-            }
-            return "#"+id;
         };
 
         $scope.activateEvent = function(id) {

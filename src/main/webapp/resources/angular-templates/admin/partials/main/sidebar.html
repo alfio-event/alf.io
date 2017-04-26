@@ -49,11 +49,11 @@
             </li>
             <li>
                 <ul class="nav nav-pills nav-stacked" data-ng-if="ctrl.internal">
-                    <li role="presentation" data-ng-if="ctrl.isDetail">
-                        <a data-ng-click="ctrl.navigateTo('additional-fields')"><i class="fa fa-info-circle"></i> Additional Fields</a>
-                    </li>
                     <li data-ng-if="!ctrl.isDetail">
                         <a data-ui-sref="events.single.detail({eventName: ctrl.event.shortName})"><i class="fa fa-arrow-left"></i> back to event detail</a>
+                    </li>
+                    <li role="presentation" data-ui-sref-active="active">
+                        <a ui-sref="events.single.dataToCollect({eventName: ctrl.event.shortName})"><i class="fa fa-info-circle"></i> Attendees' data to collect</a>
                     </li>
                     <li role="presentation" data-ui-sref-active="active">
                         <a ui-sref="events.single.promoCodes({eventName: ctrl.event.shortName})"><i class="fa fa-percent"></i> Promo Codes</a>
