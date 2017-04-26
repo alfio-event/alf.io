@@ -14,6 +14,7 @@
         ctrl.loadUsers = loadUsers;
         ctrl.deleteUser = deleteUser;
         ctrl.resetPassword = resetPassword;
+        ctrl.enable = enable;
 
         ctrl.$onInit = function() {
             ctrl.users = [];
@@ -44,6 +45,12 @@
                     UserService.showUserData(reset.data);
                 })
             }
+        }
+
+        function enable(user, status) {
+            UserService.enable(user, status).then(function() {
+                loadUsers();
+            });
         }
     }
 })();

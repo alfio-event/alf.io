@@ -351,7 +351,7 @@ public class EventApiController {
             header.add("Email");
             header.addAll(fields.stream().map(TicketFieldConfiguration::getName).collect(Collectors.toList()));
             writer.writeNext(header.toArray(new String[header.size()]));
-            userManager.findAllUsers(principal.getName()).stream()
+            userManager.findAllEnabledUsers(principal.getName()).stream()
                 .map(u -> Pair.of(u, userManager.getUserRole(u)))
                 .filter(p -> p.getRight() == Role.SPONSOR)
                 .flatMap(p -> sponsorScanRepository.loadSponsorData(event.getId(), p.getKey().getId(), SponsorScanRepository.DEFAULT_TIMESTAMP)

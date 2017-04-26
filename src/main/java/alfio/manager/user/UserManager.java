@@ -75,6 +75,14 @@ public class UserManager {
 
     public List<User> findAllUsers(String username) {
         return findUserOrganizations(username)
+            .stream()
+            .flatMap(o -> userOrganizationRepository.findByOrganizationId(o.getId()).stream())
+            .map(uo -> userRepository.findById(uo.getUserId()))
+            .collect(toList());
+    }
+
+    public List<User> findAllEnabledUsers(String username) {
+        return findUserOrganizations(username)
                 .stream()
                 .flatMap(o -> userOrganizationRepository.findByOrganizationId(o.getId()).stream())
                 .map(uo -> userRepository.findById(uo.getUserId()))
@@ -216,7 +224,18 @@ public class UserManager {
     public void deleteUser(int userId, String currentUsername) {
         User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
         Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot commit suicide");
-        Assert.isTrue(userRepository.toggleEnabled(userId, false) == 1, "unexpected update result");
+
+        userRepository.deleteUserFromSponsorScan(userId);
+        userRepository.deleteUserFromOrganization(userId);
+        userRepository.deleteUser(userId);
+    }
+
+    @Transactional
+    public void enable(int userId, String currentUsername, boolean status) {
+        User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
+        Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot commit suicide");
+
+        userRepository.toggleEnabled(userId, status);
     }
 
     public ValidationResult validateUser(Integer id, String username, int organizationId, String role, String firstName, String lastName, String emailAddress) {

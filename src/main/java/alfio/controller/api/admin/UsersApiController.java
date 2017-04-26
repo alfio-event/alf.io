@@ -180,6 +180,12 @@ public class UsersApiController {
         return OK;
     }
 
+    @RequestMapping(value = "/users/{id}/enable/{enable}", method = POST)
+    public String enableUser(@PathVariable("id") int userId, @PathVariable("enable")boolean enable, Principal principal) {
+        userManager.enable(userId, principal.getName(), enable);
+        return OK;
+    }
+
     @RequestMapping(value = "/users/{id}", method = GET)
     public UserModification loadUser(@PathVariable("id") int userId) {
         User user = userManager.findUser(userId);

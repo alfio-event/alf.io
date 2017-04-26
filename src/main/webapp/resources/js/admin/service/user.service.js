@@ -16,6 +16,9 @@
                 var url = angular.isDefined(user.id) ? '/admin/api/users/edit' : '/admin/api/users/new';
                 return $http['post'](url, user).error(HttpErrorHandler.handle);
             },
+            enable : function(user, status) {
+                return $http['post']('/admin/api/users/'+user.id+'/enable/'+status).error(HttpErrorHandler.handle);
+            },
             checkUser : function(user) {
                 return $http['post']('/admin/api/users/check', user).error(HttpErrorHandler.handle);
             },

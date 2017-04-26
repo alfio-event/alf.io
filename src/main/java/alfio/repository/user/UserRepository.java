@@ -57,4 +57,13 @@ public interface UserRepository {
     @Query("update ba_user set password = :password where id = :id")
     int resetPassword(@Bind("id") int id, @Bind("password") String newPassword);
 
+    @Query("delete sponsor_scan where user_id = :id")
+    int deleteUserFromSponsorScan(@Bind("id") int id);
+
+    @Query("delete j_user_organization where user_id = :id")
+    int deleteUserFromOrganization(@Bind("id") int id);
+
+    @Query("delete ba_user where id = :id")
+    int deleteUser(@Bind("id") int id);
+
 }
