@@ -38,7 +38,8 @@
     <script src="{{request.contextPath}}/resources/js/admin/filter/util.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/service/service.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/service/resource-service.js"></script>
-    <script src="{{request.contextPath}}/resources/js/admin/service/organization.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/service/organization.service.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/service/user.service.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/plugin/plugin-log.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/email/email-log.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/util/file-upload.js"></script>
@@ -49,6 +50,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/expired-events-list/expired-events-list.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/users/users.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/user-edit/user-edit.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/organizations/organizations.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/organization-edit/organization-edit.js"></script>

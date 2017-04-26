@@ -46,8 +46,8 @@
                 updateOrAction(organization).success(function() {
                     if(ctrl.organizationsCtrl) {
                         ctrl.organizationsCtrl.load();
+                        $state.go('^');
                     }
-                    $state.go('^', {});
                 });
             }, angular.noop);
         }

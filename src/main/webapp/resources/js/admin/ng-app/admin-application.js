@@ -25,7 +25,7 @@
                 url: "new",
                 views: {
                     "newOrganization": {
-                        template: "<organization-edit type='new'></organization-edit>",
+                        template: "<organization-edit type='new'></organization-edit>"
                     }
                 }
             })
@@ -40,8 +40,26 @@
                 }
             })
             .state('users', {
-                url: "/users",
+                url: "/users/",
                 template: "<users></users>"
+            })
+            .state('users.new', {
+                url: "new",
+                views: {
+                    "editUser": {
+                        template: "<user-edit type='new'></user-edit>"
+                    }
+                }
+            })
+            .state('users.edit', {
+                url: ":userId/edit",
+                views: {
+                    "editUser": {
+                        template: "<user-edit type='edit' user-id='$ctrl.$state.params.userId'></user-edit>",
+                        controller: ['$state', function($state) {this.$state = $state;}],
+                        controllerAs: '$ctrl'
+                    }
+                }
             })
             .state('events', {
                 abstract: true,
