@@ -43,14 +43,18 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/plugin/plugin-log.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/email/email-log.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/util/file-upload.js"></script>
-    <script src="{{request.contextPath}}/resources/js/admin/feature/user/user.js"></script>
+
     <script src="{{request.contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
+
     <script src="{{request.contextPath}}/resources/js/admin/feature/additional-service/additional-service.js"></script>
+
     <script src="{{request.contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js"></script>
+
     <script src="{{request.contextPath}}/resources/js/admin/feature/expired-events-list/expired-events-list.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/users/users.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/user-edit/user-edit.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/user-edit-current/user-edit-current.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/organizations/organizations.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/organization-edit/organization-edit.js"></script>
