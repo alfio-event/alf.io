@@ -11,7 +11,7 @@
                     eventIsFreeOfCharge: '='
                 },
                 bindToController: true,
-                templateUrl: '/resources/angular-templates/admin/partials/event/fragment/additional-services.html',
+                templateUrl: '../resources/js/admin/feature/additional-service/additional-services.html',
                 controller: 'AdditionalServicesController',
                 controllerAs: 'ctrl'
             };
@@ -28,7 +28,7 @@
                     selectedLanguages: '='
                 },
                 bindToController: true,
-                templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-additional-service.html',
+                templateUrl: '../resources/js/admin/feature/additional-service/edit-additional-service.html',
                 controller: 'EditAdditionalServiceController',
                 controllerAs: 'ctrl'
             };

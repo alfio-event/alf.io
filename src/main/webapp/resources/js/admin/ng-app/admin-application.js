@@ -10,6 +10,16 @@
     
     var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-additional-services', 'alfio-event-statistic', 'ui.ace']);
 
+    var loadEvent = {
+        'loadEvent': function($stateParams, EventService) {
+            return EventService.getEvent($stateParams.eventName);
+        }
+    };
+
+    function loadEventCtrl(loadEvent) {
+        this.loadEvent = loadEvent.data.event;
+    }
+
     admin.config(function($stateProvider, $urlRouterProvider) {
         $urlRouterProvider.otherwise("/");
         $stateProvider
@@ -115,7 +125,17 @@
             })
             .state('events.single.promoCodes', {
                 url:'/promo-codes',
-                template:'<event-promo-codes event="ctrl.event"></event-promo-codes>'
+                template:'<event-promo-codes event="$ctrl.loadEvent"></event-promo-codes>',
+                controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent
+            })
+            .state('events.single.donations', {
+                url: '/donations',
+                template: '<additional-services selected-languages="$ctrl.loadEvent.locales" event-is-free-of-charge="$ctrl.loadEvent.freeOfCharge" event-id="$ctrl.loadEvent.id" event-start-date="$ctrl.loadEvent.formattedBegin"></additional-services>',
+                controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent
             })
             .state('events.single.checkIn', {
                 url: '/check-in',
