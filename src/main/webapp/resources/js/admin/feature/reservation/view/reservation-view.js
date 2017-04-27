@@ -129,6 +129,10 @@
                 if(ctrl.onConfirm) {ctrl.onConfirm({eventName: ctrl.event.shortName, reservationId: ctrl.reservation.id})} else {$window.location.reload();}
             });
         };
+
+        ctrl.removeTicket = function(ticket) {
+            EventService.removeTickets(ctrl.event, [ticket]);
+        }
     }
 
 })();

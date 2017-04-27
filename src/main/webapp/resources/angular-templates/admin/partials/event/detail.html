@@ -131,7 +131,8 @@
                                     <div class="list-group">
                                         <div class="list-group-item" data-ng-repeat="ticket in ticketCategory.tickets | filter:ticketCategory.ticketFilter | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
                                             <div class="list-group-item-heading">
-                                                <button class="btn btn-sm btn-default pull-right" data-ng-click="toggleLocking(event, ticket, ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-uib-tooltip="forbid ticket reassignment" data-tooltip-placement="left" data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button>
+                                                <button type="button" class="btn btn-sm btn-default pull-right" data-ng-click="toggleLocking(event, ticket, ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-uib-tooltip="forbid ticket reassignment" data-tooltip-placement="left" data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button>
+                                                <button type="button" class="btn btn-sm btn-default pull-right" ng-click="removeTicket(event, ticket)"><i class="fa fa-trash"></i> remove</button>
                                                 <h4><i data-ng-class="evaluateTicketStatus(ticket.status)" data-uib-tooltip="{{ticket.status | statusText}}"></i> {{::ticket.uuid | limitTo:8}} <span data-ng-if="ticket.paid">Confirmed on: {{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span> by {{::ticket.ticketReservation.fullName}}</h4>
                                             </div>
                                             <div class="list-group-item-text">

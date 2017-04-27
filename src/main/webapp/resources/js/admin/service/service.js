@@ -217,6 +217,11 @@
                         };
                     }
                 });
+            },
+
+
+            removeTickets: function(event, tickets) {
+                alert('to implement');
             }
         };
         return service;

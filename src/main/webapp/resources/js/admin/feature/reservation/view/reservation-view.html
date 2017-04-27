@@ -120,33 +120,37 @@
                     <label><input type="checkbox" ng-model="ticketInfo.updateAttendees"> Edit attendees</label>
                 </div>
             </div>
-            <ul class="list-group wMarginTop10px">
-                <li class="list-group-item" ng-repeat="attendee in ticketInfo.attendees">
-                    <div class="list-group-item-text row">
-                        <div class="col-xs-12 col-md-4">
-                            <div class="form-group">
-                                <label for="attendee-{{$index}}-firstName">Attendee {{$index + 1}} First name</label>
-                                <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-firstName" required name="attendee-{{$index}}-first" ng-model="attendee.firstName">
-                                <div ng-if="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.firstName}}</div>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-md-4">
-                            <div class="form-group">
-                                <label for="attendee-{{$index}}-lastName">Last name</label>
-                                <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-lastName" required name="attendee-{{$index}}-last" ng-model="attendee.lastName">
-                                <div ng-if="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.lastName}}</div>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-md-4">
-                            <div class="form-group">
-                                <label for="attendee-{{$index}}-emailAddress">E-Mail</label>
-                                <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-emailAddress" required name="attendee-{{$index}}-emailAddress" ng-model="attendee.emailAddress">
-                                <div ng-if="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.emailAddress}}</div>
-                            </div>
-                        </div>
-                    </div>
-                </li>
-            </ul>
+            <table class="table table-responsive table-striped wMarginTop10px">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>First name</th>
+                        <th>Last name</th>
+                        <th>E-Mail</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr  ng-repeat="attendee in ticketInfo.attendees">
+                        <td>{{$index + 1}}</td>
+                        <td>
+                            <input type="text" ng-show="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-firstName" required name="attendee-{{$index}}-first" ng-model="attendee.firstName">
+                            <div ng-show="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.firstName}}</div>
+                        </td>
+                        <td>
+                            <input type="text" ng-show="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-lastName" required name="attendee-{{$index}}-last" ng-model="attendee.lastName">
+                            <div ng-show="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.lastName}}</div>
+                        </td>
+                        <td>
+                            <input type="text" ng-show="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-emailAddress" required name="attendee-{{$index}}-emailAddress" ng-model="attendee.emailAddress">
+                            <div ng-show="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.emailAddress}}</div>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-default" ng-click="$ctrl.removeTicket(event, ticket)"><i class="fa fa-trash"></i> remove</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
         <div class="pull-left">
             <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.notifyCustomer()"><i class="fa fa-envelope-o"></i> Send reservation via email</button>

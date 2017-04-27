@@ -861,6 +861,12 @@
             });
         };
 
+        $scope.removeTicket = function(event, ticket) {
+            EventService.removeTickets(event, [ticket]).then(function() {
+                loadData();
+            });
+        };
+
         $scope.editCategory = function(category, event) {
             var inception = moment(category.formattedInception);
             var expiration = moment(category.formattedExpiration);
