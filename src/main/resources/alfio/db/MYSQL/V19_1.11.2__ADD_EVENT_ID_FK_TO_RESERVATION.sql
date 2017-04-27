@@ -16,10 +16,11 @@
 --
 
 alter table tickets_reservation add column event_id_fk integer;
-alter table tickets_reservation add foreign key(event_id_fk) references event(id);
+
 
 update tickets_reservation tr set event_id_fk = (select distinct event_id from ticket where tickets_reservation_id = tr.id);
 
 delete from tickets_reservation where event_id_fk is null;
 
 alter table tickets_reservation MODIFY column event_id_fk integer NOT NULL;
+alter table tickets_reservation add foreign key(event_id_fk) references event(id);
