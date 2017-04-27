@@ -83,15 +83,8 @@ public interface EventRepository {
                      @Bind("vatStatus") PriceContainer.VatStatus vatStatus,
                      @Bind("srcPriceCts") int srcPriceCts);
 
-    @Query("select a.* from event a, ticket b where b.tickets_reservation_id = :reservationId and b.event_id = a.id limit 1")
-    Event findByTicketReservationId(@Bind("reservationId") String reservationId);
-
-    @Query("select a.* from event a, additional_service_item b where b.tickets_reservation_uuid = :reservationId and b.event_id_fk = a.id limit 1")
-    Event findByAdditionalServiceReservationId(@Bind("reservationId") String reservationId);
-
-    default Event findByReservationId(String reservationId) {
-        return OptionalWrapper.optionally(() -> findByTicketReservationId(reservationId)).orElseGet(() -> findByAdditionalServiceReservationId(reservationId));
-    }
+    @Query("select a.* from event a inner join tickets_reservation on event_id_fk = a.id where tickets_reservation.id = :reservationId")
+    Event findByReservationId(@Bind("reservationId") String reservationId);
 
     @Query("update event set display_name = short_name where id = :eventId and display_name is null")
     int fillDisplayNameIfRequired(@Bind("eventId") int eventId);

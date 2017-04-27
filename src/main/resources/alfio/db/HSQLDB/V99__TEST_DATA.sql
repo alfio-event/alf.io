@@ -30,8 +30,8 @@ insert into ticket_category(inception, expiration, name, max_tickets, price_cts,
   ('2014-01-10 00:00:00', '2017-10-10 00:00:00', 'Restricted', 4, 463, true, 'ACTIVE', 0, TRUE ),
   ('2014-01-10 00:00:00', '2017-10-10 00:00:00', 'Unbounded', -1, 463, false, 'ACTIVE', 0, FALSE );
 
-insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address) values('abcdefghi', '2014-01-10 00:00:00', 'IN_PAYMENT', 'ciccio', 'cc@cc.uu', null);
-insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address) values('abcdefghiz', '2014-01-10 00:00:00', 'PENDING', 'ciccio', 'cc@cc.uu', null);
+insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address, event_id_fk) values('abcdefghi', '2014-01-10 00:00:00', 'IN_PAYMENT', 'ciccio', 'cc@cc.uu', null, 0);
+insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address, event_id_fk) values('abcdefghiz', '2014-01-10 00:00:00', 'PENDING', 'ciccio', 'cc@cc.uu', null, 0);
 insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts, tickets_reservation_id)
 values
 

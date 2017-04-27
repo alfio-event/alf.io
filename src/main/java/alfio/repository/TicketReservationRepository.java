@@ -28,8 +28,8 @@ import java.util.Optional;
 @QueryRepository
 public interface TicketReservationRepository {
 
-    @Query("insert into tickets_reservation(id, validity, promo_code_id_fk, status, user_language) values (:id, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage)")
-    int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity, @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId, @Bind("userLanguage") String userLanguage);
+    @Query("insert into tickets_reservation(id, validity, promo_code_id_fk, status, user_language, event_id_fk) values (:id, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId)")
+    int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity, @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId, @Bind("userLanguage") String userLanguage, @Bind("eventId") int eventId);
 
     @Query("update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email, user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod where id = :reservationId")
     int updateTicketReservation(@Bind("reservationId") String reservationId, @Bind("status") String status,
@@ -100,13 +100,9 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set invoice_number = :invoiceNumber where id = :reservationId")
     int setInvoiceNumber(@Bind("reservationId") String reservationId, @Bind("invoiceNumber") String invoiceNumber);
 
-    @Query("select distinct tickets_reservation.* from  tickets_reservation " +
-        " inner join ticket on tickets_reservation_id = tickets_reservation.id " +
-        " where invoice_number is not null and event_id = :eventId")
+    @Query("select * from  tickets_reservation where invoice_number is not null and event_id_fk = :eventId order by confirmation_ts desc, validity desc")
     List<TicketReservation> findAllReservationsWithInvoices(@Bind("eventId") int eventId);
 
-    @Query("select tickets_reservation.* from tickets_reservation inner join " +
-            "(select distinct tickets_reservation_id from ticket inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where event_id = :eventId) b " +
-            " on tickets_reservation.id = b.tickets_reservation_id order by confirmation_ts desc, validity desc")
+    @Query("select * from tickets_reservation where event_id_fk = :eventId order by confirmation_ts desc, validity desc")
     List<TicketReservation> findAllReservationsInEvent(@Bind("eventId") int eventId);
 }

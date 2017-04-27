@@ -810,7 +810,7 @@ public class EventManager {
 		eventDeleterRepository.deleteEventMigration(eventId);
 		eventDeleterRepository.deleteSponsorScan(eventId);
 		eventDeleterRepository.deleteTicket(eventId);
-		eventDeleterRepository.resetTicketReservation(eventId);
+		eventDeleterRepository.deleteReservation(eventId);
 		
 		eventDeleterRepository.deletePromoCode(eventId);
 		eventDeleterRepository.deleteTicketCategoryText(eventId);

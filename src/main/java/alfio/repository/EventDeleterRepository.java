@@ -70,10 +70,9 @@ public interface EventDeleterRepository {
 	
 	@Query("delete from ticket where event_id = :eventId")
 	int deleteTicket(@Bind("eventId") int eventId);
-	
-	//tickets_reservation will remain in the system though
-	@Query("update tickets_reservation set promo_code_id_fk = null where promo_code_id_fk in (select id from promo_code where event_id_fk = :eventId)")
-	int resetTicketReservation(@Bind("eventId") int eventId);
+
+	@Query("delete from tickets_reservation where event_id_fk = :eventId")
+	int deleteReservation(@Bind("eventId") int eventId);
 	
 	@Query("delete from promo_code where event_id_fk = :eventId")
 	int deletePromoCode(@Bind("eventId") int eventId);

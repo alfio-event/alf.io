@@ -93,6 +93,13 @@ public class AdminReservationApiController {
     @RequestMapping(value = "/event/{eventName}/{reservationId}/remove-tickets", method = RequestMethod.POST)
     public Result<Boolean> removeTickets(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
                                              @RequestBody RemoveTicketsModification toRemove, Principal principal) {
+
+        List<Integer> toRefund = toRemove.getRefundTo().entrySet().stream()
+            .filter(Map.Entry::getValue)
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toList());
+
+        adminReservationManager.removeTickets(eventName, reservationId, toRemove.getTicketIds(), toRefund, principal.getName());
         return Result.success(true);
     }
 
@@ -115,7 +122,7 @@ public class AdminReservationApiController {
     @RequiredArgsConstructor
     @Getter
     public static class RemoveTicketsModification {
-        private final List<Long> ticketIds;
-        private Map<Long, Boolean> refundTo;
+        private final List<Integer> ticketIds;
+        private Map<Integer, Boolean> refundTo;
     }
 }

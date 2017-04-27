@@ -43,6 +43,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.util.Assert;
 
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -54,6 +55,7 @@ import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Component
@@ -70,6 +72,7 @@ public class AdminReservationManager {
     private final EventRepository eventRepository;
     private final PlatformTransactionManager transactionManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
+    private final TicketFieldRepository ticketFieldRepository;
 
     @Autowired
     public AdminReservationManager(EventManager eventManager,
@@ -81,7 +84,8 @@ public class AdminReservationManager {
                                    SpecialPriceRepository specialPriceRepository,
                                    TicketReservationRepository ticketReservationRepository,
                                    EventRepository eventRepository,
-                                   SpecialPriceTokenGenerator specialPriceTokenGenerator) {
+                                   SpecialPriceTokenGenerator specialPriceTokenGenerator,
+                                   TicketFieldRepository ticketFieldRepository) {
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -92,6 +96,7 @@ public class AdminReservationManager {
         this.ticketReservationRepository = ticketReservationRepository;
         this.eventRepository = eventRepository;
         this.specialPriceTokenGenerator = specialPriceTokenGenerator;
+        this.ticketFieldRepository = ticketFieldRepository;
     }
 
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
@@ -267,7 +272,7 @@ public class AdminReservationManager {
             String reservationId = UUID.randomUUID().toString();
             String specialPriceSessionId = UUID.randomUUID().toString();
             Date validity = Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant());
-            ticketReservationRepository.createNewReservation(reservationId, validity, null, arm.getLanguage());
+            ticketReservationRepository.createNewReservation(reservationId, validity, null, arm.getLanguage(), event.getId());
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
             ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.PENDING.name(), customerData.getEmailAddress(), customerData.getFullName(), customerData.getFirstName(), customerData.getLastName(), arm.getLanguage(), null, null, null);
 
@@ -425,5 +430,30 @@ public class AdminReservationManager {
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
     }
 
+    @Transactional
+    public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, String username) {
+        loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
+            Event e = res.getRight();
+            TicketReservation reservation = res.getLeft();
+            List<Ticket> tickets = res.getMiddle();
+            Set<Integer> ticketIdsInReservation = tickets.stream().map(Ticket::getId).collect(toSet());
+            // ensure that all the tickets ids are present in tickets
+            Assert.isTrue(ticketIdsInReservation.containsAll(ticketIds), "Some ticket ids are not contained in the reservation");
+            Assert.isTrue(ticketIdsInReservation.containsAll(toRefund), "Some ticket ids to refund are not contained in the reservation");
+            //
 
+            ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
+            ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
+            ticketRepository.resetTickets(ticketIds);
+            //
+
+            // TODO: handle refund
+
+            //
+
+            if(tickets.size() - ticketIds.size() <= 0) {
+                //TODO: mark reservation as CANCELLED
+            }
+        });
+    }
 }
