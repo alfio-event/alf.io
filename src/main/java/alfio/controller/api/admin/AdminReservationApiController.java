@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RequestMapping("/admin/api/reservation")
@@ -89,6 +90,12 @@ public class AdminReservationApiController {
             .map(triple -> toReservationDescriptor(reservationId, triple));
     }
 
+    @RequestMapping(value = "/event/{eventName}/{reservationId}/remove-tickets", method = RequestMethod.POST)
+    public Result<Boolean> removeTickets(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
+                                             @RequestBody RemoveTicketsModification toRemove, Principal principal) {
+        return Result.success(true);
+    }
+
     private TicketReservationDescriptor toReservationDescriptor(String reservationId, Triple<TicketReservation, List<Ticket>, Event> triple) {
         List<SerializablePair<TicketCategory, List<Ticket>>> tickets = triple.getMiddle().stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
             .map(entry -> SerializablePair.of(eventManager.getTicketCategoryById(entry.getKey(), triple.getRight().getId()), entry.getValue()))
@@ -103,5 +110,12 @@ public class AdminReservationApiController {
         private final TicketReservation reservation;
         private final OrderSummary orderSummary;
         private final List<SerializablePair<TicketCategory, List<Ticket>>> ticketsByCategory;
+    }
+
+    @RequiredArgsConstructor
+    @Getter
+    public static class RemoveTicketsModification {
+        private final List<Long> ticketIds;
+        private Map<Long, Boolean> refundTo;
     }
 }

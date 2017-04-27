@@ -220,24 +220,34 @@
             },
 
 
-            removeTickets: function(event, ticketIds) {
+            removeTicketsModal: function(event, reservationId, ticketIds) {
                 var deferred = $q.defer();
                 var promise = deferred.promise;
 
                 var modal = $uibModal.open({
                     size:'lg',
-                    template:'<tickets-remove event="event" ticket-ids="ticketIds" on-cancel="close()"></tickets-remove>',
+                    template:'<tickets-remove event="event" reservation-id="reservationId" ticket-ids="ticketIds" on-success="success()" on-cancel="close()"></tickets-remove>',
                     backdrop: 'static',
                     controller: function($scope) {
                         $scope.event = event;
                         $scope.ticketIds = ticketIds;
+                        $scope.reservationId = reservationId;
                         $scope.close = function() {
                             $scope.$close(false);
                             deferred.reject();
                         }
+
+                        $scope.success = function () {
+                            $scope.$close(false);
+                            deferred.resolve();
+                        }
                     }
                 });
                 return promise;
+            },
+
+            removeTickets: function(eventName, reservationId, ticketIds, ticketIdsToRefund) {
+                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/remove-tickets', {ticketIds: ticketIds, refundTo: ticketIdsToRefund});
             }
         };
         return service;

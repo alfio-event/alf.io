@@ -2,10 +2,18 @@
     <h3>Remove selected tickets?</h3>
 </div>
 <div class="modal-body">
-    {{$ctrl.ticketIds}}
+    <p>reservation id: {{$ctrl.reservationId}}</p>
+    <p>ticket ids:</p>
+    <ul>
+        <li ng-repeat="ticketId in $ctrl.ticketIds">
+            {{ticketId}}:  refund <input type="checkbox" ng-model="$ctrl.toRefund[ticketId]">
+        </li>
+    </ul>
+
 </div>
 <div class="modal-footer">
     <div class="pull-right">
+        <button class="btn btn-default" type="button" data-ng-click="$ctrl.confirmRemove()">confirm removal</button>
         <button class="btn btn-default" type="button" data-ng-click="$ctrl.onCancel()"><i class="fa fa-times"></i> close</button>
     </div>
 </div>
