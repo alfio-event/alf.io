@@ -862,7 +862,8 @@
         };
 
         $scope.removeTicket = function(event, ticket) {
-            EventService.removeTickets(event, [ticket]).then(function() {
+            console.log(ticket.id);
+            EventService.removeTickets(event, [ticket.id]).then(function() {
                 loadData();
             });
         };

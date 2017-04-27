@@ -56,6 +56,8 @@
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/event-promo-codes/event-promo-codes.js"></script>
 
+    <script src="{{request.contextPath}}/resources/js/admin/feature/tickets-remove/tickets-remove.js"></script>
+
     <script src="{{request.contextPath}}/resources/js/admin/feature/users/users.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/user-edit/user-edit.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/user-edit-current/user-edit-current.js"></script>

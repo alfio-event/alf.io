@@ -131,7 +131,7 @@
         };
 
         ctrl.removeTicket = function(ticket) {
-            EventService.removeTickets(ctrl.event, [ticket]);
+            EventService.removeTickets(ctrl.event, [ticket.ticketId]);
         }
     }
 

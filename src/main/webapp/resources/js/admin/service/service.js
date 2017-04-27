@@ -32,7 +32,7 @@
         };
     });
 
-    baseServices.service("EventService", function($http, HttpErrorHandler, $uibModal, $window, $rootScope) {
+    baseServices.service("EventService", function($http, HttpErrorHandler, $uibModal, $window, $rootScope, $q) {
         var service = {
             data: {},
             getAllEvents : function() {
@@ -220,8 +220,24 @@
             },
 
 
-            removeTickets: function(event, tickets) {
-                alert('to implement');
+            removeTickets: function(event, ticketIds) {
+                var deferred = $q.defer();
+                var promise = deferred.promise;
+
+                var modal = $uibModal.open({
+                    size:'lg',
+                    template:'<tickets-remove event="event" ticket-ids="ticketIds" on-cancel="close()"></tickets-remove>',
+                    backdrop: 'static',
+                    controller: function($scope) {
+                        $scope.event = event;
+                        $scope.ticketIds = ticketIds;
+                        $scope.close = function() {
+                            $scope.$close(false);
+                            deferred.reject();
+                        }
+                    }
+                });
+                return promise;
             }
         };
         return service;
