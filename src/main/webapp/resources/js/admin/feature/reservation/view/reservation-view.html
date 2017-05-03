@@ -18,7 +18,9 @@
         </div>
 
         <div class="page-header">
-            <h3>Reservation details</h3>
+            <h3>Reservation details
+                <button type="button" ng-click="$ctrl.cancelReservationModal()" ng-if="$ctrl.reservation.status !== 'CANCELLED'" class="btn btn-sm btn-warning pull-right">Cancel reservation</button>
+            </h3>
         </div>
 
         <div class="well">

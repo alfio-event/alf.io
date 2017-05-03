@@ -219,6 +219,30 @@
                 });
             },
 
+            cancelReservationModal: function(event, reservationId) {
+                var deferred = $q.defer();
+                var promise = deferred.promise;
+
+                var modal = $uibModal.open({
+                    size:'lg',
+                    template:'<reservation-cancel event="event" reservation-id="reservationId" on-success="success()" on-cancel="close()"></reservation-cancel>',
+                    backdrop: 'static',
+                    controller: function($scope) {
+                        $scope.event = event;
+                        $scope.reservationId = reservationId;
+                        $scope.close = function() {
+                            $scope.$close(false);
+                            deferred.reject();
+                        };
+
+                        $scope.success = function () {
+                            $scope.$close(false);
+                            deferred.resolve();
+                        }
+                    }
+                });
+                return promise;
+            },
 
             removeTicketsModal: function(event, reservationId, ticketIds) {
                 var deferred = $q.defer();
@@ -235,7 +259,7 @@
                         $scope.close = function() {
                             $scope.$close(false);
                             deferred.reject();
-                        }
+                        };
 
                         $scope.success = function () {
                             $scope.$close(false);
@@ -248,6 +272,10 @@
 
             removeTickets: function(eventName, reservationId, ticketIds, ticketIdsToRefund) {
                 return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/remove-tickets', {ticketIds: ticketIds, refundTo: ticketIdsToRefund});
+            },
+
+            cancelReservation: function(eventName, reservationId, refund) {
+                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/cancel?refund=' + refund);
             }
         };
         return service;

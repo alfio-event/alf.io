@@ -29,7 +29,7 @@ import java.util.*;
 public class TicketReservation {
 
     public enum TicketReservationStatus {
-        PENDING, IN_PAYMENT, OFFLINE_PAYMENT, COMPLETE, STUCK
+        PENDING, IN_PAYMENT, OFFLINE_PAYMENT, COMPLETE, STUCK, CANCELLED
     }
 
     private final String id;

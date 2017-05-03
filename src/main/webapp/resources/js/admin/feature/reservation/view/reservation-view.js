@@ -130,6 +130,12 @@
             });
         };
 
+        ctrl.cancelReservationModal = function() {
+            EventService.cancelReservationModal(ctrl.event, ctrl.reservation.id).then(function() {
+                $window.location.reload();
+            });
+        };
+
         ctrl.removeTicket = function(ticket) {
             EventService.removeTicketsModal(ctrl.event, ctrl.reservation.id, [ticket.ticketId]).then(function() {
                 //not a beautiful solution...

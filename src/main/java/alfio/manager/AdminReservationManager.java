@@ -448,17 +448,47 @@ public class AdminReservationManager {
             Assert.isTrue(ticketIdsInReservation.containsAll(toRefund), "Some ticket ids to refund are not contained in the reservation");
             //
 
-            ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
-            ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
-            ticketRepository.resetTickets(ticketIds);
+            removeTicketsFromReservation(ticketIds);
             //
 
             handleTicketsRefund(toRefund, e, reservation, ticketsById);
 
             if(tickets.size() - ticketIds.size() <= 0) {
-                //TODO: mark reservation as CANCELLED
+                markAsCancelled(reservation);
             }
         });
+    }
+
+
+
+    @Transactional
+    public void removeReservation(String eventName, String reservationId, boolean refund, String username) {
+        loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
+            Event e = res.getRight();
+            TicketReservation reservation = res.getLeft();
+            List<Ticket> tickets = res.getMiddle();
+
+            removeTicketsFromReservation(tickets.stream().map(Ticket::getId).collect(toList()));
+
+            if(refund && reservation.getPaymentMethod().isSupportRefund()) {
+                //fully refund
+                paymentManager.refund(reservation, e, Optional.empty());
+                // TODO: save refunded amount in reservation
+            }
+
+            markAsCancelled(reservation);
+        });
+    }
+
+    private void removeTicketsFromReservation(List<Integer> ticketIds) {
+        ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
+        ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
+        ticketRepository.resetTickets(ticketIds);
+    }
+
+    private void markAsCancelled(TicketReservation ticketReservation) {
+        //TODO: eventually, send email
+        ticketReservationRepository.updateTicketStatus(ticketReservation.getId(), TicketReservationStatus.CANCELLED.toString());
     }
 
     private void handleTicketsRefund(List<Integer> toRefund, Event e, TicketReservation reservation, Map<Integer, Ticket> ticketsById) {
