@@ -470,7 +470,7 @@ public class AdminReservationManager {
 
             removeTicketsFromReservation(tickets.stream().map(Ticket::getId).collect(toList()));
 
-            if(refund && reservation.getPaymentMethod().isSupportRefund()) {
+            if(refund && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
                 //fully refund
                 paymentManager.refund(reservation, e, Optional.empty());
                 // TODO: save refunded amount in reservation
