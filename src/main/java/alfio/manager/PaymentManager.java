@@ -18,10 +18,7 @@ package alfio.manager;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.CustomerName;
-import alfio.model.Event;
-import alfio.model.OrderSummary;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
@@ -34,6 +31,7 @@ import com.stripe.model.Charge;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -79,18 +77,18 @@ public class PaymentManager {
      * @return PaymentResult
      * @throws java.lang.IllegalStateException if there is an error after charging the credit card
      */
-    public PaymentResult processPayment(String reservationId,
-                          String gatewayToken,
-                          int price,
-                          Event event,
-                          String email,
-                          CustomerName customerName,
-                          String billingAddress) {
+    public PaymentResult processStripePayment(String reservationId,
+                                              String gatewayToken,
+                                              int price,
+                                              Event event,
+                                              String email,
+                                              CustomerName customerName,
+                                              String billingAddress) {
         try {
             final Charge charge = stripeManager.chargeCreditCard(gatewayToken, price,
                     event, reservationId, email, customerName.getFullName(), billingAddress);
             log.info("transaction {} paid: {}", reservationId, charge.getPaid());
-            transactionRepository.insert(charge.getId(), reservationId,
+            transactionRepository.insert(charge.getId(), null, reservationId,
                     ZonedDateTime.now(), price, event.getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name());
             return PaymentResult.successful(charge.getId());
         } catch (Exception e) {
@@ -102,12 +100,18 @@ public class PaymentManager {
 
     }
 
-    public PaymentResult processPaypalPayment(String reservationId, String token, String payerId, int price, Event event) {
+    public PaymentResult processPaypalPayment(String reservationId,
+                                              String token,
+                                              String payerId,
+                                              int price,
+                                              Event event) {
         try {
-            String transactionId = paypalManager.commitPayment(reservationId, token, payerId, event);
-            transactionRepository.insert(transactionId, reservationId,
+            Pair<String, String> captureAndPaymentId = paypalManager.commitPayment(reservationId, token, payerId, event);
+            String captureId = captureAndPaymentId.getLeft();
+            String paymentId = captureAndPaymentId.getRight();
+            transactionRepository.insert(captureId, paymentId, reservationId,
                 ZonedDateTime.now(), price, event.getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name());
-            return PaymentResult.successful(transactionId);
+            return PaymentResult.successful(captureId);
         } catch (Exception e) {
             log.warn("errow while processing paypal payment: " + e.getMessage(), e);
             if(e instanceof PayPalRESTException) {
@@ -140,12 +144,26 @@ public class PaymentManager {
         Transaction transaction = transactionRepository.loadByReservationId(reservation.getId());
         switch(reservation.getPaymentMethod()) {
             case PAYPAL:
-                return paypalManager.refund(transaction.getTransactionId(), event, amount);
+                return paypalManager.refund(transaction, event, amount);
             case STRIPE:
-                return stripeManager.refund(transaction.getTransactionId(), event, amount);
+                return stripeManager.refund(transaction, event, amount);
             default:
                 throw new IllegalStateException("Cannot refund ");
         }
+    }
+
+    public TransactionAndPaymentInfo getInfo(TicketReservation reservation, Event event) {
+        Optional<Transaction> maybeTransaction = transactionRepository.loadOptionalByReservationId(reservation.getId());
+        return maybeTransaction.map(transaction -> {
+            switch(reservation.getPaymentMethod()) {
+                case PAYPAL:
+                    return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, paypalManager.getInfo(transaction, event).orElse(null));
+                case STRIPE:
+                    return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, stripeManager.getInfo(transaction, event).orElse(null));
+                default:
+                    return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, new PaymentInformations(reservation.getPaidAmount(), null));
+            }
+        }).orElse(new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformations(reservation.getPaidAmount(), null)));
     }
 
     @Data

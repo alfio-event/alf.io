@@ -17,6 +17,9 @@
             },
             load: function(eventName, reservationId) {
                 return $http.get('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/').error(HttpErrorHandler.handle);
+            },
+            paymentInfo: function(eventName, reservationId) {
+                return $http.get('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/payment-info').error(HttpErrorHandler.handle);
             }
         }
     }]);

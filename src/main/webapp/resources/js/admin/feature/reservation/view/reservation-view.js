@@ -78,6 +78,10 @@
                     })
                 }
             });
+
+            AdminReservationService.paymentInfo(ctrl.event.shortName, src.id).then(function(res) {
+                ctrl.paymentInfo = res.data.data;
+            });
         };
 
         ctrl.update = function(frm) {

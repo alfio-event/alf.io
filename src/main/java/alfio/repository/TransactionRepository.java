@@ -27,9 +27,10 @@ import java.util.Optional;
 @QueryRepository
 public interface TransactionRepository {
 
-    @Query("insert into b_transaction(gtw_tx_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy) " +
-            "values(:transactionId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy)")
+    @Query("insert into b_transaction(gtw_tx_id, gtw_payment_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy) " +
+            "values(:transactionId, :paymentId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy)")
     int insert(@Bind("transactionId") String transactionId,
+               @Bind("paymentId") String paymentId,
                @Bind("reservationId") String reservationId,
                @Bind("timestamp") ZonedDateTime timestamp,
                @Bind("priceInCents") int priceInCents,

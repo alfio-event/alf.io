@@ -51,7 +51,7 @@ public class PaymentManagerTest {{
         }});
         when(failureStripe.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenThrow(new AuthenticationException("401", "42", 401));
         when(failureStripe.handleException(any(StripeException.class))).thenReturn(error);
-        when(failureTR.insert(anyString(), anyString(), any(ZonedDateTime.class), anyInt(), anyString(), anyString(), anyString()))
+        when(failureTR.insert(anyString(), anyString(), anyString(), any(ZonedDateTime.class), anyInt(), anyString(), anyString(), anyString()))
                 .thenThrow(new NullPointerException());
     } catch (StripeException e) {
         throw new AssertionError("it should not have thrown any exception!!");
@@ -59,14 +59,14 @@ public class PaymentManagerTest {{
 
     describe("success flow", it -> {
         it.should("return a successful payment result", expect -> {
-            expect.that(new PaymentManager(successStripe, null, transactionRepository, configurationManager).processPayment("", "", 100, event, "", customerName, ""))
+            expect.that(new PaymentManager(successStripe, null, transactionRepository, configurationManager).processStripePayment("", "", 100, event, "", customerName, ""))
                     .is(PaymentResult.successful(paymentId));
         });
     });
 
     describe("stripe error", it -> {
         it.should("return an unsuccessful payment result", expect -> {
-            expect.that(new PaymentManager(failureStripe, null, transactionRepository, configurationManager).processPayment("", "", 100, event, "", customerName, ""))
+            expect.that(new PaymentManager(failureStripe, null, transactionRepository, configurationManager).processStripePayment("", "", 100, event, "", customerName, ""))
                     .is(PaymentResult.unsuccessful(error));
         });
     });
@@ -74,7 +74,7 @@ public class PaymentManagerTest {{
     describe("internal error", it -> {
         it.should("throw IllegalStateException in case of internal error", expect -> {
             expect.exception(IllegalStateException.class, () -> {
-                new PaymentManager(successStripe, null, failureTR, configurationManager).processPayment("", "", 100, event, "", customerName, "");
+                new PaymentManager(successStripe, null, failureTR, configurationManager).processStripePayment("", "", 100, event, "", customerName, "");
             });
         });
     });

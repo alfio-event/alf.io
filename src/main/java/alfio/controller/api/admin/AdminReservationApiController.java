@@ -33,6 +33,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequestMapping("/admin/api/reservation")
@@ -101,6 +102,11 @@ public class AdminReservationApiController {
 
         adminReservationManager.removeTickets(eventName, reservationId, toRemove.getTicketIds(), toRefund, principal.getName());
         return Result.success(true);
+    }
+
+    @RequestMapping(value = "/event/{eventName}/{reservationId}/payment-info", method = RequestMethod.GET)
+    public Result<TransactionAndPaymentInfo> getPaymentInfo(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+        return adminReservationManager.getPaymentInfo(eventName, reservationId, principal.getName());
     }
 
     @RequestMapping(value = "/event/{eventName}/{reservationId}/cancel", method = RequestMethod.POST)

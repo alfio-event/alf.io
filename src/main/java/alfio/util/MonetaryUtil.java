@@ -53,8 +53,16 @@ public final class MonetaryUtil {
         return new BigDecimal(cents).divide(HUNDRED, 2, HALF_UP);
     }
 
+    public static BigDecimal centsToUnit(long cents) {
+        return new BigDecimal(cents).divide(HUNDRED, 2, HALF_UP);
+    }
+
     public static int unitToCents(BigDecimal unit) {
         return unit.multiply(HUNDRED).setScale(0, HALF_UP).intValueExact();
+    }
+
+    public static String formatCents(long cents) {
+        return centsToUnit(cents).toPlainString();
     }
 
     public static String formatCents(int cents) {

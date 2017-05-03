@@ -45,14 +45,55 @@
                     </div>
                 </div>
             </div>
-            <div class="col-xs-3 col-xs-push-3" ng-if="$ctrl.reservation.status !== 'COMPLETE'">
+            <div class="col-xs-3 col-xs-push-3" ng-if="$ctrl.reservation.status !== 'COMPLETE' && $ctrl.reservation.status !== 'CANCELLED'">
                 <div class="form-group">
                     <label for="expiration">Expiration</label>
                     <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration" required>
                 </div>
             </div>
         </div>
-        <hr>
+
+        <div >
+            <hr>
+            <h3>Payment info</h3>
+            <div ng-if="!$ctrl.paymentInfo">Loading...</div>
+            <div class="row" ng-if="$ctrl.paymentInfo">
+                <div class="col-xs-12 col-sm-4">
+                    <div class="form-group">
+                        <label for="customerLastName">Payment method</label>
+                        <div class="form-control-static" ng-bind="$ctrl.paymentInfo.paymentMethod">-</div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-4" ng-if="$ctrl.paymentInfo.transaction">
+                    <div class="form-group">
+                        <label for="customerLastName">Payment id</label>
+                        <div class="form-control-static" ng-bind="$ctrl.paymentInfo.transaction.transactionId"></div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-4" ng-if="$ctrl.paymentInfo.transaction">
+                    <div class="form-group">
+                        <label for="customerLastName">Transaction time</label>
+                        <div class="form-control-static" ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row" ng-if="$ctrl.paymentInfo.paymentInformations">
+                <div class="col-xs-12 col-sm-6">
+                    <div class="form-group">
+                        <label for="customerLastName">Paid amount</label>
+                        <div class="form-control-static">{{$ctrl.paymentInfo.paymentInformations.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-6" ng-if="$ctrl.paymentInfo.supportRefund">
+                    <div class="form-group">
+                        <label for="customerLastName">Refunded amount</label>
+                        <div class="form-control-static">
+                            {{$ctrl.paymentInfo.paymentInformations.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="page-header">
             <h3>Contact info</h3>

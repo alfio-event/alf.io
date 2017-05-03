@@ -26,6 +26,7 @@ public class Transaction {
 
     private final int id;
     private final String transactionId;
+    private final String paymentId;
     private final String reservationId;
     private final ZonedDateTime timestamp;
     private final int priceInCents;
@@ -36,6 +37,7 @@ public class Transaction {
 
     public Transaction(@Column("id") int id,
                        @Column("gtw_tx_id") String transactionId,
+                       @Column("gtw_payment_id") String paymentId,
                        @Column("reservation_id") String reservationId,
                        @Column("t_timestamp") ZonedDateTime timestamp,
                        @Column("price_cts") int priceInCents,
@@ -44,6 +46,7 @@ public class Transaction {
                        @Column("payment_proxy") String paymentProxy) {
         this.id = id;
         this.transactionId = transactionId;
+        this.paymentId = paymentId;
         this.reservationId = reservationId;
         this.timestamp = timestamp;
         this.priceInCents = priceInCents;

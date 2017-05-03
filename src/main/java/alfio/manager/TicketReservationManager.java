@@ -321,7 +321,7 @@ public class TicketReservationManager {
                 }
                 switch(paymentProxy) {
                     case STRIPE:
-                        paymentResult = paymentManager.processPayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
+                        paymentResult = paymentManager.processStripePayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
                         if(!paymentResult.isSuccessful()) {
                             reTransitionToPending(reservationId);
                             return paymentResult;

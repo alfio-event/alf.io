@@ -19,7 +19,9 @@ package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.PaymentInformations;
 import alfio.model.system.Configuration;
+import alfio.model.transaction.Transaction;
 import alfio.repository.TicketRepository;
 import alfio.util.MonetaryUtil;
 import com.stripe.exception.*;
@@ -106,8 +108,19 @@ public class StripeManager {
         return RequestOptions.builder().setApiKey(getSecretKey(event)).build();
     }
 
+    public Optional<PaymentInformations> getInfo(Transaction transaction, Event event) {
+        try {
+            Charge charge = Charge.retrieve(transaction.getTransactionId(), options(event));
+            PaymentInformations pi = new PaymentInformations(MonetaryUtil.formatCents(charge.getAmount()), MonetaryUtil.formatCents(charge.getAmountRefunded()));
+            return Optional.ofNullable(pi);
+        } catch (StripeException e) {
+            return Optional.empty();
+        }
+    }
+
     // https://stripe.com/docs/api#create_refund
-    public boolean refund(String chargeId, Event event, Optional<Integer> amount) {
+    public boolean refund(Transaction transaction, Event event, Optional<Integer> amount) {
+        String chargeId = transaction.getTransactionId();
         try {
             String amountOrFull = amount.map(MonetaryUtil::formatCents).orElse("full");
             log.info("Stripe: trying to do a refund for payment {} with amount: {}", chargeId, amountOrFull);
