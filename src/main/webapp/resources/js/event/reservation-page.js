@@ -252,6 +252,10 @@
             }
         });
 
+        if($('#postpone-assignment').is(':checked')) {
+            $('#attendeesData').find('.field-required').attr('required', false);
+        }
+
         function fillAttendeeData(firstOrFullName, lastName) {
             var useFullName = (typeof lastName == "undefined");
             var element = $('#attendeesData');
