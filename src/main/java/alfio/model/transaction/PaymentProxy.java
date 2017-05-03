@@ -24,23 +24,25 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public enum PaymentProxy {
-    STRIPE("stripe.com", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_STRIPE)),
-    ON_SITE("on-site payment", true, true, Collections.emptySet()),
-    OFFLINE("offline payment", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_OFFLINE)),
-    NONE("no payment required", false, false, Collections.emptySet()),
-    ADMIN("manual", false, false, Collections.emptySet()),
-    PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL));
+    STRIPE("stripe.com", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_STRIPE), true),
+    ON_SITE("on-site payment", true, true, Collections.emptySet(), false),
+    OFFLINE("offline payment", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_OFFLINE), false),
+    NONE("no payment required", false, false, Collections.emptySet(), false),
+    ADMIN("manual", false, false, Collections.emptySet(), false),
+    PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL), true);
 
     private final String description;
     private final boolean deskPayment;
     private final boolean visible;
     private final Set<ConfigurationKeys.SettingCategory> settingCategories;
+    private final boolean supportRefund;
 
-    PaymentProxy(String description, boolean deskPayment, boolean visible, Set<ConfigurationKeys.SettingCategory> settingCategories) {
+    PaymentProxy(String description, boolean deskPayment, boolean visible, Set<ConfigurationKeys.SettingCategory> settingCategories, boolean supportRefund) {
         this.description = description;
         this.deskPayment = deskPayment;
         this.visible = visible;
         this.settingCategories = settingCategories;
+        this.supportRefund = supportRefund;
     }
 
     public String getDescription() {
@@ -57,6 +59,10 @@ public enum PaymentProxy {
 
     private boolean isVisible() {
         return visible;
+    }
+
+    public boolean isSupportRefund() {
+        return supportRefund;
     }
 
     @JsonIgnore

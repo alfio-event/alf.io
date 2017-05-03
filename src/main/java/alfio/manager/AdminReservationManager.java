@@ -48,6 +48,8 @@ import org.springframework.util.Assert;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static alfio.util.EventUtil.generateEmptyTickets;
@@ -73,6 +75,7 @@ public class AdminReservationManager {
     private final PlatformTransactionManager transactionManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
     private final TicketFieldRepository ticketFieldRepository;
+    private final PaymentManager paymentManager;
 
     @Autowired
     public AdminReservationManager(EventManager eventManager,
@@ -85,7 +88,8 @@ public class AdminReservationManager {
                                    TicketReservationRepository ticketReservationRepository,
                                    EventRepository eventRepository,
                                    SpecialPriceTokenGenerator specialPriceTokenGenerator,
-                                   TicketFieldRepository ticketFieldRepository) {
+                                   TicketFieldRepository ticketFieldRepository,
+                                   PaymentManager paymentManager) {
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -97,6 +101,7 @@ public class AdminReservationManager {
         this.eventRepository = eventRepository;
         this.specialPriceTokenGenerator = specialPriceTokenGenerator;
         this.ticketFieldRepository = ticketFieldRepository;
+        this.paymentManager = paymentManager;
     }
 
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
@@ -436,6 +441,7 @@ public class AdminReservationManager {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
+            Map<Integer, Ticket> ticketsById = tickets.stream().collect(Collectors.toMap(Ticket::getId, Function.identity()));
             Set<Integer> ticketIdsInReservation = tickets.stream().map(Ticket::getId).collect(toSet());
             // ensure that all the tickets ids are present in tickets
             Assert.isTrue(ticketIdsInReservation.containsAll(ticketIds), "Some ticket ids are not contained in the reservation");
@@ -447,13 +453,29 @@ public class AdminReservationManager {
             ticketRepository.resetTickets(ticketIds);
             //
 
-            // TODO: handle refund
-
-            //
+            handleTicketsRefund(toRefund, e, reservation, ticketsById);
 
             if(tickets.size() - ticketIds.size() <= 0) {
                 //TODO: mark reservation as CANCELLED
             }
         });
+    }
+
+    private void handleTicketsRefund(List<Integer> toRefund, Event e, TicketReservation reservation, Map<Integer, Ticket> ticketsById) {
+        if(!reservation.getPaymentMethod().isSupportRefund()) {
+            return;
+        }
+        // refund each selected ticket
+        for(Integer toRefundId : toRefund) {
+            int toBeRefunded = ticketsById.get(toRefundId).getFinalPriceCts();
+            if(toBeRefunded > 0) {
+                if(paymentManager.refund(reservation, e, Optional.of(toBeRefunded))) {
+                    //TODO: save refunded amount in reservation
+                } else {
+                    //
+                }
+            }
+        }
+        //
     }
 }
