@@ -45,6 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.util.Assert;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -477,10 +478,22 @@ public class AdminReservationManager {
             if(refund && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
                 //fully refund
                 paymentManager.refund(reservation, e, Optional.empty());
-                // TODO: save refunded amount in reservation
             }
 
             markAsCancelled(reservation);
+        });
+    }
+
+    public Result<Boolean> refund(String eventName, String reservationId, BigDecimal refundAmount, String username) {
+        return loadReservation(eventName, reservationId, username).map((res) -> {
+            Event e = res.getRight();
+            TicketReservation reservation = res.getLeft();
+
+            if(reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
+                return paymentManager.refund(reservation, e, Optional.of(MonetaryUtil.unitToCents(refundAmount)));
+            } else {
+                return false;
+            }
         });
     }
 

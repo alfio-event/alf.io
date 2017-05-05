@@ -23,12 +23,14 @@ import alfio.model.*;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.result.Result;
 import alfio.repository.EventRepository;
+import alfio.util.MonetaryUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
@@ -116,6 +118,11 @@ public class AdminReservationApiController {
         return Result.success(true);
     }
 
+    @RequestMapping(value = "/event/{eventName}/{reservationId}/refund", method = RequestMethod.POST)
+    public Result<Boolean> refund(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @RequestBody RefundAmount amount, Principal principal) {
+        return adminReservationManager.refund(eventName, reservationId, new BigDecimal(amount.amount), principal.getName());
+    }
+
     private TicketReservationDescriptor toReservationDescriptor(String reservationId, Triple<TicketReservation, List<Ticket>, Event> triple) {
         List<SerializablePair<TicketCategory, List<Ticket>>> tickets = triple.getMiddle().stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
             .map(entry -> SerializablePair.of(eventManager.getTicketCategoryById(entry.getKey(), triple.getRight().getId()), entry.getValue()))
@@ -137,5 +144,11 @@ public class AdminReservationApiController {
     public static class RemoveTicketsModification {
         private final List<Integer> ticketIds;
         private Map<Integer, Boolean> refundTo;
+    }
+
+    @RequiredArgsConstructor
+    @Getter
+    public static class RefundAmount {
+        private final String amount;
     }
 }

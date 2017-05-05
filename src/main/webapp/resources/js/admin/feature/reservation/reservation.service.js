@@ -20,6 +20,9 @@
             },
             paymentInfo: function(eventName, reservationId) {
                 return $http.get('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/payment-info').error(HttpErrorHandler.handle);
+            },
+            refund: function(eventName, reservationId, amount) {
+                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/refund', {amount: amount}).error(HttpErrorHandler.handle);
             }
         }
     }]);

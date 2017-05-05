@@ -93,6 +93,14 @@
                     </div>
                 </div>
             </div>
+            <div class="form-inline" ng-if="$ctrl.paymentInfo.supportRefund">
+                <label>Refund:
+                    <input type="text" class="form-control input-sm" ng-model="$ctrl.amountToRefund">
+                    {{$ctrl.paymentInfo.transaction.currency}}
+                </label>
+                <i ng-show="$ctrl.refundInProgress" class="fa fa-cog fa-2x fa-spin"></i>
+                <button type="button" class="btn btn-warning" ng-click="$ctrl.confirmRefund()" ng-disabled="$ctrl.refundInProgress">refund</button>
+            </div>
         </div>
 
         <div class="page-header">

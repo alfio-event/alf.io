@@ -30,6 +30,9 @@
             }
         };
 
+        ctrl.amountToRefund = null;
+        ctrl.refundInProgress = false;
+
         ctrl.displayCreationWarning = angular.isDefined($stateParams.fromCreation) && $stateParams.fromCreation;
 
         ctrl.hideCreationWarning = function() {
@@ -79,10 +82,14 @@
                 }
             });
 
-            AdminReservationService.paymentInfo(ctrl.event.shortName, src.id).then(function(res) {
+            loadPaymentInfo();
+        };
+
+        function loadPaymentInfo() {
+            AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
                 ctrl.paymentInfo = res.data.data;
             });
-        };
+        }
 
         ctrl.update = function(frm) {
             if(frm.$valid) {
@@ -145,6 +152,19 @@
                 //not a beautiful solution...
                 $window.location.reload();
             });
+        };
+
+        ctrl.confirmRefund = function() {
+            if(ctrl.amountToRefund != null && ctrl.amountToRefund.length > 0) {
+                if ($window.confirm('Are you sure to refund ' + ctrl.amountToRefund + ctrl.paymentInfo.transaction.currency + ' ?')) {
+                    ctrl.refundInProgress = true;
+                    AdminReservationService.refund(ctrl.event.shortName, ctrl.reservation.id, ctrl.amountToRefund).then(function () {
+                        ctrl.amountToRefund = null;
+                        ctrl.refundInProgress = false;
+                        loadPaymentInfo();
+                    })
+                }
+            }
         }
     }
 
