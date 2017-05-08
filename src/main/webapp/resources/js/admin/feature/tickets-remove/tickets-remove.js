@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('adminApplication').component('ticketsRemove', {
-        controller: ['EventService', TicketsRemoveCtrl],
+        controller: ['AdminReservationService', 'EventService', TicketsRemoveCtrl],
         templateUrl: '../resources/js/admin/feature/tickets-remove/tickets-remove.html',
         bindings: {
             event: '<',
@@ -14,13 +14,16 @@
     });
 
 
-    function TicketsRemoveCtrl(EventService) {
+    function TicketsRemoveCtrl(AdminReservationService, EventService) {
         var ctrl = this;
 
         ctrl.confirmRemove = confirmRemove;
 
         ctrl.$onInit = function() {
             ctrl.toRefund = {};
+            AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationId).then(function(res) {
+                ctrl.paymentInfo = res.data.data;
+            });
         }
 
         function confirmRemove() {

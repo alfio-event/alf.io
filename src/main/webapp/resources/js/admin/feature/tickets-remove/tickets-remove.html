@@ -1,14 +1,18 @@
 <div class="modal-header">
-    <h3>Remove selected tickets?</h3>
+    <h3>Remove selected ticket?</h3>
 </div>
 <div class="modal-body">
-    <p>reservation id: {{$ctrl.reservationId}}</p>
-    <p>ticket ids:</p>
-    <ul>
-        <li ng-repeat="ticketId in $ctrl.ticketIds">
-            {{ticketId}}:  refund <input type="checkbox" ng-model="$ctrl.toRefund[ticketId]">
-        </li>
-    </ul>
+    <div ng-if="$ctrl.paymentInfo">
+        <p>reservation id: {{$ctrl.reservationId}}</p>
+        <p>ticket id:</p>
+        <div ng-repeat="ticketId in $ctrl.ticketIds">
+            {{ticketId}}
+            <span ng-if="$ctrl.paymentInfo.supportRefund">refund <input type="checkbox" ng-model="$ctrl.toRefund[ticketId]"></span>
+        </div>
+    </div>
+    <div ng-if="!$ctrl.paymentInfo">
+        loading...
+    </div>
 
 </div>
 <div class="modal-footer">
