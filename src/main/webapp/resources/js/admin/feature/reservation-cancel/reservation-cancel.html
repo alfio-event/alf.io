@@ -14,7 +14,7 @@
 </div>
 <div class="modal-footer">
     <div class="pull-right">
-        <button class="btn btn-default" type="button" data-ng-click="$ctrl.confirmRemove()">confirm removal</button>
+        <button class="btn btn-default" ng-disabled="$ctrl.submitted" type="button" data-ng-click="$ctrl.confirmRemove()">confirm removal</button>
         <button class="btn btn-default" type="button" data-ng-click="$ctrl.onCancel()"><i class="fa fa-times"></i> close</button>
     </div>
 </div>

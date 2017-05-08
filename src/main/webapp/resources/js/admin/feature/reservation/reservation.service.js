@@ -23,6 +23,9 @@
             },
             refund: function(eventName, reservationId, amount) {
                 return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/refund', {amount: amount}).error(HttpErrorHandler.handle);
+            },
+            getTicket: function(eventName, reservationId, ticketId) {
+                return $http.get('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/ticket/'+ticketId).error(HttpErrorHandler.handle);
             }
         }
     }]);

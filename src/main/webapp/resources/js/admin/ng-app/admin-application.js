@@ -862,7 +862,7 @@
         };
 
         $scope.removeTicket = function(event, ticket) {
-            EventService.removeTicketsModal(event, ticket.ticketReservation.id, [ticket.id]).then(function() {
+            EventService.removeTicketModal(event, ticket.ticketReservation.id, ticket.id).then(function() {
                 loadData();
             });
         };

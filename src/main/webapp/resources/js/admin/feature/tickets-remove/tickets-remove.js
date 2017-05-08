@@ -7,7 +7,7 @@
         bindings: {
             event: '<',
             reservationId: '<',
-            ticketIds:'<',
+            ticketId:'<',
             onSuccess: '&',
             onCancel:'&'
         }
@@ -24,11 +24,18 @@
             AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationId).then(function(res) {
                 ctrl.paymentInfo = res.data.data;
             });
-        }
+
+            AdminReservationService.getTicket(ctrl.event.shortName, ctrl.reservationId, ctrl.ticketId).then(function(res) {
+                ctrl.ticket = res.data.data;
+            })
+        };
 
         function confirmRemove() {
-            return EventService.removeTickets(ctrl.event.shortName, ctrl.reservationId, ctrl.ticketIds, ctrl.toRefund).then(function() {
+            ctrl.submitted = true;
+            return EventService.removeTickets(ctrl.event.shortName, ctrl.reservationId, [ctrl.ticketId], ctrl.toRefund).then(function() {
                 ctrl.onSuccess();
+            }).finally(function() {
+                ctrl.submitted = false;
             });
         }
     }

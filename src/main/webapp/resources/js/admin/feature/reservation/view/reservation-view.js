@@ -148,7 +148,7 @@
         };
 
         ctrl.removeTicket = function(ticket) {
-            EventService.removeTicketsModal(ctrl.event, ctrl.reservation.id, [ticket.ticketId]).then(function() {
+            EventService.removeTicketModal(ctrl.event, ctrl.reservation.id, ticket.ticketId).then(function() {
                 //not a beautiful solution...
                 $window.location.reload();
             });

@@ -21,6 +21,7 @@ import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
 import alfio.model.*;
 import alfio.model.modification.AdminReservationModification;
+import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.repository.EventRepository;
 import alfio.util.MonetaryUtil;
@@ -92,6 +93,15 @@ public class AdminReservationApiController {
         return adminReservationManager.loadReservation(eventName, reservationId, principal.getName())
             .map(triple -> toReservationDescriptor(reservationId, triple));
     }
+
+    @RequestMapping(value = "/event/{eventName}/{reservationId}/ticket/{ticketId}", method = RequestMethod.GET)
+    public Result<Ticket> loadTicket(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @PathVariable("ticketId") int ticketId, Principal principal) {
+        return adminReservationManager.loadReservation(eventName, reservationId, principal.getName()).flatMap(triple -> {
+            //not optimal
+            return triple.getMiddle().stream().filter(t -> t.getId() == ticketId).findFirst().map(Result::success).orElse(Result.error(ErrorCode.custom("not_found", "not found")));
+        });
+    }
+
 
     @RequestMapping(value = "/event/{eventName}/{reservationId}/remove-tickets", method = RequestMethod.POST)
     public Result<Boolean> removeTickets(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,

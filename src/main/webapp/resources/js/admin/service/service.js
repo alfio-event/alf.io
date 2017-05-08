@@ -244,17 +244,17 @@
                 return promise;
             },
 
-            removeTicketsModal: function(event, reservationId, ticketIds) {
+            removeTicketModal: function(event, reservationId, ticketId) {
                 var deferred = $q.defer();
                 var promise = deferred.promise;
 
                 var modal = $uibModal.open({
                     size:'lg',
-                    template:'<tickets-remove event="event" reservation-id="reservationId" ticket-ids="ticketIds" on-success="success()" on-cancel="close()"></tickets-remove>',
+                    template:'<tickets-remove event="event" reservation-id="reservationId" ticket-id="ticketId" on-success="success()" on-cancel="close()"></tickets-remove>',
                     backdrop: 'static',
                     controller: function($scope) {
                         $scope.event = event;
-                        $scope.ticketIds = ticketIds;
+                        $scope.ticketId = ticketId;
                         $scope.reservationId = reservationId;
                         $scope.close = function() {
                             $scope.$close(false);

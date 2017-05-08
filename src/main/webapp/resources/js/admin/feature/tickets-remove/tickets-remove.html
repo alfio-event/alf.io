@@ -3,11 +3,27 @@
 </div>
 <div class="modal-body">
     <div ng-if="$ctrl.paymentInfo">
-        <p>reservation id: {{$ctrl.reservationId}}</p>
-        <p>ticket id:</p>
-        <div ng-repeat="ticketId in $ctrl.ticketIds">
-            {{ticketId}}
-            <span ng-if="$ctrl.paymentInfo.supportRefund">refund <input type="checkbox" ng-model="$ctrl.toRefund[ticketId]"></span>
+        <p>Reservation id: {{$ctrl.reservationId}}</p>
+        <p>Ticket information:</p>
+        <div>
+            <table class="table table-responsive table-striped">
+                <thead>
+                    <th>Identifier</th>
+                    <th>First name</th>
+                    <th>Last name</th>
+                    <th>E-Mail</th>
+                    <th>Paid amount</th>
+                    <th ng-if="$ctrl.paymentInfo.supportRefund">Refund</th>
+                </thead>
+                <tbody>
+                    <td ng-bind="$ctrl.ticket.uuid"></td>
+                    <td ng-bind="$ctrl.ticket.firstName"></td>
+                    <td ng-bind="$ctrl.ticket.firstName"></td>
+                    <td ng-bind="$ctrl.ticket.email"></td>
+                    <td>{{$ctrl.ticket.formattedFinalPrice}} {{$ctrl.event.currency}}</td>
+                    <td ng-if="$ctrl.paymentInfo.supportRefund"><input type="checkbox" ng-model="$ctrl.toRefund[$ctrl.ticketId]"></td>
+                </tbody>
+            </table>
         </div>
     </div>
     <div ng-if="!$ctrl.paymentInfo">
@@ -17,7 +33,7 @@
 </div>
 <div class="modal-footer">
     <div class="pull-right">
-        <button class="btn btn-default" type="button" data-ng-click="$ctrl.confirmRemove()">confirm removal</button>
+        <button class="btn btn-default" type="button" ng-disabled="$ctrl.submitted" data-ng-click="$ctrl.confirmRemove()">confirm removal</button>
         <button class="btn btn-default" type="button" data-ng-click="$ctrl.onCancel()"><i class="fa fa-times"></i> close</button>
     </div>
 </div>
