@@ -29,13 +29,18 @@ import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.Result.ResultStatus;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
+import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -77,6 +82,9 @@ public class AdminReservationManager {
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
     private final TicketFieldRepository ticketFieldRepository;
     private final PaymentManager paymentManager;
+    private final NotificationManager notificationManager;
+    private final MessageSource messageSource;
+    private final TemplateManager templateManager;
 
     @Autowired
     public AdminReservationManager(EventManager eventManager,
@@ -90,7 +98,10 @@ public class AdminReservationManager {
                                    EventRepository eventRepository,
                                    SpecialPriceTokenGenerator specialPriceTokenGenerator,
                                    TicketFieldRepository ticketFieldRepository,
-                                   PaymentManager paymentManager) {
+                                   PaymentManager paymentManager,
+                                   NotificationManager notificationManager,
+                                   MessageSource messageSource,
+                                   TemplateManager templateManager) {
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -103,6 +114,9 @@ public class AdminReservationManager {
         this.specialPriceTokenGenerator = specialPriceTokenGenerator;
         this.ticketFieldRepository = ticketFieldRepository;
         this.paymentManager = paymentManager;
+        this.notificationManager = notificationManager;
+        this.messageSource = messageSource;
+        this.templateManager = templateManager;
     }
 
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
@@ -437,7 +451,7 @@ public class AdminReservationManager {
     }
 
     @Transactional
-    public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, String username) {
+    public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, String username) {
         loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
@@ -449,7 +463,7 @@ public class AdminReservationManager {
             Assert.isTrue(ticketIdsInReservation.containsAll(toRefund), "Some ticket ids to refund are not contained in the reservation");
             //
 
-            removeTicketsFromReservation(ticketIds);
+            removeTicketsFromReservation(e, ticketIds, notify, username);
             //
 
             handleTicketsRefund(toRefund, e, reservation, ticketsById);
@@ -467,13 +481,13 @@ public class AdminReservationManager {
 
 
     @Transactional
-    public void removeReservation(String eventName, String reservationId, boolean refund, String username) {
+    public void removeReservation(String eventName, String reservationId, boolean refund, boolean notify, String username) {
         loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
 
-            removeTicketsFromReservation(tickets.stream().map(Ticket::getId).collect(toList()));
+            removeTicketsFromReservation(e, tickets.stream().map(Ticket::getId).collect(toList()), notify, username);
 
             if(refund && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
                 //fully refund
@@ -497,10 +511,28 @@ public class AdminReservationManager {
         });
     }
 
-    private void removeTicketsFromReservation(List<Integer> ticketIds) {
+    private void removeTicketsFromReservation(Event event, List<Integer> ticketIds, boolean notify, String username) {
+        if(notify && !ticketIds.isEmpty()) {
+            Organization o = eventManager.loadOrganizer(event, username);
+            ticketRepository.findByIds(ticketIds).stream().forEach(t -> {
+                if(StringUtils.isNotBlank(t.getEmail())) {
+                    sendTicketHasBeenRemoved(event, o, t);
+                }
+
+            });
+        }
+
         ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
         ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
         ticketRepository.resetTickets(ticketIds);
+    }
+
+    private void sendTicketHasBeenRemoved(Event event, Organization organization, Ticket ticket) {
+        Map<String, Object> model = TemplateResource.buildModelForTicketHasBeenCancelled(organization, event, ticket);
+        Locale locale = Locale.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
+        notificationManager.sendSimpleEmail(event, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
+            new Object[]{event.getDisplayName()}, locale),
+            () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
     }
 
     private void markAsCancelled(TicketReservation ticketReservation) {

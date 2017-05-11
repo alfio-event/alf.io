@@ -145,6 +145,9 @@ public interface TicketRepository {
     @Query("select * from ticket where id = :id and category_id = :categoryId")
     Ticket findById(@Bind("id") int ticketId, @Bind("categoryId") int categoryId);
 
+    @Query("select * from ticket where id in (:ids)")
+    List<Ticket> findByIds(@Bind("ids") List<Integer> ticketIds);
+
     @Query("select * from ticket where special_price_id_fk = :specialPriceId")
     Ticket findBySpecialPriceId(@Bind("specialPriceId") int specialPriceId);
 

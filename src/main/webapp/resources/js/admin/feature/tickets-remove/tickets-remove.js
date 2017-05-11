@@ -21,6 +21,7 @@
 
         ctrl.$onInit = function() {
             ctrl.toRefund = {};
+            ctrl.notify = false;
             AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationId).then(function(res) {
                 ctrl.paymentInfo = res.data.data;
             });
@@ -32,7 +33,7 @@
 
         function confirmRemove() {
             ctrl.submitted = true;
-            return EventService.removeTickets(ctrl.event.shortName, ctrl.reservationId, [ctrl.ticketId], ctrl.toRefund).then(function() {
+            return EventService.removeTickets(ctrl.event.shortName, ctrl.reservationId, [ctrl.ticketId], ctrl.toRefund, ctrl.notify).then(function() {
                 ctrl.onSuccess();
             }).finally(function() {
                 ctrl.submitted = false;

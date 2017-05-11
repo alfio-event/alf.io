@@ -7,6 +7,7 @@
         <p ng-if="$ctrl.paymentInfo.supportRefund">Fully refund: <input type="checkbox" ng-model="$ctrl.refund"> ?</p>
         <p>Paid amount: {{$ctrl.paymentInfo.paymentInformations.paidAmount}} {{$ctrl.event.currencyCode}}</p>
         <p ng-if="!$ctrl.paymentInfo.supportRefund">Note: you cannot refund this reservation automatically.</p>
+        <p>Notify ticket owner: <input type="checkbox" ng-model="$ctrl.notify"></p>
     </div>
     <div ng-if="!$ctrl.paymentInfo">
         loading...

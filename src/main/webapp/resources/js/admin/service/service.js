@@ -270,12 +270,12 @@
                 return promise;
             },
 
-            removeTickets: function(eventName, reservationId, ticketIds, ticketIdsToRefund) {
-                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/remove-tickets', {ticketIds: ticketIds, refundTo: ticketIdsToRefund});
+            removeTickets: function(eventName, reservationId, ticketIds, ticketIdsToRefund, notify) {
+                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/remove-tickets', {ticketIds: ticketIds, refundTo: ticketIdsToRefund, notify : notify});
             },
 
-            cancelReservation: function(eventName, reservationId, refund) {
-                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/cancel?refund=' + refund);
+            cancelReservation: function(eventName, reservationId, refund, notify) {
+                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/cancel?refund=' + refund+"&notify="+notify);
             }
         };
         return service;

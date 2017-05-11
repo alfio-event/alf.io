@@ -112,7 +112,7 @@ public class AdminReservationApiController {
             .map(Map.Entry::getKey)
             .collect(Collectors.toList());
 
-        adminReservationManager.removeTickets(eventName, reservationId, toRemove.getTicketIds(), toRefund, principal.getName());
+        adminReservationManager.removeTickets(eventName, reservationId, toRemove.getTicketIds(), toRefund, Optional.ofNullable(toRemove.getNotify()).orElse(false), principal.getName());
         return Result.success(true);
     }
 
@@ -123,8 +123,9 @@ public class AdminReservationApiController {
 
     @RequestMapping(value = "/event/{eventName}/{reservationId}/cancel", method = RequestMethod.POST)
     public Result<Boolean> removeReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @RequestParam("refund") boolean refund,
+                                             @RequestParam(value = "notify", defaultValue = "false") boolean notify,
                                              Principal principal) {
-        adminReservationManager.removeReservation(eventName, reservationId, refund, principal.getName());
+        adminReservationManager.removeReservation(eventName, reservationId, refund, notify, principal.getName());
         return Result.success(true);
     }
 
@@ -154,6 +155,7 @@ public class AdminReservationApiController {
     public static class RemoveTicketsModification {
         private final List<Integer> ticketIds;
         private Map<Integer, Boolean> refundTo;
+        private final Boolean notify;
     }
 
     @RequiredArgsConstructor
