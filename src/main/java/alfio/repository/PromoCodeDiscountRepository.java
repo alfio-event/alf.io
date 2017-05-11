@@ -36,10 +36,10 @@ public interface PromoCodeDiscountRepository {
     @Query("select * from promo_code where id = :id")
     PromoCodeDiscount findById(@Bind("id") int id);
 
-    @Query("insert into promo_code(promo_code, event_id_fk, valid_from, valid_to, discount_amount, discount_type, categories) "
-            + " values (:promoCode, :eventId, :start, :end, :discountAmount, :discountType, :categories)")
+    @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories) "
+            + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories)")
     int addPromoCode(@Bind("promoCode") String promoCode,
-            @Bind("eventId") int eventId, @Bind("start") ZonedDateTime start,
+            @Bind("eventId") Integer eventId, @Bind("organizationId") Integer organizationId, @Bind("start") ZonedDateTime start,
             @Bind("end") ZonedDateTime end,
             @Bind("discountAmount") int discountAmount,
             @Bind("discountType") String discountType,

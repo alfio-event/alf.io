@@ -703,7 +703,7 @@ public class EventManager {
         categoriesId = Optional.ofNullable(categoriesId).orElse(Collections.emptyList()).stream().filter(Objects::nonNull).collect(toList());
         //
 
-        promoCodeRepository.addPromoCode(promoCode, eventId, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId));
+        promoCodeRepository.addPromoCode(promoCode, eventId, null, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId));
     }
     
     public void deletePromoCode(int promoCodeId) {
