@@ -690,8 +690,9 @@ public class EventManager {
         return true;
     }
 
-    public void addPromoCode(String promoCode, int eventId, ZonedDateTime start, ZonedDateTime end, int discountAmount, DiscountType discountType, List<Integer> categoriesId) {
+    public void addPromoCode(String promoCode, Integer eventId, Integer organizationId, ZonedDateTime start, ZonedDateTime end, int discountAmount, DiscountType discountType, List<Integer> categoriesId) {
         Validate.isTrue(promoCode.length() >= 7, "min length is 7 chars");
+        Validate.isTrue((eventId != null && organizationId == null) || (eventId == null && organizationId != null), "eventId or organizationId must be not null");
         if(DiscountType.PERCENTAGE == discountType) {
             Validate.inclusiveBetween(0, 100, discountAmount, "percentage discount must be between 0 and 100");
         }
@@ -703,7 +704,7 @@ public class EventManager {
         categoriesId = Optional.ofNullable(categoriesId).orElse(Collections.emptyList()).stream().filter(Objects::nonNull).collect(toList());
         //
 
-        promoCodeRepository.addPromoCode(promoCode, eventId, null, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId));
+        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId));
     }
     
     public void deletePromoCode(int promoCodeId) {
@@ -711,7 +712,7 @@ public class EventManager {
     }
 
     public void updatePromoCode(String promoCodeName, int eventId, ZonedDateTime start, ZonedDateTime end) {
-        promoCodeRepository.update(eventId, promoCodeName, start, end);
+        promoCodeRepository.updateEventPromoCode(eventId, promoCodeName, start, end);
     }
     
     public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInEvent(int eventId) {

@@ -159,7 +159,7 @@ public class EventController {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
         Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
-        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> promoCodeRepository.findPromoCodeInEvent(event.getId(), trimmedCode)));
+        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode)));
         
         if(specialCode.isPresent()) {
             if (!optionally(() -> eventManager.getTicketCategoryById(specialCode.get().getTicketCategoryId(), event.getId())).isPresent()) {
@@ -196,7 +196,7 @@ public class EventController {
             Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
 
             Optional<PromoCodeDiscount> promoCodeDiscount = SessionUtil.retrievePromotionCodeDiscount(request)
-                .flatMap((code) -> optionally(() -> promoCodeRepository.findPromoCodeInEvent(event.getId(), code)));
+                .flatMap((code) -> optionally(() -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), code)));
 
             final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             //hide access restricted ticket categories

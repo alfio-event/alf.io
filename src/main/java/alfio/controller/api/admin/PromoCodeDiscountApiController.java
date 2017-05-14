@@ -59,7 +59,7 @@ public class PromoCodeDiscountApiController {
         
         int discount = promoCode.getDiscountType() == DiscountType.FIXED_AMOUNT ? promoCode.getDiscountInCents() : promoCode.getDiscountAsPercent();
         
-        eventManager.addPromoCode(promoCode.getPromoCode(), eventId, promoCode.getStart().toZonedDateTime(zoneId), 
+        eventManager.addPromoCode(promoCode.getPromoCode(), eventId, null, promoCode.getStart().toZonedDateTime(zoneId),
                 promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType(), promoCode.getCategories());
     }
 
@@ -83,7 +83,7 @@ public class PromoCodeDiscountApiController {
     
     @RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}/disable", method = POST)
     public void disablePromoCode(@PathVariable("eventId") int eventId, @PathVariable("promoCodeName") String promoCodeName) {
-        promoCodeRepository.updateEnd(eventId, promoCodeName, ZonedDateTime.now());
+        promoCodeRepository.updateEventPromoCodeEnd(eventId, promoCodeName, ZonedDateTime.now());
     }
     
     @RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}/count-use", method = GET)
