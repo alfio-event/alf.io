@@ -8,6 +8,7 @@
             forEvent: '<',
             forOrganization: '<',
             event: '<',
+            organizationId: '<'
         }
     });
 
@@ -26,7 +27,9 @@
         }
 
         function loadData() {
-            PromoCodeService.list(ctrl.event.id).then(function(res) {
+            var loader = ctrl.forEvent ? function () {return PromoCodeService.list(ctrl.event.id)} : function() {return PromoCodeService.listOrganization(ctrl.organizationId)};
+
+            loader().then(function(res) {
                 ctrl.promocodes = res.data;
                 angular.forEach(ctrl.promocodes, function(v) {
                     (function(v) {
@@ -61,8 +64,6 @@
         }
 
         function changeDate(promocode) {
-
-            var eventId = ctrl.event.id;
 
             //TODO: transform component style
             $uibModal.open({
@@ -107,6 +108,9 @@
 
         function addPromoCode() {
             var event = ctrl.event;
+            var organizationId = ctrl.organizationId;
+            var forEvent = ctrl.forEvent;
+            var eventId = forEvent ? event.id : null;
             //TODO: transform component style
             $uibModal.open({
                 size:'lg',
@@ -115,15 +119,24 @@
                 controller: function($scope) {
 
                     $scope.event = event;
+                    $scope.forEvent = forEvent;
 
                     var now = moment();
-                    var eventBegin = moment(event.formattedBegin);
+                    var eventBegin = forEvent ? moment(event.formattedBegin) : moment();
 
-                    $scope.validCategories = _.filter(event.ticketCategories, function(tc) {
-                        return !tc.expired;
-                    });
+                    if(forEvent) {
+                        $scope.validCategories = _.filter(event.ticketCategories, function(tc) {
+                            return !tc.expired;
+                        });
+                    }
 
-                    $scope.promocode = {discountType :'PERCENTAGE', start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')}, end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}, categories:[]};
+
+                    $scope.promocode = {
+                        discountType :'PERCENTAGE',
+                        start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')},
+                        end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')},
+                        categories:[]
+                    };
 
                     $scope.addCategory = function addCategory(index, value) {
                         $scope.promocode.categories[index] = value;
@@ -138,16 +151,20 @@
                     $scope.cancel = function() {
                         $scope.$dismiss('canceled');
                     };
-                    $scope.update = function(form, promocode, event) {
+                    $scope.update = function(form, promocode) {
                         if(!form.$valid) {
                             return;
                         }
                         $scope.$close(true);
 
 
-                        promocode.categories = _.filter(promocode.categories, function(i) {return i != null;});
+                        if(forEvent) {
+                            promocode.categories = _.filter(promocode.categories, function(i) {return i != null;});
+                        }
+                        promocode.eventId = eventId;
+                        promocode.organizationId = organizationId;
 
-                        PromoCodeService.add(event.id, promocode).then(function(result) {
+                        PromoCodeService.add(promocode).then(function(result) {
                             validationErrorHandler(result, form, form.promocode).then(function() {
                                 $scope.$close(true);
                             });

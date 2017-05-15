@@ -30,6 +30,9 @@ public interface PromoCodeDiscountRepository {
     @Query("select * from promo_code where event_id_fk = :eventId order by promo_code asc")
     List<PromoCodeDiscount> findAllInEvent(@Bind("eventId") int eventId);
 
+    @Query("select * from promo_code where organization_id_fk = :organizationId order by promo_code asc")
+    List<PromoCodeDiscount> findAllInOrganization(@Bind("organizationId") int organizationId);
+
     @Query("delete from promo_code where id = :id")
     int deletePromoCode(@Bind("id") int id);
     

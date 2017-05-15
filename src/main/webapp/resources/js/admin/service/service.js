@@ -394,14 +394,17 @@
     
     baseServices.service("PromoCodeService", function($http, HttpErrorHandler) {
         return {
-                add : function(eventId, promoCode) {
-                    return $http['post']('/admin/api/events/' + eventId + '/promo-code', promoCode).error(HttpErrorHandler.handle);
+                add : function(promoCode) {
+                    return $http['post']('/admin/api/promo-code', promoCode).error(HttpErrorHandler.handle);
                 },
                 remove: function(promoCodeId) {
                     return $http['delete']('/admin/api/promo-code/' + promoCodeId).error(HttpErrorHandler.handle);
                 },
                 list: function(eventId) {
                     return $http.get('/admin/api/events/' + eventId + '/promo-code').error(HttpErrorHandler.handle);
+                },
+                listOrganization : function(organizationId) {
+                    return $http.get('/admin/api/organization/' + organizationId + '/promo-code').error(HttpErrorHandler.handle);
                 },
                 countUse : function(promoCodeId) {
                     return $http.get('/admin/api/promo-code/' + promoCodeId + '/count-use');

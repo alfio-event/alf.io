@@ -720,6 +720,11 @@ public class EventManager {
         return promoCodeRepository.findAllInEvent(eventId).stream().map((p) -> new PromoCodeDiscountWithFormattedTime(p, zoneId)).collect(toList());
     }
 
+    public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInOrganization(int organizationId) {
+        ZoneId zoneId = ZoneId.systemDefault();
+        return promoCodeRepository.findAllInOrganization(organizationId).stream().map((p) -> new PromoCodeDiscountWithFormattedTime(p, zoneId)).collect(toList());
+    }
+
     public String getEventUrl(Event event) {
         return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/") + "/event/" + event.getShortName() + "/";
     }

@@ -52,31 +52,42 @@ public class PromoCodeDiscountApiController {
         this.eventManager = eventManager;
     }
 
-    @RequestMapping(value = "/events/{eventId}/promo-code", method = POST)
-    public void addPromoCode(@PathVariable("eventId") int eventId, @RequestBody PromoCodeDiscountModification promoCode) {
-        Event event = eventRepository.findById(eventId);
-        ZoneId zoneId = TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
+    @RequestMapping(value = "/promo-code", method = POST)
+    public void addPromoCode(@RequestBody PromoCodeDiscountModification promoCode) {
+        Integer eventId = promoCode.getEventId();
+        Integer organizationId = promoCode.getOrganizationId();
+        ZoneId zoneId = zoneIdFromEventId(eventId);
         
         int discount = promoCode.getDiscountType() == DiscountType.FIXED_AMOUNT ? promoCode.getDiscountInCents() : promoCode.getDiscountAsPercent();
-        
-        eventManager.addPromoCode(promoCode.getPromoCode(), eventId, null, promoCode.getStart().toZonedDateTime(zoneId),
+
+        eventManager.addPromoCode(promoCode.getPromoCode(), eventId, organizationId, promoCode.getStart().toZonedDateTime(zoneId),
                 promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType(), promoCode.getCategories());
     }
 
     @RequestMapping(value = "/promo-code/{promoCodeId}", method = POST)
     public void updatePromocode(@PathVariable("promoCodeId") int promoCodeId, @RequestBody PromoCodeDiscountModification promoCode) {
         PromoCodeDiscount pcd = promoCodeRepository.findById(promoCodeId);
+        ZoneId zoneId = zoneIdFromEventId(pcd.getEventId());
+        eventManager.updatePromoCode(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId), promoCode.getEnd().toZonedDateTime(zoneId));
+    }
+
+    private ZoneId zoneIdFromEventId(Integer eventId) {
         ZoneId zoneId = TimeZone.getDefault().toZoneId();
-        if(pcd.getEventId() != null) {
-            Event event = eventRepository.findById(pcd.getEventId());
+        if(eventId != null) {
+            Event event = eventRepository.findById(eventId);
             zoneId = TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
         }
-        eventManager.updatePromoCode(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId), promoCode.getEnd().toZonedDateTime(zoneId));
+        return zoneId;
     }
 
     @RequestMapping(value = "/events/{eventId}/promo-code", method = GET)
     public List<PromoCodeDiscountWithFormattedTime> listPromoCodeInEvent(@PathVariable("eventId") int eventId) {
         return eventManager.findPromoCodesInEvent(eventId);
+    }
+
+    @RequestMapping(value = "/organization/{organizationId}/promo-code", method = GET)
+    public List<PromoCodeDiscountWithFormattedTime> listPromoCodeInOrganization(@PathVariable("organizationId") int organizationId) {
+        return eventManager.findPromoCodesInOrganization(organizationId);
     }
     
     @RequestMapping(value = "/promo-code/{promoCodeId}", method = DELETE)

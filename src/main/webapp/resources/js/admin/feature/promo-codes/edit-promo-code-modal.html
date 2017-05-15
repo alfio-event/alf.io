@@ -1,7 +1,7 @@
 <div class="modal-header">
     <h3>Insert new promo code</h3>
 </div>
-<form name="promoCodeForm" data-ng-submit="update(promoCodeForm, promocode, event)" novalidate data-error-sensitive>
+<form name="promoCodeForm" data-ng-submit="update(promoCodeForm, promocode)" novalidate data-error-sensitive>
     <div class="modal-body">
         <div class="col-sm-12 col-md-8 col-md-offset-2">
             <div class="form-group" bs-form-error="promocode.promoCode">
@@ -17,7 +17,7 @@
                 <field-error data-form-obj="promocode" data-field-obj="promocode.dateString" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" ng-if="forEvent">
                 <label>Restrict to categories</label>
                 <ul>
                     <li ng-repeat="category in validCategories"><label><input type="checkbox" ng-true-value="{{::category.id}}" ng-false-value="null" ng-model="promocode.categories[$index]"> {{::category.name}}</label></li>
