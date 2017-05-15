@@ -1,16 +1,18 @@
 (function() {
     'use strict';
 
-    angular.module('adminApplication').component('eventPromoCodes', {
-        controller: ['$window', '$uibModal', '$q', 'PromoCodeService', EventPromoCodeCtrl],
-        templateUrl: '../resources/js/admin/feature/event-promo-codes/event-promo-codes.html',
+    angular.module('adminApplication').component('promoCodes', {
+        controller: ['$window', '$uibModal', '$q', 'PromoCodeService', PromoCodeCtrl],
+        templateUrl: '../resources/js/admin/feature/promo-codes/promo-codes.html',
         bindings: {
+            forEvent: '<',
+            forOrganization: '<',
             event: '<',
         }
     });
 
 
-    function EventPromoCodeCtrl($window, $uibModal, $q, PromoCodeService) {
+    function PromoCodeCtrl($window, $uibModal, $q, PromoCodeService) {
         var ctrl = this;
 
         ctrl.isInternal = isInternal;
@@ -64,7 +66,7 @@
             //TODO: transform component style
             $uibModal.open({
                 size: 'lg',
-                templateUrl: '../resources/js/admin/feature/event-promo-codes/edit-date-promo-code-modal.html',
+                templateUrl: '../resources/js/admin/feature/promo-codes/edit-date-promo-code-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
                     $scope.cancel = function() {$scope.$dismiss('canceled');};
@@ -106,7 +108,7 @@
             //TODO: transform component style
             $uibModal.open({
                 size:'lg',
-                templateUrl: '../resources/js/admin/feature/event-promo-codes/edit-promo-code-modal.html',
+                templateUrl: '../resources/js/admin/feature/promo-codes/edit-promo-code-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
 

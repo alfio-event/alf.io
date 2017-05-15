@@ -132,7 +132,7 @@
             })
             .state('events.single.promoCodes', {
                 url:'/promo-codes',
-                template:'<event-promo-codes event="$ctrl.loadEvent"></event-promo-codes>',
+                template:'<promo-codes for-event="true" event="$ctrl.loadEvent"></promo-codes>',
                 controller: loadEventCtrl,
                 controllerAs: '$ctrl',
                 resolve: loadEvent
