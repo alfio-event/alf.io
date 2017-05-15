@@ -59,6 +59,7 @@ import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.StreamUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -208,8 +209,15 @@ public class NotificationManager {
                         .secondaryFields(new TextField("loc", "LOCATION", event.getLocation()))
                 );
 
-            if(event.getFileBlobIdIsPresent()) {
+            List<PassResource> passResources = new ArrayList<>(4);
+            try(InputStream icon = new ClassPathResource("/alfio/icon/icon.png").getInputStream();
+                InputStream icon2 = new ClassPathResource("/alfio/icon/icon@2x.png").getInputStream()) {
+                passResources.add(new PassResource("icon.png", StreamUtils.copyToByteArray(icon)));
+                passResources.add(new PassResource("icon@2x.png", StreamUtils.copyToByteArray(icon2)));
+            } catch (IOException e) {
+                //
             }
+
 
             fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(metadata -> {
                 if(metadata.getContentType().equals("image/png") || metadata.getContentType().equals("image/jpeg")) {
@@ -218,12 +226,15 @@ public class NotificationManager {
                         fileUploadManager.outputFile(event.getFileBlobId(), baos);
                         return readAndConvertImage(baos);
                     });
-
                     cachedLogo.ifPresent(logo -> {
-                        pass.files(new PassResource("logo.png", logo), new PassResource("logo@2x.png", logo));
+                        passResources.add(new PassResource("logo.png", logo));
+                        passResources.add(new PassResource("logo@2x.png", logo));
                     });
                 }
             });
+
+            pass.files(passResources.toArray(new PassResource[passResources.size()]));
+
             try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 InputStream appleCert = new ClassPathResource("/alfio/certificates/AppleWWDRCA.cer").getInputStream()) {
                 PassSigner signer = PassSignerImpl.builder()
