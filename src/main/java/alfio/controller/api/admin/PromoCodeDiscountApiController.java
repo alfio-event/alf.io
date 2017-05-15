@@ -75,19 +75,18 @@ public class PromoCodeDiscountApiController {
         return eventManager.findPromoCodesInEvent(eventId);
     }
     
-    @RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}", method = DELETE)
-    public void removePromoCode(@PathVariable("eventId") int eventId, @PathVariable("promoCodeName") String promoCodeName) {
-        PromoCodeDiscount promoCode = promoCodeRepository.findPromoCodeInEvent(eventId, promoCodeName);
-        eventManager.deletePromoCode(promoCode.getId());
+    @RequestMapping(value = "/promo-code/{promoCodeId}", method = DELETE)
+    public void removePromoCode(@PathVariable("promoCodeId") int promoCodeId) {
+        eventManager.deletePromoCode(promoCodeId);
     }
     
-    @RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}/disable", method = POST)
-    public void disablePromoCode(@PathVariable("eventId") int eventId, @PathVariable("promoCodeName") String promoCodeName) {
-        promoCodeRepository.updateEventPromoCodeEnd(eventId, promoCodeName, ZonedDateTime.now());
+    @RequestMapping(value = "/promo-code/{promoCodeId}/disable", method = POST)
+    public void disablePromoCode(@PathVariable("promoCodeId") int promoCodeId) {
+        promoCodeRepository.updateEventPromoCodeEnd(promoCodeId, ZonedDateTime.now());
     }
     
-    @RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}/count-use", method = GET)
-    public int countPromoCodeUse(@PathVariable("eventId") int eventId, @PathVariable("promoCodeName") String promoCodeName) {
-        return promoCodeRepository.countAppliedPromoCode(eventId, promoCodeName);
+    @RequestMapping(value = "/promo-code/{promoCodeId}/count-use", method = GET)
+    public int countPromoCodeUse(@PathVariable("promoCodeId") int promoCodeId) {
+        return promoCodeRepository.countAppliedPromoCode(promoCodeId);
     }
 }

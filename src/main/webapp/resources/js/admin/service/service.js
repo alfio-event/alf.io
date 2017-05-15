@@ -397,17 +397,17 @@
                 add : function(eventId, promoCode) {
                     return $http['post']('/admin/api/events/' + eventId + '/promo-code', promoCode).error(HttpErrorHandler.handle);
                 },
-                remove: function(eventId, promoCode) {
-                    return $http['delete']('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)).error(HttpErrorHandler.handle);
+                remove: function(promoCodeId) {
+                    return $http['delete']('/admin/api/promo-code/' + promoCodeId).error(HttpErrorHandler.handle);
                 },
                 list: function(eventId) {
                     return $http.get('/admin/api/events/' + eventId + '/promo-code').error(HttpErrorHandler.handle);
                 },
-                countUse : function(eventId, promoCode) {
-                    return $http.get('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)+ '/count-use');
+                countUse : function(promoCodeId) {
+                    return $http.get('/admin/api/promo-code/' + promoCodeId + '/count-use');
                 },
-                disable: function(eventId, promoCode) {
-                    return $http['post']('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)+ '/disable');
+                disable: function(promoCodeId) {
+                    return $http['post']('/admin/api/promo-code/' + promoCodeId + '/disable');
                 },
                 update: function(eventId, promoCode, toUpdate) {
                     return $http.post('/admin/api/events/' + eventId + '/promo-code/'+ encodeURIComponent(promoCode), toUpdate);

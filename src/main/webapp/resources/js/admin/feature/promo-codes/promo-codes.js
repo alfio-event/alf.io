@@ -30,7 +30,7 @@
                 ctrl.promocodes = res.data;
                 angular.forEach(ctrl.promocodes, function(v) {
                     (function(v) {
-                        PromoCodeService.countUse(ctrl.event.id, v.promoCode).then(function(val) {
+                        PromoCodeService.countUse(v.promoCode.id).then(function(val) {
                             v.useCount = parseInt(val.data, 10);
                         });
                     })(v);
@@ -49,13 +49,13 @@
 
         function deletePromocode(promocode) {
             if($window.confirm('Delete promo code ' + promocode.promoCode + '?')) {
-                PromoCodeService.remove(ctrl.event.id, promocode.promoCode).then(loadData, errorHandler);
+                PromoCodeService.remove(promocode.id).then(loadData, errorHandler);
             }
         }
 
         function disablePromocode(promocode) {
             if($window.confirm('Disable promo code ' + promocode.promoCode + '?')) {
-                PromoCodeService.disable(ctrl.event.id, promocode.promoCode).then(loadData, errorHandler);
+                PromoCodeService.disable(promocode.id).then(loadData, errorHandler);
             }
         }
 
