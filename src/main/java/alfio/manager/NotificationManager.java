@@ -180,12 +180,11 @@ public class NotificationManager {
 
             //ugly, find an alternative way?
             Optional<KeyStore> ksJks = loadKeyStore(keystoreRaw, "jks");
-            Optional<KeyStore> ksP12 = loadKeyStore(keystoreRaw, "pkcs12");
-            if(!ksJks.isPresent() && !ksP12.isPresent()) {
+            if(!ksJks.isPresent()) {
                 log.warn("Not able to load keystore, check");
                 return null;
             }
-            KeyStore keyStore = ksJks.orElseGet(() -> ksP12.orElseThrow(IllegalStateException::new));
+            KeyStore keyStore = ksJks.orElseThrow(IllegalStateException::new);
 
             // from example: https://github.com/ryantenney/passkit4j/blob/master/src/test/java/com/ryantenney/passkit4j/EventTicketExample.java
             Pass pass = new Pass()
@@ -257,7 +256,8 @@ public class NotificationManager {
         });
     }
 
-    //"jks" "pkcs12"
+    //"jks"
+    // -> "pkcs12" don't work ;(
     private static Optional<KeyStore> loadKeyStore(byte[] k, String type) {
         try {
             KeyStore ks = KeyStore.getInstance(type);
