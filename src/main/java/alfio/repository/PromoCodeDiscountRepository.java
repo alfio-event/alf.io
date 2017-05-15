@@ -48,8 +48,11 @@ public interface PromoCodeDiscountRepository {
     @Query("select * from promo_code where event_id_fk = :eventId and promo_code = :promoCode")
     PromoCodeDiscount findPromoCodeInEvent(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
 
-    @Query("select * from (select * from promo_code where promo_code = :promoCode and event_id_fk = :eventId and organization_id_fk is null union" +
-            " select * from promo_code where promo_code = :promoCode and event_id_fk is null and organization_id_fk = (select org_id from event where id = :eventId)) a limit 1")
+
+    @Query("select * from promo_code where promo_code = :promoCode and ("
+        +" (event_id_fk = :eventId and organization_id_fk is null) or "
+        +" (event_id_fk is null and organization_id_fk = (select org_id from event where id = :eventId))) "
+        +" order by event_id_fk is null limit 1")
     PromoCodeDiscount findPromoCodeInEventOrOrganization(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
 
     @Query("select count(*) from promo_code where event_id_fk = :eventId")
