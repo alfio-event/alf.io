@@ -30,7 +30,8 @@
                 ctrl.promocodes = res.data;
                 angular.forEach(ctrl.promocodes, function(v) {
                     (function(v) {
-                        PromoCodeService.countUse(v.promoCode.id).then(function(val) {
+                        console.log(v);
+                        PromoCodeService.countUse(v.id).then(function(val) {
                             v.useCount = parseInt(val.data, 10);
                         });
                     })(v);
@@ -74,7 +75,7 @@
                     var end = moment(promocode.formattedEnd);
                     $scope.promocode = {start: {date: start.format('YYYY-MM-DD'), time: start.format('HH:mm')}, end: {date: end.format('YYYY-MM-DD'), time: end.format('HH:mm')}};
                     $scope.update = function(toUpdate) {
-                        PromoCodeService.update(eventId, promocode.promoCode, toUpdate).then(function() {
+                        PromoCodeService.update(promocode.id, toUpdate).then(function() {
                             $scope.$close(true);
                         }).then(loadData);
                     };
@@ -104,7 +105,8 @@
             });
         }
 
-        function addPromoCode(event) {
+        function addPromoCode() {
+            var event = ctrl.event;
             //TODO: transform component style
             $uibModal.open({
                 size:'lg',

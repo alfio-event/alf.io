@@ -711,8 +711,8 @@ public class EventManager {
         promoCodeRepository.deletePromoCode(promoCodeId);
     }
 
-    public void updatePromoCode(String promoCodeName, int eventId, ZonedDateTime start, ZonedDateTime end) {
-        promoCodeRepository.updateEventPromoCode(eventId, promoCodeName, start, end);
+    public void updatePromoCode(int promoCodeId, ZonedDateTime start, ZonedDateTime end) {
+        promoCodeRepository.updateEventPromoCode(promoCodeId, start, end);
     }
     
     public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInEvent(int eventId) {

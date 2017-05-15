@@ -63,11 +63,15 @@ public class PromoCodeDiscountApiController {
                 promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType(), promoCode.getCategories());
     }
 
-    @RequestMapping(value = "/events/{eventId}/promo-code/{promoCodeName}", method = POST)
-    public void updatePromocode(@PathVariable("eventId") int eventId, @PathVariable("promoCodeName") String promoCodeName, @RequestBody PromoCodeDiscountModification promoCode) {
-        Event event = eventRepository.findById(eventId);
-        ZoneId zoneId = TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
-        eventManager.updatePromoCode(promoCodeName, eventId, promoCode.getStart().toZonedDateTime(zoneId), promoCode.getEnd().toZonedDateTime(zoneId));
+    @RequestMapping(value = "/promo-code/{promoCodeId}", method = POST)
+    public void updatePromocode(@PathVariable("promoCodeId") int promoCodeId, @RequestBody PromoCodeDiscountModification promoCode) {
+        PromoCodeDiscount pcd = promoCodeRepository.findById(promoCodeId);
+        ZoneId zoneId = TimeZone.getDefault().toZoneId();
+        if(pcd.getEventId() != null) {
+            Event event = eventRepository.findById(pcd.getEventId());
+            zoneId = TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
+        }
+        eventManager.updatePromoCode(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId), promoCode.getEnd().toZonedDateTime(zoneId));
     }
 
     @RequestMapping(value = "/events/{eventId}/promo-code", method = GET)

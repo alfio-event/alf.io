@@ -60,6 +60,6 @@ public interface PromoCodeDiscountRepository {
     @Query("update promo_code set valid_to = :end where id = :id")
     int updateEventPromoCodeEnd(@Bind("id") int id, @Bind("end") ZonedDateTime end);
 
-    @Query("update promo_code set valid_from = :start, valid_to = :end where event_id_fk = :eventId and promo_code = :promoCode")
-    int updateEventPromoCode(@Bind("eventId") int eventId, @Bind("promoCode") String promoCodeName, @Bind("start") ZonedDateTime start, @Bind("end") ZonedDateTime end);
+    @Query("update promo_code set valid_from = :start, valid_to = :end where id = :id")
+    int updateEventPromoCode(@Bind("id") int id, @Bind("start") ZonedDateTime start, @Bind("end") ZonedDateTime end);
 }

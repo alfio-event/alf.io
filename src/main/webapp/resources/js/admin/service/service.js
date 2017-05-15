@@ -409,8 +409,8 @@
                 disable: function(promoCodeId) {
                     return $http['post']('/admin/api/promo-code/' + promoCodeId + '/disable');
                 },
-                update: function(eventId, promoCode, toUpdate) {
-                    return $http.post('/admin/api/events/' + eventId + '/promo-code/'+ encodeURIComponent(promoCode), toUpdate);
+                update: function(promoCodeId, toUpdate) {
+                    return $http.post('/admin/api/promo-code/' + promoCodeId, toUpdate);
                 }
         };
     });
