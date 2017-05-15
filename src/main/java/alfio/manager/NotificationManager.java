@@ -187,17 +187,18 @@ public class NotificationManager {
             KeyStore keyStore = ksJks.orElseThrow(IllegalStateException::new);
 
             // from example: https://github.com/ryantenney/passkit4j/blob/master/src/test/java/com/ryantenney/passkit4j/EventTicketExample.java
+
+            Location loc = new Location(Double.parseDouble(event.getLatitude()), Double.parseDouble(event.getLongitude())).altitude(0.0);
+
             Pass pass = new Pass()
                 .teamIdentifier(teamIdentifier)
                 .passTypeIdentifier(typeIdentifier)
-                .organizationName(event.getDisplayName())
+                .organizationName(organization.getName())
                 .description(event.getDisplayName())
                 .serialNumber(ticket.getUuid())
                 .relevantDate(Date.from(event.getBegin().toInstant()))
                 .expirationDate(Date.from(event.getEnd().toInstant()))
-                .locations(
-                    new Location(Double.parseDouble(event.getLatitude()), Double.parseDouble(event.getLongitude()))
-                )
+                .locations(loc)
                 .barcode(new Barcode(BarcodeFormat.QR, ticket.ticketCode(event.getPrivateKey())))
                 .foregroundColor(Color.WHITE)
                 .backgroundColor(Color.WHITE)
@@ -219,7 +220,7 @@ public class NotificationManager {
                     });
 
                     cachedLogo.ifPresent(logo -> {
-                        pass.files(new PassResource("logo.png", logo));
+                        pass.files(new PassResource("logo.png", logo), new PassResource("logo@2x.png", logo));
                     });
                 }
             });
