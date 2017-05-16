@@ -19,7 +19,7 @@ alter table tickets_reservation add column event_id_fk integer;
 alter table tickets_reservation add foreign key(event_id_fk) references event(id);
 
 update tickets_reservation tr set event_id_fk = (select distinct event_id from ticket where tickets_reservation_id = tr.id);
-
+delete from b_transaction where reservation_id in (select id from tickets_reservation where event_id_fk is null);
 delete from tickets_reservation where event_id_fk is null;
 
 alter table tickets_reservation alter column event_id_fk SET NOT NULL;
