@@ -133,6 +133,7 @@ public class ReservationController {
                         return redirectReservation(Optional.of(reservation), eventName, reservationId);
                     }
 
+                    List<Ticket> ticketsInReservation = ticketReservationManager.findTicketsInReservation(reservationId);
                     if (Boolean.TRUE.equals(isPaypalSuccess) && paypalPayerID != null && paypalPaymentId != null) {
                         model.addAttribute("paypalPaymentId", paypalPaymentId)
                             .addAttribute("paypalPayerID", paypalPayerID)
@@ -148,7 +149,7 @@ public class ReservationController {
                     } else {
                         model.addAttribute("paypalCheckoutConfirmation", false)
                              .addAttribute("postponeAssignment", false)
-                             .addAttribute("showPostpone", true);
+                             .addAttribute("showPostpone", ticketsInReservation.size() > 1);
                     }
 
                     try {
@@ -186,7 +187,7 @@ public class ReservationController {
                     modelMap.putIfAbsent("hasErrors", false);
                     model.addAttribute(
                         "ticketsByCategory",
-                        ticketReservationManager.findTicketsInReservation(reservationId).stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
+                        ticketsInReservation.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
                             .map((e) -> {
                                 TicketCategory category = eventManager.getTicketCategoryById(e.getKey(), event.getId());
                                 List<TicketDecorator> decorators = TicketDecorator.decorate(e.getValue(),
