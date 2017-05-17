@@ -122,7 +122,7 @@ public class AdditionalServiceApiController {
             .map(event -> {
                 AffectedRowCountAndKey<Integer> result = additionalServiceRepository.insert(eventId, Optional.ofNullable(additionalService.getPrice()).map(MonetaryUtil::unitToCents).orElse(0), additionalService.isFixPrice(),
                     additionalService.getOrdinal(), additionalService.getAvailableQuantity(), additionalService.getMaxQtyPerOrder(), additionalService.getInception().toZonedDateTime(event.getZoneId()),
-                    additionalService.getExpiration().toZonedDateTime(event.getZoneId()), additionalService.getVat(), additionalService.getVatType());
+                    additionalService.getExpiration().toZonedDateTime(event.getZoneId()), additionalService.getVat(), additionalService.getVatType(), additionalService.getType());
                 Validate.isTrue(result.getAffectedRowCount() == 1, "too many records updated");
                 int id = result.getKey();
                 Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).

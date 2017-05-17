@@ -40,7 +40,7 @@ public class AdditionalService {
     }
 
     public enum AdditionalServiceType {
-        DONATION
+        DONATION, SUPPLEMENT
     }
 
     private final int id;
@@ -53,7 +53,7 @@ public class AdditionalService {
     private final ZonedDateTime utcExpiration;
     private final BigDecimal vat;
     private final VatType vatType;
-    private final AdditionalServiceType type = AdditionalServiceType.DONATION;
+    private final AdditionalServiceType type;
 
     private final Integer srcPriceCts;
 
@@ -67,7 +67,8 @@ public class AdditionalService {
                              @Column("expiration_ts") ZonedDateTime utcExpiration,
                              @Column("vat") BigDecimal vat,
                              @Column("vat_type") VatType vatType,
-                             @Column("src_price_cts") Integer srcPriceCts) {
+                             @Column("src_price_cts") Integer srcPriceCts,
+                             @Column("service_type") AdditionalServiceType type) {
         this.id = id;
         this.eventId = eventId;
         this.fixPrice = fixPrice;
@@ -79,6 +80,7 @@ public class AdditionalService {
         this.vat = vat;
         this.vatType = vatType;
         this.srcPriceCts = srcPriceCts;
+        this.type = type;
     }
 
     public ZonedDateTime getInception(ZoneId zoneId) {

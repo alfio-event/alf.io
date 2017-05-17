@@ -85,6 +85,7 @@ public class AdminReservationManager {
     private final NotificationManager notificationManager;
     private final MessageSource messageSource;
     private final TemplateManager templateManager;
+    private final AdditionalServiceItemRepository additionalServiceItemRepository;
 
     @Autowired
     public AdminReservationManager(EventManager eventManager,
@@ -101,7 +102,8 @@ public class AdminReservationManager {
                                    PaymentManager paymentManager,
                                    NotificationManager notificationManager,
                                    MessageSource messageSource,
-                                   TemplateManager templateManager) {
+                                   TemplateManager templateManager,
+                                   AdditionalServiceItemRepository additionalServiceItemRepository) {
         this.eventManager = eventManager;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -117,6 +119,7 @@ public class AdminReservationManager {
         this.notificationManager = notificationManager;
         this.messageSource = messageSource;
         this.templateManager = templateManager;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
     }
 
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
@@ -470,6 +473,7 @@ public class AdminReservationManager {
 
             if(tickets.size() - ticketIds.size() <= 0) {
                 markAsCancelled(reservation);
+                additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
             }
         });
     }
@@ -488,6 +492,8 @@ public class AdminReservationManager {
             List<Ticket> tickets = res.getMiddle();
 
             removeTicketsFromReservation(e, tickets.stream().map(Ticket::getId).collect(toList()), notify, username);
+
+            additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
 
             if(refund && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
                 //fully refund
@@ -518,7 +524,6 @@ public class AdminReservationManager {
                 if(StringUtils.isNotBlank(t.getEmail())) {
                     sendTicketHasBeenRemoved(event, o, t);
                 }
-
             });
         }
 
@@ -536,7 +541,6 @@ public class AdminReservationManager {
     }
 
     private void markAsCancelled(TicketReservation ticketReservation) {
-        //TODO: eventually, send email
         ticketReservationRepository.updateTicketStatus(ticketReservation.getId(), TicketReservationStatus.CANCELLED.toString());
     }
 
@@ -548,11 +552,7 @@ public class AdminReservationManager {
         for(Integer toRefundId : toRefund) {
             int toBeRefunded = ticketsById.get(toRefundId).getFinalPriceCts();
             if(toBeRefunded > 0) {
-                if(paymentManager.refund(reservation, e, Optional.of(toBeRefunded))) {
-                    //TODO: save refunded amount in reservation
-                } else {
-                    //
-                }
+                paymentManager.refund(reservation, e, Optional.of(toBeRefunded));
             }
         }
         //

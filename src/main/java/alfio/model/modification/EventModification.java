@@ -16,6 +16,7 @@
  */
 package alfio.model.modification;
 
+import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.modification.support.LocationDescriptor;
@@ -219,6 +220,7 @@ public class EventModification {
         private final List<AdditionalServiceText> description;
         private final BigDecimal finalPrice;
         private final String currencyCode;
+        private final alfio.model.AdditionalService.AdditionalServiceType type = alfio.model.AdditionalService.AdditionalServiceType.DONATION;
 
         @JsonCreator
         public AdditionalService(@JsonProperty("id") Integer id,

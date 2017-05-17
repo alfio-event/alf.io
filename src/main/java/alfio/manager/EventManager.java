@@ -202,7 +202,7 @@ public class EventManager {
     private void createAllAdditionalServices(int eventId, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId) {
         Optional.ofNullable(additionalServices)
             .ifPresent(list -> list.forEach(as -> {
-                AffectedRowCountAndKey<Integer> service = additionalServiceRepository.insert(eventId, Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0), as.isFixPrice(), as.getOrdinal(), as.getAvailableQuantity(), as.getMaxQtyPerOrder(), as.getInception().toZonedDateTime(zoneId), as.getExpiration().toZonedDateTime(zoneId), as.getVat(), as.getVatType());
+                AffectedRowCountAndKey<Integer> service = additionalServiceRepository.insert(eventId, Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0), as.isFixPrice(), as.getOrdinal(), as.getAvailableQuantity(), as.getMaxQtyPerOrder(), as.getInception().toZonedDateTime(zoneId), as.getExpiration().toZonedDateTime(zoneId), as.getVat(), as.getVatType(), as.getType());
                 as.getTitle().forEach(insertAdditionalServiceDescription(service.getKey()));
                 as.getDescription().forEach(insertAdditionalServiceDescription(service.getKey()));
             }));
@@ -253,7 +253,13 @@ public class EventManager {
         ZoneId utc = ZoneId.of("UTC");
         int eventId = event.getId();
         String checksum = new AdditionalService(0, eventId, as.isFixPrice(), as.getOrdinal(), as.getAvailableQuantity(),
-            as.getMaxQtyPerOrder(), as.getInception().toZonedDateTime(event.getZoneId()).withZoneSameInstant(utc), as.getExpiration().toZonedDateTime(event.getZoneId()).withZoneSameInstant(utc), as.getVat(), as.getVatType(), Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0)).getChecksum();
+            as.getMaxQtyPerOrder(),
+            as.getInception().toZonedDateTime(event.getZoneId()).withZoneSameInstant(utc),
+            as.getExpiration().toZonedDateTime(event.getZoneId()).withZoneSameInstant(utc),
+            as.getVat(),
+            as.getVatType(),
+            Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
+            as.getType()).getChecksum();
         return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::getId).orElse(null);
     }
 
