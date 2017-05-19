@@ -221,6 +221,7 @@ public class EventModification {
         private final BigDecimal finalPrice;
         private final String currencyCode;
         private final alfio.model.AdditionalService.AdditionalServiceType type = alfio.model.AdditionalService.AdditionalServiceType.DONATION;
+        private final alfio.model.AdditionalService.SupplementPolicy supplementPolicy = null;
 
         @JsonCreator
         public AdditionalService(@JsonProperty("id") Integer id,

@@ -43,6 +43,13 @@ public class AdditionalService {
         DONATION, SUPPLEMENT
     }
 
+    public enum SupplementPolicy {
+        MANDATORY_ONE_FOR_TICKET,
+        OPTIONAL_UNLIMITED_AMOUNT,
+        OPTIONAL_MAX_AMOUNT_PER_TICKET,
+        OPTIONAL_MAX_AMOUNT_PER_RESERVATION
+    }
+
     private final int id;
     private final int eventId;
     private final boolean fixPrice;
@@ -54,6 +61,7 @@ public class AdditionalService {
     private final BigDecimal vat;
     private final VatType vatType;
     private final AdditionalServiceType type;
+    private final SupplementPolicy supplementPolicy;
 
     private final Integer srcPriceCts;
 
@@ -68,7 +76,8 @@ public class AdditionalService {
                              @Column("vat") BigDecimal vat,
                              @Column("vat_type") VatType vatType,
                              @Column("src_price_cts") Integer srcPriceCts,
-                             @Column("service_type") AdditionalServiceType type) {
+                             @Column("service_type") AdditionalServiceType type,
+                             @Column("supplement_policy") SupplementPolicy supplementPolicy) {
         this.id = id;
         this.eventId = eventId;
         this.fixPrice = fixPrice;
@@ -81,6 +90,7 @@ public class AdditionalService {
         this.vatType = vatType;
         this.srcPriceCts = srcPriceCts;
         this.type = type;
+        this.supplementPolicy = supplementPolicy;
     }
 
     public ZonedDateTime getInception(ZoneId zoneId) {
@@ -103,6 +113,9 @@ public class AdditionalService {
             digest.update(Optional.ofNullable(vat).map(BigDecimal::toString).orElse("").getBytes());
             digest.update(vatType.name().getBytes());
             digest.update(type.name().getBytes());
+            if (supplementPolicy != null) {
+                digest.update(supplementPolicy.name().getBytes());
+            }
             return new String(Hex.encode(digest.digest()));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
