@@ -201,7 +201,21 @@ public class TicketReservationManager {
         
         ticketReservationRepository.createNewReservation(reservationId, reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null), locale.getLanguage(), event.getId());
         list.forEach(t -> reserveTicketsForCategory(event, specialPriceSessionId, reservationId, t, locale, forWaitingQueue, discount.orElse(null)));
-        additionalServices.forEach(as -> reserveAdditionalServicesForReservation(event.getId(), reservationId, as, locale, discount.orElse(null)));
+
+        int ticketCount = list
+            .stream()
+            .map(TicketReservationWithOptionalCodeModification::getAmount)
+            .mapToInt(Integer::intValue).sum();
+
+        //TODO: add date validity check too in findAllInEventWithPolicy
+        additionalServiceRepository.findAllInEventWithPolicy(event.getId(), AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET).forEach(as -> {
+            AdditionalServiceReservationModification asrm = new AdditionalServiceReservationModification();
+            asrm.setAdditionalServiceId(as.getId());
+            asrm.setQuantity(ticketCount);
+            additionalServices.add(new ASReservationWithOptionalCodeModification(asrm, Optional.empty()));
+        });
+
+        additionalServices.forEach(as -> reserveAdditionalServicesForReservation(event.getId(), reservationId, as, discount.orElse(null)));
 
         TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
 
@@ -241,7 +255,7 @@ public class TicketReservationManager {
         ticketRepository.updateTicketPrice(reservedForUpdate, category.getId(), event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
     }
 
-    private void reserveAdditionalServicesForReservation(int eventId, String transactionId, ASReservationWithOptionalCodeModification additionalServiceReservation, Locale locale, PromoCodeDiscount discount) {
+    private void reserveAdditionalServicesForReservation(int eventId, String transactionId, ASReservationWithOptionalCodeModification additionalServiceReservation, PromoCodeDiscount discount) {
         Optional.ofNullable(additionalServiceReservation.getAdditionalServiceId())
             .flatMap(id -> optionally(() -> additionalServiceRepository.getById(id, eventId)))
             .filter(as -> additionalServiceReservation.getQuantity() > 0 && (as.isFixPrice() || Optional.ofNullable(additionalServiceReservation.getAmount()).filter(a -> a.compareTo(BigDecimal.ZERO) > 0).isPresent()))

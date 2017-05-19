@@ -52,4 +52,6 @@ public interface AdditionalServiceRepository {
                @Bind("inceptionTs") ZonedDateTime inception, @Bind("expirationTs") ZonedDateTime expiration, @Bind("vat") BigDecimal vat,
                @Bind("vatType") AdditionalService.VatType vatType, @Bind("srcPriceCts") int srcPriceCts);
 
+    @Query("select * from additional_service where event_id_fk = :eventId and supplement_policy = :supplementPolicy order by ordinal")
+    List<AdditionalService> findAllInEventWithPolicy(@Bind("eventId") int eventId, @Bind("supplementPolicy") AdditionalService.SupplementPolicy policy);
 }
