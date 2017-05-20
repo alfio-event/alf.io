@@ -222,6 +222,11 @@ public class EventController {
             List<SaleableAdditionalService> additionalServices = additionalServiceRepository.loadAllForEvent(event.getId()).stream().map((as) -> getSaleableAdditionalService(event, locale, as, promoCodeDiscount.orElse(null))).collect(Collectors.toList());
             Predicate<SaleableTicketCategory> waitingQueueTargetCategory = tc -> !tc.getExpired() && !tc.isBounded();
             boolean validPaymentConfigured = isEventHasValidPaymentConfigurations(event, configurationManager);
+
+            List<SaleableAdditionalService> notExpiredServices = additionalServices.stream().filter(SaleableAdditionalService::isNotExpired).collect(Collectors.toList());
+            List<SaleableAdditionalService> donations = notExpiredServices.stream().filter(a -> a.getType() == AdditionalService.AdditionalServiceType.DONATION).collect(Collectors.toList());
+            List<SaleableAdditionalService> supplements = notExpiredServices.stream().filter(a -> a.getType() == AdditionalService.AdditionalServiceType.SUPPLEMENT).collect(Collectors.toList());
+
             model.addAttribute("event", eventDescriptor)//
                 .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
                 .addAttribute("ticketCategories", validCategories)//
@@ -239,9 +244,11 @@ public class EventController {
                 .addAttribute("unboundedCategories", ticketCategories.stream().filter(waitingQueueTargetCategory).collect(Collectors.toList()))
                 .addAttribute("preSales", EventUtil.isPreSales(event, ticketCategories))
                 .addAttribute("userLanguage", locale.getLanguage())
-                .addAttribute("showAdditionalServices", !additionalServices.isEmpty())
-                .addAttribute("enabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isNotExpired).collect(Collectors.toList()))
-                .addAttribute("disabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isExpired).collect(Collectors.toList()))
+                .addAttribute("showAdditionalServices", !notExpiredServices.isEmpty())
+                .addAttribute("showAdditionalServicesDonations", !donations.isEmpty())
+                .addAttribute("showAdditionalServicesSupplements", !supplements.isEmpty())
+                .addAttribute("enabledAdditionalServicesDonations", donations)
+                .addAttribute("enabledAdditionalServicesSupplements", supplements)
                 .addAttribute("forwardButtonDisabled", (ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable)) || !validPaymentConfigured)
                 .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
                 .addAttribute("validPaymentMethodAvailable", validPaymentConfigured);

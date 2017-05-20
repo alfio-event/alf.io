@@ -117,10 +117,16 @@ public class ReservationForm {
             return OptionalWrapper.optionally(() -> eventManager.findEventByTicketCategory(tc)).isPresent();
         });
 
+
+        //FIXME add here a new error code for handling supplement policy!
+        //
+
         final boolean validAdditionalServiceSelected = additionalServices.stream().allMatch(asm -> {
             AdditionalService as = eventManager.getAdditionalServiceById(asm.getAdditionalServiceId(), event.getId());
             ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-            return as.getInception(event.getZoneId()).isBefore(now) && as.getExpiration(event.getZoneId()).isAfter(now) &&
+            return as.getInception(event.getZoneId()).isBefore(now) &&
+                as.getExpiration(event.getZoneId()).isAfter(now) &&
+                (as.isFixPrice() || (!as.isFixPrice() && asm.getAmount() != null && asm.getAmount().compareTo(BigDecimal.ZERO) >= 0)) &&
                 OptionalWrapper.optionally(() -> eventManager.findEventByAdditionalService(as)).isPresent();
         });
 
