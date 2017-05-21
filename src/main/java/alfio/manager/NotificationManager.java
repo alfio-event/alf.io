@@ -398,7 +398,7 @@ public class NotificationManager {
 
     private void sendMessage(EmailMessage message) {
         Event event = eventRepository.findById(message.getEventId());
-        mailer.send(event, message.getRecipient(), message.getSubject(), message.getMessage(), Optional.empty(), decodeAttachments(message.getAttachments()));
+        mailer.send(event, message.getRecipient(), message.getCc(), message.getSubject(), message.getMessage(), Optional.empty(), decodeAttachments(message.getAttachments()));
         emailMessageRepository.updateStatusToSent(message.getEventId(), message.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
     }
 

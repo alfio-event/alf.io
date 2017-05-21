@@ -40,7 +40,7 @@ public class MailjetMailer implements Mailer  {
     }
 
     @Override
-    public void send(Event event, String to, String subject, String text, Optional<String> html, Attachment... attachment) {
+    public void send(Event event, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment) {
         String apiKeyPublic = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAILJET_APIKEY_PUBLIC));
         String apiKeyPrivate = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAILJET_APIKEY_PRIVATE));
 
@@ -49,12 +49,18 @@ public class MailjetMailer implements Mailer  {
         //https://dev.mailjet.com/guides/?shell#sending-with-attached-files
         Map<String, Object> mailPayload = new HashMap<>();
 
+        List<Map<String, String>> recipients = new ArrayList<>();
+        recipients.add(Collections.singletonMap("Email", to));
+        if(cc != null && !cc.isEmpty()) {
+            recipients.addAll(cc.stream().map(email -> Collections.singletonMap("Email", email)).collect(Collectors.toList()));
+        }
+
         mailPayload.put("FromEmail", fromEmail);
         mailPayload.put("FromName", event.getDisplayName());
         mailPayload.put("Subject", subject);
         mailPayload.put("Text-part", text);
         html.ifPresent(h -> mailPayload.put("Html-part", h));
-        mailPayload.put("Recipients", Collections.singletonList(Collections.singletonMap("Email", to)));
+        mailPayload.put("Recipients", recipients);
 
         String replyTo = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAIL_REPLY_TO), "");
         if(StringUtils.isNotBlank(replyTo)) {

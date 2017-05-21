@@ -23,7 +23,7 @@ import java.util.*;
 
 public interface Mailer {
 
-    void send(Event event, String to, String subject, String text, Optional<String> html, Attachment... attachment);
+    void send(Event event, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment);
 
     @Data
     class Attachment {

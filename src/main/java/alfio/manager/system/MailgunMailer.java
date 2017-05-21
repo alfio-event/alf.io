@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static alfio.model.system.ConfigurationKeys.*;
@@ -38,7 +39,7 @@ class MailgunMailer implements Mailer {
     private final ConfigurationManager configurationManager;
 
     
-    private RequestBody prepareBody(Event event, String to, String subject, String text,
+    private RequestBody prepareBody(Event event, String to, List<String> cc, String subject, String text,
             Optional<String> html, Attachment... attachments)
             throws IOException {
 
@@ -46,8 +47,13 @@ class MailgunMailer implements Mailer {
 
         if (ArrayUtils.isEmpty(attachments)) {
             FormEncodingBuilder builder = new FormEncodingBuilder()
-                    .add("from", from).add("to", to).add("subject", subject)
+                    .add("from", from)
+                    .add("to", to)
+                    .add("subject", subject)
                     .add("text", text);
+            if(cc != null && !cc.isEmpty()) {
+                builder.add("cc", StringUtils.join(cc, ','));
+            }
 
             String replyTo = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAIL_REPLY_TO), "");
             if(StringUtils.isNotBlank(replyTo)) {
@@ -66,6 +72,10 @@ class MailgunMailer implements Mailer {
                     .addFormDataPart("subject", subject)
                     .addFormDataPart("text", text);
 
+            if(cc != null && !cc.isEmpty()) {
+                multipartBuilder.addFormDataPart("cc", StringUtils.join(cc, ','));
+            }
+
             html.ifPresent((htmlContent) -> multipartBuilder.addFormDataPart(
                     "html", htmlContent));
 
@@ -80,15 +90,15 @@ class MailgunMailer implements Mailer {
     }
 
     @Override
-    public void send(Event event, String to, String subject, String text,
-            Optional<String> html, Attachment... attachment) {
+    public void send(Event event, String to, List<String> cc, String subject, String text,
+                     Optional<String> html, Attachment... attachment) {
 
         String apiKey = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_KEY));
         String domain = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_DOMAIN));
 
         try {
 
-            RequestBody formBody = prepareBody(event, to, subject, text, html,
+            RequestBody formBody = prepareBody(event, to, cc, subject, text, html,
                     attachment);
 
             Request request = new Request.Builder()

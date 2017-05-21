@@ -23,10 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static alfio.model.system.ConfigurationKeys.MAILER_TYPE;
 
@@ -49,13 +46,13 @@ public class DefaultMailer implements Mailer {
     }
 
     @Override
-    public void send(Event event, String to, String subject, String text,
-            Optional<String> html, Attachment... attachments) {
+    public void send(Event event, String to, List<String> cc, String subject, String text,
+                     Optional<String> html, Attachment... attachments) {
 
         String mailerType = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILER_TYPE), "smtp").toLowerCase(Locale.ENGLISH);
 
         mailers.getOrDefault(mailerType, defaultMailer)
-                .send(event, to, subject, text, html, attachments);
+                .send(event, to, cc, subject, text, html, attachments);
     }
 
 }

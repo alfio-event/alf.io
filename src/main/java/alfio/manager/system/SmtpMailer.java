@@ -39,6 +39,7 @@ import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -51,8 +52,8 @@ class SmtpMailer implements Mailer {
     private final ConfigurationManager configurationManager;
 
     @Override
-    public void send(Event event, String to, String subject, String text,
-            Optional<String> html, Attachment... attachments) {
+    public void send(Event event, String to, List<String> cc, String subject, String text,
+                     Optional<String> html, Attachment... attachments) {
         MimeMessagePreparator preparator = (mimeMessage) -> {
             MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
                     : new MimeMessageHelper(mimeMessage, "UTF-8");
@@ -63,6 +64,9 @@ class SmtpMailer implements Mailer {
                 message.setReplyTo(replyTo);
             }
             message.setTo(to);
+            if(cc != null && !cc.isEmpty()){
+                message.setCc(cc.toArray(new String[cc.size()]));
+            }
             if (html.isPresent()) {
                 message.setText(text, html.get());
             } else {

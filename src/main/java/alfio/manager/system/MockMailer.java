@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -44,7 +45,7 @@ public class MockMailer implements Mailer {
     }
 
     @Override
-    public void send(Event event, String to, String subject, String text, Optional<String> html, Attachment... attachments) {
+    public void send(Event event, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachments) {
 
         String printedAttachments = Optional.ofNullable(attachments)
             .map(Arrays::asList)
@@ -52,7 +53,7 @@ public class MockMailer implements Mailer {
             .stream().map(a -> "{filename:" +a.getFilename() + ", contentType: " + a.getContentType() + "}")
             .collect(Collectors.joining(", "));
 
-        log.info("Email: from: {}, replyTo: {}, to: {}, subject: {}, text: {}, html: {}, attachments: {}", event.getDisplayName(), configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAIL_REPLY_TO), ""), to, subject, text,
+        log.info("Email: from: {}, replyTo: {}, to: {}, cc: {}, subject: {}, text: {}, html: {}, attachments: {}", event.getDisplayName(), configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAIL_REPLY_TO), ""), to, cc, subject, text,
             html.orElse("no html"), printedAttachments);
     }
 }

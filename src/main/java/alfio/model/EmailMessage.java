@@ -23,6 +23,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 public class EmailMessage implements Comparable<EmailMessage> {
@@ -35,6 +37,7 @@ public class EmailMessage implements Comparable<EmailMessage> {
     private final int eventId;
     private final Status status;
     private final String recipient;
+    private final List<String> cc = new ArrayList<>();
     private final String subject;
     private final String message;
     private final String attachments;
