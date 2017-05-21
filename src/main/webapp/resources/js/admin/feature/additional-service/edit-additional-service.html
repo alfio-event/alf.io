@@ -39,8 +39,18 @@
                     </div>
                 </div>
             </div>
+            <div class="row" ng-if="ctrl.type === 'SUPPLEMENT'">
+                <div class="col-sm-12">
+                    <label>
+                        Additional service policy:
+                        <select class="form-control" data-ng-model="ctrl.item.supplementPolicy" required>
+                            <option data-ng-repeat="type in ctrl.supplementPolicies" data-ng-selected="{{ctrl.item.supplementPolicy === type.key}}" data-ng-value="type.key">{{type.value}}</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
             <div class="row">
-                <div class="col-sm-3">
+                <div class="col-sm-12" ng-if="ctrl.type === 'DONATION'">
                     <label class="control-label">Price policy</label>
                     <div class="form-group">
                         <div class="radio-inline">
@@ -59,9 +69,9 @@
                         <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.price" data-show-existing-errors="ctrl.showExistingErrors"></field-error>
                     </div>
                 </div>
-                <div class="col-sm-3" data-ng-if="ctrl.item.fixPrice">
+                <div class="col-sm-3" data-ng-if="ctrl.item.fixPrice && !(ctrl.type === 'SUPPLEMENT' && (ctrl.item.supplementPolicy === 'MANDATORY_ONE_FOR_TICKET' || ctrl.item.supplementPolicy === 'OPTIONAL_UNLIMITED_AMOUNT'))">
                     <div class="form-group" bs-form-error="ctrl.additionalServiceForm.maxQtyPerOrder">
-                        <label>Max qty per order: <input type="number" min="1" class="form-control" step="1" data-ng-model="ctrl.item.maxQtyPerOrder" required></label>
+                        <label>Max qty per {{ctrl.item.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_TICKET' ? 'ticket' : 'order'}}: <input type="number" min="1" class="form-control" step="1" data-ng-model="ctrl.item.maxQtyPerOrder" required></label>
                     </div>
                 </div>
                 <div class="col-sm-3">

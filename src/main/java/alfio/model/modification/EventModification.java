@@ -221,7 +221,7 @@ public class EventModification {
         private final BigDecimal finalPrice;
         private final String currencyCode;
         private final alfio.model.AdditionalService.AdditionalServiceType type;
-        private final alfio.model.AdditionalService.SupplementPolicy supplementPolicy = null;
+        private final alfio.model.AdditionalService.SupplementPolicy supplementPolicy;
 
         @JsonCreator
         public AdditionalService(@JsonProperty("id") Integer id,
@@ -237,8 +237,9 @@ public class EventModification {
                                  @JsonProperty("additionalServiceFields") List<AdditionalField> additionalServiceFields,
                                  @JsonProperty("title") List<AdditionalServiceText> title,
                                  @JsonProperty("description") List<AdditionalServiceText> description,
-                                 @JsonProperty("type")alfio.model.AdditionalService.AdditionalServiceType type) {
-            this(id, price, fixPrice, ordinal, availableQuantity, maxQtyPerOrder, inception, expiration, vat, vatType, additionalServiceFields, title, description, null, null, type);
+                                 @JsonProperty("type")alfio.model.AdditionalService.AdditionalServiceType type,
+                                 @JsonProperty("supplementPolicy")alfio.model.AdditionalService.SupplementPolicy supplementPolicy) {
+            this(id, price, fixPrice, ordinal, availableQuantity, maxQtyPerOrder, inception, expiration, vat, vatType, additionalServiceFields, title, description, null, null, type, supplementPolicy);
         }
 
         private AdditionalService(Integer id,
@@ -256,7 +257,8 @@ public class EventModification {
                                   List<AdditionalServiceText> description,
                                   BigDecimal finalPrice,
                                   String currencyCode,
-                                  alfio.model.AdditionalService.AdditionalServiceType type) {
+                                  alfio.model.AdditionalService.AdditionalServiceType type,
+                                  alfio.model.AdditionalService.SupplementPolicy supplementPolicy) {
             this.id = id;
             this.price = price;
             this.fixPrice = fixPrice;
@@ -273,6 +275,7 @@ public class EventModification {
             this.finalPrice = finalPrice;
             this.currencyCode = currencyCode;
             this.type = type;
+            this.supplementPolicy = supplementPolicy;
         }
 
         public static Builder from(alfio.model.AdditionalService src) {
@@ -317,7 +320,7 @@ public class EventModification {
                 String currencyCode = priceContainer.map(PriceContainer::getCurrencyCode).orElse("");
                 return new AdditionalService(src.getId(), Optional.ofNullable(src.getSrcPriceCts()).map(MonetaryUtil::centsToUnit).orElse(BigDecimal.ZERO),
                     src.isFixPrice(), src.getOrdinal(), src.getAvailableQuantity(), src.getMaxQtyPerOrder(), DateTimeModification.fromZonedDateTime(src.getInception(zoneId)),
-                    DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description, finalPrice, currencyCode, src.getType());
+                    DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description, finalPrice, currencyCode, src.getType(), src.getSupplementPolicy());
             }
 
         }

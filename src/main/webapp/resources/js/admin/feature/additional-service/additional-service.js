@@ -223,7 +223,7 @@
                 availableQuantity: -1,
                 maxQtyPerOrder: 1,
                 priceInCents: 0,
-                fixPrice: false,
+                fixPrice: ctrl.type === 'SUPPLEMENT',
                 inception: {},
                 expiration: {}
             };
@@ -260,6 +260,12 @@
              {key: 'CUSTOM_INCLUDED', value::'Price VAT inclusive, apply special VAT'},
              {key: 'CUSTOM_EXCLUDED', value:: 'Price VAT exclusive, apply special VAT'}*/];
         ctrl.types = ['DONATION'];
+        ctrl.supplementPolicies = [
+            {key: 'MANDATORY_ONE_FOR_TICKET', value:'Make the additional service mandatory: one for each ticket bought'},
+            {key: 'OPTIONAL_UNLIMITED_AMOUNT', value:'Apply no limit on the quantity'},
+            {key: 'OPTIONAL_MAX_AMOUNT_PER_TICKET', value:'Apply a limit for each ticket bought'},
+            {key: 'OPTIONAL_MAX_AMOUNT_PER_RESERVATION', value:'Apply a limit for the whole reservation'}
+        ];
         ctrl.save = function() {
             if(ctrl.additionalServiceForm.$valid) {
                 ctrl.item.type = ctrl.type; // fix type

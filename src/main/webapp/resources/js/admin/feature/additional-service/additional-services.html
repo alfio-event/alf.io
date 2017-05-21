@@ -36,8 +36,16 @@
                         <span data-ng-if="item.fixPrice">{{item.price  | currency : (item.currency || "")}}</span>
                     </div>
                 </div>
-                <div class="row" data-ng-if="item.fixPrice">
-                    <div class="col-sm-4"><strong>Max Qty per order</strong></div>
+                <div class="row">
+                    <div class="col-sm-4"><strong>Type</strong></div>
+                    <div class="col-sm-8">{{item.type}}</div>
+                </div>
+                <div class="row" ng-if="item.type === 'SUPPLEMENT'">
+                    <div class="col-sm-4"><strong>Policy</strong></div>
+                    <div class="col-sm-8">{{item.supplementPolicy}}</div>
+                </div>
+                <div class="row" data-ng-if="item.fixPrice && (item.supplementPolicy !== 'MANDATORY_ONE_FOR_TICKET' && item.supplementPolicy !== 'OPTIONAL_UNLIMITED_AMOUNT')">
+                    <div class="col-sm-4"><strong>Max Qty per {{item.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_TICKET' ? 'ticket' : 'order'}}</strong></div>
                     <div class="col-sm-8">{{item.maxQtyPerOrder}}</div>
                 </div>
             </div>
