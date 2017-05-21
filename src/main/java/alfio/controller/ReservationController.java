@@ -28,6 +28,7 @@ import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
@@ -38,6 +39,7 @@ import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +60,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
@@ -511,10 +514,19 @@ public class ReservationController {
 
     private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        notificationManager.sendSimpleEmail(event, organization.getEmail(), "Reservation complete " + reservation.getId(), () -> {
-            return  templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, ticketReservationManager.prepareModelForReservationEmail(event, reservation),
-                RequestContextUtils.getLocale(request));
-        });
+
+        Configuration.ConfigurationPathKey key = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC);
+
+        List<String> cc = Stream.of(StringUtils.split(configurationManager.getStringConfigValue(key, ""), ','))
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .filter(StringUtils::isNotBlank)
+            .collect(Collectors.toList());
+
+        notificationManager.sendSimpleEmail(event, organization.getEmail(), cc, "Reservation complete " + reservation.getId(), () ->
+            templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, ticketReservationManager.prepareModelForReservationEmail(event, reservation),
+                RequestContextUtils.getLocale(request))
+        );
     }
 
     private boolean isExpressCheckoutEnabled(Event event, OrderSummary orderSummary) {

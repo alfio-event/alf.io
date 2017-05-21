@@ -330,23 +330,32 @@ public class NotificationManager {
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text);
         String recipient = ticket.getEmail();
         //TODO handle HTML
-        tx.execute(status -> emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
+        tx.execute(status -> emailMessageRepository.insert(event.getId(), recipient, null, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
+    }
+
+    public void sendSimpleEmail(Event event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder) {
+        sendSimpleEmail(event, recipient, cc, subject, textBuilder, Collections.emptyList());
     }
 
     public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder) {
-        sendSimpleEmail(event, recipient, subject, textBuilder, Collections.emptyList());
+        sendSimpleEmail(event, recipient, Collections.emptyList(), subject, textBuilder);
     }
 
     public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+        sendSimpleEmail(event, recipient, Collections.emptyList(), subject, textBuilder, attachments);
+    }
+
+    public void sendSimpleEmail(Event event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
 
         String encodedAttachments = attachments.isEmpty() ? null : encodeAttachments(attachments.toArray(new Mailer.Attachment[attachments.size()]));
+        String encodedCC = Json.toJson(cc);
 
         String text = textBuilder.generate();
         String checksum = calculateChecksum(recipient, encodedAttachments, subject, text);
         //in order to minimize the database size, it is worth checking if there is already another message in the table
         Optional<EmailMessage> existing = emailMessageRepository.findByEventIdAndChecksum(event.getId(), checksum);
         if(!existing.isPresent()) {
-            emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
+            emailMessageRepository.insert(event.getId(), recipient, encodedCC, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
         } else {
             emailMessageRepository.updateStatus(event.getId(), WAITING.name(), existing.get().getId());
         }
