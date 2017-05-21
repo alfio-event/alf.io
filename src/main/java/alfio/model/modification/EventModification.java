@@ -220,7 +220,7 @@ public class EventModification {
         private final List<AdditionalServiceText> description;
         private final BigDecimal finalPrice;
         private final String currencyCode;
-        private final alfio.model.AdditionalService.AdditionalServiceType type = alfio.model.AdditionalService.AdditionalServiceType.DONATION;
+        private final alfio.model.AdditionalService.AdditionalServiceType type;
         private final alfio.model.AdditionalService.SupplementPolicy supplementPolicy = null;
 
         @JsonCreator
@@ -236,8 +236,9 @@ public class EventModification {
                                  @JsonProperty("vatType") alfio.model.AdditionalService.VatType vatType,
                                  @JsonProperty("additionalServiceFields") List<AdditionalField> additionalServiceFields,
                                  @JsonProperty("title") List<AdditionalServiceText> title,
-                                 @JsonProperty("description") List<AdditionalServiceText> description) {
-            this(id, price, fixPrice, ordinal, availableQuantity, maxQtyPerOrder, inception, expiration, vat, vatType, additionalServiceFields, title, description, null, null);
+                                 @JsonProperty("description") List<AdditionalServiceText> description,
+                                 @JsonProperty("type")alfio.model.AdditionalService.AdditionalServiceType type) {
+            this(id, price, fixPrice, ordinal, availableQuantity, maxQtyPerOrder, inception, expiration, vat, vatType, additionalServiceFields, title, description, null, null, type);
         }
 
         private AdditionalService(Integer id,
@@ -254,7 +255,8 @@ public class EventModification {
                                   List<AdditionalServiceText> title,
                                   List<AdditionalServiceText> description,
                                   BigDecimal finalPrice,
-                                  String currencyCode) {
+                                  String currencyCode,
+                                  alfio.model.AdditionalService.AdditionalServiceType type) {
             this.id = id;
             this.price = price;
             this.fixPrice = fixPrice;
@@ -270,6 +272,7 @@ public class EventModification {
             this.description = description;
             this.finalPrice = finalPrice;
             this.currencyCode = currencyCode;
+            this.type = type;
         }
 
         public static Builder from(alfio.model.AdditionalService src) {
@@ -284,7 +287,6 @@ public class EventModification {
             private List<AdditionalServiceText> title = new ArrayList<>();
             private List<AdditionalServiceText> description = new ArrayList<>();
             private PriceContainer priceContainer;
-            private String uuid = UUID.randomUUID().toString();
 
             private Builder(alfio.model.AdditionalService src) {
                 this.src = src;
@@ -297,11 +299,6 @@ public class EventModification {
 
             public Builder withPriceContainer(PriceContainer priceContainer) {
                 this.priceContainer = priceContainer;
-                return this;
-            }
-
-            public Builder withAdditionalFields(List<AdditionalField> additionalServiceFields) {
-                this.additionalServiceFields = additionalServiceFields;
                 return this;
             }
 
@@ -320,7 +317,7 @@ public class EventModification {
                 String currencyCode = priceContainer.map(PriceContainer::getCurrencyCode).orElse("");
                 return new AdditionalService(src.getId(), Optional.ofNullable(src.getSrcPriceCts()).map(MonetaryUtil::centsToUnit).orElse(BigDecimal.ZERO),
                     src.isFixPrice(), src.getOrdinal(), src.getAvailableQuantity(), src.getMaxQtyPerOrder(), DateTimeModification.fromZonedDateTime(src.getInception(zoneId)),
-                    DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description, finalPrice, currencyCode);
+                    DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description, finalPrice, currencyCode, src.getType());
             }
 
         }

@@ -1,8 +1,7 @@
 <div class="page-header">
-    <h3><i class="fa fa-money"></i> Donation options</h3>
-    <span class="text-muted">here you can add one or more "donation" option.</span>
+    <h3><i class="fa {{ctrl.icon}}"></i> {{ctrl.title}}</h3>
 </div>
-<div class="panel panel-default" data-ng-repeat="item in ctrl.displayList">
+<div class="panel panel-default" data-ng-repeat="item in ctrl.displayList | filter : {type: ctrl.type}">
     <div data-ng-if="item.id" id="additional-service-{{item.id}}"></div>
     <div class="panel-heading">
         <div class="panel-title">

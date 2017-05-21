@@ -34,13 +34,19 @@ public class SaleableAdditionalService implements PriceContainer {
     private final String title;
     private final String description;
     private final PromoCodeDiscount promoCodeDiscount;
+    private final int index;
 
-    public SaleableAdditionalService(Event event, AdditionalService additionalService, String title, String description, PromoCodeDiscount promoCodeDiscount) {
+    public SaleableAdditionalService(Event event, AdditionalService additionalService, String title, String description, PromoCodeDiscount promoCodeDiscount, int index) {
         this.event = event;
         this.additionalService = additionalService;
         this.title = title;
         this.description = description;
         this.promoCodeDiscount = promoCodeDiscount;
+        this.index = index;
+    }
+
+    public SaleableAdditionalService withIndex(int index) {
+        return new SaleableAdditionalService(this.event, this.additionalService, this.title, this.description, this.promoCodeDiscount, index);
     }
 
     public boolean isExpired() {

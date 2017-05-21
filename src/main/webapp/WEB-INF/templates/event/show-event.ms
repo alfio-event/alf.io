@@ -110,9 +110,9 @@
         {{#showAdditionalServicesSupplements}}
             <h2>{{#i18n}}show-event.additional-services{{/i18n}}</h2>
             <ul class="list-group">
-                {{#enabledAdditionalServicesDonations}}
+                {{#enabledAdditionalServicesSupplements}}
                     {{> /event/additional-service.ms }}
-                {{/enabledAdditionalServicesDonations}}
+                {{/enabledAdditionalServicesSupplements}}
             </ul>
         {{/showAdditionalServicesSupplements}}
         {{#showAdditionalServicesDonations}}

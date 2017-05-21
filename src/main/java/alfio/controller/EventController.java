@@ -224,8 +224,9 @@ public class EventController {
             boolean validPaymentConfigured = isEventHasValidPaymentConfigurations(event, configurationManager);
 
             List<SaleableAdditionalService> notExpiredServices = additionalServices.stream().filter(SaleableAdditionalService::isNotExpired).collect(Collectors.toList());
-            List<SaleableAdditionalService> donations = notExpiredServices.stream().filter(a -> a.getType() == AdditionalService.AdditionalServiceType.DONATION).collect(Collectors.toList());
-            List<SaleableAdditionalService> supplements = notExpiredServices.stream().filter(a -> a.getType() == AdditionalService.AdditionalServiceType.SUPPLEMENT).collect(Collectors.toList());
+
+            List<SaleableAdditionalService> supplements = adjustIndex(0, notExpiredServices.stream().filter(a -> a.getType() == AdditionalService.AdditionalServiceType.SUPPLEMENT).collect(Collectors.toList()));
+            List<SaleableAdditionalService> donations = adjustIndex(supplements.size(), notExpiredServices.stream().filter(a -> a.getType() == AdditionalService.AdditionalServiceType.DONATION).collect(Collectors.toList()));
 
             model.addAttribute("event", eventDescriptor)//
                 .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
@@ -337,7 +338,16 @@ public class EventController {
 
     private SaleableAdditionalService getSaleableAdditionalService(Event event, Locale locale, AdditionalService as, PromoCodeDiscount promoCodeDiscount) {
         return new SaleableAdditionalService(event, as, additionalServiceTextRepository.findBestMatchByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE).getValue(),
-            additionalServiceTextRepository.findBestMatchByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.DESCRIPTION).getValue(), promoCodeDiscount);
+            additionalServiceTextRepository.findBestMatchByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.DESCRIPTION).getValue(), promoCodeDiscount, 0);
+    }
+
+    private static List<SaleableAdditionalService> adjustIndex(int offset, List<SaleableAdditionalService> l) {
+        List<SaleableAdditionalService> n = new ArrayList<>(l.size());
+
+        for(int i = 0; i < l.size(); i++) {
+            n.add(l.get(i).withIndex(i+offset));
+        }
+        return n;
     }
 
     private static boolean shouldApplyDiscount(PromoCodeDiscount promoCodeDiscount, TicketCategory ticketCategory) {

@@ -137,9 +137,16 @@
                 controllerAs: '$ctrl',
                 resolve: loadEvent
             })
+            .state('events.single.additionalServices', {
+                url: '/additional-services',
+                template: '<additional-services data-type="SUPPLEMENT" data-title="Additional services" data-icon="fa-money" selected-languages="$ctrl.loadEvent.locales" event-is-free-of-charge="$ctrl.loadEvent.freeOfCharge" event-id="$ctrl.loadEvent.id" event-start-date="$ctrl.loadEvent.formattedBegin"></additional-services>',
+                controller: loadEventCtrl,
+                controllerAs: '$ctrl',
+                resolve: loadEvent
+            })
             .state('events.single.donations', {
                 url: '/donations',
-                template: '<additional-services selected-languages="$ctrl.loadEvent.locales" event-is-free-of-charge="$ctrl.loadEvent.freeOfCharge" event-id="$ctrl.loadEvent.id" event-start-date="$ctrl.loadEvent.formattedBegin"></additional-services>',
+                template: '<additional-services data-type="DONATION" data-title="Donation options" data-icon="fa-gift" selected-languages="$ctrl.loadEvent.locales" event-is-free-of-charge="$ctrl.loadEvent.freeOfCharge" event-id="$ctrl.loadEvent.id" event-start-date="$ctrl.loadEvent.formattedBegin"></additional-services>',
                 controller: loadEventCtrl,
                 controllerAs: '$ctrl',
                 resolve: loadEvent

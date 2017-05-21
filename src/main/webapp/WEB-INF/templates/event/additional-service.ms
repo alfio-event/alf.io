@@ -50,14 +50,14 @@
         </div>
         <div class="col-sm-2 text-align-center">
             {{#saleable}}
-                <input name="additionalService[{{-index}}].additionalServiceId" value="{{id}}" type="hidden">
+                <input name="additionalService[{{index}}].additionalServiceId" value="{{id}}" type="hidden">
                 {{#fixPrice}}
-                    <select aria-labelledby="{{id}}-label" name="additionalService[{{-index}}].quantity" class="form-control text-align-center" placeholder="0" autocomplete="off">
+                    <select aria-labelledby="{{id}}-label" name="additionalService[{{index}}].quantity" class="form-control text-align-center" placeholder="0" autocomplete="off">
                         {{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
                     </select>
                 {{/fixPrice}}
                 {{^fixPrice}}
-                    <input type="number" min="0" step="any" name="additionalService[{{-index}}].amount" class="form-control" title="">
+                    <input type="number" min="0" step="any" name="additionalService[{{index}}].amount" class="form-control" title="">
                 {{/fixPrice}}
             {{/saleable}}
             {{^saleable}}
