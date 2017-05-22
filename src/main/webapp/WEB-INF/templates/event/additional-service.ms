@@ -55,11 +55,14 @@
                     {{#mandatoryOneForTicket}}
                         {{#i18n}}show-event.mandatoryOneForTicket{{/i18n}}
                     {{/mandatoryOneForTicket}}
-                    {{^mandatoryOneForTicket}}
+                    {{#unlimitedAmount}}
+                        <input type="number" min="0" step="1" aria-labelledby="{{id}}-label" name="additionalService[{{index}}].quantity" class="form-control" placeholder="0" autocomplete="off">
+                    {{/unlimitedAmount}}
+                    {{#limitedAmount}}
                         <select aria-labelledby="{{id}}-label" name="additionalService[{{index}}].quantity" class="form-control text-align-center" placeholder="0" autocomplete="off">
                             {{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
                         </select>
-                    {{/mandatoryOneForTicket}}
+                    {{/limitedAmount}}
                 {{/fixPrice}}
                 {{^fixPrice}}
                     <input type="number" min="0" step="any" name="additionalService[{{index}}].amount" class="form-control" title="">

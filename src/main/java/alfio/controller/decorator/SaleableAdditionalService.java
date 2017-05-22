@@ -140,7 +140,17 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public boolean getMandatoryOneForTicket() {
-        return additionalService.getSupplementPolicy() == AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET;
+        return getSupplementPolicy() == AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET;
+    }
+
+    public boolean getUnlimitedAmount() {
+        return getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT;
+    }
+
+    public boolean getLimitedAmount() {
+        return getSupplementPolicy() == null ||
+            getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_RESERVATION ||
+            getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET;
     }
 
     public BigDecimal getVatPercentage() {
