@@ -207,12 +207,15 @@ public class TicketReservationManager {
             .map(TicketReservationWithOptionalCodeModification::getAmount)
             .mapToInt(Integer::intValue).sum();
 
-        //TODO: add date validity check too in findAllInEventWithPolicy
-        additionalServiceRepository.findAllInEventWithPolicy(event.getId(), AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET).forEach(as -> {
-            AdditionalServiceReservationModification asrm = new AdditionalServiceReservationModification();
-            asrm.setAdditionalServiceId(as.getId());
-            asrm.setQuantity(ticketCount);
-            additionalServices.add(new ASReservationWithOptionalCodeModification(asrm, Optional.empty()));
+        // apply valid additional service with supplement policy mandatory one for ticket
+        additionalServiceRepository.findAllInEventWithPolicy(event.getId(), AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET)
+            .stream()
+            .filter(AdditionalService::getSaleable)
+            .forEach(as -> {
+                AdditionalServiceReservationModification asrm = new AdditionalServiceReservationModification();
+                asrm.setAdditionalServiceId(as.getId());
+                asrm.setQuantity(ticketCount);
+                additionalServices.add(new ASReservationWithOptionalCodeModification(asrm, Optional.empty()));
         });
 
         additionalServices.forEach(as -> reserveAdditionalServicesForReservation(event.getId(), reservationId, as, discount.orElse(null)));

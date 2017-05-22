@@ -73,10 +73,6 @@ public class SaleableAdditionalService implements PriceContainer {
         return isFixPrice() && getFinalPrice().compareTo(BigDecimal.ZERO) == 0;
     }
 
-    public boolean getSaleable() {
-        return getUtcInception().isBefore(now()) && getUtcExpiration().isAfter(now());
-    }
-
     public ZonedDateTime getZonedInception() {
         return getInception(event.getZoneId());
     }
@@ -141,6 +137,10 @@ public class SaleableAdditionalService implements PriceContainer {
             default:
                 return false;
         }
+    }
+
+    public boolean getMandatoryOneForTicket() {
+        return additionalService.getSupplementPolicy() == AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET;
     }
 
     public BigDecimal getVatPercentage() {

@@ -52,9 +52,14 @@
             {{#saleable}}
                 <input name="additionalService[{{index}}].additionalServiceId" value="{{id}}" type="hidden">
                 {{#fixPrice}}
-                    <select aria-labelledby="{{id}}-label" name="additionalService[{{index}}].quantity" class="form-control text-align-center" placeholder="0" autocomplete="off">
-                        {{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
-                    </select>
+                    {{#mandatoryOneForTicket}}
+                        {{#i18n}}show-event.mandatoryOneForTicket{{/i18n}}
+                    {{/mandatoryOneForTicket}}
+                    {{^mandatoryOneForTicket}}
+                        <select aria-labelledby="{{id}}-label" name="additionalService[{{index}}].quantity" class="form-control text-align-center" placeholder="0" autocomplete="off">
+                            {{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
+                        </select>
+                    {{/mandatoryOneForTicket}}
                 {{/fixPrice}}
                 {{^fixPrice}}
                     <input type="number" min="0" step="any" name="additionalService[{{index}}].amount" class="form-control" title="">

@@ -23,6 +23,7 @@ import org.springframework.security.crypto.codec.Hex;
 import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -99,6 +100,11 @@ public class AdditionalService {
 
     public ZonedDateTime getExpiration(ZoneId zoneId) {
         return Optional.ofNullable(utcExpiration).map(i -> i.withZoneSameInstant(zoneId)).orElseGet(() -> ZonedDateTime.now(zoneId).plus(1L, ChronoUnit.HOURS));
+    }
+
+    public boolean getSaleable() {
+        ZonedDateTime now = ZonedDateTime.now(Clock.systemUTC());
+        return getUtcInception().isBefore(now) && getUtcExpiration().isAfter(now);
     }
 
     public String getChecksum() {
