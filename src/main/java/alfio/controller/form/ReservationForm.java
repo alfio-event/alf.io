@@ -84,11 +84,9 @@ public class ReservationForm {
 
     public Optional<Pair<List<TicketReservationWithOptionalCodeModification>, List<ASReservationWithOptionalCodeModification>>> validate(Errors bindingResult,
                                                                                                                                          TicketReservationManager tickReservationManager,
-                                                                                                                                         TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
                                                                                                                                          AdditionalServiceRepository additionalServiceRepository,
                                                                                                                                          EventManager eventManager,
-                                                                                                                                         Event event,
-                                                                                                                                         Locale locale) {
+                                                                                                                                         Event event) {
         int selectionCount = ticketSelectionCount();
         int additionalServicesCount = additionalServicesSelectionCount(additionalServiceRepository, event.getId());
 
@@ -118,15 +116,13 @@ public class ReservationForm {
         });
 
 
-        //FIXME add here a new error code for handling supplement policy!
-        //
-
         final boolean validAdditionalServiceSelected = additionalServices.stream().allMatch(asm -> {
             AdditionalService as = eventManager.getAdditionalServiceById(asm.getAdditionalServiceId(), event.getId());
             ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             return as.getInception(event.getZoneId()).isBefore(now) &&
                 as.getExpiration(event.getZoneId()).isAfter(now) &&
-                (as.isFixPrice() || (!as.isFixPrice() && asm.getAmount() != null && asm.getAmount().compareTo(BigDecimal.ZERO) >= 0)) &&
+                asm.getQuantity() >= 0 &&
+                ((as.isFixPrice() && asm.isQuantityValid(as, selectionCount)) || (!as.isFixPrice() && asm.getAmount() != null && asm.getAmount().compareTo(BigDecimal.ZERO) >= 0)) &&
                 OptionalWrapper.optionally(() -> eventManager.findEventByAdditionalService(as)).isPresent();
         });
 
@@ -141,14 +137,13 @@ public class ReservationForm {
                 (trimmedCode) -> OptionalWrapper.optionally(() -> tickReservationManager.getSpecialPriceByCode(trimmedCode)));
         //
         final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        maxTicketsByTicketReservation.forEach((pair) -> validateCategory(bindingResult, tickReservationManager, ticketCategoryDescriptionRepository, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft(), locale));
+        maxTicketsByTicketReservation.forEach((pair) -> validateCategory(bindingResult, tickReservationManager, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft()));
         return bindingResult.hasErrors() ? Optional.empty() : Optional.of(Pair.of(res, additionalServices.stream().map(as -> new ASReservationWithOptionalCodeModification(as, specialCode)).collect(Collectors.toList())));
     }
 
-    private static void validateCategory(Errors bindingResult, TicketReservationManager tickReservationManager, TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository, EventManager eventManager,
+    private static void validateCategory(Errors bindingResult, TicketReservationManager tickReservationManager, EventManager eventManager,
                                          Event event, int maxAmountOfTicket, List<TicketReservationWithOptionalCodeModification> res,
-                                         Optional<SpecialPrice> specialCode, ZonedDateTime now, TicketReservationModification r,
-                                         Locale locale) {
+                                         Optional<SpecialPrice> specialCode, ZonedDateTime now, TicketReservationModification r) {
         TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
         SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, "", now, event, tickReservationManager.countAvailableTickets(event, tc), maxAmountOfTicket, null);
 

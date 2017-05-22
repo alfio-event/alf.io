@@ -47,8 +47,22 @@ public class AdditionalService {
     public enum SupplementPolicy {
         MANDATORY_ONE_FOR_TICKET,
         OPTIONAL_UNLIMITED_AMOUNT,
-        OPTIONAL_MAX_AMOUNT_PER_TICKET,
-        OPTIONAL_MAX_AMOUNT_PER_RESERVATION
+        OPTIONAL_MAX_AMOUNT_PER_TICKET {
+            @Override
+            public boolean isValid(int quantity, AdditionalService as, int ticketsCount) {
+                return quantity <= ticketsCount*as.getMaxQtyPerOrder();
+            }
+        },
+        OPTIONAL_MAX_AMOUNT_PER_RESERVATION {
+            @Override
+            public boolean isValid(int quantity, AdditionalService as, int selectionCount) {
+                return quantity < as.getMaxQtyPerOrder();
+            }
+        };
+
+        public boolean isValid(int quantity, AdditionalService as, int selectionCount) {
+            return true;
+        }
     }
 
     private final int id;

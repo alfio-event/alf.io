@@ -301,7 +301,7 @@ public class EventController {
                 return redirectToEvent;
             }
 
-            return reservation.validate(bindingResult, ticketReservationManager, ticketCategoryDescriptionRepository, additionalServiceRepository, eventManager, event, locale)
+            return reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event)
                 .map(selected -> {
 
                     Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
