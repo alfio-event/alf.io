@@ -153,6 +153,10 @@ public class SaleableAdditionalService implements PriceContainer {
             getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET;
     }
 
+    public boolean getMaxAmountPerTicket() {
+        return getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET;
+    }
+
     public BigDecimal getVatPercentage() {
         AdditionalService.VatType vatType = getVatType();
         if(vatType == AdditionalService.VatType.INHERITED) {

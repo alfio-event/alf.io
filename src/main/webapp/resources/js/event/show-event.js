@@ -58,6 +58,36 @@
         $('#collapseOne').on('shown.bs.collapse', function () {
             $('#promo-code').focus();
         })
+
+        function countTotalTicketSelected() {
+            var selected = $("[data-ticket-selector]").map(function() {
+                return parseInt(this.value);
+            });
+            var tot = 0;
+            for(var i = 0; i < selected.length; i++) {
+                tot+=selected[i];
+            }
+            return tot;
+        }
+
+        function updateSelect(select, totalSelected) {
+            var maxAmount = parseInt($(select).attr('data-max-amount-per-ticket')) * totalSelected;
+            var options = [];
+            for(var i = 0; i <= maxAmount; i++) {
+                options.push($("<option value='"+i+"'>"+i+"</option>"));
+            }
+            var value = select.value;
+            $(select).empty();
+            $(select).append(options);
+            select.value = Math.min(value, maxAmount);
+        }
+
+        $("[data-ticket-selector]").change(function() {
+            var totalSelected = countTotalTicketSelected();
+            $("[data-max-amount-per-ticket]").each(function() {
+               updateSelect(this, totalSelected);
+            });
+        });
     });
     
 })();

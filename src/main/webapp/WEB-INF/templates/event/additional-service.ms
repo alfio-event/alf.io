@@ -59,8 +59,13 @@
                         <input type="number" min="0" step="1" aria-labelledby="{{id}}-label" name="additionalService[{{index}}].quantity" class="form-control" placeholder="0" autocomplete="off">
                     {{/unlimitedAmount}}
                     {{#limitedAmount}}
-                        <select aria-labelledby="{{id}}-label" name="additionalService[{{index}}].quantity" class="form-control text-align-center" placeholder="0" autocomplete="off">
-                            {{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
+                        <select {{#maxAmountPerTicket}}data-max-amount-per-ticket="{{maxQtyPerOrder}}"{{/maxAmountPerTicket}} aria-labelledby="{{id}}-label" name="additionalService[{{index}}].quantity" class="form-control text-align-center" placeholder="0" autocomplete="off">
+                            {{#maxAmountPerTicket}}
+                                <option value="0">0</option>
+                            {{/maxAmountPerTicket}}
+                            {{^maxAmountPerTicket}}
+                                {{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
+                            {{/maxAmountPerTicket}}
                         </select>
                     {{/limitedAmount}}
                 {{/fixPrice}}
