@@ -129,7 +129,7 @@ public class ReservationApiController {
                 }
                 ticketReservationRepository.updateTicketReservation(reservationId, t.getMiddle().getStatus().name(), paymentForm.getEmail(),
                     paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), locale.getLanguage(), billingAddress, null,
-                    Optional.ofNullable(paymentForm.getPaymentMethod()).map(Enum::name).orElse(null));
+                    Optional.ofNullable(paymentForm.getPaymentMethod()).map(p -> p.name()).orElse(null));
                 paymentForm.getTickets().forEach((ticketId, owner) -> {
                     if(isNotEmpty(owner.getEmail()) && ((isNotEmpty(owner.getFirstName()) && isNotEmpty(owner.getLastName())) || isNotEmpty(owner.getFullName()))) {
                         ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, Optional.empty(), request, (tr) -> {}, Optional.empty());
