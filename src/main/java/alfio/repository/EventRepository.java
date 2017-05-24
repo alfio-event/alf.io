@@ -95,6 +95,9 @@ public interface EventRepository {
     @Query("select id from event where end_ts > :now")
     List<Integer> findAllActiveIds(@Bind("now") ZonedDateTime now);
 
+    @Query("select * from event where end_ts > :now")
+    List<Event> findAllActives(@Bind("now") ZonedDateTime now);
+
     @Query("update event set available_seats = :newValue where id = :eventId")
     int updateAvailableSeats(@Bind("eventId") int eventId, @Bind("newValue") int newValue);
 

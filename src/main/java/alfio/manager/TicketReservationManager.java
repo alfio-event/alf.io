@@ -79,7 +79,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-import static org.apache.commons.lang3.time.DateUtils.addDays;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
 
@@ -1024,14 +1023,17 @@ public class TicketReservationManager {
                 });
     }
 
+    //called heach hour
     void sendReminderForOfflinePaymentsToEventManagers() {
-        //Date expiration = truncate(addDays(new Date(), 2), Calendar.DATE);
-        //ticketReservationRepository.findAllOfflinePaymentReservationWithDateBefore(expiration)
-            //.stream()
-            //.collect(Collectors.groupingBy(TicketReservationInfo::getEventId)).forEach((eventId, reservations) -> {
-                //log.info("for event {} there are {} pending offline payments to handle", eventId, reservations.size());
-                //TODO implement
-        //});
+        eventRepository.findAllActives(ZonedDateTime.now(Clock.systemUTC())).stream().filter(event -> {
+            ZonedDateTime dateTimeForEvent = ZonedDateTime.now(event.getZoneId());
+            log.info("date time event {}, hour is {}", dateTimeForEvent, dateTimeForEvent.truncatedTo(ChronoUnit.HOURS).getHour());
+            return dateTimeForEvent.truncatedTo(ChronoUnit.HOURS).getHour() == 5; //only for the events at 5:00 local time
+        }).forEachOrdered(event -> {
+            ZonedDateTime dateTimeForEvent = ZonedDateTime.now(event.getZoneId()).truncatedTo(ChronoUnit.DAYS).plusDays(1);
+            List<TicketReservationInfo> reservations = ticketReservationRepository.findAllOfflinePaymentReservationWithExpirationBefore(dateTimeForEvent, event.getId());
+            log.info("for event {} there are {} pending offline payments to handle", event.getId(), reservations.size());
+        });
     }
 
     void sendReminderForTicketAssignment() {
