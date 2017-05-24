@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.model.TicketReservation;
+import alfio.model.TicketReservationInfo;
 import ch.digitalfondue.npjt.*;
 
 import java.time.ZonedDateTime;
@@ -57,6 +58,12 @@ public interface TicketReservationRepository {
         @QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false", db = "PGSQL"),
         @QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date('day') <= :expiration and offline_payment_reminder_sent = false", db = "MYSQL")})
     List<TicketReservation> findAllOfflinePaymentReservationForNotification(@Bind("expiration") Date expiration);
+
+    @Query("select id, full_name, first_name, last_name, email_address, event_id_fk from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration")
+    @QueriesOverride({
+        @QueryOverride(value = "select id, full_name, first_name, last_name, email_address, event_id_fk from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration", db = "PGSQL"),
+        @QueryOverride(value = "select id, full_name, first_name, last_name, email_address, event_id_fk from tickets_reservation where status = 'OFFLINE_PAYMENT' and date('day') <= :expiration", db = "MYSQL")})
+    List<TicketReservationInfo> findAllOfflinePaymentReservationWithDateBefore(@Bind("expiration") Date expiration);
 
     @Query("update tickets_reservation set offline_payment_reminder_sent = true where id = :reservationId")
     int flagAsOfflinePaymentReminderSent(@Bind("reservationId") String reservationId);

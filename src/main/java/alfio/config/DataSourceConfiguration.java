@@ -31,6 +31,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.log4j.Log4j2;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
+import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.Trigger;
 import org.quartz.spi.TriggerFiredBundle;
@@ -49,10 +50,7 @@ import org.springframework.jdbc.datasource.AbstractDataSource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.quartz.JobDetailFactoryBean;
-import org.springframework.scheduling.quartz.SchedulerFactoryBean;
-import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
-import org.springframework.scheduling.quartz.SpringBeanJobFactory;
+import org.springframework.scheduling.quartz.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -214,6 +212,17 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         }
     }
 
+    private static JobDetailFactoryBean jobDetailFactory(Class<? extends Job> jobClass, String name) {
+        JobDetailFactoryBean jobDetailFactory = new JobDetailFactoryBean();
+        jobDetailFactory.setJobClass(jobClass);
+        jobDetailFactory.setName(name);
+        jobDetailFactory.setDurability(true);
+
+        jobDetailFactory.afterPropertiesSet();
+        return jobDetailFactory;
+    }
+
+
     /**
      * @param jobClass
      * @param name
@@ -222,12 +231,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
      * @throws ParseException
      */
     private static Trigger buildTrigger(Class<? extends Job> jobClass, String name, long repeatInterval) throws ParseException {
-        JobDetailFactoryBean jobDetailFactory = new JobDetailFactoryBean();
-        jobDetailFactory.setJobClass(jobClass);
-        jobDetailFactory.setName(name);
-        jobDetailFactory.setDurability(true);
-
-        jobDetailFactory.afterPropertiesSet();
+        JobDetailFactoryBean jobDetailFactory = jobDetailFactory(jobClass, name);
 
         SimpleTriggerFactoryBean triggerFactoryBean = new SimpleTriggerFactoryBean();
         triggerFactoryBean.setJobDetail(jobDetailFactory.getObject());
@@ -238,6 +242,18 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         return triggerFactoryBean.getObject();
     }
 
+    private static CronTrigger buildCron(Class<? extends Job> jobClass, String name, String cronExpression) throws ParseException {
+        JobDetailFactoryBean jobDetailFactory = jobDetailFactory(jobClass, name);
+
+        CronTriggerFactoryBean cronTriggerFactoryBean = new CronTriggerFactoryBean();
+        cronTriggerFactoryBean.setJobDetail(jobDetailFactory.getObject());
+        cronTriggerFactoryBean.setCronExpression(cronExpression);
+        cronTriggerFactoryBean.setName(name);
+        cronTriggerFactoryBean.afterPropertiesSet();
+
+        return cronTriggerFactoryBean.getObject();
+    }
+
     public Trigger[] getTriggers() throws ParseException {
         return new Trigger[]{
             buildTrigger(CleanupExpiredPendingReservation.class, "CleanupExpiredPendingReservation", CleanupExpiredPendingReservation.INTERVAL),
@@ -246,7 +262,8 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
             buildTrigger(GenerateSpecialPriceCodes.class, "GenerateSpecialPriceCodes", GenerateSpecialPriceCodes.INTERVAL),
             buildTrigger(SendEmails.class, "SendEmails", SendEmails.INTERVAL),
             buildTrigger(ProcessReleasedTickets.class, "ProcessReleasedTickets", ProcessReleasedTickets.INTERVAL),
-            buildTrigger(CleanupUnreferencedBlobFiles.class, "CleanupUnreferencedBlobFiles", CleanupUnreferencedBlobFiles.INTERVAL)
+            buildTrigger(CleanupUnreferencedBlobFiles.class, "CleanupUnreferencedBlobFiles", CleanupUnreferencedBlobFiles.INTERVAL),
+            buildCron(SendOfflinePaymentReminderToEventOrganizers.class, "SendOfflinePaymentReminderToEventOrganizers", SendOfflinePaymentReminderToEventOrganizers.CRON_EXPRESSION)
         };
     }
 

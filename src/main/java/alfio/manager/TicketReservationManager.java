@@ -79,6 +79,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.lang3.time.DateUtils.addDays;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
 
@@ -1021,6 +1022,16 @@ public class TicketReservationManager {
                     ticketReservationRepository.flagAsOfflinePaymentReminderSent(reservation.getId());
                     notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{getShortReservationID(event, reservation.getId())}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
                 });
+    }
+
+    void sendReminderForOfflinePaymentsToEventManagers() {
+        Date expiration = truncate(addDays(new Date(), 2), Calendar.DATE);
+        ticketReservationRepository.findAllOfflinePaymentReservationWithDateBefore(expiration)
+            .stream()
+            .collect(Collectors.groupingBy(TicketReservationInfo::getEventId)).forEach((eventId, reservations) -> {
+                log.info("for event {} there are {} pending offline payments to handle", eventId, reservations.size());
+                //TODO implement
+        });
     }
 
     void sendReminderForTicketAssignment() {

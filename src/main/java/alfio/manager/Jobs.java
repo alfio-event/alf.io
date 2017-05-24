@@ -66,6 +66,10 @@ public class Jobs {
         ticketReservationManager.sendReminderForOfflinePayments();
     }
 
+    public void sendOfflinePaymentReminderToEventOrganizers() {
+        ticketReservationManager.sendReminderForOfflinePaymentsToEventManagers();
+    }
+
     public void sendTicketAssignmentReminder() {
         ticketReservationManager.sendReminderForTicketAssignment();
         ticketReservationManager.sendReminderForOptionalData();
@@ -86,6 +90,24 @@ public class Jobs {
     public void cleanupUnreferencedBlobFiles() {
         fileUploadManager.cleanupUnreferencedBlobFiles();
     }
+
+    @DisallowConcurrentExecution
+    @Log4j2
+    public static class SendOfflinePaymentReminderToEventOrganizers implements Job {
+
+        public static String CRON_EXPRESSION = "0 0 0 1/1 * ? *";
+
+        @Autowired
+        private Jobs jobs;
+
+        @Override
+        public void execute(JobExecutionContext context) throws JobExecutionException {
+            jobs.sendOfflinePaymentReminderToEventOrganizers();
+            log.trace("running job " + getClass().getSimpleName());
+        }
+    }
+
+
 
     @DisallowConcurrentExecution
     @Log4j2
