@@ -95,7 +95,8 @@ public class Jobs {
     @Log4j2
     public static class SendOfflinePaymentReminderToEventOrganizers implements Job {
 
-        public static String CRON_EXPRESSION = "0 0 0 1/1 * ? *";
+        //run each hour
+        public static String CRON_EXPRESSION = "0 0 0/1 1/1 * ? *";
 
         @Autowired
         private Jobs jobs;

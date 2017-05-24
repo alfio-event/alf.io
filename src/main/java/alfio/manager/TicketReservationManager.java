@@ -1025,13 +1025,13 @@ public class TicketReservationManager {
     }
 
     void sendReminderForOfflinePaymentsToEventManagers() {
-        Date expiration = truncate(addDays(new Date(), 2), Calendar.DATE);
-        ticketReservationRepository.findAllOfflinePaymentReservationWithDateBefore(expiration)
-            .stream()
-            .collect(Collectors.groupingBy(TicketReservationInfo::getEventId)).forEach((eventId, reservations) -> {
-                log.info("for event {} there are {} pending offline payments to handle", eventId, reservations.size());
+        //Date expiration = truncate(addDays(new Date(), 2), Calendar.DATE);
+        //ticketReservationRepository.findAllOfflinePaymentReservationWithDateBefore(expiration)
+            //.stream()
+            //.collect(Collectors.groupingBy(TicketReservationInfo::getEventId)).forEach((eventId, reservations) -> {
+                //log.info("for event {} there are {} pending offline payments to handle", eventId, reservations.size());
                 //TODO implement
-        });
+        //});
     }
 
     void sendReminderForTicketAssignment() {
