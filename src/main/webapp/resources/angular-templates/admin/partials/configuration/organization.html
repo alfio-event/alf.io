@@ -84,6 +84,17 @@
                     </div>
                 </div>
 
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-eur"></i> EU-Specific invoice settings</div>
+                    </div>
+                    <div class="panel-body">
+                        <div data-ng-repeat="setting in organizationConf.invoiceEu.settings">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(setting)" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}" list-values="setting.listValues"></setting>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="page-header" data-ng-if="organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentOffline">
                     <h2>Payment</h2>
                     <span>Payment provider settings</span>

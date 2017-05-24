@@ -240,19 +240,21 @@
                 $(this).removeClass('untouched');
             });
 
-        $('#postpone-assignment').change(function() {
-            var classes = 'hidden-xs hidden-sm hidden-md hidden-lg';
+        var postponeAssignment = $('#postpone-assignment');
+
+        var hiddenClasses = 'hidden-xs hidden-sm hidden-md hidden-lg';
+        postponeAssignment.change(function() {
             var element = $('#attendeesData');
             if($(this).is(':checked')) {
                 element.find('.field-required').attr('required', false);
-                element.addClass(classes)
+                element.addClass(hiddenClasses)
             } else {
                 element.find('.field-required').attr('required', true);
-                element.removeClass(classes)
+                element.removeClass(hiddenClasses)
             }
         });
 
-        if($('#postpone-assignment').is(':checked')) {
+        if(postponeAssignment.is(':checked')) {
             $('#attendeesData').find('.field-required').attr('required', false);
         }
 
@@ -272,5 +274,66 @@
                 element.val(newValue);
             }
         }
+
+        $('#invoice-requested').change(function() {
+            var element = $('#invoice');
+            if($(this).is(':checked')) {
+                element.find('.field-required').attr('required', true);
+                element.removeClass('hidden');
+            } else {
+                element.find('.field-required').attr('required', false);
+                element.addClass('hidden');
+            }
+        });
+
+        var euBillingCountry = $('#vatCountry');
+        euBillingCountry.change(function() {
+            if($(this).val() === '') {
+                $('#billing-address-container').removeClass(hiddenClasses);
+                $('#billing-address').attr('required', true);
+                $('#validation-result-container').addClass(hiddenClasses);
+                $('#vat-number-container').addClass(hiddenClasses);
+                $('#vatNr').attr('required', false);
+            } else {
+                $('#billing-address-container').addClass(hiddenClasses);
+                $('#validation-result-container').removeClass(hiddenClasses);
+                $('#billing-address').attr('required', false);
+                $('#vat-number-container').removeClass(hiddenClasses);
+                $('#vatNr').attr('required', true);
+            }
+        });
+
+        $('#validateVAT').click(function() {
+            var frm = $(this.form);
+            var action = $(this).attr('data-validation-url');
+            var vatInput = $('#vatNr');
+            vatInput.removeClass('has-error');
+            vatInput.parent('div').removeClass('has-error');
+            var vatNr = vatInput.val();
+            var country = euBillingCountry.val();
+            var resultContainer = $('#validation-result');
+            if(vatNr !== '' && country !== '') {
+                jQuery.ajax({
+                    url: action,
+                    type: 'POST',
+                    data: frm.serialize(),
+                    success: function() {
+                        resultContainer.removeClass('text-danger');
+                        window.location.reload();
+                    },
+                    error: function(xhr, textStatus, errorThrown) {
+                        vatInput.addClass('has-error');
+                        vatInput.parent('div').addClass('has-error');
+                        resultContainer.removeClass('text-success');
+                        resultContainer.addClass('text-danger');
+                        if(xhr.status === 400) {
+                            resultContainer.html(resultContainer.attr('data-validation-error-msg'));
+                        } else {
+                            resultContainer.html(resultContainer.attr('data-generic-error-msg'));
+                        }
+                    }
+                });
+            }
+        })
     });
 })();

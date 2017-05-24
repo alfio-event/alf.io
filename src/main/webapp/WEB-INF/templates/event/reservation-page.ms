@@ -61,16 +61,23 @@
     </tbody>
     <tfoot>
         {{^orderSummary.free}}
-        {{^event.vatIncluded}}
-            <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
-        {{/event.vatIncluded}}
+            {{#orderSummary.displayVat}}
+                {{^event.vatIncluded}}
+                    <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+                {{/event.vatIncluded}}
+            {{/orderSummary.displayVat}}
         {{/orderSummary.free}}
         <tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td class="text-right"><strong>{{orderSummary.totalPrice}} {{event.currency}}</strong></td></tr>
         
         {{^orderSummary.free}}
-        {{#event.vatIncluded}}
-            <tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
-        {{/event.vatIncluded}}
+            {{#orderSummary.displayVat}}
+                {{#event.vatIncluded}}
+                    <tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+                {{/event.vatIncluded}}
+            {{/orderSummary.displayVat}}
+            {{^orderSummary.displayVat}}
+                <tr><td colspan="4">{{#i18n}}invoice.vat-voided{{/i18n}}</td></tr>
+            {{/orderSummary.displayVat}}
         {{/orderSummary.free}}
     </tfoot>
 </table>
@@ -143,13 +150,77 @@
     </div>
 
     {{^orderSummary.free}}
-    
-    <div class="form-group {{#field-has-error}}[billingAddress] has-error{{/field-has-error}}">
-        <label for="billing-address" class="control-label">{{#i18n}}reservation-page.billing-address{{/i18n}}</label>
-        <textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450">{{paymentForm.billingAddress}}</textarea>
-        {{#field-has-error}}[billingAddress]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddress{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
-    </div>
 
+    {{#orderSummary.displayVat}}
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="invoiceRequested" id="invoice-requested" value="true" {{#paymentForm.invoiceRequested}}checked{{/paymentForm.invoiceRequested}}>
+                {{#i18n}}reservation-page.i-need-an-invoice{{/i18n}}
+            </label>
+        </div>
+    {{/orderSummary.displayVat}}
+
+    <div id="invoice" {{^paymentForm.invoiceRequested}}class="hidden"{{/paymentForm.invoiceRequested}}>
+        {{#euVatCheckingEnabled}}
+            {{#orderSummary.displayVat}}
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6">
+                        <div class="form-group">
+                            <label for="vatCountry">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
+                            <select name="vatCountryCode" id="vatCountry" value="{{paymentForm.vatCountryCode}}" class="form-control">
+                                <option value="">{{#i18n}}reservation-page.country.outside-eu{{/i18n}}</option>
+                                {{#euCountries}}
+                                    <option value="{{left}}">{{right}}</option>
+                                {{/euCountries}}
+                            </select>
+                        </div>
+                    </div>
+                    <div id="vat-number-container" class="col-xs-12 col-sm-6 {{^paymentForm.hasVatCountryCode}}hidden-xs hidden-sm hidden-md hidden-lg{{/paymentForm.hasVatCountryCode}}">
+                        <div class="form-group">
+                            <label for="vatNr">{{#i18n}}invoice.vat{{/i18n}}</label>
+                            <input id="vatNr" type="text" required name="vatNr" class="form-control" value="{{paymentForm.vatNr}}"/>
+                        </div>
+                    </div>
+                </div>
+                <div id="validation-result-container" class="row {{^paymentForm.hasVatCountryCode}}hidden-xs hidden-sm hidden-md hidden-lg{{/paymentForm.hasVatCountryCode}}">
+                    <div class="col-xs-10 text-right">
+                        <span id="validation-result" data-validation-error-msg="{{#i18n}}reservation-page.vat-validation-error{{/i18n}}" data-generic-error-msg="{{#i18n}}reservation-page.vat-error{{/i18n}}"></span>
+                    </div>
+                    <div class="col-xs-2 text-right">
+                        <button type="button" class="btn btn-warning btn-sm" data-validation-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/vat-validation" id="validateVAT">{{#i18n}}invoice.validate.vat{{/i18n}}</button>
+                    </div>
+                </div>
+            {{/orderSummary.displayVat}}
+            <div class="clearfix"></div>
+        {{/euVatCheckingEnabled}}
+
+        <div class="row">
+            {{^orderSummary.displayVat}}
+                <input type="hidden" name="vatCountryCode" value="{{paymentForm.vatCountryCode}}">
+                <input type="hidden" name="vatNr" value="{{paymentForm.vatNr}}"/>
+                <input type="hidden" name="invoiceRequested" value="true">
+                <div class="col-xs-6 col-md-2">
+                    <div class="form-group">
+                        <label class="control-label">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
+                        <p class="form-control-static">{{paymentForm.vatCountryCode}}</p>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-md-2">
+                    <div class="form-group">
+                        <label class="control-label">{{#i18n}}invoice.vat{{/i18n}}</label>
+                        <p class="form-control-static">{{paymentForm.vatNr}}</p>
+                    </div>
+                </div>
+            {{/orderSummary.displayVat}}
+            <div class="col-xs-12 {{^orderSummary.displayVat}}col-md-8{{/orderSummary.displayVat}}">
+                <div class="form-group {{#field-has-error}}[billingAddress] has-error{{/field-has-error}}" id="billing-address-container">
+                    <label for="billing-address" class="control-label">{{#i18n}}reservation-page.billing-address{{/i18n}}</label>
+                    <textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450">{{paymentForm.billingAddress}}</textarea>
+                    {{#field-has-error}}[billingAddress]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddress{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <h2>{{#i18n}}reservation-page.payment{{/i18n}}</h2>

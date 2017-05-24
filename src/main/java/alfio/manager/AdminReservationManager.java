@@ -61,9 +61,7 @@ import java.util.stream.Stream;
 import static alfio.util.EventUtil.generateEmptyTickets;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Component
@@ -322,7 +320,7 @@ public class AdminReservationManager {
         }
         ticketRepository.reserveTickets(reservationId, reservedForUpdate, categoryId, arm.getLanguage(), category.getSrcPriceCts());
         Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), categoryId);
-        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, event, null);
+        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event, null);
         ticketRepository.updateTicketPrice(reservedForUpdate, categoryId, event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
         List<SpecialPrice> codes = category.isAccessRestricted() ? bindSpecialPriceTokens(specialPriceSessionId, categoryId, attendees) : Collections.emptyList();
         assignTickets(attendees, reservedForUpdate, codes, reservationId, arm.getLanguage(), category.getSrcPriceCts());

@@ -60,6 +60,9 @@
             loadCategory: function(eventId, categoryId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/categories/'+categoryId+'/load').error(HttpErrorHandler.handle);
             },
+            loadEUCountries: function () {
+                return $http.get('/admin/api/configuration/eu-countries').error(HttpErrorHandler.handle);
+            },
             update: function(configuration) {
                 return $http.post('/admin/api/configuration/update', configuration).error(HttpErrorHandler.handle);
             },
@@ -110,7 +113,7 @@
                         mailAttemptsCount: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_ATTEMPTS_COUNT';})
                     };
                 }
-                _.forEach(['PAYMENT_STRIPE', 'PAYMENT_PAYPAL', 'PAYMENT_OFFLINE'], function(group) {
+                _.forEach(['PAYMENT_STRIPE', 'PAYMENT_PAYPAL', 'PAYMENT_OFFLINE', 'INVOICE_EU'], function(group) {
                     if(angular.isDefined(original[group]) && original[group].length > 0) {
                         transformed[_.camelCase(group)] = {
                             settings: original[group]
@@ -150,11 +153,20 @@
 
         var loadAll = function() {
             systemConf.loading = true;
-            $q.all([EventService.getAllLanguages(), ConfigurationService.loadAll()]).then(function(results) {
+            $q.all([EventService.getAllLanguages(), ConfigurationService.loadAll(), ConfigurationService.loadEUCountries()]).then(function(results) {
                 systemConf.allLanguages = results[0].data;
                 loadSettings(systemConf, results[1].data, ConfigurationService);
                 if(systemConf.general) {
                     systemConf.general.selectedLanguages = _.chain(systemConf.allLanguages).map('value').filter(function(x) {return parseInt(systemConf.general.supportedTranslations.value) & x;}).value();
+                }
+                if(systemConf.invoiceEu) {
+                    var euCountries = _.map(results[2].data, function(o) {
+                        var key = Object.keys(o)[0];
+                        return {key: key, value: o[key]};
+                    });
+                    _.forEach(_.filter(systemConf.invoiceEu.settings, function(e) {return e.key === 'COUNTRY_OF_BUSINESS'}), function(cb) {
+                        cb.listValues = euCountries;
+                    });
                 }
             }, function() {
                 systemConf.loading = false;

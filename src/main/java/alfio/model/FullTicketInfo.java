@@ -72,6 +72,10 @@ public class FullTicketInfo {
                           @Column("tr_direct_assignment") boolean directAssignment,
                           @Column("tr_invoice_number") String invoiceNumber,
                           @Column("tr_invoice_model") String invoiceModel,
+                          @Column("tr_vat_status") PriceContainer.VatStatus reservationVatStatus,
+                          @Column("tr_vat_nr") String vatNr,
+                          @Column("tr_vat_country") String vatCountry,
+                          @Column("tr_invoice_requested") boolean invoiceRequested,
                           //
                           //
                           @Column("tc_id") int tcId,
@@ -88,7 +92,7 @@ public class FullTicketInfo {
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email,
             lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trFirstName, trLastName, trEmail, trBillingAddress,
-                trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage, directAssignment, invoiceNumber, invoiceModel);
+                trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage, directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,
                 tcAccessRestricted, tcStatus, tcEventId, bounded, tcSrcPriceCts);
 

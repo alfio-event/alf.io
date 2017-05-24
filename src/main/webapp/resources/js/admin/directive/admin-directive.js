@@ -640,7 +640,8 @@
             scope: {
                 setting: '=obj',
                 displayDeleteIfNeeded: '=',
-                deleteHandler: '&'
+                deleteHandler: '&',
+                listValues: '='
             },
             templateUrl:'/resources/angular-templates/admin/partials/configuration/setting.html',
             link: angular.noop,

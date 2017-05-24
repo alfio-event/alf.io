@@ -46,7 +46,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -89,7 +88,7 @@ public class TicketReservationManager {
     
     private static final String STUCK_TICKETS_MSG = "there are stuck tickets for the event %s. Please check admin area.";
     private static final String STUCK_TICKETS_SUBJECT = "warning: stuck tickets found";
-    public static final String NOT_YET_PAID_TRANSACTION_ID = "not-paid";
+    static final String NOT_YET_PAID_TRANSACTION_ID = "not-paid";
 
     private final EventRepository eventRepository;
     private final OrganizationRepository organizationRepository;
@@ -126,10 +125,9 @@ public class TicketReservationManager {
     }
 
     public static class OfflinePaymentException extends RuntimeException {
-        public OfflinePaymentException(String message){ super(message); }
+        OfflinePaymentException(String message){ super(message); }
     }
 
-    @Autowired
     public TicketReservationManager(EventRepository eventRepository,
                                     OrganizationRepository organizationRepository,
                                     TicketRepository ticketRepository,
@@ -147,7 +145,6 @@ public class TicketReservationManager {
                                     PlatformTransactionManager transactionManager,
                                     WaitingQueueManager waitingQueueManager,
                                     PluginManager pluginManager,
-                                    FileUploadManager fileUploadManager,
                                     TicketFieldRepository ticketFieldRepository,
                                     AdditionalServiceRepository additionalServiceRepository,
                                     AdditionalServiceItemRepository additionalServiceItemRepository,
@@ -254,7 +251,7 @@ public class TicketReservationManager {
             ticketRepository.reserveTickets(transactionId, reservedForUpdate, ticketReservation.getTicketCategoryId(), locale.getLanguage(), category.getSrcPriceCts());
         }
         Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), category.getId());
-        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, event, discount);
+        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event, discount);
         ticketRepository.updateTicketPrice(reservedForUpdate, category.getId(), event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
     }
 
@@ -321,7 +318,8 @@ public class TicketReservationManager {
 
     public PaymentResult confirm(String gatewayToken, String payerId, Event event, String reservationId,
                                  String email, CustomerName customerName, Locale userLanguage, String billingAddress,
-                                 TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method) {
+                                 TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method,
+                                 boolean invoiceRequested, String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
         if(!initPaymentProcess(reservationCost, paymentProxy, reservationId, email, customerName, userLanguage, billingAddress)) {
             return PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION");
@@ -330,12 +328,13 @@ public class TicketReservationManager {
             PaymentResult paymentResult;
             ticketReservationRepository.lockReservationForUpdate(reservationId);
             if(reservationCost.getPriceWithVAT() > 0) {
-                if(configurationManager.hasAllConfigurationsForInvoice(event)) {
+                if(invoiceRequested && configurationManager.hasAllConfigurationsForInvoice(event)) {
                     int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(event.getOrganizationId());
                     invoiceSequencesRepository.incrementSequenceFor(event.getOrganizationId());
                     String pattern = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
                     ticketReservationRepository.setInvoiceNumber(reservationId, String.format(pattern, invoiceSequence));
                 }
+                ticketReservationRepository.updateBillingData(vatStatus, vatNr, vatCountryCode, invoiceRequested, reservationId);
                 switch(paymentProxy) {
                     case STRIPE:
                         paymentResult = paymentManager.processStripePayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
@@ -654,7 +653,7 @@ public class TicketReservationManager {
         final List<String> stuckReservations = ticketReservationRepository.findStuckReservations(expirationDate);
         stuckReservations.forEach(reservationId -> ticketReservationRepository.updateTicketStatus(reservationId, TicketReservationStatus.STUCK.name()));
         stuckReservations.stream()
-                .map(id -> ticketRepository.findFirstTicketInReservation(id))
+                .map(ticketRepository::findFirstTicketInReservation)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .mapToInt(Ticket::getEventId)
@@ -667,9 +666,13 @@ public class TicketReservationManager {
                 );
     }
 
-    static TotalPrice totalReservationCostWithVAT(PromoCodeDiscount promoCodeDiscount, Event event, List<Ticket> tickets, Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems) {
+    private static TotalPrice totalReservationCostWithVAT(PromoCodeDiscount promoCodeDiscount,
+                                                          Event event,
+                                                          PriceContainer.VatStatus reservationVatStatus,
+                                                          List<Ticket> tickets,
+                                                          Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems) {
 
-        List<TicketPriceContainer> ticketPrices = tickets.stream().map(t -> TicketPriceContainer.from(t, event, promoCodeDiscount)).collect(toList());
+        List<TicketPriceContainer> ticketPrices = tickets.stream().map(t -> TicketPriceContainer.from(t, reservationVatStatus, event, promoCodeDiscount)).collect(toList());
         BigDecimal totalVAT = ticketPrices.stream().map(TicketPriceContainer::getVAT).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal totalDiscount = ticketPrices.stream().map(TicketPriceContainer::getAppliedDiscount).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal totalNET = ticketPrices.stream().map(TicketPriceContainer::getFinalPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -704,7 +707,7 @@ public class TicketReservationManager {
         Event event = eventRepository.findByReservationId(reservationId);
         List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
 
-        return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), event, tickets, collectAdditionalServiceItems(reservationId, event));
+        return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), event, reservation.getVatStatus(), tickets, collectAdditionalServiceItems(reservationId, event));
     }
 
     private String formatPromoCode(PromoCodeDiscount promoCodeDiscount, List<Ticket> tickets) {
@@ -735,24 +738,25 @@ public class TicketReservationManager {
         String vat = getVAT(event).orElse(null);
         
         return new OrderSummary(reservationCost,
-                extractSummary(reservationId, event, locale, discount, reservationCost), free,
+                extractSummary(reservationId, reservation.getVatStatus(), event, locale, discount, reservationCost), free,
                 formatCents(reservationCost.getPriceWithVAT()), formatCents(reservationCost.getVAT()),
                 reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
-                reservation.getPaymentMethod() == PaymentProxy.ON_SITE, vat);
+                reservation.getPaymentMethod() == PaymentProxy.ON_SITE, vat, reservation.getVatStatus());
     }
     
-    List<SummaryRow> extractSummary(String reservationId, Event event, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
+    List<SummaryRow> extractSummary(String reservationId, PriceContainer.VatStatus reservationVatStatus,
+                                    Event event, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
         List<SummaryRow> summary = new ArrayList<>();
         List<TicketPriceContainer> tickets = ticketRepository.findTicketsInReservation(reservationId).stream()
-            .map(t -> TicketPriceContainer.from(t, event, promoCodeDiscount)).collect(toList());
+            .map(t -> TicketPriceContainer.from(t, reservationVatStatus, event, promoCodeDiscount)).collect(toList());
         tickets.stream()
             .collect(Collectors.groupingBy(TicketPriceContainer::getCategoryId))
             .forEach((categoryId, ticketsByCategory) -> {
-                final int subTotal = ticketsByCategory.stream().mapToInt(TicketPriceContainer::getSrcPriceCts).sum();
-                final int subTotalBeforeVat = ticketsByCategory.stream().mapToInt(t -> t.getFinalPriceCts() - t.getVatCts()).sum();
+                final int subTotal = ticketsByCategory.stream().mapToInt(TicketPriceContainer::getSummarySrcPriceCts).sum();
+                final int subTotalBeforeVat = ticketsByCategory.stream().mapToInt(TicketPriceContainer::getSummaryPriceBeforeVatCts).sum();
                 TicketPriceContainer firstTicket = ticketsByCategory.get(0);
-                final int ticketPriceCts = firstTicket.getSrcPriceCts();
-                final int priceBeforeVat = firstTicket.getFinalPriceCts() - firstTicket.getVatCts();
+                final int ticketPriceCts = firstTicket.getSummarySrcPriceCts();
+                final int priceBeforeVat = firstTicket.getSummaryPriceBeforeVatCts();
                 String categoryName = ticketCategoryRepository.getById(categoryId, event.getId()).getName();
                 summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts), formatCents(priceBeforeVat), ticketsByCategory.size(), formatCents(subTotal), formatCents(subTotalBeforeVat), subTotal, SummaryRow.SummaryType.TICKET));
             });

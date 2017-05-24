@@ -50,6 +50,9 @@ public class PaymentForm {
     private PaymentProxy paymentMethod;
     private Boolean expressCheckoutRequested;
     private boolean postponeAssignment = false;
+    private String vatCountryCode;
+    private String vatNr;
+    private boolean invoiceRequested = false;
     private Map<String, UpdateTicketOwnerForm> tickets;
 
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
@@ -148,6 +151,13 @@ public class PaymentForm {
         form.setBillingAddress(reservation.getBillingAddress());
         form.setEmail(reservation.getEmail());
         form.setFullName(reservation.getFullName());
+        form.setVatCountryCode(reservation.getVatCountryCode());
+        form.setVatNr(reservation.getVatNr());
+        form.setInvoiceRequested(reservation.isInvoiceRequested());
         return form;
+    }
+
+    public boolean getHasVatCountryCode() {
+        return !StringUtils.isEmpty(vatCountryCode);
     }
 }

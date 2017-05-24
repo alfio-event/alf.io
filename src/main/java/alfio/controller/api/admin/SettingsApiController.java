@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.controller.api.support.TicketHelper;
 import alfio.manager.plugin.PluginManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.modification.ConfigurationModification;
@@ -25,6 +26,7 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import lombok.Data;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,12 +34,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.Configuration.getSystemConfiguration;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
@@ -140,6 +140,11 @@ public class SettingsApiController {
     public boolean deleteKey(@PathVariable("key") String key) {
         configurationManager.deleteKey(key);
         return true;
+    }
+
+    @RequestMapping(value = "/configuration/eu-countries", method = GET)
+    public List<Pair<String, String>> loadEUCountries(Locale locale) {
+        return TicketHelper.getLocalizedEUCountries(locale, configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)));
     }
 
     @Data

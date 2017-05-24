@@ -16,9 +16,9 @@
  */
 package alfio.model;
 
+import alfio.model.transaction.PaymentProxy;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import alfio.model.transaction.PaymentProxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -52,6 +52,10 @@ public class TicketReservation {
     private final boolean directAssignmentRequested;
     private final String invoiceNumber;
     private final String invoiceModel;
+    private final PriceContainer.VatStatus vatStatus;
+    private final String vatNr;
+    private final String vatCountryCode;
+    private final boolean invoiceRequested;
 
     public TicketReservation(@Column("id") String id,
                              @Column("validity") Date validity,
@@ -70,7 +74,11 @@ public class TicketReservation {
                              @Column("user_language") String userLanguage,
                              @Column("direct_assignment") boolean directAssignmentRequested,
                              @Column("invoice_number") String invoiceNumber,
-                             @Column("invoice_model") String invoiceModel) {
+                             @Column("invoice_model") String invoiceModel,
+                             @Column("vat_status") PriceContainer.VatStatus vatStatus,
+                             @Column("vat_nr") String vatNr,
+                             @Column("vat_country") String vatCountryCode,
+                             @Column("invoice_requested") boolean invoiceRequested) {
         this.id = id;
         this.validity = validity;
         this.status = status;
@@ -89,6 +97,10 @@ public class TicketReservation {
         this.directAssignmentRequested = directAssignmentRequested;
         this.invoiceNumber = invoiceNumber;
         this.invoiceModel = invoiceModel;
+        this.vatStatus = vatStatus;
+        this.vatNr = vatNr;
+        this.vatCountryCode = vatCountryCode;
+        this.invoiceRequested = invoiceRequested;
     }
 
     public boolean isStuck() {

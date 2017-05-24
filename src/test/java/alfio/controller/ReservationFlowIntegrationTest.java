@@ -28,6 +28,7 @@ import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TicketDecorator;
+import alfio.manager.EuVatChecker;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.i18n.I18nManager;
@@ -41,6 +42,7 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.transaction.PaymentProxy;
+import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
@@ -121,6 +123,12 @@ public class ReservationFlowIntegrationTest {
     private EventManager eventManager;
 
     @Autowired
+    private EventRepository eventRepository;
+
+    @Autowired
+    private EuVatChecker euVatChecker;
+
+    @Autowired
     private EventController eventController;
 
     @Autowired
@@ -174,7 +182,7 @@ public class ReservationFlowIntegrationTest {
 
         //
         TemplateManager templateManager = Mockito.mock(TemplateManager.class);
-        reservationApiController = new ReservationApiController(ticketHelper, templateManager, i18nManager);
+        reservationApiController = new ReservationApiController(eventRepository, ticketHelper, templateManager, i18nManager, euVatChecker, ticketReservationRepository);
     }
 
 

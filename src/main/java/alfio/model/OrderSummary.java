@@ -30,6 +30,7 @@ public class OrderSummary {
     private final boolean waitingForPayment;
     private final boolean cashPayment;
     private final String vatPercentage;
+    private final PriceContainer.VatStatus vatStatus;
 
     /* lol jmustache */
     public boolean getFree() {
@@ -54,5 +55,9 @@ public class OrderSummary {
 
     public boolean getSingleTicketOrder() {
         return getTicketAmount() == 1;
+    }
+
+    public boolean getDisplayVat() {
+        return !PriceContainer.VatStatus.isVatExempt(vatStatus);
     }
 }

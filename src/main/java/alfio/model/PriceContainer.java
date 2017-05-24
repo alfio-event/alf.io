@@ -22,6 +22,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.UnaryOperator;
 
 import static alfio.util.MonetaryUtil.HUNDRED;
 import static java.math.RoundingMode.HALF_UP;
@@ -29,10 +31,32 @@ import static java.math.RoundingMode.UNNECESSARY;
 
 public interface PriceContainer {
 
+    BiFunction<BigDecimal, BigDecimal, BigDecimal> includedVatExtractor = (price, vatPercentage) -> MonetaryUtil.extractVAT(price, vatPercentage).setScale(2, RoundingMode.HALF_UP);
+    BiFunction<BigDecimal, BigDecimal, BigDecimal> notIncludedVatCalculator = (price, vatPercentage) -> MonetaryUtil.calcVat(price, vatPercentage).setScale(2, RoundingMode.HALF_UP);
+
     enum VatStatus {
-        NONE,
-        INCLUDED,
-        NOT_INCLUDED
+        NONE((price, vatPercentage) -> BigDecimal.ZERO, UnaryOperator.identity()),
+        INCLUDED(includedVatExtractor, UnaryOperator.identity()),
+        NOT_INCLUDED(notIncludedVatCalculator, UnaryOperator.identity()),
+        INCLUDED_EXEMPT(includedVatExtractor, BigDecimal::negate),
+        NOT_INCLUDED_EXEMPT((price, vatPercentage) -> BigDecimal.ZERO, UnaryOperator.identity());
+
+        private final UnaryOperator<BigDecimal> transformer;
+        private final BiFunction<BigDecimal, BigDecimal, BigDecimal> extractor;
+
+        VatStatus(BiFunction<BigDecimal, BigDecimal, BigDecimal> extractor,
+                  UnaryOperator<BigDecimal> transformer) {
+            this.extractor = extractor;
+            this.transformer = transformer;
+        }
+
+        public BigDecimal extractVat(BigDecimal price, BigDecimal vatPercentage) {
+            return this.extractor.andThen(transformer).apply(price, vatPercentage);
+        }
+
+        public static boolean isVatExempt(VatStatus vatStatus) {
+            return vatStatus == INCLUDED_EXEMPT || vatStatus == NOT_INCLUDED_EXEMPT;
+        }
     }
 
     /**
@@ -83,10 +107,10 @@ public interface PriceContainer {
     default BigDecimal getFinalPrice() {
         final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts());
         BigDecimal discountedPrice = price.subtract(getAppliedDiscount());
-        if(getVatStatus() != VatStatus.NOT_INCLUDED) {
-            return discountedPrice;
-        } else {
+        if(getVatStatus() != VatStatus.INCLUDED) {
             return discountedPrice.add(getVAT(discountedPrice, getVatStatus(), getVatPercentageOrZero()));
+        } else {
+            return discountedPrice;
         }
     }
 
@@ -115,11 +139,7 @@ public interface PriceContainer {
     }
 
     static BigDecimal getVAT(BigDecimal price, VatStatus vatStatus, BigDecimal vatPercentage) {
-        if(vatStatus != VatStatus.NOT_INCLUDED) {
-            return MonetaryUtil.extractVAT(price, vatPercentage).setScale(2, RoundingMode.HALF_UP);
-        } else {
-            return MonetaryUtil.calcVat(price, vatPercentage).setScale(2, RoundingMode.HALF_UP);
-        }
+        return vatStatus.extractVat(price, vatPercentage);
     }
 
 }

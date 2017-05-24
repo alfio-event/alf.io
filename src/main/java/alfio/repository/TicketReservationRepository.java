@@ -16,6 +16,7 @@
  */
 package alfio.repository;
 
+import alfio.model.PriceContainer;
 import alfio.model.TicketReservation;
 import alfio.model.TicketReservationInfo;
 import ch.digitalfondue.npjt.*;
@@ -111,4 +112,11 @@ public interface TicketReservationRepository {
 
     @Query("select * from tickets_reservation where event_id_fk = :eventId order by confirmation_ts desc, validity desc")
     List<TicketReservation> findAllReservationsInEvent(@Bind("eventId") int eventId);
+
+    @Query("update tickets_reservation set vat_status = :vatStatus, vat_nr = :vatNr, vat_country = :vatCountry, invoice_requested = :invoiceRequested where id = :reservationId")
+    int updateBillingData(@Bind("vatStatus") PriceContainer.VatStatus vatStatus,
+                          @Bind("vatNr") String vatNr,
+                          @Bind("vatCountry") String country,
+                          @Bind("invoiceRequested") boolean invoiceRequested,
+                          @Bind("reservationId") String reservationId);
 }

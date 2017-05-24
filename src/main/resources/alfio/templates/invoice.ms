@@ -129,6 +129,7 @@
                     <p>{{.}}</p>
                     {{/ticketReservation.lineSplittedBillingAddress}}
                     {{/ticketReservation.hasBillingAddress}}
+                    {{^orderSummary.displayVat}}{{#i18n}}invoice.vat{{/i18n}} {{ticketReservation.vatNr}}{{/orderSummary.displayVat}}
                 </td>
             </tr>
         </table>
@@ -161,11 +162,14 @@
             </tbody>
             <tfoot>
                 {{^orderSummary.free}}
-                <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</th><th class="text-right">{{orderSummary.totalVAT}}</th></tr>
+                    {{#orderSummary.displayVat}}
+                        <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</th><th class="text-right">{{orderSummary.totalVAT}}</th></tr>
+                    {{/orderSummary.displayVat}}
+                    {{^orderSummary.displayVat}}
+                        <tr><th colspan="4" class="no-padding">{{#i18n}}invoice.vat-voided{{/i18n}}</th></tr>
+                    {{/orderSummary.displayVat}}
                 {{/orderSummary.free}}
                 <tr><th colspan="3" class="strong" class="no-padding">{{#i18n}}reservation-page.total{{/i18n}}</th><th class="text-right strong">{{event.currency}} {{orderSummary.totalPrice}}</th></tr>
-                {{^orderSummary.free}}
-                {{/orderSummary.free}}
             </tfoot>
         </table>
 
