@@ -59,6 +59,12 @@ public enum TemplateResource {
             return prepareSampleDataForConfirmationEmail(organization, event);
         }
     },
+    OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER("/alfio/templates/offline-reservation-expiring-email-for-organizer-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareSampleModelForOfflineReservationExpiringEmailForOrganizer(event);
+        }
+    },
     REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
@@ -277,6 +283,25 @@ public enum TemplateResource {
             model.put("bankAccountOnwerAsList", Arrays.asList(StringUtils.split(owner, '\n')));
         });
 
+        return model;
+    }
+
+    // used by OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER
+    public static Map<String, Object> prepareModelForOfflineReservationExpiringEmailForOrganizer(Event event, List<TicketReservationInfo> reservations, String baseUrl) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("eventName", event.getDisplayName());
+        model.put("ticketReservations", reservations);
+        model.put("baseUrl", baseUrl);
+        model.put("eventShortName", event.getShortName());
+        return model;
+    }
+
+    public static Map<String, Object> prepareSampleModelForOfflineReservationExpiringEmailForOrganizer(Event event) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("eventName", event.getDisplayName());
+        model.put("ticketReservations", Collections.singletonList(new TicketReservationInfo("id", null, "Firstname", "Lastname", "email@email.email", 42)));
+        model.put("baseUrl", "http://base-url/");
+        model.put("eventShortName", event.getShortName());
         return model;
     }
 

@@ -43,4 +43,8 @@ public class TicketReservationInfo {
         this.eventId = eventId;
     }
 
+    public String getFullName() {
+        return (firstName != null && lastName != null) ? (firstName + " " + lastName) : fullName;
+    }
+
 }

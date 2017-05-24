@@ -513,15 +513,9 @@ public class ReservationController {
     }
 
     private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
+
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-
-        Configuration.ConfigurationPathKey key = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC);
-
-        List<String> cc = Stream.of(StringUtils.split(configurationManager.getStringConfigValue(key, ""), ','))
-            .filter(Objects::nonNull)
-            .map(String::trim)
-            .filter(StringUtils::isNotBlank)
-            .collect(Collectors.toList());
+        List<String> cc = notificationManager.getCCForEventOrganizer(event);
 
         notificationManager.sendSimpleEmail(event, organization.getEmail(), cc, "Reservation complete " + reservation.getId(), () ->
             templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, ticketReservationManager.prepareModelForReservationEmail(event, reservation),

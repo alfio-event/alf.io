@@ -76,6 +76,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static alfio.model.EmailMessage.Status.*;
 
@@ -335,6 +336,15 @@ public class NotificationManager {
 
     public void sendSimpleEmail(Event event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder) {
         sendSimpleEmail(event, recipient, cc, subject, textBuilder, Collections.emptyList());
+    }
+
+    public List<String> getCCForEventOrganizer(Event event) {
+        Configuration.ConfigurationPathKey key = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC);
+        return Stream.of(StringUtils.split(configurationManager.getStringConfigValue(key, ""), ','))
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .filter(StringUtils::isNotBlank)
+            .collect(Collectors.toList());
     }
 
     public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder) {

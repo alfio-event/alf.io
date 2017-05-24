@@ -1025,14 +1025,22 @@ public class TicketReservationManager {
 
     //called heach hour
     void sendReminderForOfflinePaymentsToEventManagers() {
+        String baseUrl = configurationManager.getRequiredValue(Configuration.getSystemConfiguration(ConfigurationKeys.BASE_URL));
         eventRepository.findAllActives(ZonedDateTime.now(Clock.systemUTC())).stream().filter(event -> {
             ZonedDateTime dateTimeForEvent = ZonedDateTime.now(event.getZoneId());
-            log.info("date time event {}, hour is {}", dateTimeForEvent, dateTimeForEvent.truncatedTo(ChronoUnit.HOURS).getHour());
             return dateTimeForEvent.truncatedTo(ChronoUnit.HOURS).getHour() == 5; //only for the events at 5:00 local time
         }).forEachOrdered(event -> {
             ZonedDateTime dateTimeForEvent = ZonedDateTime.now(event.getZoneId()).truncatedTo(ChronoUnit.DAYS).plusDays(1);
             List<TicketReservationInfo> reservations = ticketReservationRepository.findAllOfflinePaymentReservationWithExpirationBefore(dateTimeForEvent, event.getId());
             log.info("for event {} there are {} pending offline payments to handle", event.getId(), reservations.size());
+            if(!reservations.isEmpty()) {
+                Organization organization = organizationRepository.getById(event.getOrganizationId());
+                List<String> cc = notificationManager.getCCForEventOrganizer(event);
+                String subject = String.format("There are %d pending offline payments that will expire in event: %s", reservations.size(), event.getDisplayName());
+                Map<String, Object> model = TemplateResource.prepareModelForOfflineReservationExpiringEmailForOrganizer(event, reservations, baseUrl);
+                notificationManager.sendSimpleEmail(event, organization.getEmail(), cc, subject, () ->
+                    templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER, model, Locale.ENGLISH));
+            }
         });
     }
 
