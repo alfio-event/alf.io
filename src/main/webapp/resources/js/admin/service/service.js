@@ -393,8 +393,16 @@
     });
     
     baseServices.service("PromoCodeService", function($http, HttpErrorHandler) {
+
+        function addUtfOffsetIfNecessary(promoCode) {
+            if(promoCode.eventId == null) {
+                promoCode.utcOffset = (new Date()).getTimezoneOffset()*-60; //in seconds
+            }
+        }
+
         return {
                 add : function(promoCode) {
+                    addUtfOffsetIfNecessary(promoCode);
                     return $http['post']('/admin/api/promo-code', promoCode).error(HttpErrorHandler.handle);
                 },
                 remove: function(promoCodeId) {
@@ -413,6 +421,7 @@
                     return $http['post']('/admin/api/promo-code/' + promoCodeId + '/disable');
                 },
                 update: function(promoCodeId, toUpdate) {
+                    addUtfOffsetIfNecessary(toUpdate);
                     return $http.post('/admin/api/promo-code/' + promoCodeId, toUpdate);
                 }
         };

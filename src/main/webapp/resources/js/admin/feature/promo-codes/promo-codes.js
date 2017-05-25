@@ -33,7 +33,6 @@
                 ctrl.promocodes = res.data;
                 angular.forEach(ctrl.promocodes, function(v) {
                     (function(v) {
-                        console.log(v);
                         PromoCodeService.countUse(v.id).then(function(val) {
                             v.useCount = parseInt(val.data, 10);
                         });
@@ -72,6 +71,7 @@
                 backdrop: 'static',
                 controller: function($scope) {
                     $scope.cancel = function() {$scope.$dismiss('canceled');};
+                    $scope.forEvent = ctrl.forEvent;
                     var start = moment(promocode.formattedStart);
                     var end = moment(promocode.formattedEnd);
                     $scope.promocode = {start: {date: start.format('YYYY-MM-DD'), time: start.format('HH:mm')}, end: {date: end.format('YYYY-MM-DD'), time: end.format('HH:mm')}};
@@ -122,7 +122,7 @@
                     $scope.forEvent = forEvent;
 
                     var now = moment();
-                    var eventBegin = forEvent ? moment(event.formattedBegin) : moment();
+                    var eventBegin = forEvent ? moment(event.formattedBegin) : moment().add(1,'d').endOf('d');
 
                     if(forEvent) {
                         $scope.validCategories = _.filter(event.ticketCategories, function(tc) {

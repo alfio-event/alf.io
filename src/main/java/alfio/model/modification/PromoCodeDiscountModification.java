@@ -37,6 +37,7 @@ public class PromoCodeDiscountModification {
     private final BigDecimal discountAmount;
     private final DiscountType discountType;
     private final List<Integer> categories;
+    private final Integer utcOffset;
 
     @JsonCreator
     public PromoCodeDiscountModification(
@@ -47,7 +48,8 @@ public class PromoCodeDiscountModification {
             @JsonProperty("end") DateTimeModification end,
             @JsonProperty("discountAmount") BigDecimal discountAmount,
             @JsonProperty("discountType") DiscountType discountType,
-            @JsonProperty("categories") List<Integer> categories) {
+            @JsonProperty("categories") List<Integer> categories,
+            @JsonProperty("utcOffset") Integer utcOffset) {
         this.organizationId = organizationId;
         this.eventId = eventId;
         this.promoCode = promoCode;
@@ -56,6 +58,7 @@ public class PromoCodeDiscountModification {
         this.discountAmount = discountAmount;
         this.discountType = discountType;
         this.categories = categories;
+        this.utcOffset = utcOffset;
     }
     
     public int getDiscountAsPercent() {

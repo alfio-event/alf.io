@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.TimeZone;
@@ -56,7 +57,7 @@ public class PromoCodeDiscountApiController {
     public void addPromoCode(@RequestBody PromoCodeDiscountModification promoCode) {
         Integer eventId = promoCode.getEventId();
         Integer organizationId = promoCode.getOrganizationId();
-        ZoneId zoneId = zoneIdFromEventId(eventId);
+        ZoneId zoneId = zoneIdFromEventId(eventId, promoCode.getUtcOffset());
         
         int discount = promoCode.getDiscountType() == DiscountType.FIXED_AMOUNT ? promoCode.getDiscountInCents() : promoCode.getDiscountAsPercent();
 
@@ -67,17 +68,17 @@ public class PromoCodeDiscountApiController {
     @RequestMapping(value = "/promo-code/{promoCodeId}", method = POST)
     public void updatePromocode(@PathVariable("promoCodeId") int promoCodeId, @RequestBody PromoCodeDiscountModification promoCode) {
         PromoCodeDiscount pcd = promoCodeRepository.findById(promoCodeId);
-        ZoneId zoneId = zoneIdFromEventId(pcd.getEventId());
+        ZoneId zoneId = zoneIdFromEventId(pcd.getEventId(), promoCode.getUtcOffset());
         eventManager.updatePromoCode(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId), promoCode.getEnd().toZonedDateTime(zoneId));
     }
 
-    private ZoneId zoneIdFromEventId(Integer eventId) {
-        ZoneId zoneId = TimeZone.getDefault().toZoneId();
+    private ZoneId zoneIdFromEventId(Integer eventId, Integer utcOffset) {
         if(eventId != null) {
             Event event = eventRepository.findById(eventId);
-            zoneId = TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
+            return TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
+        } else {
+            return ZoneId.ofOffset("UTC", ZoneOffset.ofTotalSeconds(utcOffset != null ? utcOffset : 0));
         }
-        return zoneId;
     }
 
     @RequestMapping(value = "/events/{eventId}/promo-code", method = GET)
