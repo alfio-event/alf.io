@@ -43,9 +43,7 @@
                 <div class="col-sm-12">
                     <label>
                         Additional service policy:
-                        <select class="form-control" data-ng-model="ctrl.item.supplementPolicy" required>
-                            <option data-ng-repeat="type in ctrl.supplementPolicies" data-ng-selected="{{ctrl.item.supplementPolicy === type.key}}" data-ng-value="type.key">{{type.value}}</option>
-                        </select>
+                        <select class="form-control" data-ng-model="ctrl.item.supplementPolicy" ng-options="type.key as type.value for type in ctrl.supplementPolicies" required></select>
                     </label>
                 </div>
             </div>
@@ -78,8 +76,7 @@
                     <div class="form-group" bs-form-error="ctrl.additionalServiceForm.vatType">
                         <label>
                             VAT Type:
-                            <select class="form-control" data-ng-model="ctrl.item.vatType" required>
-                                <option data-ng-repeat="type in ctrl.vatTypes" data-ng-selected="{{ctrl.item.vatType === type.key}}" data-ng-value="type.key">{{type.value}}</option>
+                            <select class="form-control" ng-model="ctrl.item.vatType" required ng-options="type.key as type.value for type in ctrl.vatTypes">
                             </select>
                         </label>
                         <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.vatType" data-show-existing-errors="ctrl.showExistingErrors"></field-error>
