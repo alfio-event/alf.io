@@ -54,8 +54,8 @@ public interface PromoCodeDiscountRepository {
         +" order by event_id_fk is null limit 1")
     PromoCodeDiscount findPromoCodeInEventOrOrganization(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
 
-    @Query("select count(*) from promo_code where event_id_fk = :eventId")
-    Integer countByEventId(@Bind("eventId") int eventId);
+    @Query("select count(*) from promo_code where (event_id_fk = :eventId and organization_id_fk is null) or (event_id_fk is null and organization_id_fk = :organizationId)")
+    Integer countByEventAndOrganizationId(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
 
     @Query("select count(*) from tickets_reservation where promo_code_id_fk = :id")
     Integer countAppliedPromoCode(@Bind("id") int id);

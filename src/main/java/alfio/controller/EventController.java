@@ -212,7 +212,7 @@ public class EventController {
                 configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAPS_CLIENT_API_KEY)));
 
             final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
-                promoCodeRepository.countByEventId(event.getId()) > 0;
+                promoCodeRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0;
 
             String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
 
