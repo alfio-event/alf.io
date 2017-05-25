@@ -313,6 +313,8 @@
             var country = euBillingCountry.val();
             var resultContainer = $('#validation-result');
             if(vatNr !== '' && country !== '') {
+                $(this).html('<i class="fa fa-circle-o-notch fa-spin"></i>');
+                $('#continue-button').attr('disabled', true);
                 jQuery.ajax({
                     url: action,
                     type: 'POST',
@@ -331,7 +333,12 @@
                         } else {
                             resultContainer.html(resultContainer.attr('data-generic-error-msg'));
                         }
+                    },
+                    complete: function(xhr) {
+                        $(this).html($(this).attr('data-text'));
+                        $('#continue-button').attr('disabled', false);
                     }
+
                 });
             }
         })
