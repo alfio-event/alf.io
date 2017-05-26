@@ -19,7 +19,7 @@
                 <tbody>
                     <td ng-bind="$ctrl.ticket.uuid"></td>
                     <td ng-bind="$ctrl.ticket.firstName"></td>
-                    <td ng-bind="$ctrl.ticket.firstName"></td>
+                    <td ng-bind="$ctrl.ticket.lastName"></td>
                     <td ng-bind="$ctrl.ticket.email"></td>
                     <td>{{$ctrl.ticket.formattedFinalPrice}} {{$ctrl.event.currency}}</td>
                     <td ng-if="$ctrl.paymentInfo.supportRefund"><input type="checkbox" ng-model="$ctrl.toRefund[$ctrl.ticketId]"></td>
