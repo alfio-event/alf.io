@@ -275,31 +275,47 @@
             }
         }
 
+
+        function disableBillingFields() {
+            $('#vatNr,#vatCountryCode,#billing-address').attr('required', false).attr('disabled', '');
+        }
+
+        disableBillingFields();
+
+
+
         $('#invoice-requested').change(function() {
             var element = $('#invoice');
             if($(this).is(':checked')) {
                 element.find('.field-required').attr('required', true);
                 element.removeClass('hidden');
+                euBillingCountry.change();
             } else {
                 element.find('.field-required').attr('required', false);
                 element.addClass('hidden');
+                disableBillingFields();
             }
         });
+
+
+
 
         var euBillingCountry = $('#vatCountry');
         euBillingCountry.change(function() {
             if($(this).val() === '') {
                 $('#billing-address-container').removeClass(hiddenClasses);
-                $('#billing-address').attr('required', true);
+                $('#billing-address').attr('required', true).removeAttr('disabled');
                 $('#validation-result-container').addClass(hiddenClasses);
                 $('#vat-number-container').addClass(hiddenClasses);
-                $('#vatNr').attr('required', false);
+                $('#vatNr').attr('required', false).attr('disabled', '');
+                $("#vatCountryCode").attr('required', false).attr('disabled', '');
             } else {
                 $('#billing-address-container').addClass(hiddenClasses);
                 $('#validation-result-container').removeClass(hiddenClasses);
-                $('#billing-address').attr('required', false);
+                $('#billing-address').attr('required', false).attr('disabled');
                 $('#vat-number-container').removeClass(hiddenClasses);
-                $('#vatNr').attr('required', true);
+                $('#vatNr').attr('required', true).removeAttr('disabled');
+                $("#vatCountryCode").attr('required', true).removeAttr('disabled', '');
             }
         });
 
