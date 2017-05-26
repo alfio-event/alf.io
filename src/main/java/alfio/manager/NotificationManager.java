@@ -202,7 +202,8 @@ public class NotificationManager {
                 .expirationDate(Date.from(event.getEnd().toInstant()))
                 .locations(loc)
                 .barcode(new Barcode(BarcodeFormat.QR, ticket.ticketCode(event.getPrivateKey())))
-                .foregroundColor(Color.WHITE)
+                .labelColor(Color.BLACK)
+                .foregroundColor(Color.BLACK)
                 .backgroundColor(Color.WHITE)
                 .passInformation(
                     new EventTicket()
