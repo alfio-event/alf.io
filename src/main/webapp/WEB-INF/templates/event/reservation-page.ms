@@ -229,7 +229,6 @@
                 {{#is-payment-method}}[OFFLINE,{{.}}]{{> /event/payment/offline }}{{/is-payment-method}}
             </div>
         {{/activePaymentMethods}}
-    {{/orderSummary.free}}
 
     {{#orderSummary.displayVat}}
         <div class="checkbox wMarginTop">
@@ -255,13 +254,19 @@
                             </select>
                         </div>
                     </div>
-                    <div id="vat-number-container" {{^paymentForm.hasVatCountryCode}}class="hidden-xs hidden-sm hidden-md hidden-lg"{{/paymentForm.hasVatCountryCode}}>
-                        <div class="col-xs-12 col-sm-6">
-                            <div class="form-group">
-                                <label for="vatNr">{{#i18n}}invoice.vat{{/i18n}}</label>
-                                <input id="vatNr" type="text" required name="vatNr" class="form-control" value="{{paymentForm.vatNr}}"/>
+
+                    <div id="vat-number-container" class="{{^paymentForm.hasVatCountryCode}}hidden-xs hidden-sm hidden-md hidden-lg{{/paymentForm.hasVatCountryCode}}">
+                            <div class="col-xs-6 col-sm-8">
+                                <div class="form-group">
+                                    <label for="vatNr">{{#i18n}}invoice.vat{{/i18n}}</label>
+                                    <div class="input-group">
+                                        <input id="vatNr" type="text" required name="vatNr" class="form-control" value="{{paymentForm.vatNr}}"/>
+                                        <div class="input-group-btn">
+                                            <button type="button" class="btn btn-warning btn-block" data-validation-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/vat-validation" id="validateVAT" data-text="{{#i18n}}invoice.validate.vat{{/i18n}}">{{#i18n}}invoice.validate.vat{{/i18n}}</button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
                     </div>
                 </div>
                 <div id="validation-result-container" class="row {{^paymentForm.hasVatCountryCode}}hidden-xs hidden-sm hidden-md hidden-lg{{/paymentForm.hasVatCountryCode}}">
@@ -300,7 +305,7 @@
             </div>
         </div>
     </div>
-
+    {{/orderSummary.free}}
     <hr/>
 
     <div class="checkbox wMarginTop wMarginBottom">
@@ -330,11 +335,6 @@
                     {{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}
                 {{/paypalCheckoutConfirmation}}
                 </button>
-                {{#euVatCheckingEnabled}}
-                    {{#orderSummary.displayVat}}
-                        <button type="button" class="btn btn-warning btn-block hidden-xs hidden-sm hidden-md hidden-lg" data-validation-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/vat-validation" id="validateVAT" data-text="{{#i18n}}invoice.validate.vat{{/i18n}}">{{#i18n}}invoice.validate.vat{{/i18n}}</button>
-                    {{/orderSummary.displayVat}}
-                {{/euVatCheckingEnabled}}
             </div>
             <div class="col-md-4 col-md-pull-4 col-xs-12"><button type="submit" class="btn btn-default btn-block" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button></div>
         </div>

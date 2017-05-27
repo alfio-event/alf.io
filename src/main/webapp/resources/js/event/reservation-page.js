@@ -116,14 +116,22 @@
             if(!this.checkValidity()) {
                 return false;
             }
+
+            var vatCountry = $('#vatCountry');
+            if(vatCountry.length && vatCountry.val() !== '') {
+                var vatNr = $('#vatNr');
+                markFieldAsError(vatNr);
+                vatNr.focus();
+                return false;
+            }
              
             // Disable the submit button to prevent repeated clicks
             $form.find('button').prop('disabled', true);
 
             var selectedPaymentMethod = $form.find('input[name=paymentMethod]');
-            if(selectedPaymentMethod.length === 0 ||
+            if(hasStripe && (selectedPaymentMethod.length === 0 ||
                 (selectedPaymentMethod.length === 1 && selectedPaymentMethod.val() === 'STRIPE') ||
-                selectedPaymentMethod.filter(':checked').val() === 'STRIPE') {
+                selectedPaymentMethod.filter(':checked').val() === 'STRIPE')) {
                 Stripe.card.createToken($form, stripeResponseHandler);
                 // Prevent the form from submitting with the default action
                 return false;
@@ -148,8 +156,13 @@
             $form.submit();
         });
         
-        if(hasStripe) {
-            $('#payment-form').submit(submitForm);
+        $('#payment-form').submit(submitForm);
+
+        function markFieldAsError(node) {
+            $(node).parent().addClass('has-error');
+            if($(node).parent().parent().parent().hasClass('form-group')) {
+                $(node).parent().parent().parent().addClass('has-error');
+            }
         }
 
         
@@ -162,10 +175,7 @@
                 $(form).find('.has-error').removeClass('has-error');
                 // Find all invalid fields within the form.
                 var invalidFields = form.find("input,select,textarea").filter(function(i,v) {return !v.validity.valid;}).each( function( index, node ) {
-                    $(node).parent().addClass('has-error');
-                    if($(node).parent().parent().parent().hasClass('form-group')) {
-                        $(node).parent().parent().parent().addClass('has-error');
-                    }
+                    markFieldAsError(node);
                 });
             };
 
@@ -305,13 +315,13 @@
         var euBillingCountry = $('#vatCountry');
         euBillingCountry.change(function() {
             if($(this).val() === '') {
-                $('#billing-address-container, #continue-button').removeClass(hiddenClasses);
+                $('#billing-address-container').removeClass(hiddenClasses);
                 $('#billing-address').attr('required', true).removeAttr('disabled');
                 $('#validation-result-container, #vat-number-container, #validateVAT').addClass(hiddenClasses);
                 $('#vatNr').attr('required', false).attr('disabled', '');
                 $("#vatCountryCode").attr('required', false).attr('disabled', '');
             } else {
-                $('#billing-address-container, #continue-button').addClass(hiddenClasses);
+                $('#billing-address-container').addClass(hiddenClasses);
                 $('#validation-result-container, #vat-number-container, #validateVAT').removeClass(hiddenClasses);
                 $('#billing-address').attr('required', false).attr('disabled');
                 $('#vatNr').attr('required', true).removeAttr('disabled');
