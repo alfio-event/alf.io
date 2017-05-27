@@ -84,30 +84,32 @@
         var parser = Number && Number.parseInt ? Number : window;
         var validity = new Date(parser.parseInt($("#validity").attr('data-validity')));
         
-        var interval = null;
-        
         var displayMessage = function() {
 
-            var totalSec = Math.max(validity.getTime() - new Date().getTime(), 0) / 1000;
-            var sec = totalSec % 60;
-            var min = (totalSec - sec) / 60;
             var validityElem = $("#validity");
-            if(totalSec <= 0) {
-                validityElem.find("strong").html(validityElem.attr('data-message-time-elapsed'));
-                $("#continue-button").addClass('hide');
-                clearInterval(interval);
-            } else {
-                validityElem.find("strong").html(validityElem.attr('data-message').replace('#minutes#', min).replace('#seconds#',  Math.floor(sec)));
-            }
+            var template = validityElem.attr('data-message');
+
+            countdown.setLabels(
+                validityElem.attr('data-labels-singular'),
+                validityElem.attr('data-labels-plural'),
+                ' '+validityElem.attr('data-labels-and')+' ',
+                ', ');
+
+            var timerId = countdown(validity, function(ts) {
+                        if(ts.value < 0) {
+                            validityElem.html(template.replace('##time##', ts.toHTML("strong")));
+                        } else {
+                            clearInterval(timerId);
+                            $('#validity-container').html('<strong>'+validityElem.attr('data-message-time-elapsed')+'</strong>');
+                            $('#continue-button').addClass('hidden');
+                        }
+                    }, countdown.MONTHS|countdown.WEEKS|countdown.DAYS|countdown.HOURS|countdown.MINUTES|countdown.SECONDS);
+
         };
         
         displayMessage();
         
-        var interval = setInterval(displayMessage, 1000);
-        //
-        
-        
-        
+
         function submitForm(e) {
             var $form = $(this);
             

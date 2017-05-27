@@ -28,6 +28,7 @@
 {{/includeStripe}}
  ></script>
 <script src="{{request.contextPath}}/resources/js/event/attendee-form.js"></script>
+<script src="{{request.contextPath}}/resources/js/countdownjs/countdown.min.js"></script>
 {{>/event/header}}
 
 <div class="wizard wMarginBottom wMarginTop center">
@@ -68,7 +69,7 @@
             {{/orderSummary.displayVat}}
         {{/orderSummary.free}}
         <tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td class="text-right"><strong>{{orderSummary.totalPrice}} {{event.currency}}</strong></td></tr>
-        
+
         {{^orderSummary.free}}
             {{#orderSummary.displayVat}}
                 {{#event.vatIncluded}}
@@ -90,8 +91,16 @@
     {{/error.globalErrors}}
 {{/hasErrors}}
 
-<div class="alert alert-info" data-validity="{{reservation.validity.time}}" data-message="{{#i18n}}reservation-page.time-for-completition{{/i18n}}" data-message-time-elapsed="{{#i18n}}error.STEP_2_ORDER_HAS_EXPIRED{{/i18n}}" id="validity">
-    <p><strong></strong></p>
+<div class="alert alert-info text-center">
+    <i class="fa fa-clock-o"></i>
+    <span id="validity-container"><span data-validity="{{reservation.validity.time}}"
+          data-message="{{#i18n}}reservation-page.time-for-completion{{/i18n}}"
+          data-message-time-elapsed="{{#i18n}}error.STEP_2_ORDER_HAS_EXPIRED{{/i18n}}"
+          data-labels-singular="{{#i18n}}reservation-page.time-for-completion.labels.singular{{/i18n}}"
+          data-labels-plural="{{#i18n}}reservation-page.time-for-completion.labels.plural{{/i18n}}"
+          data-labels-and="{{#i18n}}reservation-page.time-for-completion.labels.and{{/i18n}}"
+          id="validity"></span>
+    </span>
 </div>
 
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
