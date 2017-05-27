@@ -86,8 +86,12 @@
         };
 
         function loadPaymentInfo() {
+            ctrl.loadingPaymentInfo = true;
             AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
                 ctrl.paymentInfo = res.data.data;
+                ctrl.loadingPaymentInfo = false;
+            }, function() {
+                ctrl.loadingPaymentInfo = false;
             });
         }
 

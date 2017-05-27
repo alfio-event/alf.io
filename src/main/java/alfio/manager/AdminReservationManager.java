@@ -35,11 +35,11 @@ import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -66,6 +66,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Component
 @Log4j2
+@RequiredArgsConstructor
 public class AdminReservationManager {
 
     private final EventManager eventManager;
@@ -84,41 +85,6 @@ public class AdminReservationManager {
     private final MessageSource messageSource;
     private final TemplateManager templateManager;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
-
-    @Autowired
-    public AdminReservationManager(EventManager eventManager,
-                                   TicketReservationManager ticketReservationManager,
-                                   PlatformTransactionManager transactionManager,
-                                   TicketCategoryRepository ticketCategoryRepository,
-                                   TicketRepository ticketRepository,
-                                   NamedParameterJdbcTemplate jdbc,
-                                   SpecialPriceRepository specialPriceRepository,
-                                   TicketReservationRepository ticketReservationRepository,
-                                   EventRepository eventRepository,
-                                   SpecialPriceTokenGenerator specialPriceTokenGenerator,
-                                   TicketFieldRepository ticketFieldRepository,
-                                   PaymentManager paymentManager,
-                                   NotificationManager notificationManager,
-                                   MessageSource messageSource,
-                                   TemplateManager templateManager,
-                                   AdditionalServiceItemRepository additionalServiceItemRepository) {
-        this.eventManager = eventManager;
-        this.ticketReservationManager = ticketReservationManager;
-        this.ticketCategoryRepository = ticketCategoryRepository;
-        this.transactionManager = transactionManager;
-        this.ticketRepository = ticketRepository;
-        this.jdbc = jdbc;
-        this.specialPriceRepository = specialPriceRepository;
-        this.ticketReservationRepository = ticketReservationRepository;
-        this.eventRepository = eventRepository;
-        this.specialPriceTokenGenerator = specialPriceTokenGenerator;
-        this.ticketFieldRepository = ticketFieldRepository;
-        this.paymentManager = paymentManager;
-        this.notificationManager = notificationManager;
-        this.messageSource = messageSource;
-        this.templateManager = templateManager;
-        this.additionalServiceItemRepository = additionalServiceItemRepository;
-    }
 
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();

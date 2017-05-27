@@ -56,7 +56,8 @@
         <div >
             <hr>
             <h3>Payment info</h3>
-            <div ng-if="!$ctrl.paymentInfo">Loading...</div>
+            <div ng-if="$ctrl.loadingPaymentInfo">Loading...</div>
+            <div ng-if="!$ctrl.loadingPaymentInfo && !$ctrl.paymentInfo">No payments have been found.</div>
             <div class="row" ng-if="$ctrl.paymentInfo">
                 <div class="col-xs-12 col-sm-4">
                     <div class="form-group">
@@ -128,7 +129,7 @@
                 </div>
             </div>
         </div>
-        <div class="row">
+        <div class="row" ng-if="$ctrl.reservation.updateContactData || $ctrl.reservation.customerData.billingAddress">
             <div class="col-xs-12 col-sm-12">
                 <div class="form-group">
                     <label for="customerBillingAddress">Billing address</label>
@@ -185,15 +186,15 @@
                     <tr  ng-repeat="attendee in ticketInfo.attendees">
                         <td>{{$index + 1}}</td>
                         <td>
-                            <input type="text" ng-show="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-firstName" required name="attendee-{{$index}}-first" ng-model="attendee.firstName">
+                            <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-firstName" required name="attendee-{{$index}}-first" ng-model="attendee.firstName">
                             <div ng-show="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.firstName}}</div>
                         </td>
                         <td>
-                            <input type="text" ng-show="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-lastName" required name="attendee-{{$index}}-last" ng-model="attendee.lastName">
+                            <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-lastName" required name="attendee-{{$index}}-last" ng-model="attendee.lastName">
                             <div ng-show="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.lastName}}</div>
                         </td>
                         <td>
-                            <input type="text" ng-show="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-emailAddress" required name="attendee-{{$index}}-emailAddress" ng-model="attendee.emailAddress">
+                            <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-emailAddress" required name="attendee-{{$index}}-emailAddress" ng-model="attendee.emailAddress">
                             <div ng-show="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.emailAddress}}</div>
                         </td>
                         <td>
