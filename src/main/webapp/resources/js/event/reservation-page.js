@@ -303,17 +303,15 @@
         var euBillingCountry = $('#vatCountry');
         euBillingCountry.change(function() {
             if($(this).val() === '') {
-                $('#billing-address-container').removeClass(hiddenClasses);
+                $('#billing-address-container, #continue-button').removeClass(hiddenClasses);
                 $('#billing-address').attr('required', true).removeAttr('disabled');
-                $('#validation-result-container').addClass(hiddenClasses);
-                $('#vat-number-container').addClass(hiddenClasses);
+                $('#validation-result-container, #vat-number-container, #validateVAT').addClass(hiddenClasses);
                 $('#vatNr').attr('required', false).attr('disabled', '');
                 $("#vatCountryCode").attr('required', false).attr('disabled', '');
             } else {
-                $('#billing-address-container').addClass(hiddenClasses);
-                $('#validation-result-container').removeClass(hiddenClasses);
+                $('#billing-address-container, #continue-button').addClass(hiddenClasses);
+                $('#validation-result-container, #vat-number-container, #validateVAT').removeClass(hiddenClasses);
                 $('#billing-address').attr('required', false).attr('disabled');
-                $('#vat-number-container').removeClass(hiddenClasses);
                 $('#vatNr').attr('required', true).removeAttr('disabled');
                 $("#vatCountryCode").attr('required', true).removeAttr('disabled', '');
             }
@@ -329,7 +327,8 @@
             var country = euBillingCountry.val();
             var resultContainer = $('#validation-result');
             if(vatNr !== '' && country !== '') {
-                $(this).html('<i class="fa fa-circle-o-notch fa-spin"></i>');
+                var btn = $(this);
+                btn.html('<i class="fa fa-circle-o-notch fa-spin"></i>');
                 $('#continue-button').attr('disabled', true);
                 jQuery.ajax({
                     url: action,
@@ -351,7 +350,7 @@
                         }
                     },
                     complete: function(xhr) {
-                        $(this).html($(this).attr('data-text'));
+                        btn.html(btn.attr('data-text'));
                         $('#continue-button').attr('disabled', false);
                     }
 

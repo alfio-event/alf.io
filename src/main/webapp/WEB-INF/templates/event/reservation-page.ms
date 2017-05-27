@@ -231,7 +231,7 @@
         </div>
     {{/orderSummary.displayVat}}
 
-    <div id="invoice" {{^paymentForm.invoiceRequested}}class="hidden"{{/paymentForm.invoiceRequested}}>
+    <div id="invoice" class="wMarginTop {{^paymentForm.invoiceRequested}}hidden{{/paymentForm.invoiceRequested}}">
         {{#euVatCheckingEnabled}}
             {{#orderSummary.displayVat}}
                 <div class="row">
@@ -250,15 +250,8 @@
                         <div class="col-xs-12 col-sm-6">
                             <div class="form-group">
                                 <label for="vatNr">{{#i18n}}invoice.vat{{/i18n}}</label>
-                                <div class="input-group">
-                                    <input id="vatNr" type="text" required name="vatNr" class="form-control" value="{{paymentForm.vatNr}}"/>
-                                    <div class="input-group-btn">
-                                        <button type="button" class="btn btn-warning" data-validation-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/vat-validation" id="validateVAT" data-text="{{#i18n}}invoice.validate.vat{{/i18n}}">{{#i18n}}invoice.validate.vat{{/i18n}}</button>
-                                    </div>
-                                </div>
+                                <input id="vatNr" type="text" required name="vatNr" class="form-control" value="{{paymentForm.vatNr}}"/>
                             </div>
-                        </div>
-                        <div class="col-xs-2 text-right">
                         </div>
                     </div>
                 </div>
@@ -319,14 +312,21 @@
     {{/orderSummary.free}}
     {{^orderSummary.free}}
         <div class="row">
-            <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom"><button type="submit" class="btn btn-success btn-block" id="continue-button">
+            <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom">
+                <button type="submit" class="btn btn-success btn-block" id="continue-button">
                 {{#paypalCheckoutConfirmation}}
                     {{#i18n}}reservation-page.paypal.confirm-button{{/i18n}}
                 {{/paypalCheckoutConfirmation}}
                 {{^paypalCheckoutConfirmation}}
                     {{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}
                 {{/paypalCheckoutConfirmation}}
-            </button></div>
+                </button>
+                {{#euVatCheckingEnabled}}
+                    {{#orderSummary.displayVat}}
+                        <button type="button" class="btn btn-warning btn-block hidden-xs hidden-sm hidden-md hidden-lg" data-validation-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/vat-validation" id="validateVAT" data-text="{{#i18n}}invoice.validate.vat{{/i18n}}">{{#i18n}}invoice.validate.vat{{/i18n}}</button>
+                    {{/orderSummary.displayVat}}
+                {{/euVatCheckingEnabled}}
+            </div>
             <div class="col-md-4 col-md-pull-4 col-xs-12"><button type="submit" class="btn btn-default btn-block" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button></div>
         </div>
     {{/orderSummary.free}}

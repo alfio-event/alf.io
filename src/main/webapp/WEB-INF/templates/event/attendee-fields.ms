@@ -53,7 +53,7 @@
                 <label class="col-sm-3 control-label" for="{{name}}-title-{{uuid}}">{{labelDescription}}{{#isRequired}}*{{/isRequired}}</label>
                 <div class="col-sm-9">
                     {{#inputField}}
-                        <input type="{{inputType}}" name="{{elementNamePrefix}}additional['{{name}}'][{{fieldIndex}}]" value="{{fieldValue}}" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control"
+                        <input type="{{inputType}}" name="{{elementNamePrefix}}additional['{{name}}'][{{fieldIndex}}]" value="{{fieldValue}}" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control {{#isRequired}}field-required{{/isRequired}}"
                                {{#placeholderDescriptionDefined}}placeholder="{{placeholderDescription}}"{{/placeholderDescriptionDefined}}
                             {{#maxLengthDefined}}maxlength="{{maxLength}}"{{/maxLengthDefined}}
                             {{#minLengthDefined}}minlength="{{minLength}}"{{/minLengthDefined}}
