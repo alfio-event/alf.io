@@ -72,6 +72,8 @@
      
     jQuery(function() {
 
+        var hiddenClasses = 'hidden-xs hidden-sm hidden-md hidden-lg';
+
         $(document).ready(function() {
             $(":input:not(input[type=button],input[type=submit],button):visible:first").focus();
         });
@@ -121,6 +123,9 @@
             if(vatCountry.length && vatCountry.val() !== '') {
                 var vatNr = $('#vatNr');
                 markFieldAsError(vatNr);
+                $('#validation-result-container').removeClass(hiddenClasses);
+                var validationResult = $('#validation-result');
+                validationResult.html(validationResult.attr('data-validation-required-msg'));
                 vatNr.focus();
                 return false;
             }
@@ -254,7 +259,6 @@
 
         var postponeAssignment = $('#postpone-assignment');
 
-        var hiddenClasses = 'hidden-xs hidden-sm hidden-md hidden-lg';
         postponeAssignment.change(function() {
             var element = $('#attendeesData');
             if($(this).is(':checked')) {
@@ -347,14 +351,11 @@
                     type: 'POST',
                     data: frm.serialize(),
                     success: function() {
-                        resultContainer.removeClass('text-danger');
                         window.location.reload();
                     },
                     error: function(xhr, textStatus, errorThrown) {
                         vatInput.addClass('has-error');
                         vatInput.parent('div').addClass('has-error');
-                        resultContainer.removeClass('text-success');
-                        resultContainer.addClass('text-danger');
                         if(xhr.status === 400) {
                             resultContainer.html(resultContainer.attr('data-validation-error-msg'));
                         } else {

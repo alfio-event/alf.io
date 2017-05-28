@@ -271,7 +271,9 @@
                 </div>
                 <div id="validation-result-container" class="row {{^paymentForm.hasVatCountryCode}}hidden-xs hidden-sm hidden-md hidden-lg{{/paymentForm.hasVatCountryCode}}">
                     <div class="col-xs-10 text-right">
-                        <span id="validation-result" data-validation-error-msg="{{#i18n}}reservation-page.vat-validation-error{{/i18n}}" data-generic-error-msg="{{#i18n}}reservation-page.vat-error{{/i18n}}"></span>
+                        <span id="validation-result" class="text-danger" data-validation-error-msg="{{#i18n}}reservation-page.vat-validation-error{{/i18n}}"
+                              data-generic-error-msg="{{#i18n}}reservation-page.vat-error{{/i18n}}"
+                              data-validation-required-msg="{{#i18n}}reservation-page.vat-validation-required{{/i18n}}"></span>
                     </div>
                 </div>
             {{/orderSummary.displayVat}}
