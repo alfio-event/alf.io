@@ -14,12 +14,14 @@
     function ReservationsListCtrl(EventService, $filter) {
         var ctrl = this;
 
+        ctrl.currentPagePending = 1;
         ctrl.currentPage = 1;
         ctrl.itemsPerPage = 50;
         ctrl.statusFilter = '';
         ctrl.toSearch = '';
         ctrl.formatFullName = formatFullName;
         ctrl.updateFilteredData = updateFilteredData;
+        ctrl.truncateReservationId = truncateReservationId;
 
         var filter = $filter('filter');
 
@@ -34,7 +36,7 @@
                 ctrl.allStatus.unshift({value: '', label: 'Show all'});
                 updateFilteredData();
             })
-        }
+        };
 
         function formatFullName(r) {
             if(r.firstName && r.lastName) {
@@ -44,8 +46,13 @@
             }
         }
 
+        function truncateReservationId(id) {
+            return id.substring(0,8).toUpperCase();
+        }
+
         function updateFilteredData() {
-            ctrl.filteredReservations = filter(filter(ctrl.reservations, ctrl.toSearch), {status: ctrl.statusFilter});
+            ctrl.filteredReservations = filter(filter(_.filter(ctrl.reservations, function(r) {return r.status !== 'PENDING'}), ctrl.toSearch), {status: ctrl.statusFilter});
+            ctrl.filteredPendingReservations = filter(filter(_.filter(ctrl.reservations, function(r) {return r.status === 'PENDING'}), ctrl.toSearch), {status: ctrl.statusFilter});
         }
     }
 })();
