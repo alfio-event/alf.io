@@ -21,10 +21,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.modification.UserModification;
 import alfio.model.result.ValidationResult;
-import alfio.model.user.Organization;
-import alfio.model.user.Role;
-import alfio.model.user.User;
-import alfio.model.user.UserWithPassword;
+import alfio.model.user.*;
 import alfio.util.ImageUtil;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -104,7 +101,7 @@ public class UsersApiController {
     }
 
     @RequestMapping(value = "/users", method = GET)
-    public List<User> getAllUsers(Principal principal) {
+    public List<UserWithOrganizations> getAllUsers(Principal principal) {
         return userManager.findAllUsers(principal.getName());
     }
 

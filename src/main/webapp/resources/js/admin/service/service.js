@@ -292,7 +292,7 @@
         };
     });
 
-    baseServices.service('ValidationService', function() {
+    baseServices.service('ValidationService', function(NotificationHandler) {
         return {
             validationPerformer: function($q, validator, data, form) {
                 var deferred = $q.defer();
@@ -304,11 +304,14 @@
             validationResultHandler: function(form, deferred) {
                 return function(validationResult) {
                     if(validationResult.errorCount > 0) {
-                        angular.forEach(validationResult.validationErrors, function(error) {
-                            if(form.$setError) {
+                        if(form.$setError) {
+                            angular.forEach(validationResult.validationErrors, function(error) {
                                 form.$setError(error.fieldName, error.message);
-                            }
-                        });
+                            });
+                        } else {
+                            var firstError = validationResult.validationErrors[0];
+                            NotificationHandler.showError(firstError.description);
+                        }
                         deferred.reject('invalid form');
                     }
                     deferred.resolve();

@@ -18,6 +18,7 @@ package alfio.manager.user;
 
 import alfio.model.result.ValidationResult;
 import alfio.model.user.*;
+import alfio.model.user.join.UserOrganization;
 import alfio.repository.InvoiceSequencesRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -25,10 +26,10 @@ import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.PasswordGenerator;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,13 +37,13 @@ import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
 @Component
+@RequiredArgsConstructor
 public class UserManager {
 
     public static final String ADMIN_USERNAME = "admin";
@@ -54,31 +55,21 @@ public class UserManager {
     private final PasswordEncoder passwordEncoder;
     private final InvoiceSequencesRepository invoiceSequencesRepository;
 
-    @Autowired
-    public UserManager(AuthorityRepository authorityRepository,
-                       OrganizationRepository organizationRepository,
-                       UserOrganizationRepository userOrganizationRepository,
-                       UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       InvoiceSequencesRepository invoiceSequencesRepository) {
-        this.authorityRepository = authorityRepository;
-        this.organizationRepository = organizationRepository;
-        this.userOrganizationRepository = userOrganizationRepository;
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.invoiceSequencesRepository = invoiceSequencesRepository;
-    }
-
     private List<Authority> getUserAuthorities(User user) {
         return authorityRepository.findGrantedAuthorities(user.getUsername());
     }
 
-    public List<User> findAllUsers(String username) {
-        return findUserOrganizations(username)
+    public List<UserWithOrganizations> findAllUsers(String username) {
+        List<Organization> organizations = findUserOrganizations(username);
+        Map<Integer, List<UserOrganization>> usersAndOrganizations = userOrganizationRepository.findByOrganizationIdsOrderByUserId(organizations.stream().map(Organization::getId).collect(toList()))
             .stream()
-            .flatMap(o -> userOrganizationRepository.findByOrganizationId(o.getId()).stream())
-            .map(uo -> userRepository.findById(uo.getUserId()))
-            .collect(toList());
+            .collect(Collectors.groupingBy(UserOrganization::getUserId));
+        return userRepository.findByIds(usersAndOrganizations.keySet())
+            .stream()
+            .map(u -> {
+                List<UserOrganization> userOrganizations = usersAndOrganizations.get(u.getId());
+                return new UserWithOrganizations(u, organizations.stream().filter(o -> userOrganizations.stream().anyMatch(uo -> uo.getOrganizationId() == o.getId())).collect(toList()));
+            }).collect(toList());
     }
 
     public List<User> findAllEnabledUsers(String username) {

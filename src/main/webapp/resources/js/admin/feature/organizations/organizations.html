@@ -1,8 +1,8 @@
 <div class="container">
     <h1>Organizations</h1>
     <hr>
-    <div>
-        <a ui-sref="organizations.new">add new organization</a>
+    <div class="text-right">
+        <a ui-sref="organizations.new" class="btn btn-success"><i class="fa fa-plus"></i> add new</a>
     </div>
     <table class="table table-striped">
         <thead>
@@ -10,7 +10,7 @@
                 <th>name</th>
                 <th class="hidden-xs" width="35%">description</th>
                 <th width="30%">e-mail</th>
-                <th width="10%">actions</th>
+                <th width="10%"><span class="sr-only">actions</span></th>
             </tr>
         </thead>
         <tbody>

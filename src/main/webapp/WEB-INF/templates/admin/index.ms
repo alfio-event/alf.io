@@ -101,7 +101,7 @@
                         <div class="collapse navbar-collapse" data-uib-collapse="ctrl.menuCollapsed">
                             <ul class="nav navbar-nav">
                                 <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="organizations">Organizations</a></li>
+                                {{#isAdmin}}<li data-ui-sref-active="active"><a data-ui-sref="organizations">Organizations</a></li>{{/isAdmin}}
                                 <li data-ui-sref-active="active"><a data-ui-sref="users">Users</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="configuration.system">Configuration</a></li>
                                 <li class="nav-divider"></li>

@@ -30,8 +30,12 @@ public class User {
     private final boolean enabled;
 
 
-    public User(@Column("id") int id, @Column("username") String username, @Column("first_name") String firstName,
-            @Column("last_name") String lastName, @Column("email_address") String emailAddress, @Column("enabled") boolean enabled) {
+    public User(@Column("id") int id,
+                @Column("username") String username,
+                @Column("first_name") String firstName,
+                @Column("last_name") String lastName,
+                @Column("email_address") String emailAddress,
+                @Column("enabled") boolean enabled) {
         this.id = id;
         this.username = username;
         this.firstName = firstName;

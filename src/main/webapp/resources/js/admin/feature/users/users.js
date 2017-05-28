@@ -4,6 +4,17 @@
     angular.module('adminApplication').component('users', {
         controller: ['$window', 'UserService', UsersCtrl],
         templateUrl: '../resources/js/admin/feature/users/users.html'
+    }).filter('userEnabled', function() {
+        return function(list, activeRequired) {
+            return _.filter(list, function(e) { return e.enabled === activeRequired })
+        }
+    }).filter('orgSelected', function() {
+        return function(list, orgId) {
+            if(!orgId) {
+                return list;
+            }
+            return _.filter(list, function(e) { return _.any(e.memberOf, function(i) { return i.id === orgId })})
+        }
     });
 
 
@@ -15,17 +26,24 @@
         ctrl.deleteUser = deleteUser;
         ctrl.resetPassword = resetPassword;
         ctrl.enable = enable;
+        ctrl.selectedOrganization = null;
 
         ctrl.$onInit = function() {
             ctrl.users = [];
+            ctrl.organizations = [];
             loadUsers();
-        }
+        };
 
 
         function loadUsers() {
             self.loading = true;
             UserService.getAllUsers().then(function(result) {
-                ctrl.users = _.sortBy(result.data, 'username');
+                ctrl.users = _.sortByOrder(result.data, ['enabled','username'], [false, true]);
+                ctrl.organizations = _.chain(result.data)
+                    .map('memberOf')
+                    .flatten()
+                    .uniq(false, 'id')
+                    .value();
                 ctrl.loading = false;
             });
         }
