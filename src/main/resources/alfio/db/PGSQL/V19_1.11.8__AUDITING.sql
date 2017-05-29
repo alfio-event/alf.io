@@ -24,3 +24,5 @@ create table auditing (
     entity_id varchar(512),
     modifications text
 );
+
+create index "auditing_reservation_id_idx" on auditing(reservation_id);

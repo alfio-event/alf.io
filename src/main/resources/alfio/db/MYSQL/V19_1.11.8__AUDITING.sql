@@ -23,4 +23,6 @@ create table auditing (
     entity_type varchar(64),
     entity_id varchar(512),
     modifications mediumtext
-) ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;;
+) ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
+
+create index auditing_reservation_id_idx on auditing(reservation_id);

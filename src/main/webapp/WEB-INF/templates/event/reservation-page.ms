@@ -160,7 +160,7 @@
         {{#field-has-error}}[email]<span class="help-block text-danger">{{#i18n}}{{#field-error}}email{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
     </div>
 
-    {{^orderSummary.free}}
+
 
     <div class="page-header">
         <h2>{{#i18n}}reservation-page.attendees{{/i18n}}</h2>
@@ -192,6 +192,9 @@
         </ul>
     </div>
     <div class="clearfix"></div>
+
+
+    {{^orderSummary.free}}
 
     <div class="page-header wMarginTop">
         <h2>{{#i18n}}reservation-page.payment{{/i18n}}</h2>

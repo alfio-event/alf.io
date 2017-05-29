@@ -41,7 +41,12 @@ import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
+import de.danielbechler.diff.ObjectDifferBuilder;
+import de.danielbechler.diff.node.DiffNode;
+import de.danielbechler.diff.node.Visit;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -56,6 +61,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.ZoneId;
@@ -922,6 +928,9 @@ public class TicketReservationManager {
                                   PartialTicketTextGenerator ownerChangeTextBuilder,
                                   Optional<UserDetails> userDetails) {
 
+        Ticket preUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
+        Map<String, String> preUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
+
         String newEmail = updateTicketOwner.getEmail().trim();
         CustomerName customerName = new CustomerName(updateTicketOwner.getFullName(), updateTicketOwner.getFirstName(), updateTicketOwner.getLastName(), event);
         ticketRepository.updateTicketOwner(ticket.getUuid(), newEmail, customerName.getFullName(), customerName.getFirstName(), customerName.getLastName());
@@ -958,6 +967,52 @@ public class TicketReservationManager {
             ticketReservationRepository.updateAssignee(reservation.getId(), username);
         }
         pluginManager.handleTicketAssignment(newTicket);
+
+
+
+        Ticket postUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
+        Map<String, String> postUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
+
+        DiffNode diffTicket = ObjectDifferBuilder.buildDefault().compare(postUpdateTicket, preUpdateTicket);
+        DiffNode diffTicketFields = ObjectDifferBuilder.buildDefault().compare(postUpdateTicketFields, preUpdateTicketFields);
+        FieldChangesSaver diffTicketVisitor = new FieldChangesSaver(preUpdateTicket, postUpdateTicket);
+        FieldChangesSaver diffTicketFieldsVisitor = new FieldChangesSaver(preUpdateTicketFields, postUpdateTicketFields);
+        diffTicket.visit(diffTicketVisitor);
+        diffTicketFields.visit(diffTicketFieldsVisitor);
+
+        List<Map<String, Object>> changes = new ArrayList<>(diffTicketVisitor.changes);
+        changes.addAll(diffTicketFieldsVisitor.changes);
+
+        auditingRepository.insert(ticket.getTicketsReservationId(), null, Audit.EventType.UPDATE_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()), Json.toJson(changes));
+    }
+
+
+    private static class FieldChangesSaver implements DiffNode.Visitor {
+
+        private final Object preBase;
+        private final Object postBase;
+
+        private final List<Map<String, Object>> changes = new ArrayList<>();
+
+
+        FieldChangesSaver(Object preBase, Object postBase) {
+            this.preBase = preBase;
+            this.postBase = postBase;
+        }
+
+        @Override
+        public void node(DiffNode node, Visit visit) {
+            if(node.hasChanges() && node.getState() != DiffNode.State.UNTOUCHED && !node.isRootNode()) {
+                Object baseValue = node.canonicalGet(preBase);
+                Object workingValue = node.canonicalGet(postBase);
+                HashMap<String, Object> change = new HashMap<>();
+                change.put("propertyName", node.getPath().toString());
+                change.put("state", node.getState());
+                change.put("oldValue", baseValue);
+                change.put("newValue", workingValue);
+                changes.add(change);
+            }
+        }
     }
 
     private boolean isAdmin(Optional<UserDetails> userDetails) {
