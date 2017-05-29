@@ -26,3 +26,5 @@ create table auditing (
 );
 
 create index "auditing_reservation_id_idx" on auditing(reservation_id);
+
+create view auditing_user as (select * from auditing left join ba_user on auditing.user_id = ba_user.id)
