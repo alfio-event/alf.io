@@ -385,14 +385,17 @@ public class ReservationController {
         if (!ticketReservation.get().getValidity().after(new Date())) {
             bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
         }
+
         final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        if(!paymentForm.isPostponeAssignment() && !ticketRepository.checkTicketUUIDs(reservationId, paymentForm.getTickets().keySet())) {
-            bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
-        }
-        paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()));
-        if (bindingResult.hasErrors()) {
-            SessionUtil.addToFlash(bindingResult, redirectAttributes);
-            return redirectReservation(ticketReservation, eventName, reservationId);
+        if(paymentForm.getPaymentMethod() != PaymentProxy.PAYPAL || !paymentForm.hasPaypalTokens()) {
+            if(!paymentForm.isPostponeAssignment() && !ticketRepository.checkTicketUUIDs(reservationId, paymentForm.getTickets().keySet())) {
+                bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
+            }
+            paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()));
+            if (bindingResult.hasErrors()) {
+                SessionUtil.addToFlash(bindingResult, redirectAttributes);
+                return redirectReservation(ticketReservation, eventName, reservationId);
+            }
         }
 
         CustomerName customerName = new CustomerName(paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), event);
