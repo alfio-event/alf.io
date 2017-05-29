@@ -16,7 +16,7 @@
 --
 
 create table auditing (
-    session_id varchar(512),
+    reservation_id varchar(512),
     user_id int,
     event_type varchar(128),
     event_time timestamp not null,

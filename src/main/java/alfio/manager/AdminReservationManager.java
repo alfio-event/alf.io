@@ -433,7 +433,7 @@ public class AdminReservationManager {
             Assert.isTrue(ticketIdsInReservation.containsAll(toRefund), "Some ticket ids to refund are not contained in the reservation");
             //
 
-            removeTicketsFromReservation(e, ticketIds, notify, username);
+            removeTicketsFromReservation(reservationId, e, ticketIds, notify, username);
             //
 
             handleTicketsRefund(toRefund, e, reservation, ticketsById, username);
@@ -458,7 +458,7 @@ public class AdminReservationManager {
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
 
-            removeTicketsFromReservation(e, tickets.stream().map(Ticket::getId).collect(toList()), notify, username);
+            removeTicketsFromReservation(reservationId, e, tickets.stream().map(Ticket::getId).collect(toList()), notify, username);
 
             additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
 
@@ -484,7 +484,7 @@ public class AdminReservationManager {
         });
     }
 
-    private void removeTicketsFromReservation(Event event, List<Integer> ticketIds, boolean notify, String username) {
+    private void removeTicketsFromReservation(String reservationId, Event event, List<Integer> ticketIds, boolean notify, String username) {
         if(notify && !ticketIds.isEmpty()) {
             Organization o = eventManager.loadOrganizer(event, username);
             ticketRepository.findByIds(ticketIds).stream().forEach(t -> {
@@ -498,7 +498,7 @@ public class AdminReservationManager {
         Date date = new Date();
 
         ticketIds.forEach(id -> {
-            auditingRepository.insert(null, userId, Audit.EventType.CANCEL_TICKET, date, Audit.EntityType.TICKET, id.toString(), null);
+            auditingRepository.insert(reservationId, userId, Audit.EventType.CANCEL_TICKET, date, Audit.EntityType.TICKET, id.toString(), null);
         });
 
         ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);

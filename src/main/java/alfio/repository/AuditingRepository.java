@@ -27,9 +27,9 @@ import java.util.Date;
 @QueryRepository
 public interface AuditingRepository {
 
-    @Query("insert into auditing(session_id, user_id, event_type, event_time, entity_type, entity_id, modifications) " +
-        " values (:sessionId, :userId, :eventType, :eventTime, :entityType, :entityId, :modifications)")
-    int insert(@Bind("sessionId") String sessionId, @Bind("userId") Integer userId,
+    @Query("insert into auditing(reservation_id, user_id, event_type, event_time, entity_type, entity_id, modifications) " +
+        " values (:reservationId, :userId, :eventType, :eventTime, :entityType, :entityId, :modifications)")
+    int insert(@Bind("reservationId") String reservationId, @Bind("userId") Integer userId,
                @Bind("eventType") Audit.EventType eventType, @Bind("eventTime")Date eventTime,
                @Bind("entityType") Audit.EntityType entityType, @Bind("entityId") String entityId,
                @Bind("modifications") String modifications);
