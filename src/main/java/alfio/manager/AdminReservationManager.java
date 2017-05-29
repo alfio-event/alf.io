@@ -445,6 +445,10 @@ public class AdminReservationManager {
         });
     }
 
+    public Result<List<Audit>> getAudit(String eventName, String reservationId, String username) {
+        return loadReservation(eventName, reservationId, username).map((res) -> auditingRepository.findAllForReservation(reservationId));
+    }
+
     public Result<TransactionAndPaymentInfo> getPaymentInfo(String eventName, String reservationId, String username) {
         return loadReservation(eventName, reservationId, username)
             .map((res) -> paymentManager.getInfo(res.getLeft(), res.getRight()));

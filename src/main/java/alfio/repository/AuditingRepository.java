@@ -23,6 +23,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.Date;
+import java.util.List;
 
 @QueryRepository
 public interface AuditingRepository {
@@ -33,4 +34,8 @@ public interface AuditingRepository {
                @Bind("eventType") Audit.EventType eventType, @Bind("eventTime")Date eventTime,
                @Bind("entityType") Audit.EntityType entityType, @Bind("entityId") String entityId,
                @Bind("modifications") String modifications);
+
+
+    @Query("select * from auditing_user where reservation_id = :reservationId order by event_time asc")
+    List<Audit> findAllForReservation(@Bind("reservationId") String reservationId);
 }

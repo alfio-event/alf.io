@@ -16,6 +16,15 @@
  */
 package alfio.model;
 
+import alfio.util.Json;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+@Getter
 public class Audit {
 
     public enum EntityType {
@@ -24,5 +33,34 @@ public class Audit {
 
     public enum EventType {
         RESERVATION_CREATE, RESERVATION_COMPLETE, CANCEL_RESERVATION_EXPIRED, CANCEL_RESERVATION, UPDATE_EVENT, CANCEL_TICKET, REFUND, UPDATE_TICKET
+    }
+
+    private final String reservationId;
+    private final EventType eventType;
+    private final Date eventTime;
+    private final EntityType entityType;
+    private final String entityId;
+    private final List<Map<String, Object>> modifications;
+    private final String username;
+    private final String firstName;
+    private final String lastName;
+    private final String email;
+
+
+    public Audit(@Column("reservation_id") String reservationId, @Column("event_type") EventType eventType,
+                 @Column("event_time") Date eventTime, @Column("entity_type") EntityType entityType,
+                 @Column("entity_id") String entityId, @Column("modifications") String modifications,
+                 @Column("username") String username, @Column("first_name") String firstName,
+                 @Column("last_name") String lastName, @Column("email_address") String email) {
+        this.reservationId = reservationId;
+        this.eventType = eventType;
+        this.eventTime = eventTime;
+        this.entityType = entityType;
+        this.entityId = entityId;
+        this.modifications = modifications == null ? null : Json.fromJson(modifications, List.class);
+        this.username = username;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
     }
 }

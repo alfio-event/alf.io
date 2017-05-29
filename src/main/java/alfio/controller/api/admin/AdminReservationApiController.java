@@ -88,6 +88,11 @@ public class AdminReservationApiController {
         return adminReservationManager.notify(eventName, reservationId, arm, principal.getName());
     }
 
+    @RequestMapping(value = "/event/{eventName}/{reservationId}/audit", method = RequestMethod.GET)
+    public Result<List<Audit>> getAudit(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+        return adminReservationManager.getAudit(eventName, reservationId, principal.getName());
+    }
+
     @RequestMapping(value = "/event/{eventName}/{reservationId}", method = RequestMethod.GET)
     public Result<TicketReservationDescriptor> loadReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
         return adminReservationManager.loadReservation(eventName, reservationId, principal.getName())
