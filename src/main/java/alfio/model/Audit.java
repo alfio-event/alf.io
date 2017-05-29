@@ -18,6 +18,7 @@ package alfio.model;
 
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.Getter;
 
 import java.util.Date;
@@ -57,7 +58,7 @@ public class Audit {
         this.eventTime = eventTime;
         this.entityType = entityType;
         this.entityId = entityId;
-        this.modifications = modifications == null ? null : Json.fromJson(modifications, List.class);
+        this.modifications = modifications == null ? null : Json.fromJson(modifications, new TypeReference<List<Map<String, Object>>>() {});
         this.username = username;
         this.firstName = firstName;
         this.lastName = lastName;
