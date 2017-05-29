@@ -53,55 +53,56 @@
             </div>
         </div>
 
-        <div >
-            <hr>
-            <h3>Payment info</h3>
+        <div>
+            <div class="page-header">
+                <h3>Payment info</h3>
+            </div>
+
             <div ng-if="$ctrl.loadingPaymentInfo">Loading...</div>
             <div ng-if="!$ctrl.loadingPaymentInfo && !$ctrl.paymentInfo">No payments have been found.</div>
             <div class="row" ng-if="$ctrl.paymentInfo">
-                <div class="col-xs-12 col-sm-4">
-                    <div class="form-group">
-                        <label for="customerLastName">Payment method</label>
-                        <div class="form-control-static" ng-bind="$ctrl.paymentInfo.paymentMethod">-</div>
-                    </div>
-                </div>
-                <div class="col-xs-12 col-sm-4" ng-if="$ctrl.paymentInfo.transaction">
-                    <div class="form-group">
-                        <label for="customerLastName">Payment id</label>
-                        <div class="form-control-static" ng-bind="$ctrl.paymentInfo.transaction.transactionId"></div>
-                    </div>
-                </div>
-                <div class="col-xs-12 col-sm-4" ng-if="$ctrl.paymentInfo.transaction">
-                    <div class="form-group">
-                        <label for="customerLastName">Transaction time</label>
-                        <div class="form-control-static" ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="row" ng-if="$ctrl.paymentInfo.paymentInformations">
                 <div class="col-xs-12 col-sm-6">
-                    <div class="form-group">
-                        <label for="customerLastName">Paid amount</label>
-                        <div class="form-control-static">{{$ctrl.paymentInfo.paymentInformations.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</div>
-                    </div>
+
+                    <dl class="dl-horizontal">
+                        <dt>Payment method</dt>
+                        <dd><span ng-bind="$ctrl.paymentInfo.paymentMethod">-</span></dd>
+
+                        <dt ng-if="$ctrl.paymentInfo.transaction">Payment id</dt>
+                        <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.transactionId"></dd>
+
+                        <dt ng-if="$ctrl.paymentInfo.transaction">Transaction timestamp</dt>
+                        <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
+
+                        <dt ng-if="$ctrl.paymentInfo.paymentInformations && $ctrl.paymentInfo.paymentInformations">Paid amount</dt>
+                        <dd ng-if="$ctrl.paymentInfo.paymentInformations && $ctrl.paymentInfo.paymentInformations">{{$ctrl.paymentInfo.paymentInformations.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
+
+                        <dt ng-if="$ctrl.paymentInfo.paymentInformations && $ctrl.paymentInfo.supportRefund">Refunded amount</dt>
+                        <dd ng-if="$ctrl.paymentInfo.paymentInformations && $ctrl.paymentInfo.supportRefund">{{$ctrl.paymentInfo.paymentInformations.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}</dd>
+                    </dl>
+
                 </div>
                 <div class="col-xs-12 col-sm-6" ng-if="$ctrl.paymentInfo.supportRefund">
-                    <div class="form-group">
-                        <label for="customerLastName">Refunded amount</label>
-                        <div class="form-control-static">
-                            {{$ctrl.paymentInfo.paymentInformations.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}
+                    <div class="panel panel-default">
+                        <div class="panel-heading"><strong>Refund</strong></div>
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-xs-9">
+                                    <div class="form-inline">
+                                        <label for="amountToRefund">Amount to Refund</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control input-sm" ng-model="$ctrl.amountToRefund" id="amountToRefund">
+                                            <div class="input-group-addon">{{$ctrl.paymentInfo.transaction.currency}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xs-3 text-right">
+                                    <i ng-show="$ctrl.refundInProgress" class="fa fa-cog fa-2x fa-spin"></i>
+                                    <button type="button" class="btn btn-warning" ng-click="$ctrl.confirmRefund()" ng-disabled="$ctrl.refundInProgress">refund</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="form-inline" ng-if="$ctrl.paymentInfo.supportRefund">
-                <label>Refund:
-                    <input type="text" class="form-control input-sm" ng-model="$ctrl.amountToRefund">
-                    {{$ctrl.paymentInfo.transaction.currency}}
-                </label>
-                <i ng-show="$ctrl.refundInProgress" class="fa fa-cog fa-2x fa-spin"></i>
-                <button type="button" class="btn btn-warning" ng-click="$ctrl.confirmRefund()" ng-disabled="$ctrl.refundInProgress">refund</button>
-            </div>
         </div>
 
         <div class="page-header">
