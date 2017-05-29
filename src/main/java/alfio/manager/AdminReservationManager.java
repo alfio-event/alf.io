@@ -31,6 +31,7 @@ import alfio.model.result.Result.ResultStatus;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
+import alfio.repository.user.UserRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
@@ -85,6 +86,8 @@ public class AdminReservationManager {
     private final MessageSource messageSource;
     private final TemplateManager templateManager;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
+    private final AuditingRepository auditingRepository;
+    private final UserRepository userRepository;
 
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
@@ -433,7 +436,7 @@ public class AdminReservationManager {
             removeTicketsFromReservation(e, ticketIds, notify, username);
             //
 
-            handleTicketsRefund(toRefund, e, reservation, ticketsById);
+            handleTicketsRefund(toRefund, e, reservation, ticketsById, username);
 
             if(tickets.size() - ticketIds.size() <= 0) {
                 markAsCancelled(reservation);
@@ -461,7 +464,7 @@ public class AdminReservationManager {
 
             if(refund && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
                 //fully refund
-                paymentManager.refund(reservation, e, Optional.empty());
+                paymentManager.refund(reservation, e, Optional.empty(), username);
             }
 
             markAsCancelled(reservation);
@@ -474,7 +477,7 @@ public class AdminReservationManager {
             TicketReservation reservation = res.getLeft();
 
             if(reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
-                return paymentManager.refund(reservation, e, Optional.of(MonetaryUtil.unitToCents(refundAmount)));
+                return paymentManager.refund(reservation, e, Optional.of(MonetaryUtil.unitToCents(refundAmount)), username);
             } else {
                 return false;
             }
@@ -490,6 +493,13 @@ public class AdminReservationManager {
                 }
             });
         }
+
+        Integer userId = userRepository.findIdByUserName(username).orElse(null);
+        Date date = new Date();
+
+        ticketIds.forEach(id -> {
+            auditingRepository.insert(null, userId, Audit.EventType.CANCEL_TICKET, date, Audit.EntityType.TICKET, id.toString(), null);
+        });
 
         ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
         ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
@@ -508,7 +518,7 @@ public class AdminReservationManager {
         ticketReservationRepository.updateTicketStatus(ticketReservation.getId(), TicketReservationStatus.CANCELLED.toString());
     }
 
-    private void handleTicketsRefund(List<Integer> toRefund, Event e, TicketReservation reservation, Map<Integer, Ticket> ticketsById) {
+    private void handleTicketsRefund(List<Integer> toRefund, Event e, TicketReservation reservation, Map<Integer, Ticket> ticketsById, String username) {
         if(!reservation.getPaymentMethod().isSupportRefund()) {
             return;
         }
@@ -516,7 +526,7 @@ public class AdminReservationManager {
         for(Integer toRefundId : toRefund) {
             int toBeRefunded = ticketsById.get(toRefundId).getFinalPriceCts();
             if(toBeRefunded > 0) {
-                paymentManager.refund(reservation, e, Optional.of(toBeRefunded));
+                paymentManager.refund(reservation, e, Optional.of(toBeRefunded), username);
             }
         }
         //

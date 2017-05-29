@@ -23,11 +23,15 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
+import alfio.repository.AuditingRepository;
 import alfio.repository.TransactionRepository;
+import alfio.repository.user.UserRepository;
 import alfio.util.ErrorsCode;
+import alfio.util.Json;
 import com.paypal.base.rest.PayPalRESTException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -36,31 +40,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 @Log4j2
+@AllArgsConstructor
 public class PaymentManager {
 
     private final StripeManager stripeManager;
     private final PaypalManager paypalManager;
     private final TransactionRepository transactionRepository;
     private final ConfigurationManager configurationManager;
-
-    @Autowired
-    public PaymentManager(StripeManager stripeManager,
-                          PaypalManager paypalManager,
-                          TransactionRepository transactionRepository,
-                          ConfigurationManager configurationManager) {
-        this.stripeManager = stripeManager;
-        this.paypalManager = paypalManager;
-        this.transactionRepository = transactionRepository;
-        this.configurationManager = configurationManager;
-    }
+    private final AuditingRepository auditingRepository;
+    private final UserRepository userRepository;
 
     /**
      * This method processes the pending payment using the configured payment gateway (at the time of writing, only STRIPE)
@@ -140,16 +133,29 @@ public class PaymentManager {
         return paypalManager.createCheckoutRequest(event, reservationId, orderSummary, customerName, email, billingAddress, locale, postponeAssignment);
     }
 
-    public boolean refund(TicketReservation reservation, Event event, Optional<Integer> amount) {
+    public boolean refund(TicketReservation reservation, Event event, Optional<Integer> amount, String username) {
         Transaction transaction = transactionRepository.loadByReservationId(reservation.getId());
+        boolean res = false;
         switch(reservation.getPaymentMethod()) {
             case PAYPAL:
-                return paypalManager.refund(transaction, event, amount);
+                res = paypalManager.refund(transaction, event, amount);
+                break;
             case STRIPE:
-                return stripeManager.refund(transaction, event, amount);
+                res = stripeManager.refund(transaction, event, amount);
+                break;
             default:
                 throw new IllegalStateException("Cannot refund ");
         }
+
+        if(res) {
+            Map<String, String> changes = new HashMap<>();
+            changes.put("refund", amount.map(i -> i.toString()).orElse("full"));
+            changes.put("paymentMethod", reservation.getPaymentMethod().toString());
+            String change = Json.toJson(changes);
+            auditingRepository.insert(null, userRepository.findIdByUserName(username).orElse(null), Audit.EventType.REFUND, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), change);
+        }
+
+        return res;
     }
 
     public TransactionAndPaymentInfo getInfo(TicketReservation reservation, Event event) {

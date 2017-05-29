@@ -38,6 +38,9 @@ public interface UserRepository {
     @Query("select * from ba_user where username = :username")
     List<User> findByUsername(@Bind("username") String username);
 
+    @Query("select id from ba_user where username = :username")
+    Optional<Integer> findIdByUserName(@Bind("username") String username);
+
     @Query("select * from ba_user where username = :username and enabled = true")
     Optional<User> findEnabledByUsername(@Bind("username") String username);
 
