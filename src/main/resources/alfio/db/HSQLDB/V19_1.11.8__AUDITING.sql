@@ -21,6 +21,6 @@ create table auditing (
     event_type varchar(128),
     event_time timestamp with time zone not null,
     entity_type varchar(64),
-    entity_id integer,
+    entity_id varchar(512),
     modifications clob
 );

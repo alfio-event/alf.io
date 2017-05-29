@@ -112,6 +112,7 @@ public class TicketReservationManager {
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final InvoiceSequencesRepository invoiceSequencesRepository;
+    private final AuditingRepository auditingRepository;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -149,7 +150,8 @@ public class TicketReservationManager {
                                     AdditionalServiceRepository additionalServiceRepository,
                                     AdditionalServiceItemRepository additionalServiceItemRepository,
                                     AdditionalServiceTextRepository additionalServiceTextRepository,
-                                    InvoiceSequencesRepository invoiceSequencesRepository) {
+                                    InvoiceSequencesRepository invoiceSequencesRepository,
+                                    AuditingRepository auditingRepository) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -172,6 +174,7 @@ public class TicketReservationManager {
         this.additionalServiceItemRepository = additionalServiceItemRepository;
         this.additionalServiceTextRepository = additionalServiceTextRepository;
         this.invoiceSequencesRepository = invoiceSequencesRepository;
+        this.auditingRepository = auditingRepository;
     }
     
     /**
@@ -221,6 +224,8 @@ public class TicketReservationManager {
 
         OrderSummary orderSummary = orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage()));
         ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
+
+        auditingRepository.insert(null, null, Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId, null);
 
         return reservationId;
     }

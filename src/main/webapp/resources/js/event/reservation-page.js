@@ -306,6 +306,10 @@
                 element.find('.field-required').attr('required', true);
                 element.removeClass('hidden');
                 euBillingCountry.change();
+                if(euBillingCountry.length === 0) {
+                    $('#billing-address-container').removeClass(hiddenClasses);
+                    $('#billing-address').attr('required', true).removeAttr('disabled');
+                }
             } else {
                 element.find('.field-required').attr('required', false);
                 element.addClass('hidden');
