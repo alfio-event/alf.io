@@ -221,5 +221,36 @@
             <button type="button" ng-if="$ctrl.reservation.status === 'PENDING' && $ctrl.onUpdate" class="btn btn-lg btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
             <button type="submit" class="btn btn-lg btn-warning" data-ng-disabled="viewReservation.$waiting" style="margin-bottom:20px">Update</button>
         </div>
+        <div class="clearfix"></div>
     </form>
+
+
+    <div class="wMarginTop">
+        <h3>Audit log</h3>
+        <hr>
+
+        <table class="table table-responsive table-striped wMarginTop10px">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>By user</th>
+                    <th>Entity type</th>
+                    <th>Entity id</th>
+                    <th>Modifications</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="audit in $ctrl.audit">
+                    <td ng-bind="audit.eventType"></td>
+                    <td ng-bind="audit.eventTime|formatDate"></td>
+                    <td>{{audit.username}} {{audit.firstName}} {{audit.lastName}} {{audit.email}}</td>
+                    <td ng-bind="audit.entityType"></td>
+                    <td ng-bind="audit.entityId"></td>
+                    <td><pre ng-bind="audit.modifications|json"></pre></td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
 </div>

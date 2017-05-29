@@ -148,11 +148,12 @@ public class PaymentManager {
         }
 
         if(res) {
-            Map<String, String> changes = new HashMap<>();
+            Map<String, Object> changes = new HashMap<>();
             changes.put("refund", amount.map(i -> i.toString()).orElse("full"));
             changes.put("paymentMethod", reservation.getPaymentMethod().toString());
-            String change = Json.toJson(changes);
-            auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null), Audit.EventType.REFUND, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), change);
+            auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null),
+                Audit.EventType.REFUND, new Date(), Audit.EntityType.RESERVATION, reservation.getId(),
+                Collections.singletonList(changes));
         }
 
         return res;

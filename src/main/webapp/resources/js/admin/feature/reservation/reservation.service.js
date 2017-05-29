@@ -26,6 +26,9 @@
             },
             getTicket: function(eventName, reservationId, ticketId) {
                 return $http.get('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/ticket/'+ticketId).error(HttpErrorHandler.handle);
+            },
+            getAudit: function(eventName, reservationId) {
+                return $http.get('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/audit').error(HttpErrorHandler.handle);
             }
         }
     }]);

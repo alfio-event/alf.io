@@ -502,7 +502,7 @@ public class AdminReservationManager {
         Date date = new Date();
 
         ticketIds.forEach(id -> {
-            auditingRepository.insert(reservationId, userId, Audit.EventType.CANCEL_TICKET, date, Audit.EntityType.TICKET, id.toString(), null);
+            auditingRepository.insert(reservationId, userId, Audit.EventType.CANCEL_TICKET, date, Audit.EntityType.TICKET, id.toString());
         });
 
         ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);

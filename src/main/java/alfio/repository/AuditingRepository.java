@@ -18,12 +18,14 @@ package alfio.repository;
 
 
 import alfio.model.Audit;
+import alfio.util.Json;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @QueryRepository
 public interface AuditingRepository {
@@ -31,9 +33,21 @@ public interface AuditingRepository {
     @Query("insert into auditing(reservation_id, user_id, event_type, event_time, entity_type, entity_id, modifications) " +
         " values (:reservationId, :userId, :eventType, :eventTime, :entityType, :entityId, :modifications)")
     int insert(@Bind("reservationId") String reservationId, @Bind("userId") Integer userId,
-               @Bind("eventType") Audit.EventType eventType, @Bind("eventTime")Date eventTime,
+               @Bind("eventType") Audit.EventType eventType, @Bind("eventTime") Date eventTime,
                @Bind("entityType") Audit.EntityType entityType, @Bind("entityId") String entityId,
                @Bind("modifications") String modifications);
+
+
+    default int insert(String reservationId, Integer userId, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
+                       String entityId) {
+        return this.insert(reservationId, userId, eventType, eventTime, entityType, entityId, (String) null);
+    }
+
+    default int insert(String reservationId, Integer userId, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
+                       String entityId, List<Map<String, Object>> modifications) {
+        String modificationJson = modifications == null ? null : Json.toJson(modifications);
+        return this.insert(reservationId, userId, eventType, eventTime, entityType, entityId, modificationJson);
+    }
 
 
     @Query("select * from auditing_user where reservation_id = :reservationId order by event_time asc")

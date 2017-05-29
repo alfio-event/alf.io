@@ -83,7 +83,14 @@
             });
 
             loadPaymentInfo();
+            loadAudit();
         };
+
+        function loadAudit() {
+            AdminReservationService.getAudit(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+                ctrl.audit = res.data.data;
+            });
+        }
 
         function loadPaymentInfo() {
             ctrl.loadingPaymentInfo = true;
@@ -166,6 +173,7 @@
                         ctrl.amountToRefund = null;
                         ctrl.refundInProgress = false;
                         loadPaymentInfo();
+                        loadAudit();
                     })
                 }
             }
