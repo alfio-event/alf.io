@@ -140,16 +140,16 @@ dependencies {
     compile "javax.mail:mail:1.5.0-b01"
     compile "org.quartz-scheduler:quartz:2.3.0"
     /**/
-    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC10"
-    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC10"
-    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC10"
+    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC11"
+    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC11"
+    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC11"
     /**/
     compile "com.google.zxing:core:3.3.0"
     compile "com.google.zxing:javase:3.3.0"
     compile "org.flywaydb:flyway-core:4.2.0"
-    compile "org.postgresql:postgresql:42.0.0"
-    compile 'mysql:mysql-connector-java:5.1.41'
-    compile "com.zaxxer:HikariCP:2.6.1"
+    compile "org.postgresql:postgresql:42.1.1"
+    compile 'mysql:mysql-connector-java:5.1.42'
+    compile "com.zaxxer:HikariCP:2.6.2"
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-core:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-jcl:$log4jVersion"
@@ -164,7 +164,7 @@ dependencies {
     compile 'net.sf.biweekly:biweekly:0.6.1'
     compile 'com.atlassian.commonmark:commonmark:0.9.0'
     compile 'com.ryantenney.passkit4j:passkit4j:2.0.1'
-    compile 'com.github.ben-manes.caffeine:caffeine:2.4.0'
+    compile 'com.github.ben-manes.caffeine:caffeine:2.5.2'
 
     testCompile "org.springframework:spring-test:$springVersion"
     testCompile "com.insightfullogic:lambda-behave:0.3"
