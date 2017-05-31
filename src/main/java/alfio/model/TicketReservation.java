@@ -131,6 +131,10 @@ public class TicketReservation {
         return invoiceModel != null;
     }
 
+    public boolean getHasBeenPaid() {
+        return status == TicketReservationStatus.COMPLETE;
+    }
+
     public List<String> getLineSplittedBillingAddress() {
         if(billingAddress == null) {
             return Collections.emptyList();

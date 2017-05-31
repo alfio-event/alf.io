@@ -233,16 +233,16 @@
             </div>
         {{/activePaymentMethods}}
 
-    {{#orderSummary.displayVat}}
+    {{#invoiceIsAllowed}}
         <div class="checkbox wMarginTop">
             <label>
                 <input type="checkbox" name="invoiceRequested" id="invoice-requested" value="true" {{#paymentForm.invoiceRequested}}checked{{/paymentForm.invoiceRequested}}>
                 {{#i18n}}reservation-page.i-need-an-invoice{{/i18n}}
             </label>
         </div>
-    {{/orderSummary.displayVat}}
+    {{/invoiceIsAllowed}}
 
-    <div id="invoice" class="wMarginTop {{^paymentForm.invoiceRequested}}hidden{{/paymentForm.invoiceRequested}}">
+    <div id="invoice" class="wMarginTop {{#invoiceIsAllowed}}{{^paymentForm.invoiceRequested}}hidden{{/paymentForm.invoiceRequested}}{{/invoiceIsAllowed}}">
         {{#euVatCheckingEnabled}}
             {{#orderSummary.displayVat}}
                 <div class="row">
@@ -303,8 +303,8 @@
             {{/orderSummary.displayVat}}
             <div class="col-xs-12 {{^orderSummary.displayVat}}col-md-8{{/orderSummary.displayVat}}">
                 <div class="form-group {{#field-has-error}}[billingAddress] has-error{{/field-has-error}}" id="billing-address-container">
-                    <label for="billing-address" class="control-label">{{#i18n}}reservation-page.billing-address{{/i18n}}</label>
-                    <textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450">{{paymentForm.billingAddress}}</textarea>
+                    <label for="billing-address" class="control-label">{{#i18n}}{{billingAddressLabel}}{{/i18n}}</label>
+                    <textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450" {{#invoiceIsAllowed}}data-invoice-enabled="true"{{/invoiceIsAllowed}}>{{paymentForm.billingAddress}}</textarea>
                     {{#field-has-error}}[billingAddress]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddress{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
                 </div>
             </div>
