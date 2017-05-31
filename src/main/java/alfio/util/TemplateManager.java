@@ -198,7 +198,7 @@ public class TemplateManager {
                     return Pair.of(END, idx);
                 } else {
                     ast.addText(template.substring(0, startTagIdx));
-                    ast.addI18NNode(startTagIdx + START_TAG.length());
+                    ast.addI18NNode();
                     return Pair.of(OPEN_TAG, startTagIdx + START_TAG.length());
                 }
             }
@@ -211,7 +211,7 @@ public class TemplateManager {
                 if (endTagIdx != -1 && startTagIdx != -1 && startTagIdx < endTagIdx) {
                     ast.addText(template.substring(idx, startTagIdx));
                     int startTagIdxBoundary = startTagIdx + START_TAG.length();
-                    ast.addI18NNode(startTagIdxBoundary);
+                    ast.addI18NNode();
                     return Pair.of(OPEN_TAG, startTagIdxBoundary);
                 } else if (endTagIdx == -1 && startTagIdx == -1) {
                     ast.addText(template.substring(idx));
@@ -262,8 +262,8 @@ public class TemplateManager {
             }
         }
 
-        void addI18NNode(int startIdx) {
-            addChild(new I18NNode(startIdx));
+        void addI18NNode() {
+            addChild(new I18NNode());
             currentLevel = currentLevel.children.get(currentLevel.children.size() - 1);
         }
 
@@ -306,11 +306,6 @@ public class TemplateManager {
     }
 
     static class I18NNode extends Node {
-        int startIdx;
-
-        I18NNode(int startIdx) {
-            this.startIdx = startIdx;
-        }
 
         @Override
         public void visit(StringBuilder sb, Locale locale, MessageSource messageSource) {

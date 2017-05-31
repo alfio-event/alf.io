@@ -19,7 +19,12 @@
                     <div class="panel-body text-info">
                         <div class="row">
                             <div class="col-xs-4"><div class="fa fa-cogs fa-5x"></div></div>
-                            <div class="col-xs-8"><div class="text-right event-statistic-highlighted">{{ctrl.pendingReservations}}</div></div>
+                            <div class="col-xs-8">
+                                <div class="text-right event-statistic-highlighted">
+                                    <span ng-if="ctrl.pendingReservations == 0">0</span>
+                                    <a ng-if="ctrl.pendingReservations > 0" data-ui-sref="events.single.reservationsList({eventName:ctrl.event.shortName})">{{ctrl.pendingReservations}}</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

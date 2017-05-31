@@ -1,0 +1,91 @@
+<form name="ctrl.additionalServiceForm" data-ng-submit="ctrl.save()" novalidate data-error-sensitive="">
+<div class="modal-content">
+    <div class="modal-header">
+        <h2 class="modal-title">Edit {{ctrl.title}}</h2>
+    </div>
+    <div class="modal-body">
+
+            <div data-ng-repeat="pair in ctrl.item.zippedTitleAndDescriptions">
+                <div class="row" >
+                    <div class="col-xs-12 col-md-2"><h4>{{pair[0].displayLanguage}}</h4></div>
+                    <div class="col-md-4 col-xs-12" data-ng-init="title = pair[0]">
+                        <div class="form-group">
+                            <label for="title-{{title.locale}}">Title</label>
+                            <input id="title-{{title.locale}}" type="text" data-ng-model="title.value" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xs-12" data-ng-init="desc = pair[1]">
+                        <div class="form-group">
+                            <label for="desc-{{desc.locale}}">Description</label> <display-commonmark-preview text="desc.value"></display-commonmark-preview>
+                            <textarea id="desc-{{desc.locale}}" data-ng-model="desc.value" class="form-control" required></textarea>
+                            <common-mark-help></common-mark-help>
+                        </div>
+                    </div>
+                </div>
+                <hr data-ng-if="!$last" />
+            </div>
+
+
+            <div class="page-header">
+                <h3>Availability and prices</h3>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="form-group" bs-form-error="ctrl.additionalServiceForm.dateString">
+                        <label for="date">Validity range</label>
+                        <input type="text" data-date-range data-start-model="ctrl.item.inception" data-min-date="true" data-end-model="ctrl.item.expiration" data-ng-model="ctrl.item.dateString" name="date" id="date" class="form-control" required />
+                        <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.dateString" data-show-existing-errors="showExistingErrors"></field-error>
+                    </div>
+                </div>
+            </div>
+            <div class="row" ng-if="ctrl.type === 'SUPPLEMENT'">
+                <div class="col-sm-12">
+                    <label>
+                        Additional service policy:
+                        <select class="form-control" data-ng-model="ctrl.item.supplementPolicy" ng-options="type.key as type.value for type in ctrl.supplementPolicies" required></select>
+                    </label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12" ng-if="ctrl.type === 'DONATION'">
+                    <label class="control-label">Price policy</label>
+                    <div class="form-group">
+                        <div class="radio-inline">
+                            <label><input type="radio" data-ng-model="ctrl.item.fixPrice" data-ng-value="true"> Fixed</label>
+                        </div>
+                        <div class="radio-inline">
+                            <label><input type="radio" data-ng-model="ctrl.item.fixPrice" data-ng-value="false"> User-defined</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-2" data-ng-if="ctrl.item.fixPrice">
+                    <div class="form-group" bs-form-error="ctrl.additionalServiceForm.price">
+                        <label>
+                            Price: <input type="number" min="0" class="form-control" data-ng-model="ctrl.item.price" required>
+                        </label>
+                        <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.price" data-show-existing-errors="ctrl.showExistingErrors"></field-error>
+                    </div>
+                </div>
+                <div class="col-sm-3" data-ng-if="ctrl.item.fixPrice && !(ctrl.type === 'SUPPLEMENT' && (ctrl.item.supplementPolicy === 'MANDATORY_ONE_FOR_TICKET' || ctrl.item.supplementPolicy === 'OPTIONAL_UNLIMITED_AMOUNT'))">
+                    <div class="form-group" bs-form-error="ctrl.additionalServiceForm.maxQtyPerOrder">
+                        <label>Max qty per {{ctrl.item.supplementPolicy === 'OPTIONAL_MAX_AMOUNT_PER_TICKET' ? 'ticket' : 'order'}}: <input type="number" min="1" class="form-control" step="1" data-ng-model="ctrl.item.maxQtyPerOrder" required></label>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="form-group" bs-form-error="ctrl.additionalServiceForm.vatType">
+                        <label>
+                            VAT Type:
+                            <select class="form-control" ng-model="ctrl.item.vatType" required ng-options="type.key as type.value for type in ctrl.vatTypes">
+                            </select>
+                        </label>
+                        <field-error data-form-obj="ctrl.additionalServiceForm" data-field-obj="ctrl.additionalServiceForm.vatType" data-show-existing-errors="ctrl.showExistingErrors"></field-error>
+                    </div>
+                </div>
+            </div>
+    </div>
+    <div class="modal-footer">
+        <control-buttons data-form-obj="ctrl.additionalServiceForm" data-cancel-handler="ctrl.cancel"></control-buttons>
+    </div>
+</div>
+</form>

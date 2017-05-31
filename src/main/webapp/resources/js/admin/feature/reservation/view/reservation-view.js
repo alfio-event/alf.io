@@ -14,7 +14,7 @@
     });
 
 
-    function ReservationViewCtrl(AdminReservationService, $window, $stateParams) {
+    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams) {
         var ctrl = this;
 
         ctrl.notification = {
@@ -30,6 +30,9 @@
             }
         };
 
+        ctrl.amountToRefund = null;
+        ctrl.refundInProgress = false;
+
         ctrl.displayCreationWarning = angular.isDefined($stateParams.fromCreation) && $stateParams.fromCreation;
 
         ctrl.hideCreationWarning = function() {
@@ -37,6 +40,9 @@
         };
 
         ctrl.$onInit = function() {
+            EventService.getAllLanguages().then(function(allLangs) {
+               ctrl.allLanguages = allLangs.data;
+            });
             var src = ctrl.reservationDescriptor.reservation;
             var currentURL = $window.location.href;
             ctrl.reservationUrl = (currentURL.substring(0, currentURL.indexOf('/admin')) + '/event/'+ ctrl.event.shortName + '/reservation/' + src.id+'?lang='+src.userLanguage);
@@ -51,7 +57,9 @@
                 customerData: {
                     firstName: src.firstName,
                     lastName: src.lastName,
-                    emailAddress: src.email
+                    emailAddress: src.email,
+                    billingAddress: src.billingAddress,
+                    userLanguage: src.userLanguage
                 },
                 language: src.userLanguage
             };
@@ -73,7 +81,26 @@
                     })
                 }
             });
+
+            loadPaymentInfo();
+            loadAudit();
         };
+
+        function loadAudit() {
+            AdminReservationService.getAudit(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+                ctrl.audit = res.data.data;
+            });
+        }
+
+        function loadPaymentInfo() {
+            ctrl.loadingPaymentInfo = true;
+            AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+                ctrl.paymentInfo = res.data.data;
+                ctrl.loadingPaymentInfo = false;
+            }, function() {
+                ctrl.loadingPaymentInfo = false;
+            });
+        }
 
         ctrl.update = function(frm) {
             if(frm.$valid) {
@@ -124,6 +151,33 @@
                 if(ctrl.onConfirm) {ctrl.onConfirm({eventName: ctrl.event.shortName, reservationId: ctrl.reservation.id})} else {$window.location.reload();}
             });
         };
+
+        ctrl.cancelReservationModal = function() {
+            EventService.cancelReservationModal(ctrl.event, ctrl.reservation.id).then(function() {
+                $window.location.reload();
+            });
+        };
+
+        ctrl.removeTicket = function(ticket) {
+            EventService.removeTicketModal(ctrl.event, ctrl.reservation.id, ticket.ticketId).then(function() {
+                //not a beautiful solution...
+                $window.location.reload();
+            });
+        };
+
+        ctrl.confirmRefund = function() {
+            if(ctrl.amountToRefund != null && ctrl.amountToRefund.length > 0) {
+                if ($window.confirm('Are you sure to refund ' + ctrl.amountToRefund + ctrl.paymentInfo.transaction.currency + ' ?')) {
+                    ctrl.refundInProgress = true;
+                    AdminReservationService.refund(ctrl.event.shortName, ctrl.reservation.id, ctrl.amountToRefund).then(function () {
+                        ctrl.amountToRefund = null;
+                        ctrl.refundInProgress = false;
+                        loadPaymentInfo();
+                        loadAudit();
+                    })
+                }
+            }
+        }
     }
 
 })();

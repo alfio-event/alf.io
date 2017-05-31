@@ -1,0 +1,21 @@
+<div class="modal-header">
+    <h3>Cancel reservation?</h3>
+</div>
+<div class="modal-body">
+    <div ng-if="$ctrl.paymentInfo">
+        <p>Reservation id: {{$ctrl.reservationId}}</p>
+        <p ng-if="$ctrl.paymentInfo.supportRefund">Fully refund: <input type="checkbox" ng-model="$ctrl.refund"> ?</p>
+        <p>Paid amount: {{$ctrl.paymentInfo.paymentInformations.paidAmount}} {{$ctrl.event.currencyCode}}</p>
+        <p ng-if="!$ctrl.paymentInfo.supportRefund">Note: you cannot refund this reservation automatically.</p>
+        <p>Notify ticket owner: <input type="checkbox" ng-model="$ctrl.notify"></p>
+    </div>
+    <div ng-if="!$ctrl.paymentInfo">
+        loading...
+    </div>
+</div>
+<div class="modal-footer">
+    <div class="pull-right">
+        <button class="btn btn-default" ng-disabled="$ctrl.submitted" type="button" data-ng-click="$ctrl.confirmRemove()">confirm removal</button>
+        <button class="btn btn-default" type="button" data-ng-click="$ctrl.onCancel()"><i class="fa fa-times"></i> close</button>
+    </div>
+</div>

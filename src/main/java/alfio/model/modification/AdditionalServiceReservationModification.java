@@ -16,6 +16,7 @@
  */
 package alfio.model.modification;
 
+import alfio.model.AdditionalService;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -25,4 +26,12 @@ public class AdditionalServiceReservationModification {
     private Integer additionalServiceId;
     private BigDecimal amount;
     private Integer quantity = 1;
+
+    public boolean isQuantityValid(AdditionalService as, int selectionCount) {
+        if(quantity != null && as.getSupplementPolicy() != null) {
+            return as.getSupplementPolicy().isValid(quantity, as, selectionCount);
+        } else {
+            return true;
+        }
+    }
 }

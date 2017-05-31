@@ -51,7 +51,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -68,7 +67,6 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
-@WebIntegrationTest
 public class DataMigratorIntegrationTest {
 
     public static final int AVAILABLE_SEATS = 20;
@@ -291,7 +289,7 @@ public class DataMigratorIntegrationTest {
 	        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
 	        Date expiration = DateUtils.addDays(new Date(), 1);
 	        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
-	        ticketReservationManager.confirm("TOKEN", null, event, reservationId, "email@email.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, null, new TotalPrice(1000, 10, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE));
+	        ticketReservationManager.confirm("TOKEN", null, event, reservationId, "email@email.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, null, new TotalPrice(1000, 10, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE), false, null, null, null);
 	        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
 	        UpdateTicketOwnerForm first = new UpdateTicketOwnerForm();
 	        first.setEmail("email@email.ch");

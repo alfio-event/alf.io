@@ -149,7 +149,7 @@ public class EventManager {
         return event;
     }
 
-    void checkOwnership(Event event, String username, int organizationId) {
+    public void checkOwnership(Event event, String username, int organizationId) {
         Validate.isTrue(organizationId == event.getOrganizationId(), "invalid organizationId");
         userManager.findUserOrganizations(username)
                 .stream()
@@ -202,7 +202,18 @@ public class EventManager {
     private void createAllAdditionalServices(int eventId, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId) {
         Optional.ofNullable(additionalServices)
             .ifPresent(list -> list.forEach(as -> {
-                AffectedRowCountAndKey<Integer> service = additionalServiceRepository.insert(eventId, Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0), as.isFixPrice(), as.getOrdinal(), as.getAvailableQuantity(), as.getMaxQtyPerOrder(), as.getInception().toZonedDateTime(zoneId), as.getExpiration().toZonedDateTime(zoneId), as.getVat(), as.getVatType());
+                AffectedRowCountAndKey<Integer> service = additionalServiceRepository.insert(eventId,
+                    Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
+                    as.isFixPrice(),
+                    as.getOrdinal(),
+                    as.getAvailableQuantity(),
+                    as.getMaxQtyPerOrder(),
+                    as.getInception().toZonedDateTime(zoneId),
+                    as.getExpiration().toZonedDateTime(zoneId),
+                    as.getVat(),
+                    as.getVatType(),
+                    as.getType(),
+                    as.getSupplementPolicy());
                 as.getTitle().forEach(insertAdditionalServiceDescription(service.getKey()));
                 as.getDescription().forEach(insertAdditionalServiceDescription(service.getKey()));
             }));
@@ -253,7 +264,14 @@ public class EventManager {
         ZoneId utc = ZoneId.of("UTC");
         int eventId = event.getId();
         String checksum = new AdditionalService(0, eventId, as.isFixPrice(), as.getOrdinal(), as.getAvailableQuantity(),
-            as.getMaxQtyPerOrder(), as.getInception().toZonedDateTime(event.getZoneId()).withZoneSameInstant(utc), as.getExpiration().toZonedDateTime(event.getZoneId()).withZoneSameInstant(utc), as.getVat(), as.getVatType(), Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0)).getChecksum();
+            as.getMaxQtyPerOrder(),
+            as.getInception().toZonedDateTime(event.getZoneId()).withZoneSameInstant(utc),
+            as.getExpiration().toZonedDateTime(event.getZoneId()).withZoneSameInstant(utc),
+            as.getVat(),
+            as.getVatType(),
+            Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
+            as.getType(),
+            as.getSupplementPolicy()).getChecksum();
         return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::getId).orElse(null);
     }
 
@@ -362,7 +380,7 @@ public class EventManager {
         final List<TicketCategory> categories = ticketCategoryRepository.findByEventId(eventId);
         return categories.stream().filter(tc -> tc.getId() == categoryId).findFirst()
             .map(existing -> new Result.Builder<>(() -> {
-                    updateCategory(tcm, event.getVat(), event.isVatIncluded(), event.isFreeOfCharge(), event.getZoneId(), event);
+                    updateCategory(tcm, event.isFreeOfCharge(), event.getZoneId(), event);
                     return ticketCategoryRepository.getById(categoryId, eventId);
                 })
                 .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
@@ -473,7 +491,6 @@ public class EventManager {
 
     private void createCategoriesForEvent(EventModification em, Event event) {
         boolean freeOfCharge = em.isFreeOfCharge();
-        boolean vatIncluded = em.isVatIncluded();
         ZoneId zoneId = TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
         int eventId = event.getId();
 
@@ -541,7 +558,7 @@ public class EventManager {
         }));
     }
 
-    private void updateCategory(TicketCategoryModification tc, BigDecimal vat, boolean vatIncluded, boolean freeOfCharge, ZoneId zoneId, Event event) {
+    private void updateCategory(TicketCategoryModification tc, boolean freeOfCharge, ZoneId zoneId, Event event) {
         int eventId = event.getId();
         final int price = evaluatePrice(tc.getPriceInCents(), freeOfCharge);
         TicketCategory original = ticketCategoryRepository.getById(tc.getId(), eventId);
@@ -691,8 +708,9 @@ public class EventManager {
         return true;
     }
 
-    public void addPromoCode(String promoCode, int eventId, ZonedDateTime start, ZonedDateTime end, int discountAmount, DiscountType discountType, List<Integer> categoriesId) {
+    public void addPromoCode(String promoCode, Integer eventId, Integer organizationId, ZonedDateTime start, ZonedDateTime end, int discountAmount, DiscountType discountType, List<Integer> categoriesId) {
         Validate.isTrue(promoCode.length() >= 7, "min length is 7 chars");
+        Validate.isTrue((eventId != null && organizationId == null) || (eventId == null && organizationId != null), "eventId or organizationId must be not null");
         if(DiscountType.PERCENTAGE == discountType) {
             Validate.inclusiveBetween(0, 100, discountAmount, "percentage discount must be between 0 and 100");
         }
@@ -704,20 +722,25 @@ public class EventManager {
         categoriesId = Optional.ofNullable(categoriesId).orElse(Collections.emptyList()).stream().filter(Objects::nonNull).collect(toList());
         //
 
-        promoCodeRepository.addPromoCode(promoCode, eventId, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId));
+        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId));
     }
     
     public void deletePromoCode(int promoCodeId) {
         promoCodeRepository.deletePromoCode(promoCodeId);
     }
 
-    public void updatePromoCode(String promoCodeName, int eventId, ZonedDateTime start, ZonedDateTime end) {
-        promoCodeRepository.update(eventId, promoCodeName, start, end);
+    public void updatePromoCode(int promoCodeId, ZonedDateTime start, ZonedDateTime end) {
+        promoCodeRepository.updateEventPromoCode(promoCodeId, start, end);
     }
     
     public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInEvent(int eventId) {
         ZoneId zoneId = eventRepository.findById(eventId).getZoneId();
         return promoCodeRepository.findAllInEvent(eventId).stream().map((p) -> new PromoCodeDiscountWithFormattedTime(p, zoneId)).collect(toList());
+    }
+
+    public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInOrganization(int organizationId) {
+        ZoneId zoneId = ZoneId.systemDefault();
+        return promoCodeRepository.findAllInOrganization(organizationId).stream().map((p) -> new PromoCodeDiscountWithFormattedTime(p, zoneId)).collect(toList());
     }
 
     public String getEventUrl(Event event) {
@@ -777,8 +800,8 @@ public class EventManager {
 	public void swapAdditionalFieldPosition(int eventId, int id1, int id2) {
 		TicketFieldConfiguration field1 = ticketFieldRepository.findById(id1);
 		TicketFieldConfiguration field2 = ticketFieldRepository.findById(id2);
-		Assert.isTrue(eventId == field1.getEventId());
-		Assert.isTrue(eventId == field2.getEventId());
+		Assert.isTrue(eventId == field1.getEventId(), "eventId does not match field1.eventId");
+		Assert.isTrue(eventId == field2.getEventId(), "eventId does not match field2.eventId");
 		ticketFieldRepository.updateFieldOrder(id1, field2.getOrder());
 		ticketFieldRepository.updateFieldOrder(id2, field1.getOrder());
 	}
@@ -811,7 +834,7 @@ public class EventManager {
 		eventDeleterRepository.deleteEventMigration(eventId);
 		eventDeleterRepository.deleteSponsorScan(eventId);
 		eventDeleterRepository.deleteTicket(eventId);
-		eventDeleterRepository.resetTicketReservation(eventId);
+		eventDeleterRepository.deleteReservation(eventId);
 		
 		eventDeleterRepository.deletePromoCode(eventId);
 		eventDeleterRepository.deleteTicketCategoryText(eventId);

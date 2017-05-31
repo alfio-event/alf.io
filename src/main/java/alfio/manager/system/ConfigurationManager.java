@@ -138,6 +138,14 @@ public class ConfigurationManager {
         return optionally(() -> findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())).map(Configuration::getValue);
     }
 
+    public Map<ConfigurationKeys, Optional<String>> getStringConfigValueFrom(ConfigurationPathKey... keys) {
+        Map<ConfigurationKeys, Optional<String>> res = new HashMap<>();
+        for(ConfigurationPathKey key : keys) {
+            res.put(key.getKey(), getStringConfigValue(key));
+        }
+        return res;
+    }
+
     public String getRequiredValue(ConfigurationPathKey pathKey) {
         return getStringConfigValue(pathKey)
             .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + pathKey.getKey() + " not present"));

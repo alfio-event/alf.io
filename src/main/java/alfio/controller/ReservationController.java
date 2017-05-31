@@ -28,6 +28,7 @@ import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
@@ -37,10 +38,10 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
-import org.apache.commons.lang3.StringUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -59,12 +60,13 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
-import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
-import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
+import static alfio.model.system.Configuration.getSystemConfiguration;
+import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
 
 @Controller
+@Log4j2
+@AllArgsConstructor
 public class ReservationController {
 
     private final EventRepository eventRepository;
@@ -72,8 +74,6 @@ public class ReservationController {
     private final TicketReservationManager ticketReservationManager;
     private final OrganizationRepository organizationRepository;
 
-    private final StripeManager stripeManager;
-    private final PaypalManager paypalManager;
     private final TemplateManager templateManager;
     private final MessageSource messageSource;
     private final ConfigurationManager configurationManager;
@@ -82,37 +82,7 @@ public class ReservationController {
     private final TicketFieldRepository ticketFieldRepository;
     private final PaymentManager paymentManager;
     private final TicketRepository ticketRepository;
-
-    @Autowired
-    public ReservationController(EventRepository eventRepository,
-                                 EventManager eventManager,
-                                 TicketReservationManager ticketReservationManager,
-                                 OrganizationRepository organizationRepository,
-                                 StripeManager stripeManager,
-                                 TemplateManager templateManager,
-                                 MessageSource messageSource,
-                                 ConfigurationManager configurationManager,
-                                 NotificationManager notificationManager,
-                                 TicketHelper ticketHelper,
-                                 TicketFieldRepository ticketFieldRepository,
-                                 PaypalManager paypalManager,
-                                 PaymentManager paymentManager,
-                                 TicketRepository ticketRepository) {
-        this.eventRepository = eventRepository;
-        this.eventManager = eventManager;
-        this.ticketReservationManager = ticketReservationManager;
-        this.organizationRepository = organizationRepository;
-        this.stripeManager = stripeManager;
-        this.templateManager = templateManager;
-        this.messageSource = messageSource;
-        this.configurationManager = configurationManager;
-        this.notificationManager = notificationManager;
-        this.ticketHelper = ticketHelper;
-        this.ticketFieldRepository = ticketFieldRepository;
-        this.paypalManager = paypalManager;
-        this.paymentManager = paymentManager;
-        this.ticketRepository = ticketRepository;
-    }
+    private final EuVatChecker vatChecker;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
     public String showPaymentPage(@PathVariable("eventName") String eventName,
@@ -140,6 +110,7 @@ public class ReservationController {
                         return redirectReservation(Optional.of(reservation), eventName, reservationId);
                     }
 
+                    List<Ticket> ticketsInReservation = ticketReservationManager.findTicketsInReservation(reservationId);
                     if (Boolean.TRUE.equals(isPaypalSuccess) && paypalPayerID != null && paypalPaymentId != null) {
                         model.addAttribute("paypalPaymentId", paypalPaymentId)
                             .addAttribute("paypalPayerID", paypalPayerID)
@@ -155,36 +126,49 @@ public class ReservationController {
                     } else {
                         model.addAttribute("paypalCheckoutConfirmation", false)
                              .addAttribute("postponeAssignment", false)
-                             .addAttribute("showPostpone", true);
+                             .addAttribute("showPostpone", ticketsInReservation.size() > 1);
+                    }
+
+                    try {
+                        model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
+                    } catch (TicketReservationManager.OfflinePaymentException e) {
+                        if(event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
+                            log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName() , e);
+                        }
+                        model.addAttribute("delayForOfflinePayment", 0);
                     }
 
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
                     List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
                         .stream()
-                        .filter(p -> p.isActive() && event.getAllowedPaymentProxies().contains(p.getPaymentProxy()))
+                        .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
                         .map(PaymentManager.PaymentMethod::getPaymentProxy)
                         .collect(toList());
-                    model.addAttribute("orderSummary", orderSummary);
-                    model.addAttribute("reservationId", reservationId);
-                    model.addAttribute("reservation", reservation);
-                    model.addAttribute("pageTitle", "reservation-page.header.title");
-                    model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
-                    model.addAttribute("event", event);
-                    model.addAttribute("activePaymentMethods", activePaymentMethods);
-                    model.addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary));
-                    model.addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName());
-                    model.addAttribute("countries", ticketHelper.getLocalizedCountries(locale));
+
+                    model.addAttribute("multiplePaymentMethods" , activePaymentMethods.size() > 1 )
+                        .addAttribute("orderSummary", orderSummary)
+                        .addAttribute("reservationId", reservationId)
+                        .addAttribute("reservation", reservation)
+                        .addAttribute("pageTitle", "reservation-page.header.title")
+                        .addAttribute("event", event)
+                        .addAttribute("activePaymentMethods", activePaymentMethods)
+                        .addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary))
+                        .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
+                        .addAttribute("countries", TicketHelper.getLocalizedCountries(locale))
+                        .addAttribute("euCountries", TicketHelper.getLocalizedEUCountries(locale, configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST))))
+                        .addAttribute("euVatCheckingEnabled", vatChecker.isVatCheckingEnabledFor(event.getOrganizationId()));
+
                     boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
                     model.addAttribute("includeStripe", includeStripe);
                     if (includeStripe) {
-                        model.addAttribute("stripe_p_key", stripeManager.getPublicKey(event));
+                        model.addAttribute("stripe_p_key", paymentManager.getStripePublicKey(event));
                     }
                     Map<String, Object> modelMap = model.asMap();
                     modelMap.putIfAbsent("paymentForm", PaymentForm.fromExistingReservation(reservation));
                     modelMap.putIfAbsent("hasErrors", false);
                     model.addAttribute(
                         "ticketsByCategory",
-                        ticketReservationManager.findTicketsInReservation(reservationId).stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
+                        ticketsInReservation.stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
                             .map((e) -> {
                                 TicketCategory category = eventManager.getTicketCategoryById(e.getKey(), event.getId());
                                 List<TicketDecorator> decorators = TicketDecorator.decorate(e.getValue(),
@@ -244,7 +228,7 @@ public class ReservationController {
                     model.addAttribute("collapseEnabled", tickets.size() > 1 && !ticketsAllAssigned);
                     model.addAttribute("additionalServicesOnly", tickets.isEmpty() && !additionalServices.isEmpty());
                     model.addAttribute("additionalServices", additionalServices);
-                    model.addAttribute("countries", ticketHelper.getLocalizedCountries(locale));
+                    model.addAttribute("countries", TicketHelper.getLocalizedCountries(locale));
                     model.addAttribute("pageTitle", "reservation-page-complete.header.title");
                     model.addAttribute("event", ev);
                     model.addAttribute("useFirstAndLastName", ev.mustUseFirstAndLastName());
@@ -401,14 +385,17 @@ public class ReservationController {
         if (!ticketReservation.get().getValidity().after(new Date())) {
             bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
         }
+
         final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        if(!paymentForm.isPostponeAssignment() && !ticketRepository.checkTicketUUIDs(reservationId, paymentForm.getTickets().keySet())) {
-            bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
-        }
-        paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()));
-        if (bindingResult.hasErrors()) {
-            SessionUtil.addToFlash(bindingResult, redirectAttributes);
-            return redirectReservation(ticketReservation, eventName, reservationId);
+        if(paymentForm.getPaymentMethod() != PaymentProxy.PAYPAL || !paymentForm.hasPaypalTokens()) {
+            if(!paymentForm.isPostponeAssignment() && !ticketRepository.checkTicketUUIDs(reservationId, paymentForm.getTickets().keySet())) {
+                bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
+            }
+            paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()));
+            if (bindingResult.hasErrors()) {
+                SessionUtil.addToFlash(bindingResult, redirectAttributes);
+                return redirectReservation(ticketReservation, eventName, reservationId);
+            }
         }
 
         CustomerName customerName = new CustomerName(paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), event);
@@ -417,8 +404,8 @@ public class ReservationController {
         if(paymentForm.getPaymentMethod() == PaymentProxy.PAYPAL && !paymentForm.hasPaypalTokens()) {
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
             try {
-                String checkoutUrl = paypalManager.createCheckoutRequest(event, reservationId, orderSummary, customerName,
-                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale, paymentForm.isPostponeAssignment(), paymentForm.getTickets());
+                String checkoutUrl = paymentManager.createPaypalCheckoutRequest(event, reservationId, orderSummary, customerName,
+                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale, paymentForm.isPostponeAssignment());
                 assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
                 return "redirect:" + checkoutUrl;
             } catch (Exception e) {
@@ -432,7 +419,7 @@ public class ReservationController {
 
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaypalPayerID(), event, reservationId, paymentForm.getEmail(),
             customerName, locale, paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
-                Optional.ofNullable(paymentForm.getPaymentMethod()));
+                Optional.ofNullable(paymentForm.getPaymentMethod()), paymentForm.isInvoiceRequested(), paymentForm.getVatCountryCode(), paymentForm.getVatNr(), ticketReservation.get().getVatStatus());
 
         if(!status.isSuccessful()) {
             String errorMessageCode = status.getErrorCode().get();
@@ -457,13 +444,13 @@ public class ReservationController {
 
     private void assignTickets(String eventName, String reservationId, PaymentForm paymentForm, BindingResult bindingResult, HttpServletRequest request, boolean preAssign) {
         if(!paymentForm.isPostponeAssignment()) {
-            paymentForm.getTickets().entrySet().forEach(t -> {
-                String ticketId = t.getKey();
-                UpdateTicketOwnerForm owner = t.getValue();
-                if(preAssign) {
-                    ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {}, Optional.empty());
+            paymentForm.getTickets().forEach((ticketId, owner) -> {
+                if (preAssign) {
+                    ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {
+                    }, Optional.empty());
                 } else {
-                    ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {}, Optional.empty());
+                    ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {
+                    }, Optional.empty());
                 }
             });
         }
@@ -507,11 +494,14 @@ public class ReservationController {
     }
 
     private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
+
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        notificationManager.sendSimpleEmail(event, organization.getEmail(), "Reservation complete " + reservation.getId(), () -> {
-            return  templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, ticketReservationManager.prepareModelForReservationEmail(event, reservation),
-                RequestContextUtils.getLocale(request));
-        });
+        List<String> cc = notificationManager.getCCForEventOrganizer(event);
+
+        notificationManager.sendSimpleEmail(event, organization.getEmail(), cc, "Reservation complete " + reservation.getId(), () ->
+            templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, ticketReservationManager.prepareModelForReservationEmail(event, reservation),
+                RequestContextUtils.getLocale(request))
+        );
     }
 
     private boolean isExpressCheckoutEnabled(Event event, OrderSummary orderSummary) {

@@ -19,16 +19,21 @@ package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.PaymentInformations;
 import alfio.model.system.Configuration;
+import alfio.model.transaction.Transaction;
 import alfio.repository.TicketRepository;
+import alfio.util.MonetaryUtil;
 import com.stripe.exception.*;
 import com.stripe.model.Charge;
+import com.stripe.model.Refund;
 import com.stripe.net.RequestOptions;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -96,7 +101,44 @@ public class StripeManager {
             initialMetadata.put("billingAddress", billingAddress);
         }
         chargeParams.put("metadata", initialMetadata);
-        return Charge.create(chargeParams, RequestOptions.builder().setApiKey(getSecretKey(event)).build());
+        return Charge.create(chargeParams, options(event));
+    }
+
+    private RequestOptions options(Event event) {
+        return RequestOptions.builder().setApiKey(getSecretKey(event)).build();
+    }
+
+    public Optional<PaymentInformations> getInfo(Transaction transaction, Event event) {
+        try {
+            Charge charge = Charge.retrieve(transaction.getTransactionId(), options(event));
+            PaymentInformations pi = new PaymentInformations(MonetaryUtil.formatCents(charge.getAmount()), MonetaryUtil.formatCents(charge.getAmountRefunded()));
+            return Optional.ofNullable(pi);
+        } catch (StripeException e) {
+            return Optional.empty();
+        }
+    }
+
+    // https://stripe.com/docs/api#create_refund
+    public boolean refund(Transaction transaction, Event event, Optional<Integer> amount) {
+        String chargeId = transaction.getTransactionId();
+        try {
+            String amountOrFull = amount.map(MonetaryUtil::formatCents).orElse("full");
+            log.info("Stripe: trying to do a refund for payment {} with amount: {}", chargeId, amountOrFull);
+            Map<String, Object> params = new HashMap<>();
+            params.put("charge", chargeId);
+            amount.ifPresent(a -> params.put("amount", a));
+            Refund r = Refund.create(params, options(event));
+            if("succeeded".equals(r.getStatus())) {
+                log.info("Stripe: refund for payment {} executed with success for amount: {}", chargeId, amountOrFull);
+                return true;
+            } else {
+                log.warn("Stripe: was not able to refund payment with id {}, returned status is not 'succeded' but {}", chargeId, r.getStatus());
+                return false;
+            }
+        } catch (StripeException e) {
+            log.warn("Stripe: was not able to refund payment with id " + chargeId, e);
+            return false;
+        }
     }
 
     public String handleException(StripeException exc) {

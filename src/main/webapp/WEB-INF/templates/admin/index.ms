@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-csp.css"/>
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.css"/>
+    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.css"/>
     <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/lodash/lodash.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
@@ -29,20 +30,42 @@
     <script src="{{request.contextPath}}/resources/bower_components/chartist-plugin-accessibility/dist/chartist-plugin-accessibility.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/angular-animate/angular-animate.min.js"></script>
     <script src="{{request.contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/ng-app/admin-application.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/directive/admin-directive.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/filter/util.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/service/service.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/service/resource-service.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/service/organization.service.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/service/user.service.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/plugin/plugin-log.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/email/email-log.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/util/file-upload.js"></script>
-    <script src="{{request.contextPath}}/resources/js/admin/feature/user/user.js"></script>
+
     <script src="{{request.contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
+
     <script src="{{request.contextPath}}/resources/js/admin/feature/additional-service/additional-service.js"></script>
+
     <script src="{{request.contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js"></script>
+
     <script src="{{request.contextPath}}/resources/js/admin/feature/expired-events-list/expired-events-list.js"></script>
+
+    <script src="{{request.contextPath}}/resources/js/admin/feature/event-data-to-collect/event-data-to-collect.js"></script>
+
+    <script src="{{request.contextPath}}/resources/js/admin/feature/promo-codes/promo-codes.js"></script>
+
+    <script src="{{request.contextPath}}/resources/js/admin/feature/tickets-remove/tickets-remove.js"></script>
+
+    <script src="{{request.contextPath}}/resources/js/admin/feature/reservation-cancel/reservation-cancel.js"></script>
+
+    <script src="{{request.contextPath}}/resources/js/admin/feature/users/users.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/user-edit/user-edit.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/user-edit-current/user-edit-current.js"></script>
+
+    <script src="{{request.contextPath}}/resources/js/admin/feature/organizations/organizations.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/organization-edit/organization-edit.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/resources/show/resources-show.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/resources/edit/resources-edit.js"></script>
@@ -50,6 +73,9 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/reservation.service.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/view/reservation-view.js"></script>
+
+    <script src="{{request.contextPath}}/resources/js/admin/feature/reservations-list/reservations-list.js"></script>
+
     <link rel="stylesheet" href="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />
 
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
@@ -75,6 +101,8 @@
                         <div class="collapse navbar-collapse" data-uib-collapse="ctrl.menuCollapsed">
                             <ul class="nav navbar-nav">
                                 <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
+                                {{#isAdmin}}<li data-ui-sref-active="active"><a data-ui-sref="organizations">Organizations</a></li>{{/isAdmin}}
+                                <li data-ui-sref-active="active"><a data-ui-sref="users">Users</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="configuration.system">Configuration</a></li>
                                 <li class="nav-divider"></li>
                                 <li class="visible-xs navbar-text"><i class="fa fa-user"></i> Logged in as {{username}}</li>
@@ -94,6 +122,7 @@
             </div>
         </div>
     </div>
+    <div growl></div>
     <div data-ng-controller="LayoutController as ctrl" data-ng-switch="ctrl.displaySidebar">
         <div class="container-fluid menu-spacer" data-ng-show="ctrl.displaySidebar">
             <div class="row">
@@ -110,6 +139,9 @@
             <footer class="text-center">
                 <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{alfioVersion}}</h5>
                 <small><a href="https://github.com/exteso/alf.io/issues" target="_blank">report an issue</a> or <a href="https://groups.google.com/d/forum/alfio" target="_blank">ask for help</a></small>
+                <div class="wMarginTop10px">
+                    <a class="btn btn-xs btn-success" href="https://goo.gl/forms/nmpNNETLL4NCUPJt2" target="_blank">Tell us about you!</a>
+                </div>
             </footer>
         </div>
     </div>

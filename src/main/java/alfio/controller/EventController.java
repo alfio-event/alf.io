@@ -32,6 +32,7 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
@@ -158,7 +159,7 @@ public class EventController {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
         Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
-        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> promoCodeRepository.findPromoCodeInEvent(event.getId(), trimmedCode)));
+        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode)));
         
         if(specialCode.isPresent()) {
             if (!optionally(() -> eventManager.getTicketCategoryById(specialCode.get().getTicketCategoryId(), event.getId())).isPresent()) {
@@ -195,7 +196,7 @@ public class EventController {
             Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
 
             Optional<PromoCodeDiscount> promoCodeDiscount = SessionUtil.retrievePromotionCodeDiscount(request)
-                .flatMap((code) -> optionally(() -> promoCodeRepository.findPromoCodeInEvent(event.getId(), code)));
+                .flatMap((code) -> optionally(() -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), code)));
 
             final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             //hide access restricted ticket categories
@@ -211,7 +212,7 @@ public class EventController {
                 configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAPS_CLIENT_API_KEY)));
 
             final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
-                promoCodeRepository.countByEventId(event.getId()) > 0;
+                promoCodeRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0;
 
             String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
 
@@ -220,6 +221,13 @@ public class EventController {
             List<SaleableTicketCategory> validCategories = ticketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
             List<SaleableAdditionalService> additionalServices = additionalServiceRepository.loadAllForEvent(event.getId()).stream().map((as) -> getSaleableAdditionalService(event, locale, as, promoCodeDiscount.orElse(null))).collect(Collectors.toList());
             Predicate<SaleableTicketCategory> waitingQueueTargetCategory = tc -> !tc.getExpired() && !tc.isBounded();
+            boolean validPaymentConfigured = isEventHasValidPaymentConfigurations(event, configurationManager);
+
+            List<SaleableAdditionalService> notExpiredServices = additionalServices.stream().filter(SaleableAdditionalService::isNotExpired).collect(Collectors.toList());
+
+            List<SaleableAdditionalService> supplements = adjustIndex(0, notExpiredServices.stream().filter(a -> a.getType() == AdditionalService.AdditionalServiceType.SUPPLEMENT).collect(Collectors.toList()));
+            List<SaleableAdditionalService> donations = adjustIndex(supplements.size(), notExpiredServices.stream().filter(a -> a.getType() == AdditionalService.AdditionalServiceType.DONATION).collect(Collectors.toList()));
+
             model.addAttribute("event", eventDescriptor)//
                 .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
                 .addAttribute("ticketCategories", validCategories)//
@@ -237,11 +245,15 @@ public class EventController {
                 .addAttribute("unboundedCategories", ticketCategories.stream().filter(waitingQueueTargetCategory).collect(Collectors.toList()))
                 .addAttribute("preSales", EventUtil.isPreSales(event, ticketCategories))
                 .addAttribute("userLanguage", locale.getLanguage())
-                .addAttribute("showAdditionalServices", !additionalServices.isEmpty())
-                .addAttribute("enabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isNotExpired).collect(Collectors.toList()))
-                .addAttribute("disabledAdditionalServices", additionalServices.stream().filter(SaleableAdditionalService::isExpired).collect(Collectors.toList()))
-                .addAttribute("forwardButtonDisabled", ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable))
-                .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName());
+                .addAttribute("showAdditionalServices", !notExpiredServices.isEmpty())
+                .addAttribute("showAdditionalServicesDonations", !donations.isEmpty())
+                .addAttribute("showAdditionalServicesSupplements", !supplements.isEmpty())
+                .addAttribute("enabledAdditionalServicesDonations", donations)
+                .addAttribute("enabledAdditionalServicesSupplements", supplements)
+                .addAttribute("forwardButtonDisabled", (ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable)) || !validPaymentConfigured)
+                .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
+                .addAttribute("validPaymentMethodAvailable", validPaymentConfigured);
+
             model.asMap().putIfAbsent("hasErrors", false);//
             return "/event/show-event";
         }).orElse(REDIRECT + "/");
@@ -289,7 +301,7 @@ public class EventController {
                 return redirectToEvent;
             }
 
-            return reservation.validate(bindingResult, ticketReservationManager, ticketCategoryDescriptionRepository, additionalServiceRepository, eventManager, event, locale)
+            return reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event)
                 .map(selected -> {
 
                     Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
@@ -326,11 +338,31 @@ public class EventController {
 
     private SaleableAdditionalService getSaleableAdditionalService(Event event, Locale locale, AdditionalService as, PromoCodeDiscount promoCodeDiscount) {
         return new SaleableAdditionalService(event, as, additionalServiceTextRepository.findBestMatchByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE).getValue(),
-            additionalServiceTextRepository.findBestMatchByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.DESCRIPTION).getValue(), promoCodeDiscount);
+            additionalServiceTextRepository.findBestMatchByLocaleAndType(as.getId(), locale.getLanguage(), AdditionalServiceText.TextType.DESCRIPTION).getValue(), promoCodeDiscount, 0);
+    }
+
+    private static List<SaleableAdditionalService> adjustIndex(int offset, List<SaleableAdditionalService> l) {
+        List<SaleableAdditionalService> n = new ArrayList<>(l.size());
+
+        for(int i = 0; i < l.size(); i++) {
+            n.add(l.get(i).withIndex(i+offset));
+        }
+        return n;
     }
 
     private static boolean shouldApplyDiscount(PromoCodeDiscount promoCodeDiscount, TicketCategory ticketCategory) {
         return promoCodeDiscount.getCategories().isEmpty() || promoCodeDiscount.getCategories().contains(ticketCategory.getId());
+    }
+
+    private boolean isEventHasValidPaymentConfigurations(Event event, ConfigurationManager configurationManager) {
+        if (event.isFreeOfCharge()) {
+            return true;
+        } else if (event.getAllowedPaymentProxies().size() == 0) {
+            return false;
+        } else {
+            //Check whether event already started and it has only PaymentProxy.OFFLINE as payment method
+            return !(event.getAllowedPaymentProxies().size() == 1 && event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE) && !TicketReservationManager.hasValidOfflinePaymentWaitingPeriod(event, configurationManager));
+        }
     }
 
 }

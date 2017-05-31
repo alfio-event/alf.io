@@ -28,6 +28,7 @@
 {{/includeStripe}}
  ></script>
 <script src="{{request.contextPath}}/resources/js/event/attendee-form.js"></script>
+<script src="{{request.contextPath}}/resources/js/countdownjs/countdown.min.js"></script>
 {{>/event/header}}
 
 <div class="wizard wMarginBottom wMarginTop center">
@@ -61,16 +62,23 @@
     </tbody>
     <tfoot>
         {{^orderSummary.free}}
-        {{^event.vatIncluded}}
-            <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
-        {{/event.vatIncluded}}
+            {{#orderSummary.displayVat}}
+                {{^event.vatIncluded}}
+                    <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+                {{/event.vatIncluded}}
+            {{/orderSummary.displayVat}}
         {{/orderSummary.free}}
         <tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td class="text-right"><strong>{{orderSummary.totalPrice}} {{event.currency}}</strong></td></tr>
-        
+
         {{^orderSummary.free}}
-        {{#event.vatIncluded}}
-            <tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
-        {{/event.vatIncluded}}
+            {{#orderSummary.displayVat}}
+                {{#event.vatIncluded}}
+                    <tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+                {{/event.vatIncluded}}
+            {{/orderSummary.displayVat}}
+            {{^orderSummary.displayVat}}
+                <tr><td colspan="4">{{#i18n}}invoice.vat-voided{{/i18n}}</td></tr>
+            {{/orderSummary.displayVat}}
         {{/orderSummary.free}}
     </tfoot>
 </table>
@@ -83,8 +91,16 @@
     {{/error.globalErrors}}
 {{/hasErrors}}
 
-<div class="alert alert-info" data-validity="{{reservation.validity.time}}" data-message="{{#i18n}}reservation-page.time-for-completition{{/i18n}}" data-message-time-elapsed="{{#i18n}}error.STEP_2_ORDER_HAS_EXPIRED{{/i18n}}" id="validity">
-    <p><strong></strong></p>
+<div class="alert alert-info text-center">
+    <i class="fa fa-clock-o"></i>
+    <span id="validity-container"><span data-validity="{{reservation.validity.time}}"
+          data-message="{{#i18n}}reservation-page.time-for-completion{{/i18n}}"
+          data-message-time-elapsed="{{#i18n}}error.STEP_2_ORDER_HAS_EXPIRED{{/i18n}}"
+          data-labels-singular="{{#i18n}}reservation-page.time-for-completion.labels.singular{{/i18n}}"
+          data-labels-plural="{{#i18n}}reservation-page.time-for-completion.labels.plural{{/i18n}}"
+          data-labels-and="{{#i18n}}reservation-page.time-for-completion.labels.and{{/i18n}}"
+          id="validity"></span>
+    </span>
 </div>
 
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
@@ -110,7 +126,9 @@
     {{/paypalCheckoutConfirmation}}
     {{^paypalCheckoutConfirmation}}
 
-    <h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
+    <div class="page-header">
+        <h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
+    </div>
     {{#useFirstAndLastName}}
     <div class="row">
         <div class="col-xs-12 col-sm-6">
@@ -142,71 +160,19 @@
         {{#field-has-error}}[email]<span class="help-block text-danger">{{#i18n}}{{#field-error}}email{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
     </div>
 
-    {{^orderSummary.free}}
-    
-    <div class="form-group {{#field-has-error}}[billingAddress] has-error{{/field-has-error}}">
-        <label for="billing-address" class="control-label">{{#i18n}}reservation-page.billing-address{{/i18n}}</label>
-        <textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450">{{paymentForm.billingAddress}}</textarea>
-        {{#field-has-error}}[billingAddress]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddress{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+
+
+    <div class="page-header">
+        <h2>{{#i18n}}reservation-page.attendees{{/i18n}}</h2>
     </div>
-
-
-
-    <h2>{{#i18n}}reservation-page.payment{{/i18n}}</h2>
-
-        {{#event.multiplePaymentMethods}}
-            <div class="btn-group j-btn-group" data-toggle="buttons">
-                {{#activePaymentMethods}}
-                <label class="btn btn-default tooltip-handler xs-payment-method" {{#is-payment-method}}[STRIPE,{{.}}]  title="Powered by Stripe"{{/is-payment-method}}>
-                    <input type="radio" required name="paymentMethod" id="option-{{.}}" data-payment-method="{{.}}" autocomplete="off" value="{{.}}">
-                    {{#is-payment-method}}[STRIPE,{{.}}]<i class="fa fa-cc-stripe"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[PAYPAL,{{.}}]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
-                </label>
-                {{/activePaymentMethods}}
-            </div>
-        {{/event.multiplePaymentMethods}}
-        {{^event.multiplePaymentMethods}}
-            {{#event.firstPaymentMethod}}
-                <h4 class="wMarginTop">
-                {{#is-payment-method}}[STRIPE,{{.}}]<i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[PAYPAL,{{.}}]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
-                </h4>
-                <input type="hidden" name="paymentMethod" value="{{.}}">
-            {{/event.firstPaymentMethod}}
-        {{/event.multiplePaymentMethods}}
-        {{#event.allowedPaymentProxies}}
-            <div class="payment-method-detail" id="payment-method-{{.}}">
-                {{#is-payment-method}}[STRIPE,{{.}}]{{> /event/payment/stripe }}{{/is-payment-method}}
-                {{#is-payment-method}}[PAYPAL,{{.}}]{{> /event/payment/paypal }}{{/is-payment-method}}
-                {{#is-payment-method}}[ON_SITE,{{.}}]{{> /event/payment/on-site }}{{/is-payment-method}}
-                {{#is-payment-method}}[OFFLINE,{{.}}]{{> /event/payment/offline }}{{/is-payment-method}}
-            </div>
-        {{/event.allowedPaymentProxies}}
-    {{/orderSummary.free}}
-
-    <div class="checkbox wMarginTop">
-        <label>
-            <input type="checkbox" required name="termAndConditionsAccepted" value="true">
-            {{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termsAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
-        </label>
-    </div>
-
-    <hr/>
-
-    {{/paypalCheckoutConfirmation}}
-    <h2>{{#i18n}}reservation-page.attendees{{/i18n}}</h2>
 
     {{#showPostpone}}
-    <div class="checkbox">
-        <label>
-            <input type="checkbox" name="postponeAssignment" id="postpone-assignment" value="true" {{#postponeAssignment}}checked="checked"{{/postponeAssignment}}>
-            {{#i18n}}reservation-page.postpone-assignment{{/i18n}}
-        </label>
-    </div>
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" name="postponeAssignment" id="postpone-assignment" value="true" {{#postponeAssignment}}checked="checked"{{/postponeAssignment}}>
+                {{#i18n}}reservation-page.postpone-assignment{{/i18n}}
+            </label>
+        </div>
     {{/showPostpone}}
 
     <div id="attendeesData" {{#postponeAssignment}}class="hidden-xs hidden-sm hidden-md hidden-lg"{{/postponeAssignment}}>
@@ -214,10 +180,7 @@
             {{#ticketsByCategory}}
                 {{#value}}
                     <li class="list-group-item">
-                        <div class="wMarginBottom">
-                            <h3><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.ticket-nr{{/i18n}}<span class="ticket-counter"></span></h3>
-                        </div>
-                        {{#i18n}}reservation-page-complete.ticket-type{{/i18n}} <strong>{{key.name}}</strong>
+                        <h3><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.ticket-nr{{/i18n}}<span class="ticket-counter"></span> - <small>{{key.name}}</small></h3>
                         <div class="form-horizontal">
                             <div data-collapse-enabled="true" class="collapsible-container">
                                 {{> /event/attendee-fields }}
@@ -230,9 +193,135 @@
     </div>
     <div class="clearfix"></div>
 
-    <hr />
+
+    {{^orderSummary.free}}
+
+    <div class="page-header wMarginTop">
+        <h2>{{#i18n}}reservation-page.payment{{/i18n}}</h2>
+    </div>
+
+        {{#multiplePaymentMethods}}
+            <div class="btn-group j-btn-group" data-toggle="buttons">
+                {{#activePaymentMethods}}
+                <label class="btn btn-default tooltip-handler xs-payment-method" {{#is-payment-method}}[STRIPE,{{.}}]  title="Powered by Stripe"{{/is-payment-method}}>
+                    <input type="radio" required name="paymentMethod" id="option-{{.}}" data-payment-method="{{.}}" autocomplete="off" value="{{.}}">
+                    {{#is-payment-method}}[STRIPE,{{.}}]<i class="fa fa-cc-stripe"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
+                    {{#is-payment-method}}[PAYPAL,{{.}}]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
+                    {{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
+                    {{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
+                </label>
+                {{/activePaymentMethods}}
+            </div>
+        {{/multiplePaymentMethods}}
+        {{^multiplePaymentMethods}}
+            {{#activePaymentMethods}}
+                <h4 class="wMarginTop">
+                {{#is-payment-method}}[STRIPE,{{.}}]<i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
+                {{#is-payment-method}}[PAYPAL,{{.}}]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
+                {{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
+                {{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
+                </h4>
+                <input type="hidden" name="paymentMethod" value="{{.}}">
+            {{/activePaymentMethods}}
+        {{/multiplePaymentMethods}}
+        {{#activePaymentMethods}}
+            <div class="payment-method-detail" id="payment-method-{{.}}">
+                {{#is-payment-method}}[STRIPE,{{.}}]{{> /event/payment/stripe }}{{/is-payment-method}}
+                {{#is-payment-method}}[PAYPAL,{{.}}]{{> /event/payment/paypal }}{{/is-payment-method}}
+                {{#is-payment-method}}[ON_SITE,{{.}}]{{> /event/payment/on-site }}{{/is-payment-method}}
+                {{#is-payment-method}}[OFFLINE,{{.}}]{{> /event/payment/offline }}{{/is-payment-method}}
+            </div>
+        {{/activePaymentMethods}}
+
+    {{#orderSummary.displayVat}}
+        <div class="checkbox wMarginTop">
+            <label>
+                <input type="checkbox" name="invoiceRequested" id="invoice-requested" value="true" {{#paymentForm.invoiceRequested}}checked{{/paymentForm.invoiceRequested}}>
+                {{#i18n}}reservation-page.i-need-an-invoice{{/i18n}}
+            </label>
+        </div>
+    {{/orderSummary.displayVat}}
+
+    <div id="invoice" class="wMarginTop {{^paymentForm.invoiceRequested}}hidden{{/paymentForm.invoiceRequested}}">
+        {{#euVatCheckingEnabled}}
+            {{#orderSummary.displayVat}}
+                <div class="row">
+                    <div class="col-xs-12 col-sm-4">
+                        <div class="form-group">
+                            <label for="vatCountry">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
+                            <select name="vatCountryCode" id="vatCountry" value="{{paymentForm.vatCountryCode}}" class="form-control">
+                                <option value="">{{#i18n}}reservation-page.country.outside-eu{{/i18n}}</option>
+                                {{#euCountries}}
+                                    <option value="{{left}}">{{right}}</option>
+                                {{/euCountries}}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="vat-number-container" class="{{^paymentForm.hasVatCountryCode}}hidden-xs hidden-sm hidden-md hidden-lg{{/paymentForm.hasVatCountryCode}}">
+                            <div class="col-xs-6 col-sm-8">
+                                <div class="form-group">
+                                    <label for="vatNr">{{#i18n}}invoice.vat{{/i18n}}</label>
+                                    <div class="input-group">
+                                        <input id="vatNr" type="text" required name="vatNr" class="form-control" value="{{paymentForm.vatNr}}"/>
+                                        <div class="input-group-btn">
+                                            <button type="button" class="btn btn-warning btn-block" data-validation-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/vat-validation" id="validateVAT" data-text="{{#i18n}}invoice.validate.vat{{/i18n}}">{{#i18n}}invoice.validate.vat{{/i18n}}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+                <div id="validation-result-container" class="row {{^paymentForm.hasVatCountryCode}}hidden-xs hidden-sm hidden-md hidden-lg{{/paymentForm.hasVatCountryCode}}">
+                    <div class="col-xs-10 text-right">
+                        <span id="validation-result" class="text-danger" data-validation-error-msg="{{#i18n}}reservation-page.vat-validation-error{{/i18n}}"
+                              data-generic-error-msg="{{#i18n}}reservation-page.vat-error{{/i18n}}"
+                              data-validation-required-msg="{{#i18n}}reservation-page.vat-validation-required{{/i18n}}"></span>
+                    </div>
+                </div>
+            {{/orderSummary.displayVat}}
+            <div class="clearfix"></div>
+        {{/euVatCheckingEnabled}}
+
+        <div class="row">
+            {{^orderSummary.displayVat}}
+                <input type="hidden" name="vatCountryCode" value="{{paymentForm.vatCountryCode}}">
+                <input type="hidden" name="vatNr" value="{{paymentForm.vatNr}}"/>
+                <input type="hidden" name="invoiceRequested" value="true">
+                <div class="col-xs-6 col-md-2">
+                    <div class="form-group">
+                        <label class="control-label">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
+                        <p class="form-control-static">{{paymentForm.vatCountryCode}}</p>
+                    </div>
+                </div>
+                <div class="col-xs-6 col-md-2">
+                    <div class="form-group">
+                        <label class="control-label">{{#i18n}}invoice.vat{{/i18n}}</label>
+                        <p class="form-control-static">{{paymentForm.vatNr}}</p>
+                    </div>
+                </div>
+            {{/orderSummary.displayVat}}
+            <div class="col-xs-12 {{^orderSummary.displayVat}}col-md-8{{/orderSummary.displayVat}}">
+                <div class="form-group {{#field-has-error}}[billingAddress] has-error{{/field-has-error}}" id="billing-address-container">
+                    <label for="billing-address" class="control-label">{{#i18n}}reservation-page.billing-address{{/i18n}}</label>
+                    <textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450">{{paymentForm.billingAddress}}</textarea>
+                    {{#field-has-error}}[billingAddress]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddress{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+                </div>
+            </div>
+        </div>
+    </div>
+    {{/orderSummary.free}}
+    <hr/>
+
+    <div class="checkbox wMarginTop wMarginBottom">
+        <label>
+            <input type="checkbox" required name="termAndConditionsAccepted" value="true">
+            {{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termsAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
+        </label>
+    </div>
 
 
+    {{/paypalCheckoutConfirmation}}
 
     {{#orderSummary.free}}
         <div class="row">
@@ -242,20 +331,19 @@
     {{/orderSummary.free}}
     {{^orderSummary.free}}
         <div class="row">
-            <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom"><button type="submit" class="btn btn-success btn-block" id="continue-button">
+            <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom">
+                <button type="submit" class="btn btn-success btn-block" id="continue-button">
                 {{#paypalCheckoutConfirmation}}
                     {{#i18n}}reservation-page.paypal.confirm-button{{/i18n}}
                 {{/paypalCheckoutConfirmation}}
                 {{^paypalCheckoutConfirmation}}
                     {{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}
                 {{/paypalCheckoutConfirmation}}
-            </button></div>
+                </button>
+            </div>
             <div class="col-md-4 col-md-pull-4 col-xs-12"><button type="submit" class="btn btn-default btn-block" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button></div>
         </div>
     {{/orderSummary.free}}
-
-
-
 
  
     <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">

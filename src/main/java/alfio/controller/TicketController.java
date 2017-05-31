@@ -144,7 +144,7 @@ public class TicketController {
                 .addAttribute("reservationId", ticketReservationManager.getShortReservationID(event, data.getMiddle().getId()))
                 .addAttribute("event", event)//
                 .addAttribute("ticketCategory", ticketCategory)//
-                .addAttribute("countries", ticketHelper.getLocalizedCountries(locale))
+                .addAttribute("countries", TicketHelper.getLocalizedCountries(locale))
                 .addAttribute("organization", organization)//
                 .addAttribute("pageTitle", "show-ticket.header.title")
                 .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName());

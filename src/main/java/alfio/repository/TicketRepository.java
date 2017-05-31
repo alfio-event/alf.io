@@ -103,13 +103,22 @@ public interface TicketRepository {
     })
     int resetCategoryIdForUnboundedCategories(@Bind("reservationIds") List<String> reservationIds);
 
+    @Query("update ticket set category_id = null where id in (:ticketIds) and category_id in (select tc.id from ticket_category tc, ticket t where t.id in (:ticketIds) and t.category_id = tc.id and tc.bounded = false)")
+    @QueriesOverride({
+        @QueryOverride(db = "MYSQL", value = "update ticket set category_id = null where id in (:ticketIds) and category_id in (select * from (select tc.id from ticket_category tc, ticket t where t.id in (:ticketIds) and t.category_id = tc.id and tc.bounded = false) as sq)")
+    })
+    int resetCategoryIdForUnboundedCategoriesWithTicketIds(@Bind("ticketIds") List<Integer> ticketIds);
+
     @Query("update ticket set category_id = null where event_id = :eventId and category_id = :categoryId and id in (:ticketIds)")
     int unbindTicketsFromCategory(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId, @Bind("ticketIds") List<Integer> ids);
 
     @Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc")
     List<Ticket> findTicketsInReservation(@Bind("reservationId") String reservationId);
 
-    @Query("select count(*) from ticket where tickets_reservation_id = :reservationId")
+    @Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc LIMIT 1 OFFSET 0")
+    Optional<Ticket> findFirstTicketInReservation(@Bind("reservationId") String reservationId);
+
+    @Query("select count(*) from ticket where tickets_reservation_id = :reservationId ")
     Integer countTicketsInReservation(@Bind("reservationId") String reservationId);
     
     @Query("select * from ticket where uuid = :uuid")
@@ -136,6 +145,9 @@ public interface TicketRepository {
     @Query("select * from ticket where id = :id and category_id = :categoryId")
     Ticket findById(@Bind("id") int ticketId, @Bind("categoryId") int categoryId);
 
+    @Query("select * from ticket where id in (:ids)")
+    List<Ticket> findByIds(@Bind("ids") List<Integer> ticketIds);
+
     @Query("select * from ticket where special_price_id_fk = :specialPriceId")
     Ticket findBySpecialPriceId(@Bind("specialPriceId") int specialPriceId);
 
@@ -144,9 +156,6 @@ public interface TicketRepository {
 
     @Query("select * from ticket where category_id in (:categories) and status = 'PENDING'")
     List<Ticket> findPendingTicketsInCategories(@Bind("categories") List<Integer> categories);
-
-    @Query("select distinct tickets_reservation_id from ticket where event_id = :eventId and status = 'PENDING'")
-    List<String> findPendingReservationsForEvent(@Bind("eventId") int eventId);
     
     @Query("select " +
             " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
@@ -156,6 +165,7 @@ public interface TicketRepository {
             " tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address," +
             " tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, " +
             " tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language, tr.direct_assignment tr_direct_assignment, tr.invoice_number tr_invoice_number, tr.invoice_model tr_invoice_model, " +
+            " tr.vat_status tr_vat_status, tr.vat_nr tr_vat_nr, tr.vat_country tr_vat_country, tr.invoice_requested tr_invoice_requested," +
             " tc.id tc_id, tc.inception tc_inception, tc.expiration tc_expiration, tc.max_tickets tc_max_tickets, tc.name tc_name, tc.src_price_cts tc_src_price_cts, tc.access_restricted tc_access_restricted, tc.tc_status tc_tc_status, tc.event_id tc_event_id, tc.bounded tc_bounded" +
             " from ticket t " +
             " inner join tickets_reservation tr on t.tickets_reservation_id = tr.id " +
@@ -170,6 +180,7 @@ public interface TicketRepository {
         " t.user_language t_user_language," +
         " tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address," +
         " tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language, tr.direct_assignment tr_direct_assignment, " +
+        " tr.vat_status tr_vat_status, tr.vat_nr tr_vat_nr, tr.vat_country tr_vat_country, tr.invoice_requested tr_invoice_requested," +
         " tr.invoice_number tr_invoice_number, tr.invoice_model tr_invoice_model from ticket t, tickets_reservation tr where t.event_id = :eventId and t.status in(" + CONFIRMED + ") and t.tickets_reservation_id = tr.id order by tr.confirmation_ts")
     List<TicketCSVInfo> findAllConfirmedForCSV(@Bind("eventId") int eventId);
 
@@ -191,11 +202,16 @@ public interface TicketRepository {
     @Query("update ticket set reminder_sent = true where id = :id and reminder_sent = false")
     int flagTicketAsReminderSent(@Bind("id") int ticketId);
 
-    @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, full_name = null, first_name = null, last_name = null, email_address = null where id = :ticketId and status = 'ACQUIRED' and tickets_reservation_id = :reservationId and event_id = :eventId")
+    String RESET_TICKET = " TICKETS_RESERVATION_ID = null, FULL_NAME = null, EMAIL_ADDRESS = null, SPECIAL_PRICE_ID_FK = null, LOCKED_ASSIGNMENT = false, USER_LANGUAGE = null, REMINDER_SENT = false, SRC_PRICE_CTS = 0, FINAL_PRICE_CTS = 0, VAT_CTS = 0, DISCOUNT_CTS = 0, FIRST_NAME = null, LAST_NAME = null ";
+
+    @Query("update ticket set status = 'RELEASED', " + RESET_TICKET + " where id = :ticketId and status = 'ACQUIRED' and tickets_reservation_id = :reservationId and event_id = :eventId")
     int releaseTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
 
-    @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, special_price_id_fk = null, full_name = null, first_name = null, last_name = null, email_address = null where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
+    @Query("update ticket set status = 'RELEASED', " + RESET_TICKET + " where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
     int releaseExpiredTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
+
+    @Query("update ticket set status = 'FREE', " + RESET_TICKET + " where id in (:ticketIds)")
+    int resetTickets(@Bind("ticketIds") List<Integer> ticketIds);
 
     @Query("select count(*) from ticket where status = 'RELEASED' and event_id = :eventId")
     Integer countWaiting(@Bind("eventId") int eventId);
@@ -230,5 +246,4 @@ public interface TicketRepository {
     default boolean checkTicketUUIDs(String reservationId, Set<String> uuids) {
         return countFoundTicketsInReservation(reservationId, uuids) == uuids.size();
     }
-
 }

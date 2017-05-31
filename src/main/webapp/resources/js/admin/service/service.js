@@ -1,6 +1,6 @@
 (function () {
     "use strict";
-    var baseServices = angular.module('adminServices', []);
+    var baseServices = angular.module('adminServices', ['angular-growl' , 'ngAnimate']);
 
     baseServices.config(['$httpProvider', function($httpProvider) {
         var token = $("meta[name='_csrf']").attr("content");
@@ -32,7 +32,7 @@
         };
     });
 
-    baseServices.service("EventService", function($http, HttpErrorHandler, $uibModal, $window, $rootScope) {
+    baseServices.service("EventService", function($http, HttpErrorHandler, $uibModal, $window, $rootScope, $q) {
         var service = {
             data: {},
             getAllEvents : function() {
@@ -156,7 +156,9 @@
             swapFieldPosition: function(eventName, id1, id2) {
             	return $http.post('/admin/api/events/'+eventName+'/additional-field/swap-position/'+id1+'/'+id2);
             },
-
+            findAllReservations: function(eventName) {
+                return $http.get('/admin/api/reservation/event/'+eventName+'/reservations/list');
+            },
             deleteEvent: function(event) {
                 var modal = $uibModal.open({
                     size:'lg',
@@ -215,6 +217,65 @@
                         };
                     }
                 });
+            },
+
+            cancelReservationModal: function(event, reservationId) {
+                var deferred = $q.defer();
+                var promise = deferred.promise;
+
+                var modal = $uibModal.open({
+                    size:'lg',
+                    template:'<reservation-cancel event="event" reservation-id="reservationId" on-success="success()" on-cancel="close()"></reservation-cancel>',
+                    backdrop: 'static',
+                    controller: function($scope) {
+                        $scope.event = event;
+                        $scope.reservationId = reservationId;
+                        $scope.close = function() {
+                            $scope.$close(false);
+                            deferred.reject();
+                        };
+
+                        $scope.success = function () {
+                            $scope.$close(false);
+                            deferred.resolve();
+                        }
+                    }
+                });
+                return promise;
+            },
+
+            removeTicketModal: function(event, reservationId, ticketId) {
+                var deferred = $q.defer();
+                var promise = deferred.promise;
+
+                var modal = $uibModal.open({
+                    size:'lg',
+                    template:'<tickets-remove event="event" reservation-id="reservationId" ticket-id="ticketId" on-success="success()" on-cancel="close()"></tickets-remove>',
+                    backdrop: 'static',
+                    controller: function($scope) {
+                        $scope.event = event;
+                        $scope.ticketId = ticketId;
+                        $scope.reservationId = reservationId;
+                        $scope.close = function() {
+                            $scope.$close(false);
+                            deferred.reject();
+                        };
+
+                        $scope.success = function () {
+                            $scope.$close(false);
+                            deferred.resolve();
+                        }
+                    }
+                });
+                return promise;
+            },
+
+            removeTickets: function(eventName, reservationId, ticketIds, ticketIdsToRefund, notify) {
+                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/remove-tickets', {ticketIds: ticketIds, refundTo: ticketIdsToRefund, notify : notify});
+            },
+
+            cancelReservation: function(eventName, reservationId, refund, notify) {
+                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/cancel?refund=' + refund+"&notify="+notify);
             }
         };
         return service;
@@ -231,7 +292,7 @@
         };
     });
 
-    baseServices.service('ValidationService', function() {
+    baseServices.service('ValidationService', function(NotificationHandler) {
         return {
             validationPerformer: function($q, validator, data, form) {
                 var deferred = $q.defer();
@@ -243,9 +304,14 @@
             validationResultHandler: function(form, deferred) {
                 return function(validationResult) {
                     if(validationResult.errorCount > 0) {
-                        angular.forEach(validationResult.validationErrors, function(error) {
-                            form.$setError(error.fieldName, error.message);
-                        });
+                        if(form.$setError) {
+                            angular.forEach(validationResult.validationErrors, function(error) {
+                                form.$setError(error.fieldName, error.message);
+                            });
+                        } else {
+                            var firstError = validationResult.validationErrors[0];
+                            NotificationHandler.showError(firstError.description);
+                        }
                         deferred.reject('invalid form');
                     }
                     deferred.resolve();
@@ -262,6 +328,25 @@
             }
         };
     });
+
+    baseServices.service("NotificationHandler", ["growl", function (growl) {
+        var config = {ttl: 5000, disableCountDown: true};
+        return {
+            showSuccess: function (message) {
+                growl.success(message, config);
+            },
+            showWarning: function (message) {
+                growl.warning(message, config);
+            },
+            showInfo : function (message) {
+                growl.info(message, config);
+            },
+            showError : function (message) {
+                growl.error(message, config);
+            }
+        }
+
+    }]);
 
     baseServices.service("PriceCalculator", function() {
         var instance = {
@@ -311,24 +396,36 @@
     });
     
     baseServices.service("PromoCodeService", function($http, HttpErrorHandler) {
+
+        function addUtfOffsetIfNecessary(promoCode) {
+            if(promoCode.eventId == null) {
+                promoCode.utcOffset = (new Date()).getTimezoneOffset()*-60; //in seconds
+            }
+        }
+
         return {
-                add : function(eventId, promoCode) {
-                    return $http['post']('/admin/api/events/' + eventId + '/promo-code', promoCode).error(HttpErrorHandler.handle);
+                add : function(promoCode) {
+                    addUtfOffsetIfNecessary(promoCode);
+                    return $http['post']('/admin/api/promo-code', promoCode).error(HttpErrorHandler.handle);
                 },
-                remove: function(eventId, promoCode) {
-                    return $http['delete']('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)).error(HttpErrorHandler.handle);
+                remove: function(promoCodeId) {
+                    return $http['delete']('/admin/api/promo-code/' + promoCodeId).error(HttpErrorHandler.handle);
                 },
                 list: function(eventId) {
                     return $http.get('/admin/api/events/' + eventId + '/promo-code').error(HttpErrorHandler.handle);
                 },
-                countUse : function(eventId, promoCode) {
-                    return $http.get('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)+ '/count-use');
+                listOrganization : function(organizationId) {
+                    return $http.get('/admin/api/organization/' + organizationId + '/promo-code').error(HttpErrorHandler.handle);
                 },
-                disable: function(eventId, promoCode) {
-                    return $http['post']('/admin/api/events/' + eventId + '/promo-code/' + encodeURIComponent(promoCode)+ '/disable');
+                countUse : function(promoCodeId) {
+                    return $http.get('/admin/api/promo-code/' + promoCodeId + '/count-use');
                 },
-                update: function(eventId, promoCode, toUpdate) {
-                    return $http.post('/admin/api/events/' + eventId + '/promo-code/'+ encodeURIComponent(promoCode), toUpdate);
+                disable: function(promoCodeId) {
+                    return $http['post']('/admin/api/promo-code/' + promoCodeId + '/disable');
+                },
+                update: function(promoCodeId, toUpdate) {
+                    addUtfOffsetIfNecessary(toUpdate);
+                    return $http.post('/admin/api/promo-code/' + promoCodeId, toUpdate);
                 }
         };
     });

@@ -202,11 +202,19 @@ public class TicketHelper {
         return assignTicket(eventName, reservationId, ticketUuid, form, bindingResult, request, model);
     }
 
-    public List<Pair<String, String>> getLocalizedCountries(Locale locale) {
-        return Stream.of(Locale.getISOCountries())
-                .map(isoCode -> Pair.of(isoCode, new Locale("", isoCode).getDisplayCountry(locale)))
-                .sorted(Comparator.comparing(Pair::getRight))
-                .collect(Collectors.toList());
+    public static List<Pair<String, String>> getLocalizedCountries(Locale locale) {
+        return mapISOCountries(Stream.of(Locale.getISOCountries()), locale);
+    }
+
+    public static List<Pair<String, String>> getLocalizedEUCountries(Locale locale, String euCountries) {
+        return mapISOCountries(Stream.of(Locale.getISOCountries()).filter(isoCode -> StringUtils.contains(euCountries, isoCode)), locale);
+    }
+
+    private static List<Pair<String, String>> mapISOCountries(Stream<String> isoCountries, Locale locale) {
+        return isoCountries
+            .map(isoCode -> Pair.of(isoCode, new Locale("", isoCode).getDisplayCountry(locale)))
+            .sorted(Comparator.comparing(Pair::getRight))
+            .collect(Collectors.toList());
     }
 
     private void updateTicketOwner(UpdateTicketOwnerForm updateTicketOwner, HttpServletRequest request, Ticket t, Event event, TicketReservation ticketReservation, Optional<UserDetails> userDetails) {

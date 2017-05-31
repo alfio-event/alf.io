@@ -102,7 +102,6 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
         registry.addViewController("/admin/partials/index.html").setViewName("/admin/partials/main");
-        registry.addViewController("/admin/partials/main/organizations.html").setViewName("/admin/partials/organizations");
     }
 
     @Override

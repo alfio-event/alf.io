@@ -50,14 +50,29 @@
         </div>
         <div class="col-sm-2 text-align-center">
             {{#saleable}}
-                <input name="additionalService[{{-index}}].additionalServiceId" value="{{id}}" type="hidden">
                 {{#fixPrice}}
-                    <select aria-labelledby="{{id}}-label" name="additionalService[{{-index}}].quantity" class="form-control text-align-center" placeholder="0" autocomplete="off">
-                        {{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
-                    </select>
+                    {{#mandatoryOneForTicket}}
+                        {{#i18n}}show-event.mandatoryOneForTicket{{/i18n}}
+                    {{/mandatoryOneForTicket}}
+                    {{#unlimitedAmount}}
+                        <input name="additionalService[{{index}}].additionalServiceId" value="{{id}}" type="hidden">
+                        <input type="number" min="0" step="1" aria-labelledby="{{id}}-label" name="additionalService[{{index}}].quantity" class="form-control" placeholder="0" autocomplete="off">
+                    {{/unlimitedAmount}}
+                    {{#limitedAmount}}
+                        <input name="additionalService[{{index}}].additionalServiceId" value="{{id}}" type="hidden">
+                        <select {{#maxAmountPerTicket}}data-max-amount-per-ticket="{{maxQtyPerOrder}}"{{/maxAmountPerTicket}} aria-labelledby="{{id}}-label" name="additionalService[{{index}}].quantity" class="form-control text-align-center" placeholder="0" autocomplete="off">
+                            {{#maxAmountPerTicket}}
+                                <option value="0">0</option>
+                            {{/maxAmountPerTicket}}
+                            {{^maxAmountPerTicket}}
+                                {{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
+                            {{/maxAmountPerTicket}}
+                        </select>
+                    {{/limitedAmount}}
                 {{/fixPrice}}
                 {{^fixPrice}}
-                    <input type="number" min="0" step="any" name="additionalService[{{-index}}].amount" class="form-control" title="">
+                    <input name="additionalService[{{index}}].additionalServiceId" value="{{id}}" type="hidden">
+                    <input type="number" min="0" step="any" name="additionalService[{{index}}].amount" class="form-control" title="">
                 {{/fixPrice}}
             {{/saleable}}
             {{^saleable}}

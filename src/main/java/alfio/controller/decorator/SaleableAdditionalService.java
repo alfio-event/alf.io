@@ -34,13 +34,19 @@ public class SaleableAdditionalService implements PriceContainer {
     private final String title;
     private final String description;
     private final PromoCodeDiscount promoCodeDiscount;
+    private final int index;
 
-    public SaleableAdditionalService(Event event, AdditionalService additionalService, String title, String description, PromoCodeDiscount promoCodeDiscount) {
+    public SaleableAdditionalService(Event event, AdditionalService additionalService, String title, String description, PromoCodeDiscount promoCodeDiscount, int index) {
         this.event = event;
         this.additionalService = additionalService;
         this.title = title;
         this.description = description;
         this.promoCodeDiscount = promoCodeDiscount;
+        this.index = index;
+    }
+
+    public SaleableAdditionalService withIndex(int index) {
+        return new SaleableAdditionalService(this.event, this.additionalService, this.title, this.description, this.promoCodeDiscount, index);
     }
 
     public boolean isExpired() {
@@ -65,10 +71,6 @@ public class SaleableAdditionalService implements PriceContainer {
 
     public boolean getFree() {
         return isFixPrice() && getFinalPrice().compareTo(BigDecimal.ZERO) == 0;
-    }
-
-    public boolean getSaleable() {
-        return getUtcInception().isBefore(now()) && getUtcExpiration().isAfter(now());
     }
 
     public ZonedDateTime getZonedInception() {
@@ -135,6 +137,24 @@ public class SaleableAdditionalService implements PriceContainer {
             default:
                 return false;
         }
+    }
+
+    public boolean getMandatoryOneForTicket() {
+        return getSupplementPolicy() == AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET;
+    }
+
+    public boolean getUnlimitedAmount() {
+        return getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT;
+    }
+
+    public boolean getLimitedAmount() {
+        return getSupplementPolicy() == null ||
+            getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_RESERVATION ||
+            getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET;
+    }
+
+    public boolean getMaxAmountPerTicket() {
+        return getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET;
     }
 
     public BigDecimal getVatPercentage() {

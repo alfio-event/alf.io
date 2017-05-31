@@ -17,136 +17,253 @@
             </div>
         </div>
 
-        <div class="page-header">
-            <h3>Reservation details</h3>
-        </div>
 
-        <div class="well">
-            <h4>URL to share: <a ng-href="{{$ctrl.reservationUrl}}" target="_blank">{{$ctrl.reservationUrl}}</a></h4>
-        </div>
+        <uib-tabset active="active">
+            <uib-tab index="0">
+                <uib-tab-heading>
+                    Info
+                </uib-tab-heading>
 
-        <div class="row wMarginBottom">
-            <div class="col-xs-12">
-                <small><i class="fa fa-info-circle"></i> <span class="text-muted">Once the reservation has been created, you can choose whether to confirm it or to leave it pending and send the link to the contact person for the payment.</span></small>
-                <small><span class="text-muted">Being in control of the expiration date can be really useful in case you want to give more time for the payment.</span></small>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-xs-3">
-                <div class="form-group">
-                    <label>Status</label>
-                    <div class="input-group">
-                        <div class="form-control-static">{{$ctrl.reservation.status}}</div>
-                        <div class="input-group-addon" style="padding: 0; background-color: transparent; border: 0" ng-if="!$ctrl.onUpdate">
-                            <button type="button" ng-if="$ctrl.reservation.status === 'PENDING'" class="btn btn-sm btn-success pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
-                        </div>
+
+
+                <div class="page-header">
+                    <h3>Reservation details
+                        <button type="button" ng-click="$ctrl.cancelReservationModal()" ng-if="$ctrl.reservation.status !== 'CANCELLED'" class="btn btn-sm btn-warning pull-right">Cancel reservation</button>
+                    </h3>
+                </div>
+
+                <div class="well">
+                    <h4>URL to share: <a ng-href="{{$ctrl.reservationUrl}}" target="_blank">{{$ctrl.reservationUrl}}</a></h4>
+                </div>
+
+                <div class="row wMarginBottom">
+                    <div class="col-xs-12">
+                        <small><i class="fa fa-info-circle"></i> <span class="text-muted">Once the reservation has been created, you can choose whether to confirm it or to leave it pending and send the link to the contact person for the payment.</span></small>
+                        <small><span class="text-muted">Being in control of the expiration date can be really useful in case you want to give more time for the payment.</span></small>
                     </div>
                 </div>
-            </div>
-            <div class="col-xs-3 col-xs-push-3" ng-if="$ctrl.reservation.status !== 'COMPLETE'">
-                <div class="form-group">
-                    <label for="expiration">Expiration</label>
-                    <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration" required>
-                </div>
-            </div>
-        </div>
-        <hr>
-
-        <div class="page-header">
-            <h3>Contact info</h3>
-        </div>
-
-        <div class="row">
-            <div class="col-xs-12">
-                <div class="checkbox">
-                    <label><input type="checkbox" ng-model="$ctrl.reservation.updateContactData"> Edit contact info</label>
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-6">
-                <div class="form-group">
-                    <label for="customerFirstName">First name</label>
-                    <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.firstName}}</div>
-                    <input class="form-control" id="customerFirstName" ng-if="$ctrl.reservation.updateContactData" name="customerFirstName" ng-model="$ctrl.reservation.customerData.firstName">
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-6">
-                <div class="form-group">
-                    <label for="customerLastName">Last name</label>
-                    <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.lastName}}</div>
-                    <input class="form-control" id="customerLastName" ng-if="$ctrl.reservation.updateContactData" name="customerLastName" ng-model="$ctrl.reservation.customerData.lastName">
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-xs-12 col-sm-6">
-                <div class="form-group">
-                    <label for="customerEmailAddress">Email Address</label>
-                    <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.emailAddress}}</div>
-                    <input type="email" class="form-control" id="customerEmailAddress" ng-if="$ctrl.reservation.updateContactData" name="customerEmailAddress" ng-model="$ctrl.reservation.customerData.emailAddress">
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-6">
-                <div class="form-group">
-                    <label>Language</label>
-                    <div class="form-control-static">{{$ctrl.reservation.language}}</div>
-                </div>
-            </div>
-        </div>
-
-        <hr>
-        <div class="panel panel-default" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
-            <div class="panel-heading">
-                <div class="panel-title">Attendees for Category {{ticketInfo.category.name}}</div>
-            </div>
-            <div class="panel-body">
-                <div class="checkbox">
-                    <label><input type="checkbox" ng-model="ticketInfo.updateAttendees"> Edit attendees</label>
-                </div>
-            </div>
-            <ul class="list-group wMarginTop10px">
-                <li class="list-group-item" ng-repeat="attendee in ticketInfo.attendees">
-                    <div class="list-group-item-text row">
-                        <div class="col-xs-12 col-md-4">
-                            <div class="form-group">
-                                <label for="attendee-{{$index}}-firstName">Attendee {{$index + 1}} First name</label>
-                                <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-firstName" required name="attendee-{{$index}}-first" ng-model="attendee.firstName">
-                                <div ng-if="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.firstName}}</div>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-md-4">
-                            <div class="form-group">
-                                <label for="attendee-{{$index}}-lastName">Last name</label>
-                                <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-lastName" required name="attendee-{{$index}}-last" ng-model="attendee.lastName">
-                                <div ng-if="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.lastName}}</div>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-md-4">
-                            <div class="form-group">
-                                <label for="attendee-{{$index}}-emailAddress">E-Mail</label>
-                                <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-emailAddress" required name="attendee-{{$index}}-emailAddress" ng-model="attendee.emailAddress">
-                                <div ng-if="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.emailAddress}}</div>
+                <div class="row">
+                    <div class="col-xs-3">
+                        <div class="form-group">
+                            <label>Status</label>
+                            <div class="input-group">
+                                <div class="form-control-static">{{$ctrl.reservation.status}}</div>
+                                <div class="input-group-addon" style="padding: 0; background-color: transparent; border: 0" ng-if="!$ctrl.onUpdate">
+                                    <button type="button" ng-if="$ctrl.reservation.status === 'PENDING'" class="btn btn-sm btn-success pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </li>
-            </ul>
-        </div>
-        <div class="pull-left">
-            <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.notifyCustomer()"><i class="fa fa-envelope-o"></i> Send reservation via email</button>
-            <button class="btn btn-sm btn-default" ng-if="$ctrl.reservation.status === 'COMPLETE'" type="button" ng-click="$ctrl.notifyAttendees()"><i class="fa fa-envelope-o"></i> Send tickets via email</button>
-        </div>
-        <div class="pull-right" ng-if="$ctrl.reservationDescriptor.reservation.hasInvoiceOrReceiptDocument">
-            <a class="btn btn-sm btn-default" ng-if="$ctrl.reservationDescriptor.reservation.hasInvoiceNumber" href="../event/{{$ctrl.event.shortName}}/reservation/{{$ctrl.reservation.id}}/invoice" target="_blank"><i class="fa fa-download"></i> Download invoice</a>
-            <a class="btn btn-sm btn-default" ng-if="!$ctrl.reservationDescriptor.reservation.hasInvoiceNumber" href="../event/{{$ctrl.event.shortName}}/reservation/{{$ctrl.reservation.id}}/receipt" target="_blank"><i class="fa fa-download"></i> Download receipt</a>
-        </div>
-        <div class="clearfix wMarginBottom"></div>
-        <div uib-alert type="success" close="$ctrl.hideMessages()" dismiss-on-timeout="2000" data-ng-if="$ctrl.confirmationMessage"><i class="fa fa-check"></i> {{$ctrl.confirmationMessage}}</div>
-        <div uib-alert type="danger" close="$ctrl.hideMessages()" dismiss-on-timeout="2000" data-ng-if="$ctrl.errorMessage"><i class="fa fa-times"></i> {{$ctrl.errorMessage}}</div>
-        <hr>
-        <div class="pull-right">
-            <button type="button" ng-if="$ctrl.onClose" ng-click="$ctrl.onClose()" class="btn btn-lg" style="margin-bottom:20px">Close</button>
-            <button type="button" ng-if="$ctrl.reservation.status === 'PENDING' && $ctrl.onUpdate" class="btn btn-lg btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
-            <button type="submit" class="btn btn-lg btn-warning" data-ng-disabled="viewReservation.$waiting" style="margin-bottom:20px">Update</button>
-        </div>
+                    <div class="col-xs-3 col-xs-push-3" ng-if="$ctrl.reservation.status !== 'COMPLETE' && $ctrl.reservation.status !== 'CANCELLED'">
+                        <div class="form-group">
+                            <label for="expiration">Expiration</label>
+                            <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="page-header">
+                        <h3>Payment info</h3>
+                    </div>
+
+                    <div ng-if="$ctrl.loadingPaymentInfo">Loading...</div>
+                    <div ng-if="!$ctrl.loadingPaymentInfo && !$ctrl.paymentInfo">No payments have been found.</div>
+                    <div class="row" ng-if="$ctrl.paymentInfo">
+                        <div class="col-xs-12 col-sm-6">
+
+                            <dl class="dl-horizontal">
+                                <dt>Payment method</dt>
+                                <dd><span ng-bind="$ctrl.paymentInfo.paymentMethod">-</span></dd>
+
+                                <dt ng-if="$ctrl.paymentInfo.transaction">Payment id</dt>
+                                <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.transactionId"></dd>
+
+                                <dt ng-if="$ctrl.paymentInfo.transaction">Transaction timestamp</dt>
+                                <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
+
+                                <dt ng-if="$ctrl.paymentInfo.paymentInformations && $ctrl.paymentInfo.paymentInformations">Paid amount</dt>
+                                <dd ng-if="$ctrl.paymentInfo.paymentInformations && $ctrl.paymentInfo.paymentInformations">{{$ctrl.paymentInfo.paymentInformations.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
+
+                                <dt ng-if="$ctrl.paymentInfo.paymentInformations && $ctrl.paymentInfo.supportRefund">Refunded amount</dt>
+                                <dd ng-if="$ctrl.paymentInfo.paymentInformations && $ctrl.paymentInfo.supportRefund">{{$ctrl.paymentInfo.paymentInformations.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}</dd>
+                            </dl>
+
+                        </div>
+                        <div class="col-xs-12 col-sm-6" ng-if="$ctrl.paymentInfo.supportRefund">
+                            <div class="panel panel-default">
+                                <div class="panel-heading"><strong>Refund</strong></div>
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-xs-9">
+                                            <div class="form-inline">
+                                                <label for="amountToRefund">Amount to Refund</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control input-sm" ng-model="$ctrl.amountToRefund" id="amountToRefund">
+                                                    <div class="input-group-addon">{{$ctrl.paymentInfo.transaction.currency}}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-xs-3 text-right">
+                                            <i ng-show="$ctrl.refundInProgress" class="fa fa-cog fa-2x fa-spin"></i>
+                                            <button type="button" class="btn btn-warning" ng-click="$ctrl.confirmRefund()" ng-disabled="$ctrl.refundInProgress">refund</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="page-header">
+                        <h3>Contact info</h3>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div class="checkbox">
+                                <label><input type="checkbox" ng-model="$ctrl.reservation.updateContactData"> Edit contact info</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6">
+                            <div class="form-group">
+                                <label for="customerFirstName">First name</label>
+                                <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.firstName}}</div>
+                                <input class="form-control" id="customerFirstName" ng-if="$ctrl.reservation.updateContactData" name="customerFirstName" ng-model="$ctrl.reservation.customerData.firstName">
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6">
+                            <div class="form-group">
+                                <label for="customerLastName">Last name</label>
+                                <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.lastName}}</div>
+                                <input class="form-control" id="customerLastName" ng-if="$ctrl.reservation.updateContactData" name="customerLastName" ng-model="$ctrl.reservation.customerData.lastName">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" ng-if="$ctrl.reservation.updateContactData || $ctrl.reservation.customerData.billingAddress">
+                        <div class="col-xs-12 col-sm-12">
+                            <div class="form-group">
+                                <label for="customerBillingAddress">Billing address</label>
+                                <pre class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.billingAddress}}</pre>
+                                <textarea class="form-control"
+                                          id="customerBillingAddress"
+                                          ng-if="$ctrl.reservation.updateContactData" name="customerBillingAddress"
+                                          ng-model="$ctrl.reservation.customerData.billingAddress">
+                                </textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6">
+                            <div class="form-group">
+                                <label for="customerEmailAddress">Email Address</label>
+                                <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.emailAddress}}</div>
+                                <input type="email" class="form-control" id="customerEmailAddress" ng-if="$ctrl.reservation.updateContactData" name="customerEmailAddress" ng-model="$ctrl.reservation.customerData.emailAddress">
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6">
+                            <div class="form-group">
+                                <label>Language</label>
+                                <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.userLanguage}}</div>
+                                <select class="form-control"
+                                        ng-if="$ctrl.reservation.updateContactData"
+                                        ng-model="$ctrl.reservation.customerData.userLanguage"
+                                        data-ng-options="lang.locale as lang.locale for lang in $ctrl.allLanguages | selectedLanguages:$ctrl.event.locales"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div class="panel panel-default" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
+                        <div class="panel-heading">
+                            <div class="panel-title">Attendees for Category {{ticketInfo.category.name}}</div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="checkbox">
+                                <label><input type="checkbox" ng-model="ticketInfo.updateAttendees"> Edit attendees</label>
+                            </div>
+                        </div>
+                        <table class="table table-responsive table-striped wMarginTop10px">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>First name</th>
+                                    <th>Last name</th>
+                                    <th>E-Mail</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr  ng-repeat="attendee in ticketInfo.attendees">
+                                    <td>{{$index + 1}}</td>
+                                    <td>
+                                        <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-firstName" required name="attendee-{{$index}}-first" ng-model="attendee.firstName">
+                                        <div ng-show="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.firstName}}</div>
+                                    </td>
+                                    <td>
+                                        <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-lastName" required name="attendee-{{$index}}-last" ng-model="attendee.lastName">
+                                        <div ng-show="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.lastName}}</div>
+                                    </td>
+                                    <td>
+                                        <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-emailAddress" required name="attendee-{{$index}}-emailAddress" ng-model="attendee.emailAddress">
+                                        <div ng-show="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.emailAddress}}</div>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-default" ng-click="$ctrl.removeTicket(attendee)"><i class="fa fa-trash"></i> remove</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pull-left">
+                        <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.notifyCustomer()"><i class="fa fa-envelope-o"></i> Send reservation via email</button>
+                        <button class="btn btn-sm btn-default" ng-if="$ctrl.reservation.status === 'COMPLETE'" type="button" ng-click="$ctrl.notifyAttendees()"><i class="fa fa-envelope-o"></i> Send tickets via email</button>
+                    </div>
+                    <div class="pull-right" ng-if="$ctrl.reservationDescriptor.reservation.hasInvoiceOrReceiptDocument">
+                        <a class="btn btn-sm btn-default" ng-if="$ctrl.reservationDescriptor.reservation.hasInvoiceNumber" href="../event/{{$ctrl.event.shortName}}/reservation/{{$ctrl.reservation.id}}/invoice" target="_blank"><i class="fa fa-download"></i> Download invoice</a>
+                        <a class="btn btn-sm btn-default" ng-if="!$ctrl.reservationDescriptor.reservation.hasInvoiceNumber" href="../event/{{$ctrl.event.shortName}}/reservation/{{$ctrl.reservation.id}}/receipt" target="_blank"><i class="fa fa-download"></i> Download receipt</a>
+                    </div>
+                    <div class="clearfix wMarginBottom"></div>
+                    <div uib-alert type="success" close="$ctrl.hideMessages()" dismiss-on-timeout="2000" data-ng-if="$ctrl.confirmationMessage"><i class="fa fa-check"></i> {{$ctrl.confirmationMessage}}</div>
+                    <div uib-alert type="danger" close="$ctrl.hideMessages()" dismiss-on-timeout="2000" data-ng-if="$ctrl.errorMessage"><i class="fa fa-times"></i> {{$ctrl.errorMessage}}</div>
+                    <hr>
+                    <div class="pull-right">
+                        <button type="button" ng-if="$ctrl.onClose" ng-click="$ctrl.onClose()" class="btn btn-lg" style="margin-bottom:20px">Close</button>
+                        <button type="button" ng-if="$ctrl.reservation.status === 'PENDING' && $ctrl.onUpdate" class="btn btn-lg btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
+                        <button type="submit" class="btn btn-lg btn-warning" data-ng-disabled="viewReservation.$waiting" style="margin-bottom:20px">Update</button>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+            </uib-tab>
+
+            <uib-tab index="1">
+                <uib-tab-heading>Audit log</uib-tab-heading>
+
+                <table class="table table-responsive table-striped wMarginTop10px">
+                    <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>By user</th>
+                        <th>Entity type</th>
+                        <th>Entity id</th>
+                        <th>Modifications</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="audit in $ctrl.audit">
+                        <td ng-bind="audit.eventType"></td>
+                        <td ng-bind="audit.eventTime|formatDate"></td>
+                        <td>{{audit.username}} {{audit.firstName}} {{audit.lastName}} {{audit.email}}</td>
+                        <td ng-bind="audit.entityType"></td>
+                        <td ng-bind="audit.entityId"></td>
+                        <td><pre ng-bind="audit.modifications|json"></pre></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </uib-tab>
+
+        </uib-tabset>
+
     </form>
+
 </div>

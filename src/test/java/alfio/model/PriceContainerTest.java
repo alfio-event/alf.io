@@ -72,8 +72,42 @@ public class PriceContainerTest {
     }
 
     @Test
+    public void getFinalPriceInputVatNotIncludedExemptSingle() {
+        PriceContainerImpl vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("30.00"), PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT);
+        assertEquals(new BigDecimal("10.00"), vs.getFinalPrice());
+
+        PromoCodeDiscount promoCodeDiscount = mock(PromoCodeDiscount.class);
+        when(promoCodeDiscount.getDiscountAmount()).thenReturn(100, 10);
+        when(promoCodeDiscount.getFixedAmount()).thenReturn(true, false);
+        when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT, PromoCodeDiscount.DiscountType.PERCENTAGE);
+
+        vs = new PriceContainerImpl(1100, "CHF", new BigDecimal("8.00"), PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT, promoCodeDiscount);
+        assertEquals(new BigDecimal("10.00"), vs.getFinalPrice());
+
+        vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("10.00"), PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT, promoCodeDiscount);
+        assertEquals(new BigDecimal("9.00"), vs.getFinalPrice());
+    }
+
+    @Test
+    public void getFinalPriceInputVatIncludedExemptSingle() {
+        PriceContainerImpl vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("30.00"), PriceContainer.VatStatus.INCLUDED_EXEMPT);
+        assertEquals(new BigDecimal("7.69"), vs.getFinalPrice());
+
+        PromoCodeDiscount promoCodeDiscount = mock(PromoCodeDiscount.class);
+        when(promoCodeDiscount.getDiscountAmount()).thenReturn(100, 10);
+        when(promoCodeDiscount.getFixedAmount()).thenReturn(true, false);
+        when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT, PromoCodeDiscount.DiscountType.PERCENTAGE);
+
+        vs = new PriceContainerImpl(1100, "CHF", new BigDecimal("8.00"), PriceContainer.VatStatus.INCLUDED_EXEMPT, promoCodeDiscount);
+        assertEquals(new BigDecimal("9.26"), vs.getFinalPrice());
+
+        vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("10.00"), PriceContainer.VatStatus.INCLUDED_EXEMPT, promoCodeDiscount);
+        assertEquals(new BigDecimal("8.18"), vs.getFinalPrice());
+    }
+
+    @Test
     public void getFinalPriceInputVatNotIncluded() throws Exception {
-        generateTestStream("CHF", PriceContainer.VatStatus.NOT_INCLUDED)
+        generateTestStream(PriceContainer.VatStatus.NOT_INCLUDED)
             .forEach(p -> {
                 PriceContainer priceContainer = p.getRight();
                 BigDecimal finalPrice = priceContainer.getFinalPrice();
@@ -88,14 +122,15 @@ public class PriceContainerTest {
             });
     }
 
-    private Stream<Pair<Integer, PriceContainer>> generateTestStream(String currency, PriceContainer.VatStatus vatStatus) {
+
+    private Stream<Pair<Integer, PriceContainer>> generateTestStream(PriceContainer.VatStatus vatStatus) {
         List<BigDecimal> vatPercentages = IntStream.range(100, 3000)
             .mapToObj(vatCts -> new BigDecimal(vatCts).divide(new BigDecimal("100.00"), 2, RoundingMode.UNNECESSARY))
             .collect(Collectors.toList());
         return IntStream.range(1, 500_00).
             parallel()
-            .mapToObj(Integer::new)
-            .flatMap(i -> vatPercentages.stream().map(vat -> Pair.of(i, new PriceContainerImpl(i, currency, vat, vatStatus))));
+            .boxed()
+            .flatMap(i -> vatPercentages.stream().map(vat -> Pair.of(i, new PriceContainerImpl(i, "CHF", vat, vatStatus))));
     }
 
 }

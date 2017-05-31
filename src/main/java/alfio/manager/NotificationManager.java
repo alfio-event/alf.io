@@ -24,6 +24,7 @@ import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
+import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
@@ -35,28 +36,47 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.*;
+import com.ryantenney.passkit4j.Pass;
+import com.ryantenney.passkit4j.PassResource;
+import com.ryantenney.passkit4j.PassSerializer;
+import com.ryantenney.passkit4j.model.*;
+import com.ryantenney.passkit4j.model.Color;
+import com.ryantenney.passkit4j.model.TextField;
+import com.ryantenney.passkit4j.sign.PassSigner;
+import com.ryantenney.passkit4j.sign.PassSignerImpl;
+import com.ryantenney.passkit4j.sign.PassSigningException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.StreamUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static alfio.model.EmailMessage.Status.*;
 
@@ -73,6 +93,10 @@ public class NotificationManager {
     private final OrganizationRepository organizationRepository;
     private final ConfigurationManager configurationManager;
     private final Gson gson;
+    private final Cache<String, Optional<byte[]>> passbookLogoCache = Caffeine.newBuilder()
+        .maximumSize(20)
+        .expireAfterWrite(20, TimeUnit.MINUTES)
+        .build();
 
     private final EnumMap<Mailer.AttachmentIdentifier, Function<Map<String, String>, byte[]>> attachmentTransformer;
 
@@ -102,8 +126,17 @@ public class NotificationManager {
 
 
         attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, (model) -> {
-            Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
-            Locale locale = Json.fromJson(model.get("locale"), Locale.class);
+            Event event;
+            Locale locale;
+            if(model.containsKey("eventId")) {
+                //legacy branch, now we generate the ics as a reinterpreted ticket
+                event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
+                locale = Json.fromJson(model.get("locale"), Locale.class);
+            } else {
+                Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
+                event = eventRepository.findById(ticket.getEventId());
+                locale = Locale.forLanguageTag(ticket.getUserLanguage());
+            }
             String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
             return event.getIcal(description).orElse(null);
         });
@@ -122,6 +155,103 @@ public class NotificationManager {
                 templateManager,
                 payload.getRight())));
 
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, (model) -> {
+            Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
+            int eventId = ticket.getEventId();
+            Event event = eventRepository.findById(eventId);
+            Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
+            int organizationId = organization.getId();
+
+            Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(organizationId, eventId);
+            Map<ConfigurationKeys, Optional<String>> pbookConf = configurationManager.getStringConfigValueFrom(
+                partial.apply(ConfigurationKeys.PASSBOOK_TYPE_IDENTIFIER),
+                partial.apply(ConfigurationKeys.PASSBOOK_KEYSTORE),
+                partial.apply(ConfigurationKeys.PASSBOOK_KEYSTORE_PASSWORD),
+                partial.apply(ConfigurationKeys.PASSBOOK_TEAM_IDENTIFIER));
+            //check if all are set
+            if(pbookConf.values().stream().anyMatch(o -> !o.isPresent())) {
+                log.warn("Missing configuration keys, check if all 4 are presents");
+                return null;
+            }
+
+            //
+            String teamIdentifier = pbookConf.get(ConfigurationKeys.PASSBOOK_TEAM_IDENTIFIER).orElseThrow(IllegalStateException::new);
+            String typeIdentifier = pbookConf.get(ConfigurationKeys.PASSBOOK_TYPE_IDENTIFIER).orElseThrow(IllegalStateException::new);
+            byte[] keystoreRaw = Base64.getDecoder().decode(pbookConf.get(ConfigurationKeys.PASSBOOK_KEYSTORE).orElseThrow(IllegalStateException::new));
+            String keystorePwd = pbookConf.get(ConfigurationKeys.PASSBOOK_KEYSTORE_PASSWORD).orElseThrow(IllegalStateException::new);
+
+            //ugly, find an alternative way?
+            Optional<KeyStore> ksJks = loadKeyStore(keystoreRaw, "jks");
+            if(!ksJks.isPresent()) {
+                log.warn("Not able to load keystore, check");
+                return null;
+            }
+            KeyStore keyStore = ksJks.orElseThrow(IllegalStateException::new);
+
+            // from example: https://github.com/ryantenney/passkit4j/blob/master/src/test/java/com/ryantenney/passkit4j/EventTicketExample.java
+
+            Location loc = new Location(Double.parseDouble(event.getLatitude()), Double.parseDouble(event.getLongitude())).altitude(0.0);
+
+            Pass pass = new Pass()
+                .teamIdentifier(teamIdentifier)
+                .passTypeIdentifier(typeIdentifier)
+                .organizationName(organization.getName())
+                .description(event.getDisplayName())
+                .serialNumber(ticket.getUuid())
+                .relevantDate(Date.from(event.getBegin().toInstant()))
+                .expirationDate(Date.from(event.getEnd().toInstant()))
+                .locations(loc)
+                .barcode(new Barcode(BarcodeFormat.QR, ticket.ticketCode(event.getPrivateKey())))
+                .labelColor(Color.BLACK)
+                .foregroundColor(Color.BLACK)
+                .backgroundColor(Color.WHITE)
+                .passInformation(
+                    new EventTicket()
+                        .primaryFields(new TextField("event", "EVENT", event.getDisplayName()))
+                        .secondaryFields(new TextField("loc", "LOCATION", event.getLocation()))
+                );
+
+            List<PassResource> passResources = new ArrayList<>(4);
+            try(InputStream icon = new ClassPathResource("/alfio/icon/icon.png").getInputStream();
+                InputStream icon2 = new ClassPathResource("/alfio/icon/icon@2x.png").getInputStream()) {
+                passResources.add(new PassResource("icon.png", StreamUtils.copyToByteArray(icon)));
+                passResources.add(new PassResource("icon@2x.png", StreamUtils.copyToByteArray(icon2)));
+            } catch (IOException e) {
+                //
+            }
+
+
+            fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(metadata -> {
+                if(metadata.getContentType().equals("image/png") || metadata.getContentType().equals("image/jpeg")) {
+                    Optional<byte[]> cachedLogo = passbookLogoCache.get(event.getFileBlobId(), (id) -> {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        fileUploadManager.outputFile(event.getFileBlobId(), baos);
+                        return readAndConvertImage(baos);
+                    });
+                    cachedLogo.ifPresent(logo -> {
+                        passResources.add(new PassResource("logo.png", logo));
+                        passResources.add(new PassResource("logo@2x.png", logo));
+                    });
+                }
+            });
+
+            pass.files(passResources.toArray(new PassResource[passResources.size()]));
+
+            try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                InputStream appleCert = new ClassPathResource("/alfio/certificates/AppleWWDRCA.cer").getInputStream()) {
+                PassSigner signer = PassSignerImpl.builder()
+                    .keystore(keyStore, keystorePwd)
+                    .intermediateCertificate(appleCert)
+                    .build();
+                PassSerializer.writePkPassArchive(pass, signer, baos);
+                //PassSerializer.writePkPassArchive(pass, signer, new FileOutputStream("/tmp/Passbook.pkpass"));
+                return baos.toByteArray();
+            } catch (IOException | PassSigningException e) {
+                log.warn("was not able to generate the passbook file", e);
+                return null;
+            }
+        });
+
         attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, (model) -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
@@ -138,6 +268,37 @@ public class NotificationManager {
             }
             return baos.toByteArray();
         });
+    }
+
+    //"jks"
+    // -> "pkcs12" don't work ;(
+    private static Optional<KeyStore> loadKeyStore(byte[] k, String type) {
+        try {
+            KeyStore ks = KeyStore.getInstance(type);
+            ks.load(new ByteArrayInputStream(k), null);
+            return Optional.of(ks);
+        } catch (GeneralSecurityException | IOException e) {
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<byte[]> readAndConvertImage(ByteArrayOutputStream baos) {
+        try {
+            BufferedImage sourceImage = ImageIO.read(new ByteArrayInputStream(baos.toByteArray()));
+            boolean isWider = sourceImage.getWidth() > sourceImage.getHeight();
+            // as defined in https://developer.apple.com/library/content/documentation/UserExperience/Conceptual/PassKit_PG/Creating.html#//apple_ref/doc/uid/TP40012195-CH4-SW8
+            // logo max 160*50
+            int finalWidth = isWider ? 160 : -1;
+            int finalHeight = !isWider ? 50 : -1;
+            Image thumb = sourceImage.getScaledInstance(finalWidth, finalHeight, Image.SCALE_SMOOTH);
+            BufferedImage bufferedThumbnail = new BufferedImage(thumb.getWidth(null), thumb.getHeight(null), BufferedImage.TYPE_INT_RGB);
+            bufferedThumbnail.getGraphics().drawImage(thumb, 0, 0, null);
+            ByteArrayOutputStream logoPng = new ByteArrayOutputStream();
+            ImageIO.write(bufferedThumbnail, "png", logoPng);
+            return Optional.of(logoPng.toByteArray());
+        } catch (IOException e) {
+            return Optional.empty();
+        }
     }
 
     public Function<Map<String, String>, byte[]> receiptOrInvoiceFactory(Function<Triple<Event, Locale, Map<String, Object>>, Optional<byte[]>> pdfGenerator) {
@@ -165,34 +326,47 @@ public class NotificationManager {
         List<Mailer.Attachment> attachments = new ArrayList<>();
         attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization));
 
-        Map<String, String> icsModel = new HashMap<>();
-        icsModel.put("eventId", Integer.toString(event.getId()));
-        icsModel.put("locale", Json.toJson(locale));
-        attachments.add(new Mailer.Attachment("calendar.ics", null, "text/calendar", icsModel, Mailer.AttachmentIdentifier.CALENDAR_ICS));
-
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[attachments.size()]));
         String subject = messageSource.getMessage("ticket-email-subject", new Object[]{event.getDisplayName()}, locale);
         String text = textBuilder.generate(ticket);
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text);
         String recipient = ticket.getEmail();
         //TODO handle HTML
-        tx.execute(status -> emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
+        tx.execute(status -> emailMessageRepository.insert(event.getId(), recipient, null, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
+    }
+
+    public void sendSimpleEmail(Event event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder) {
+        sendSimpleEmail(event, recipient, cc, subject, textBuilder, Collections.emptyList());
+    }
+
+    public List<String> getCCForEventOrganizer(Event event) {
+        Configuration.ConfigurationPathKey key = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC);
+        return Stream.of(StringUtils.split(configurationManager.getStringConfigValue(key, ""), ','))
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .filter(StringUtils::isNotBlank)
+            .collect(Collectors.toList());
     }
 
     public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder) {
-        sendSimpleEmail(event, recipient, subject, textBuilder, Collections.emptyList());
+        sendSimpleEmail(event, recipient, Collections.emptyList(), subject, textBuilder);
     }
 
     public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+        sendSimpleEmail(event, recipient, Collections.emptyList(), subject, textBuilder, attachments);
+    }
+
+    public void sendSimpleEmail(Event event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
 
         String encodedAttachments = attachments.isEmpty() ? null : encodeAttachments(attachments.toArray(new Mailer.Attachment[attachments.size()]));
+        String encodedCC = Json.toJson(cc);
 
         String text = textBuilder.generate();
         String checksum = calculateChecksum(recipient, encodedAttachments, subject, text);
         //in order to minimize the database size, it is worth checking if there is already another message in the table
         Optional<EmailMessage> existing = emailMessageRepository.findByEventIdAndChecksum(event.getId(), checksum);
         if(!existing.isPresent()) {
-            emailMessageRepository.insert(event.getId(), recipient, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
+            emailMessageRepository.insert(event.getId(), recipient, encodedCC, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
         } else {
             emailMessageRepository.updateStatus(event.getId(), WAITING.name(), existing.get().getId());
         }
@@ -244,7 +418,7 @@ public class NotificationManager {
 
     private void sendMessage(EmailMessage message) {
         Event event = eventRepository.findById(message.getEventId());
-        mailer.send(event, message.getRecipient(), message.getSubject(), message.getMessage(), Optional.empty(), decodeAttachments(message.getAttachments()));
+        mailer.send(event, message.getRecipient(), message.getCc(), message.getSubject(), message.getMessage(), Optional.empty(), decodeAttachments(message.getAttachments()));
         emailMessageRepository.updateStatusToSent(message.getEventId(), message.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
     }
 
@@ -257,13 +431,34 @@ public class NotificationManager {
             return new Mailer.Attachment[0];
         }
         Mailer.Attachment[] attachments = gson.fromJson(input, Mailer.Attachment[].class);
-        return Arrays.stream(attachments).map(this::transformAttachment).toArray(size -> new Mailer.Attachment[size]);
+
+        Set<Mailer.AttachmentIdentifier> alreadyPresents = Arrays.stream(attachments).map(Mailer.Attachment::getIdentifier).filter(Objects::nonNull).collect(Collectors.toSet());
+        //
+        List<Mailer.Attachment> toReinterpret = Arrays.stream(attachments)
+            .filter(attachment -> attachment.getIdentifier() != null && !attachment.getIdentifier().reinterpretAs().isEmpty())
+            .collect(Collectors.toList());
+
+        List<Mailer.Attachment> generated = new ArrayList<>(Arrays.stream(attachments)
+            .map(attachment -> this.transformAttachment(attachment, attachment.getIdentifier()))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList()));
+
+        List<Mailer.Attachment> reinterpreted = new ArrayList<>();
+        toReinterpret.forEach(attachment ->
+            attachment.getIdentifier().reinterpretAs().stream()
+                .filter(identifier -> !alreadyPresents.contains(identifier))
+                .forEach(identifier -> reinterpreted.add(this.transformAttachment(attachment, identifier))
+            )
+        );
+
+        generated.addAll(reinterpreted.stream().filter(Objects::nonNull).collect(Collectors.toList()));
+        return generated.toArray(new Mailer.Attachment[generated.size()]);
     }
 
-    private Mailer.Attachment transformAttachment(Mailer.Attachment attachment) {
-        if(attachment.getIdentifier() != null) {
-            byte[] result = attachmentTransformer.get(attachment.getIdentifier()).apply(attachment.getModel());
-            return new Mailer.Attachment(attachment.getFilename(), result, attachment.getContentType(), null, null);
+    private Mailer.Attachment transformAttachment(Mailer.Attachment attachment, Mailer.AttachmentIdentifier identifier) {
+        if(identifier != null) {
+            byte[] result = attachmentTransformer.get(identifier).apply(attachment.getModel());
+            return result == null ? null : new Mailer.Attachment(identifier.fileName(attachment.getFilename()), result, identifier.contentType(attachment.getContentType()), null, null);
         } else {
             return attachment;
         }

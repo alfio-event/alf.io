@@ -8,10 +8,13 @@
                     onModification: '&',
                     eventId: '=',
                     eventStartDate: '=',
-                    eventIsFreeOfCharge: '='
+                    eventIsFreeOfCharge: '=',
+                    title: '@',
+                    icon: '@',
+                    type: '@'
                 },
                 bindToController: true,
-                templateUrl: '/resources/angular-templates/admin/partials/event/fragment/additional-services.html',
+                templateUrl: '../resources/js/admin/feature/additional-service/additional-services.html',
                 controller: 'AdditionalServicesController',
                 controllerAs: 'ctrl'
             };
@@ -25,10 +28,12 @@
                     onEditComplete: '&',
                     onDismiss: '&',
                     eventStartDate: '=',
-                    selectedLanguages: '='
+                    selectedLanguages: '=',
+                    title:'<',
+                    type:'<'
                 },
                 bindToController: true,
-                templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-additional-service.html',
+                templateUrl: '../resources/js/admin/feature/additional-service/edit-additional-service.html',
                 controller: 'EditAdditionalServiceController',
                 controllerAs: 'ctrl'
             };
@@ -110,11 +115,13 @@
             var parentCtrl = self;
             var modal = $uibModal.open({
                 size:'lg',
-                template:'<edit-additional-service data-editing-item="ctrl.item" data-titles="ctrl.titles" data-descriptions="ctrl.descriptions" data-on-edit-complete="ctrl.onEditComplete(item)" data-on-dismiss="ctrl.onDismiss()" data-event-start-date="ctrl.eventStartDate"></edit-additional-service>',
+                template:'<edit-additional-service data-type="ctrl.type" data-title="ctrl.title" data-editing-item="ctrl.item" data-titles="ctrl.titles" data-descriptions="ctrl.descriptions" data-on-edit-complete="ctrl.onEditComplete(item)" data-on-dismiss="ctrl.onDismiss()" data-event-start-date="ctrl.eventStartDate"></edit-additional-service>',
                 backdrop: 'static',
                 controller: function() {
                     var ctrl = this;
                     ctrl.item = angular.copy(item);
+                    ctrl.title = parentCtrl.title;
+                    ctrl.type = parentCtrl.type;
                     ctrl.selectedLanguages = parentCtrl.selectedLanguages;
                     ctrl.titles = _.filter(angular.copy(parentCtrl.titles), function(t) {
                         return (t.localeValue & ctrl.selectedLanguages) === t.localeValue;
@@ -216,7 +223,7 @@
                 availableQuantity: -1,
                 maxQtyPerOrder: 1,
                 priceInCents: 0,
-                fixPrice: false,
+                fixPrice: ctrl.type === 'SUPPLEMENT',
                 inception: {},
                 expiration: {}
             };
@@ -253,8 +260,15 @@
              {key: 'CUSTOM_INCLUDED', value::'Price VAT inclusive, apply special VAT'},
              {key: 'CUSTOM_EXCLUDED', value:: 'Price VAT exclusive, apply special VAT'}*/];
         ctrl.types = ['DONATION'];
+        ctrl.supplementPolicies = [
+            {key: 'MANDATORY_ONE_FOR_TICKET', value:'Make the additional service mandatory: one for each ticket bought'},
+            {key: 'OPTIONAL_UNLIMITED_AMOUNT', value:'Apply no limit on the quantity'},
+            {key: 'OPTIONAL_MAX_AMOUNT_PER_TICKET', value:'Apply a limit for each ticket bought'},
+            {key: 'OPTIONAL_MAX_AMOUNT_PER_RESERVATION', value:'Apply a limit for the whole reservation'}
+        ];
         ctrl.save = function() {
             if(ctrl.additionalServiceForm.$valid) {
+                ctrl.item.type = ctrl.type; // fix type
                 ValidationService.validationPerformer($q, AdditionalServiceManager.validate, ctrl.item, ctrl.additionalServiceForm).then(function() {
                     ctrl.onEditComplete({'item': ctrl.item});
                 }, angular.noop);

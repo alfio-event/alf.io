@@ -1,0 +1,78 @@
+<div class="container">
+    <h1>Users</h1>
+    <hr>
+    <div class="row">
+        <div class="col-xs-9">
+            <div class="form-inline" ng-if="!$ctrl.loading && $ctrl.organizations.length > 1">
+                <div class="form-group-lg">
+                    <label for="selectedOrganization">Show only members of</label>
+                    <select id="selectedOrganization" class="form-control" ng-options="o.id as o.name for o in $ctrl.organizations" data-ng-model="$ctrl.selectedOrganization"></select>
+                    <button class="btn btn-default" ng-if="$ctrl.selectedOrganization" ng-click="$ctrl.selectedOrganization = null"><i class="fa fa-ban"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-3 text-right">
+            <a ui-sref="users.new" class="btn btn-success"><i class="fa fa-plus"></i> add new</a>
+        </div>
+    </div>
+    <div class="text-center text-muted" data-ng-if="$ctrl.loading">
+        <div class="wMarginTop">
+            <i class="fa fa-cog fa-spin fa-3x"></i>
+        </div>
+    </div>
+    <div class="page-header">
+        <h3>Users enabled</h3>
+    </div>
+    <div class="table-responsive" data-ng-if="!$ctrl.loading">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th width="10%">Username</th>
+                <th width="20%">Name</th>
+                <th width="40%">Member of</th>
+                <th><span class="sr-only">actions</span></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="user in ($ctrl.users | orgSelected:$ctrl.selectedOrganization | userEnabled:true)" data-ng-class-even="active">
+                <td><a ui-sref="users.edit({userId:user.id})">{{user.username}}</a></td>
+                <td>{{user.firstName}} {{user.lastName}}</td>
+                <td><span class="label label-info" ng-repeat="org in user.memberOf">{{org.name}}</span></td>
+                <td class="text-right">
+                    <a class="btn btn-xs btn-default" data-ui-sref="users.edit({userId:user.id})"><i class="fa fa-edit"></i> Edit</a>
+                    <button class="btn btn-xs btn-default" ng-click="$ctrl.resetPassword(user)"><i class="fa fa-refresh"></i> Reset Password</button>
+                    <button class="btn btn-xs btn-warning" ng-if="user.enabled" ng-click="$ctrl.enable(user, false)"><i class="fa fa-eye-slash"></i> Disable</button>
+                    <button class="btn btn-xs btn-danger" ng-click="$ctrl.deleteUser(user)"><i class="fa fa-trash"></i> Delete</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div data-ui-view="editUser"></div>
+    <div class="page-header">
+        <h3>Users not enabled</h3>
+    </div>
+    <div class="table-responsive" data-ng-if="!$ctrl.loading">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th width="10%">Username</th>
+                <th width="20%">Name</th>
+                <th width="40%">Member of</th>
+                <th><span class="sr-only">actions</span></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="user in ($ctrl.users | orgSelected:$ctrl.selectedOrganization | userEnabled:false)" data-ng-class-even="active">
+                <td><a ui-sref="users.edit({userId:user.id})">{{user.username}}</a></td>
+                <td>{{user.firstName}} {{user.lastName}}</td>
+                <td><span class="label label-info" ng-repeat="org in user.memberOf">{{org.name}}</span></td>
+                <td class="text-right">
+                    <button class="btn btn-xs btn-success" ng-if="!user.enabled" ng-click="$ctrl.enable(user, true)"><i class="fa fa-eye"></i> Enable</button>
+                    <button class="btn btn-xs btn-danger" ng-click="$ctrl.deleteUser(user)"><i class="fa fa-trash"></i> Delete</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

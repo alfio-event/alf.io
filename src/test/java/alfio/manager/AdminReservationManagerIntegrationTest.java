@@ -171,7 +171,7 @@ public class AdminReservationManagerIntegrationTest {
         Event event = eventWithUsername.getKey();
         String username = eventWithUsername.getValue();
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
-        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch");
+        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "en");
         Category category = new Category(null, "name", new BigDecimal("100.00"));
         int attendees = AVAILABLE_SEATS;
         List<TicketsInfo> ticketsInfoList = Collections.singletonList(new TicketsInfo(category, generateAttendees(attendees), true, false));
@@ -205,7 +205,7 @@ public class AdminReservationManagerIntegrationTest {
         Event event = eventWithUsername.getKey();
         String username = eventWithUsername.getValue();
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
-        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch");
+        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "en");
 
         TicketCategory existingCategory = ticketCategoryRepository.findByEventId(event.getId()).get(0);
 
@@ -229,6 +229,10 @@ public class AdminReservationManagerIntegrationTest {
         assertEquals(AVAILABLE_SEATS, modified.getAvailableSeats());
         assertEquals(3, ticketRepository.findPendingTicketsInCategories(Arrays.asList(resExistingCategoryId, resNewCategoryId)).size());
         assertEquals(3, ticketRepository.findTicketsInReservation(data.getLeft().getId()).size());
+
+        String reservationId = data.getLeft().getId();
+        assertEquals(ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().get().getId(),
+            ticketRepository.findFirstTicketInReservation(reservationId).get().getId());
 
         ticketCategoryRepository.findByEventId(event.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.PENDING)));
         adminReservationManager.confirmReservation(event.getShortName(), data.getLeft().getId(), username);
@@ -263,7 +267,7 @@ public class AdminReservationManagerIntegrationTest {
         Event event = eventWithUsername.getKey();
         String username = eventWithUsername.getValue();
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
-        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch");
+        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "en");
         Iterator<Integer> attendeesIterator = attendeesNr.iterator();
         List<TicketCategory> existingCategories = ticketCategoryRepository.findByEventId(event.getId());
         List<Attendee> allAttendees = new ArrayList<>();

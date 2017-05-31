@@ -30,8 +30,8 @@ insert into ticket_category(inception, expiration, name, max_tickets, price_cts,
   ('2014-01-10 00:00:00', '2017-10-10 00:00:00', 'Restricted', 4, 463, true, 'ACTIVE', 0, TRUE ),
   ('2014-01-10 00:00:00', '2017-10-10 00:00:00', 'Unbounded', -1, 463, false, 'ACTIVE', 0, FALSE );
 
-insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address) values('abcdefghi', '2014-01-10 00:00:00', 'IN_PAYMENT', 'ciccio', 'cc@cc.uu', null);
-insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address) values('abcdefghiz', '2014-01-10 00:00:00', 'PENDING', 'ciccio', 'cc@cc.uu', null);
+insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address, event_id_fk) values('abcdefghi', '2014-01-10 00:00:00', 'IN_PAYMENT', 'ciccio', 'cc@cc.uu', null, 0);
+insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address, event_id_fk) values('abcdefghiz', '2014-01-10 00:00:00', 'PENDING', 'ciccio', 'cc@cc.uu', null, 0);
 insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts, tickets_reservation_id)
 values
 
@@ -89,6 +89,16 @@ insert into configuration (c_key, c_value, description) values
   ('OFFLINE_REMINDER_HOURS', '42', 'How many hours before expiration should be sent a reminder e-mail for offline payments?'),
   ('BANK_ACCOUNT_NR', '4242424242', 'Bank Account number'),
   ('BANK_ACCOUNT_OWNER', U&'My Name\000ABla Bla', 'Bank Account owner');
+
+
+-- passbook, the keystore has been generated with:
+-- keytool -genkey -alias test -keyalg RSA -keystore KeyStore.jks
+-- and then base64 encoded, nothing special and secret here :D
+insert into configuration(c_key, c_value, description) VALUES
+    ('PASSBOOK_KEYSTORE', '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', 'Passbook keystore(base64 encoded keystore)'),
+    ('PASSBOOK_KEYSTORE_PASSWORD', 'testtest', 'Passbook keystore password'),
+    ('PASSBOOK_TYPE_IDENTIFIER', 'pass.alfio.test.eventTicket', 'Passbook type identifier'),
+    ('PASSBOOK_TEAM_IDENTIFIER', 'alfio', 'Passbook team identifier');
 
 
 -- create fields configuration

@@ -19,6 +19,7 @@ package alfio.repository.user;
 import alfio.model.user.User;
 import ch.digitalfondue.npjt.*;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,11 +29,17 @@ public interface UserRepository {
     @Query("SELECT * FROM ba_user WHERE id = :userId")
     User findById(@Bind("userId") int userId);
 
+    @Query("select * from ba_user where id in (:userIds)")
+    List<User> findByIds(@Bind("userIds") Collection<Integer> ids);
+
     @Query("select * from ba_user where username = :username")
     User getByUsername(@Bind("username") String username);
 
     @Query("select * from ba_user where username = :username")
     List<User> findByUsername(@Bind("username") String username);
+
+    @Query("select id from ba_user where username = :username")
+    Optional<Integer> findIdByUserName(@Bind("username") String username);
 
     @Query("select * from ba_user where username = :username and enabled = true")
     Optional<User> findEnabledByUsername(@Bind("username") String username);
@@ -56,5 +63,14 @@ public interface UserRepository {
 
     @Query("update ba_user set password = :password where id = :id")
     int resetPassword(@Bind("id") int id, @Bind("password") String newPassword);
+
+    @Query("delete from sponsor_scan where user_id = :id")
+    int deleteUserFromSponsorScan(@Bind("id") int id);
+
+    @Query("delete from j_user_organization where user_id = :id")
+    int deleteUserFromOrganization(@Bind("id") int id);
+
+    @Query("delete from ba_user where id = :id")
+    int deleteUser(@Bind("id") int id);
 
 }

@@ -36,7 +36,8 @@ public class PromoCodeDiscount {
 
     private final int id;
     private final String promoCode;
-    private final int eventId;
+    private final Integer eventId;
+    private final Integer organizationId;
     private final ZonedDateTime utcStart;
     private final ZonedDateTime utcEnd;
     private final int discountAmount;
@@ -45,7 +46,8 @@ public class PromoCodeDiscount {
     
     public PromoCodeDiscount(@Column("id")int id, 
             @Column("promo_code") String promoCode, 
-            @Column("event_id_fk") int eventId,
+            @Column("event_id_fk") Integer eventId,
+            @Column("organization_id_fk") Integer organizationId,
             @Column("valid_from") ZonedDateTime utcStart, 
             @Column("valid_to") ZonedDateTime utcEnd, 
             @Column("discount_amount") int discountAmount,
@@ -54,6 +56,7 @@ public class PromoCodeDiscount {
         this.id = id;
         this.promoCode = promoCode;
         this.eventId = eventId;
+        this.organizationId = organizationId;
         this.utcStart = utcStart;
         this.utcEnd = utcEnd;
         this.discountAmount = discountAmount;

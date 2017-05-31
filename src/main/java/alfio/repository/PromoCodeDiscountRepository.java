@@ -30,33 +30,39 @@ public interface PromoCodeDiscountRepository {
     @Query("select * from promo_code where event_id_fk = :eventId order by promo_code asc")
     List<PromoCodeDiscount> findAllInEvent(@Bind("eventId") int eventId);
 
+    @Query("select * from promo_code where organization_id_fk = :organizationId order by promo_code asc")
+    List<PromoCodeDiscount> findAllInOrganization(@Bind("organizationId") int organizationId);
+
     @Query("delete from promo_code where id = :id")
     int deletePromoCode(@Bind("id") int id);
     
     @Query("select * from promo_code where id = :id")
     PromoCodeDiscount findById(@Bind("id") int id);
 
-    @Query("insert into promo_code(promo_code, event_id_fk, valid_from, valid_to, discount_amount, discount_type, categories) "
-            + " values (:promoCode, :eventId, :start, :end, :discountAmount, :discountType, :categories)")
+    @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories) "
+            + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories)")
     int addPromoCode(@Bind("promoCode") String promoCode,
-            @Bind("eventId") int eventId, @Bind("start") ZonedDateTime start,
+            @Bind("eventId") Integer eventId, @Bind("organizationId") Integer organizationId, @Bind("start") ZonedDateTime start,
             @Bind("end") ZonedDateTime end,
             @Bind("discountAmount") int discountAmount,
             @Bind("discountType") String discountType,
             @Bind("categories") String categories);
 
-    @Query("select * from promo_code where event_id_fk = :eventId and promo_code = :promoCode")
-    PromoCodeDiscount findPromoCodeInEvent(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
+    @Query("select * from promo_code where promo_code = :promoCode and ("
+        +" (event_id_fk = :eventId and organization_id_fk is null) or "
+        +" (event_id_fk is null and organization_id_fk = (select org_id from event where id = :eventId))) "
+        +" order by event_id_fk is null limit 1")
+    PromoCodeDiscount findPromoCodeInEventOrOrganization(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
 
-    @Query("select count(*) from promo_code where event_id_fk = :eventId")
-    Integer countByEventId(@Bind("eventId") int eventId);
+    @Query("select count(*) from promo_code where (event_id_fk = :eventId and organization_id_fk is null) or (event_id_fk is null and organization_id_fk = :organizationId)")
+    Integer countByEventAndOrganizationId(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
 
-    @Query("select count(*) from promo_code inner join tickets_reservation on promo_code_id_fk = promo_code.id where event_id_fk = :eventId and promo_code = :promoCode")
-    Integer countAppliedPromoCode(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
+    @Query("select count(*) from tickets_reservation where promo_code_id_fk = :id")
+    Integer countAppliedPromoCode(@Bind("id") int id);
 
-    @Query("update promo_code set valid_to = :end where event_id_fk = :eventId and promo_code = :promoCode")
-    int updateEnd(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode, @Bind("end") ZonedDateTime end);
+    @Query("update promo_code set valid_to = :end where id = :id")
+    int updateEventPromoCodeEnd(@Bind("id") int id, @Bind("end") ZonedDateTime end);
 
-    @Query("update promo_code set valid_from = :start, valid_to = :end where event_id_fk = :eventId and promo_code = :promoCode")
-    int update(@Bind("eventId") int eventId, @Bind("promoCode") String promoCodeName, @Bind("start") ZonedDateTime start, @Bind("end") ZonedDateTime end);
+    @Query("update promo_code set valid_from = :start, valid_to = :end where id = :id")
+    int updateEventPromoCode(@Bind("id") int id, @Bind("start") ZonedDateTime start, @Bind("end") ZonedDateTime end);
 }

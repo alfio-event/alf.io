@@ -30,7 +30,8 @@ public class LightweightMailMessage extends EmailMessage {
                         @Column("checksum") String checksum,
                         @Column("request_ts") ZonedDateTime requestTimestamp,
                         @Column("sent_ts") ZonedDateTime sentTimestamp,
-                        @Column("attempts") int attempts) {
-        super(id, eventId, status, recipient, subject, message, null, checksum, requestTimestamp, sentTimestamp, attempts);
+                        @Column("attempts") int attempts,
+                        @Column("email_cc") String cc) {
+        super(id, eventId, status, recipient, subject, message, null, checksum, requestTimestamp, sentTimestamp, attempts, cc);
     }
 }

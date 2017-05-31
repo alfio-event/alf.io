@@ -1,0 +1,47 @@
+<div ng-if="$ctrl.forEvent && !($ctrl.isInternal($ctrl.event) && !$ctrl.event.freeOfCharge)">
+    Your event cannot have promo codes!
+</div>
+<div ng-if="$ctrl.forOrganization || ($ctrl.isInternal($ctrl.event) && !$ctrl.event.freeOfCharge)">
+    <div class="page-header">
+        <h3><i class="fa fa-percent"></i> Promo codes</h3>
+        <h5 class="text-muted">Manage/Handle the promo codes.</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table" data-ng-if="$ctrl.promocodes.length > 0">
+            <thead>
+            <tr>
+                <th>Code</th>
+                <th><abbr title="Usage count">count</abbr></th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th ng-if="$ctrl.forEvent">Categories</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr data-ng-repeat="promocode in $ctrl.promocodes" data-ng-class="{'text-muted': promocode.expired}">
+                <td>{{::promocode.promoCode}} <span data-ng-if="promocode.expired">(Expired)</span></td>
+                <td>{{promocode.useCount}}</td>
+                <td>{{::promocode.formattedStart | formatDate}}</td>
+                <td>{{::promocode.formattedEnd | formatDate}}</td>
+                <td>{{::promocode.discountType}}</td>
+                <td>
+                    <span data-ng-if="promocode.discountType === 'PERCENTAGE'">{{::promocode.discountAmount}}%</span>
+                    <span data-ng-if="promocode.discountType === 'FIXED_AMOUNT'">{{::promocode.formattedDiscountAmount | currency : ($ctrl.event.currency || "")}}</span>
+                </td>
+                <td ng-if="$ctrl.forEvent"><div ng-if="promocode.categories.length > 0"><p ng-repeat="categoryId in promocode.categories">{{::ticketCategoriesById[categoryId].name}}</p></div><div class="text-muted" ng-if="promocode.categories.length == 0 || promocode.categories == null">Apply to all</div></td>
+                <td>
+                    <button class="btn btn-sm btn-default" ng-click="$ctrl.changeDate(promocode)"><i class="fa fa-calendar"></i> Change date</button>
+                    <button data-ng-hide="promocode.expired" class="btn btn-sm btn-default" data-ng-click="$ctrl.disablePromocode(promocode)"><i class="fa fa-remove"></i> Disable</button>
+                    <button data-ng-show="promocode.useCount === 0" class="btn btn-sm btn-default" data-ng-click="$ctrl.deletePromocode(promocode)"><i class="fa fa-trash"></i> Delete</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div>
+            <button type="button" class="btn btn-success" data-ng-click="$ctrl.addPromoCode()"><i class="fa fa-plus"></i> add promo code</button>
+        </div>
+    </div>
+</div>

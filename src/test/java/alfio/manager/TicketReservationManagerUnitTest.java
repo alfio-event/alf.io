@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.manager.plugin.PluginManager;
-import alfio.model.SummaryRow;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.repository.*;
@@ -101,6 +100,8 @@ public class TicketReservationManagerUnitTest {
     private AdditionalServiceTextRepository additionalServiceTextRepository;
     @Mock
     private InvoiceSequencesRepository invoiceSequencesRepository;
+    @Mock
+    private AuditingRepository auditingRepository;
 
     @Before
     public void setUp() {
@@ -121,12 +122,12 @@ public class TicketReservationManagerUnitTest {
             transactionManager,
             waitingQueueManager,
             pluginManager,
-            fileUploadManager,
             ticketFieldRepository,
             additionalServiceRepository,
             additionalServiceItemRepository,
             additionalServiceTextRepository,
-            invoiceSequencesRepository);
+            invoiceSequencesRepository,
+            auditingRepository);
     }
 
     @Test
@@ -189,7 +190,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatNotIncluded() {
         initReservationWithTicket(1000, false);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, event, Locale.ENGLISH, null, new TotalPrice(1100, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1100, 100, 0, 0));
         assertEquals(1, summaryRows.size());
         assertEquals("10.00", summaryRows.get(0).getPrice());
     }
@@ -197,7 +198,23 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatIncluded() {
         initReservationWithTicket(1000, true);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
+        assertEquals(1, summaryRows.size());
+        assertEquals("10.00", summaryRows.get(0).getPrice());
+    }
+
+    @Test
+    public void testExtractSummaryVatIncludedExempt() {
+        initReservationWithTicket(1000, true);
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
+        assertEquals(1, summaryRows.size());
+        assertEquals("9.09", summaryRows.get(0).getPrice());
+    }
+
+    @Test
+    public void testExtractSummaryVatNotIncludedExempt() {
+        initReservationWithTicket(1000, true);
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
         assertEquals(1, summaryRows.size());
         assertEquals("10.00", summaryRows.get(0).getPrice());
     }
@@ -205,7 +222,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatNotIncludedASInherited() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.INHERITED, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, event, Locale.ENGLISH, null, new TotalPrice(2200, 200, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(2200, 200, 0, 0));
         assertEquals(2, summaryRows.size());
         summaryRows.forEach(r -> assertEquals(String.format("%s failed", r.getType()), "10.00", r.getPrice()));
     }
@@ -213,7 +230,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatIncludedASInherited() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.INHERITED, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, event, Locale.ENGLISH, null, new TotalPrice(2000, 182, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 182, 0, 0));
         assertEquals(2, summaryRows.size());
         summaryRows.forEach(r -> assertEquals(String.format("%s failed", r.getType()), "10.00", r.getPrice()));
     }
@@ -221,7 +238,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatNotIncludedASNone() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.NONE, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
         assertEquals(2, summaryRows.size());
         summaryRows.forEach(r -> assertEquals(String.format("%s failed", r.getType()), "10.00", r.getPrice()));
     }
@@ -229,7 +246,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatIncludedASNone() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.NONE, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, event, Locale.ENGLISH, null, new TotalPrice(2000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 100, 0, 0));
         assertEquals(2, summaryRows.size());
         assertEquals("10.00", summaryRows.get(0).getPrice());
         assertEquals("10.00", summaryRows.get(1).getPrice());

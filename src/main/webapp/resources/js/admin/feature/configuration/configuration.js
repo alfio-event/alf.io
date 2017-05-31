@@ -60,6 +60,9 @@
             loadCategory: function(eventId, categoryId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/categories/'+categoryId+'/load').error(HttpErrorHandler.handle);
             },
+            loadEUCountries: function () {
+                return $http.get('/admin/api/configuration/eu-countries').error(HttpErrorHandler.handle);
+            },
             update: function(configuration) {
                 return $http.post('/admin/api/configuration/update', configuration).error(HttpErrorHandler.handle);
             },
@@ -105,11 +108,12 @@
                         settings: _.filter(original['MAIL'], function(e) {return e.key !== 'MAILER_TYPE';}),
                         type: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAILER_TYPE';}),
                         maxEmailPerCycle: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAX_EMAIL_PER_CYCLE';}),
+                        cc: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_SYSTEM_NOTIFICATION_CC';}),
                         mailReplyTo: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';}),
                         mailAttemptsCount: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_ATTEMPTS_COUNT';})
                     };
                 }
-                _.forEach(['PAYMENT_STRIPE', 'PAYMENT_PAYPAL', 'PAYMENT_OFFLINE'], function(group) {
+                _.forEach(['PAYMENT_STRIPE', 'PAYMENT_PAYPAL', 'PAYMENT_OFFLINE', 'INVOICE_EU'], function(group) {
                     if(angular.isDefined(original[group]) && original[group].length > 0) {
                         transformed[_.camelCase(group)] = {
                             settings: original[group]
@@ -143,17 +147,26 @@
 
     ConfigurationController.$inject = ['OrganizationService', 'EventService', '$q', '$rootScope'];
 
-    function SystemConfigurationController(ConfigurationService, EventService, $rootScope, $q) {
+    function SystemConfigurationController(ConfigurationService, EventService, NotificationHandler, $rootScope, $q) {
         var systemConf = this;
         systemConf.loading = true;
 
         var loadAll = function() {
             systemConf.loading = true;
-            $q.all([EventService.getAllLanguages(), ConfigurationService.loadAll()]).then(function(results) {
+            $q.all([EventService.getAllLanguages(), ConfigurationService.loadAll(), ConfigurationService.loadEUCountries()]).then(function(results) {
                 systemConf.allLanguages = results[0].data;
                 loadSettings(systemConf, results[1].data, ConfigurationService);
                 if(systemConf.general) {
                     systemConf.general.selectedLanguages = _.chain(systemConf.allLanguages).map('value').filter(function(x) {return parseInt(systemConf.general.supportedTranslations.value) & x;}).value();
+                }
+                if(systemConf.invoiceEu) {
+                    var euCountries = _.map(results[2].data, function(o) {
+                        var key = Object.keys(o)[0];
+                        return {key: key, value: o[key]};
+                    });
+                    _.forEach(_.filter(systemConf.invoiceEu.settings, function(e) {return e.key === 'COUNTRY_OF_BUSINESS'}), function(cb) {
+                        cb.listValues = euCountries;
+                    });
                 }
             }, function() {
                 systemConf.loading = false;
@@ -168,7 +181,9 @@
             systemConf.loading = true;
             ConfigurationService.bulkUpdate(systemConf.settings).then(function() {
                 loadAll();
+                NotificationHandler.showSuccess("Configurations have been saved successfully");
             }, function(e) {
+                NotificationHandler.showError("Unable to save the configuration");
                 alert(e.data);
                 systemConf.loading = false;
             });
@@ -187,7 +202,7 @@
         });
     }
 
-    SystemConfigurationController.$inject = ['ConfigurationService', 'EventService', '$rootScope', '$q'];
+    SystemConfigurationController.$inject = ['ConfigurationService', 'EventService', 'NotificationHandler', '$rootScope', '$q'];
 
     function OrganizationConfigurationController(ConfigurationService, OrganizationService, $stateParams, $q, $rootScope) {
         var organizationConf = this;

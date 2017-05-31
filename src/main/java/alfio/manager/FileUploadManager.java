@@ -20,6 +20,8 @@ import alfio.model.FileBlobMetadata;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.repository.FileUploadRepository;
 import alfio.util.Json;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,13 +40,11 @@ import org.springframework.util.StreamUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Transactional
@@ -53,6 +53,10 @@ public class FileUploadManager {
 
     private final NamedParameterJdbcTemplate jdbc;
     private final FileUploadRepository repository;
+    private final Cache<String, byte[]> cache = Caffeine.newBuilder()
+        .maximumSize(20)
+        .expireAfterWrite(20, TimeUnit.MINUTES)
+        .build();
 
     @Autowired
     public FileUploadManager(NamedParameterJdbcTemplate jdbc, FileUploadRepository repository) {
@@ -65,15 +69,23 @@ public class FileUploadManager {
     }
 
     public void outputFile(String id, OutputStream out) {
-        SqlParameterSource param = new MapSqlParameterSource("id", id);
-
-        jdbc.query(repository.fileContent(id), param, rs -> {
-            try (InputStream is = rs.getBinaryStream("content")) {
-                StreamUtils.copy(is, out);
-            } catch (IOException e) {
-                throw new IllegalStateException("Error while copying data", e);
-            }
+        byte[] res = cache.get(id, identifier -> {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            SqlParameterSource param = new MapSqlParameterSource("id", id);
+            jdbc.query(repository.fileContent(id), param, rs -> {
+                try (InputStream is = rs.getBinaryStream("content")) {
+                    StreamUtils.copy(is, baos);
+                } catch (IOException e) {
+                    throw new IllegalStateException("Error while copying data", e);
+                }
+            });
+            return baos.toByteArray();
         });
+        try {
+            StreamUtils.copy(res, out);
+        } catch (IOException e) {
+            throw new IllegalStateException("Error while copying data", e);
+        }
     }
 
 

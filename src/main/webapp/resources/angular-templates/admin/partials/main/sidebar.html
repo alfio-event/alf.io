@@ -49,20 +49,26 @@
             </li>
             <li>
                 <ul class="nav nav-pills nav-stacked" data-ng-if="ctrl.internal">
-                    <li role="presentation" data-ng-if="ctrl.isDetail">
-                        <a data-ng-click="ctrl.navigateTo('promo-codes')"><i class="fa fa-percent"></i> Promo Codes</a>
-                    </li>
-                    <li role="presentation" data-ng-if="ctrl.isDetail">
-                        <a data-ng-click="ctrl.navigateTo('additional-fields')"><i class="fa fa-info-circle"></i> Additional Fields</a>
-                    </li>
-                    <li role="presentation" data-ng-if="ctrl.isDetail">
-                        <a data-ng-click="ctrl.navigateTo('donation-options')"><i class="fa fa-money"></i> Donation options</a>
-                    </li>
                     <li data-ng-if="!ctrl.isDetail">
                         <a data-ui-sref="events.single.detail({eventName: ctrl.event.shortName})"><i class="fa fa-arrow-left"></i> back to event detail</a>
                     </li>
                     <li role="presentation" data-ui-sref-active="active">
-                        <a data-ui-sref="events.single.email-log({eventName:ctrl.event.shortName})"><i class="fa fa-paper-plane-o"></i> e-mail log</a>
+                        <a ui-sref="events.single.dataToCollect({eventName: ctrl.event.shortName})"><i class="fa fa-info-circle"></i> Attendees' data to collect</a>
+                    </li>
+                    <li role="presentation" data-ui-sref-active="active">
+                        <a ui-sref="events.single.promoCodes({eventName: ctrl.event.shortName})"><i class="fa fa-percent"></i> Promo Codes</a>
+                    </li>
+                    <li role="presentation" data-ui-sref-active="active">
+                        <a ui-sref="events.single.additionalServices({eventName: ctrl.event.shortName})"><i class="fa fa-money"></i> Additional options</a>
+                    </li>
+                    <li role="presentation" data-ui-sref-active="active">
+                        <a ui-sref="events.single.donations({eventName: ctrl.event.shortName})"><i class="fa fa-gift"></i> Donation options</a>
+                    </li>
+                    <li role="presentation" data-ui-sref-active="active">
+                        <a data-ui-sref="events.single.reservationsList({eventName:ctrl.event.shortName})"><i class="fa fa-ticket"></i> Reservations</a>
+                    </li>
+                    <li role="presentation" data-ui-sref-active="active">
+                        <a data-ui-sref="events.single.email-log({eventName:ctrl.event.shortName})"><i class="fa fa-paper-plane-o"></i> E-mail log</a>
                     </li>
                     <li role="presentation" data-ui-sref-active="active">
                         <a data-ui-sref="events.single.plugin-log({eventName:ctrl.event.shortName})"><i class="fa fa-plug"></i> Plugins log</a>

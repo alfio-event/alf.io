@@ -16,13 +16,19 @@
  */
 package alfio.model;
 
+import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 public class EmailMessage implements Comparable<EmailMessage> {
@@ -35,6 +41,7 @@ public class EmailMessage implements Comparable<EmailMessage> {
     private final int eventId;
     private final Status status;
     private final String recipient;
+    private final List<String> cc;
     private final String subject;
     private final String message;
     private final String attachments;
@@ -53,7 +60,8 @@ public class EmailMessage implements Comparable<EmailMessage> {
                         @Column("checksum") String checksum,
                         @Column("request_ts") ZonedDateTime requestTimestamp,
                         @Column("sent_ts") ZonedDateTime sentTimestamp,
-                        @Column("attempts") int attempts) {
+                        @Column("attempts") int attempts,
+                        @Column("email_cc") String emailCC) {
         this.id = id;
         this.eventId = eventId;
         this.requestTimestamp = requestTimestamp;
@@ -65,6 +73,12 @@ public class EmailMessage implements Comparable<EmailMessage> {
         this.attachments = attachments;
         this.checksum = checksum;
         this.attempts = attempts;
+
+        if(emailCC != null && StringUtils.isNotBlank(emailCC)) {
+            this.cc = Json.GSON.fromJson(emailCC, new TypeToken<List<String>>(){}.getType());
+        } else {
+            this.cc = new ArrayList<>();
+        }
     }
 
     @Override

@@ -29,26 +29,36 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @Getter
 public class PromoCodeDiscountModification {
 
+    private final Integer organizationId;
+    private final Integer eventId;
     private final String promoCode;
     private final DateTimeModification start;
     private final DateTimeModification end;
     private final BigDecimal discountAmount;
     private final DiscountType discountType;
     private final List<Integer> categories;
+    private final Integer utcOffset;
 
     @JsonCreator
-    public PromoCodeDiscountModification(@JsonProperty("promoCode") String promoCode,
+    public PromoCodeDiscountModification(
+            @JsonProperty("organizationId") Integer organizationId,
+            @JsonProperty("eventId") Integer eventId,
+            @JsonProperty("promoCode") String promoCode,
             @JsonProperty("start") DateTimeModification start,
             @JsonProperty("end") DateTimeModification end,
             @JsonProperty("discountAmount") BigDecimal discountAmount,
             @JsonProperty("discountType") DiscountType discountType,
-            @JsonProperty("categories") List<Integer> categories) {
+            @JsonProperty("categories") List<Integer> categories,
+            @JsonProperty("utcOffset") Integer utcOffset) {
+        this.organizationId = organizationId;
+        this.eventId = eventId;
         this.promoCode = promoCode;
         this.start = start;
         this.end = end;
         this.discountAmount = discountAmount;
         this.discountType = discountType;
         this.categories = categories;
+        this.utcOffset = utcOffset;
     }
     
     public int getDiscountAsPercent() {

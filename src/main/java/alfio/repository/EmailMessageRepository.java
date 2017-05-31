@@ -36,12 +36,13 @@ public interface EmailMessageRepository {
      * @param checksum
      * @return
      */
-    @Query("select id, event_id, status, recipient, subject, message, null as attachments, checksum, request_ts, sent_ts, attempts from email_message where event_id = :eventId and checksum = :checksum limit 1")
+    @Query("select id, event_id, status, recipient, subject, message, null as attachments, checksum, request_ts, sent_ts, attempts, email_cc from email_message where event_id = :eventId and checksum = :checksum limit 1")
     Optional<EmailMessage> findByEventIdAndChecksum(@Bind("eventId") int eventId, @Bind("checksum") String checksum);
 
-    @Query("insert into email_message (event_id, status, recipient, subject, message, attachments, checksum, request_ts) values(:eventId, 'WAITING', :recipient, :subject, :message, :attachments, :checksum, :timestamp)")
+    @Query("insert into email_message (event_id, status, recipient, subject, message, attachments, checksum, request_ts, email_cc) values(:eventId, 'WAITING', :recipient, :subject, :message, :attachments, :checksum, :timestamp, :emailCC)")
     int insert(@Bind("eventId") int eventId,
                @Bind("recipient") String recipient,
+               @Bind("emailCC") String cc,
                @Bind("subject") String subject,
                @Bind("message") String message,
                @Bind("attachments") String attachments,
@@ -68,7 +69,7 @@ public interface EmailMessageRepository {
     @Query("update email_message set status = 'SENT', sent_ts = :sentTimestamp where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatusToSent(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("sentTimestamp") ZonedDateTime sentTimestamp, @Bind("expectedStatuses") List<String> expectedStatuses);
 
-    @Query("select id, event_id, status, recipient, subject, message, checksum, request_ts, sent_ts, attempts from email_message where event_id = :eventId")
+    @Query("select id, event_id, status, recipient, subject, message, checksum, request_ts, sent_ts, attempts, email_cc from email_message where event_id = :eventId")
     List<LightweightMailMessage> findByEventId(@Bind("eventId") int eventId);
 
     @Query("select * from email_message where id = :id")

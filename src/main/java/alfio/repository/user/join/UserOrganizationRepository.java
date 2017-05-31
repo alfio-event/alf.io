@@ -32,10 +32,16 @@ public interface UserOrganizationRepository {
     @Query("select * from j_user_organization where org_id = :organizationId")
     List<UserOrganization> findByOrganizationId(@Bind("organizationId") int organizationId);
 
+    @Query("select * from j_user_organization where org_id in (:organizationIds) order by user_id")
+    List<UserOrganization> findByOrganizationIdsOrderByUserId(@Bind("organizationIds") List<Integer> organizationIds);
+
     @Query("insert into j_user_organization (user_id, org_id) values(:userId, :organizationId)")
     int create(@Bind("userId") int userId, @Bind("organizationId") int organizationId);
 
     @Query("update j_user_organization set org_id = :organizationId where user_id = :userId")
     int updateUserOrganization(@Bind("userId") int userId, @Bind("organizationId") int organizationId);
+
+    @Query("select * from j_user_organization")
+    List<UserOrganization> findAll();
 
 }

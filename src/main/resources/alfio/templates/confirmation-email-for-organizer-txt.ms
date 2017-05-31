@@ -5,7 +5,7 @@ Category: {{name}}, Quantity: {{amount}}, Subtotal: {{subTotal}} {{event.currenc
 
 {{^orderSummary.free}}{{^event.vatIncluded}}VAT {{event.vat}}%: {{orderSummary.totalVAT}} {{event.currency}}{{/event.vatIncluded}}{{/orderSummary.free}}
 
-Total: {{orderSummary.totalPrice}} {{event.currency}}
+Total: {{orderSummary.totalPrice}} {{event.currency}} {{^orderSummary.displayVat}}(Vat Exempt){{/orderSummary.displayVat}}
 
 {{^orderSummary.free}}{{#event.vatIncluded}}VAT INCL {{event.vat}}%: {{orderSummary.totalVAT}} {{event.currency}}{{/event.vatIncluded}}{{/orderSummary.free}}
 

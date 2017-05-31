@@ -1,6 +1,6 @@
 buildscript {
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.4.1.RELEASE")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.3.RELEASE")
     }
     repositories {
         jcenter()
@@ -11,17 +11,17 @@ plugins {
     id 'java'
     id 'idea'
     id 'jacoco'
-    id 'com.github.kt3k.coveralls' version '2.4.0'
-    id 'com.github.ben-manes.versions' version '0.13.0'
+    id 'com.github.kt3k.coveralls' version '2.8.1'
+    id 'com.github.ben-manes.versions' version '0.14.0'
     id 'com.github.hierynomus.license' version '0.11.0'
-    id 'net.researchgate.release' version '2.3.0'
+    id 'net.researchgate.release' version '2.6.0'
 }
 
 apply plugin: 'war'
-apply plugin: 'spring-boot'
+apply plugin: 'org.springframework.boot'
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.13' 
+    gradleVersion = '3.5'
 }
 
 //as pointed out by @facundofarias, we should check minimum javac version in order to avoid problems with type inference mechanism during compilation
@@ -134,45 +134,50 @@ dependencies {
     compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     compile "org.springframework.security:spring-security-web:$springSecurityConfigVersion"
     compile "org.springframework.security:spring-security-config:$springSecurityConfigVersion"
-    compile "ch.digitalfondue.npjt-extra:npjt-extra:1.1.1"
-    compile "com.samskivert:jmustache:1.12"
-    compile "com.github.sps.mustache:mustache-spring-view:1.3"
+    compile "ch.digitalfondue.npjt-extra:npjt-extra:1.1.3"
+    compile "com.samskivert:jmustache:1.13"
+    compile "com.github.sps.mustache:mustache-spring-view:1.4"
     compile "javax.mail:mail:1.5.0-b01"
-    compile "org.quartz-scheduler:quartz:2.2.3"
+    compile "org.quartz-scheduler:quartz:2.3.0"
     /**/
-    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC8"
-    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC8"
-    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC8"
+    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC11"
+    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC11"
+    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC11"
     /**/
     compile "com.google.zxing:core:3.3.0"
     compile "com.google.zxing:javase:3.3.0"
-    compile "org.flywaydb:flyway-core:4.1.0"
-    compile "org.postgresql:postgresql:9.4.1211"
-    compile 'mysql:mysql-connector-java:5.1.40'
-    compile "com.zaxxer:HikariCP:2.5.1"
+    compile "org.flywaydb:flyway-core:4.2.0"
+    compile "org.postgresql:postgresql:42.1.1"
+    compile 'mysql:mysql-connector-java:5.1.42'
+    compile "com.zaxxer:HikariCP:2.6.2"
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-core:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-jcl:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
     compile "com.stripe:stripe-java:$stripeVersion"
-    compile 'com.paypal.sdk:rest-api-sdk:1.8.0'
-    compile "com.google.maps:google-maps-services:0.1.16"
+    compile 'com.paypal.sdk:rest-api-sdk:1.13.1'
+    compile "com.google.maps:google-maps-services:0.1.20"
     compile "org.apache.commons:commons-lang3:3.5"
     compile "com.squareup.okhttp:okhttp:2.7.5"
-    compile "com.opencsv:opencsv:3.4"
+    compile "com.opencsv:opencsv:3.9"
     compile 'commons-codec:commons-codec:1.10'
-    compile 'net.sf.biweekly:biweekly:0.6.0'
-    compile 'com.atlassian.commonmark:commonmark:0.7.1'
+    compile 'net.sf.biweekly:biweekly:0.6.1'
+    compile 'com.atlassian.commonmark:commonmark:0.9.0'
+    compile 'com.ryantenney.passkit4j:passkit4j:2.0.1'
+    compile 'com.github.ben-manes.caffeine:caffeine:2.5.2'
+    compile 'de.danielbechler:java-object-diff:0.95-RC5'
 
     testCompile "org.springframework:spring-test:$springVersion"
     testCompile "com.insightfullogic:lambda-behave:0.3"
 
-    compileOnly "org.projectlombok:lombok:1.16.4"
+    compileOnly "org.projectlombok:lombok:1.16.16"
+    testCompile "org.projectlombok:lombok:1.16.16"
+
     compileOnly "javax.servlet:javax.servlet-api:3.1.0"
     testCompile "javax.servlet:javax.servlet-api:3.1.0"
     testCompile "org.springframework.boot:spring-boot-starter-test"
-    testCompile "net.sourceforge.htmlunit:htmlunit:2.21"
-    runtime "org.hsqldb:hsqldb:2.3.3"
+    testCompile "net.sourceforge.htmlunit:htmlunit:2.26"
+    runtime "org.hsqldb:hsqldb:2.4.0"
     runtime "commons-fileupload:commons-fileupload:1.3.2"
     providedCompile "org.springframework.boot:spring-boot-starter-web@jar"
     providedCompile "org.springframework.boot:spring-boot-starter@jar"
@@ -180,26 +185,6 @@ dependencies {
     providedCompile "org.springframework.boot:spring-boot-autoconfigure@jar"
     providedCompile "org.springframework.boot:spring-boot-starter-jetty"
     providedRuntime "org.springframework.boot:spring-boot-starter-jetty"
-}
-
-sourceSets {
-    main {
-        compileClasspath += configurations.compileOnly
-    }
-    test {
-        compileClasspath += configurations.testCompileOnly
-    }
-}
-
-javadoc {
-    classpath += configurations.compileOnly
-}
-
-idea {
-    module {
-        scopes.PROVIDED.plus += [configurations.compileOnly]
-        scopes.PROVIDED.plus += [configurations.testCompileOnly]
-    }
 }
 
 // -- license configuration
@@ -224,17 +209,20 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-processResources << {
+processResources {
 
-    final gradleProperties = new File(( File ) it.destinationDir, 'application.properties' )
-    final properties       = new Properties()
+    doLast {
 
-    assert gradleProperties.file
+        final gradleProperties = new File((File) it.destinationDir, 'application.properties')
+        final properties = new Properties()
 
-    gradleProperties.withReader { properties.load( it ) }
-    properties[ 'alfio.version' ] = project.version
-    properties[ 'alfio.build-ts' ] = ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
-    gradleProperties.withWriter { properties.store( it, null )}
+        assert gradleProperties.file
+
+        gradleProperties.withReader { properties.load(it) }
+        properties['alfio.version'] = project.version
+        properties['alfio.build-ts'] = ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
+        gradleProperties.withWriter { properties.store(it, null) }
+    }
 }
 
 compileJava {

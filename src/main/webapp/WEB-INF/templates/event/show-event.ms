@@ -95,18 +95,34 @@
 {{/displayWaitingQueueForm}}
 
 <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reserve-tickets" class="form-horizontal">
+{{^validPaymentMethodAvailable}}
+    <div class="alert alert-warning">
+        <h3>{{#i18n}}show-event.offline-payment-not-available{{/i18n}}</h3>
+    </div>
+{{/validPaymentMethodAvailable}}
+{{#validPaymentMethodAvailable}}
     <ul class="list-group">
     {{#ticketCategories}}
         {{> /event/ticket-category.ms }}
     {{/ticketCategories}}
     </ul>
     {{#showAdditionalServices}}
-    <h2>{{#i18n}}show-event.additional-services{{/i18n}}</h2>
-    <ul class="list-group">
-        {{#enabledAdditionalServices}}
-            {{> /event/additional-service.ms }}
-        {{/enabledAdditionalServices}}
-    </ul>
+        {{#showAdditionalServicesSupplements}}
+            <h2>{{#i18n}}show-event.additional-services{{/i18n}}</h2>
+            <ul class="list-group">
+                {{#enabledAdditionalServicesSupplements}}
+                    {{> /event/additional-service.ms }}
+                {{/enabledAdditionalServicesSupplements}}
+            </ul>
+        {{/showAdditionalServicesSupplements}}
+        {{#showAdditionalServicesDonations}}
+            <h2>{{#i18n}}show-event.donations{{/i18n}}</h2>
+            <ul class="list-group">
+                {{#enabledAdditionalServicesDonations}}
+                    {{> /event/additional-service.ms }}
+                {{/enabledAdditionalServicesDonations}}
+            </ul>
+        {{/showAdditionalServicesDonations}}
     {{/showAdditionalServices}}
     {{#showNoCategoriesWarning}}
         <div class="alert alert-warning">
@@ -178,7 +194,7 @@
     </div>
 </div>
 {{/hasAccessPromotions}}
-
+{{/validPaymentMethodAvailable}}
     <hr/>
 
     <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">

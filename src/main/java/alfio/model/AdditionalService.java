@@ -23,6 +23,7 @@ import org.springframework.security.crypto.codec.Hex;
 import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -40,7 +41,28 @@ public class AdditionalService {
     }
 
     public enum AdditionalServiceType {
-        DONATION
+        DONATION, SUPPLEMENT
+    }
+
+    public enum SupplementPolicy {
+        MANDATORY_ONE_FOR_TICKET,
+        OPTIONAL_UNLIMITED_AMOUNT,
+        OPTIONAL_MAX_AMOUNT_PER_TICKET {
+            @Override
+            public boolean isValid(int quantity, AdditionalService as, int ticketsCount) {
+                return quantity <= ticketsCount*as.getMaxQtyPerOrder();
+            }
+        },
+        OPTIONAL_MAX_AMOUNT_PER_RESERVATION {
+            @Override
+            public boolean isValid(int quantity, AdditionalService as, int selectionCount) {
+                return quantity < as.getMaxQtyPerOrder();
+            }
+        };
+
+        public boolean isValid(int quantity, AdditionalService as, int selectionCount) {
+            return true;
+        }
     }
 
     private final int id;
@@ -53,7 +75,8 @@ public class AdditionalService {
     private final ZonedDateTime utcExpiration;
     private final BigDecimal vat;
     private final VatType vatType;
-    private final AdditionalServiceType type = AdditionalServiceType.DONATION;
+    private final AdditionalServiceType type;
+    private final SupplementPolicy supplementPolicy;
 
     private final Integer srcPriceCts;
 
@@ -67,7 +90,9 @@ public class AdditionalService {
                              @Column("expiration_ts") ZonedDateTime utcExpiration,
                              @Column("vat") BigDecimal vat,
                              @Column("vat_type") VatType vatType,
-                             @Column("src_price_cts") Integer srcPriceCts) {
+                             @Column("src_price_cts") Integer srcPriceCts,
+                             @Column("service_type") AdditionalServiceType type,
+                             @Column("supplement_policy") SupplementPolicy supplementPolicy) {
         this.id = id;
         this.eventId = eventId;
         this.fixPrice = fixPrice;
@@ -79,6 +104,8 @@ public class AdditionalService {
         this.vat = vat;
         this.vatType = vatType;
         this.srcPriceCts = srcPriceCts;
+        this.type = type;
+        this.supplementPolicy = supplementPolicy;
     }
 
     public ZonedDateTime getInception(ZoneId zoneId) {
@@ -87,6 +114,11 @@ public class AdditionalService {
 
     public ZonedDateTime getExpiration(ZoneId zoneId) {
         return Optional.ofNullable(utcExpiration).map(i -> i.withZoneSameInstant(zoneId)).orElseGet(() -> ZonedDateTime.now(zoneId).plus(1L, ChronoUnit.HOURS));
+    }
+
+    public boolean getSaleable() {
+        ZonedDateTime now = ZonedDateTime.now(Clock.systemUTC());
+        return getUtcInception().isBefore(now) && getUtcExpiration().isAfter(now);
     }
 
     public String getChecksum() {
@@ -101,6 +133,9 @@ public class AdditionalService {
             digest.update(Optional.ofNullable(vat).map(BigDecimal::toString).orElse("").getBytes());
             digest.update(vatType.name().getBytes());
             digest.update(type.name().getBytes());
+            if (supplementPolicy != null) {
+                digest.update(supplementPolicy.name().getBytes());
+            }
             return new String(Hex.encode(digest.digest()));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);

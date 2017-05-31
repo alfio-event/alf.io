@@ -18,46 +18,42 @@ package alfio.manager;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.CustomerName;
-import alfio.model.Event;
+import alfio.model.*;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.Transaction;
+import alfio.repository.AuditingRepository;
 import alfio.repository.TransactionRepository;
+import alfio.repository.user.UserRepository;
 import alfio.util.ErrorsCode;
+import alfio.util.Json;
 import com.paypal.base.rest.PayPalRESTException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 @Log4j2
+@AllArgsConstructor
 public class PaymentManager {
 
     private final StripeManager stripeManager;
     private final PaypalManager paypalManager;
     private final TransactionRepository transactionRepository;
     private final ConfigurationManager configurationManager;
-
-    @Autowired
-    public PaymentManager(StripeManager stripeManager,
-                          PaypalManager paypalManager,
-                          TransactionRepository transactionRepository,
-                          ConfigurationManager configurationManager) {
-        this.stripeManager = stripeManager;
-        this.paypalManager = paypalManager;
-        this.transactionRepository = transactionRepository;
-        this.configurationManager = configurationManager;
-    }
+    private final AuditingRepository auditingRepository;
+    private final UserRepository userRepository;
 
     /**
      * This method processes the pending payment using the configured payment gateway (at the time of writing, only STRIPE)
@@ -74,18 +70,18 @@ public class PaymentManager {
      * @return PaymentResult
      * @throws java.lang.IllegalStateException if there is an error after charging the credit card
      */
-    public PaymentResult processPayment(String reservationId,
-                          String gatewayToken,
-                          int price,
-                          Event event,
-                          String email,
-                          CustomerName customerName,
-                          String billingAddress) {
+    public PaymentResult processStripePayment(String reservationId,
+                                              String gatewayToken,
+                                              int price,
+                                              Event event,
+                                              String email,
+                                              CustomerName customerName,
+                                              String billingAddress) {
         try {
             final Charge charge = stripeManager.chargeCreditCard(gatewayToken, price,
                     event, reservationId, email, customerName.getFullName(), billingAddress);
             log.info("transaction {} paid: {}", reservationId, charge.getPaid());
-            transactionRepository.insert(charge.getId(), reservationId,
+            transactionRepository.insert(charge.getId(), null, reservationId,
                     ZonedDateTime.now(), price, event.getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name());
             return PaymentResult.successful(charge.getId());
         } catch (Exception e) {
@@ -97,18 +93,18 @@ public class PaymentManager {
 
     }
 
-    public PaymentResult processOfflinePayment(String reservationId, int price, Event event) {
-        String transactionId = UUID.randomUUID().toString();
-        transactionRepository.insert(transactionId, reservationId, ZonedDateTime.now(event.getZoneId()), price, event.getCurrency(), "Offline payment confirmation", PaymentProxy.OFFLINE.toString());
-        return PaymentResult.successful(transactionId);
-    }
-
-    public PaymentResult processPaypalPayment(String reservationId, String token, String payerId, int price, Event event) {
+    public PaymentResult processPaypalPayment(String reservationId,
+                                              String token,
+                                              String payerId,
+                                              int price,
+                                              Event event) {
         try {
-            String transactionId = paypalManager.commitPayment(reservationId, token, payerId, event);
-            transactionRepository.insert(transactionId, reservationId,
+            Pair<String, String> captureAndPaymentId = paypalManager.commitPayment(reservationId, token, payerId, event);
+            String captureId = captureAndPaymentId.getLeft();
+            String paymentId = captureAndPaymentId.getRight();
+            transactionRepository.insert(captureId, paymentId, reservationId,
                 ZonedDateTime.now(), price, event.getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name());
-            return PaymentResult.successful(transactionId);
+            return PaymentResult.successful(captureId);
         } catch (Exception e) {
             log.warn("errow while processing paypal payment: " + e.getMessage(), e);
             if(e instanceof PayPalRESTException) {
@@ -127,6 +123,54 @@ public class PaymentManager {
                 return new PaymentMethod(p, status);
             })
             .collect(Collectors.toList());
+    }
+
+    public String getStripePublicKey(Event event) {
+        return stripeManager.getPublicKey(event);
+    }
+
+    public String createPaypalCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary, CustomerName customerName, String email, String billingAddress, Locale locale, boolean postponeAssignment) throws Exception {
+        return paypalManager.createCheckoutRequest(event, reservationId, orderSummary, customerName, email, billingAddress, locale, postponeAssignment);
+    }
+
+    public boolean refund(TicketReservation reservation, Event event, Optional<Integer> amount, String username) {
+        Transaction transaction = transactionRepository.loadByReservationId(reservation.getId());
+        boolean res = false;
+        switch(reservation.getPaymentMethod()) {
+            case PAYPAL:
+                res = paypalManager.refund(transaction, event, amount);
+                break;
+            case STRIPE:
+                res = stripeManager.refund(transaction, event, amount);
+                break;
+            default:
+                throw new IllegalStateException("Cannot refund ");
+        }
+
+        if(res) {
+            Map<String, Object> changes = new HashMap<>();
+            changes.put("refund", amount.map(i -> i.toString()).orElse("full"));
+            changes.put("paymentMethod", reservation.getPaymentMethod().toString());
+            auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null),
+                Audit.EventType.REFUND, new Date(), Audit.EntityType.RESERVATION, reservation.getId(),
+                Collections.singletonList(changes));
+        }
+
+        return res;
+    }
+
+    public TransactionAndPaymentInfo getInfo(TicketReservation reservation, Event event) {
+        Optional<Transaction> maybeTransaction = transactionRepository.loadOptionalByReservationId(reservation.getId());
+        return maybeTransaction.map(transaction -> {
+            switch(reservation.getPaymentMethod()) {
+                case PAYPAL:
+                    return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, paypalManager.getInfo(transaction, event).orElse(null));
+                case STRIPE:
+                    return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, stripeManager.getInfo(transaction, event).orElse(null));
+                default:
+                    return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, new PaymentInformations(reservation.getPaidAmount(), null));
+            }
+        }).orElse(new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformations(reservation.getPaidAmount(), null)));
     }
 
     @Data

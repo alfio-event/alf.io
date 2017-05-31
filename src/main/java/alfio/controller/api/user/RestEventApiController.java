@@ -125,7 +125,7 @@ public class RestEventApiController {
     @RequestMapping(value = "events/{shortName}/reserve-tickets", method = RequestMethod.POST)
     public ResponseEntity<Result<String>> reserveTickets(@PathVariable("shortName") String shortName, @RequestBody ReservationForm reservation, BindingResult bindingResult, Locale locale) {
         return eventRepository.findOptionalByShortName(shortName).map(event -> {
-            Optional<String> reservationUrl = reservation.validate(bindingResult, ticketReservationManager, ticketCategoryDescriptionRepository, additionalServiceRepository, eventManager, event, locale).flatMap(selected -> {
+            Optional<String> reservationUrl = reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event).flatMap(selected -> {
                 Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
                 try {
                     String reservationId = ticketReservationManager.createTicketReservation(event,

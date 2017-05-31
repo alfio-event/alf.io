@@ -42,6 +42,7 @@ public class AdminController {
         model.addAttribute("alfioVersion", version);
         model.addAttribute("username", principal.getName());
         model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
+        model.addAttribute("isAdmin", principal.getName().equals("admin"));
         return "/admin/index";
     }
 }

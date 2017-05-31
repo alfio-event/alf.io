@@ -64,6 +64,9 @@
                 <div>
                     <setting obj="systemConf.mail.mailAttemptsCount" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
                 </div>
+                <div>
+                    <setting obj="systemConf.mail.cc" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                </div>
             </div>
             <div data-ng-repeat="setting in systemConf.mail.settings" data-ng-if="!systemConf.mail.type">
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
@@ -77,6 +80,17 @@
         <div>
             <div data-ng-repeat="setting in systemConf.settings.INVOICE">
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title"><i class="fa fa-eur"></i> EU-Specific invoice settings</div>
+            </div>
+            <div class="panel-body">
+                <div class="alert alert-info"><i class="fa fa-info-circle"></i> You'll need to build and deploy the <a href="https://github.com/stephanj/ServerlessEUVATChecker" target="_blank">ServerlessEUVATChecker</a> Lambda Function on AWS.</div>
+                <div data-ng-repeat="setting in systemConf.invoiceEu.settings">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(setting)" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}" list-values="setting.listValues"></setting>
+                </div>
             </div>
         </div>
 

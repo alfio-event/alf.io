@@ -16,33 +16,35 @@
  */
 package alfio.manager;
 
-import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.model.OrderSummary;
-import alfio.model.SummaryRow;
+import alfio.model.*;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.CustomerName;
 import alfio.model.Event;
-import alfio.model.TicketReservation;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
+import alfio.util.MonetaryUtil;
 import com.paypal.api.payments.*;
+import com.paypal.api.payments.Transaction;
 import com.paypal.base.rest.APIContext;
 import com.paypal.base.rest.PayPalRESTException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static alfio.util.MonetaryUtil.formatCents;
 
 @Component
 @Log4j2
@@ -130,15 +132,8 @@ public class PaypalManager {
         return transactions;
     }
 
-    private static Item fromSummaryRow(SummaryRow summaryRow, Event event) {
-        String quantity = Integer.toString(summaryRow.getAmount());
-        String price = summaryRow.getType() == SummaryRow.SummaryType.PROMOTION_CODE ? summaryRow.getSubTotal() : summaryRow.getPrice();
-        return new Item(summaryRow.getName(), quantity, price, event.getCurrency());
-    }
-
     public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary, CustomerName customerName,
-                                        String email, String billingAddress, Locale locale, boolean postponeAssignment,
-                                        Map<String, UpdateTicketOwnerForm> tickets) throws Exception {
+                                        String email, String billingAddress, Locale locale, boolean postponeAssignment) throws Exception {
 
         Optional<String> experienceProfileId = getOrCreateWebProfile(event, locale);
 
@@ -198,12 +193,13 @@ public class PaypalManager {
         return MessageDigest.isEqual(hmac.getBytes(StandardCharsets.UTF_8), computedHmac.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String commitPayment(String reservationId, String token, String payerId, Event event) throws PayPalRESTException {
+    public Pair<String, String> commitPayment(String reservationId, String token, String payerId, Event event) throws PayPalRESTException {
 
         Payment payment = new Payment().setId(token);
         PaymentExecution paymentExecute = new PaymentExecution();
         paymentExecute.setPayerId(payerId);
         Payment result = payment.execute(getApiContext(event), paymentExecute);
+
 
         // state can only be "created", "approved" or "failed".
         // if we are at this stage, the only possible options are approved or failed, thus it's safe to re transition the reservation to a pending status: no payment has been made!
@@ -213,7 +209,7 @@ public class PaypalManager {
         }
 
         // navigate the object graph (ideally taking the first Sale object) result.getTransactions().get(0).getRelatedResources().get(0).getSale().getId()
-        return result.getTransactions().stream()
+        String captureId = result.getTransactions().stream()
             .map(Transaction::getRelatedResources)
             .flatMap(List::stream)
             .map(RelatedResources::getSale)
@@ -221,5 +217,50 @@ public class PaypalManager {
             .map(Sale::getId)
             .filter(Objects::nonNull)
             .findFirst().orElseThrow(IllegalStateException::new);
+
+        return Pair.of(captureId, payment.getId());
+    }
+
+    public Optional<PaymentInformations> getInfo(alfio.model.transaction.Transaction transaction, Event event) {
+        try {
+            String refund = null;
+
+            //check for backward compatibility  reason...
+            if(transaction.getPaymentId() != null) {
+                //navigate in all refund objects and sum their amount
+                refund = Payment.get(getApiContext(event), transaction.getPaymentId()).getTransactions().stream()
+                    .map(Transaction::getRelatedResources)
+                    .flatMap(List::stream)
+                    .filter(f -> f.getRefund() != null)
+                    .map(RelatedResources::getRefund)
+                    .map(Refund::getAmount)
+                    .map(Amount::getTotal)
+                    .map(BigDecimal::new)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add).toPlainString();
+                //
+            }
+            Capture c = Capture.get(getApiContext(event), transaction.getTransactionId());
+            return Optional.ofNullable(new PaymentInformations(c.getAmount().getTotal(), refund));
+        } catch (PayPalRESTException ex) {
+            log.warn("Paypal: error while fetching information for payment id " + transaction.getTransactionId(), ex);
+            return Optional.empty();
+        }
+    }
+
+    public boolean refund(alfio.model.transaction.Transaction transaction, Event event, Optional<Integer> amount) {
+        String captureId = transaction.getTransactionId();
+        try {
+            String amountOrFull = amount.map(MonetaryUtil::formatCents).orElse("full");
+            log.info("Paypal: trying to do a refund for payment {} with amount: {}", captureId, amountOrFull);
+            Capture capture = Capture.get(getApiContext(event), captureId);
+            RefundRequest refundRequest = new RefundRequest();
+            amount.ifPresent(a -> refundRequest.setAmount(new Amount(capture.getAmount().getCurrency(), formatCents(a))));
+            DetailedRefund res = capture.refund(getApiContext(event), refundRequest);
+            log.info("Paypal: refund for payment {} executed with success for amount: {}", captureId, amountOrFull);
+            return true;
+        } catch(PayPalRESTException ex) {
+            log.warn("Paypal: was not able to refund payment with id " + captureId, ex);
+            return false;
+        }
     }
 }

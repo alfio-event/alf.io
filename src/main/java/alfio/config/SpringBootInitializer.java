@@ -18,7 +18,7 @@ package alfio.config;
 
 import com.openhtmltopdf.util.XRLog;
 import lombok.extern.log4j.Log4j2;
-import org.eclipse.jetty.server.session.HashSessionIdManager;
+import org.eclipse.jetty.server.session.DefaultSessionIdManager;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 import org.springframework.boot.context.embedded.MimeMappings;
@@ -93,7 +93,7 @@ public class SpringBootInitializer {
             Optional.ofNullable(System.getProperty("alfio.worker.name")).ifPresent(workerName -> {
                 ((JettyEmbeddedServletContainerFactory)container).addServerCustomizers(server -> {
                     log.info("Configuring session manager using worker name {}", workerName);
-                    HashSessionIdManager sessionIdManager = new HashSessionIdManager();
+                    DefaultSessionIdManager sessionIdManager = new DefaultSessionIdManager(server);
                     sessionIdManager.setWorkerName(workerName);
                     server.setSessionIdManager(sessionIdManager);
                 });

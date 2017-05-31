@@ -72,6 +72,8 @@
      
     jQuery(function() {
 
+        var hiddenClasses = 'hidden-xs hidden-sm hidden-md hidden-lg';
+
         $(document).ready(function() {
             $(":input:not(input[type=button],input[type=submit],button):visible:first").focus();
         });
@@ -84,34 +86,47 @@
         var parser = Number && Number.parseInt ? Number : window;
         var validity = new Date(parser.parseInt($("#validity").attr('data-validity')));
         
-        var interval = null;
-        
         var displayMessage = function() {
 
-            var totalSec = Math.max(validity.getTime() - new Date().getTime(), 0) / 1000;
-            var sec = totalSec % 60;
-            var min = (totalSec - sec) / 60;
             var validityElem = $("#validity");
-            if(totalSec <= 0) {
-                validityElem.find("strong").html(validityElem.attr('data-message-time-elapsed'));
-                $("#continue-button").addClass('hide');
-                clearInterval(interval);
-            } else {
-                validityElem.find("strong").html(validityElem.attr('data-message').replace('#minutes#', min).replace('#seconds#',  Math.floor(sec)));
-            }
+            var template = validityElem.attr('data-message');
+
+            countdown.setLabels(
+                validityElem.attr('data-labels-singular'),
+                validityElem.attr('data-labels-plural'),
+                ' '+validityElem.attr('data-labels-and')+' ',
+                ', ');
+
+            var timerId = countdown(validity, function(ts) {
+                        if(ts.value < 0) {
+                            validityElem.html(template.replace('##time##', ts.toHTML("strong")));
+                        } else {
+                            clearInterval(timerId);
+                            $('#validity-container').html('<strong>'+validityElem.attr('data-message-time-elapsed')+'</strong>');
+                            $('#continue-button').addClass('hidden');
+                        }
+                    }, countdown.MONTHS|countdown.WEEKS|countdown.DAYS|countdown.HOURS|countdown.MINUTES|countdown.SECONDS);
+
         };
         
         displayMessage();
         
-        var interval = setInterval(displayMessage, 1000);
-        //
-        
-        
-        
+
         function submitForm(e) {
             var $form = $(this);
             
             if(!this.checkValidity()) {
+                return false;
+            }
+
+            var vatCountry = $('#vatCountry');
+            if(vatCountry.length && vatCountry.val() !== '') {
+                var vatNr = $('#vatNr');
+                markFieldAsError(vatNr);
+                $('#validation-result-container').removeClass(hiddenClasses);
+                var validationResult = $('#validation-result');
+                validationResult.html(validationResult.attr('data-validation-required-msg'));
+                vatNr.focus();
                 return false;
             }
              
@@ -119,9 +134,9 @@
             $form.find('button').prop('disabled', true);
 
             var selectedPaymentMethod = $form.find('input[name=paymentMethod]');
-            if(selectedPaymentMethod.length === 0 ||
+            if(hasStripe && (selectedPaymentMethod.length === 0 ||
                 (selectedPaymentMethod.length === 1 && selectedPaymentMethod.val() === 'STRIPE') ||
-                selectedPaymentMethod.filter(':checked').val() === 'STRIPE') {
+                selectedPaymentMethod.filter(':checked').val() === 'STRIPE')) {
                 Stripe.card.createToken($form, stripeResponseHandler);
                 // Prevent the form from submitting with the default action
                 return false;
@@ -146,8 +161,13 @@
             $form.submit();
         });
         
-        if(hasStripe) {
-            $('#payment-form').submit(submitForm);
+        $('#payment-form').submit(submitForm);
+
+        function markFieldAsError(node) {
+            $(node).parent().addClass('has-error');
+            if($(node).parent().parent().parent().hasClass('form-group')) {
+                $(node).parent().parent().parent().addClass('has-error');
+            }
         }
 
         
@@ -160,10 +180,7 @@
                 $(form).find('.has-error').removeClass('has-error');
                 // Find all invalid fields within the form.
                 var invalidFields = form.find("input,select,textarea").filter(function(i,v) {return !v.validity.valid;}).each( function( index, node ) {
-                    $(node).parent().addClass('has-error');
-                    if($(node).parent().parent().parent().hasClass('form-group')) {
-                        $(node).parent().parent().parent().addClass('has-error');
-                    }
+                    markFieldAsError(node);
                 });
             };
 
@@ -240,17 +257,22 @@
                 $(this).removeClass('untouched');
             });
 
-        $('#postpone-assignment').change(function() {
-            var classes = 'hidden-xs hidden-sm hidden-md hidden-lg';
+        var postponeAssignment = $('#postpone-assignment');
+
+        postponeAssignment.change(function() {
             var element = $('#attendeesData');
             if($(this).is(':checked')) {
                 element.find('.field-required').attr('required', false);
-                element.addClass(classes)
+                element.addClass(hiddenClasses)
             } else {
                 element.find('.field-required').attr('required', true);
-                element.removeClass(classes)
+                element.removeClass(hiddenClasses)
             }
         });
+
+        if(postponeAssignment.is(':checked')) {
+            $('#attendeesData').find('.field-required').attr('required', false);
+        }
 
         function fillAttendeeData(firstOrFullName, lastName) {
             var useFullName = (typeof lastName == "undefined");
@@ -268,5 +290,89 @@
                 element.val(newValue);
             }
         }
+
+
+        function disableBillingFields() {
+            $('#vatNr,#vatCountryCode,#billing-address').attr('required', false).attr('disabled', '');
+        }
+
+        disableBillingFields();
+
+
+
+        $('#invoice-requested').change(function() {
+            var element = $('#invoice');
+            if($(this).is(':checked')) {
+                element.find('.field-required').attr('required', true);
+                element.removeClass('hidden');
+                euBillingCountry.change();
+                if(euBillingCountry.length === 0) {
+                    $('#billing-address-container').removeClass(hiddenClasses);
+                    $('#billing-address').attr('required', true).removeAttr('disabled');
+                }
+            } else {
+                element.find('.field-required').attr('required', false);
+                element.addClass('hidden');
+                disableBillingFields();
+            }
+        });
+
+
+
+
+        var euBillingCountry = $('#vatCountry');
+        euBillingCountry.change(function() {
+            if($(this).val() === '') {
+                $('#billing-address-container').removeClass(hiddenClasses);
+                $('#billing-address').attr('required', true).removeAttr('disabled');
+                $('#validation-result-container, #vat-number-container, #validateVAT').addClass(hiddenClasses);
+                $('#vatNr').attr('required', false).attr('disabled', '');
+                $("#vatCountryCode").attr('required', false).attr('disabled', '');
+            } else {
+                $('#billing-address-container').addClass(hiddenClasses);
+                $('#validation-result-container, #vat-number-container, #validateVAT').removeClass(hiddenClasses);
+                $('#billing-address').attr('required', false).attr('disabled');
+                $('#vatNr').attr('required', true).removeAttr('disabled');
+                $("#vatCountryCode").attr('required', true).removeAttr('disabled', '');
+            }
+        });
+
+        $('#validateVAT').click(function() {
+            var frm = $(this.form);
+            var action = $(this).attr('data-validation-url');
+            var vatInput = $('#vatNr');
+            vatInput.removeClass('has-error');
+            vatInput.parent('div').removeClass('has-error');
+            var vatNr = vatInput.val();
+            var country = euBillingCountry.val();
+            var resultContainer = $('#validation-result');
+            if(vatNr !== '' && country !== '') {
+                var btn = $(this);
+                btn.html('<i class="fa fa-circle-o-notch fa-spin"></i>');
+                $('#continue-button').attr('disabled', true);
+                jQuery.ajax({
+                    url: action,
+                    type: 'POST',
+                    data: frm.serialize(),
+                    success: function() {
+                        window.location.reload();
+                    },
+                    error: function(xhr, textStatus, errorThrown) {
+                        vatInput.addClass('has-error');
+                        vatInput.parent('div').addClass('has-error');
+                        if(xhr.status === 400) {
+                            resultContainer.html(resultContainer.attr('data-validation-error-msg'));
+                        } else {
+                            resultContainer.html(resultContainer.attr('data-generic-error-msg'));
+                        }
+                    },
+                    complete: function(xhr) {
+                        btn.html(btn.attr('data-text'));
+                        $('#continue-button').attr('disabled', false);
+                    }
+
+                });
+            }
+        })
     });
 })();

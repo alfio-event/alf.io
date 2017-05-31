@@ -29,12 +29,19 @@ import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.Result.ResultStatus;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.user.Organization;
 import alfio.repository.*;
+import alfio.repository.user.UserRepository;
+import alfio.util.Json;
 import alfio.util.MonetaryUtil;
+import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -42,21 +49,25 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.util.Assert;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static alfio.util.EventUtil.generateEmptyTickets;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Component
 @Log4j2
+@RequiredArgsConstructor
 public class AdminReservationManager {
 
     private final EventManager eventManager;
@@ -69,29 +80,14 @@ public class AdminReservationManager {
     private final EventRepository eventRepository;
     private final PlatformTransactionManager transactionManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
-
-    @Autowired
-    public AdminReservationManager(EventManager eventManager,
-                                   TicketReservationManager ticketReservationManager,
-                                   PlatformTransactionManager transactionManager,
-                                   TicketCategoryRepository ticketCategoryRepository,
-                                   TicketRepository ticketRepository,
-                                   NamedParameterJdbcTemplate jdbc,
-                                   SpecialPriceRepository specialPriceRepository,
-                                   TicketReservationRepository ticketReservationRepository,
-                                   EventRepository eventRepository,
-                                   SpecialPriceTokenGenerator specialPriceTokenGenerator) {
-        this.eventManager = eventManager;
-        this.ticketReservationManager = ticketReservationManager;
-        this.ticketCategoryRepository = ticketCategoryRepository;
-        this.transactionManager = transactionManager;
-        this.ticketRepository = ticketRepository;
-        this.jdbc = jdbc;
-        this.specialPriceRepository = specialPriceRepository;
-        this.ticketReservationRepository = ticketReservationRepository;
-        this.eventRepository = eventRepository;
-        this.specialPriceTokenGenerator = specialPriceTokenGenerator;
-    }
+    private final TicketFieldRepository ticketFieldRepository;
+    private final PaymentManager paymentManager;
+    private final NotificationManager notificationManager;
+    private final MessageSource messageSource;
+    private final TemplateManager templateManager;
+    private final AdditionalServiceItemRepository additionalServiceItemRepository;
+    private final AuditingRepository auditingRepository;
+    private final UserRepository userRepository;
 
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
@@ -179,7 +175,7 @@ public class AdminReservationManager {
         if(arm.isUpdateContactData()) {
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
             ticketReservationRepository.updateTicketReservation(reservationId, r.getStatus().name(), customerData.getEmailAddress(), customerData.getFullName(),
-                customerData.getFirstName(), customerData.getLastName(), r.getUserLanguage(), null, null, null);
+                customerData.getFirstName(), customerData.getLastName(), customerData.getUserLanguage(), customerData.getBillingAddress(), r.getConfirmationTimestamp(), Optional.ofNullable(r.getPaymentMethod()).map(PaymentProxy::name).orElse(null));
         }
         arm.getTicketsInfo().stream()
             .filter(TicketsInfo::isUpdateAttendees)
@@ -266,7 +262,7 @@ public class AdminReservationManager {
             String reservationId = UUID.randomUUID().toString();
             String specialPriceSessionId = UUID.randomUUID().toString();
             Date validity = Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant());
-            ticketReservationRepository.createNewReservation(reservationId, validity, null, arm.getLanguage());
+            ticketReservationRepository.createNewReservation(reservationId, validity, null, arm.getLanguage(), event.getId());
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
             ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.PENDING.name(), customerData.getEmailAddress(), customerData.getFullName(), customerData.getFirstName(), customerData.getLastName(), arm.getLanguage(), null, null, null);
 
@@ -274,6 +270,10 @@ public class AdminReservationManager {
                 .map(pair -> reserveForTicketsInfo(event, arm, reservationId, specialPriceSessionId, pair))
                 .reduce(this::reduceReservationResults)
                 .orElseGet(() -> Result.error(ErrorCode.custom("", "unknown error")));
+
+            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, Locale.forLanguageTag(arm.getLanguage()));
+            ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
+
             return result.map(list -> Pair.of(ticketReservationRepository.findReservationById(reservationId), list));
         });
     }
@@ -289,7 +289,7 @@ public class AdminReservationManager {
         }
         ticketRepository.reserveTickets(reservationId, reservedForUpdate, categoryId, arm.getLanguage(), category.getSrcPriceCts());
         Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), categoryId);
-        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, event, null);
+        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event, null);
         ticketRepository.updateTicketPrice(reservedForUpdate, categoryId, event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
         List<SpecialPrice> codes = category.isAccessRestricted() ? bindSpecialPriceTokens(specialPriceSessionId, categoryId, attendees) : Collections.emptyList();
         assignTickets(attendees, reservedForUpdate, codes, reservationId, arm.getLanguage(), category.getSrcPriceCts());
@@ -420,5 +420,119 @@ public class AdminReservationManager {
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
     }
 
+    @Transactional
+    public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, String username) {
+        loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
+            Event e = res.getRight();
+            TicketReservation reservation = res.getLeft();
+            List<Ticket> tickets = res.getMiddle();
+            Map<Integer, Ticket> ticketsById = tickets.stream().collect(Collectors.toMap(Ticket::getId, Function.identity()));
+            Set<Integer> ticketIdsInReservation = tickets.stream().map(Ticket::getId).collect(toSet());
+            // ensure that all the tickets ids are present in tickets
+            Assert.isTrue(ticketIdsInReservation.containsAll(ticketIds), "Some ticket ids are not contained in the reservation");
+            Assert.isTrue(ticketIdsInReservation.containsAll(toRefund), "Some ticket ids to refund are not contained in the reservation");
+            //
 
+            removeTicketsFromReservation(reservationId, e, ticketIds, notify, username);
+            //
+
+            handleTicketsRefund(toRefund, e, reservation, ticketsById, username);
+
+            if(tickets.size() - ticketIds.size() <= 0) {
+                markAsCancelled(reservation);
+                additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
+            }
+        });
+    }
+
+    public Result<List<Audit>> getAudit(String eventName, String reservationId, String username) {
+        return loadReservation(eventName, reservationId, username).map((res) -> auditingRepository.findAllForReservation(reservationId));
+    }
+
+    public Result<TransactionAndPaymentInfo> getPaymentInfo(String eventName, String reservationId, String username) {
+        return loadReservation(eventName, reservationId, username)
+            .map((res) -> paymentManager.getInfo(res.getLeft(), res.getRight()));
+    }
+
+
+    @Transactional
+    public void removeReservation(String eventName, String reservationId, boolean refund, boolean notify, String username) {
+        loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
+            Event e = res.getRight();
+            TicketReservation reservation = res.getLeft();
+            List<Ticket> tickets = res.getMiddle();
+
+            removeTicketsFromReservation(reservationId, e, tickets.stream().map(Ticket::getId).collect(toList()), notify, username);
+
+            additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
+
+            if(refund && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
+                //fully refund
+                paymentManager.refund(reservation, e, Optional.empty(), username);
+            }
+
+            markAsCancelled(reservation);
+        });
+    }
+
+    public Result<Boolean> refund(String eventName, String reservationId, BigDecimal refundAmount, String username) {
+        return loadReservation(eventName, reservationId, username).map((res) -> {
+            Event e = res.getRight();
+            TicketReservation reservation = res.getLeft();
+
+            if(reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
+                return paymentManager.refund(reservation, e, Optional.of(MonetaryUtil.unitToCents(refundAmount)), username);
+            } else {
+                return false;
+            }
+        });
+    }
+
+    private void removeTicketsFromReservation(String reservationId, Event event, List<Integer> ticketIds, boolean notify, String username) {
+        if(notify && !ticketIds.isEmpty()) {
+            Organization o = eventManager.loadOrganizer(event, username);
+            ticketRepository.findByIds(ticketIds).stream().forEach(t -> {
+                if(StringUtils.isNotBlank(t.getEmail())) {
+                    sendTicketHasBeenRemoved(event, o, t);
+                }
+            });
+        }
+
+        Integer userId = userRepository.findIdByUserName(username).orElse(null);
+        Date date = new Date();
+
+        ticketIds.forEach(id -> {
+            auditingRepository.insert(reservationId, userId, Audit.EventType.CANCEL_TICKET, date, Audit.EntityType.TICKET, id.toString());
+        });
+
+        ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
+        ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
+        ticketRepository.resetTickets(ticketIds);
+    }
+
+    private void sendTicketHasBeenRemoved(Event event, Organization organization, Ticket ticket) {
+        Map<String, Object> model = TemplateResource.buildModelForTicketHasBeenCancelled(organization, event, ticket);
+        Locale locale = Locale.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
+        notificationManager.sendSimpleEmail(event, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
+            new Object[]{event.getDisplayName()}, locale),
+            () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
+    }
+
+    private void markAsCancelled(TicketReservation ticketReservation) {
+        ticketReservationRepository.updateTicketStatus(ticketReservation.getId(), TicketReservationStatus.CANCELLED.toString());
+    }
+
+    private void handleTicketsRefund(List<Integer> toRefund, Event e, TicketReservation reservation, Map<Integer, Ticket> ticketsById, String username) {
+        if(!reservation.getPaymentMethod().isSupportRefund()) {
+            return;
+        }
+        // refund each selected ticket
+        for(Integer toRefundId : toRefund) {
+            int toBeRefunded = ticketsById.get(toRefundId).getFinalPriceCts();
+            if(toBeRefunded > 0) {
+                paymentManager.refund(reservation, e, Optional.of(toBeRefunded), username);
+            }
+        }
+        //
+    }
 }

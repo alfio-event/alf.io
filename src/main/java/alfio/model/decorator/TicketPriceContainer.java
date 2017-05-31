@@ -27,6 +27,9 @@ import lombok.experimental.Delegate;
 import java.math.BigDecimal;
 import java.util.Optional;
 
+import static alfio.util.MonetaryUtil.centsToUnit;
+import static alfio.util.MonetaryUtil.unitToCents;
+
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class TicketPriceContainer implements PriceContainer {
 
@@ -58,7 +61,25 @@ public class TicketPriceContainer implements PriceContainer {
         return vatStatus;
     }
 
-    public static TicketPriceContainer from(Ticket t, Event e, PromoCodeDiscount discount) {
-        return new TicketPriceContainer(t, discount, e.getCurrency(), e.getVat(), e.getVatStatus());
+    public int getSummarySrcPriceCts() {
+        if(VatStatus.isVatExempt(getVatStatus())) {
+            return unitToCents(getFinalPrice());
+        }
+        return getSrcPriceCts();
+    }
+
+    public int getSummaryPriceBeforeVatCts() {
+        VatStatus vatStatus = getVatStatus();
+        if(vatStatus == VatStatus.NOT_INCLUDED_EXEMPT) {
+            return getSrcPriceCts();
+        } else if(vatStatus == VatStatus.INCLUDED_EXEMPT) {
+            return getSrcPriceCts() + unitToCents(vatStatus.extractVat(centsToUnit(getSrcPriceCts()), getVatPercentageOrZero()));
+        }
+        return getFinalPriceCts() - getVatCts();
+    }
+
+    public static TicketPriceContainer from(Ticket t, VatStatus reservationVatStatus, Event e, PromoCodeDiscount discount) {
+        VatStatus vatStatus = Optional.ofNullable(reservationVatStatus).filter(s -> s == VatStatus.INCLUDED_EXEMPT || s == VatStatus.NOT_INCLUDED_EXEMPT).orElseGet(e::getVatStatus);
+        return new TicketPriceContainer(t, discount, e.getCurrency(), e.getVat(), vatStatus);
     }
 }
