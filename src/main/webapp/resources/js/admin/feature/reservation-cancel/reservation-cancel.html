@@ -1,21 +1,41 @@
 <div class="modal-header">
-    <h3>Cancel reservation?</h3>
+    <h3>Cancel reservation <small ng-bind="$ctrl.reservationId"></small></h3>
 </div>
-<div class="modal-body">
-    <div ng-if="$ctrl.paymentInfo">
-        <p>Reservation id: {{$ctrl.reservationId}}</p>
-        <p ng-if="$ctrl.paymentInfo.supportRefund">Fully refund: <input type="checkbox" ng-model="$ctrl.refund"> ?</p>
-        <p>Paid amount: {{$ctrl.paymentInfo.paymentInformations.paidAmount}} {{$ctrl.event.currencyCode}}</p>
-        <p ng-if="!$ctrl.paymentInfo.supportRefund">Note: you cannot refund this reservation automatically.</p>
-        <p>Notify ticket owner: <input type="checkbox" ng-model="$ctrl.notify"></p>
-    </div>
+<div class="modal-body form-horizontal">
+
+
+    <form ng-if="$ctrl.paymentInfo" >
+        <div class="alert alert-warning text-center" ng-if="$ctrl.paymentInfo.paymentInformations.paidAmount !== '0.00' && !$ctrl.paymentInfo.supportRefund"><i class="fa fa-warning"></i> This reservation cannot be refunded automatically.</div>
+        <div class="form-group">
+            <label class="col-sm-4 control-label">Payment method</label>
+            <div class="col-sm-8 form-control-static" ng-bind="$ctrl.paymentInfo.paymentMethod"></div>
+        </div>
+        <div class="form-group" ng-if="$ctrl.paymentInfo.transaction">
+            <label class="col-sm-4 control-label">Transaction timestamp</label>
+            <div class="col-sm-8 form-control-static" ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></div>
+        </div>
+        <div class="form-group" ng-if="$ctrl.paymentInfo.paymentInformations">
+            <label class="col-sm-4 control-label">Paid amount</label>
+            <div class="col-sm-8 form-control-static">{{$ctrl.paymentInfo.paymentInformations.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</div>
+        </div>
+        <div class="form-group" ng-if="$ctrl.paymentInfo.supportRefund">
+            <div class="col-sm-offset-4 col-sm-8 checkbox">
+                <label><input type="checkbox" ng-model="$ctrl.refund"> Refund {{$ctrl.paymentInfo.paymentInformations.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</label>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-4 col-sm-8 checkbox">
+                <label><input type="checkbox" ng-model="$ctrl.notify"> Notify ticket owner</label>
+            </div>
+        </div>
+    </form>
     <div ng-if="!$ctrl.paymentInfo">
         loading...
     </div>
 </div>
 <div class="modal-footer">
     <div class="pull-right">
-        <button class="btn btn-default" ng-disabled="$ctrl.submitted" type="button" data-ng-click="$ctrl.confirmRemove()">confirm removal</button>
-        <button class="btn btn-default" type="button" data-ng-click="$ctrl.onCancel()"><i class="fa fa-times"></i> close</button>
+        <button class="btn btn-lg btn-warning" ng-disabled="$ctrl.submitted" type="button" data-ng-click="$ctrl.confirmRemove()">Cancel reservation</button>
+        <button class="btn btn-lg btn-default" type="button" data-ng-click="$ctrl.onCancel()">Close</button>
     </div>
 </div>

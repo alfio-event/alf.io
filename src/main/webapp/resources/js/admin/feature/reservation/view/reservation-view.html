@@ -28,7 +28,7 @@
 
                 <div class="page-header">
                     <h3>Reservation details
-                        <button type="button" ng-click="$ctrl.cancelReservationModal()" ng-if="$ctrl.reservation.status !== 'CANCELLED'" class="btn btn-sm btn-warning pull-right">Cancel reservation</button>
+                        <button type="button" ng-click="$ctrl.cancelReservationModal()" ng-if="$ctrl.reservation.status !== 'CANCELLED'" class="btn btn-warning pull-right">Cancel reservation</button>
                     </h3>
                 </div>
 
@@ -194,7 +194,7 @@
                             </thead>
                             <tbody>
                                 <tr  ng-repeat="attendee in ticketInfo.attendees">
-                                    <td>{{$index + 1}}</td>
+                                    <td><div class="form-control-static">{{$index + 1}}</div></td>
                                     <td>
                                         <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-firstName" required name="attendee-{{$index}}-first" ng-model="attendee.firstName">
                                         <div ng-show="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.firstName}}</div>
@@ -243,7 +243,7 @@
                     <tr>
                         <th>Type</th>
                         <th>Date</th>
-                        <th>By user</th>
+                        <th>User</th>
                         <th>Entity type</th>
                         <th>Entity id</th>
                         <th>Modifications</th>
@@ -253,10 +253,11 @@
                     <tr ng-repeat="audit in $ctrl.audit">
                         <td ng-bind="audit.eventType"></td>
                         <td ng-bind="audit.eventTime|formatDate"></td>
-                        <td>{{audit.username}} {{audit.firstName}} {{audit.lastName}} {{audit.email}}</td>
+                        <td ng-if="audit.username"><abbr title="{{audit.firstName}} {{audit.lastName}} {{audit.email}}">{{audit.username}}</abbr></td>
+                        <td ng-if="!audit.username">-</td>
                         <td ng-bind="audit.entityType"></td>
                         <td ng-bind="audit.entityId"></td>
-                        <td><pre ng-bind="audit.modifications|json"></pre></td>
+                        <td><pre ng-if="audit.modifications" ng-bind="audit.modifications|json"></pre></td>
                     </tr>
                     </tbody>
                 </table>
