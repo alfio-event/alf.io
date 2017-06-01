@@ -41,7 +41,7 @@ public interface AdditionalServiceItemRepository {
 
     @Query("select count(*) > 0 from additional_service_item " +
         " inner join additional_service on additional_service_id_fk = additional_service.id " +
-        " where service_type = 'SUPPLEMENT' and tickets_reservation_uuid = :reservationId and final_price > 0")
+        " where service_type = 'SUPPLEMENT' and tickets_reservation_uuid = :reservationId and final_price_cts > 0")
     boolean hasPaidSupplements(@Bind("reservationId") String reservationId);
 
 }
