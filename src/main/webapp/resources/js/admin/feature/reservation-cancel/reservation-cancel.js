@@ -23,7 +23,7 @@
             ctrl.notify = false;
             AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationId).then(function(res) {
                 ctrl.paymentInfo = res.data.data;
-            }).finally(function() {
+            }).catch(function() {
                 ctrl.paymentInfo = {};
             });
         };
