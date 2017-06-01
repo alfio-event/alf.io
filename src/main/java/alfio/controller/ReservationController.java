@@ -178,7 +178,7 @@ public class ReservationController {
                             .map((e) -> {
                                 TicketCategory category = eventManager.getTicketCategoryById(e.getKey(), event.getId());
                                 List<TicketDecorator> decorators = TicketDecorator.decorate(e.getValue(),
-                                    hasPaidSupplement && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false),
+                                    !hasPaidSupplement && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false),
                                     eventManager.checkTicketCancellationPrerequisites(),
                                     ticket -> ticketHelper.findTicketFieldConfigurationAndValue(event.getId(), ticket, locale),
                                     true, (t) -> "tickets['"+t.getUuid()+"'].");
@@ -222,7 +222,7 @@ public class ReservationController {
                             .map((e) -> {
                                 TicketCategory category = eventManager.getTicketCategoryById(e.getKey(), ev.getId());
                                 List<TicketDecorator> decorators = TicketDecorator.decorate(e.getValue(),
-                                    hasPaidSupplement && configurationManager.getBooleanConfigValue(Configuration.from(ev.getOrganizationId(), ev.getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false),
+                                    !hasPaidSupplement && configurationManager.getBooleanConfigValue(Configuration.from(ev.getOrganizationId(), ev.getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false),
                                     eventManager.checkTicketCancellationPrerequisites(),
                                     ticket -> ticketHelper.findTicketFieldConfigurationAndValue(ev.getId(), ticket, locale),
                                     tickets.size() == 1, TicketDecorator.EMPTY_PREFIX_GENERATOR);
