@@ -120,6 +120,8 @@ public class TicketReservationManager {
     private final InvoiceSequencesRepository invoiceSequencesRepository;
     private final AuditingRepository auditingRepository;
 
+
+
     public static class NotEnoughTicketsException extends RuntimeException {
 
     }
@@ -1266,5 +1268,10 @@ public class TicketReservationManager {
 
     public List<TicketReservation> findAllInvoices(int eventId) {
         return ticketReservationRepository.findAllReservationsWithInvoices(eventId);
+    }
+
+
+    public boolean hasPaidSupplements(String reservationId) {
+        return additionalServiceItemRepository.hasPaidSupplements(reservationId);
     }
 }

@@ -39,5 +39,9 @@ public interface AdditionalServiceItemRepository {
     @Query("update additional_service_item set status = :status where tickets_reservation_uuid = :reservationUuid")
     int updateItemsStatusWithReservationUUID(@Bind("reservationUuid") String reservationUuid, @Bind("status") AdditionalServiceItemStatus status);
 
+    @Query("select count(*) > 0 from additional_service_item " +
+        " inner join additional_service on additional_service_id_fk = additional_service.id " +
+        " where service_type = 'SUPPLEMENT' and tickets_reservation_uuid = :reservationId and final_price > 0")
+    boolean hasPaidSupplements(@Bind("reservationId") String reservationId);
 
 }
