@@ -37,6 +37,7 @@ import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -61,15 +62,22 @@ public class UserManager {
 
     public List<UserWithOrganizations> findAllUsers(String username) {
         List<Organization> organizations = findUserOrganizations(username);
-        Map<Integer, List<UserOrganization>> usersAndOrganizations = userOrganizationRepository.findByOrganizationIdsOrderByUserId(organizations.stream().map(Organization::getId).collect(toList()))
-            .stream()
-            .collect(Collectors.groupingBy(UserOrganization::getUserId));
-        return userRepository.findByIds(usersAndOrganizations.keySet())
-            .stream()
-            .map(u -> {
-                List<UserOrganization> userOrganizations = usersAndOrganizations.get(u.getId());
-                return new UserWithOrganizations(u, organizations.stream().filter(o -> userOrganizations.stream().anyMatch(uo -> uo.getOrganizationId() == o.getId())).collect(toList()));
-            }).collect(toList());
+        Predicate<Collection<?>> isNotEmpty = ks -> !ks.isEmpty();
+        return Optional.of(organizations)
+            .filter(isNotEmpty)
+            .flatMap(org -> {
+                Map<Integer, List<UserOrganization>> usersAndOrganizations = userOrganizationRepository.findByOrganizationIdsOrderByUserId(organizations.stream().map(Organization::getId).collect(toList()))
+                    .stream()
+                    .collect(Collectors.groupingBy(UserOrganization::getUserId));
+                return Optional.of(usersAndOrganizations.keySet())
+                    .filter(isNotEmpty)
+                    .map(ks -> userRepository.findByIds(ks)
+                        .stream()
+                        .map(u -> {
+                            List<UserOrganization> userOrganizations = usersAndOrganizations.get(u.getId());
+                            return new UserWithOrganizations(u, organizations.stream().filter(o -> userOrganizations.stream().anyMatch(uo -> uo.getOrganizationId() == o.getId())).collect(toList()));
+                        }).collect(toList()));
+            }).orElseGet(Collections::emptyList);
     }
 
     public List<User> findAllEnabledUsers(String username) {
