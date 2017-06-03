@@ -1,5 +1,5 @@
 (function() {
-    'user strict';
+    'use strict';
 
     angular.module('adminApplication').component('resourcesShow', {
         bindings: {
@@ -7,7 +7,7 @@
         },
         controller: ResourcesShowCtrl,
         templateUrl: '../resources/js/admin/feature/resources/show/resources-show.html'
-    })
+    });
 
 
 function ResourcesShowCtrl(ResourceService) {
