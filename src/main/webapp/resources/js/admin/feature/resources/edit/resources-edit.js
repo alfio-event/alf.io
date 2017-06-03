@@ -67,6 +67,7 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
                 ctrl.previewedText = res.text;
                 ctrl.previewMode = true;
             }
+            ctrl.binaryPreview = res.download;
         }, errorHandler);
     }
 
