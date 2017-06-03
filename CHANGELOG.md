@@ -1,5 +1,60 @@
 # Change Log
 
+## [1.11](https://github.com/exteso/alf.io/tree/1.11) (2017-06-01)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.10.2...1.11)
+
+**Implemented enhancements:**
+
+- Support partial refund [\#280](https://github.com/exteso/alf.io/issues/280)
+- Promo code at organization level [\#291](https://github.com/exteso/alf.io/issues/291)
+- Improve UI/UX of admin [\#282](https://github.com/exteso/alf.io/issues/282)
+- VAT management for EU [\#278](https://github.com/exteso/alf.io/issues/278)
+- notify organizer of expiring pending payments [\#277](https://github.com/exteso/alf.io/issues/277)
+- Display pending reservations in the event detail [\#244](https://github.com/exteso/alf.io/issues/244)
+- Support passbook when sending ticket [\#214](https://github.com/exteso/alf.io/issues/214)
+- support refund [\#208](https://github.com/exteso/alf.io/issues/208)
+- Add a remove ticket function [\#114](https://github.com/exteso/alf.io/issues/114)
+- add more caching for uploaded file [\#58](https://github.com/exteso/alf.io/issues/58)
+
+**Fixed bugs:**
+
+- Billing Address remains also if inserting a VAT number [\#295](https://github.com/exteso/alf.io/issues/295)
+- Remove ticket confirmation panel shows firstname instead of lastname [\#294](https://github.com/exteso/alf.io/issues/294)
+- I need an invoice not working for "Outside EU" [\#293](https://github.com/exteso/alf.io/issues/293)
+- Additional option are calculated wrong [\#292](https://github.com/exteso/alf.io/issues/292)
+
+**Closed issues:**
+
+- Backend Android App Unexpected Error [\#283](https://github.com/exteso/alf.io/issues/283)
+- better user handling [\#289](https://github.com/exteso/alf.io/issues/289)
+- send reservation notification to multiple addresses [\#285](https://github.com/exteso/alf.io/issues/285)
+- Update contact data/billing address [\#275](https://github.com/exteso/alf.io/issues/275)
+- Implement auditing [\#135](https://github.com/exteso/alf.io/issues/135)
+- Support additional items [\#111](https://github.com/exteso/alf.io/issues/111)
+
+**Merged pull requests:**
+
+- Dutch lang update [\#296](https://github.com/exteso/alf.io/pull/296) ([mg-1999](https://github.com/mg-1999))
+- \#247 feedback message added for configuration save action  [\#272](https://github.com/exteso/alf.io/pull/272) ([Praitheesh](https://github.com/Praitheesh))
+
+## [1.10.2](https://github.com/exteso/alf.io/tree/1.10.2) (2017-04-10)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.10.1...1.10.2)
+
+**Fixed bugs:**
+
+- Cannot confirm a reservation after updating contact data from admin [\#271](https://github.com/exteso/alf.io/issues/271)
+- does not generate the invoice when using the combination: admin: create reservation + offline payment [\#270](https://github.com/exteso/alf.io/issues/270)
+
+**Closed issues:**
+
+- Updating to latest release [\#273](https://github.com/exteso/alf.io/issues/273)
+- MediaStreamTrack.getSources\(\) is deprecated and removed from Chrome [\#265](https://github.com/exteso/alf.io/issues/265)
+-  Alf.io-1.10 - Error running in Eclipse [\#263](https://github.com/exteso/alf.io/issues/263)
+
+**Merged pull requests:**
+
+- \#197 if event began already and has only offline payment method then … [\#262](https://github.com/exteso/alf.io/pull/262) ([Praitheesh](https://github.com/Praitheesh))
+
 ## [1.10.1](https://github.com/exteso/alf.io/tree/1.10.1) (2017-03-13)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.10...1.10.1)
 
