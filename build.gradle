@@ -76,7 +76,7 @@ ext {
     datasourceValidationQuery = 'SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS'
     //springProfilesActive = 'dev,debug-csp' //enable csp report. FIXME For some reasons it doesn't work on Chrome
     springProfilesActive = 'dev'
-    baseImage = "ubuntu"
+    baseImage = "openjdk:jdk-alpine"
     port = "8080"
 
 
@@ -100,7 +100,7 @@ ext {
             datasourceUsername = 'root'
             datasourcePassword = ''
             datasourceValidationQuery = 'SELECT 1'
-            break;
+            break
         case 'docker-test':
             datasourceDialect = 'PGSQL'
             datasourceDriver = 'org.postgresql.Driver'
@@ -108,7 +108,7 @@ ext {
             datasourceUsername = 'postgres'
             datasourcePassword = 'postgres'
             datasourceValidationQuery = 'SELECT 1'
-            break;
+            break
     }
 }
 
