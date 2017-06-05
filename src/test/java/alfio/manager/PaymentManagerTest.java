@@ -63,14 +63,14 @@ public class PaymentManagerTest {{
 
     describe("success flow", it -> {
         it.should("return a successful payment result", expect -> {
-            expect.that(new PaymentManager(successStripe, null, transactionRepository, configurationManager, auditingRepository, userRepository).processStripePayment("", "", 100, event, "", customerName, ""))
+            expect.that(new PaymentManager(successStripe, null, null, transactionRepository, configurationManager, auditingRepository, userRepository).processStripePayment("", "", 100, event, "", customerName, ""))
                     .is(PaymentResult.successful(paymentId));
         });
     });
 
     describe("stripe error", it -> {
         it.should("return an unsuccessful payment result", expect -> {
-            expect.that(new PaymentManager(failureStripe, null, transactionRepository, configurationManager, auditingRepository, userRepository).processStripePayment("", "", 100, event, "", customerName, ""))
+            expect.that(new PaymentManager(failureStripe, null, null, transactionRepository, configurationManager, auditingRepository, userRepository).processStripePayment("", "", 100, event, "", customerName, ""))
                     .is(PaymentResult.unsuccessful(error));
         });
     });
@@ -78,7 +78,7 @@ public class PaymentManagerTest {{
     describe("internal error", it -> {
         it.should("throw IllegalStateException in case of internal error", expect -> {
             expect.exception(IllegalStateException.class, () -> {
-                new PaymentManager(successStripe, null, failureTR, configurationManager, auditingRepository, userRepository).processStripePayment("", "", 100, event, "", customerName, "");
+                new PaymentManager(successStripe, null, null, failureTR, configurationManager, auditingRepository, userRepository).processStripePayment("", "", 100, event, "", customerName, "");
             });
         });
     });

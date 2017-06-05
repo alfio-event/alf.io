@@ -50,6 +50,7 @@ public class PaymentManager {
 
     private final StripeManager stripeManager;
     private final PaypalManager paypalManager;
+    private final MollieManager mollieManager;
     private final TransactionRepository transactionRepository;
     private final ConfigurationManager configurationManager;
     private final AuditingRepository auditingRepository;

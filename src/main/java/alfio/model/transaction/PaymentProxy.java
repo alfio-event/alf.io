@@ -29,7 +29,8 @@ public enum PaymentProxy {
     OFFLINE("offline payment", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_OFFLINE), false),
     NONE("no payment required", false, false, Collections.emptySet(), false),
     ADMIN("manual", false, false, Collections.emptySet(), false),
-    PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL), true);
+    PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL), true),
+    MOLLIE("mollie", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_MOLLIE), true);
 
     private final String description;
     private final boolean deskPayment;
