@@ -420,8 +420,22 @@ public class ReservationController {
                 return redirectReservation(ticketReservation, eventName, reservationId);
             }
         }
-        //
 
+        //handle mollie redirect
+        if(paymentForm.getPaymentMethod() == PaymentProxy.MOLLIE) {
+            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
+            try {
+                String checkoutUrl = paymentManager.createMollieCheckoutRequest(event, reservationId, orderSummary, customerName,
+                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale, paymentForm.isPostponeAssignment());
+                assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
+                return "redirect:" + checkoutUrl;
+            } catch (Exception e) {
+                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
+                SessionUtil.addToFlash(bindingResult, redirectAttributes);
+                return redirectReservation(ticketReservation, eventName, reservationId);
+            }
+        }
+        //
 
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaypalPayerID(), event, reservationId, paymentForm.getEmail(),
             customerName, locale, paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),

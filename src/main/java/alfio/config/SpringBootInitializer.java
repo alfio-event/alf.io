@@ -88,7 +88,7 @@ public class SpringBootInitializer {
             mimeMappings.put("svg", "image/svg+xml");
             container.setSessionTimeout(2, TimeUnit.HOURS);
             container.setMimeMappings(new MimeMappings(mimeMappings));
-            container.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/404-not-found"), new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/500-internal-server-error"), new ErrorPage("/session-expired"));
+            //container.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/404-not-found"), new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/500-internal-server-error"), new ErrorPage("/session-expired"));
 
             Optional.ofNullable(System.getProperty("alfio.worker.name")).ifPresent(workerName -> {
                 ((JettyEmbeddedServletContainerFactory)container).addServerCustomizers(server -> {
