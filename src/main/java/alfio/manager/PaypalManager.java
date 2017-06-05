@@ -21,19 +21,18 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.util.MonetaryUtil;
 import com.paypal.api.payments.*;
 import com.paypal.api.payments.Transaction;
 import com.paypal.base.rest.APIContext;
 import com.paypal.base.rest.PayPalRESTException;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -48,22 +47,13 @@ import static alfio.util.MonetaryUtil.formatCents;
 
 @Component
 @Log4j2
+@AllArgsConstructor
 public class PaypalManager {
 
     private final ConfigurationManager configurationManager;
     private final MessageSource messageSource;
     private final ConcurrentHashMap<String, String> cachedWebProfiles = new ConcurrentHashMap<>();
     private final TicketReservationRepository ticketReservationRepository;
-
-    @Autowired
-    public PaypalManager(ConfigurationManager configurationManager,
-                         TicketReservationRepository ticketReservationRepository,
-                         MessageSource messageSource,
-                         TicketRepository ticketRepository) {
-        this.configurationManager = configurationManager;
-        this.messageSource = messageSource;
-        this.ticketReservationRepository = ticketReservationRepository;
-    }
 
     private APIContext getApiContext(Event event) {
         int orgId = event.getOrganizationId();

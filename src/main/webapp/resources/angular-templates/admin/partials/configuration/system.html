@@ -95,7 +95,7 @@
         </div>
 
 
-        <div class="page-header" data-ng-if="systemConf.paymentPaypal || systemConf.paymentStripe || systemConf.paymentOffline">
+        <div class="page-header" data-ng-if="systemConf.paymentPaypal || systemConf.paymentStripe || systemConf.paymentMollie || systemConf.paymentOffline">
             <h2>Payment</h2>
             <span>Payment provider settings</span>
         </div>
@@ -122,6 +122,20 @@
                     <p>Once you have created your app and tested the integration, you can enable live payments by inserting the <strong>Live</strong> Client ID and Secret, and enabling the "live mode" below.</p>
                 </div>
                 <div data-ng-repeat="setting in systemConf.paymentPaypal.settings">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                </div>
+            </div>
+        </div>
+
+        <div data-ng-if="systemConf.paymentMollie" class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title"> Mollie configuration</div>
+            </div>
+            <div class="panel-body">
+                <div class="alert alert-info">
+                    <p><i class="fa fa-info-circle"></i> in order to accept payments through Mollie, you must have Live API key.</p>
+                </div>
+                <div data-ng-repeat="setting in systemConf.paymentMollie.settings">
                     <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
                 </div>
             </div>
