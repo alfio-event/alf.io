@@ -24,26 +24,28 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public enum PaymentProxy {
-    STRIPE("stripe.com", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_STRIPE), true),
-    ON_SITE("on-site payment", true, true, Collections.emptySet(), false),
-    OFFLINE("offline payment", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_OFFLINE), false),
-    NONE("no payment required", false, false, Collections.emptySet(), false),
-    ADMIN("manual", false, false, Collections.emptySet(), false),
-    PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL), true),
-    MOLLIE("mollie", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_MOLLIE), true);
+    STRIPE("stripe.com", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_STRIPE), true, Collections.emptySet()),
+    ON_SITE("on-site payment", true, true, Collections.emptySet(), false, Collections.emptySet()),
+    OFFLINE("offline payment", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_OFFLINE), false, Collections.emptySet()),
+    NONE("no payment required", false, false, Collections.emptySet(), false, Collections.emptySet()),
+    ADMIN("manual", false, false, Collections.emptySet(), false, Collections.emptySet()),
+    PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL), true, Collections.emptySet()),
+    MOLLIE("mollie", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_MOLLIE), true, Collections.singleton("EUR"));
 
     private final String description;
     private final boolean deskPayment;
     private final boolean visible;
     private final Set<ConfigurationKeys.SettingCategory> settingCategories;
     private final boolean supportRefund;
+    private final Set<String> onlyForCurrency;
 
-    PaymentProxy(String description, boolean deskPayment, boolean visible, Set<ConfigurationKeys.SettingCategory> settingCategories, boolean supportRefund) {
+    PaymentProxy(String description, boolean deskPayment, boolean visible, Set<ConfigurationKeys.SettingCategory> settingCategories, boolean supportRefund, Set<String> onlyForCurrency) {
         this.description = description;
         this.deskPayment = deskPayment;
         this.visible = visible;
         this.settingCategories = settingCategories;
         this.supportRefund = supportRefund;
+        this.onlyForCurrency = onlyForCurrency;
     }
 
     public String getDescription() {
@@ -77,6 +79,10 @@ public enum PaymentProxy {
 
     public static List<PaymentProxy> availableProxies() {
         return Arrays.stream(values()).filter(PaymentProxy::isVisible).collect(Collectors.toList());
+    }
+
+    public Set<String> getOnlyForCurrency() {
+        return onlyForCurrency;
     }
 
 }

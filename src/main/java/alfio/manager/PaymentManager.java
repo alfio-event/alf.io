@@ -186,9 +186,15 @@ public class PaymentManager {
         }
 
         private final PaymentProxy paymentProxy;
+
         private final PaymentMethodStatus status;
+
         public boolean isActive() {
             return status == PaymentMethodStatus.ACTIVE;
+        }
+
+        public Set<String> getOnlyForCurrency() {
+            return paymentProxy.getOnlyForCurrency();
         }
     }
 }

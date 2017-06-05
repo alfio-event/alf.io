@@ -382,7 +382,8 @@
                         return {
                             id: p.paymentProxy,
                             description: PAYMENT_PROXY_DESCRIPTIONS[p.paymentProxy] || 'Unknown provider ('+p.paymentProxy+')  Please check configuration',
-                            enabled: p.status === 'ACTIVE'
+                            enabled: p.status === 'ACTIVE',
+                            onlyForCurrency: p.onlyForCurrency
                         };
                     });
                 });

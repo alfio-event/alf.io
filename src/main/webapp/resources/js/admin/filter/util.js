@@ -6,7 +6,8 @@
         'STRIPE': 'Credit card payments',
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)',
-        'PAYPAL' : 'PayPal'
+        'PAYPAL' : 'PayPal',
+        'MOLLIE' : 'Mollie (€ only): (iDEAL, SOFORT, credit cards, etc.)'
     });
 
     filters.filter('printSelectedOrganization', function() {
@@ -78,13 +79,17 @@
     }]);
 
     filters.filter('paymentMethodFilter', function() {
-        return function(list, disabled) {
-            var query = 'enabled';
+        return function(list, disabled, currency) {
+            var query = function(m) {
+                return m.enabled && (m.onlyForCurrency.length === 0 || m.onlyForCurrency.indexOf(currency) > -1);
+            };
+
             if(disabled) {
                 query = function(m) {
-                    return !m.enabled;
-                };
+                    return !m.enabled || (m.enabled && m.onlyForCurrency.length > 0 && m.onlyForCurrency.indexOf(currency) === -1);
+                }
             }
+
             return _.filter(list, query);
         }
     });
