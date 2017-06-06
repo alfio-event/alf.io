@@ -31,7 +31,7 @@ import java.util.*;
 public class TicketReservation {
 
     public enum TicketReservationStatus {
-        PENDING, IN_PAYMENT, OFFLINE_PAYMENT, COMPLETE, STUCK, CANCELLED
+        PENDING, IN_PAYMENT, EXTERNAL_PROCESSING_PAYMENT, OFFLINE_PAYMENT, COMPLETE, STUCK, CANCELLED
     }
 
     private final String id;

@@ -344,6 +344,14 @@ public class ReservationController {
         return redirectReservation(reservation, eventName, reservationId);
     }
 
+    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/waitingPayment", method = RequestMethod.GET)
+    public String showProcessingPayment(@PathVariable("eventName") String eventName,
+                                        @PathVariable("reservationId") String reservationId,
+                                        Model model, Locale locale) {
+
+        //FIXME
+        return "/event/reservation-processing-payment";
+    }
 
 
     private String redirectReservation(Optional<TicketReservation> ticketReservation, String eventName, String reservationId) {
@@ -360,6 +368,8 @@ public class ReservationController {
                 return baseUrl + "/success";
             case OFFLINE_PAYMENT:
                 return baseUrl + "/waitingPayment";
+            case EXTERNAL_PROCESSING_PAYMENT:
+                return baseUrl + "/processing-payment";
             case IN_PAYMENT:
             case STUCK:
                 return baseUrl + "/failure";

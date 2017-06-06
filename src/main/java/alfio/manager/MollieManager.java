@@ -91,9 +91,7 @@ public class MollieManager {
                 log.warn(msg);
                 throw new Exception(msg);
             } else {
-
-                TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-                //TODO: switch the reservation in a status "PROCESSING" -> so we can then handle them in the webhook
+                ticketReservationRepository.updateTicketStatus(reservationId, TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT.toString());
                 Map<String, Object> res = Json.GSON.fromJson(respBody, (new TypeToken<Map<String, Object>>() {}).getType());
                 return ((Map<String, String> )res.get("links")).get("paymentUrl");
             }
