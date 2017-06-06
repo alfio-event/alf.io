@@ -65,7 +65,7 @@ public class MollieManager {
         String description = messageSource.getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(event, reservationId), event.getDisplayName()}, locale);
         payload.put("description", description);
         payload.put("redirectUrl", bookUrl);
-        payload.put("webhookUrl", baseUrl + "/api/event/" + eventName + "/webhook/mollie"); //for testing: "https://test.alf.io/api/webhook/mollie"
+        payload.put("webhookUrl", baseUrl + "/api/event/" + eventName + "/reservation/" + reservationId + "/webhook/mollie"); //for testing: "https://test.alf.io/api/webhook/mollie"
 
 
         Map<String, String> initialMetadata = new HashMap<>();
@@ -94,8 +94,6 @@ public class MollieManager {
 
                 TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
                 //TODO: switch the reservation in a status "PROCESSING" -> so we can then handle them in the webhook
-                //TODO: see statuses: https://www.mollie.com/en/docs/status
-                //      basically, we need to handle the cases "expired", "cancelled" and "paid"
                 Map<String, Object> res = Json.GSON.fromJson(respBody, (new TypeToken<Map<String, Object>>() {}).getType());
                 return ((Map<String, String> )res.get("links")).get("paymentUrl");
             }
@@ -103,7 +101,7 @@ public class MollieManager {
     }
 
 
-    public void handleWebhook(String eventShortName, String paymentId) throws Exception {
+    public void handleWebhook(String eventShortName, String reservationId, String paymentId) throws Exception {
         Event event = eventRepository.findByShortName(eventShortName);
 
         Request request = requestFor("https://api.mollie.nl/v1/payments/"+paymentId, event).get().build();
@@ -117,6 +115,10 @@ public class MollieManager {
                 throw new Exception(msg);
             } else {
                 Map<String, Object> res = Json.GSON.fromJson(respBody, (new TypeToken<Map<String, Object>>() {}).getType());
+
+                //load metadata, check that reservationId match
+
+                //see statuses: https://www.mollie.com/en/docs/status
                 String status = (String) res.get("status");
                 //open cancelled expired failed pending paid paidout refunded charged_back
                 if("paid".equals(status)) {
@@ -126,7 +128,6 @@ public class MollieManager {
                 }
             }
         }
-
     }
 
     private Request.Builder requestFor(String url, Event event) {
