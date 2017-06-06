@@ -23,6 +23,7 @@ import alfio.model.OrderSummary;
 import alfio.model.TicketReservation;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.util.Json;
 import com.google.gson.reflect.TypeToken;
@@ -33,7 +34,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -47,16 +47,15 @@ public class MollieManager {
     private final ConfigurationManager configurationManager;
     private final MessageSource messageSource;
     private final TicketReservationRepository ticketReservationRepository;
+    private final EventRepository eventRepository;
 
     public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary, CustomerName customerName, String email, String billingAddress, Locale locale, boolean postponeAssignment) throws Exception {
-
-        String mollieAPIKey = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), ConfigurationKeys.MOLLIE_API_KEY));
 
         String eventName = event.getShortName();
 
         String baseUrl = StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/");
 
-        String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + reservationId + "/book";
+        String bookUrl = baseUrl + "/event/" + eventName + "/reservation/" + reservationId + "/book";
 
 
         Map<String, Object> payload = new HashMap<>();
@@ -66,18 +65,23 @@ public class MollieManager {
         String description = messageSource.getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(event, reservationId), event.getDisplayName()}, locale);
         payload.put("description", description);
         payload.put("redirectUrl", bookUrl);
-        payload.put("webhookUrl", baseUrl+"/api/webhook/mollie"); //for testing: "https://test.alf.io/api/webhook/mollie"
-        payload.put("metadata", Collections.singletonMap("reservationId", reservationId));
+        payload.put("webhookUrl", baseUrl + "/api/event/" + eventName + "/webhook/mollie"); //for testing: "https://test.alf.io/api/webhook/mollie"
 
+
+        Map<String, String> initialMetadata = new HashMap<>();
+        initialMetadata.put("reservationId", reservationId);
+        initialMetadata.put("email", email);
+        initialMetadata.put("fullName", customerName.getFullName());
+        if (StringUtils.isNotBlank(billingAddress)) {
+            initialMetadata.put("billingAddress", billingAddress);
+        }
+
+        payload.put("metadata", initialMetadata);
 
         RequestBody body = RequestBody.create(MediaType.parse("application/json"), Json.GSON.toJson(payload));
-        Request request = new Request.Builder().url("https://api.mollie.nl/v1/payments")
-            .header("Authorization", "Bearer " + mollieAPIKey)
+        Request request = requestFor("https://api.mollie.nl/v1/payments", event)
             .post(body)
             .build();
-
-
-
 
         Response resp = client.newCall(request).execute();
         try(ResponseBody responseBody = resp.body()) {
@@ -96,6 +100,37 @@ public class MollieManager {
                 return ((Map<String, String> )res.get("links")).get("paymentUrl");
             }
         }
+    }
 
+
+    public void handleWebhook(String eventShortName, String paymentId) throws Exception {
+        Event event = eventRepository.findByShortName(eventShortName);
+
+        Request request = requestFor("https://api.mollie.nl/v1/payments/"+paymentId, event).get().build();
+        Response resp = client.newCall(request).execute();
+
+        try(ResponseBody responseBody = resp.body()) {
+            String respBody = responseBody.string();
+            if(!resp.isSuccessful()) {
+                String msg = "was not able to get payment id " + paymentId + " for event " + eventShortName + " : " + respBody;
+                log.warn(msg);
+                throw new Exception(msg);
+            } else {
+                Map<String, Object> res = Json.GSON.fromJson(respBody, (new TypeToken<Map<String, Object>>() {}).getType());
+                String status = (String) res.get("status");
+                //open cancelled expired failed pending paid paidout refunded charged_back
+                if("paid".equals(status)) {
+                    //TODO: register payment -> fetch reservationId from metadata -> switch as paid etc...
+                } else if("expired".equals(status)) {
+                    //TODO: set reservation to expired so it can be handled by the job
+                }
+            }
+        }
+
+    }
+
+    private Request.Builder requestFor(String url, Event event) {
+        String mollieAPIKey = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), ConfigurationKeys.MOLLIE_API_KEY));
+        return new Request.Builder().url(url).header("Authorization", "Bearer " + mollieAPIKey);
     }
 }
