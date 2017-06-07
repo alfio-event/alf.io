@@ -17,10 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.CustomerName;
-import alfio.model.Event;
-import alfio.model.OrderSummary;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
@@ -49,7 +46,16 @@ public class MollieManager {
     private final TicketReservationRepository ticketReservationRepository;
     private final EventRepository eventRepository;
 
-    public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary, CustomerName customerName, String email, String billingAddress, Locale locale, boolean postponeAssignment) throws Exception {
+    public String createCheckoutRequest(Event event, String reservationId,
+                                        OrderSummary orderSummary,
+                                        CustomerName customerName,
+                                        String email,
+                                        String billingAddress,
+                                        Locale locale,
+                                        boolean invoiceRequested,
+                                        String vatCountryCode,
+                                        String vatNr,
+                                        PriceContainer.VatStatus vatStatus) throws Exception {
 
         String eventName = event.getShortName();
 

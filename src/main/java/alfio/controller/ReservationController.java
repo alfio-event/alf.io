@@ -83,6 +83,7 @@ public class ReservationController {
     private final PaymentManager paymentManager;
     private final TicketRepository ticketRepository;
     private final EuVatChecker vatChecker;
+    private final MollieManager mollieManager;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
     public String showPaymentPage(@PathVariable("eventName") String eventName,
@@ -344,7 +345,7 @@ public class ReservationController {
         return redirectReservation(reservation, eventName, reservationId);
     }
 
-    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/waitingPayment", method = RequestMethod.GET)
+    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/processing-payment", method = RequestMethod.GET)
     public String showProcessingPayment(@PathVariable("eventName") String eventName,
                                         @PathVariable("reservationId") String reservationId,
                                         Model model, Locale locale) {
@@ -435,8 +436,12 @@ public class ReservationController {
         if(paymentForm.getPaymentMethod() == PaymentProxy.MOLLIE) {
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
             try {
-                String checkoutUrl = paymentManager.createMollieCheckoutRequest(event, reservationId, orderSummary, customerName,
-                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale, paymentForm.isPostponeAssignment());
+                String checkoutUrl = mollieManager.createCheckoutRequest(event, reservationId, orderSummary, customerName,
+                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale,
+                    paymentForm.isInvoiceRequested(),
+                    paymentForm.getVatCountryCode(),
+                    paymentForm.getVatNr(),
+                    ticketReservation.get().getVatStatus());
                 assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
                 return "redirect:" + checkoutUrl;
             } catch (Exception e) {
