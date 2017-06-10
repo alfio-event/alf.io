@@ -220,21 +220,21 @@ public enum PlatformProvider {
 
         @Override
         public String getUrl(Environment env) {
-            String dbHost = Objects.requireNonNull(System.getenv("POSTGRES_PORT_5432_TCP_ADDR"), "DB_PORT_5432_TCP_ADDR env variable is missing");
-            String port = Objects.requireNonNull(System.getenv("POSTGRES_PORT_5432_TCP_PORT"), "DB_PORT_5432_TCP_PORT env variable is missing");
-            String dbName = Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_DB"), "DB_ENV_POSTGRES_DB env variable is missing");
+            String dbHost = Objects.requireNonNull(System.getenv("POSTGRES_PORT_5432_TCP_ADDR"), "POSTGRES_PORT_5432_TCP_ADDR env variable is missing");
+            String port = Objects.requireNonNull(System.getenv("POSTGRES_PORT_5432_TCP_PORT"), "POSTGRES_PORT_5432_TCP_PORT env variable is missing");
+            String dbName = Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_DB"), "POSTGRES_ENV_POSTGRES_DB env variable is missing");
             return "jdbc:postgresql://" + dbHost + ":" + port + "/" + dbName;
         }
 
         @Override
         public String getUsername(Environment env) {
-            return Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_USERNAME"), "DB_ENV_POSTGRES_USERNAME env variable is missing");
+            return Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_USERNAME"), "POSTGRES_ENV_POSTGRES_USERNAME env variable is missing");
         }
 
 
         @Override
         public String getPassword(Environment env) {
-            return Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_PASSWORD"), "DB_ENV_POSTGRES_PASSWORD env variable is missing");
+            return Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_PASSWORD"), "POSTGRES_ENV_POSTGRES_PASSWORD env variable is missing");
         }
 
         @Override
