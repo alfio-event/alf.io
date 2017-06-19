@@ -15,15 +15,23 @@
             <div class="col-sm-10 col-sm-push-1 col-xs-12 col-md-6 col-md-push-3">
                 <form role="form" name="loginForm" action="{{request.contextPath}}/authenticate" method="post">
                     <input name="_csrf" type="hidden" value="{{_csrf.token}}" />
-                    <div class="page-header">
-                        <h2>Authentication requested</h2>
-                        <span>Please login with Username and Password</span>
-                    </div>
+                    {{#demo}}
+                        <div class="page-header">
+                            <h2>Authentication requested</h2>
+                            <span>This instance is in demo mode, please enter your email address, a password and click on login</span>
+                        </div>
+                    {{/demo}}
+                    {{^demo}}
+                        <div class="page-header">
+                            <h2>Authentication requested</h2>
+                            <span>Please login with Username and Password</span>
+                        </div>
+                    {{/demo}}
                     {{#failed}}
                         <div class="alert alert-danger">Unknown user or wrong password. Please try again.</div>
                     {{/failed}}
                     <div class="form-group">
-                        <label for="username">Username</label>
+                        <label for="username">{{#demo}}Email address{{/demo}}{{^demo}}Username{{/demo}}</label>
                         <input id="username" class="form-control" type="text" name="username" value="" required="required">
                     </div>
                     <div class="form-group">
