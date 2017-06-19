@@ -20,7 +20,7 @@
         this.loadEvent = loadEvent.data.event;
     }
 
-    admin.config(function($stateProvider, $urlRouterProvider) {
+    admin.config(function($stateProvider, $urlRouterProvider, growlProvider) {
         $urlRouterProvider.otherwise("/");
         $stateProvider
             .state('index', {
@@ -248,6 +248,8 @@
                     }
                 }
             });
+
+        growlProvider.globalPosition('middle-center');
     });
 
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -582,9 +584,8 @@
                                                         $window,
                                                         $uibModal,
                                                         PAYMENT_PROXY_DESCRIPTIONS,
-                                                        AdditionalServiceManager,
-                                                        $location,
-                                                        $anchorScroll) {
+                                                        UtilsService,
+                                                        NotificationHandler) {
         var loadData = function() {
             $scope.loading = true;
 
@@ -948,9 +949,16 @@
         };
 
         $scope.activateEvent = function(id) {
-            EventService.toggleActivation(id, true).then(function() {
-                $scope.eventHasBeenActivated = true;
-                loadData();
+
+            UtilsService.getApplicationInfo().then(function(appInfo) {
+                if (appInfo.data.isDemoMode) {
+                    NotificationHandler.showError('Cannot publish events in demo mode for privacy reasons');
+                } else {
+                    EventService.toggleActivation(id, true).then(function() {
+                        $scope.eventHasBeenActivated = true;
+                        loadData();
+                    });
+                }
             });
         };
 

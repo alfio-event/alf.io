@@ -16,13 +16,9 @@
  */
 package alfio.config;
 
-import alfio.manager.system.ConfigurationManager;
+import alfio.manager.RecaptchaService;
 import alfio.manager.user.UserManager;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Role;
-import alfio.util.Json;
-import com.squareup.okhttp.*;
-import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -121,7 +117,7 @@ public class WebSecurityConfig {
         private UserManager userManager;
 
         @Autowired
-        private ConfigurationManager configurationManager;
+        private RecaptchaService recaptchaService;
 
         @Bean
         public CsrfTokenRepository getCsrfTokenRepository() {
@@ -172,7 +168,7 @@ public class WebSecurityConfig {
 
             //
             if(environment.acceptsProfiles("demo")) {
-                http.addFilterBefore(new UserCreatorBeforeLoginFilter(userManager, configurationManager, "/authenticate", "/authentication?recaptchaFailed"), UsernamePasswordAuthenticationFilter.class);
+                http.addFilterBefore(new UserCreatorBeforeLoginFilter(userManager, recaptchaService, "/authenticate", "/authentication?recaptchaFailed"), UsernamePasswordAuthenticationFilter.class);
             }
         }
 
@@ -182,29 +178,24 @@ public class WebSecurityConfig {
 
             private final UserManager userManager;
             private final RequestMatcher requestMatcher;
-            private final ConfigurationManager configurationManager;
-            private final OkHttpClient client = new OkHttpClient();
+            private final RecaptchaService recaptchaService;
             private final String recaptchaFailureUrl;
 
-            UserCreatorBeforeLoginFilter(UserManager userManager, ConfigurationManager configurationManager, String loginProcessingUrl, String recaptchaFailureUrl) {
+            UserCreatorBeforeLoginFilter(UserManager userManager, RecaptchaService recaptchaService, String loginProcessingUrl, String recaptchaFailureUrl) {
                 this.userManager = userManager;
-                this.configurationManager = configurationManager;
+                this.recaptchaService = recaptchaService;
                 this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
                 this.recaptchaFailureUrl = recaptchaFailureUrl;
             }
 
-            private boolean checkRecaptcha(HttpServletRequest req) {
-                return configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(ConfigurationKeys.RECAPTCHA_SECRET))
-                    .map((secret) -> recaptchaRequest(client, secret, req.getParameter("g-recaptcha-response")))
-                    .orElse(true);
-            }
+
 
             @Override
             public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
                 HttpServletRequest req = (HttpServletRequest) request;
                 HttpServletResponse res = (HttpServletResponse) response;
 
-                if(requestMatcher.matches(req) && !checkRecaptcha(req)) {
+                if(requestMatcher.matches(req) && !recaptchaService.checkRecaptcha(req)) {
                     res.sendRedirect(recaptchaFailureUrl);
                     return;
                 }
@@ -223,21 +214,7 @@ public class WebSecurityConfig {
         }
     }
 
-    private static boolean recaptchaRequest(OkHttpClient client, String secret, String response) {
-        try {
-            RequestBody reqBody = new FormEncodingBuilder().add("secret", secret).add("response", response).build();
-            Request request = new Request.Builder().url("https://www.google.com/recaptcha/api/siteverify").post(reqBody).build();
-            Response resp = client.newCall(request).execute();
-            return Json.fromJson(resp.body().string(), RecatpchaResponse.class).success;
-        } catch (IOException e) {
-            return false;
-        }
-    }
 
-    @Data
-    public static class RecatpchaResponse {
-        private boolean success;
-    }
 
 
 
