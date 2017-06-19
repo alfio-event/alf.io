@@ -39,11 +39,12 @@ public class LoginController {
     private final ConfigurationManager configurationManager;
 
     @RequestMapping(value="/authentication", method = RequestMethod.GET)
-    public String getLoginPage(@RequestParam(value="failed", required = false) String failed, Model model, Principal principal) {
+    public String getLoginPage(@RequestParam(value="failed", required = false) String failed, @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed, Model model, Principal principal) {
         if(principal != null) {
             return REDIRECT_ADMIN;
         }
         model.addAttribute("failed", failed != null);
+        model.addAttribute("recaptchaFailed", recaptchaFailed != null);
         model.addAttribute("demo", environment.acceptsProfiles("demo"));
         model.addAttribute("hasRecaptchaApiKey");
 

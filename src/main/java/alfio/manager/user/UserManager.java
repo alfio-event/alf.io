@@ -93,8 +93,8 @@ public class UserManager {
         return userRepository.findEnabledByUsername(username).orElseThrow(IllegalArgumentException::new);
     }
 
-    public boolean enabledUsernameExists(String username) {
-        return userRepository.findEnabledByUsername(username).isPresent();
+    public boolean usernameExists(String username) {
+        return userRepository.findIdByUserName(username).isPresent();
     }
 
     public User findUser(int id) {

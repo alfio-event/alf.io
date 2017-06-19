@@ -33,6 +33,9 @@
                     {{#failed}}
                         <div class="alert alert-danger">Unknown user or wrong password. Please try again.</div>
                     {{/failed}}
+                    {{#recaptchaFailed}}
+                        <div class="alert alert-danger">Recaptcha check failed. Are you a human?</div>
+                    {{/recaptchaFailed}}
                     <div class="form-group">
                         <label for="username">{{#demo}}Email address{{/demo}}{{^demo}}Username{{/demo}}</label>
                         <input id="username" class="form-control" type="text" name="username" value="" required="required">
