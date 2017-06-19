@@ -93,6 +93,10 @@ public class UserManager {
         return userRepository.findEnabledByUsername(username).orElseThrow(IllegalArgumentException::new);
     }
 
+    public boolean enabledUsernameExists(String username) {
+        return userRepository.findEnabledByUsername(username).isPresent();
+    }
+
     public User findUser(int id) {
         return userRepository.findById(id);
     }
@@ -151,10 +155,11 @@ public class UserManager {
     }
 
     @Transactional
-    public void createOrganization(String name, String description, String email) {
+    public int createOrganization(String name, String description, String email) {
         organizationRepository.create(name, description, email);
         int orgId = organizationRepository.findByName(name).stream().findFirst().orElseThrow(IllegalStateException::new).getId();
         invoiceSequencesRepository.initFor(orgId);
+        return orgId;
     }
 
     @Transactional

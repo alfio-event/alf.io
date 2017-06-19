@@ -16,6 +16,8 @@
  */
 package alfio.controller;
 
+import lombok.AllArgsConstructor;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,9 +27,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.security.Principal;
 
 @Controller
+@AllArgsConstructor
 public class LoginController {
 
     private static final String REDIRECT_ADMIN = "redirect:/admin/";
+
+    private final Environment environment;
 
     @RequestMapping(value="/authentication", method = RequestMethod.GET)
     public String getLoginPage(@RequestParam(value="failed", required = false) String failed, Model model, Principal principal) {
@@ -35,6 +40,7 @@ public class LoginController {
             return REDIRECT_ADMIN;
         }
         model.addAttribute("failed", failed != null);
+        model.addAttribute("demo", environment.acceptsProfiles("demo"));
         return "/login/login";
     }
 
