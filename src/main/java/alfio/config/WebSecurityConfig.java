@@ -16,8 +16,13 @@
  */
 package alfio.config;
 
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Role;
+import alfio.util.Json;
+import com.squareup.okhttp.*;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -115,6 +120,9 @@ public class WebSecurityConfig {
         @Autowired
         private UserManager userManager;
 
+        @Autowired
+        private ConfigurationManager configurationManager;
+
         @Bean
         public CsrfTokenRepository getCsrfTokenRepository() {
             HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
@@ -164,7 +172,7 @@ public class WebSecurityConfig {
 
             //
             if(environment.acceptsProfiles("demo")) {
-                http.addFilterBefore(new UserCreatorBeforeLoginFilter(userManager, "/authenticate"), UsernamePasswordAuthenticationFilter.class);
+                http.addFilterBefore(new UserCreatorBeforeLoginFilter(userManager, configurationManager, "/authenticate", "/authentication?recaptchaFailed"), UsernamePasswordAuthenticationFilter.class);
             }
         }
 
@@ -174,25 +182,61 @@ public class WebSecurityConfig {
 
             private final UserManager userManager;
             private final RequestMatcher requestMatcher;
+            private final ConfigurationManager configurationManager;
+            private final OkHttpClient client = new OkHttpClient();
+            private final String recaptchaFailureUrl;
 
-            UserCreatorBeforeLoginFilter(UserManager userManager, String loginProcessingUrl) {
+            UserCreatorBeforeLoginFilter(UserManager userManager, ConfigurationManager configurationManager, String loginProcessingUrl, String recaptchaFailureUrl) {
                 this.userManager = userManager;
+                this.configurationManager = configurationManager;
                 this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
+                this.recaptchaFailureUrl = recaptchaFailureUrl;
+            }
+
+            private boolean checkRecaptcha(HttpServletRequest req) {
+                return configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(ConfigurationKeys.RECAPTCHA_SECRET))
+                    .map((secret) -> recaptchaRequest(client, secret, req.getParameter("g-recaptcha-response")))
+                    .orElse(true);
             }
 
             @Override
             public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
                 HttpServletRequest req = (HttpServletRequest) request;
+                HttpServletResponse res = (HttpServletResponse) response;
+
+                if(requestMatcher.matches(req) && !checkRecaptcha(req)) {
+                    res.sendRedirect(recaptchaFailureUrl);
+                    return;
+                }
+
+                //ensure organization/user
                 if(requestMatcher.matches(req) && req.getParameter("username") != null && req.getParameter("password") != null) {
                     String username = req.getParameter("username");
-                    if(!userManager.enabledUsernameExists(username)) {
-                        int orgId= userManager.createOrganization(username, "Demo organization", username);
+                    if(!userManager.usernameExists(username)) {
+                        int orgId = userManager.createOrganization(username, "Demo organization", username);
                         userManager.insertUser(orgId, username, "", "", username, Role.OWNER);
                     }
                 }
+
                 chain.doFilter(request, response);
             }
         }
+    }
+
+    private static boolean recaptchaRequest(OkHttpClient client, String secret, String response) {
+        try {
+            RequestBody reqBody = new FormEncodingBuilder().add("secret", secret).add("response", response).build();
+            Request request = new Request.Builder().url("https://www.google.com/recaptcha/api/siteverify").post(reqBody).build();
+            Response resp = client.newCall(request).execute();
+            return Json.fromJson(resp.body().string(), RecatpchaResponse.class).success;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    @Data
+    public static class RecatpchaResponse {
+        private boolean success;
     }
 
 
