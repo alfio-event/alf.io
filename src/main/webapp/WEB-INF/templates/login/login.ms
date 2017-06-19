@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/css/admin.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
     <title>Authentication</title>
+    {{#demo}}
+        <script src='https://www.google.com/recaptcha/api.js'></script>
+    {{/demo}}
 </head>
 <body>
     <div class="container">
@@ -42,6 +45,9 @@
                         <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom"><button type="submit" class="btn btn-success btn-block">Login</button></div>
                         <div class="col-md-4 col-md-pull-4 col-xs-12"><button type="reset" class="btn btn-default btn-block">Cancel</button></div>
                     </div>
+                    {{#hasRecaptchaApiKey}}
+                        <div class="g-recaptcha" data-sitekey="{{recaptchaApiKey}}"></div>
+                    {{/hasRecaptchaApiKey}}
                 </form>
             </div>
         </div>

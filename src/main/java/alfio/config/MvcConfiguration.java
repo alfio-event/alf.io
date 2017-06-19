@@ -211,11 +211,11 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                 // http://www.html5rocks.com/en/tutorials/security/content-security-policy/
                 // lockdown policy
                 response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
-                        + " script-src 'self' https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/;"//
+                        + " script-src 'self' https://js.stripe.com/ https://api.stripe.com/ https://ssl.google-analytics.com/ https://www.google.com/recaptcha/api.js https://www.gstatic.com/recaptcha/api2/;"//
                         + " style-src 'self' 'unsafe-inline';" // unsafe-inline for style is acceptable...
                         + " img-src 'self' https: data:;"//
                         + " child-src 'self';"//webworker
-                        + " frame-src 'self' https://js.stripe.com;"
+                        + " frame-src 'self' https://js.stripe.com https://www.google.com;"
                         + " font-src 'self';"//
                         + " media-src blob: 'self';"//for loading camera api
                         + " connect-src 'self' https://api.stripe.com;" //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready

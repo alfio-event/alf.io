@@ -16,6 +16,9 @@
  */
 package alfio.controller;
 
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Controller;
@@ -33,6 +36,7 @@ public class LoginController {
     private static final String REDIRECT_ADMIN = "redirect:/admin/";
 
     private final Environment environment;
+    private final ConfigurationManager configurationManager;
 
     @RequestMapping(value="/authentication", method = RequestMethod.GET)
     public String getLoginPage(@RequestParam(value="failed", required = false) String failed, Model model, Principal principal) {
@@ -41,6 +45,16 @@ public class LoginController {
         }
         model.addAttribute("failed", failed != null);
         model.addAttribute("demo", environment.acceptsProfiles("demo"));
+        model.addAttribute("hasRecaptchaApiKey");
+
+        if(environment.acceptsProfiles("demo")) {
+            configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.RECAPTCHA_API_KEY)).ifPresent(key -> {
+                model.addAttribute("hasRecaptchaApiKey", true);
+                model.addAttribute("recaptchaApiKey", key);
+            });
+        }
+
+
         return "/login/login";
     }
 
