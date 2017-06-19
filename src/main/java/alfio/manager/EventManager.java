@@ -37,6 +37,7 @@ import alfio.repository.*;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
@@ -46,6 +47,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.flywaydb.core.Flyway;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -74,6 +76,7 @@ import static java.util.stream.Collectors.toList;
 @Component
 @Transactional
 @Log4j2
+@AllArgsConstructor
 public class EventManager {
 
     private static final Predicate<TicketCategory> IS_CATEGORY_BOUNDED = TicketCategory::isBounded;
@@ -94,48 +97,9 @@ public class EventManager {
     private final EventDeleterRepository eventDeleterRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
-    private final InvoiceSequencesRepository invoiceSequencesRepository;
     private final Flyway flyway;
+    private final Environment environment;
 
-    @Autowired
-    public EventManager(UserManager userManager,
-                        EventRepository eventRepository,
-                        EventDescriptionRepository eventDescriptionRepository,
-                        EventStatisticsManager eventStatisticsManager,
-                        TicketCategoryRepository ticketCategoryRepository,
-                        TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
-                        TicketRepository ticketRepository,
-                        SpecialPriceRepository specialPriceRepository,
-                        PromoCodeDiscountRepository promoCodeRepository,
-                        LocationManager locationManager,
-                        NamedParameterJdbcTemplate jdbc,
-                        ConfigurationManager configurationManager,
-                        PluginManager pluginManager,
-                        TicketFieldRepository ticketFieldRepository,
-                        EventDeleterRepository eventDeleterRepository,
-                        AdditionalServiceRepository additionalServiceRepository, AdditionalServiceTextRepository additionalServiceTextRepository,
-                        InvoiceSequencesRepository invoiceSequencesRepository,
-                        Flyway flyway) {
-        this.userManager = userManager;
-        this.eventRepository = eventRepository;
-        this.eventDescriptionRepository = eventDescriptionRepository;
-        this.eventStatisticsManager = eventStatisticsManager;
-        this.ticketCategoryRepository = ticketCategoryRepository;
-        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
-        this.ticketRepository = ticketRepository;
-        this.specialPriceRepository = specialPriceRepository;
-        this.promoCodeRepository = promoCodeRepository;
-        this.locationManager = locationManager;
-        this.jdbc = jdbc;
-        this.configurationManager = configurationManager;
-        this.pluginManager = pluginManager;
-        this.ticketFieldRepository = ticketFieldRepository;
-        this.eventDeleterRepository = eventDeleterRepository;
-        this.additionalServiceRepository = additionalServiceRepository;
-        this.additionalServiceTextRepository = additionalServiceTextRepository;
-        this.invoiceSequencesRepository = invoiceSequencesRepository;
-        this.flyway = flyway;
-    }
 
     public Event getSingleEvent(String eventName, String username) {
         final Event event = eventRepository.findByShortName(eventName);
@@ -196,6 +160,11 @@ public class EventManager {
     public void toggleActiveFlag(int id, String username, boolean activate) {
         Event event = eventRepository.findById(id);
         checkOwnership(event, username, event.getOrganizationId());
+
+        if(environment.acceptsProfiles("demo")) {
+            throw new IllegalStateException("demo mode");
+        }
+
         eventRepository.updateEventStatus(id, activate ? Event.Status.PUBLIC : Event.Status.DRAFT);
     }
 

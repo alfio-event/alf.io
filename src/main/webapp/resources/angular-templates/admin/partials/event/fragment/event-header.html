@@ -15,7 +15,12 @@
     </div>
 </div>
 <div class="alert alert-warning" data-ng-if="event.status !== 'PUBLIC'">
-    <h4><i class="fa fa-eye-slash"></i> this event has not yet been published. Therefore only people who know the direct URL can see it. <a class="btn btn-warning" ng-click="activateEvent(event.id)">Publish now</a></h4>
+    <h4>
+        <i class="fa fa-eye-slash"></i>
+        this event has not yet been published. Therefore only people who know the direct URL
+        (<a ng-href="{{eventPublicURL}}" target="_blank">{{eventPublicURL}}</a>) can see it.</h4>
+
+        <a class="btn btn-warning" ng-click="activateEvent(event.id)">Publish now</a>
 </div>
 <div uib-alert type="success" close="closeActivationAlert()" data-ng-if="eventHasBeenActivated">
     <h4><i class="fa fa-info-circle"></i> Congratulations, this event has been successfully published! <a class="btn btn-default" ng-click="deactivateEvent(event.id)">Undo</a></h4>

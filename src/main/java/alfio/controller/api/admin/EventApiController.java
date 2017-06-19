@@ -38,12 +38,13 @@ import alfio.util.TemplateManager;
 import alfio.util.Validator;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -77,6 +78,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 @RestController
 @RequestMapping("/admin/api")
 @Log4j2
+@AllArgsConstructor
 public class EventApiController {
 
     private static final String OK = "OK";
@@ -95,36 +97,6 @@ public class EventApiController {
     private final TemplateManager templateManager;
     private final FileUploadManager fileUploadManager;
 
-    @Autowired
-    public EventApiController(EventManager eventManager,
-                              EventStatisticsManager eventStatisticsManager,
-                              I18nManager i18nManager,
-                              TicketReservationManager ticketReservationManager,
-                              TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
-                              TicketFieldRepository ticketFieldRepository,
-                              DescriptionsLoader descriptionsLoader,
-                              TicketHelper ticketHelper,
-                              DynamicFieldTemplateRepository dynamicFieldTemplateRepository,
-                              UserManager userManager,
-                              SponsorScanRepository sponsorScanRepository,
-                              PaymentManager paymentManager,
-                              TemplateManager templateManager,
-                              FileUploadManager fileUploadManager) {
-        this.eventManager = eventManager;
-        this.eventStatisticsManager = eventStatisticsManager;
-        this.i18nManager = i18nManager;
-        this.ticketReservationManager = ticketReservationManager;
-        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
-        this.ticketFieldRepository = ticketFieldRepository;
-        this.descriptionsLoader = descriptionsLoader;
-        this.ticketHelper = ticketHelper;
-        this.dynamicFieldTemplateRepository = dynamicFieldTemplateRepository;
-        this.userManager = userManager;
-        this.sponsorScanRepository = sponsorScanRepository;
-        this.paymentManager = paymentManager;
-        this.templateManager = templateManager;
-        this.fileUploadManager = fileUploadManager;
-    }
 
     @ExceptionHandler(DataAccessException.class)
     public String exception(DataAccessException e) {
