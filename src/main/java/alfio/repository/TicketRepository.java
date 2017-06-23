@@ -210,7 +210,7 @@ public interface TicketRepository {
     @Query("update ticket set status = 'RELEASED', " + RESET_TICKET + " where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
     int releaseExpiredTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
 
-    @Query("update ticket set status = 'FREE', " + RESET_TICKET + " where id in (:ticketIds)")
+    @Query("update ticket set status = 'RELEASED', " + RESET_TICKET + " where id in (:ticketIds)")
     int resetTickets(@Bind("ticketIds") List<Integer> ticketIds);
 
     @Query("select count(*) from ticket where status = 'RELEASED' and event_id = :eventId")
