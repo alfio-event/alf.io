@@ -167,27 +167,26 @@ public class WebSecurityConfig {
 
 
             //
+
+            http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed"), UsernamePasswordAuthenticationFilter.class);
+
             if(environment.acceptsProfiles("demo")) {
-                http.addFilterBefore(new UserCreatorBeforeLoginFilter(userManager, recaptchaService, "/authenticate", "/authentication?recaptchaFailed"), UsernamePasswordAuthenticationFilter.class);
+                http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, "/authenticate"), RecaptchaLoginFilter.class);
             }
         }
 
 
-        // generate a user if it does not exists, to be used by the demo profile
-        private static class UserCreatorBeforeLoginFilter extends GenericFilterBean {
-
-            private final UserManager userManager;
+        private static class RecaptchaLoginFilter extends GenericFilterBean {
             private final RequestMatcher requestMatcher;
             private final RecaptchaService recaptchaService;
             private final String recaptchaFailureUrl;
 
-            UserCreatorBeforeLoginFilter(UserManager userManager, RecaptchaService recaptchaService, String loginProcessingUrl, String recaptchaFailureUrl) {
-                this.userManager = userManager;
-                this.recaptchaService = recaptchaService;
+
+            RecaptchaLoginFilter(RecaptchaService recaptchaService, String loginProcessingUrl, String recaptchaFailureUrl) {
                 this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
+                this.recaptchaService = recaptchaService;
                 this.recaptchaFailureUrl = recaptchaFailureUrl;
             }
-
 
 
             @Override
@@ -199,6 +198,28 @@ public class WebSecurityConfig {
                     res.sendRedirect(recaptchaFailureUrl);
                     return;
                 }
+
+                chain.doFilter(request, response);
+            }
+        }
+
+
+        // generate a user if it does not exists, to be used by the demo profile
+        private static class UserCreatorBeforeLoginFilter extends GenericFilterBean {
+
+            private final UserManager userManager;
+            private final RequestMatcher requestMatcher;
+
+            UserCreatorBeforeLoginFilter(UserManager userManager, String loginProcessingUrl) {
+                this.userManager = userManager;
+                this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
+            }
+
+
+
+            @Override
+            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+                HttpServletRequest req = (HttpServletRequest) request;
 
                 //ensure organization/user
                 if(requestMatcher.matches(req) && req.getParameter("username") != null && req.getParameter("password") != null) {
