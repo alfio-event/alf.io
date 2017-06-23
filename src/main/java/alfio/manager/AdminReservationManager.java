@@ -491,7 +491,7 @@ public class AdminReservationManager {
     private void removeTicketsFromReservation(String reservationId, Event event, List<Integer> ticketIds, boolean notify, String username) {
         if(notify && !ticketIds.isEmpty()) {
             Organization o = eventManager.loadOrganizer(event, username);
-            ticketRepository.findByIds(ticketIds).stream().forEach(t -> {
+            ticketRepository.findByIds(ticketIds).forEach(t -> {
                 if(StringUtils.isNotBlank(t.getEmail())) {
                     sendTicketHasBeenRemoved(event, o, t);
                 }
