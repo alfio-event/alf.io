@@ -35,7 +35,6 @@ public class LoginController {
 
     private static final String REDIRECT_ADMIN = "redirect:/admin/";
 
-    private final Environment environment;
     private final ConfigurationManager configurationManager;
 
     @RequestMapping(value="/authentication", method = RequestMethod.GET)
@@ -45,16 +44,12 @@ public class LoginController {
         }
         model.addAttribute("failed", failed != null);
         model.addAttribute("recaptchaFailed", recaptchaFailed != null);
-        model.addAttribute("demo", environment.acceptsProfiles("demo"));
-        model.addAttribute("hasRecaptchaApiKey");
+        model.addAttribute("hasRecaptchaApiKey", false);
 
-        if(environment.acceptsProfiles("demo")) {
-            configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.RECAPTCHA_API_KEY)).ifPresent(key -> {
-                model.addAttribute("hasRecaptchaApiKey", true);
-                model.addAttribute("recaptchaApiKey", key);
-            });
-        }
-
+        configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.RECAPTCHA_API_KEY)).ifPresent(key -> {
+            model.addAttribute("hasRecaptchaApiKey", true);
+            model.addAttribute("recaptchaApiKey", key);
+        });
 
         return "/login/login";
     }

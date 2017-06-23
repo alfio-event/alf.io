@@ -176,6 +176,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                     mv.addObject("request", request);
                     final ModelMap modelMap = mv.getModelMap();
 
+                    modelMap.put("demoModeEnabled", environment.acceptsProfiles("demo"));
+
                     Optional.ofNullable(request.getAttribute("ALFIO_EVENT_NAME")).map(Object::toString).ifPresent(eventName -> {
 
                         List<?> availableLanguages = i18nManager.getEventLanguages(eventName);

@@ -8,9 +8,9 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/css/admin.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
     <title>Authentication</title>
-    {{#demo}}
+    {{#hasRecaptchaApiKey}}
         <script src='https://www.google.com/recaptcha/api.js'></script>
-    {{/demo}}
+    {{/hasRecaptchaApiKey}}
 </head>
 <body>
     <div class="container">
@@ -18,18 +18,18 @@
             <div class="col-sm-10 col-sm-push-1 col-xs-12 col-md-6 col-md-push-3">
                 <form role="form" name="loginForm" action="{{request.contextPath}}/authenticate" method="post">
                     <input name="_csrf" type="hidden" value="{{_csrf.token}}" />
-                    {{#demo}}
+                    {{#demoModeEnabled}}
                         <div class="page-header">
                             <h2>Authentication requested</h2>
                             <span>This instance is in demo mode, please enter your email address, a password and click on login</span>
                         </div>
-                    {{/demo}}
-                    {{^demo}}
+                    {{/demoModeEnabled}}
+                    {{^demoModeEnabled}}
                         <div class="page-header">
                             <h2>Authentication requested</h2>
                             <span>Please login with Username and Password</span>
                         </div>
-                    {{/demo}}
+                    {{/demoModeEnabled}}
                     {{#failed}}
                         <div class="alert alert-danger">Unknown user or wrong password. Please try again.</div>
                     {{/failed}}

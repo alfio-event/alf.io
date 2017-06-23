@@ -45,6 +45,10 @@ public class RecaptchaService {
     }
 
     private static boolean recaptchaRequest(OkHttpClient client, String secret, String response) {
+        if(response == null) {
+            return false;
+        }
+
         try {
             RequestBody reqBody = new FormEncodingBuilder().add("secret", secret).add("response", response).build();
             Request request = new Request.Builder().url("https://www.google.com/recaptcha/api/siteverify").post(reqBody).build();
