@@ -191,7 +191,7 @@ public class EventController {
     public String showEvent(@PathVariable("eventName") String eventName,
                             Model model, HttpServletRequest request, Locale locale) {
 
-        return eventRepository.findOptionalByShortName(eventName).map(event -> {
+        return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
             Optional<String> maybeSpecialCode = SessionUtil.retrieveSpecialPriceCode(request);
             Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
 
