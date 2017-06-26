@@ -48,7 +48,7 @@ public class Event implements EventHiddenFieldContainer {
 
     private static final String VERSION_FOR_FIRST_AND_LAST_NAME = "15.1.8.8";
     public enum Status {
-        DRAFT, PUBLIC
+        DRAFT, PUBLIC, DISABLED
     }
 
     public enum EventType {

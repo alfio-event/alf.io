@@ -22,6 +22,10 @@ import lombok.Getter;
 @Getter
 public class User {
 
+    public enum Type {
+        INTERNAL, DEMO
+    }
+
     private final int id;
     private final String username;
     private final String firstName;

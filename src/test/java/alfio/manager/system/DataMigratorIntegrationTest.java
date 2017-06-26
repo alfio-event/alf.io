@@ -36,6 +36,7 @@ import alfio.model.system.EventMigration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
+import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
@@ -118,7 +119,7 @@ public class DataMigratorIntegrationTest {
 
         organizationRepository.create(organizationName, "org", "email@example.com");
         Organization organization = organizationRepository.findByName(organizationName).get(0);
-        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR);
+        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR, User.Type.INTERNAL);
 
         Map<String, String> desc = new HashMap<>();
         desc.put("en", "muh description");

@@ -19,6 +19,7 @@ package alfio.config;
 import alfio.manager.RecaptchaService;
 import alfio.manager.user.UserManager;
 import alfio.model.user.Role;
+import alfio.model.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -226,7 +227,7 @@ public class WebSecurityConfig {
                     String username = req.getParameter("username");
                     if(!userManager.usernameExists(username)) {
                         int orgId = userManager.createOrganization(username, "Demo organization", username);
-                        userManager.insertUser(orgId, username, "", "", username, Role.OWNER);
+                        userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO);
                     }
                 }
 
