@@ -19,9 +19,11 @@ package alfio.manager.system;
 import alfio.config.Initializer;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -35,17 +37,16 @@ import static alfio.model.system.ConfigurationKeys.MAIL_REPLY_TO;
 @Log4j2
 @Component
 @Profile(Initializer.PROFILE_DEV)
+@AllArgsConstructor
 public class MockMailer implements Mailer {
 
     private final ConfigurationManager configurationManager;
-
-    @Autowired
-    public MockMailer(ConfigurationManager configurationManager) {
-        this.configurationManager = configurationManager;
-    }
+    private final Environment environment;
 
     @Override
     public void send(Event event, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachments) {
+
+        subject = decorateSubjectIfDemo(subject, environment);
 
         String printedAttachments = Optional.ofNullable(attachments)
             .map(Arrays::asList)
@@ -53,7 +54,10 @@ public class MockMailer implements Mailer {
             .stream().map(a -> "{filename:" +a.getFilename() + ", contentType: " + a.getContentType() + "}")
             .collect(Collectors.joining(", "));
 
-        log.info("Email: from: {}, replyTo: {}, to: {}, cc: {}, subject: {}, text: {}, html: {}, attachments: {}", event.getDisplayName(), configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAIL_REPLY_TO), ""), to, cc, subject, text,
+        log.info("Email: from: {}, replyTo: {}, to: {}, cc: {}, subject: {}, text: {}, html: {}, attachments: {}",
+            event.getDisplayName(),
+            configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAIL_REPLY_TO), ""),
+            to, cc, subject, text,
             html.orElse("no html"), printedAttachments);
     }
 }

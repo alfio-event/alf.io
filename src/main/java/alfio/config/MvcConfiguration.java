@@ -201,8 +201,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
 
 
                         if(demoModeEnabled) {
-                            modelMap.putIfAbsent("paypalTestUsername", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_USERNAME), ""));
-                            modelMap.putIfAbsent("paypalTestPassword", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_PASSWORD), ""));
+                            modelMap.putIfAbsent("paypalTestUsername", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_USERNAME), "<missing>"));
+                            modelMap.putIfAbsent("paypalTestPassword", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_PASSWORD), "<missing>"));
                         }
 
                     }
