@@ -818,6 +818,9 @@ public class EventManager {
 	}
 
     public void disableEventsFromUsers(List<Integer> userIds) {
+        if(!userIds.isEmpty()) {
+            eventRepository.disableEventsForUsers(userIds);
+        }
     }
 
     @Data

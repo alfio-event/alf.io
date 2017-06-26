@@ -106,4 +106,7 @@ public interface EventRepository {
 
     @Query("select * from events_statistics where id in (:ids)")
     List<EventStatisticView> findStatisticsFor(@Bind("ids") Set<Integer> integers);
+
+    @Query("update event set status = 'DISABLED' where org_id in (select org_id from j_user_organization where user_id in (:userIds))")
+    int disableEventsForUsers(@Bind("userIds") List<Integer> userIds);
 }
