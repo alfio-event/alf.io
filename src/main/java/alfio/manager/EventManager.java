@@ -817,6 +817,9 @@ public class EventManager {
 		
 	}
 
+    public void disableEventsFromUsers(List<Integer> userIds) {
+    }
+
     @Data
     private static final class GeolocationResult {
         private final Pair<String, String> coordinates;

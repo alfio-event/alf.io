@@ -33,6 +33,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.List;
 
 @Component
 @AllArgsConstructor
@@ -95,9 +96,10 @@ public class Jobs {
     public void cleanupForDemoMode() {
         if(environment.acceptsProfiles("demo")) {
             int expirationDate = configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS), 20);
-            userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
-
-            //TODO: mark events created by disabled users to disabled
+            List<Integer> userIds = userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
+            if(!userIds.isEmpty()) {
+                eventManager.disableEventsFromUsers(userIds);
+            }
         }
     }
 

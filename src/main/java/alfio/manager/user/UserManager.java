@@ -279,7 +279,11 @@ public class UserManager {
     }
 
 
-    public void disableAccountsOlderThan(Date date, User.Type type) {
-        userRepository.disableAccountsOlderThan(date, type);
+    public List<Integer> disableAccountsOlderThan(Date date, User.Type type) {
+        List<Integer> userIds = userRepository.findUserToDisableOlderThan(date, type);
+        if(!userIds.isEmpty()) {
+            userRepository.disableAccountsOlderThan(date, type);
+        }
+        return userIds;
     }
 }

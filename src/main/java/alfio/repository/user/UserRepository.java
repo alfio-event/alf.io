@@ -76,4 +76,7 @@ public interface UserRepository {
 
     @Query("update ba_user set enabled = false where user_type = :type and enabled = true and user_creation_time < :date")
     int disableAccountsOlderThan(@Bind("date") Date date, @Bind("type") User.Type type);
+
+    @Query("select id from ba_user where user_type = :type and enabled = true and user_creation_time < :date")
+    List<Integer> findUserToDisableOlderThan(Date date, User.Type type);
 }
