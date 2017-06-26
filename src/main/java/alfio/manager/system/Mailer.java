@@ -18,6 +18,7 @@ package alfio.manager.system;
 
 import alfio.model.Event;
 import lombok.Data;
+import org.springframework.core.env.Environment;
 
 import java.util.*;
 
@@ -35,6 +36,14 @@ public interface Mailer {
         //for dynamically generated attachment
         private final Map<String, String> model;
         private final AttachmentIdentifier identifier;
+    }
+
+    default String decorateSubjectIfDemo(String subject, Environment environment) {
+        if(environment.acceptsProfiles("demo")) {
+            return "THIS IS A TEST: " + subject;
+        } else {
+            return subject;
+        }
     }
 
 

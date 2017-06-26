@@ -21,6 +21,7 @@ import alfio.model.Event;
 import alfio.model.system.Configuration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -34,10 +35,12 @@ public class DefaultMailer implements Mailer {
     private final ConfigurationManager configurationManager;
     private final Map<String, Mailer> mailers;
     private final Mailer defaultMailer;
+    private final Environment environment;
 
     @Autowired
-    public DefaultMailer(ConfigurationManager configurationManager) {
+    public DefaultMailer(ConfigurationManager configurationManager, Environment environment) {
         this.configurationManager = configurationManager;
+        this.environment = environment;
         this.mailers = new HashMap<>();
         this.defaultMailer = new SmtpMailer(configurationManager);
         mailers.put("smtp", defaultMailer);
@@ -48,6 +51,8 @@ public class DefaultMailer implements Mailer {
     @Override
     public void send(Event event, String to, List<String> cc, String subject, String text,
                      Optional<String> html, Attachment... attachments) {
+
+        subject = decorateSubjectIfDemo(subject, environment);
 
         String mailerType = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILER_TYPE), "smtp").toLowerCase(Locale.ENGLISH);
 
