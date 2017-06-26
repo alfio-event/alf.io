@@ -279,4 +279,7 @@ public class UserManager {
     }
 
 
+    public void disableAccountsOlderThan(Date date, User.Type type) {
+        userRepository.disableAccountsOlderThan(date, type);
+    }
 }

@@ -20,6 +20,7 @@ import alfio.model.user.User;
 import ch.digitalfondue.npjt.*;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -73,4 +74,6 @@ public interface UserRepository {
     @Query("delete from ba_user where id = :id")
     int deleteUser(@Bind("id") int id);
 
+    @Query("update ba_user set enabled = false where user_type = :type and enabled = true and user_creation_time < :date")
+    int disableAccountsOlderThan(@Bind("date") Date date, @Bind("type") User.Type type);
 }

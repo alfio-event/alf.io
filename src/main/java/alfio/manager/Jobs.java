@@ -16,6 +16,12 @@
  */
 package alfio.manager;
 
+import alfio.manager.system.ConfigurationManager;
+import alfio.manager.user.UserManager;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
+import alfio.model.user.User;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.time.DateUtils;
 import org.quartz.DisallowConcurrentExecution;
@@ -23,35 +29,30 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
 
 @Component
+@AllArgsConstructor
 public class Jobs {
 
     private static final int ONE_MINUTE = 1000 * 60;
     private static final int THIRTY_MINUTES = 30 * ONE_MINUTE;
     private static final int THIRTY_SECONDS = 1000 * 30;
     private static final int FIVE_SECONDS = 1000 * 5;
+
     private final TicketReservationManager ticketReservationManager;
     private final NotificationManager notificationManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
     private final FileUploadManager fileUploadManager;
     private final WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
+    private final Environment environment;
+    private final UserManager userManager;
+    private final EventManager eventManager;
+    private final ConfigurationManager configurationManager;
 
-    @Autowired
-    public Jobs(TicketReservationManager ticketReservationManager,
-                NotificationManager notificationManager,
-                SpecialPriceTokenGenerator specialPriceTokenGenerator,
-                FileUploadManager fileUploadManager,
-                WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor) {
-        this.ticketReservationManager = ticketReservationManager;
-        this.notificationManager = notificationManager;
-        this.specialPriceTokenGenerator = specialPriceTokenGenerator;
-        this.fileUploadManager = fileUploadManager;
-        this.waitingQueueSubscriptionProcessor = waitingQueueSubscriptionProcessor;
-    }
 
 
     public void cleanupExpiredPendingReservation() {
@@ -91,6 +92,15 @@ public class Jobs {
         fileUploadManager.cleanupUnreferencedBlobFiles();
     }
 
+    public void cleanupForDemoMode() {
+        if(environment.acceptsProfiles("demo")) {
+            int expirationDate = configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS), 20);
+            userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
+
+            //TODO: mark events created by disabled users to disabled
+        }
+    }
+
     @DisallowConcurrentExecution
     @Log4j2
     public static class SendOfflinePaymentReminderToEventOrganizers implements Job {
@@ -109,6 +119,24 @@ public class Jobs {
             jobs.sendOfflinePaymentReminderToEventOrganizers();
             log.trace("running job " + getClass().getSimpleName());
         }
+    }
+
+
+    @DisallowConcurrentExecution
+    @Log4j2
+    public static class CleanupForDemoMode implements Job {
+        //run each hour
+        public static String CRON_EXPRESSION = "0 0 0/1 1/1 * ? *";
+
+        @Autowired
+        private Jobs jobs;
+
+        @Override
+        public void execute(JobExecutionContext context) throws JobExecutionException {
+            jobs.cleanupForDemoMode();
+            log.trace("running job " + getClass().getSimpleName());
+        }
+
     }
 
 
