@@ -34,6 +34,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
+import alfio.model.user.User;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -98,7 +99,7 @@ public class ConfigurationManagerIntegrationTest {
         organizationRepository.create("org", "org", "email@example.com");
         Organization organization = organizationRepository.findByName("org").get(0);
 
-        userManager.insertUser(organization.getId(), USERNAME, "test", "test", "test@example.com", Role.OWNER);
+        userManager.insertUser(organization.getId(), USERNAME, "test", "test", "test@example.com", Role.OWNER, User.Type.INTERNAL);
 
         Map<String, String> desc = new HashMap<>();
         desc.put("en", "muh description");

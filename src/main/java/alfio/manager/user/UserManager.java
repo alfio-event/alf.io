@@ -199,10 +199,10 @@ public class UserManager {
     }
 
     @Transactional
-    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role) {
+    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType) {
         Organization organization = organizationRepository.getById(organizationId);
         String userPassword = PasswordGenerator.generateRandomPassword();
-        AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
+        AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true, userType);
         userOrganizationRepository.create(result.getKey(), organization.getId());
         authorityRepository.create(username, role.getRoleName());
         return new UserWithPassword(userRepository.findById(result.getKey()), userPassword, UUID.randomUUID().toString());

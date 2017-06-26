@@ -27,6 +27,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
+import alfio.model.user.User;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -95,8 +96,8 @@ public class IntegrationTestUtil {
 
         userManager.createOrganization(organizationName, "org", "email@example.com");
         Organization organization = organizationRepository.findByName(organizationName).get(0);
-        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR);
-        userManager.insertUser(organization.getId(), username+"_owner", "test", "test", "test@example.com", Role.OWNER);
+        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR, User.Type.INTERNAL);
+        userManager.insertUser(organization.getId(), username+"_owner", "test", "test", "test@example.com", Role.OWNER, User.Type.INTERNAL);
 
         LocalDateTime expiration = LocalDateTime.now().plusDays(5).plusHours(1);
 
@@ -116,7 +117,7 @@ public class IntegrationTestUtil {
     }
 
     public static void initAdminUser(UserRepository userRepository, AuthorityRepository authorityRepository) {
-        userRepository.create(UserManager.ADMIN_USERNAME, "", "The", "Administrator", "admin@localhost", true);
+        userRepository.create(UserManager.ADMIN_USERNAME, "", "The", "Administrator", "admin@localhost", true, User.Type.INTERNAL);
         authorityRepository.create(UserManager.ADMIN_USERNAME, Role.ADMIN.getRoleName());
     }
 }

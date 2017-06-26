@@ -146,7 +146,10 @@ public class UsersApiController {
     public UserWithPassword insertUser(@RequestBody UserModification userModification, HttpSession session, Principal principal) {
         Role requested = Role.valueOf(userModification.getRole());
         Validate.isTrue(userManager.getAvailableRoles(principal.getName()).stream().anyMatch(requested::equals), String.format("Requested role %s is not available for current user", userModification.getRole()));
-        UserWithPassword userWithPassword = userManager.insertUser(userModification.getOrganizationId(), userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress(), requested);
+        UserWithPassword userWithPassword = userManager.insertUser(userModification.getOrganizationId(), userModification.getUsername(),
+            userModification.getFirstName(), userModification.getLastName(),
+            userModification.getEmailAddress(), requested,
+            User.Type.INTERNAL);
         storePasswordImage(session, userWithPassword);
         return userWithPassword;
     }
