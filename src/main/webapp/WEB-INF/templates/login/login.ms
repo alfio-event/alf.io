@@ -37,7 +37,7 @@
                         <div class="alert alert-danger">Recaptcha check failed. Are you a human?</div>
                     {{/recaptchaFailed}}
                     <div class="form-group">
-                        <label for="username">{{#demo}}Email address{{/demo}}{{^demo}}Username{{/demo}}</label>
+                        <label for="username">{{#demoModeEnabled}}Email address{{/demoModeEnabled}}{{^demoModeEnabled}}Username{{/demoModeEnabled}}</label>
                         <input id="username" class="form-control" type="text" name="username" value="" required="required">
                     </div>
                     <div class="form-group">
