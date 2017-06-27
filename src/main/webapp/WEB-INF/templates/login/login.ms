@@ -21,7 +21,9 @@
                     {{#demoModeEnabled}}
                         <div class="page-header">
                             <h2>Authentication requested</h2>
-                            <span>This instance is in demo mode, please enter your email address, a password and click on login</span>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle"></i> This instance is in demo mode, please enter your email address, a password and click on login
                         </div>
                     {{/demoModeEnabled}}
                     {{^demoModeEnabled}}

@@ -16,6 +16,7 @@
  */
 package alfio.manager.system;
 
+import alfio.config.Initializer;
 import alfio.model.Event;
 import lombok.Data;
 import org.springframework.core.env.Environment;
@@ -39,7 +40,7 @@ public interface Mailer {
     }
 
     default String decorateSubjectIfDemo(String subject, Environment environment) {
-        if(environment.acceptsProfiles("demo")) {
+        if(environment.acceptsProfiles(Initializer.PROFILE_DEMO)) {
             return "THIS IS A TEST: " + subject;
         } else {
             return subject;

@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.config.Initializer;
 import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.manager.EventNameManager;
 import alfio.util.MustacheCustomTagInterceptor;
@@ -87,7 +88,7 @@ public class UtilsApiController {
         Map<String, Object> applicationInfo = new HashMap<>();
         applicationInfo.put("version", version);
         applicationInfo.put("username", principal.getName());
-        applicationInfo.put("isDemoMode", environment.acceptsProfiles("demo"));
+        applicationInfo.put("isDemoMode", environment.acceptsProfiles(Initializer.PROFILE_DEMO));
         return applicationInfo;
     }
 

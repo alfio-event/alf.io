@@ -66,7 +66,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationKeys.GOOGLE_ANALYTICS_KEY;
+import static alfio.model.system.ConfigurationKeys.*;
+
 
 @Configuration
 @ComponentScan(basePackages = {"alfio.controller", "alfio.config"})
