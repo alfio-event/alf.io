@@ -39,9 +39,10 @@ public class SpringBootLauncher {
         log.info("requested profiles {}", profiles);
 
         SpringApplication application = new SpringApplication(SpringBootInitializer.class, RepositoryConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class, MvcConfiguration.class);
-        application.setAdditionalProfiles(Initializer.PROFILE_SPRING_BOOT);
         if("true".equals(System.getenv("ALFIO_DEMO_ENABLED"))) {
-            application.setAdditionalProfiles(Initializer.PROFILE_DEMO);
+            application.setAdditionalProfiles(Initializer.PROFILE_DEMO, Initializer.PROFILE_SPRING_BOOT);
+        } else {
+            application.setAdditionalProfiles(Initializer.PROFILE_SPRING_BOOT);
         }
         ConfigurableApplicationContext applicationContext = application.run(args);
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
