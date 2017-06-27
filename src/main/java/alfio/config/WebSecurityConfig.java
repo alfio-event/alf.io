@@ -230,7 +230,7 @@ public class WebSecurityConfig {
                     String username = req.getParameter("username");
                     if(!userManager.usernameExists(username)) {
                         int orgId = userManager.createOrganization(username, "Demo organization", username);
-                        userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO);
+                        userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"));
                     }
                 }
 
