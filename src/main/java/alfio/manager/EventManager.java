@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.config.Initializer;
 import alfio.manager.location.LocationManager;
 import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.CategoryEvaluator;
@@ -46,7 +47,6 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.flywaydb.core.Flyway;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -161,7 +161,7 @@ public class EventManager {
         Event event = eventRepository.findById(id);
         checkOwnership(event, username, event.getOrganizationId());
 
-        if(environment.acceptsProfiles("demo")) {
+        if(environment.acceptsProfiles(Initializer.PROFILE_DEMO)) {
             throw new IllegalStateException("demo mode");
         }
 

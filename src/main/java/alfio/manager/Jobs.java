@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.config.Initializer;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.system.Configuration;
@@ -94,7 +95,7 @@ public class Jobs {
     }
 
     public void cleanupForDemoMode() {
-        if(environment.acceptsProfiles("demo")) {
+        if(environment.acceptsProfiles(Initializer.PROFILE_DEMO)) {
             int expirationDate = configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS), 20);
             List<Integer> userIds = userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
             if(!userIds.isEmpty()) {
