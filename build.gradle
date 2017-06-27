@@ -77,7 +77,7 @@ ext {
     //springProfilesActive = 'dev,debug-csp' //enable csp report. FIXME For some reasons it doesn't work on Chrome
     //springProfilesActive = 'dev,demo'
     springProfilesActive = 'dev'
-    baseImage = "openjdk:jdk-alpine"
+    baseImage = "openjdk:jre-alpine"
     port = "8080"
 
 
