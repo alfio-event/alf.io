@@ -18,20 +18,21 @@
             <div class="col-sm-10 col-sm-push-1 col-xs-12 col-md-6 col-md-push-3">
                 <form role="form" name="loginForm" action="{{request.contextPath}}/authenticate" method="post">
                     <input name="_csrf" type="hidden" value="{{_csrf.token}}" />
+                        <div class="page-header">
+                            <h2>Authentication requested</h2>
+                            {{^demoModeEnabled}}
+                                <span>Please login with Username and Password</span>
+                            {{/demoModeEnabled}}
+                        </div>
                     {{#demoModeEnabled}}
-                        <div class="page-header">
-                            <h2>Authentication requested</h2>
-                        </div>
                         <div class="alert alert-info">
-                            <i class="fa fa-info-circle"></i> This instance is in demo mode, please enter your email address, a password and click on login
+                            <div class="row">
+                                <div class="col-xs-1"><i class="fa fa-info-circle fa-3x"></i></div>
+                                <div class="col-xs-11">This instance is in <strong>demo mode</strong>, please enter your email address, a password and click on login</div>
+                            </div>
                         </div>
                     {{/demoModeEnabled}}
-                    {{^demoModeEnabled}}
-                        <div class="page-header">
-                            <h2>Authentication requested</h2>
-                            <span>Please login with Username and Password</span>
-                        </div>
-                    {{/demoModeEnabled}}
+
                     {{#failed}}
                         <div class="alert alert-danger">Unknown user or wrong password. Please try again.</div>
                     {{/failed}}
