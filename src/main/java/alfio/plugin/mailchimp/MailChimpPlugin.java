@@ -34,6 +34,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+
 @Log4j2
 public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAssignmentPlugin, WaitingQueueSubscriptionPlugin {
 
@@ -96,7 +97,7 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
     public Collection<PluginConfigOption> getConfigOptions(int eventId) {
         return Arrays.asList(new PluginConfigOption(getId(), eventId, DATA_CENTER, "", "The MailChimp data center used by your account (e.g. us6)", ComponentType.TEXT),
                 new PluginConfigOption(getId(), eventId, API_KEY, "", "the Mailchimp API Key", ComponentType.TEXT),
-                new PluginConfigOption(getId(), eventId, LIST_ID, "", "the list ID", ComponentType.TEXT));
+                new PluginConfigOption(getId(), eventId, LIST_ID, "", "the list ID, see http://kb.mailchimp.com/lists/manage-contacts/find-your-list-id", ComponentType.TEXT));
     }
 
     @Override
@@ -160,14 +161,16 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
                 pluginDataStorage.registerSuccess(String.format("user %s has been subscribed to list", email), eventId);
                 return true;
             }
-            String responseBody = response.body().string();
-            if(response.code() != 400 || responseBody.contains("\"errors\"")) {
-                pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
-                return false;
-            } else {
-                pluginDataStorage.registerWarning(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
+            try(ResponseBody body = response.body()) {
+                String responseBody = body.string();
+                if(response.code() != 400 || responseBody.contains("\"errors\"")) {
+                    pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
+                    return false;
+                } else {
+                    pluginDataStorage.registerWarning(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
+                }
+                return true;
             }
-            return true;
         } catch (IOException e) {
             pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, e.toString()), eventId);
             return false;

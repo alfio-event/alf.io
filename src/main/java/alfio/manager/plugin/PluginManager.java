@@ -36,7 +36,6 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -48,7 +47,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 @Component
-@Order(Ordered.LOWEST_PRECEDENCE)
+@Order
 public class PluginManager implements ApplicationListener<ContextRefreshedEvent> {
 
     private final List<Plugin> plugins;
@@ -56,7 +55,7 @@ public class PluginManager implements ApplicationListener<ContextRefreshedEvent>
     private final PluginLogRepository pluginLogRepository;
     private final EventRepository eventRepository;
     private final UserManager userManager;
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     @Autowired
     public PluginManager(List<Plugin> plugins, PluginConfigurationRepository pluginConfigurationRepository, PluginLogRepository pluginLogRepository, EventRepository eventRepository, UserManager userManager) {
