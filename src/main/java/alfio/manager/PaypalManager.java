@@ -183,12 +183,37 @@ public class PaypalManager {
         return MessageDigest.isEqual(hmac.getBytes(StandardCharsets.UTF_8), computedHmac.getBytes(StandardCharsets.UTF_8));
     }
 
+    public static class HandledPaypalErrorException extends RuntimeException {
+        HandledPaypalErrorException(String errorMessage) {
+            super(errorMessage);
+        }
+    }
+
+    private static final Set<String> MAPPED_ERROR = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("FAILED_TO_CHARGE_CC", "INSUFFICIENT_FUNDS", "EXPIRED_CREDIT_CARD", "INSTRUMENT_DECLINED")));
+
+    private static Optional<String> mappedException(PayPalRESTException e) {
+        //https://developer.paypal.com/docs/api/#errors
+        if(e.getDetails() != null && e.getDetails().getName() != null && MAPPED_ERROR.contains(e.getDetails().getName())) {
+            return Optional.of("error.STEP_2_PAYPAL_"+e.getDetails().getName());
+        } else {
+            return Optional.empty();
+        }
+    }
+
     public Pair<String, String> commitPayment(String reservationId, String token, String payerId, Event event) throws PayPalRESTException {
 
         Payment payment = new Payment().setId(token);
         PaymentExecution paymentExecute = new PaymentExecution();
         paymentExecute.setPayerId(payerId);
-        Payment result = payment.execute(getApiContext(event), paymentExecute);
+        Payment result = null;
+        try {
+            result = payment.execute(getApiContext(event), paymentExecute);
+        } catch (PayPalRESTException e) {
+            mappedException(e).ifPresent(message -> {
+                throw new HandledPaypalErrorException(message);
+            });
+            throw e;
+        }
 
 
         // state can only be "created", "approved" or "failed".

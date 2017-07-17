@@ -110,6 +110,8 @@ public class PaymentManager {
             log.warn("errow while processing paypal payment: " + e.getMessage(), e);
             if(e instanceof PayPalRESTException) {
                 return PaymentResult.unsuccessful(ErrorsCode.STEP_2_PAYPAL_UNEXPECTED);
+            } else if(e instanceof PaypalManager.HandledPaypalErrorException) {
+                return PaymentResult.unsuccessful(e.getMessage());
             }
             throw new IllegalStateException(e);
         }
