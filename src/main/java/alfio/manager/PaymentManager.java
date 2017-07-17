@@ -27,7 +27,6 @@ import alfio.repository.AuditingRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.ErrorsCode;
-import alfio.util.Json;
 import com.paypal.base.rest.PayPalRESTException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
@@ -36,7 +35,6 @@ import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -109,6 +107,8 @@ public class PaymentManager {
             log.warn("errow while processing paypal payment: " + e.getMessage(), e);
             if(e instanceof PayPalRESTException) {
                 return PaymentResult.unsuccessful(ErrorsCode.STEP_2_PAYPAL_UNEXPECTED);
+            } else if(e instanceof PaypalManager.HandledPaypalErrorException) {
+                return PaymentResult.unsuccessful(e.getMessage());
             }
             throw new IllegalStateException(e);
         }
