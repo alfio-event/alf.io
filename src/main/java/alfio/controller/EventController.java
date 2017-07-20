@@ -115,6 +115,11 @@ public class EventController {
         return ResponseEntity.ok("Up and running!");
     }
 
+    @RequestMapping(value = "/healthz", method = RequestMethod.GET)
+    public ResponseEntity<String> replyToK8s() {
+        return ResponseEntity.ok("Up and running!");
+    }
+
     @RequestMapping(value = {"/"}, method = RequestMethod.GET)
     public String listEvents(Model model, Locale locale) {
         List<Event> events = eventManager.getPublishedEvents();
