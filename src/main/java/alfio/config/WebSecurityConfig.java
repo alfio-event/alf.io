@@ -135,7 +135,9 @@ public class WebSecurityConfig {
         protected void configure(HttpSecurity http) throws Exception {
 
             if(environment.acceptsProfiles("!"+Initializer.PROFILE_DEV)) {
-                http.requiresChannel().anyRequest().requiresSecure();
+                http.requiresChannel().antMatchers("/healthz").requiresInsecure()
+                    .and()
+                    .requiresChannel().mvcMatchers("/**").requiresSecure();
             }
 
             CsrfConfigurer<HttpSecurity> configurer =
