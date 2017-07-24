@@ -27,7 +27,7 @@
         $("select").map(function() {
             var value = $(this).attr('value');
             if(value && value.length > 0) {
-                $(this).find("option[value="+value+"]").attr('selected','selected');
+                $(this).val(value);
             }
         });
     });
