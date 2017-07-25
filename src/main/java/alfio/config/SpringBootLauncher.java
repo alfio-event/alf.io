@@ -24,6 +24,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Log4j2
 public class SpringBootLauncher {
 
@@ -32,28 +35,29 @@ public class SpringBootLauncher {
      * @param args original arguments
      */
     public static void main(String[] args) {
-
         Thread.setDefaultUncaughtExceptionHandler(new DefaultExceptionHandler());
-
         String profiles = System.getProperty("spring.profiles.active", "");
-        log.info("requested profiles {}", profiles);
 
         SpringApplication application = new SpringApplication(SpringBootInitializer.class, RepositoryConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class, MvcConfiguration.class);
-        if("true".equals(System.getenv("ALFIO_DEMO_ENABLED"))) {
-            application.setAdditionalProfiles(Initializer.PROFILE_DEMO, Initializer.PROFILE_SPRING_BOOT);
-        } else {
-            application.setAdditionalProfiles(Initializer.PROFILE_SPRING_BOOT);
+        List<String> additionalProfiles = new ArrayList<>();
+        additionalProfiles.add(Initializer.PROFILE_SPRING_BOOT);
+        if("true".equals(System.getenv("ALFIO_LOG_STDOUT_ONLY"))) {
+            additionalProfiles.add("stdout");
         }
+        if("true".equals(System.getenv("ALFIO_DEMO_ENABLED"))) {
+            additionalProfiles.add(Initializer.PROFILE_DEMO);
+        }
+        application.setAdditionalProfiles(additionalProfiles.toArray(new String[additionalProfiles.size()]));
         ConfigurableApplicationContext applicationContext = application.run(args);
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
-        log.info("active profiles: {}", String.join(", ", (CharSequence[]) environment.getActiveProfiles()));
+        log.info("profiles: requested {}, active {}", profiles, String.join(", ", (CharSequence[]) environment.getActiveProfiles()));
         if ("true".equals(System.getProperty("startDBManager"))) {
             launchHsqlGUI();
         }
     }
 
 
-    public static void launchHsqlGUI() {
+    private static void launchHsqlGUI() {
         Class<?> cls;
         try {
             cls = ClassUtils.getClass("org.hsqldb.util.DatabaseManagerSwing");
