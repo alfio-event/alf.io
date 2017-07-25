@@ -169,7 +169,6 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
                 } else {
                     pluginDataStorage.registerWarning(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
                 }
-                }
                 return true;
             }
         } catch (IOException e) {
