@@ -10,6 +10,7 @@ COPY ./@APP_NAME@-@APP_VERSION@-boot.war /alf.io/
 # Define working directory.
 WORKDIR /alf.io
 RUN mkdir /alf.io/logs
+ENV ALFIO_LOG_STDOUT_ONLY=true
 
 VOLUME ["/alf.io/logs"]
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="alfio" level="debug" additivity="false">
+            <appender-ref ref="Console"/>
+        </Logger>
+        <Logger name="org.springframework" level="warn" additivity="false">
+            <appender-ref ref="Console" />
+        </Logger>
+        <Root level="error">
+            <Appender-ref ref="Console" />
+        </Root>
+    </Loggers>
+</configuration>
