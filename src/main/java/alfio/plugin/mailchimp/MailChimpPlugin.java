@@ -160,12 +160,14 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
                 pluginDataStorage.registerSuccess(String.format("user %s has been subscribed to list", email), eventId);
                 return true;
             }
-            String responseBody = response.body().string();
-            if(response.code() != 400 || responseBody.contains("\"errors\"")) {
-                pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
-                return false;
-            } else {
-                pluginDataStorage.registerWarning(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
+            try(ResponseBody body = response.body()) {
+                String responseBody = body.string();
+                if (response.code() != 400 || responseBody.contains("\"errors\"")) {
+                    pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
+                    return false;
+                } else {
+                    pluginDataStorage.registerWarning(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
+                }
             }
             return true;
         } catch (IOException e) {
@@ -182,10 +184,12 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
             .build();
         try {
             Response response = httpClient.newCall(request).execute();
-            String responseBody = response.body().string();
-            if(!responseBody.contains(ALFIO_EVENT_KEY)) {
-                log.debug("can't find ALFIO_EKEY for event "+eventKey);
-                createMergeField(listAddress, apiKey, eventKey, eventId);
+            try (ResponseBody body = response.body()) {
+                String responseBody = body.string();
+                if(!responseBody.contains(ALFIO_EVENT_KEY)) {
+                    log.debug("can't find ALFIO_EKEY for event "+eventKey);
+                    createMergeField(listAddress, apiKey, eventKey, eventId);
+                }
             }
         } catch (IOException e) {
             pluginDataStorage.registerFailure(String.format("Cannot get merge fields for %s, got: %s", eventKey, e.getMessage()), eventId);
@@ -212,7 +216,9 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
         try {
             Response response = httpClient.newCall(request).execute();
             if(!response.isSuccessful()) {
-                log.debug("can't create {} merge field. Got: {}", ALFIO_EVENT_KEY, response.body().string());
+                ResponseBody body = response.body();
+                log.debug("can't create {} merge field. Got: {}", ALFIO_EVENT_KEY, body.string());
+                body.close();
             }
         } catch (IOException e) {
             pluginDataStorage.registerFailure(String.format("Cannot create merge field for %s, got: %s", eventKey, e.getMessage()), eventId);

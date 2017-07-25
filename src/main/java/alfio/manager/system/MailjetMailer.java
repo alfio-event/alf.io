@@ -81,6 +81,9 @@ public class MailjetMailer implements Mailer  {
             Response resp = client.newCall(request).execute();
             if (!resp.isSuccessful()) {
                 log.warn("sending email was not successful:" + resp);
+            } else {
+                //close response body, in order to prevent leaks
+                resp.body().close();
             }
 
         } catch(IOException e) {
