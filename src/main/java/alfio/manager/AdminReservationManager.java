@@ -416,7 +416,7 @@ public class AdminReservationManager {
     }
 
     private void createMissingTickets(Event event, int tickets) {
-        final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), tickets).toArray(MapSqlParameterSource[]::new);
+        final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), tickets, Ticket.TicketStatus.FREE).toArray(MapSqlParameterSource[]::new);
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
     }
 
