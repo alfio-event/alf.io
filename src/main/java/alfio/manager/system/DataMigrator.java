@@ -16,10 +16,7 @@
  */
 package alfio.manager.system;
 
-import alfio.model.AdditionalService;
-import alfio.model.Event;
-import alfio.model.PriceContainer;
-import alfio.model.PromoCodeDiscount;
+import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.EventMigration;
 import alfio.repository.EventRepository;
@@ -180,7 +177,7 @@ public class DataMigrator {
     private void createMissingTickets(Event event) {
         int existingTickets = ticketRepository.countExistingTicketsForEvent(event.getId());
         if(existingTickets < event.getAvailableSeats()) {
-            MapSqlParameterSource[] tickets = EventUtil.generateEmptyTickets(event, new Date(), event.getAvailableSeats() - existingTickets).toArray(MapSqlParameterSource[]::new);
+            MapSqlParameterSource[] tickets = EventUtil.generateEmptyTickets(event, new Date(), event.getAvailableSeats() - existingTickets, Ticket.TicketStatus.FREE).toArray(MapSqlParameterSource[]::new);
             jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), tickets);
         }
     }

@@ -76,7 +76,7 @@ public class EventUtil {
     }
 
     private static Optional<SaleableTicketCategory> findFirstCategory(List<SaleableTicketCategory> categories) {
-        return sortCategories(categories, (c1, c2) -> c1.getUtcExpiration().compareTo(c2.getUtcExpiration())).findFirst();
+        return sortCategories(categories, Comparator.comparing(SaleableTicketCategory::getUtcExpiration)).findFirst();
     }
 
     private static Stream<SaleableTicketCategory> sortCategories(List<SaleableTicketCategory> categories, Comparator<SaleableTicketCategory> comparator) {
@@ -90,9 +90,9 @@ public class EventUtil {
         return findFirstCategory(categories).map(c -> now.isBefore(c.getZonedInception())).orElse(false);
     }
 
-    public static Stream<MapSqlParameterSource> generateEmptyTickets(Event event, Date creationDate, int limit) {
+    public static Stream<MapSqlParameterSource> generateEmptyTickets(Event event, Date creationDate, int limit, Ticket.TicketStatus ticketStatus) {
         return generateStreamForTicketCreation(limit)
-                .map(ps -> buildTicketParams(event.getId(), creationDate, Optional.empty(), 0, ps));
+            .map(ps -> buildTicketParams(event.getId(), creationDate, Optional.empty(), 0, ps, ticketStatus));
     }
 
     public static Stream<MapSqlParameterSource> generateStreamForTicketCreation(int limit) {
@@ -105,12 +105,21 @@ public class EventUtil {
                                               Optional<TicketCategory> tc,
                                               int srcPriceCts,
                                               MapSqlParameterSource ps) {
+        return buildTicketParams(eventId, creation, tc, srcPriceCts, ps, Ticket.TicketStatus.FREE);
+    }
+
+    private static MapSqlParameterSource buildTicketParams(int eventId,
+                                                           Date creation,
+                                                           Optional<TicketCategory> tc,
+                                                           int srcPriceCts,
+                                                           MapSqlParameterSource ps,
+                                                           Ticket.TicketStatus ticketStatus) {
         return ps.addValue("uuid", UUID.randomUUID().toString())
-                .addValue("creation", creation)
-                .addValue("categoryId", tc.map(TicketCategory::getId).orElse(null))
-                .addValue("eventId", eventId)
-                .addValue("status", Ticket.TicketStatus.FREE.name())
-                .addValue("srcPriceCts", srcPriceCts);
+            .addValue("creation", creation)
+            .addValue("categoryId", tc.map(TicketCategory::getId).orElse(null))
+            .addValue("eventId", eventId)
+            .addValue("status", ticketStatus.name())
+            .addValue("srcPriceCts", srcPriceCts);
     }
 
     public static int evaluatePrice(int price, boolean freeOfCharge) {

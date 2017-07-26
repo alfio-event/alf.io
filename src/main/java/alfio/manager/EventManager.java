@@ -284,7 +284,7 @@ public class EventManager {
         if(seatsDifference != 0) {
             Event modified = eventRepository.findById(eventId);
             if(seatsDifference > 0) {
-                final MapSqlParameterSource[] params = generateEmptyTickets(modified, Date.from(ZonedDateTime.now(modified.getZoneId()).toInstant()), seatsDifference).toArray(MapSqlParameterSource[]::new);
+                final MapSqlParameterSource[] params = generateEmptyTickets(modified, Date.from(ZonedDateTime.now(modified.getZoneId()).toInstant()), seatsDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
                 jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
             } else {
                 List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, Math.abs(seatsDifference), singletonList(TicketStatus.FREE.name()));
@@ -428,7 +428,7 @@ public class EventManager {
     }
 
     MapSqlParameterSource[] prepareTicketsBulkInsertParameters(ZonedDateTime creation,
-                                                               Event event) {
+                                                               Event event, TicketStatus ticketStatus) {
 
         //FIXME: the date should be inserted as ZonedDateTime !
         Date creationDate = Date.from(creation.toInstant());
@@ -445,7 +445,7 @@ public class EventManager {
             return boundedTickets.toArray(MapSqlParameterSource[]::new);
         }
 
-        return Stream.concat(boundedTickets, generateEmptyTickets(event, creationDate, event.getAvailableSeats() - existingTickets)).toArray(MapSqlParameterSource[]::new);
+        return Stream.concat(boundedTickets, generateEmptyTickets(event, creationDate, event.getAvailableSeats() - existingTickets, ticketStatus)).toArray(MapSqlParameterSource[]::new);
     }
 
     private Stream<MapSqlParameterSource> generateTicketsForCategory(TicketCategory tc,
@@ -619,25 +619,25 @@ public class EventManager {
                 throw new IllegalStateException("Cannot invalidate "+absDifference+" tickets. There are only "+actualDifference+" free tickets");
             }
             ticketRepository.invalidateTickets(ids);
-            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), Math.abs(addedTickets)).toArray(MapSqlParameterSource[]::new);
+            //as we're reducing the ticket quantity, it is safe to create them with status "FREE"
+            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), Math.abs(addedTickets), TicketStatus.FREE).toArray(MapSqlParameterSource[]::new);
             jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
         }
     }
 
     private MapSqlParameterSource[] prepareTokenBulkInsertParameters(TicketCategory tc, int limit) {
         return generateStreamForTicketCreation(limit)
-                .map(ps -> {
+                .peek(ps -> {
                     ps.addValue("code", UUID.randomUUID().toString());
                     ps.addValue("priceInCents", tc.getSrcPriceCts());
                     ps.addValue("ticketCategoryId", tc.getId());
                     ps.addValue("status", SpecialPrice.Status.WAITING.name());
-                    return ps;
                 })
                 .toArray(MapSqlParameterSource[]::new);
     }
 
     private void createAllTicketsForEvent(Event event) {
-        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(ZonedDateTime.now(event.getZoneId()), event);
+        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(ZonedDateTime.now(event.getZoneId()), event, TicketStatus.FREE);
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
     }
 

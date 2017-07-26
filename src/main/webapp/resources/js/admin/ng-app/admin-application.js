@@ -249,7 +249,7 @@
                 }
             });
 
-        growlProvider.globalPosition('middle-center');
+        growlProvider.globalPosition('bottom-right');
     });
 
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -584,7 +584,8 @@
                                                         $uibModal,
                                                         PAYMENT_PROXY_DESCRIPTIONS,
                                                         UtilsService,
-                                                        NotificationHandler) {
+                                                        NotificationHandler,
+                                                        $timeout) {
         var loadData = function() {
             $scope.loading = true;
 
@@ -766,6 +767,7 @@
                 controller: function($scope) {
                     $scope.eventPrices = parentScope.eventPrices;
                     $scope.event = parentScope.event;
+                    var seats = $scope.event.availableSeats;
                     $scope.allowedPaymentProxies = parentScope.allowedPaymentProxies;
 
                     $scope.cancel = function() {
@@ -779,14 +781,24 @@
                         angular.extend(obj, eventPrices);
                         EventService.updateEventPrices(obj).then(function(result) {
                             validationErrorHandler(result, form, form.editPrices).then(function(result) {
-                                $scope.$close(eventPrices);
+                                $scope.$close(eventPrices.availableSeats !== seats);
                             });
                         }, errorHandler);
                     };
                 }
             });
-            editPrices.result.then(function() {
-                loadData();
+            editPrices.result.then(function(seatsModified) {
+                var message = "Modification applied." + (seatsModified ? "Seats modification will become effective in 30s. The page will be reloaded automatically." : "");
+                NotificationHandler.showSuccess(message);
+                if(seatsModified) {
+                    $timeout(function() {
+                        NotificationHandler.showInfo("Reloading data...");
+                        $window.location.reload();
+                    }, 30000 )
+
+                } else {
+                    loadData();
+                }
             });
         };
 

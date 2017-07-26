@@ -24,6 +24,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketRepository;
@@ -136,6 +137,40 @@ public class WaitingQueueProcessorIntegrationTest {
 
     @Test
     public void testSoldOut() throws InterruptedException {
+        Pair<String, Event> pair = initSoldOutEvent();
+        Event event = pair.getRight();
+        String reservationId = pair.getLeft();
+        Ticket firstTicket = ticketRepository.findTicketsInReservation(reservationId).get(0);
+        ticketRepository.releaseTicket(reservationId, event.getId(), firstTicket.getId());
+        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
+        List<WaitingQueueSubscription> subscriptions =  waitingQueueRepository.loadAll(event.getId());
+        assertEquals(1, subscriptions.stream().filter(w -> StringUtils.isNotBlank(w.getReservationId())).count());
+        Optional<WaitingQueueSubscription> first = subscriptions.stream().filter(w -> w.getStatus().equals(WaitingQueueSubscription.Status.PENDING)).findFirst();
+        assertTrue(first.isPresent());
+        assertEquals("Giuseppe Garibaldi", first.get().getFullName());
+    }
+
+    @Test
+    public void testAddSeatsAfterSoldOut() throws InterruptedException {
+        Pair<String, Event> pair = initSoldOutEvent();
+        Event event = pair.getRight();
+        String reservationId = pair.getLeft();
+        EventModification eventModification = new EventModification(event.getId(), event.getType(), event.getWebsiteUrl(),
+            event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
+            event.getOrganizationId(), event.getLocation(), Collections.emptyMap(), DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
+            event.getRegularPrice(), event.getCurrency(), event.getAvailableSeats()+1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
+            Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList());
+        eventManager.updateEventPrices(event, eventModification, "admin");
+        //that should create an additional "RELEASED" ticket
+        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
+        List<WaitingQueueSubscription> subscriptions =  waitingQueueRepository.loadAll(event.getId());
+        assertEquals(1, subscriptions.stream().filter(w -> StringUtils.isNotBlank(w.getReservationId())).count());
+        Optional<WaitingQueueSubscription> first = subscriptions.stream().filter(w -> w.getStatus().equals(WaitingQueueSubscription.Status.PENDING)).findFirst();
+        assertTrue(first.isPresent());
+        assertEquals("Giuseppe Garibaldi", first.get().getFullName());
+    }
+
+    private Pair<String, Event> initSoldOutEvent() throws InterruptedException {
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS -1,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
@@ -174,18 +209,6 @@ public class WaitingQueueProcessorIntegrationTest {
         //the following call shouldn't have any effect
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
         assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
-
-        Ticket firstTicket = ticketRepository.findTicketsInReservation(reservationId).get(0);
-
-        ticketRepository.releaseTicket(reservationId, event.getId(), firstTicket.getId());
-
-        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
-
-        subscriptions = waitingQueueRepository.loadAll(event.getId());
-        assertEquals(1, subscriptions.stream().filter(w -> StringUtils.isNotBlank(w.getReservationId())).count());
-        Optional<WaitingQueueSubscription> first = subscriptions.stream().filter(w -> w.getStatus().equals(WaitingQueueSubscription.Status.PENDING)).findFirst();
-        assertTrue(first.isPresent());
-        assertEquals("Giuseppe Garibaldi", first.get().getFullName());
-
+        return Pair.of(reservationId, event);
     }
 }

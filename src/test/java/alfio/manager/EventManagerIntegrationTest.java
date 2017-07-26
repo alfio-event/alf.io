@@ -79,6 +79,8 @@ public class EventManagerIntegrationTest {
     private TicketCategoryRepository ticketCategoryRepository;
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
+    @Autowired
+    private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
 
     @Test
     public void testUnboundedTicketsGeneration() {
@@ -245,6 +247,10 @@ public class EventManagerIntegrationTest {
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
+        assertEquals(20, tickets.size());
+        assertEquals(20, ticketRepository.countReleasedTickets(event.getId()).intValue());
+        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
+        tickets = ticketRepository.findFreeByEventId(event.getId());
         assertEquals(40, tickets.size());
         assertEquals(40, tickets.stream().filter(t -> t.getCategoryId() == null).count());
     }
@@ -265,7 +271,8 @@ public class EventManagerIntegrationTest {
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
-        assertEquals(40, tickets.size());
+        assertEquals(20, tickets.size());
+        assertEquals(20, ticketRepository.countReleasedTickets(event.getId()).intValue());
         assertEquals(10, tickets.stream().filter(t -> t.getCategoryId() != null).count());
     }
 
