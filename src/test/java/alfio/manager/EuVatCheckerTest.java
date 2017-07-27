@@ -20,7 +20,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.VatDetail;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import com.squareup.okhttp.*;
+import okhttp3.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -95,6 +95,7 @@ public class EuVatCheckerTest {
         Response response = new Response.Builder().request(request).protocol(Protocol.HTTP_1_1)
             .body(ResponseBody.create(MediaType.parse("application/json"), body))
             .code(status)
+            .message("" + status)
             .build();
         when(call.execute()).thenReturn(response);
     }

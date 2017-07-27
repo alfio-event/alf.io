@@ -25,8 +25,8 @@ import alfio.plugin.ReservationConfirmationPlugin;
 import alfio.plugin.TicketAssignmentPlugin;
 import alfio.plugin.WaitingQueueSubscriptionPlugin;
 import alfio.util.Json;
-import com.squareup.okhttp.*;
 import lombok.extern.log4j.Log4j2;
+import okhttp3.*;
 import org.apache.commons.codec.binary.Hex;
 
 import java.io.IOException;

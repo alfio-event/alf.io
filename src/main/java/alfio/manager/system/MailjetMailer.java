@@ -20,8 +20,8 @@ import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.Json;
-import com.squareup.okhttp.*;
 import lombok.extern.log4j.Log4j2;
+import okhttp3.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 

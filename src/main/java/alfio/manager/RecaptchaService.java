@@ -19,9 +19,9 @@ package alfio.manager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.Json;
-import com.squareup.okhttp.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import okhttp3.*;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
@@ -30,8 +30,6 @@ import java.io.IOException;
 @Component
 @AllArgsConstructor
 public class RecaptchaService {
-
-
 
     private final OkHttpClient client = new OkHttpClient();
 
@@ -50,11 +48,11 @@ public class RecaptchaService {
         }
 
         try {
-            RequestBody reqBody = new FormEncodingBuilder().add("secret", secret).add("response", response).build();
+            RequestBody reqBody = new FormBody.Builder().add("secret", secret).add("response", response).build();
             Request request = new Request.Builder().url("https://www.google.com/recaptcha/api/siteverify").post(reqBody).build();
-            Response resp = client.newCall(request).execute();
-            try(ResponseBody body = resp.body()) {
-                return Json.fromJson(body.string(), RecatpchaResponse.class).success;
+
+            try(Response resp = client.newCall(request).execute()) {
+                return Json.fromJson(resp.body().string(), RecatpchaResponse.class).success;
             }
         } catch (IOException e) {
             return false;
