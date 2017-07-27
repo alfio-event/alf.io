@@ -139,7 +139,10 @@ dependencies {
     compile "com.samskivert:jmustache:1.13"
     compile "com.github.sps.mustache:mustache-spring-view:1.4"
     compile "javax.mail:mail:1.5.0-b01"
-    compile "org.quartz-scheduler:quartz:2.3.0"
+    compile "org.quartz-scheduler:quartz:2.3.0", {
+        exclude group: "com.zaxxer", module: "HikariCP-java6"
+        exclude group: "com.mchange", module: "c3p0"
+    }
     /**/
     compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC11"
     compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC11"
@@ -183,8 +186,16 @@ dependencies {
     providedCompile "org.springframework.boot:spring-boot-starter@jar"
     providedCompile "org.springframework.boot:spring-boot@jar"
     providedCompile "org.springframework.boot:spring-boot-autoconfigure@jar"
-    providedCompile "org.springframework.boot:spring-boot-starter-jetty"
-    providedRuntime "org.springframework.boot:spring-boot-starter-jetty"
+
+
+    providedCompile "org.springframework.boot:spring-boot-starter-jetty", {
+        exclude group: "org.eclipse.jetty.websocket", module: "websocket-server"
+        exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
+    }
+    providedRuntime "org.springframework.boot:spring-boot-starter-jetty", {
+        exclude group: "org.eclipse.jetty.websocket", module: "websocket-server"
+        exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
+    }
 }
 
 // -- license configuration
