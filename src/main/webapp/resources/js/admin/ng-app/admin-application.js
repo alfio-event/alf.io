@@ -788,7 +788,7 @@
                 }
             });
             editPrices.result.then(function(seatsModified) {
-                var message = "Modification applied." + (seatsModified ? "Seats modification will become effective in 30s. The page will be reloaded automatically." : "");
+                var message = "Modification applied. " + (seatsModified ? "Seats modification will become effective in 30s. The page will be reloaded automatically." : "");
                 NotificationHandler.showSuccess(message);
                 if(seatsModified) {
                     $timeout(function() {
@@ -797,7 +797,9 @@
                     }, 30000 )
 
                 } else {
-                    loadData();
+                    loadData().then(function(res) {
+                        $rootScope.$emit('ReloadEventPie', res.data.event);
+                    });
                 }
             });
         };

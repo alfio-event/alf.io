@@ -25,7 +25,7 @@ import alfio.model.user.Organization;
 import alfio.repository.WaitingQueueRepository;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +40,7 @@ import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
 
 @Component
 @Transactional
+@RequiredArgsConstructor
 public class WaitingQueueSubscriptionProcessor {
 
     private final EventManager eventManager;
@@ -50,25 +51,6 @@ public class WaitingQueueSubscriptionProcessor {
     private final WaitingQueueRepository waitingQueueRepository;
     private final MessageSource messageSource;
     private final TemplateManager templateManager;
-
-    @Autowired
-    public WaitingQueueSubscriptionProcessor(EventManager eventManager,
-                                             TicketReservationManager ticketReservationManager,
-                                             ConfigurationManager configurationManager,
-                                             WaitingQueueManager waitingQueueManager,
-                                             NotificationManager notificationManager,
-                                             WaitingQueueRepository waitingQueueRepository,
-                                             MessageSource messageSource,
-                                             TemplateManager templateManager) {
-        this.eventManager = eventManager;
-        this.ticketReservationManager = ticketReservationManager;
-        this.configurationManager = configurationManager;
-        this.waitingQueueManager = waitingQueueManager;
-        this.notificationManager = notificationManager;
-        this.waitingQueueRepository = waitingQueueRepository;
-        this.messageSource = messageSource;
-        this.templateManager = templateManager;
-    }
 
     void handleWaitingTickets() {
         Map<Boolean, List<Event>> activeEvents = eventManager.getActiveEvents().stream()

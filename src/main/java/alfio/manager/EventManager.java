@@ -69,6 +69,7 @@ import java.util.stream.Stream;
 import static alfio.util.EventUtil.*;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -312,11 +313,11 @@ public class EventManager {
         }).map(b -> {
             int eventId = event.getId();
             int sum = ticketCategoryRepository.getTicketAllocation(eventId);
-            int notBoundedTickets = ticketRepository.countFreeTicketsForUnbounded(eventId);
+            int notAllocated = ticketRepository.countNotAllocatedFreeAndReleasedTicket(eventId);
             int requestedTickets = tcm.isBounded() ? tcm.getMaxTickets() : 1;
             return new Result.Builder<>(() -> insertCategory(tcm, event))
                 .addValidation(() -> sum + requestedTickets <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
-                .addValidation(() -> requestedTickets <= notBoundedTickets, ErrorCode.CategoryError.ALL_TICKETS_ASSIGNED)
+                .addValidation(() -> requestedTickets <= notAllocated, ErrorCode.CategoryError.ALL_TICKETS_ASSIGNED)
                 .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
                 .build();
         }).orElseGet(() -> Result.error(ErrorCode.EventError.ACCESS_DENIED));
@@ -607,10 +608,15 @@ public class EventManager {
 
         if(addedTickets > 0) {
             //the updated category contains more tickets than the older one
-            List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), addedTickets, singletonList(TicketStatus.FREE.name()));
+            List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), addedTickets, asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
             jdbc.batchUpdate(ticketRepository.bulkTicketUpdate(), lockedTickets.stream()
                     .map(id -> new MapSqlParameterSource("id", id).addValue("categoryId", updated.getId()).addValue("srcPriceCts", updated.getSrcPriceCts()))
                     .toArray(MapSqlParameterSource[]::new));
+            if(updated.isAccessRestricted()) {
+                //since the updated category is not public, the tickets shouldn't be distributed to waiting people.
+                ticketRepository.revertToFree(event.getId(), updated.getId(), lockedTickets);
+            }
+
         } else {
             int absDifference = Math.abs(addedTickets);
             final List<Integer> ids = ticketRepository.lockTicketsToInvalidate(event.getId(), updated.getId(), absDifference);
@@ -619,8 +625,7 @@ public class EventManager {
                 throw new IllegalStateException("Cannot invalidate "+absDifference+" tickets. There are only "+actualDifference+" free tickets");
             }
             ticketRepository.invalidateTickets(ids);
-            //as we're reducing the ticket quantity, it is safe to create them with status "FREE"
-            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), Math.abs(addedTickets), TicketStatus.FREE).toArray(MapSqlParameterSource[]::new);
+            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), absDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
             jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
         }
     }
