@@ -22,23 +22,29 @@
             <div class="col-md-4" ng-if="field.type != 'country'">
                 <div data-ng-if="field.type === 'select'">
                     <div data-ng-repeat="restrictedValue in field.restrictedValues">
+                        <p>
+                            <button class="btn btn-sm btn-default" type="button" ng-click="moveRestrictedValue($index, true)" ng-hide="$first"><i class="fa fa-arrow-up"></i> move up</button>
+                            <button class="btn btn-sm btn-default" type="button" ng-click="moveRestrictedValue($index, false)"  ng-hide="$last"><i class="fa fa-arrow-down"></i> move down</button>
+                        </p>
                         <div class="form-group">
                             <label>Value</label>
-                            <input ng-model="restrictedValue.value" class="form-control" required data-ng-if="addNewField">
-                            <pre class="form-control-static" data-ng-if="!addNewField">{{restrictedValue}}</pre>
+                            <input ng-model="restrictedValue.value" class="form-control" required data-ng-if="addNewField || restrictedValue.isNew">
+                            <pre class="form-control-static" data-ng-if="!addNewField && !restrictedValue.isNew">{{restrictedValue}}</pre>
                         </div>
                         <div>
                             <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)" class="form-group">
                                 <label>Text {{lang.displayLanguage}}</label>
                                 <input ng-model="field.description[lang.locale].restrictedValues[restrictedValue.value]" class="form-control" required data-ng-if="addNewField">
-                                <input ng-model="field.description[lang.locale].description.restrictedValues[restrictedValue]" class="form-control" required data-ng-if="!addNewField">
+                                <input ng-model="field.description[lang.locale].description.restrictedValues[restrictedValue]" class="form-control" required data-ng-if="!addNewField && !restrictedValue.isNew">
+                                <input ng-model="field.description[lang.locale].description.restrictedValues[restrictedValue.value]" class="form-control" required data-ng-if="!addNewField && restrictedValue.isNew">
                             </div>
                         </div>
-                        <div class="form-group" data-ng-if="addNewField">
+                        <div class="form-group" data-ng-if="addNewField || restrictedValue.isNew">
                             <button type="button" ng-click="field.restrictedValues.splice(field.restrictedValues.indexOf(restrictedValue), 1)" class="btn btn-default">Remove</button>
                         </div>
+                        <hr>
                     </div>
-                    <div class="form-group" data-ng-if="addNewField">
+                    <div class="form-group">
                         <button type="button" data-ng-click="addRestrictedValue();" class="btn btn-success" >Add value</button>
                     </div>
                 </div>
@@ -70,8 +76,7 @@
                         </div>
                         <div class="form-group">
                             <label>Required</label>
-                            <input type="checkbox" data-ng-model="field.required" name="fieldRequired" id="fieldRequired" data-ng-if="addNewField">
-                            <pre class="form-control-static" data-ng-if="!addNewField">{{field.required}}</pre>
+                            <input type="checkbox" data-ng-model="field.required" name="fieldRequired" id="fieldRequired">
                         </div>
                     </div>
                 </div>

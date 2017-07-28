@@ -166,10 +166,19 @@
 
                     //
 
+
+                    $scope.moveRestrictedValue = function(currentIndex, up) {
+                        var newIdx = currentIndex + (up ? -1 : 1);
+                        var selectedObj = $scope.field.restrictedValues[currentIndex];
+                        var targetObj = $scope.field.restrictedValues[newIdx];
+                        $scope.field.restrictedValues[newIdx] = selectedObj;
+                        $scope.field.restrictedValues[currentIndex] = targetObj;
+                    }
+
                     $scope.addRestrictedValue = function() {
                         var field = $scope.field;
                         var arr = field.restrictedValues || [];
-                        arr.push({});
+                        arr.push({isNew:true});
                         field.restrictedValues = arr;
                     };
                     $scope.isLanguageSelected = function(lang, selectedLanguages) {
@@ -178,7 +187,7 @@
 
                     $scope.editField = function (form, field) {
                         if (angular.isDefined(field.id)) {
-                            EventService.saveFieldDescription(ctrl.event.shortName, field.description).then(function () {
+                            EventService.updateField(ctrl.event.shortName, field).then(function () {
                                 return loadAll();
                             }).then(function () {
                                 $scope.$close(true);

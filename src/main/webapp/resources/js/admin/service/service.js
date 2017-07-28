@@ -150,6 +150,20 @@
             addField: function(eventName, field) {
             	return $http.post('/admin/api/events/'+eventName+'/additional-field/new', field).error(HttpErrorHandler.handle);
             },
+            updateField: function(eventName, toUpdate) {
+
+                //new restrictedValues are complex objects, already present restrictedValues are plain string
+                if(toUpdate && toUpdate.restrictedValues && toUpdate.restrictedValues.length > 0) {
+                    var res = [];
+                    for(var i = 0; i < toUpdate.restrictedValues.length; i++) {
+                        res.push(toUpdate.restrictedValues[i].isNew ? toUpdate.restrictedValues[i].value: toUpdate.restrictedValues[i]);
+                    }
+                    toUpdate.restrictedValues = res;
+                }
+                //
+
+                return $http['post']('/admin/api/events/'+eventName+'/additional-field/'+toUpdate.id, toUpdate);
+            },
             deleteField: function(eventName, id) {
             	return $http['delete']('/admin/api/events/'+eventName+'/additional-field/'+id);
             },

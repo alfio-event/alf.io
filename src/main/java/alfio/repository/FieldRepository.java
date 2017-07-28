@@ -29,6 +29,9 @@ interface FieldRepository {
                                                         @Bind("maxLength") Integer maxLength, @Bind("minLength") Integer minLength, @Bind("required") boolean required, @Bind("context") TicketFieldConfiguration.Context context,
                                                         @Bind("additionalServiceId") Integer additionalServiceId);
 
+    @Query("update ticket_field_configuration set field_required = :required, field_restricted_values = :restrictedValues where id = :id")
+    int updateRequiredAndRestrictedValues(@Bind("id") int id, @Bind("required") boolean required, @Bind("restrictedValues") String restrictedValues);
+
     @Query("insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description) values (:ticketConfigurationId, :locale, :description)")
     int insertDescription(@Bind("ticketConfigurationId") int ticketConfigurationId, @Bind("locale") String locale, @Bind("description") String description);
 

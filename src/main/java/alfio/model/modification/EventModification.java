@@ -25,6 +25,7 @@ import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -138,8 +139,14 @@ public class EventModification {
     }
 
 
+    public interface WithRestrictedValues {
+
+        List<String> getRestrictedValuesAsString();
+        String getType();
+    }
+
     @Getter
-    public static class AdditionalField {
+    public static class AdditionalField implements WithRestrictedValues {
         private final int order;
         private final String name;
         private final String type;
@@ -174,7 +181,37 @@ public class EventModification {
             this.description = description;
             this.linkedAdditionalService = linkedAdditionalService;
         }
+
+        @Override
+        public List<String> getRestrictedValuesAsString() {
+            return restrictedValues == null ? null : restrictedValues.stream().map(RestrictedValue::getValue).collect(Collectors.toList());
+        }
     }
+
+    @Getter
+    public static class UpdateAdditionalField implements WithRestrictedValues {
+        private final String type;
+        private final boolean required;
+        private final List<String> restrictedValues;
+        private final Map<String, TicketFieldDescriptionModification> description;
+
+        @JsonCreator
+        public UpdateAdditionalField(@JsonProperty("type") String type,
+                                     @JsonProperty("required") boolean required,
+                                     @JsonProperty("restrictedValues") List<String> restrictedValues,
+                                     @JsonProperty("description") Map<String, TicketFieldDescriptionModification> description) {
+            this.type = type;
+            this.required = required;
+            this.restrictedValues = restrictedValues;
+            this.description = description;
+        }
+
+        @Override
+        public List<String> getRestrictedValuesAsString() {
+            return restrictedValues;
+        }
+    }
+
 
     @Getter
     public static class Description {
