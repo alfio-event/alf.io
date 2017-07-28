@@ -223,6 +223,7 @@ public class EventManagerIntegrationTest {
                 DESCRIPTION, BigDecimal.TEN, false, "", false);
         eventManager.insertCategory(event.getId(), tcm, pair.getValue());
 
+        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
@@ -485,4 +486,46 @@ public class EventManagerIntegrationTest {
         Result<TicketCategory> result = eventManager.updateCategory(category.getId(), event, tcm, username);
         assertFalse(result.isSuccess());
     }
+
+    @Test
+    public void testIncreaseRestrictedCategory() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", 10,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, true, "", true));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
+        Event event = pair.getLeft();
+        String username = pair.getRight();
+        TicketCategoryWithStatistic category = eventStatisticsManager.getSingleEventWithStatistics(event.getShortName(), username).getTicketCategories().get(0);
+        TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), 11,
+            DateTimeModification.fromZonedDateTime(category.getUtcInception()),
+            DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
+            category.getDescription(), category.getPrice(), true, "", true);
+        Result<TicketCategory> result = eventManager.updateCategory(category.getId(), event, tcm, username);
+        assertTrue(result.isSuccess());
+        assertEquals(11, ticketRepository.countFreeTickets(event.getId(), category.getId()).intValue());
+    }
+
+    @Test
+    public void testDecreaseRestrictedCategory() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", 10,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, true, "", true));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
+        Event event = pair.getLeft();
+        String username = pair.getRight();
+        TicketCategoryWithStatistic category = eventStatisticsManager.getSingleEventWithStatistics(event.getShortName(), username).getTicketCategories().get(0);
+        TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), 9,
+            DateTimeModification.fromZonedDateTime(category.getUtcInception()),
+            DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
+            category.getDescription(), category.getPrice(), true, "", true);
+        Result<TicketCategory> result = eventManager.updateCategory(category.getId(), event, tcm, username);
+        assertTrue(result.isSuccess());
+        assertEquals(9, ticketRepository.countFreeTickets(event.getId(), category.getId()).intValue());
+        assertEquals(1, ticketRepository.countReleasedTickets(event.getId()).intValue());
+    }
+
 }
