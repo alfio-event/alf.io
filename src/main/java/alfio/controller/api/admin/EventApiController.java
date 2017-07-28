@@ -389,8 +389,15 @@ public class EventApiController {
     }
     
     @RequestMapping(value = "/events/{eventName}/additional-field/{id}", method = DELETE)
-    public void deleteAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id) {
+    public void deleteAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id, Principal principal) {
+        eventManager.getSingleEvent(eventName, principal.getName());
     	eventManager.deleteAdditionalField(id);
+    }
+
+    @RequestMapping(value = "/events/{eventName}/additional-field/{id}", method = POST)
+    public void updateAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id, @RequestBody EventModification.UpdateAdditionalField field, Principal principal) {
+        eventManager.getSingleEvent(eventName, principal.getName());
+        eventManager.updateAdditionalField(id, field);
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments")

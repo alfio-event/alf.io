@@ -220,15 +220,30 @@ public class EventManager {
         }
     }
 
+    private static String toSerializedRestrictedValues(EventModification.WithRestrictedValues f) {
+        List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValuesAsString()).orElseGet(Collections::emptyList);
+        return "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
+    }
+
 	private void insertAdditionalField(Event event, AdditionalField f, int order) {
-		List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValues()).orElseGet(Collections::emptyList).stream().map(EventModification.RestrictedValue::getValue).collect(Collectors.toList());
-        String serializedRestrictedValues = "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
+        String serializedRestrictedValues = toSerializedRestrictedValues(f);
         Optional<EventModification.AdditionalService> linkedAdditionalService = Optional.ofNullable(f.getLinkedAdditionalService());
         Integer additionalServiceId = linkedAdditionalService.map(as -> Optional.ofNullable(as.getId()).orElseGet(() -> findAdditionalService(event, as))).orElse(-1);
         Context context = linkedAdditionalService.isPresent() ? Context.ADDITIONAL_SERVICE : Context.ATTENDEE;
 		int configurationId = ticketFieldRepository.insertConfiguration(event.getId(), f.getName(), order, f.getType(), serializedRestrictedValues, f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId).getKey();
 		f.getDescription().forEach((locale, value) -> ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value)));
 	}
+
+    public void updateAdditionalField(int id, EventModification.UpdateAdditionalField f) {
+        String serializedRestrictedValues = toSerializedRestrictedValues(f);
+        ticketFieldRepository.updateRequiredAndRestrictedValues(id, f.isRequired(), serializedRestrictedValues);
+        f.getDescription().forEach((locale, value) -> {
+            String val = Json.GSON.toJson(value.getDescription());
+            if(0 == ticketFieldRepository.updateDescription(id, locale, val)) {
+                ticketFieldRepository.insertDescription(id, locale, val);
+            };
+        });
+    }
 
     private Integer findAdditionalService(Event event, EventModification.AdditionalService as) {
         ZoneId utc = ZoneId.of("UTC");
