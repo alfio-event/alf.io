@@ -31,6 +31,7 @@ public interface TicketRepository {
     String CONFIRMED = "'ACQUIRED', 'CHECKED_IN', 'TO_BE_PAID'";
     String FREE = "FREE";
     String RELEASED = "RELEASED";
+    String REVERT_TO_FREE = "update ticket set status = 'FREE' where status = 'RELEASED' and event_id = :eventId";
 
     @Query(type = QueryType.TEMPLATE, value = "insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts, src_price_cts)"
             + "values(:uuid, :creation, :categoryId, :eventId, :status, 0, 0, :srcPriceCts)")
@@ -66,8 +67,11 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status = 'FREE'  and category_id = :categoryId and event_id = :eventId")
     Integer countFreeTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
-    @Query("select count(*) from ticket where status = 'FREE'  and category_id is null and event_id = :eventId")
+    @Query("select count(*) from ticket where status = 'FREE' and category_id is null and event_id = :eventId")
     Integer countFreeTicketsForUnbounded(@Bind("eventId") int eventId);
+
+    @Query("select count(*) from ticket where status in ('FREE', 'RELEASED') and category_id is null and event_id = :eventId")
+    Integer countNotAllocatedFreeAndReleasedTicket(@Bind("eventId") int eventId);
 
     @Query("select count(*) from ticket where status = 'RELEASED' and category_id is null and event_id = :eventId")
     Integer countReleasedTickets(@Bind("eventId") int eventId);
@@ -216,8 +220,11 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status = 'RELEASED' and event_id = :eventId")
     Integer countWaiting(@Bind("eventId") int eventId);
 
-    @Query("update ticket set status = 'FREE' where status = 'RELEASED' and event_id = :eventId")
+    @Query(REVERT_TO_FREE)
     int revertToFree(@Bind("eventId") int eventId);
+
+    @Query(REVERT_TO_FREE + " and category_id = :categoryId and id in (:ticketIds)")
+    int revertToFree(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId, @Bind("ticketIds") List<Integer> ticketIds);
 
     @Query("select * from ticket where status = :status and event_id = :eventId order by id limit :amount for update")
     List<Ticket> selectWaitingTicketsForUpdate(@Bind("eventId") int eventId, @Bind("status") String status, @Bind("amount") int amount);

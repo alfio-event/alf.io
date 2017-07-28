@@ -235,8 +235,11 @@ public class WaitingQueueManager {
         int availableSeats = availableSeatSupplier.get();
         int eventId = event.getId();
         log.debug("processing {} subscribers from waiting queue", availableSeats);
-        Iterator<Ticket> tickets = ticketRepository.selectWaitingTicketsForUpdate(eventId, status.name(), availableSeats).iterator();
         List<TicketCategory> unboundedCategories = ticketCategoryRepository.findUnboundedOrderByExpirationDesc(eventId);
+        Iterator<Ticket> tickets = ticketRepository.selectWaitingTicketsForUpdate(eventId, status.name(), availableSeats)
+            .stream()
+            .filter(t -> t.getCategoryId() != null || unboundedCategories.size() > 0)
+            .iterator();
         int expirationTimeout = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), WAITING_QUEUE_RESERVATION_TIMEOUT), 4);
         ZonedDateTime expiration = ZonedDateTime.now(event.getZoneId()).plusHours(expirationTimeout).with(WorkingDaysAdjusters.defaultWorkingDays());
 
