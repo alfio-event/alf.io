@@ -89,9 +89,9 @@ public class MollieManager {
             .post(body)
             .build();
 
-        Response resp = client.newCall(request).execute();
-        try(ResponseBody responseBody = resp.body()) {
-            String respBody = responseBody.string();
+        try (Response resp = client.newCall(request).execute()) {
+            ResponseBody responseBody = resp.body();
+            String respBody = responseBody != null ? responseBody.string() : "null";
             if (!resp.isSuccessful()) {
                 String msg = "was not able to create a payment for reservation id " + reservationId + ": " + respBody;
                 log.warn(msg);
@@ -99,7 +99,9 @@ public class MollieManager {
             } else {
                 ticketReservationRepository.updateTicketStatus(reservationId, TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT.toString());
                 Map<String, Object> res = Json.GSON.fromJson(respBody, (new TypeToken<Map<String, Object>>() {}).getType());
-                return ((Map<String, String> )res.get("links")).get("paymentUrl");
+                @SuppressWarnings("unchecked")
+                Map<String, String> links = (Map<String, String>) res.get("links");
+                return links.get("paymentUrl");
             }
         }
     }

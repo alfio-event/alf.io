@@ -52,7 +52,8 @@ public class RecaptchaService {
             Request request = new Request.Builder().url("https://www.google.com/recaptcha/api/siteverify").post(reqBody).build();
 
             try(Response resp = client.newCall(request).execute()) {
-                return Json.fromJson(resp.body().string(), RecatpchaResponse.class).success;
+                ResponseBody body = resp.body();
+                return body != null && Json.fromJson(body.string(), RecatpchaResponse.class).success;
             }
         } catch (IOException e) {
             return false;

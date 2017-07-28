@@ -59,8 +59,7 @@ public class EuVatChecker {
                     .url(apiAddress(configurationManager) + "?country="+countryCode.toUpperCase()+"&number="+vatNr)
                     .get()
                     .build();
-                try {
-                    Response resp = client.newCall(request).execute();
+                try (Response resp = client.newCall(request).execute()) {
                     if(resp.isSuccessful()) {
                         return Optional.of(getVatDetail(resp, vatNr, countryCode, organizerCountry(configurationManager, organizationId)));
                     } else {
@@ -75,11 +74,11 @@ public class EuVatChecker {
     }
 
     private static VatDetail getVatDetail(Response resp, String vatNr, String countryCode, String organizerCountryCode) throws IOException {
-        try (ResponseBody body = resp.body()) {
-            Map<String, String> json = Json.fromJson(body.string(), new TypeReference<Map<String, String>>() {});
-            boolean isValid = Boolean.parseBoolean(json.get("isValid"));
-            return new VatDetail(vatNr, countryCode, isValid, json.get("name"), json.get("address"), isValid && !organizerCountryCode.equals(countryCode));
-        }
+        ResponseBody body = resp.body();
+        String jsonString = body != null ? body.string() : "{}";
+        Map<String, String> json = Json.fromJson(jsonString, new TypeReference<Map<String, String>>() {});
+        boolean isValid = Boolean.parseBoolean(json.get("isValid"));
+        return new VatDetail(vatNr, countryCode, isValid, json.get("name"), json.get("address"), isValid && !organizerCountryCode.equals(countryCode));
     }
 
     private static String apiAddress(ConfigurationManager configurationManager) {

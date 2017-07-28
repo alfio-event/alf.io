@@ -155,22 +155,24 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
                 .header("Authorization", Credentials.basic("alfio", apiKey))
                 .put(RequestBody.create(MediaType.parse(APPLICATION_JSON), Json.GSON.toJson(content, Map.class)))
                 .build();
-        try {
-            Response response = httpClient.newCall(request).execute();
+        try (Response response = httpClient.newCall(request).execute()) {
+
             if(response.isSuccessful()) {
                 pluginDataStorage.registerSuccess(String.format("user %s has been subscribed to list", email), eventId);
                 return true;
             }
-            try(ResponseBody body = response.body()) {
-                String responseBody = body.string();
-                if (response.code() != 400 || responseBody.contains("\"errors\"")) {
-                    pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
-                    return false;
-                } else {
-                    pluginDataStorage.registerWarning(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
-                }
-                return true;
+            ResponseBody body = response.body();
+            if(body == null) {
+                return false;
             }
+            String responseBody = body.string();
+            if (response.code() != 400 || responseBody.contains("\"errors\"")) {
+                pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
+                return false;
+            } else {
+                pluginDataStorage.registerWarning(String.format(FAILURE_MSG, email, name, language, responseBody), eventId);
+            }
+            return true;
         } catch (IOException e) {
             pluginDataStorage.registerFailure(String.format(FAILURE_MSG, email, name, language, e.toString()), eventId);
             return false;
@@ -183,14 +185,16 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
             .header("Authorization", Credentials.basic("alfio", apiKey))
             .get()
             .build();
-        try {
-            Response response = httpClient.newCall(request).execute();
-            try (ResponseBody body = response.body()) {
-                String responseBody = body.string();
-                if(!responseBody.contains(ALFIO_EVENT_KEY)) {
-                    log.debug("can't find ALFIO_EKEY for event "+eventKey);
-                    createMergeField(listAddress, apiKey, eventKey, eventId);
-                }
+        try (Response response = httpClient.newCall(request).execute()) {
+            ResponseBody body = response.body();
+            if(body == null) {
+                log.warn("null response from mailchimp for list {}", listAddress);
+                return;
+            }
+            String responseBody = body.string();
+            if(!responseBody.contains(ALFIO_EVENT_KEY)) {
+                log.debug("can't find ALFIO_EKEY for event "+eventKey);
+                createMergeField(listAddress, apiKey, eventKey, eventId);
             }
         } catch (IOException e) {
             pluginDataStorage.registerFailure(String.format("Cannot get merge fields for %s, got: %s", eventKey, e.getMessage()), eventId);
@@ -214,12 +218,10 @@ public class MailChimpPlugin implements ReservationConfirmationPlugin, TicketAss
             .post(RequestBody.create(MediaType.parse(APPLICATION_JSON), Json.GSON.toJson(mergeField, Map.class)))
             .build();
 
-        try {
-            Response response = httpClient.newCall(request).execute();
+        try (Response response = httpClient.newCall(request).execute()) {
             if(!response.isSuccessful()) {
                 ResponseBody body = response.body();
-                log.debug("can't create {} merge field. Got: {}", ALFIO_EVENT_KEY, body.string());
-                body.close();
+                log.debug("can't create {} merge field. Got: {}", ALFIO_EVENT_KEY, body != null ? body.string() : "null");
             }
         } catch (IOException e) {
             pluginDataStorage.registerFailure(String.format("Cannot create merge field for %s, got: %s", eventKey, e.getMessage()), eventId);
