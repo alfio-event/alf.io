@@ -33,7 +33,7 @@ public enum ConfigurationKeys {
 
     BASE_URL("Base application url", false, SettingCategory.GENERAL, ComponentType.TEXT, true, EnumSet.of(SYSTEM), true),
 
-    MAPS_SERVER_API_KEY("Google maps' server api key", false, SettingCategory.GENERAL, ComponentType.TEXT, true, EnumSet.of(SYSTEM), true),
+    MAPS_SERVER_API_KEY("Google maps' server api key", true, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), true),
     MAPS_CLIENT_API_KEY("Google maps' client api key", false, SettingCategory.GENERAL, ComponentType.TEXT, true, EnumSet.of(SYSTEM), true),
 
 
