@@ -37,7 +37,14 @@
         };
     });
 
-    baseServices.service("EventService", function($http, HttpErrorHandler, $uibModal, $window, $rootScope, $q) {
+    baseServices.service("EventService", function($http, HttpErrorHandler, $uibModal, $window, $rootScope, $q, LocationService) {
+
+        function copyGeoLocation(event) {
+            event.latitude = event.geolocation.latitude;
+            event.longitude = event.geolocation.longitude;
+            event.zoneId = event.geolocation.timeZone;
+        }
+
         var service = {
             data: {},
             getAllEvents : function() {
@@ -63,13 +70,27 @@
                 return $http['post']('/admin/api/events/check', event).error(HttpErrorHandler.handle);
             },
             createEvent : function(event) {
+                copyGeoLocation(event);
                 return $http['post']('/admin/api/events/new', event).error(HttpErrorHandler.handle);
             },
             toggleActivation: function(id, active) {
                 return $http['put']('/admin/api/events/'+id+'/status?active='+active).error(HttpErrorHandler.handle);
             },
             updateEventHeader: function(eventHeader) {
-                return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);
+                //
+                if(eventHeader.geolocation && eventHeader.geolocation.latitude) {
+                    copyGeoLocation(eventHeader);
+                    //
+                    return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);
+                } else {
+                    return LocationService.clientGeolocate(eventHeader.location).then(function(geo) {
+                        eventHeader.latitude = geo.latitude;
+                        eventHeader.longitude = geo.longitude;
+                        eventHeader.zoneId = geo.timeZone;
+                        return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);
+                    })
+                }
+
             },
             updateEventPrices: function(eventPrices) {
                 return $http['post']('/admin/api/events/'+eventPrices.id+'/prices/update', eventPrices).error(HttpErrorHandler.handle);
