@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.config.Initializer;
-import alfio.manager.location.LocationManager;
 import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.system.ConfigurationManager;
@@ -90,7 +89,6 @@ public class EventManager {
     private final TicketRepository ticketRepository;
     private final SpecialPriceRepository specialPriceRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
-    private final LocationManager locationManager;
     private final NamedParameterJdbcTemplate jdbc;
     private final ConfigurationManager configurationManager;
     private final PluginManager pluginManager;
@@ -263,13 +261,13 @@ public class EventManager {
     public void updateEventHeader(Event original, EventModification em, String username) {
         checkOwnership(original, username, em.getOrganizationId());
         int eventId = original.getId();
-        final GeolocationResult geolocation = geolocate(em.getLocation());
-        final ZoneId zoneId = geolocation.getZoneId();
+
+        final ZoneId zoneId = ZoneId.of(em.getZoneId());
         final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);
         final ZonedDateTime end = em.getEnd().toZonedDateTime(zoneId);
         eventRepository.updateHeader(eventId, em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.getTermsAndConditionsUrl(),
-            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), geolocation.getLatitude(), geolocation.getLongitude(),
-            begin, end, geolocation.getTimeZone(), em.getOrganizationId(), em.getLocales());
+            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(),
+            begin, end, em.getZoneId(), em.getOrganizationId(), em.getLocales());
 
         createOrUpdateEventDescription(eventId, em);
 
@@ -399,11 +397,6 @@ public class EventManager {
         Objects.requireNonNull(newExpiration);
         Validate.isTrue(inception.isBefore(newExpiration), format("Cannot fix dates for category \"%s\" (id: %d), try updating that category first.", tc.getName(), tc.getId()));
         ticketCategoryRepository.fixDates(tc.getId(), inception, newExpiration);
-    }
-
-    private GeolocationResult geolocate(String location) {
-        Pair<String, String> coordinates = locationManager.geocode(location);
-        return new GeolocationResult(coordinates, locationManager.getTimezone(coordinates));
     }
 
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
@@ -665,11 +658,11 @@ public class EventManager {
         String paymentProxies = collectPaymentProxies(em);
         BigDecimal vat = !em.isInternal() || em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();
         String privateKey = UUID.randomUUID().toString();
-        final GeolocationResult result = geolocate(em.getLocation());
+        ZoneId zoneId = ZoneId.of(em.getZoneId());
         String currentVersion = flyway.info().current().getVersion().getVersion();
         return eventRepository.insert(em.getShortName(), em.getEventType(), em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.isInternal() ? em.getTermsAndConditionsUrl() : "",
-            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()),
-            em.getEnd().toZonedDateTime(result.getZoneId()), result.getTimeZone(), em.getCurrency(), em.getAvailableSeats(), em.isInternal() && em.isVatIncluded(),
+            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(), em.getBegin().toZonedDateTime(zoneId),
+            em.getEnd().toZonedDateTime(zoneId), em.getZoneId(), em.getCurrency(), em.getAvailableSeats(), em.isInternal() && em.isVatIncluded(),
             vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales(), em.getVatStatus(), em.getPriceInCents(), currentVersion, Event.Status.DRAFT).getKey();
     }
 

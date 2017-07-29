@@ -38,6 +38,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 
 public class IntegrationTestUtil {
@@ -108,7 +109,7 @@ public class IntegrationTestUtil {
 
         EventModification em = new EventModification(null, Event.EventType.INTERNAL, "url", "url", "url", "url", null,
                 eventName, "event display name", organization.getId(),
-                "muh location", desc,
+                "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, null);

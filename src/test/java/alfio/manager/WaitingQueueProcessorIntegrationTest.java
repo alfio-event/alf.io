@@ -158,7 +158,7 @@ public class WaitingQueueProcessorIntegrationTest {
         Event event = pair.getRight();
         EventModification eventModification = new EventModification(event.getId(), event.getType(), event.getWebsiteUrl(),
             event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
-            event.getOrganizationId(), event.getLocation(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
+            event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
             event.getRegularPrice(), event.getCurrency(), event.getAvailableSeats()+1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
             Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList());
         eventManager.updateEventPrices(event, eventModification, "admin");
@@ -177,7 +177,7 @@ public class WaitingQueueProcessorIntegrationTest {
         Event event = pair.getRight();
         EventModification eventModification = new EventModification(event.getId(), event.getType(), event.getWebsiteUrl(),
             event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
-            event.getOrganizationId(), event.getLocation(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
+            event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
             event.getRegularPrice(), event.getCurrency(), event.getAvailableSeats()+1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
             Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList());
         eventManager.updateEventPrices(event, eventModification, "admin");

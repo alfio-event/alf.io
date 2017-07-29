@@ -46,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.*;
@@ -241,7 +242,8 @@ public class EventManagerIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,
+        EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null,
+            "0.0", "0.0", ZoneId.systemDefault().getId(), null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null);
         eventManager.updateEventPrices(event, update, pair.getValue());
@@ -265,7 +267,8 @@ public class EventManagerIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", true));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,
+        EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null,
+            "0.0", "0.0", ZoneId.systemDefault().getId(), null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null);
         eventManager.updateEventPrices(event, update, pair.getValue());
@@ -286,7 +289,8 @@ public class EventManagerIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,
+        EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null,
+            "0.0", "0.0", ZoneId.systemDefault().getId(), null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null);
         eventManager.updateEventPrices(event, update, pair.getValue());
@@ -306,7 +310,8 @@ public class EventManagerIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", true));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,
+        EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null,
+            "0.0", "0.0", ZoneId.systemDefault().getId(), null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null);
         eventManager.updateEventPrices(event, update, pair.getValue());
@@ -377,7 +382,8 @@ public class EventManagerIntegrationTest {
         desc.put("de", "muh description new");
 
         EventModification em = new EventModification(event.getId(), Event.EventType.INTERNAL, "http://example.com/new", null, "http://example.com/tc", "https://example.com/img.png", null, event.getShortName(), "new display name",
-            event.getOrganizationId(), event.getLocation(), desc,
+            event.getOrganizationId(), event.getLocation(), "0.0", "0.0", ZoneId.systemDefault().getId(),
+            desc,
             DateTimeModification.fromZonedDateTime(event.getBegin()),
             DateTimeModification.fromZonedDateTime(event.getEnd().plusDays(42)),
             event.getRegularPrice(),

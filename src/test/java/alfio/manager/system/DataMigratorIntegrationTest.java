@@ -128,7 +128,8 @@ public class DataMigratorIntegrationTest {
 
         EventModification em = new EventModification(null, Event.EventType.INTERNAL, "url", "url", "url", null, null,
                 eventName, displayName, organization.getId(),
-                "muh location", desc,
+                "muh location",
+                "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now().plusHours(1)),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, null, categories, false, new LocationDescriptor("","","",""), 7, null, null);
