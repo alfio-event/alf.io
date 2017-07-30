@@ -53,6 +53,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -113,7 +114,7 @@ public class ConfigurationManagerIntegrationTest {
                 Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false));
         EventModification em = new EventModification(null, Event.EventType.INTERNAL, "url", "url", "url", null, null,
             "eventShortName", "displayName", organization.getId(),
-            "muh location", desc,
+            "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
             BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7, null, null);
@@ -213,7 +214,6 @@ public class ConfigurationManagerIntegrationTest {
 
         configurationRepository.insert(ConfigurationKeys.BASE_URL.getValue(), "http://localhost:8080", "");
         configurationRepository.insert(ConfigurationKeys.SUPPORTED_LANGUAGES.getValue(), "7", "");
-        configurationRepository.insert(ConfigurationKeys.MAPS_SERVER_API_KEY.getValue(), "MAPS_SERVER_API_KEY", "");
         configurationRepository.insert(ConfigurationKeys.MAPS_CLIENT_API_KEY.getValue(), "MAPS_CLIENT_API_KEY", "");
         configurationRepository.insert(ConfigurationKeys.MAILER_TYPE.getValue(), "smtp", "");
         assertFalse(configurationManager.isBasicConfigurationNeeded());

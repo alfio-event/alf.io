@@ -16,7 +16,6 @@
  */
 package alfio.model.modification;
 
-import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.modification.support.LocationDescriptor;
@@ -25,7 +24,6 @@ import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -47,6 +45,9 @@ public class EventModification {
     private final String displayName;
     private final int organizationId;
     private final String location;
+    private final String latitude;
+    private final String longitude;
+    private final String zoneId;
     private final Map<String, String> description;
     private final DateTimeModification begin;
     private final DateTimeModification end;
@@ -76,6 +77,9 @@ public class EventModification {
                              @JsonProperty("displayName") String displayName,
                              @JsonProperty("organizationId") int organizationId,
                              @JsonProperty("location") String location,
+                             @JsonProperty("latitude") String latitude,
+                             @JsonProperty("longitude") String longitude,
+                             @JsonProperty("zoneId") String zoneId,
                              @JsonProperty("description") Map<String, String> description,
                              @JsonProperty("begin") DateTimeModification begin,
                              @JsonProperty("end") DateTimeModification end,
@@ -102,6 +106,9 @@ public class EventModification {
         this.displayName = displayName;
         this.organizationId = organizationId;
         this.location = location;
+        this.latitude= latitude;
+        this.longitude = longitude;
+        this.zoneId = zoneId;
         this.description = description;
         this.begin = begin;
         this.end = end;

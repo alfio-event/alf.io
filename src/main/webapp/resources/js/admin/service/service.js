@@ -5,8 +5,13 @@
     baseServices.config(['$httpProvider', function($httpProvider) {
         var token = $("meta[name='_csrf']").attr("content");
         var header = $("meta[name='_csrf_header']").attr("content");
-        $httpProvider.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-        $httpProvider.defaults.headers.common[header] = token;
+        $httpProvider.defaults.headers.post['X-Requested-With'] = 'XMLHttpRequest';
+        $httpProvider.defaults.headers.post[header] = token;
+
+        $httpProvider.defaults.headers.patch = angular.copy($httpProvider.defaults.headers.post);
+        $httpProvider.defaults.headers.put = angular.copy($httpProvider.defaults.headers.post);
+        $httpProvider.defaults.headers.delete = angular.copy($httpProvider.defaults.headers.post);
+
         $httpProvider.interceptors.push(['$rootScope', '$location', '$q', function($rootScope, $location, $q) {
             return {
                 responseError: function(rejection) {//thanks to https://github.com/witoldsz/angular-http-auth/blob/master/src/http-auth-interceptor.js
@@ -32,7 +37,14 @@
         };
     });
 
-    baseServices.service("EventService", function($http, HttpErrorHandler, $uibModal, $window, $rootScope, $q) {
+    baseServices.service("EventService", function($http, HttpErrorHandler, $uibModal, $window, $rootScope, $q, LocationService) {
+
+        function copyGeoLocation(event) {
+            event.latitude = event.geolocation.latitude;
+            event.longitude = event.geolocation.longitude;
+            event.zoneId = event.geolocation.timeZone;
+        }
+
         var service = {
             data: {},
             getAllEvents : function() {
@@ -58,13 +70,27 @@
                 return $http['post']('/admin/api/events/check', event).error(HttpErrorHandler.handle);
             },
             createEvent : function(event) {
+                copyGeoLocation(event);
                 return $http['post']('/admin/api/events/new', event).error(HttpErrorHandler.handle);
             },
             toggleActivation: function(id, active) {
                 return $http['put']('/admin/api/events/'+id+'/status?active='+active).error(HttpErrorHandler.handle);
             },
             updateEventHeader: function(eventHeader) {
-                return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);
+                //
+                if(eventHeader.geolocation && eventHeader.geolocation.latitude) {
+                    copyGeoLocation(eventHeader);
+                    //
+                    return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);
+                } else {
+                    return LocationService.clientGeolocate(eventHeader.location).then(function(geo) {
+                        eventHeader.latitude = geo.latitude;
+                        eventHeader.longitude = geo.longitude;
+                        eventHeader.zoneId = geo.timeZone;
+                        return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);
+                    })
+                }
+
             },
             updateEventPrices: function(eventPrices) {
                 return $http['post']('/admin/api/events/'+eventPrices.id+'/prices/update', eventPrices).error(HttpErrorHandler.handle);
@@ -295,13 +321,50 @@
         return service;
     });
 
-    baseServices.service("LocationService", function($http, HttpErrorHandler) {
+    baseServices.service("LocationService", function($http, $q, HttpErrorHandler) {
+
+        function mapUrl(lat, lng, key) {
+            var keyParam = key ? ('&key='+encodeURIComponent(key)) : '';
+            return "https://maps.googleapis.com/maps/api/staticmap?center="+lat+","+lng+"&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C"+lat+","+lng+""+keyParam;
+        }
+
         return {
-            geolocate : function(location) {
-                return $http.get('/admin/api/location/geo.json?location='+location).error(HttpErrorHandler.handle);
+            mapApiKey: function() {
+                return $http.get('/admin/api/location/maps-client-api-key.json').then(function(res) {
+                    return res.data;
+                });
+            },
+            clientGeolocate: function(location) {
+              return this.mapApiKey().then(function(key) {
+                  var keyParam = key ? ('&key='+encodeURIComponent(key)) : ''
+
+                  return $http.get('https://maps.googleapis.com/maps/api/geocode/json?address=' + encodeURIComponent(location) + keyParam).then(function (res) {
+                      if(res && res.data && res.data.results && res.data.results.length > 0) {
+                          //take first;
+                          var ret = {};
+                          ret.latitude = "" + res.data.results[0].geometry.location.lat;
+                          ret.longitude = "" + res.data.results[0].geometry.location.lng;
+                          ret.mapUrl = mapUrl(ret.latitude, ret.longitude, key);
+                          ret.timeZone = "";
+                          return ret;
+                      } else {
+                          return null;
+                      }
+                  }).then(function(res) {
+                      if(res) {
+                          return $http.get('https://maps.googleapis.com/maps/api/timezone/json?timestamp=0&location='+res.latitude+','+res.longitude+''+keyParam).then(function(tz) {
+                              res.timeZone = tz.data.timeZoneId;
+                              return res;
+                          });
+                      }
+                      return null;
+                  });
+              });
             },
             getMapUrl : function(latitude, longitude) {
-                return $http.get('/admin/api/location/map.json?lat='+latitude+'&long='+longitude).error(HttpErrorHandler.handle);
+                return this.mapApiKey().then(function(key) {
+                    return mapUrl(latitude, longitude, key);
+                }, HttpErrorHandler.handle);
             }
         };
     });

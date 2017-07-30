@@ -160,7 +160,7 @@ dependencies {
     compile "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
     compile "com.stripe:stripe-java:5.7.1"
     compile 'com.paypal.sdk:rest-api-sdk:1.13.1'
-    compile "com.google.maps:google-maps-services:0.2.0"
+    compile 'com.squareup.okhttp3:okhttp:3.8.1'
     compile "org.apache.commons:commons-lang3:3.5"
     compile "com.opencsv:opencsv:3.10"
     compile 'commons-codec:commons-codec:1.10'

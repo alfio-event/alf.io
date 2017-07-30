@@ -378,11 +378,12 @@
                         return;
                     }
                     $scope.loadingMap = true;
-                    LocationService.geolocate(location).success(function(result) {
+                    LocationService.clientGeolocate(location).then(function(result) {
                         delete $scope['mapError'];
+                        console.log(result);
                         $scope.obj['geolocation'] = result;
                         $scope.loadingMap = false;
-                    }).error(function(e) {
+                    }, function(e) {
                         $scope.mapError = e;
                         delete $scope.obj['geolocation'];
                         $scope.loadingMap = false;

@@ -613,7 +613,7 @@
 
                 $scope.loading = false;
                 $scope.loadingMap = true;
-                LocationService.getMapUrl(result.event.latitude, result.event.longitude).success(function(mapUrl) {
+                LocationService.getMapUrl(result.event.latitude, result.event.longitude).then(function(mapUrl) {
                     $scope.event.geolocation = {
                         mapUrl: mapUrl,
                         timeZone: result.event.timeZone

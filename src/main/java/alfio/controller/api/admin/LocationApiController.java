@@ -16,33 +16,21 @@
  */
 package alfio.controller.api.admin;
 
-import alfio.manager.location.LocationManager;
-import alfio.manager.location.LocationNotFound;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
-import java.util.TimeZone;
-
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
 @RestController
 @RequestMapping("/admin/api")
 public class LocationApiController {
 
-    private final LocationManager locationManager;
     private final ConfigurationManager configurationManager;
 
     @Autowired
-    public LocationApiController(LocationManager locationManager, ConfigurationManager configurationManager) {
-        this.locationManager = locationManager;
+    public LocationApiController(ConfigurationManager configurationManager) {
         this.configurationManager = configurationManager;
     }
 
@@ -52,28 +40,8 @@ public class LocationApiController {
         return e.getMessage();
     }
 
-    @ExceptionHandler(LocationNotFound.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String locationException(Exception e) {
-        return e.getMessage();
-    }
-
-    @RequestMapping(value = "/location/geo", method = GET)
-    public LocationDescriptor geocodeAddress(@RequestParam("location") String address) {
-        Pair<String, String> coordinates = locationManager.geocode(address);
-        TimeZone timezone = locationManager.getTimezone(coordinates);
-        return LocationDescriptor.fromGeoData(coordinates, timezone, getMapsClientApiKey());
-    }
-
-    private Optional<String> getMapsClientApiKey() {
-        return configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.MAPS_CLIENT_API_KEY));
-    }
-
-    @RequestMapping(value = "/location/map", method = GET)
-    public String getMapUrl(@RequestParam("lat") String latitude, @RequestParam("long") String longitude) {
-        Validate.notBlank(latitude);
-        Validate.notBlank(longitude);
-        LocationDescriptor descriptor = LocationDescriptor.fromGeoData(Pair.of(latitude, longitude), TimeZone.getDefault(), getMapsClientApiKey());
-        return descriptor.getMapUrl();
+    @RequestMapping(value = "/location/maps-client-api-key")
+    public String mapsClientApiKey() {
+        return configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.MAPS_CLIENT_API_KEY)).orElse(null);
     }
 }
