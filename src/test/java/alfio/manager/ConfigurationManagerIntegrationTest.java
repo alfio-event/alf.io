@@ -214,7 +214,6 @@ public class ConfigurationManagerIntegrationTest {
 
         configurationRepository.insert(ConfigurationKeys.BASE_URL.getValue(), "http://localhost:8080", "");
         configurationRepository.insert(ConfigurationKeys.SUPPORTED_LANGUAGES.getValue(), "7", "");
-        configurationRepository.insert(ConfigurationKeys.MAPS_SERVER_API_KEY.getValue(), "MAPS_SERVER_API_KEY", "");
         configurationRepository.insert(ConfigurationKeys.MAPS_CLIENT_API_KEY.getValue(), "MAPS_CLIENT_API_KEY", "");
         configurationRepository.insert(ConfigurationKeys.MAILER_TYPE.getValue(), "smtp", "");
         assertFalse(configurationManager.isBasicConfigurationNeeded());
