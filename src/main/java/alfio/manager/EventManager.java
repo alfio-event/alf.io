@@ -504,10 +504,13 @@ public class EventManager {
             tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.isBounded() ? tc.getMaxTickets() : 0, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price);
         TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getKey(), eventId);
         if(tc.isBounded()) {
-            List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), singletonList(TicketStatus.FREE.name()));
+            List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
             jdbc.batchUpdate(ticketRepository.bulkTicketUpdate(), lockedTickets.stream().map(id -> new MapSqlParameterSource("id", id).addValue("categoryId", ticketCategory.getId()).addValue("srcPriceCts", ticketCategory.getSrcPriceCts())).toArray(MapSqlParameterSource[]::new));
             if(tc.isTokenGenerationRequested()) {
                 insertTokens(ticketCategory);
+                ticketRepository.revertToFree(eventId, ticketCategory.getId(), lockedTickets);
+            } else {
+                ticketRepository.resetTickets(lockedTickets);//reset to RELEASED
             }
         }
 

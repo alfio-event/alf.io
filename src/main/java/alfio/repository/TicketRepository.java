@@ -74,7 +74,10 @@ public interface TicketRepository {
     Integer countNotAllocatedFreeAndReleasedTicket(@Bind("eventId") int eventId);
 
     @Query("select count(*) from ticket where status = 'RELEASED' and category_id is null and event_id = :eventId")
-    Integer countReleasedTickets(@Bind("eventId") int eventId);
+    Integer countReleasedUnboundedTickets(@Bind("eventId") int eventId);
+
+    @Query("select count(*) from ticket where status = 'RELEASED' and category_id = :categoryId and event_id = :eventId")
+    Integer countReleasedTicketInCategory(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
     @Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', category_id = :categoryId, user_language = :userLanguage, src_price_cts = :srcPriceCts where id in (:reservedForUpdate)")
     int reserveTickets(@Bind("reservationId") String reservationId, @Bind("reservedForUpdate") List<Integer> reservedForUpdate, @Bind("categoryId") int categoryId, @Bind("userLanguage") String userLanguage, @Bind("srcPriceCts") int srcPriceCts);
