@@ -587,7 +587,7 @@ public class EventManagerIntegrationTest {
         Event event = pair.getKey();
         if(newEventSize != AVAILABLE_SEATS) {
             EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,
-                DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
+                null, event.getZoneId().toString(), Collections.emptyMap(), DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), newEventSize, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null);
             eventManager.updateEventPrices(event, update, pair.getValue());
         }
