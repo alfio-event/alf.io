@@ -173,24 +173,25 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
         return new HandlerInterceptorAdapter() {
             @Override
             public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
-                Optional.ofNullable(modelAndView).ifPresent(mv -> {
-                    mv.addObject("request", request);
-                    final ModelMap modelMap = mv.getModelMap();
+                Optional.ofNullable(modelAndView)
+                    .filter(mv -> !StringUtils.startsWith(mv.getViewName(), "redirect:"))
+                    .ifPresent(mv -> {
+                        mv.addObject("request", request);
+                        final ModelMap modelMap = mv.getModelMap();
 
-                    boolean demoModeEnabled = environment.acceptsProfiles(Initializer.PROFILE_DEMO);
+                        boolean demoModeEnabled = environment.acceptsProfiles(Initializer.PROFILE_DEMO);
 
-                    modelMap.put("demoModeEnabled", demoModeEnabled);
+                        modelMap.put("demoModeEnabled", demoModeEnabled);
 
-                    Optional.ofNullable(request.getAttribute("ALFIO_EVENT_NAME")).map(Object::toString).ifPresent(eventName -> {
+                        Optional.ofNullable(request.getAttribute("ALFIO_EVENT_NAME")).map(Object::toString).ifPresent(eventName -> {
 
-                        List<?> availableLanguages = i18nManager.getEventLanguages(eventName);
+                            List<?> availableLanguages = i18nManager.getEventLanguages(eventName);
 
-                        modelMap.put("showAvailableLanguagesInPageTop", availableLanguages.size() > 1);
-                        modelMap.put("availableLanguages", availableLanguages);
-                    });
+                            modelMap.put("showAvailableLanguagesInPageTop", availableLanguages.size() > 1);
+                            modelMap.put("availableLanguages", availableLanguages);
+                        });
 
-                    modelMap.putIfAbsent("event", null);
-                    if(!StringUtils.startsWith(mv.getViewName(), "redirect:")) {
+                        modelMap.putIfAbsent("event", null);
                         modelMap.putIfAbsent("pageTitle", "empty");
                         Event event = modelMap.get("event") == null ? null : modelMap.get("event") instanceof Event ? (Event) modelMap.get("event") : ((EventDescriptor) modelMap.get("event")).getEvent();
                         ConfigurationPathKey googleAnalyticsKey = Optional.ofNullable(event).map(e -> alfio.model.system.Configuration.from(e.getOrganizationId(), e.getId(), GOOGLE_ANALYTICS_KEY)).orElseGet(() -> alfio.model.system.Configuration.getSystemConfiguration(GOOGLE_ANALYTICS_KEY));
@@ -200,7 +201,6 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                             modelMap.putIfAbsent("paypalTestUsername", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_USERNAME), "<missing>"));
                             modelMap.putIfAbsent("paypalTestPassword", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_PASSWORD), "<missing>"));
                         }
-                    }
                 });
             }
         };
