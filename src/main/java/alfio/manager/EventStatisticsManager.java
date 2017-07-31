@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static alfio.util.OptionalWrapper.optionally;
@@ -74,7 +73,7 @@ public class EventStatisticsManager {
     }
 
     EventWithStatistics fillWithStatistics(Event event) {
-        return new EventWithStatistics(event, eventDescriptionRepository.findByEventId(event.getId()), loadTicketCategoriesWithStats(event), ticketRepository.countReleasedTickets(event.getId()));
+        return new EventWithStatistics(event, eventDescriptionRepository.findByEventId(event.getId()), loadTicketCategoriesWithStats(event), ticketRepository.countReleasedUnboundedTickets(event.getId()));
     }
 
     private List<Event> getAllEvents(String username) {

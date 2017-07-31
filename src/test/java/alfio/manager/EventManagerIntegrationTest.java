@@ -46,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.*;
@@ -177,6 +178,14 @@ public class EventManagerIntegrationTest {
         assertTrue(tickets.stream().noneMatch(t -> t.getCategoryId() == null));
     }
 
+    /**
+     * When adding an unbounded category, we won't update the tickets status, because:
+     * 1) if the unbounded category is using existing seats, the event cannot be already sold-out
+     * 2) if the unbounded category has been added after an event edit (add seats), then the tickets are already "RELEASED"
+     * 3) if there is another unbounded category, then it is safe not to update the tickets' status, in order to not
+     *    interfere with the existing category
+     *
+     */
     @Test
     public void testAddUnboundedCategory() {
         List<TicketCategoryModification> categories = Collections.singletonList(
@@ -186,7 +195,7 @@ public class EventManagerIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", true));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
+        TicketCategoryModification tcm = new TicketCategoryModification(null, "default", -1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false);
@@ -249,7 +258,7 @@ public class EventManagerIntegrationTest {
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
         assertEquals(20, tickets.size());
-        assertEquals(20, ticketRepository.countReleasedTickets(event.getId()).intValue());
+        assertEquals(20, ticketRepository.countReleasedUnboundedTickets(event.getId()).intValue());
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
         tickets = ticketRepository.findFreeByEventId(event.getId());
         assertEquals(40, tickets.size());
@@ -273,7 +282,7 @@ public class EventManagerIntegrationTest {
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
         assertEquals(20, tickets.size());
-        assertEquals(20, ticketRepository.countReleasedTickets(event.getId()).intValue());
+        assertEquals(20, ticketRepository.countReleasedUnboundedTickets(event.getId()).intValue());
         assertEquals(10, tickets.stream().filter(t -> t.getCategoryId() != null).count());
     }
 
@@ -330,12 +339,14 @@ public class EventManagerIntegrationTest {
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", true);
-        eventManager.insertCategory(event.getId(), tcm, pair.getValue());
+        Result<Integer> result = eventManager.insertCategory(event, tcm, pair.getValue());
+        assertTrue(result.isSuccess());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
-        assertEquals(AVAILABLE_SEATS, tickets.size());
+        assertEquals(10, tickets.size());
         assertEquals(10, tickets.stream().filter(t -> t.getCategoryId() == null).count());
+        assertEquals(10, ticketRepository.countReleasedTicketInCategory(event.getId(), result.getData()).intValue());
     }
 
     @Test
@@ -525,7 +536,64 @@ public class EventManagerIntegrationTest {
         Result<TicketCategory> result = eventManager.updateCategory(category.getId(), event, tcm, username);
         assertTrue(result.isSuccess());
         assertEquals(9, ticketRepository.countFreeTickets(event.getId(), category.getId()).intValue());
-        assertEquals(1, ticketRepository.countReleasedTickets(event.getId()).intValue());
+        assertEquals(1, ticketRepository.countReleasedUnboundedTickets(event.getId()).intValue());
+    }
+
+    @Test
+    public void testNewCategoryBoundedAddReleasedTickets() {
+        Pair<Event, String> eventAndUser = generateAndEditEvent(AVAILABLE_SEATS + 10);
+        //now we have 20 free seats, 10 of which RELEASED
+        Event event = eventAndUser.getLeft();
+        String username = eventAndUser.getRight();
+        TicketCategoryModification tcm = new TicketCategoryModification(null, "additional", 20,
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(event.getZoneId()).minusMinutes(1)),
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(event.getZoneId()).plusDays(5)),
+            Collections.emptyMap(), BigDecimal.TEN, false, "", true);
+        Result<Integer> result = eventManager.insertCategory(event, tcm, username);
+        assertTrue(result.isSuccess());
+        assertEquals(20, ticketRepository.countReleasedTicketInCategory(event.getId(), result.getData()).intValue());
+    }
+
+    @Test
+    public void testNewRestrictedCategory() {
+        Pair<Event, String> eventAndUser = generateAndEditEvent(AVAILABLE_SEATS + 10);
+        //now we have 20 free seats, 10 of which RELEASED
+        Event event = eventAndUser.getLeft();
+        String username = eventAndUser.getRight();
+        TicketCategoryModification tcm = new TicketCategoryModification(null, "additional", 20,
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(event.getZoneId()).minusMinutes(1)),
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(event.getZoneId()).plusDays(5)),
+            Collections.emptyMap(), BigDecimal.TEN, true, "", true);
+        Result<Integer> result = eventManager.insertCategory(event, tcm, username);
+        assertTrue(result.isSuccess());
+        assertEquals(20, ticketRepository.countFreeTickets(event.getId(), result.getData()).intValue());
+    }
+
+
+
+    private Pair<Event, String> generateAndEditEvent(int newEventSize) {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", 10,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", true));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
+        Event event = pair.getKey();
+        if(newEventSize != AVAILABLE_SEATS) {
+            EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,
+                DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
+                event.getRegularPrice(), event.getCurrency(), newEventSize, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null);
+            eventManager.updateEventPrices(event, update, pair.getValue());
+        }
+        List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
+        assertNotNull(tickets);
+        assertFalse(tickets.isEmpty());
+        assertEquals(AVAILABLE_SEATS, tickets.size());
+        if(newEventSize > AVAILABLE_SEATS) {
+            assertEquals(newEventSize - AVAILABLE_SEATS, ticketRepository.countReleasedUnboundedTickets(event.getId()).intValue());
+        }
+        assertEquals(10, tickets.stream().filter(t -> t.getCategoryId() != null).count());
+        return Pair.of(eventRepository.findById(event.getId()), pair.getRight());
     }
 
 }
