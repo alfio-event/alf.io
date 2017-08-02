@@ -42,10 +42,14 @@ public class SpringBootLauncher {
         List<String> additionalProfiles = new ArrayList<>();
         additionalProfiles.add(Initializer.PROFILE_SPRING_BOOT);
         if("true".equals(System.getenv("ALFIO_LOG_STDOUT_ONLY"))) {
+            // -> will load application-stdout.properties on top to override the logger configuration
             additionalProfiles.add("stdout");
         }
         if("true".equals(System.getenv("ALFIO_DEMO_ENABLED"))) {
             additionalProfiles.add(Initializer.PROFILE_DEMO);
+        }
+        if("true".equals(System.getenv("ALFIO_JDBC_SESSION_ENABLED"))) {
+            additionalProfiles.add(Initializer.PROFILE_JDBC_SESSION);
         }
         application.setAdditionalProfiles(additionalProfiles.toArray(new String[additionalProfiles.size()]));
         ConfigurableApplicationContext applicationContext = application.run(args);
