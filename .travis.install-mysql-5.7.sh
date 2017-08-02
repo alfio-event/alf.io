@@ -7,4 +7,5 @@ then
     sudo apt-get install -q -y --allow-unauthenticated -o Dpkg::Options::=--force-confnew mysql-server
     sudo mysql_upgrade
     mysqlcheck -u root --auto-repair --check --all-databases
+    sudo service mysql restart
 fi
