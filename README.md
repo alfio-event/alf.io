@@ -128,3 +128,13 @@ TODO
 
 The certificate at src/main/resources/alfio/certificates/AppleWWDRCA.cer has been imported for https://github.com/ryantenney/passkit4j#usage functionality.
 It will expire the 02/07/23 (as https://www.apple.com/certificateauthority/).
+
+## Available spring profiles:
+
+ - dev: enable dev mode
+ - debug-csp: add report-uri and log csp violations
+ - http: enable if behind proxy or the call chain is not full https
+ - spring-boot: added when launched by spring-boot
+ - demo: enable demo mode, the accounts for the admin will be created on the fly
+ - disable-jobs: disable jobs
+ - jdbc-session: enable saving the http session in the database

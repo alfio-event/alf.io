@@ -44,6 +44,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
     static final String PROFILE_SPRING_BOOT = "spring-boot";
     public static final String PROFILE_DEMO = "demo";
     public static final String PROFILE_DISABLE_JOBS = "disable-jobs";
+    public static final String PROFILE_JDBC_SESSION = "jdbc-session";
     private Environment environment;
 
     @Override

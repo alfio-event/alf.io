@@ -23,13 +23,11 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
 import org.springframework.boot.context.embedded.MimeMappings;
 import org.springframework.boot.context.embedded.jetty.JettyEmbeddedServletContainerFactory;
-import org.springframework.boot.web.servlet.ErrorPage;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
@@ -46,7 +44,8 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration.class,
         org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
         org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration.class})
+        org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.session.SessionAutoConfiguration.class})
 @Configuration
 @Profile(Initializer.PROFILE_SPRING_BOOT)
 @Log4j2

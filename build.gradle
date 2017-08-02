@@ -76,6 +76,7 @@ ext {
     datasourceValidationQuery = 'SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS'
     //springProfilesActive = 'dev,debug-csp' //enable csp report. FIXME For some reasons it doesn't work on Chrome
     //springProfilesActive = 'dev,demo'
+    //springProfilesActive = 'dev,demo,jdbc-session'
     springProfilesActive = 'dev'
     baseImage = "openjdk:jre-alpine"
     port = "8080"
@@ -135,6 +136,7 @@ dependencies {
     compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     compile "org.springframework.security:spring-security-web:$springSecurityConfigVersion"
     compile "org.springframework.security:spring-security-config:$springSecurityConfigVersion"
+    compile 'org.springframework.session:spring-session:1.3.1.RELEASE'
     compile "ch.digitalfondue.npjt-extra:npjt-extra:1.1.4"
     compile "com.samskivert:jmustache:1.13"
     compile "com.github.sps.mustache:mustache-spring-view:1.4"
