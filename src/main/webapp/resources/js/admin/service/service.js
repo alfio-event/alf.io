@@ -328,6 +328,8 @@
             return "https://maps.googleapis.com/maps/api/staticmap?center="+lat+","+lng+"&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C"+lat+","+lng+""+keyParam;
         }
 
+        var reqCounter = 0;
+
         return {
             mapApiKey: function() {
                 return $http.get('/admin/api/location/maps-client-api-key.json').then(function(res) {
@@ -335,31 +337,57 @@
                 });
             },
             clientGeolocate: function(location) {
-              return this.mapApiKey().then(function(key) {
-                  var keyParam = key ? ('&key='+encodeURIComponent(key)) : ''
+                var locService = this;
+                return $q(function(resolve, reject) {
 
-                  return $http.get('https://maps.googleapis.com/maps/api/geocode/json?address=' + encodeURIComponent(location) + keyParam).then(function (res) {
-                      if(res && res.data && res.data.results && res.data.results.length > 0) {
-                          //take first;
-                          var ret = {};
-                          ret.latitude = "" + res.data.results[0].geometry.location.lat;
-                          ret.longitude = "" + res.data.results[0].geometry.location.lng;
-                          ret.mapUrl = mapUrl(ret.latitude, ret.longitude, key);
-                          ret.timeZone = "";
-                          return ret;
-                      } else {
-                          return null;
-                      }
-                  }).then(function(res) {
-                      if(res) {
-                          return $http.get('https://maps.googleapis.com/maps/api/timezone/json?timestamp=0&location='+res.latitude+','+res.longitude+''+keyParam).then(function(tz) {
-                              res.timeZone = tz.data.timeZoneId;
-                              return res;
-                          });
-                      }
-                      return null;
-                  });
-              });
+                    locService.mapApiKey().then(function(key) {
+                        var keyParam = key ? ('&key='+encodeURIComponent(key)) : '';
+
+                        if(!window.google || !window.google.maps) {
+
+                            reqCounter++;
+
+                            var script = document.createElement('script');
+
+                            var callBackName = 'clientGeolocate'+reqCounter;
+
+                            script.src = 'https://maps.googleapis.com/maps/api/js?libraries=places&callback='+callBackName+keyParam;
+                            document.head.appendChild(script);
+                            window[callBackName] = function() {
+                                search();
+                            }
+                        } else {
+                            search();
+                        }
+
+                        function search() {
+                            var geocoder = new window.google.maps.Geocoder();
+                            geocoder.geocode({'address': location}, function(results, status) {
+                                if (status === 'OK') {
+                                    var ret = {};
+                                    ret.latitude = ""+results[0].geometry.location.lat()
+                                    ret.longitude = ""+results[0].geometry.location.lng()
+                                    ret.mapUrl = mapUrl(ret.latitude, ret.longitude, key);
+                                    locService.getTimezone(ret.latitude, ret.longitude).then(function(res) {
+                                        if(res.data) {
+                                            ret.timeZone = res.data;
+                                        }
+                                        resolve(ret);
+                                    });
+                                } else {
+                                    reject();
+                                }
+                            });
+                        }
+                    })
+
+                });
+            },
+            getTimezone : function(latitude, longitude) {
+              return $http.get('/admin/api/location/timezone', {params: {lat: latitude, lng: longitude}});
+            },
+            getTimezones: function() {
+                return $http.get('/admin/api/location/timezones');
             },
             getMapUrl : function(latitude, longitude) {
                 return this.mapApiKey().then(function(key) {

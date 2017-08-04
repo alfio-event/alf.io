@@ -19,9 +19,15 @@ package alfio.controller.api.admin;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import com.moodysalem.TimezoneMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/admin/api")
@@ -43,5 +49,18 @@ public class LocationApiController {
     @RequestMapping(value = "/location/maps-client-api-key")
     public String mapsClientApiKey() {
         return configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.MAPS_CLIENT_API_KEY)).orElse(null);
+    }
+
+    @RequestMapping(value = "/location/timezones")
+    public List<String> getTimezones() {
+        List<String> s = new ArrayList<>(ZoneId.getAvailableZoneIds());
+        s.sort(String::compareTo);
+        return s;
+    }
+
+    @RequestMapping(value = "/location/timezone")
+    public String getTimezone(@RequestParam("lat") double lat, @RequestParam("lng") double lng) {
+        String tzId = TimezoneMapper.tzNameAt(lat, lng);
+        return getTimezones().contains(tzId) ? tzId : null;
     }
 }
