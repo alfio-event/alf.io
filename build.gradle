@@ -145,6 +145,7 @@ dependencies {
         exclude group: "com.zaxxer", module: "HikariCP-java6"
         exclude group: "com.mchange", module: "c3p0"
     }
+    compile 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
     compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC11"
     compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC11"
