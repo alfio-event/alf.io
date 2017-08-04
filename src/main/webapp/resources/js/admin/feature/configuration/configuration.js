@@ -209,7 +209,7 @@
 
     SystemConfigurationController.$inject = ['ConfigurationService', 'EventService', 'NotificationHandler', '$rootScope', '$q'];
 
-    function OrganizationConfigurationController(ConfigurationService, OrganizationService, $stateParams, $q, $rootScope) {
+    function OrganizationConfigurationController(ConfigurationService, OrganizationService, NotificationHandler, $stateParams, $q, $rootScope) {
         var organizationConf = this;
         organizationConf.organizationId = $stateParams.organizationId;
         var load = function() {
@@ -231,7 +231,9 @@
             organizationConf.loading = true;
             ConfigurationService.updateOrganizationConfig(organizationConf.organization, organizationConf.settings).then(function() {
                 load();
+                NotificationHandler.showSuccess("Configurations have been saved successfully");
             }, function(e) {
+                NotificationHandler.showError("Unable to save the configuration");
                 alert(e.data);
                 organizationConf.loading = false;
             });
@@ -246,9 +248,9 @@
         });
     }
 
-    OrganizationConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', '$stateParams', '$q', '$rootScope'];
+    OrganizationConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', 'NotificationHandler', '$stateParams', '$q', '$rootScope'];
 
-    function EventConfigurationController(ConfigurationService, EventService, $q, $rootScope, $stateParams) {
+    function EventConfigurationController(ConfigurationService, EventService, NotificationHandler, $q, $rootScope, $stateParams) {
         var eventConf = this;
         var getData = function() {
             if(angular.isDefined($stateParams.eventName)) {
@@ -295,7 +297,9 @@
             eventConf.loading = true;
             $q.all([ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings), ConfigurationService.bulkUpdatePlugins(eventConf.eventId, eventConf.pluginSettings)]).then(function() {
                 load();
+                NotificationHandler.showSuccess("Configurations have been saved successfully");
             }, function(e) {
+                NotificationHandler.showError("Unable to save the configuration");
                 alert(e.data);
                 eventConf.loading = false;
             });
@@ -310,7 +314,7 @@
         });
     }
 
-    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', '$q', '$rootScope', '$stateParams'];
+    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'NotificationHandler', '$q', '$rootScope', '$stateParams'];
 
     function loadSettings(container, settings, ConfigurationService) {
         var general = settings['GENERAL'] || [];
