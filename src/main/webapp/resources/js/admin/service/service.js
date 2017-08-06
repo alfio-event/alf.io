@@ -429,14 +429,15 @@
         }
     });
 
-    baseServices.service("HttpErrorHandler", function($rootScope, $log) {
+    baseServices.service("HttpErrorHandler", ['$log', 'NotificationHandler', function($log, NotificationHandler) {
         return {
             handle : function(error) {
                 $log.warn(error);
-                $rootScope.$broadcast('applicationError', error.message);
+                var message = (error && error.message) ? error.message : 'Unexpected error.';
+                NotificationHandler.showError(message);
             }
         };
-    });
+    }]);
 
     baseServices.service("NotificationHandler", ["growl", function (growl) {
         var config = {ttl: 5000, disableCountDown: true};
