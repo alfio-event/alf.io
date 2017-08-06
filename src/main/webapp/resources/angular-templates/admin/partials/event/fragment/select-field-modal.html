@@ -3,7 +3,7 @@
 </div>
 <div class="modal-body">
     <ul>
-        <li data-ng-repeat="field in fields"><label><input type="checkbox" ng-model="selected[field]"> {{field}}</label></li>
+        <li data-ng-repeat="field in fields"><label><input type="checkbox" ng-model="selected[field.key]"> {{field.value}}</label></li>
     </ul>
 </div>
 <div class="modal-footer">

@@ -44,7 +44,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.core.env.Environment;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -73,6 +72,7 @@ import java.util.zip.ZipOutputStream;
 
 import static alfio.util.OptionalWrapper.optionally;
 import static alfio.util.Validator.*;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
@@ -82,6 +82,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 public class EventApiController {
 
     private static final String OK = "OK";
+    private static final String CUSTOM_FIELDS_PREFIX = "custom:";
     private final EventManager eventManager;
     private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
@@ -127,12 +128,12 @@ public class EventApiController {
 
     @RequestMapping(value = "/events", method = GET, headers = "Authorization")
     public List<EventListItem> getAllEventsForExternal(Principal principal, HttpServletRequest request) {
-        List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).collect(Collectors.toList());
+        List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).collect(toList());
         return eventManager.getActiveEvents().stream()
             .filter(e -> userOrganizations.contains(e.getOrganizationId()))
             .sorted(Comparator.comparing(e -> e.getBegin().withZoneSameInstant(ZoneId.systemDefault())))
             .map(s -> new EventListItem(s, request.getContextPath(), descriptionsLoader.eventDescriptions()))
-            .collect(Collectors.toList());
+            .collect(toList());
     }
 
     @RequestMapping(value = "/events", method = GET)
@@ -266,7 +267,12 @@ public class EventApiController {
                 out.write(marker);
             }
             
-            writer.writeNext(fields.toArray(new String[fields.size()]));
+            writer.writeNext(fields.stream().map(f -> {
+                if(f.startsWith(CUSTOM_FIELDS_PREFIX)) {
+                    return f.substring(CUSTOM_FIELDS_PREFIX.length());
+                }
+                return f;
+            }).toArray(String[]::new));
 
             eventManager.findAllConfirmedTicketsForCSV(eventName, principal.getName()).stream().map(t -> {
                 List<String> line = new ArrayList<>();
@@ -292,8 +298,9 @@ public class EventApiController {
                 //obviously not optimized
                 Map<String, String> additionalValues = ticketFieldRepository.findAllValuesForTicketId(t.getId());
 
-                fields.stream().filter(contains.negate()).forEachOrdered(field -> {
-                    line.add(additionalValues.getOrDefault(field, "").replaceAll("\"", ""));
+                fields.stream().filter(contains.negate()).filter(f -> f.startsWith(CUSTOM_FIELDS_PREFIX)).forEachOrdered(field -> {
+                    String customFieldName = field.substring(CUSTOM_FIELDS_PREFIX.length());
+                    line.add(additionalValues.getOrDefault(customFieldName, "").replaceAll("\"", ""));
                 });
 
                 return line.toArray(new String[line.size()]);
@@ -321,7 +328,7 @@ public class EventApiController {
             header.add("Timestamp");
             header.add("Full name");
             header.add("Email");
-            header.addAll(fields.stream().map(TicketFieldConfiguration::getName).collect(Collectors.toList()));
+            header.addAll(fields.stream().map(TicketFieldConfiguration::getName).collect(toList()));
             writer.writeNext(header.toArray(new String[header.size()]));
             userManager.findAllEnabledUsers(principal.getName()).stream()
                 .map(u -> Pair.of(u, userManager.getUserRole(u)))
@@ -332,7 +339,7 @@ public class EventApiController {
                 .map(p -> {
                     DetailedScanData data = p.getLeft();
                     Map<String, String> descriptions = p.getRight();
-                    return Pair.of(data, fields.stream().map(x -> descriptions.getOrDefault(x.getName(), "")).collect(Collectors.toList()));
+                    return Pair.of(data, fields.stream().map(x -> descriptions.getOrDefault(x.getName(), "")).collect(toList()));
                 }).map(p -> {
                     List<String> line = new ArrayList<>();
                     Ticket ticket = p.getLeft().getTicket();
@@ -350,10 +357,10 @@ public class EventApiController {
     }
 
     @RequestMapping("/events/{eventName}/fields")
-    public List<String> getAllFields(@PathVariable("eventName") String eventName) {
-        List<String> fields = new ArrayList<>();
-        fields.addAll(FIXED_FIELDS);
-        fields.addAll(ticketFieldRepository.findFieldsForEvent(eventName));
+    public List<SerializablePair<String, String>> getAllFields(@PathVariable("eventName") String eventName) {
+        List<SerializablePair<String, String>> fields = new ArrayList<>();
+        fields.addAll(FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList()));
+        fields.addAll(ticketFieldRepository.findFieldsForEvent(eventName).stream().map(f -> SerializablePair.of(CUSTOM_FIELDS_PREFIX + f, f)).collect(toList()));
         return fields;
     }
 
@@ -362,7 +369,7 @@ public class EventApiController {
         final Map<Integer, List<TicketFieldDescription>> descById = ticketFieldRepository.findDescriptions(eventName).stream().collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
         return ticketFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
             .map(field -> new TicketFieldConfigurationAndAllDescriptions(field, descById.getOrDefault(field.getId(), Collections.emptyList())))
-            .collect(Collectors.toList());
+            .collect(toList());
     }
 
     @RequestMapping(value = "/event/additional-field/templates", method = GET)
@@ -403,7 +410,7 @@ public class EventApiController {
     @RequestMapping(value = "/events/{eventName}/pending-payments")
     public List<SerializablePair<TicketReservation, OrderSummary>> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {
         return ticketReservationManager.getPendingPayments(eventStatisticsManager.getSingleEventWithStatistics(eventName, principal.getName())).stream()
-                .map(SerializablePair::fromPair).collect(Collectors.toList());
+                .map(SerializablePair::fromPair).collect(toList());
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)
@@ -441,7 +448,7 @@ public class EventApiController {
                             return Triple.of(Boolean.FALSE, Optional.ofNullable(reservationID).orElse(""), e.getMessage());
                         }
                     })
-                    .collect(Collectors.toList());
+                    .collect(toList());
         }
     }
 
@@ -496,7 +503,7 @@ public class EventApiController {
         return eventStatisticsManager.loadTicketCategoriesWithStats(event).stream()
                 .filter(tc -> !tc.getTickets().isEmpty())
                 .map(tc -> TicketCategoryModification.fromTicketCategory(tc.getTicketCategory(), ticketCategoryDescriptionRepository.findByTicketCategoryId(tc.getId()), event.getZoneId()))
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     private Event loadEvent(String eventName, Principal principal) {
