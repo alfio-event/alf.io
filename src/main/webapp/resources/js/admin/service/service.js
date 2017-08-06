@@ -290,6 +290,10 @@
 
             cancelReservation: function(eventName, reservationId, refund, notify) {
                 return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/cancel?refund=' + refund+"&notify="+notify);
+            },
+
+            countInvoices: function(eventName) {
+                return $http.get('/admin/api/events/'+eventName+'/invoices/count').error(HttpErrorHandler.handle);
             }
         };
         return service;

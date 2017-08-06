@@ -766,7 +766,7 @@
             scope: {},
             controllerAs: 'ctrl',
             templateUrl: '/resources/angular-templates/admin/partials/main/sidebar.html',
-            controller: ['$location', '$anchorScroll', '$scope', function($location, $anchorScroll, $scope) {
+            controller: ['$location', '$anchorScroll', '$scope', 'NotificationHandler', function($location, $anchorScroll, $scope, NotificationHandler) {
                 var ctrl = this;
                 var toUnbind = [];
                 var detectCurrentView = function(state) {
@@ -797,7 +797,14 @@
                                 $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export.csv");
                             };
                             ctrl.downloadInvoices = function() {
-                                $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/all-invoices");
+                                EventService.countInvoices(ctrl.event.shortName).then(function (res) {
+                                    var count = res.data;
+                                    if(count > 0) {
+                                        $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/all-invoices");
+                                    } else {
+                                        NotificationHandler.showInfo("No invoices have been found.");
+                                    }
+                                });
                             };
                             ctrl.goToCategory = function(category) {
                                 ctrl.navigateTo('ticket-category-'+category.id);
