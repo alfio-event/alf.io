@@ -230,7 +230,7 @@
                         service.getFields(event.shortName).then(function(fields) {
                             $scope.fields = fields.data;
                             angular.forEach(fields.data, function(v) {
-                                $scope.selected[v] = false;
+                                $scope.selected[v.key] = false;
                             })
                         });
 
