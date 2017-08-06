@@ -19,7 +19,7 @@ package alfio.controller.api.admin;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.tuple.Pair;
 
-final class SerializablePair<L,R> {
+public final class SerializablePair<L,R> {
     @Delegate
     private final Pair<L, R> pair;
 
