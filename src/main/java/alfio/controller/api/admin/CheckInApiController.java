@@ -25,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.*;
 
@@ -117,12 +118,15 @@ public class CheckInApiController {
     @RequestMapping(value = "/check-in/{eventName}/offline", method = RequestMethod.GET)
     public Map<String, String> getOfflineEncryptedInfo(@PathVariable("eventName") String eventName,
                                                        @RequestParam(value = "changedSince", required = false) Long changedSince,
-                                                       @RequestParam(value = "additionalField", required = false) List<String> additionalFields) {
+                                                       @RequestParam(value = "additionalField", required = false) List<String> additionalFields,
+                                                       HttpServletResponse resp) {
 
         Set<String> addFields = Collections.singleton("company");
         if(additionalFields != null && !additionalFields.isEmpty()) {
             addFields = new HashSet<>(additionalFields);
         }
+
+        resp.setHeader("Alfio-TIME", Long.toString(new Date().getTime()));
 
         return checkInManager.getEncryptedAttendeesInformation(eventName, addFields, changedSince == null ? null : new Date(changedSince));
     }
