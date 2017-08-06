@@ -21,6 +21,7 @@ import alfio.model.Ticket;
 import alfio.model.TicketCSVInfo;
 import ch.digitalfondue.npjt.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -178,7 +179,7 @@ public interface TicketRepository {
             " inner join tickets_reservation tr on t.tickets_reservation_id = tr.id " +
             " inner join ticket_category tc on t.category_id = tc.id " +
             " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null")
-    List<FullTicketInfo> findAllFullTicketInfoAssignedByEventId(@Bind("eventId") int eventId);
+    List<FullTicketInfo> findAllFullTicketInfoAssignedByEventId(@Bind("eventId") int eventId, @Bind("changedSince") Date changedSince);
 
     @Query("select " +
         " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +

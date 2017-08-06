@@ -160,7 +160,7 @@ public class CheckInManager {
     }
 
     public List<FullTicketInfo> findAllFullTicketInfo(int eventId) {
-        return ticketRepository.findAllFullTicketInfoAssignedByEventId(eventId);
+        return ticketRepository.findAllFullTicketInfoAssignedByEventId(eventId, null);
     }
 
     public TicketAndCheckInResult evaluateTicketStatus(int eventId, String ticketIdentifier, Optional<String> ticketCode) {
@@ -260,7 +260,7 @@ public class CheckInManager {
         }
     }
 
-    public Map<String,String> getEncryptedAttendeesInformation(String eventName, Set<String> additionalFields) {
+    public Map<String,String> getEncryptedAttendeesInformation(String eventName, Set<String> additionalFields, Date changedSince) {
         return eventRepository.findOptionalByShortName(eventName).map(event -> {
             String eventKey = event.getPrivateKey();
             Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
@@ -280,7 +280,7 @@ public class CheckInManager {
                 String key = ticket.ticketCode(eventKey);
                 return encrypt(key, Json.toJson(info));
             };
-            return ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId())
+            return ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId(), changedSince)
                 .stream()
                 .collect(Collectors.toMap(hashedHMAC, encryptedBody));
 
