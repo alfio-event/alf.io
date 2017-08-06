@@ -465,6 +465,13 @@ public class EventApiController {
         return i18nManager.getEventLanguages(eventName);
     }
 
+    @RequestMapping(value = "/events/{eventName}/invoices/count", method = GET)
+    public Integer countInvoicesForEvent(@PathVariable("eventName") String eventName, Principal principal) {
+        return optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
+            .map(e -> ticketReservationManager.countInvoices(e.getId()))
+            .orElse(0);
+    }
+
     @RequestMapping(value = "/events/{eventName}/all-invoices", method = GET)
     public void getAllInvoices(@PathVariable("eventName") String eventName, HttpServletResponse response, Principal principal) throws  IOException {
         Event event = loadEvent(eventName, principal);

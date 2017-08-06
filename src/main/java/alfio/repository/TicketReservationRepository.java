@@ -107,8 +107,11 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set invoice_number = :invoiceNumber where id = :reservationId")
     int setInvoiceNumber(@Bind("reservationId") String reservationId, @Bind("invoiceNumber") String invoiceNumber);
 
-    @Query("select * from  tickets_reservation where invoice_number is not null and event_id_fk = :eventId order by confirmation_ts desc, validity desc")
+    @Query("select * from tickets_reservation where invoice_number is not null and event_id_fk = :eventId order by confirmation_ts desc, validity desc")
     List<TicketReservation> findAllReservationsWithInvoices(@Bind("eventId") int eventId);
+
+    @Query("select count(*) from tickets_reservation where invoice_number is not null and event_id_fk = :eventId")
+    Integer countInvoices(@Bind("eventId") int eventId);
 
     @Query("select * from tickets_reservation where event_id_fk = :eventId order by confirmation_ts desc, validity desc")
     List<TicketReservation> findAllReservationsInEvent(@Bind("eventId") int eventId);

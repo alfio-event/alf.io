@@ -44,9 +44,7 @@ import alfio.util.*;
 import de.danielbechler.diff.ObjectDifferBuilder;
 import de.danielbechler.diff.node.DiffNode;
 import de.danielbechler.diff.node.Visit;
-import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -61,7 +59,6 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.ZoneId;
@@ -1268,6 +1265,10 @@ public class TicketReservationManager {
 
     public List<TicketReservation> findAllInvoices(int eventId) {
         return ticketReservationRepository.findAllReservationsWithInvoices(eventId);
+    }
+
+    public Integer countInvoices(int eventId) {
+        return ticketReservationRepository.countInvoices(eventId);
     }
 
 
