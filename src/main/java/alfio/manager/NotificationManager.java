@@ -64,11 +64,16 @@ import org.springframework.util.StreamUtils;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.security.cert.CertificateException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -170,7 +175,7 @@ public class NotificationManager {
                 partial.apply(ConfigurationKeys.PASSBOOK_TEAM_IDENTIFIER));
             //check if all are set
             if(pbookConf.values().stream().anyMatch(o -> !o.isPresent())) {
-                log.warn("Missing configuration keys, check if all 4 are presents");
+                log.trace("Cannot generate Passbook. Missing configuration keys, check if all 4 are presents");
                 return null;
             }
 
@@ -183,7 +188,7 @@ public class NotificationManager {
             //ugly, find an alternative way?
             Optional<KeyStore> ksJks = loadKeyStore(keystoreRaw, "jks");
             if(!ksJks.isPresent()) {
-                log.warn("Not able to load keystore, check");
+                log.warn("Cannot generate Passbook. Not able to load keystore. Please check configuration.");
                 return null;
             }
             KeyStore keyStore = ksJks.orElseThrow(IllegalStateException::new);
