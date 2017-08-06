@@ -9,7 +9,6 @@ build/
 *.ipr
 *.iws
 /build/
-.gradle/
 deploy*.sh
 custom.jvmargs
 classes/
