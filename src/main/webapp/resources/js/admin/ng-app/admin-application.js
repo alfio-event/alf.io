@@ -701,13 +701,13 @@
 
         var validationErrorHandler = function(result, form, fieldsContainer) {
             return $q(function(resolve, reject) {
-                if(result.data['errorCount'] == 0) {
+                if(result.data['errorCount'] === 0) {
                     resolve(result);
                 } else {
                     _.forEach(result.data.validationErrors, function(error) {
                         var field = fieldsContainer[error.fieldName];
                         if(angular.isDefined(field)) {
-                            if (error.code == ERROR_CODES.DUPLICATE) {
+                            if (error.code === ERROR_CODES.DUPLICATE) {
                                 field.$setValidity(ERROR_CODES.DUPLICATE, false);
                                 field.$setTouched();
                             } else {
@@ -719,11 +719,6 @@
                     reject('validation error');
                 }
             });
-        };
-
-        var errorHandler = function(error) {
-            $log.error(error.data);
-            alert(error.data);
         };
 
         $scope.editHeader = function() {
@@ -750,7 +745,7 @@
                             validationErrorHandler(result, form, form.editEventHeader).then(function(result) {
                                 $scope.$close(eventHeader);
                             });
-                        }, errorHandler);
+                        });
                     };
                 }
             });
@@ -786,7 +781,7 @@
                             validationErrorHandler(result, form, form.editPrices).then(function(result) {
                                 $scope.$close(eventPrices.availableSeats !== seats);
                             });
-                        }, errorHandler);
+                        });
                     };
                 }
             });
@@ -840,7 +835,7 @@
                                 });
                                 $scope.$close(true);
                             });
-                        }, errorHandler);
+                        });
                     };
                 }
             });
@@ -874,7 +869,7 @@
                             validationErrorHandler(result, form, form).then(function() {
                                 $scope.$close(true);
                             });
-                        }, errorHandler);
+                        });
                     };
                 }
             });

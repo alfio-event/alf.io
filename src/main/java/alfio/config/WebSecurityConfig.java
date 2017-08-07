@@ -42,10 +42,7 @@ import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.GenericFilterBean;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
@@ -56,15 +53,15 @@ import java.util.regex.Pattern;
 @EnableWebSecurity
 public class WebSecurityConfig {
 
-    public static final String ADMIN_API = "/admin/api";
-    public static final String CSRF_SESSION_ATTRIBUTE = "CSRF_SESSION_ATTRIBUTE";
+    static final String ADMIN_API = "/admin/api";
+    static final String CSRF_SESSION_ATTRIBUTE = "CSRF_SESSION_ATTRIBUTE";
     public static final String CSRF_PARAM_NAME = "_csrf";
     public static final String OPERATOR = "OPERATOR";
     private static final String SUPERVISOR = "SUPERVISOR";
     public static final String SPONSOR = "SPONSOR";
     private static final String ADMIN = "ADMIN";
     private static final String OWNER = "OWNER";
-
+    static final String X_REQUESTED_WITH = "X-Requested-With";
 
 
     private static class BaseWebSecurity extends  WebSecurityConfigurerAdapter {
@@ -142,8 +139,18 @@ public class WebSecurityConfig {
 
             CsrfConfigurer<HttpSecurity> configurer =
                 http.exceptionHandling()
-                    .accessDeniedPage("/session-expired")
-                    .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher("X-Requested-With", "XMLHttpRequest"))
+                    .accessDeniedHandler((request, response, accessDeniedException) -> {
+                        if(!response.isCommitted()) {
+                            if("XMLHttpRequest".equals(request.getHeader(X_REQUESTED_WITH))) {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            } else if(!response.isCommitted()) {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                RequestDispatcher dispatcher = request.getRequestDispatcher("/session-expired");
+                                dispatcher.forward(request, response);
+                            }
+                        }
+                    })
+                    .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher(X_REQUESTED_WITH, "XMLHttpRequest"))
                     .and()
                     .headers().cacheControl().disable()
                     .and()

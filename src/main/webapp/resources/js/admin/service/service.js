@@ -19,9 +19,6 @@
                     if(status === 401) {
                         $rootScope.$emit('ErrorNotLoggedIn');
                         return false;
-                    } else if(status === 403) {
-                        $rootScope.$emit('ErrorNotAuthorized');
-                        return false;
                     }
                     return $q.reject(rejection);
                 }
@@ -430,10 +427,24 @@
     });
 
     baseServices.service("HttpErrorHandler", ['$log', 'NotificationHandler', function($log, NotificationHandler) {
+        var getMessage = function(body, status) {
+            switch(status) {
+                case 400:
+                    return 'Malformed Request';
+                case 404:
+                    return 'Resource not found';
+                case 403:
+                    return 'Your account is not authorized to perform this operation.';
+                case 500:
+                    return 'Internal Server Error';
+                default:
+                    return 'Connection Error';
+            }
+        };
         return {
-            handle : function(error) {
-                $log.warn(error);
-                var message = (error && error.message) ? error.message : 'Unexpected error.';
+            handle : function(body, status) {
+                var message = getMessage(body, status);
+                $log.warn(message, status, body);
                 NotificationHandler.showError(message);
             }
         };
