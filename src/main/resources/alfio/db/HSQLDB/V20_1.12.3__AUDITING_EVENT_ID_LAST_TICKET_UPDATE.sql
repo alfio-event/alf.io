@@ -19,6 +19,6 @@
 alter table auditing add column event_id int;
 create index "auditing_event_id_idx" ON auditing(event_id);
 
-update auditing set event_id=select event_id_fk from tickets_reservation where reservation_id = id;
+update auditing set event_id=(select event_id_fk from tickets_reservation where reservation_id = id);
 
 create view latest_ticket_update as select cast(entity_id as int) ticket_id, event_id, max(event_time) last_update from auditing where entity_type = 'TICKET' group by ticket_id, event_id;
