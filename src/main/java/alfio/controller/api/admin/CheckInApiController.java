@@ -115,6 +115,15 @@ public class CheckInApiController {
         return checkInManager.findAllFullTicketInfo(eventId);
     }
 
+    @RequestMapping(value = "/check-in/{eventName}/offline-identifiers", method = RequestMethod.GET)
+    public List<Integer> getOfflineIdentifiers(@PathVariable("eventName") String eventName,
+                                              @RequestParam(value = "changedSince", required = false) Long changedSince,
+                                              HttpServletResponse resp) {
+        resp.setHeader("Alfio-TIME", Long.toString(new Date().getTime()));
+        return checkInManager.getAttendeesIdentifiers(eventName, changedSince == null ? new Date(0) : new Date(changedSince));
+
+    }
+
     @RequestMapping(value = "/check-in/{eventName}/offline", method = RequestMethod.GET)
     public Map<String, String> getOfflineEncryptedInfo(@PathVariable("eventName") String eventName,
                                                        @RequestParam(value = "changedSince", required = false) Long changedSince,
@@ -128,7 +137,7 @@ public class CheckInApiController {
 
         resp.setHeader("Alfio-TIME", Long.toString(new Date().getTime()));
 
-        return checkInManager.getEncryptedAttendeesInformation(eventName, addFields, changedSince == null ? null : new Date(changedSince));
+        return checkInManager.getEncryptedAttendeesInformation(eventName, addFields, changedSince == null ? new Date(0) : new Date(changedSince));
     }
 
     @Data

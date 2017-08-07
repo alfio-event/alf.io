@@ -247,6 +247,12 @@ public class CheckInManager {
         }
     }
 
+    public List<Integer> getAttendeesIdentifiers(String eventName, Date changedSince) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .map(event -> ticketRepository.findAllAssignedByEventId(event.getId(), changedSince))
+            .orElseGet(Collections::emptyList);
+    }
+
     public Map<String,String> getEncryptedAttendeesInformation(String eventName, Set<String> additionalFields, Date changedSince) {
         return eventRepository.findOptionalByShortName(eventName).map(event -> {
             String eventKey = event.getPrivateKey();
@@ -267,10 +273,10 @@ public class CheckInManager {
                 String key = ticket.ticketCode(eventKey);
                 return encrypt(key, Json.toJson(info));
             };
-            return ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId(), changedSince == null ? new Date(0) : changedSince)
+            return ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId(), changedSince)
                 .stream()
                 .collect(Collectors.toMap(hashedHMAC, encryptedBody));
 
-        }).orElse(Collections.emptyMap());
+        }).orElseGet(Collections::emptyMap);
     }
 }
