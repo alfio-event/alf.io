@@ -267,7 +267,7 @@ public class CheckInManager {
                 String key = ticket.ticketCode(eventKey);
                 return encrypt(key, Json.toJson(info));
             };
-            return ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId(), changedSince)
+            return ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId(), changedSince == null ? new Date(0) : changedSince)
                 .stream()
                 .collect(Collectors.toMap(hashedHMAC, encryptedBody));
 
