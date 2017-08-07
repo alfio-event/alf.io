@@ -155,6 +155,7 @@ public class PaymentManager {
             changes.put("refund", amount.map(i -> i.toString()).orElse("full"));
             changes.put("paymentMethod", reservation.getPaymentMethod().toString());
             auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null),
+                event.getId(),
                 Audit.EventType.REFUND, new Date(), Audit.EntityType.RESERVATION, reservation.getId(),
                 Collections.singletonList(changes));
         }

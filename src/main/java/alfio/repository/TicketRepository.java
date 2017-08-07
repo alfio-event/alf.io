@@ -164,7 +164,7 @@ public interface TicketRepository {
 
     @Query("select * from ticket where category_id in (:categories) and status = 'PENDING'")
     List<Ticket> findPendingTicketsInCategories(@Bind("categories") List<Integer> categories);
-    
+
     @Query("select " +
             " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
             " t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id," +
