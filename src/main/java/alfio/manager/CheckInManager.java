@@ -35,7 +35,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -253,9 +252,10 @@ public class CheckInManager {
             .orElseGet(Collections::emptyList);
     }
 
-    public Map<String,String> getEncryptedAttendeesInformation(String eventName, Set<String> additionalFields, Date changedSince) {
+    public Map<String,String> getEncryptedAttendeesInformation(String eventName, Set<String> additionalFields, List<Integer> ids) {
         return eventRepository.findOptionalByShortName(eventName).map(event -> {
             String eventKey = event.getPrivateKey();
+
             Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
 
             Function<FullTicketInfo, String> encryptedBody = ticket -> {
@@ -273,7 +273,7 @@ public class CheckInManager {
                 String key = ticket.ticketCode(eventKey);
                 return encrypt(key, Json.toJson(info));
             };
-            return ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId(), changedSince)
+            return ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId(), ids)
                 .stream()
                 .collect(Collectors.toMap(hashedHMAC, encryptedBody));
 

@@ -180,8 +180,8 @@ public interface TicketRepository {
             " inner join tickets_reservation tr on t.tickets_reservation_id = tr.id " +
             " inner join ticket_category tc on t.category_id = tc.id " +
             " left outer join latest_ticket_update ltu on t.id = ltu.ticket_id and ltu.event_id = :eventId " +
-            " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null and (ltu.last_update is null or ltu.last_update > :changedSince) order by t.id asc")
-    List<FullTicketInfo> findAllFullTicketInfoAssignedByEventId(@Bind("eventId") int eventId, @Bind("changedSince") Date changedSince);
+            " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null and t.id in (:ids) order by t.id asc")
+    List<FullTicketInfo> findAllFullTicketInfoAssignedByEventId(@Bind("eventId") int eventId, @Bind("ids") List<Integer> ids);
 
 
     @Query("select t.id " +
