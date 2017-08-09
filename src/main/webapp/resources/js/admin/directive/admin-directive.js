@@ -516,9 +516,8 @@
                 var eventName = ctrl.event.shortName;
                 ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
                 var getPendingPayments = function() {
-                    EventService.getPendingPayments(eventName).success(function(data) {
-                        ctrl.pendingReservations = data.length;
-                        $rootScope.$broadcast('PendingReservationsFound', data);
+                    EventService.getPendingPaymentsCount(eventName).then(function(res) {
+                        $rootScope.$broadcast('PendingReservationsFound', res.data);
                     });
                 };
                 getPendingPayments();
@@ -535,15 +534,15 @@
         return {
             restrict: 'E',
             scope: false,
-            template: '<span class="badge">{{pendingReservations}}</span>',
+            template: '<span class="badge">{{pendingReservationsCount}}</span>',
             link: function(scope, element, attrs) {
                 var eventName = attrs.eventName;
-                scope.pendingReservations = 0;
+                scope.pendingReservationsCount = 0;
                 if(angular.isDefined(eventName)) {
                     var getPendingPayments = function() {
-                        EventService.getPendingPayments(eventName).success(function(data) {
-                            scope.pendingReservations = data.length;
-                            $rootScope.$broadcast('PendingReservationsFound', data);
+                        EventService.getPendingPaymentsCount(eventName).then(function(res) {
+                            scope.pendingReservationsCount = res.data;
+                            $rootScope.$broadcast('PendingReservationsFound', res.data);
                         });
                     };
                     getPendingPayments();
@@ -553,8 +552,11 @@
                         $interval.cancel(promise);
                     });
                 } else {
-                    $rootScope.$on('PendingReservationsFound', function(data) {
-                        scope.pendingReservations = data.length;
+                    var listener = $rootScope.$on('PendingReservationsFound', function(data) {
+                        scope.pendingReservationsCount = data;
+                    });
+                    element.on('$destroy', function() {
+                        listener();
                     });
                 }
             }

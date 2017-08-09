@@ -123,6 +123,9 @@
                 }
                 return element.payments;
             },
+            getPendingPaymentsCount: function(eventName) {
+                return $http.get('/admin/api/events/'+eventName+'/pending-payments-count').error(HttpErrorHandler.handle);
+            },
             registerPayment: function(eventName, reservationId) {
                 return $http['post']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId+'/confirm').error(HttpErrorHandler.handle);
             },
