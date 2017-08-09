@@ -8,7 +8,7 @@
                     <h1 class="panel-title">{{#i18n}}admin.main.events{{/i18n}}</h1>
                 </div>
                 <div class="panel-body">
-                    <div data-events-list></div>
+                    <active-events-list></active-events-list>
                 </div>
             </div>
         </div>

@@ -51,6 +51,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/expired-events-list/expired-events-list.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/active-events-list/active-events-list.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/event-data-to-collect/event-data-to-collect.js"></script>
 

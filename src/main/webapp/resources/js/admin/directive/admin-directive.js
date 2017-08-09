@@ -10,27 +10,6 @@
 
     var directives = angular.module('adminDirectives', ['ui.bootstrap', 'adminServices']);
 
-    directives.directive('eventsList', function() {
-        return {
-            scope: true,
-            templateUrl: '/resources/angular-templates/admin/partials/main/events.html',
-            controller: function($scope, EventService) {
-
-                $scope.loading = true;
-
-                EventService.getAllActiveEvents().success(function(data) {
-                    $scope.events = data;
-                    $scope.loading = false;
-                });
-
-                $scope.supportsOfflinePayments = function(event) {
-                    return _.contains(event.allowedPaymentProxies, 'OFFLINE');
-                };
-            },
-            link: angular.noop
-        };
-    });
-
     directives.directive('dateRange', function() {
         return {
             restrict: 'A',
