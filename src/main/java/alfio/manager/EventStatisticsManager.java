@@ -156,8 +156,9 @@ public class EventStatisticsManager {
 
     public Predicate<Event> noSeatsAvailable() {
         return event -> {
-            EventWithStatistics eventWithStatistics = fillWithStatistics(event);
-            return eventWithStatistics.getTicketCategories().stream().allMatch(tc -> EventUtil.determineAvailableSeats(tc, eventWithStatistics) == 0);
+            Map<Integer, TicketCategoryStatisticView> stats = ticketCategoryRepository.findStatisticsForEventIdByCategoryId(event.getId());
+            EventStatisticView eventStatisticView = eventRepository.findStatisticsFor(event.getId());
+            return ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().allMatch(tc -> EventUtil.determineAvailableSeats(stats.get(tc.getId()), eventStatisticView) == 0);
         };
     }
 

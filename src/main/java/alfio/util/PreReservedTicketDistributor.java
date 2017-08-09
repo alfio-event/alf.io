@@ -16,6 +16,7 @@
  */
 package alfio.util;
 
+import alfio.model.TicketCategoryStatisticView;
 import alfio.model.modification.TicketCategoryWithStatistic;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -30,7 +31,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-public final class PreReservedTicketDistributor implements Collector<Pair<Integer, TicketCategoryWithStatistic>, List<Pair<Integer, TicketCategoryWithStatistic>>, List<Pair<Integer, TicketCategoryWithStatistic>>> {
+public final class PreReservedTicketDistributor implements Collector<Pair<Integer, TicketCategoryStatisticView>, List<Pair<Integer, TicketCategoryStatisticView>>, List<Pair<Integer, TicketCategoryStatisticView>>> {
 
     private final AtomicInteger requestedTickets;
 
@@ -39,12 +40,12 @@ public final class PreReservedTicketDistributor implements Collector<Pair<Intege
     }
 
     @Override
-    public Supplier<List<Pair<Integer, TicketCategoryWithStatistic>>> supplier() {
+    public Supplier<List<Pair<Integer, TicketCategoryStatisticView>>> supplier() {
         return ArrayList::new;
     }
 
     @Override
-    public BiConsumer<List<Pair<Integer, TicketCategoryWithStatistic>>, Pair<Integer, TicketCategoryWithStatistic>> accumulator() {
+    public BiConsumer<List<Pair<Integer, TicketCategoryStatisticView>>, Pair<Integer, TicketCategoryStatisticView>> accumulator() {
         return (accumulator, candidate) -> {
             int requested = requestedTickets.get();
             if (requested > 0) {
@@ -60,12 +61,12 @@ public final class PreReservedTicketDistributor implements Collector<Pair<Intege
      * @return the first parameter
      */
     @Override
-    public BinaryOperator<List<Pair<Integer, TicketCategoryWithStatistic>>> combiner() {
+    public BinaryOperator<List<Pair<Integer, TicketCategoryStatisticView>>> combiner() {
         return (a, b) -> a;
     }
 
     @Override
-    public Function<List<Pair<Integer, TicketCategoryWithStatistic>>, List<Pair<Integer, TicketCategoryWithStatistic>>> finisher() {
+    public Function<List<Pair<Integer, TicketCategoryStatisticView>>, List<Pair<Integer, TicketCategoryStatisticView>>> finisher() {
         return Function.identity();
     }
 

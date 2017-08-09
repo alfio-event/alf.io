@@ -18,9 +18,7 @@ package alfio.util;
 
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
+import alfio.model.*;
 import alfio.model.modification.EventWithStatistics;
 import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.system.Configuration;
@@ -126,8 +124,8 @@ public class EventUtil {
         return freeOfCharge ? 0 : price;
     }
 
-    public static int determineAvailableSeats(TicketCategoryWithStatistic tc, EventWithStatistics e) {
-        return tc.isBounded() ? tc.getNotSoldTickets() : e.getDynamicAllocation();
+    public static int determineAvailableSeats(TicketCategoryStatisticView tc, EventStatisticView e) {
+        return tc.isBounded() ? tc.getNotSoldTicketsCount() : e.getDynamicAllocation();
     }
 
 

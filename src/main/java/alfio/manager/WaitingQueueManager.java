@@ -19,12 +19,11 @@ package alfio.manager;
 import alfio.manager.plugin.PluginManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
-import alfio.model.modification.EventWithStatistics;
-import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
 import alfio.model.user.Organization;
+import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
@@ -34,11 +33,11 @@ import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import alfio.util.WorkingDaysAdjusters;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -55,6 +54,7 @@ import static alfio.util.EventUtil.determineAvailableSeats;
 
 @Component
 @Log4j2
+@AllArgsConstructor
 public class WaitingQueueManager {
 
     private final WaitingQueueRepository waitingQueueRepository;
@@ -68,31 +68,7 @@ public class WaitingQueueManager {
     private final MessageSource messageSource;
     private final OrganizationRepository organizationRepository;
     private final PluginManager pluginManager;
-
-    @Autowired
-    public WaitingQueueManager(WaitingQueueRepository waitingQueueRepository,
-                               TicketRepository ticketRepository,
-                               TicketCategoryRepository ticketCategoryRepository,
-                               ConfigurationManager configurationManager,
-                               EventStatisticsManager eventStatisticsManager,
-                               NamedParameterJdbcTemplate jdbc,
-                               NotificationManager notificationManager,
-                               TemplateManager templateManager,
-                               MessageSource messageSource,
-                               OrganizationRepository organizationRepository,
-                               PluginManager pluginManager) {
-        this.waitingQueueRepository = waitingQueueRepository;
-        this.ticketRepository = ticketRepository;
-        this.ticketCategoryRepository = ticketCategoryRepository;
-        this.configurationManager = configurationManager;
-        this.eventStatisticsManager = eventStatisticsManager;
-        this.notificationManager = notificationManager;
-        this.jdbc = jdbc;
-        this.templateManager = templateManager;
-        this.messageSource = messageSource;
-        this.organizationRepository = organizationRepository;
-        this.pluginManager = pluginManager;
-    }
+    private final EventRepository eventRepository;
 
     public boolean subscribe(Event event, CustomerName customerName, String email, Integer selectedCategoryId, Locale userLanguage) {
         try {
@@ -204,11 +180,12 @@ public class WaitingQueueManager {
 
     private void preReserveTickets(Event event, int ticketsNeeded, int eventId, int alreadyReserved) {
         final int toBeGenerated = Math.abs(alreadyReserved - ticketsNeeded);
-        EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(event);
-        List<Pair<Integer, TicketCategoryWithStatistic>> collectedTickets = eventWithStatistics.getTicketCategories().stream()
+        EventStatisticView eventStatisticView = eventRepository.findStatisticsFor(eventId);
+        Map<Integer, TicketCategoryStatisticView> ticketCategoriesStats = ticketCategoryRepository.findStatisticsForEventIdByCategoryId(eventId);
+        List<Pair<Integer, TicketCategoryStatisticView>> collectedTickets = ticketCategoryRepository.findAllTicketCategories(eventId).stream()
                 .filter(tc -> !tc.isAccessRestricted())
-                .sorted()
-                .map(tc -> Pair.of(determineAvailableSeats(tc, eventWithStatistics), tc))
+                .sorted(Comparator.comparing(t -> t.getExpiration(event.getZoneId())))
+                .map(tc -> Pair.of(determineAvailableSeats(ticketCategoriesStats.get(tc.getId()), eventStatisticView), ticketCategoriesStats.get(tc.getId())))
                 .collect(new PreReservedTicketDistributor(toBeGenerated));
         MapSqlParameterSource[] candidates = collectedTickets.stream()
                 .flatMap(p -> selectTicketsForPreReservation(eventId, p).stream())
@@ -217,8 +194,8 @@ public class WaitingQueueManager {
         jdbc.batchUpdate(ticketRepository.preReserveTicket(), candidates);
     }
 
-    private List<Integer> selectTicketsForPreReservation(int eventId, Pair<Integer, TicketCategoryWithStatistic> p) {
-        TicketCategoryWithStatistic category = p.getValue();
+    private List<Integer> selectTicketsForPreReservation(int eventId, Pair<Integer, TicketCategoryStatisticView> p) {
+        TicketCategoryStatisticView category = p.getValue();
         Integer amount = p.getKey();
         if(category.isBounded()) {
             return ticketRepository.selectFreeTicketsForPreReservation(eventId, amount, category.getId());

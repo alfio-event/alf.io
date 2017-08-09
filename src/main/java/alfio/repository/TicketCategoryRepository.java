@@ -17,11 +17,15 @@
 package alfio.repository;
 
 import alfio.model.TicketCategory;
+import alfio.model.TicketCategoryStatisticView;
 import ch.digitalfondue.npjt.*;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @QueryRepository
 public interface TicketCategoryRepository {
@@ -86,5 +90,12 @@ public interface TicketCategoryRepository {
             .filter(TicketCategory::isBounded)
             .mapToInt(TicketCategory::getMaxTickets)
             .sum();
+    }
+
+    @Query("select * from TICKET_CATEGORY_STATISTICS where event_id = :eventId")
+    List<TicketCategoryStatisticView> findStatisticsForEventId(@Bind("eventId") int eventId);
+
+    default Map<Integer, TicketCategoryStatisticView> findStatisticsForEventIdByCategoryId(int eventId) {
+        return findStatisticsForEventId(eventId).stream().collect(Collectors.toMap(TicketCategoryStatisticView::getId, Function.identity()));
     }
 }
