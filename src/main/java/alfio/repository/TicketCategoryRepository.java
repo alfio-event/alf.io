@@ -92,7 +92,10 @@ public interface TicketCategoryRepository {
             .sum();
     }
 
-    @Query("select * from TICKET_CATEGORY_STATISTICS where event_id = :eventId")
+    @Query("select * from ticket_category_statistics where ticket_category_id = :ticketCategoryId and event_id = :eventId")
+    TicketCategoryStatisticView findStatisticWithId(@Bind("ticketCategoryId") int ticketCategoryId, @Bind("eventId") int eventId);
+
+    @Query("select * from ticket_category_statistics where event_id = :eventId")
     List<TicketCategoryStatisticView> findStatisticsForEventId(@Bind("eventId") int eventId);
 
     default Map<Integer, TicketCategoryStatisticView> findStatisticsForEventIdByCategoryId(int eventId) {
