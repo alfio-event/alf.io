@@ -385,13 +385,14 @@ public class EventManager {
     }
 
     void fixOutOfRangeCategories(EventModification em, String username, ZoneId zoneId, ZonedDateTime end) {
-        eventStatisticsManager.getSingleEventWithStatistics(em.getShortName(), username).getTicketCategories().stream()
-                .map(tc -> Triple.of(tc, tc.getInception(zoneId), tc.getExpiration(zoneId)))
-                .filter(t -> t.getRight().isAfter(end))
-                .forEach(t -> fixTicketCategoryDates(end, t.getLeft(), t.getMiddle(), t.getRight()));
+        Event event = getSingleEvent(em.getShortName(), username);
+        ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
+            .map(tc -> Triple.of(tc, tc.getInception(zoneId), tc.getExpiration(zoneId)))
+            .filter(t -> t.getRight().isAfter(end))
+            .forEach(t -> fixTicketCategoryDates(end, t.getLeft(), t.getMiddle(), t.getRight()));
     }
 
-    private void fixTicketCategoryDates(ZonedDateTime end, TicketCategoryWithStatistic tc, ZonedDateTime inception, ZonedDateTime expiration) {
+    private void fixTicketCategoryDates(ZonedDateTime end, TicketCategory tc, ZonedDateTime inception, ZonedDateTime expiration) {
         final ZonedDateTime newExpiration = ObjectUtils.min(end, expiration);
         Objects.requireNonNull(newExpiration);
         Validate.isTrue(inception.isBefore(newExpiration), format("Cannot fix dates for category \"%s\" (id: %d), try updating that category first.", tc.getName(), tc.getId()));
@@ -400,11 +401,11 @@ public class EventManager {
 
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
         Event event = eventRepository.findById(eventId);
-        reallocateTickets(eventStatisticsManager.loadTicketCategoryWithStats(srcCategoryId, event), Optional.of(ticketCategoryRepository.getById(targetCategoryId, event.getId())), event);
+        reallocateTickets(ticketCategoryRepository.findStatisticWithId(srcCategoryId, eventId), Optional.of(ticketCategoryRepository.getById(targetCategoryId, event.getId())), event);
     }
 
-    void reallocateTickets(TicketCategoryWithStatistic src, Optional<TicketCategory> target, Event event) {
-        int notSoldTickets = src.getNotSoldTickets();
+    void reallocateTickets(TicketCategoryStatisticView src, Optional<TicketCategory> target, Event event) {
+        int notSoldTickets = src.getNotSoldTicketsCount();
         if(notSoldTickets == 0) {
             log.debug("since all the ticket have been sold, ticket moving is not needed anymore.");
             return;
@@ -414,7 +415,7 @@ public class EventManager {
         if(locked != notSoldTickets) {
             throw new IllegalStateException(String.format("Expected %d free tickets, got %d.", notSoldTickets, locked));
         }
-        ticketCategoryRepository.updateSeatsAvailability(src.getId(), src.getSoldTickets());
+        ticketCategoryRepository.updateSeatsAvailability(src.getId(), src.getSoldTicketsCount());
         if(target.isPresent()) {
             TicketCategory targetCategory = target.get();
             ticketCategoryRepository.updateSeatsAvailability(targetCategory.getId(), targetCategory.getMaxTickets() + locked);
@@ -430,7 +431,7 @@ public class EventManager {
     public void unbindTickets(String eventName, int categoryId, String username) {
         Event event = getSingleEvent(eventName, username);
         Validate.isTrue(ticketCategoryRepository.countUnboundedCategoriesByEventId(event.getId()) > 0, "cannot unbind tickets: there aren't any unbounded categories");
-        TicketCategoryWithStatistic ticketCategory = eventStatisticsManager.loadTicketCategoryWithStats(categoryId, event);
+        TicketCategoryStatisticView ticketCategory = ticketCategoryRepository.findStatisticWithId(categoryId, event.getId());
         Validate.isTrue(ticketCategory.isBounded(), "cannot unbind tickets from an unbounded category!");
         reallocateTickets(ticketCategory, Optional.empty(), event);
     }
@@ -570,7 +571,7 @@ public class EventManager {
             Validate.isTrue(ids.size() == addedTickets, "not enough tickets");
             Validate.isTrue(ticketRepository.moveToAnotherCategory(ids, original.getId(), updated.getPriceInCents()) == ids.size(), "not enough tickets");
         } else {
-            reallocateTickets(eventStatisticsManager.loadTicketCategoryWithStats(original.getId(), event), Optional.empty(), event);
+            reallocateTickets(ticketCategoryRepository.findStatisticWithId(original.getId(), event.getId()), Optional.empty(), event);
         }
         ticketCategoryRepository.updateBoundedFlag(original.getId(), updated.isBounded());
     }

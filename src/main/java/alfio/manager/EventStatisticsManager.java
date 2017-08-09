@@ -72,10 +72,6 @@ public class EventStatisticsManager {
         this.transactionRepository = transactionRepository;
     }
 
-    EventWithStatistics fillWithStatistics(Event event) {
-        return new EventWithStatistics(event, eventDescriptionRepository.findByEventId(event.getId()), loadTicketCategoriesWithStats(event), ticketRepository.countReleasedUnboundedTickets(event.getId()));
-    }
-
     private List<Event> getAllEvents(String username) {
         return userManager.findUserOrganizations(username)
                 .parallelStream()
@@ -100,15 +96,6 @@ public class EventStatisticsManager {
         return getAllEventsWithStatisticsFilteredBy(username, (e) -> true);
     }
 
-    TicketCategoryWithStatistic loadTicketCategoryWithStats(int categoryId, Event event) {
-        final TicketCategory tc = ticketCategoryRepository.getById(categoryId, event.getId());
-        return new TicketCategoryWithStatistic(tc,
-                loadModifiedTickets(event.getId(), tc.getId()),
-                specialPriceRepository.findAllByCategoryId(tc.getId()),
-                event,
-                descriptionForTicketCategory(tc.getId()));
-    }
-
     private Map<String, String> descriptionForTicketCategory(int ticketCategory) {
         return ticketCategoryDescriptionRepository.findByTicketCategoryId(ticketCategory).stream().collect(Collectors.toMap(TicketCategoryDescription::getLocale, TicketCategoryDescription::getDescription));
     }
@@ -126,8 +113,10 @@ public class EventStatisticsManager {
         return ticketCategoryRepository.findByEventId(event.getId());
     }
 
+    @Deprecated
     public EventWithStatistics getSingleEventWithStatistics(String eventName, String username) {
-        return fillWithStatistics(getSingleEvent(eventName, username));
+        Event event = getSingleEvent(eventName, username);
+        return new EventWithStatistics(event, eventDescriptionRepository.findByEventId(event.getId()), loadTicketCategoriesWithStats(event), ticketRepository.countReleasedUnboundedTickets(event.getId()));
     }
 
     private Event getSingleEvent(String eventName, String username) {

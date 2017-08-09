@@ -127,8 +127,7 @@ public class EventManagerIntegrationTest {
         assertFalse(tickets.isEmpty());
         assertEquals(AVAILABLE_SEATS, tickets.size());
         assertEquals(AVAILABLE_SEATS, tickets.stream().filter(t -> t.getCategoryId() == null).count());
-        EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(event);
-        List<TicketCategoryWithStatistic> ticketCategories = eventWithStatistics.getTicketCategories();
+        List<TicketCategory> ticketCategories = ticketCategoryRepository.findByEventId(event.getId());
         assertEquals(1, ticketCategories.size());
         assertEquals(0, ticketCategories.get(0).getMaxTickets());
     }
@@ -363,7 +362,7 @@ public class EventManagerIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
         Event event = pair.getKey();
-        TicketCategoryWithStatistic category = eventStatisticsManager.fillWithStatistics(event).getTicketCategories().get(0);
+        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), "default", 20,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
