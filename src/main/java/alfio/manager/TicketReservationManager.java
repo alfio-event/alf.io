@@ -118,7 +118,6 @@ public class TicketReservationManager {
     private final AuditingRepository auditingRepository;
 
 
-
     public static class NotEnoughTicketsException extends RuntimeException {
 
     }
@@ -1059,8 +1058,7 @@ public class TicketReservationManager {
     }
 
     private List<Pair<TicketReservation, OrderSummary>> fetchWaitingForPayment(List<String> reservationIds, Event event, Locale locale) {
-        return ticketReservationRepository.findAllReservationsWaitingForPayment().stream()
-                    .filter(reservationIds::contains)
+        return ticketReservationRepository.findAllReservationsWaitingForPayment(reservationIds).stream()
                     .map(id -> Pair.of(ticketReservationRepository.findReservationById(id), orderSummaryForReservationId(id, event, locale)))
                     .collect(Collectors.toList());
     }
@@ -1248,19 +1246,29 @@ public class TicketReservationManager {
         confirmOfflinePayment(event, reservation.getId());
     }
 
-    public List<Pair<TicketReservation, OrderSummary>> getPendingPayments(EventWithStatistics eventWithStatistics) {
-        Event event = eventWithStatistics.getEvent();
-
-        List<TicketCategoryWithStatistic> categories = eventWithStatistics.getTicketCategories();
+    private List<String> pendingReservationIdInEvent(int eventId) {
+        List<Integer> categories = ticketCategoryRepository.findIdsByEventId(eventId);
         if(categories.isEmpty()) {
             return Collections.emptyList();
         }
-        List<String> reservationIds = ticketRepository.findPendingTicketsInCategories(categories.stream().map(TicketCategoryWithStatistic::getId).collect(toList()))
-                .stream()
-                .map(Ticket::getTicketsReservationId)
-                .distinct()
-                .collect(toList());
+        return ticketRepository.findPendingReservationIdInCategories(categories);
+    }
+
+    public List<Pair<TicketReservation, OrderSummary>> getPendingPayments(Event event) {
+        List<String> reservationIds = pendingReservationIdInEvent(event.getId());
+        if(reservationIds.isEmpty()) {
+            return Collections.emptyList();
+        }
         return fetchWaitingForPayment(reservationIds, event, Locale.ENGLISH);
+    }
+
+    public Integer getPendingPaymentsCount(int eventId) {
+
+        List<String> reservationIds = pendingReservationIdInEvent(eventId);
+        if(reservationIds.isEmpty()) {
+            return 0;
+        }
+        return ticketReservationRepository.findAllReservationsWaitingForPaymentCount(reservationIds);
     }
 
     public List<TicketReservation> findAllInvoices(int eventId) {

@@ -409,8 +409,15 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{eventName}/pending-payments")
     public List<SerializablePair<TicketReservation, OrderSummary>> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {
-        return ticketReservationManager.getPendingPayments(eventStatisticsManager.getSingleEventWithStatistics(eventName, principal.getName())).stream()
+        Event event = eventManager.getSingleEvent(eventName, principal.getName());
+        return ticketReservationManager.getPendingPayments(event).stream()
                 .map(SerializablePair::fromPair).collect(toList());
+    }
+
+    @RequestMapping(value = "/events/{eventName}/pending-payments-count")
+    public Integer getPendingPaymentsCount(@PathVariable("eventName") String eventName, Principal principal) {
+        Event event = eventManager.getSingleEvent(eventName, principal.getName());
+        return ticketReservationManager.getPendingPaymentsCount(event.getId());
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)

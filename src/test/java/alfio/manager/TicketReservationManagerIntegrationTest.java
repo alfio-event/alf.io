@@ -151,7 +151,7 @@ public class TicketReservationManagerIntegrationTest {
         TotalPrice totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
 
 
-        assertEquals(0, ticketReservationManager.getPendingPayments(event).size());
+        assertEquals(0, ticketReservationManager.getPendingPayments(event.getEvent()).size());
 
         PaymentResult confirm = ticketReservationManager.confirm(null, null, event.getEvent(), reservationId, "email@example.com", new CustomerName("full name", "full", "name", event.getEvent()), Locale.ENGLISH, "billing address",
             totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
@@ -161,7 +161,7 @@ public class TicketReservationManagerIntegrationTest {
 
         assertEquals(TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, ticketReservationManager.findById(reservationId).get().getStatus());
 
-        assertEquals(1, ticketReservationManager.getPendingPayments(event).size());
+        assertEquals(1, ticketReservationManager.getPendingPayments(event.getEvent()).size());
 
         ticketReservationManager.validateAndConfirmOfflinePayment(reservationId, event.getEvent(), new BigDecimal("190.00"));
 
