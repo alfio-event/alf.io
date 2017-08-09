@@ -83,7 +83,6 @@ public class EventManager {
     private final UserManager userManager;
     private final EventRepository eventRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
-    private final EventStatisticsManager eventStatisticsManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final TicketRepository ticketRepository;

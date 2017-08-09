@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 public class EventWithStatistics implements StatisticsContainer, Comparable<EventWithStatistics>, PriceContainer {
 
     public static final DateTimeFormatter JSON_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm");
-    public static final Predicate<TicketCategoryWithStatistic> IS_BOUNDED = TicketCategoryWithStatistic::isBounded;
+    private static final Predicate<TicketCategoryWithStatistic> IS_BOUNDED = TicketCategoryWithStatistic::isBounded;
 
     @Delegate(excludes = {EventHiddenFieldContainer.class, PriceContainer.class})
     @JsonIgnore
