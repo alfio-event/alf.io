@@ -16,10 +16,10 @@
                         ctrl.counter++;
                     };
                     ctrl.isEven = function() {
-                        return ctrl.counter % 2 == 0;
+                        return ctrl.counter % 2 === 0;
                     };
                     ctrl.isOdd = function() {
-                        return ctrl.counter % 2 != 0;
+                        return ctrl.counter % 2 !== 0;
                     };
                     ctrl.ticketsConfirmed = ctrl.event.soldTickets + ctrl.event.checkedInTickets;
                     ctrl.allTickets = _.chain(ctrl.event.ticketCategories)
@@ -126,7 +126,8 @@
         .directive("eventTwoWeeksBar", ['$filter', function($filter) {
             return {
                 scope: {
-                    tickets: '='
+                    tickets: '=',
+                    event: '='
                 },
                 bindToController: true,
                 templateUrl: '/resources/angular-templates/admin/partials/event/statistic/two-weeks-bar.html',
@@ -134,8 +135,10 @@
                 controllerAs: 'ctrl',
                 link: function ($scope, element, attrs) {
                     var dateFilter = $filter('formatDate');
-                    var start = moment().subtract(15, 'days').startOf('day');
-                    var end = moment().endOf('day');
+                    var now = moment().startOf('day');
+                    var eventEnd = moment($scope.ctrl.event.end).endOf('day');
+                    var end = now.isAfter(eventEnd) ? eventEnd : now;
+                    var start = end.subtract(15, 'days').startOf('day');
                     var tickets = _.chain($scope.ctrl.tickets).filter(function(t) {
                         var reservationTimestamp = t.ticketReservation.confirmationTimestamp;
                         return reservationTimestamp && moment(dateFilter(reservationTimestamp, 'YYYY-MM-DD HH:mm:ss')).isBetween(start, end);
@@ -185,7 +188,8 @@
         .directive("eventAllTicketsByDay", ['$filter', function($filter) {
             return {
                 scope: {
-                    tickets: '='
+                    tickets: '=',
+                    event: '='
                 },
                 bindToController: true,
                 templateUrl: '/resources/angular-templates/admin/partials/event/statistic/tickets-by-day.html',
@@ -208,8 +212,11 @@
                         }).value();
                     var start = ticketsConfirmationTs.length > 0 ? ticketsConfirmationTs[0] : moment().subtract(1, 'days');
                     var labelMutableStart = undefined;
+                    var now = moment();
+                    var eventEnd = moment($scope.ctrl.event.end);
+                    var end = now.isAfter(eventEnd) ? eventEnd : now;
 
-                    var labels = _.range(0, Math.abs(start.diff(moment(), 'days'))).map(function(t) {return moment(start).add(t, 'd');});
+                    var labels = _.range(0, Math.abs(start.diff(end, 'days'))).map(function(t) {return moment(start).add(t, 'd');});
 
                     new Chartist.Line(element.find('.event-tl').get(0), {
                         labels: labels,
