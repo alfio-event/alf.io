@@ -1,25 +1,25 @@
         <div class="row">
-            <div class="col-xs-3">
+            <div class="col-xs-6 col-md-3">
                 <!-- inspired by https://blackrockdigital.github.io/startbootstrap-sb-admin-2/ -->
                 <div class="panel panel-info">
-                    <div class="panel-heading"><div class="panel-title">Total tickets confirmed</div></div>
+                    <div class="panel-heading hidden-xs hidden-sm"><div class="panel-title">Total tickets confirmed</div></div>
                     <div class="panel-body text-info">
                         <div class="row">
-                            <div class="col-xs-4"><div class="fa fa-ticket fa-5x"></div></div>
-                            <div class="col-xs-8"><div class="text-right event-statistic-highlighted">{{ctrl.ticketsConfirmed}}</div></div>
+                            <div class="col-xs-3 col-md-2"><span class="fa fa-ticket icon-overview"></span></div>
+                            <div class="col-xs-9 col-md-10"><div class="text-right event-statistic-highlighted">{{ctrl.ticketsConfirmed}}</div></div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-xs-3">
+            <div class="col-xs-6 col-md-3">
                 <div class="panel panel-info">
-                    <div class="panel-heading">
+                    <div class="panel-heading hidden-xs hidden-sm">
                         <div class="panel-title">Reservations in progress</div>
                     </div>
                     <div class="panel-body text-info">
                         <div class="row">
-                            <div class="col-xs-4"><div class="fa fa-cogs fa-5x"></div></div>
-                            <div class="col-xs-8">
+                            <div class="col-xs-3 col-md-2"><span class="fa fa-cogs icon-overview"></span></div>
+                            <div class="col-xs-9 col-md-10">
                                 <div class="text-right event-statistic-highlighted">
                                     <span ng-if="ctrl.pendingReservations == 0">0</span>
                                     <a ng-if="ctrl.pendingReservations > 0" data-ui-sref="events.single.reservationsList({eventName:ctrl.event.shortName})">{{ctrl.pendingReservations}}</a>
@@ -29,21 +29,22 @@
                     </div>
                 </div>
             </div>
-            <div class="col-xs-6" data-ng-if="!ctrl.event.freeOfCharge">
+            <div class="col-xs-12 col-md-6" data-ng-if="!ctrl.event.freeOfCharge">
                 <div class="panel panel-info">
-                    <div class="panel-heading">
-                        <div class="panel-title">Gross income ({{ctrl.event.currency}})</div>
+                    <div class="panel-heading  hidden-xs hidden-sm">
+                        <div class="panel-title">Gross income</div>
                     </div>
                     <div class="panel-body text-info">
                         <div class="row">
-                            <div class="col-xs-4"><div class="fa fa-money fa-5x"></div></div>
-                            <div class="col-xs-8"><div class="text-right event-statistic-highlighted">{{ctrl.event.grossIncome|currency:''}}</div></div>
+                            <div class="col-xs-3 col-md-4"><span class="fa fa-money icon-overview"></span></div>
+                            <div class="col-xs-9 col-md-8 text-right"><span class="event-statistic-highlighted">{{ctrl.event.grossIncome|currency:''}}</span> <span class="text-muted">{{ctrl.event.currency}}</span></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <hr/>
+        <hr class="visible-xs visible-sm"/>
+        <div class="wMarginBottom hidden-xs hidden-sm">&nbsp;</div>
         <div class="row">
             <div class="col-xs-12 col-lg-6">
                 <div class="row">

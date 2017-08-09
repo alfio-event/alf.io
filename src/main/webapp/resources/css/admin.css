@@ -155,6 +155,15 @@ td.cell-wrap {
     overflow-wrap: normal;
 }
 
+.event-statistic-highlighted {
+    font-size:3.5em;
+    font-weight: normal;
+}
+
+.icon-overview {
+    font-size: 5em !important;
+}
+
 /* for phone :D */
 @media screen and (max-width: 767px) {
 
@@ -188,6 +197,14 @@ td.cell-wrap {
       float: left;
       text-transform: uppercase;
       font-weight: bold;
+    }
+
+    .event-statistic-highlighted {
+        font-size:1em;
+        font-weight: bold;
+    }
+    .icon-overview {
+        font-size: 1.5em !important;
     }
 }
 
@@ -259,10 +276,6 @@ a.emulate-nav-pills-link {
 
 .alert-form {
     margin-top:28px;
-}
-
-.event-statistic-highlighted {
-    font-size:3.5em;
 }
 
 /* pie chart */
