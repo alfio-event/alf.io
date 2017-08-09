@@ -280,12 +280,11 @@ public class EventManager {
     public void updateEventPrices(Event original, EventModification em, String username) {
         checkOwnership(original, username, em.getOrganizationId());
         int eventId = original.getId();
-        final EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(original);
         int seatsDifference = em.getAvailableSeats() - original.getAvailableSeats();
         if(seatsDifference < 0) {
-            int allocatedSeats = eventWithStatistics.getTicketCategories().stream()
-                    .filter(TicketCategoryWithStatistic::isBounded)
-                    .mapToInt(TicketCategoryWithStatistic::getMaxTickets)
+            int allocatedSeats = ticketCategoryRepository.findByEventId(original.getId()).stream()
+                    .filter(TicketCategory::isBounded)
+                    .mapToInt(TicketCategory::getMaxTickets)
                     .sum();
             if(em.getAvailableSeats() < allocatedSeats) {
                 throw new IllegalArgumentException(format("cannot reduce max tickets to %d. There are already %d tickets allocated. Try updating categories first.", em.getAvailableSeats(), allocatedSeats));
