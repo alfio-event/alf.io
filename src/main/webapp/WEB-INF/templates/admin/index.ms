@@ -87,7 +87,7 @@
     <div class="navbar navbar-default navbar-fixed-top" role="navigation" data-ng-controller="MenuController as ctrl">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-xs-12 col-md-10 col-md-push-1">
+                <div class="col-xs-12 col-lg-11">
                     <div class="navbar-header">
                         <button type="button" class="navbar-toggle" data-ng-click="ctrl.toggleCollapse(ctrl.menuCollapsed)">
                             <span class="sr-only">Toggle navigation</span>
@@ -126,10 +126,10 @@
     <div data-ng-controller="LayoutController as ctrl" data-ng-switch="ctrl.displaySidebar">
         <div class="container-fluid menu-spacer" data-ng-show="ctrl.displaySidebar">
             <div class="row">
-                <div class="hidden-xs hidden-sm col-md-2 col-md-push-1">
+                <div class="hidden-xs hidden-sm col-md-3 col-lg-2">
                     <alfio-sidebar></alfio-sidebar>
                 </div>
-                <div class="col-sm-12 col-xs-12 col-md-8 col-md-push-1">
+                <div class="col-sm-12 col-xs-12 col-md-9">
                     <div data-ui-view></div>
                 </div>
             </div>

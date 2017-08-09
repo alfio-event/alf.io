@@ -199,31 +199,6 @@ td.cell-wrap {
     color: blue;
 }
 
-@media (min-width: 992px) {
-    div.sidebar {
-        width:175px;
-    }
-}
-
-@media (min-width: 1150px) {
-    div.sidebar {
-        width:200px;
-    }
-}
-
-@media (min-width: 1550px) {
-    div.sidebar {
-        width:300px;
-    }
-}
-
-@media (min-height: 900px) {
-    div.sidebar {
-        position: fixed;
-        top:20px;
-    }
-}
-
 a[data-ng-click], a[ng-click] {
     cursor: pointer;
 }
