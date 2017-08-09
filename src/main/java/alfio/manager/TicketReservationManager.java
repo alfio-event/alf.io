@@ -1057,12 +1057,6 @@ public class TicketReservationManager {
         });
     }
 
-    private List<Pair<TicketReservation, OrderSummary>> fetchWaitingForPayment(List<String> reservationIds, Event event, Locale locale) {
-        return ticketReservationRepository.findAllReservationsWaitingForPayment(reservationIds).stream()
-                    .map(id -> Pair.of(ticketReservationRepository.findReservationById(id), orderSummaryForReservationId(id, event, locale)))
-                    .collect(Collectors.toList());
-    }
-
     void sendReminderForOfflinePayments() {
         Date expiration = truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(OFFLINE_REMINDER_HOURS), 24)), Calendar.DATE);
         ticketReservationRepository.findAllOfflinePaymentReservationForNotification(expiration).stream()
@@ -1254,21 +1248,18 @@ public class TicketReservationManager {
         return ticketRepository.findPendingReservationIdInCategories(categories);
     }
 
+    private List<Pair<TicketReservation, OrderSummary>> fetchWaitingForPayment(int eventId, Event event, Locale locale) {
+        return ticketReservationRepository.findAllReservationsWaitingForPaymentInEventId(eventId).stream()
+            .map(id -> Pair.of(ticketReservationRepository.findReservationById(id), orderSummaryForReservationId(id, event, locale)))
+            .collect(Collectors.toList());
+    }
+
     public List<Pair<TicketReservation, OrderSummary>> getPendingPayments(Event event) {
-        List<String> reservationIds = pendingReservationIdInEvent(event.getId());
-        if(reservationIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return fetchWaitingForPayment(reservationIds, event, Locale.ENGLISH);
+        return fetchWaitingForPayment(event.getId(), event, Locale.ENGLISH);
     }
 
     public Integer getPendingPaymentsCount(int eventId) {
-
-        List<String> reservationIds = pendingReservationIdInEvent(eventId);
-        if(reservationIds.isEmpty()) {
-            return 0;
-        }
-        return ticketReservationRepository.findAllReservationsWaitingForPaymentCount(reservationIds);
+        return ticketReservationRepository.findAllReservationsWaitingForPaymentCountInEventId(eventId);
     }
 
     public List<TicketReservation> findAllInvoices(int eventId) {

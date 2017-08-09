@@ -50,11 +50,11 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set full_name = :fullName where id = :reservationId")
     int updateAssignee(@Bind("reservationId") String reservationId, @Bind("fullName") String fullName);
 
-    @Query("select id from tickets_reservation where status = 'OFFLINE_PAYMENT' and id in (:ids)")
-    List<String> findAllReservationsWaitingForPayment(@Bind("ids") List<String> ids);
+    @Query("select id from tickets_reservation where status = 'OFFLINE_PAYMENT' and event_id_fk = :eventId")
+    List<String> findAllReservationsWaitingForPaymentInEventId(@Bind("eventId") int eventId);
 
-    @Query("select count(id) from tickets_reservation where status = 'OFFLINE_PAYMENT' and id in (:ids)")
-    Integer findAllReservationsWaitingForPaymentCount(@Bind("ids") List<String> ids);
+    @Query("select count(id) from tickets_reservation where status = 'OFFLINE_PAYMENT' and event_id_fk = :eventId")
+    Integer findAllReservationsWaitingForPaymentCountInEventId(@Bind("eventId") int eventId);
 
     @Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and offline_payment_reminder_sent = false")
     @QueriesOverride({

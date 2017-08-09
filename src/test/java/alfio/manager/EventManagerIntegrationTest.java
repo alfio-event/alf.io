@@ -127,7 +127,7 @@ public class EventManagerIntegrationTest {
         assertFalse(tickets.isEmpty());
         assertEquals(AVAILABLE_SEATS, tickets.size());
         assertEquals(AVAILABLE_SEATS, tickets.stream().filter(t -> t.getCategoryId() == null).count());
-            EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(event);
+        EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(event);
         List<TicketCategoryWithStatistic> ticketCategories = eventWithStatistics.getTicketCategories();
         assertEquals(1, ticketCategories.size());
         assertEquals(0, ticketCategories.get(0).getMaxTickets());
