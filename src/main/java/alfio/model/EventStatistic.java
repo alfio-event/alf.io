@@ -24,11 +24,14 @@ import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 
 public class EventStatistic implements StatisticsContainer, Comparable<EventStatistic> {
+
+    public static final DateTimeFormatter JSON_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm");
 
 
     @JsonIgnore
@@ -55,11 +58,11 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
     }
 
     public String getFormattedBegin() {
-        return event.getBegin().format(EventWithStatistics.JSON_DATE_FORMATTER);
+        return event.getBegin().format(JSON_DATE_FORMATTER);
     }
 
     public String getFormattedEnd() {
-        return event.getEnd().format(EventWithStatistics.JSON_DATE_FORMATTER);
+        return event.getEnd().format(JSON_DATE_FORMATTER);
     }
 
     public boolean isExpired() {

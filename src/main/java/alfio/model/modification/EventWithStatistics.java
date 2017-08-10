@@ -16,10 +16,7 @@
  */
 package alfio.model.modification;
 
-import alfio.model.Event;
-import alfio.model.EventDescription;
-import alfio.model.EventHiddenFieldContainer;
-import alfio.model.PriceContainer;
+import alfio.model.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.experimental.Delegate;
@@ -39,7 +36,6 @@ import java.util.stream.Collectors;
 @Getter
 public class EventWithStatistics implements StatisticsContainer, Comparable<EventWithStatistics>, PriceContainer {
 
-    public static final DateTimeFormatter JSON_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm");
     private static final Predicate<TicketCategoryWithStatistic> IS_BOUNDED = TicketCategoryWithStatistic::isBounded;
 
     @Delegate(excludes = {EventHiddenFieldContainer.class, PriceContainer.class})
@@ -73,11 +69,11 @@ public class EventWithStatistics implements StatisticsContainer, Comparable<Even
     }
 
     public String getFormattedBegin() {
-        return getBegin().format(JSON_DATE_FORMATTER);
+        return getBegin().format(EventStatistic.JSON_DATE_FORMATTER);
     }
 
     public String getFormattedEnd() {
-        return getEnd().format(JSON_DATE_FORMATTER);
+        return getEnd().format(EventStatistic.JSON_DATE_FORMATTER);
     }
 
     boolean containsOrphanTickets() {

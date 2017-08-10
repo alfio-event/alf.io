@@ -113,11 +113,11 @@ public class TicketCategoryWithStatistic implements Comparable<TicketCategoryWit
     }
 
     public String getFormattedInception() {
-        return getInception(event.getZoneId()).format(EventWithStatistics.JSON_DATE_FORMATTER);
+        return getInception(event.getZoneId()).format(EventStatistic.JSON_DATE_FORMATTER);
     }
 
     public String getFormattedExpiration() {
-        return getExpiration(event.getZoneId()).format(EventWithStatistics.JSON_DATE_FORMATTER);
+        return getExpiration(event.getZoneId()).format(EventStatistic.JSON_DATE_FORMATTER);
     }
 
     public BigDecimal getActualPrice() {
