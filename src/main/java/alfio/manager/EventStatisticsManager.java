@@ -23,11 +23,13 @@ import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketWithStatistic;
 import alfio.repository.*;
 import alfio.util.EventUtil;
+import alfio.util.MonetaryUtil;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +93,10 @@ public class EventStatisticsManager {
         }
     }
 
+    public EventStatistic getEventStatistic(int eventId) {
+        return new EventStatistic(eventRepository.findById(eventId), eventRepository.findStatisticsFor(eventId));
+    }
+
     @Cacheable
     public List<EventStatistic> getAllEventsWithStatistics(String username) {
         return getAllEventsWithStatisticsFilteredBy(username, (e) -> true);
@@ -105,8 +111,12 @@ public class EventStatisticsManager {
                 .collect(toList());
     }
 
-    public List<TicketCategory> loadTicketCategories(Event event) {
+    private List<TicketCategory> loadTicketCategories(Event event) {
         return ticketCategoryRepository.findByEventId(event.getId());
+    }
+
+    public BigDecimal getGrossIncomeForEvent(int eventId) {
+        return MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(eventId));
     }
 
     @Deprecated
@@ -146,5 +156,4 @@ public class EventStatisticsManager {
             return ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().allMatch(tc -> EventUtil.determineAvailableSeats(stats.get(tc.getId()), eventStatisticView) == 0);
         };
     }
-
 }

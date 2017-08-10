@@ -45,6 +45,7 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
@@ -155,6 +156,9 @@ public class ReservationFlowIntegrationTest {
     private ScanAuditRepository scanAuditRepository;
     @Autowired
     private TicketReservationManager ticketReservationManager;
+
+    @Autowired
+    private TicketCategoryRepository ticketCategoryRepository;
 
     private ReservationApiController reservationApiController;
 
@@ -413,7 +417,7 @@ public class ReservationFlowIntegrationTest {
         RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
         TicketReservationModification ticketReservation = new TicketReservationModification();
         ticketReservation.setAmount(1);
-        ticketReservation.setTicketCategoryId(eventStatisticsManager.loadTicketCategories(event).stream().findFirst().map(TicketCategory::getId).orElseThrow(IllegalStateException::new));
+        ticketReservation.setTicketCategoryId(ticketCategoryRepository.findByEventId(event.getId()).stream().findFirst().map(TicketCategory::getId).orElseThrow(IllegalStateException::new));
         reservationForm.setReservation(Collections.singletonList(ticketReservation));
 
 

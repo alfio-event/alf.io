@@ -26,19 +26,20 @@ import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.result.ValidationResult;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
-import alfio.repository.DynamicFieldTemplateRepository;
-import alfio.repository.SponsorScanRepository;
-import alfio.repository.TicketCategoryDescriptionRepository;
-import alfio.repository.TicketFieldRepository;
+import alfio.repository.*;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.Validator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Delegate;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -97,6 +98,7 @@ public class EventApiController {
     private final PaymentManager paymentManager;
     private final TemplateManager templateManager;
     private final FileUploadManager fileUploadManager;
+    private final EventDescriptionRepository eventDescriptionRepository;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -151,14 +153,73 @@ public class EventApiController {
         return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> event.expiredSince(14));
     }
 
+
+    @AllArgsConstructor
+    @Getter
+    public static class EventAndOrganization {
+        private final EventWithStatistics event;
+        private final Organization organization;
+    }
+
+
+
+    @AllArgsConstructor
+    @Getter
+    public static class EventWithAdditionalInfo implements StatisticsContainer, PriceContainer {
+
+        @Delegate(excludes = {EventHiddenFieldContainer.class, PriceContainer.class})
+        @JsonIgnore
+        private final Event event;
+
+        @Delegate(excludes = {Event.class})
+        @JsonIgnore
+        private final EventStatistic eventStatistic;
+
+        private final Map<String, String> description;
+
+        private final BigDecimal grossIncome;
+
+        @Override
+        @JsonIgnore
+        public int getSrcPriceCts() {
+            return event.getSrcPriceCts();
+        }
+
+        @Override
+        public String getCurrencyCode() {
+            return getCurrency();
+        }
+
+        @Override
+        @JsonIgnore
+        public Optional<BigDecimal> getOptionalVatPercentage() {
+            return getVatStatus() != VatStatus.NONE ? Optional.ofNullable(event.getVat()) : Optional.empty();
+        }
+
+        @Override
+        public VatStatus getVatStatus() {
+            return event.getVatStatus();
+        }
+
+        public BigDecimal getVatPercentage() {
+            return getVatPercentageOrZero();
+        }
+
+        public BigDecimal getVat() {
+            return getVAT();
+        }
+    }
+
     @RequestMapping(value = "/events/{name}", method = GET)
-    public ResponseEntity<Map<String, Object>> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
+    public ResponseEntity<EventAndOrganization> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
         final String username = principal.getName();
-        return optionally(() -> eventStatisticsManager.getSingleEventWithStatistics(eventName, username))
+        return optionally(() -> /*eventManager.getSingleEvent(eventName, username)*/ eventStatisticsManager.getSingleEventWithStatistics(eventName, username))
             .map(event -> {
-                Map<String, Object> out = new HashMap<>();
-                out.put("event", event);
-                out.put("organization", eventManager.loadOrganizer(event.getEvent(), username));
+                Map<String, String> description = eventDescriptionRepository.findByEventIdAsMap(event.getId());
+                EventStatistic eventStatistic = eventStatisticsManager.getEventStatistic(event.getId());
+                BigDecimal grossIncome = eventStatisticsManager.getGrossIncomeForEvent(event.getId());
+                //EventWithAdditionalInfo e = new EventWithAdditionalInfo(event.getEvent(), eventStatistic, description, grossIncome);
+                EventAndOrganization out = new EventAndOrganization(event, eventManager.loadOrganizer(event.getEvent(), username));
                 return ResponseEntity.ok(out);
             }).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
