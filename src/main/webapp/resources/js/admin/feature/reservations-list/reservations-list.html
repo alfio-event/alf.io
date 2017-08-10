@@ -67,7 +67,7 @@
             </thead>
             <tbody>
                 <tr ng-repeat="r in $ctrl.filteredReservations | limitTo: $ctrl.itemsPerPage : $ctrl.itemsPerPage * ($ctrl.currentPage - 1)">
-                    <td ng-class="{'text-danger': r.status != 'COMPLETE', 'text-success': r.status == 'COMPLETE'}" uib-tooltip="{{r.status}}"><i ng-class="{'fa fa-check-circle': r.status == 'COMPLETE', 'fa fa-exclamation': r.status != 'COMPLETE'}"></i></td>
+                    <td ng-class="{'text-danger': r.status != 'COMPLETE', 'text-success': r.status == 'COMPLETE'}"><i uib-tooltip="{{r.status}}" ng-class="{'fa fa-check-circle': r.status == 'COMPLETE', 'fa fa-exclamation': r.status != 'COMPLETE'}"></i></td>
                     <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="$ctrl.truncateReservationId(r.id)"></a></td>
                     <td ng-bind="$ctrl.formatFullName(r)"></td>
                     <td ng-bind="r.email"></td>
