@@ -503,20 +503,19 @@
 
     directives.directive('pendingPaymentsLink', ['$rootScope', '$interval', 'EventService', function($rootScope, $interval, EventService) {
         return {
-            restrict: 'E',
+            restrict: 'AE',
             scope: {
-                event: '=',
+                eventName: '=',
                 styleClass: '@'
             },
             bindToController: true,
             controllerAs: 'ctrl',
-            template: '<a ng-class="ctrl.styleClass" data-ui-sref="events.single.pending-payments({eventName: ctrl.event.shortName})"><i class="fa fa-dollar"></i> Pending Payments <pending-payments-badge event-name="{{ctrl.event.shortName}}"></pending-payments-badge></a>',
+            template: '<a ng-class="ctrl.styleClass" data-ui-sref="events.single.pending-payments({eventName: ctrl.eventName})"><i class="fa fa-dollar"></i> Pending Payments <pending-payments-badge event-name="{{ctrl.eventName}}"></pending-payments-badge></a>',
             controller: ['$scope', function($scope) {
                 var ctrl = this;
-                var eventName = ctrl.event.shortName;
                 ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
                 var getPendingPayments = function() {
-                    EventService.getPendingPaymentsCount(eventName).then(function(res) {
+                    EventService.getPendingPaymentsCount(ctrl.eventName).then(function(res) {
                         $rootScope.$broadcast('PendingReservationsFound', res.data);
                     });
                 };
@@ -532,12 +531,13 @@
 
     directives.directive('pendingPaymentsBadge', function($rootScope, $interval, EventService) {
         return {
-            restrict: 'E',
+            restrict: 'AE',
             scope: false,
-            template: '<span class="badge">{{pendingReservationsCount}}</span>',
+            template: '<span ng-class="styleClass">{{pendingReservationsCount}}</span>',
             link: function(scope, element, attrs) {
                 var eventName = attrs.eventName;
                 scope.pendingReservationsCount = 0;
+                scope.styleClass = attrs.styleClass || "badge";
                 if(angular.isDefined(eventName)) {
                     var getPendingPayments = function() {
                         EventService.getPendingPaymentsCount(eventName).then(function(res) {
@@ -661,21 +661,22 @@
 
     directives.directive('waitingQueueDisplayCounter', function() {
         return {
-            restrict: 'E',
+            restrict: 'AE',
             bindToController: true,
             scope: {
-                event: '=',
-                styleClass: '@'
+                eventName: '=',
+                styleClass: '@',
+                justCount: '='
             },
             controllerAs: 'ctrl',
             controller: function(WaitingQueueService) {
                 var ctrl = this;
-                WaitingQueueService.countSubscribers(this.event).success(function(result) {
+                WaitingQueueService.countSubscribers(ctrl.eventName).success(function(result) {
                     ctrl.count = result;
                 });
                 ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
             },
-            template: '<a data-ng-class="ctrl.styleClass" data-ui-sref="events.single.show-waiting-queue({eventName: ctrl.event.shortName})"><i class="fa fa-group"></i> Waiting queue <span class="badge">{{ctrl.count}}</span></a>'
+            template: '<a data-ng-class="ctrl.styleClass" data-ui-sref="events.single.show-waiting-queue({eventName: ctrl.eventName})"><i class="fa fa-group" ng-if="!ctrl.justCount"></i> <span ng-class="{\'sr-only\': ctrl.justCount}">Waiting queue</span> <span ng-class="{\'badge\': !ctrl.justCount}">{{ctrl.count}}</span></a>'
         }
     });
 

@@ -72,10 +72,7 @@
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="categoryConf.delete(config)"></setting>
             </div>
         </div>
-
-        <div class="pull-right wMarginBottom wMarginTop">
-            <button type="submit" class="btn btn-success" data-ng-disabled="categoryConf.loading">save</button>
-            <a class="btn btn-default" data-ng-click="categoryConf.closeModal()">close</a>
-        </div>
+        <hr />
+        <control-buttons data-success-text="Save" data-cancel-handler="categoryConf.closeModal"></control-buttons>
     </form>
 </div>

@@ -77,9 +77,9 @@
                 <div class="row">
                     <div class="col-xs-12">
                         <div class="btn-group j-btn-group">
-                            <label class="btn btn-default" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'fullData'"><i class="fa fa-address-card"></i> Insert attendees manually</label>
-                            <label class="btn btn-default" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'CSV'"><i class="fa fa-upload"></i> Upload CSV</label>
-                            <label class="btn btn-default" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'noData'"><i class="fa fa-user-times"></i> Reserve empty seats</label>
+                            <label class="btn btn-default" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'fullData'"><i class="fa fa-address-card"></i> <span class="hidden-xs hidden-sm">Insert attendees</span> manually</label>
+                            <label class="btn btn-default hidden-xs hidden-sm" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'CSV'"><i class="fa fa-upload"></i> Upload CSV</label>
+                            <label class="btn btn-default" ng-model="ticketInfo.attendeeStrategy" uib-btn-radio="'noData'"><i class="fa fa-user-times"></i> <span class="hidden-xs hidden-sm">Reserve</span> empty seats</label>
                         </div>
                     </div>
                 </div>

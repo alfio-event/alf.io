@@ -1,18 +1,6 @@
 <div class="page-header">
-    <h1>{{event.displayName}} 
-    	<a class="btn btn-default visible-xs-inline visible-sm-inline" data-ng-if="isInternal(event)" data-ui-sref="events.single.configuration({eventName: event.shortName})"><i class="fa fa-wrench"></i><span class="sr-only"> settings</span></a>
-    	<button type="button" ng-click="openDeleteWarning(event)" class="btn btn-danger visible-xs-inline visible-sm-inline" ng-if="isInternal(event)"><i class="fa fa-trash"></i> Delete</button>
-	</h1>
+    <h1>{{event.displayName}}</h1>
     <h4 class="text-muted">{{event.shortDescription}}</h4>
-    <div data-ng-if="isInternal(event)" class="visible-xs visible-sm">
-        <span><button class="btn btn-primary" type="button" data-ng-click="openFieldSelectionModal()" ><i class="fa fa-download"></i> download attendees' data</button></span>
-        <span><a class="btn btn-warning" data-ui-sref="events.single.show-resources({eventName: event.shortName})"><i class="fa fa-file-text-o" aria-hidden="true"></i> show/edit email and ticket templates</a></span>
-        <span><a class="btn btn-warning" data-ui-sref="events.single.compose-custom-message({eventName: event.shortName})"><i class="fa fa-envelope"></i> send a message to attendees</a></span>
-        <waiting-queue-display-counter data-event="event"></waiting-queue-display-counter>
-        <span><a class="btn btn-warning" data-ng-click="downloadSponsorsScan()" ><i class="fa fa-download"></i> download sponsors scan</a></span>
-        <span><a class="btn btn-default" data-ui-sref="events.single.email-log({eventName:event.shortName})"><i class="fa fa-paper-plane-o"></i> view sent messages</a></span>
-        <span><a class="btn btn-default" data-ui-sref="events.single.plugin-log({eventName:event.shortName})"><i class="fa fa-plug"></i> view Plugins log</a></span>
-    </div>
 </div>
 <div class="alert alert-warning" data-ng-if="event.status !== 'PUBLIC'">
     <h4>

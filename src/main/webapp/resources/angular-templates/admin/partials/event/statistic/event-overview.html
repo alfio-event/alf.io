@@ -29,6 +29,26 @@
                     </div>
                 </div>
             </div>
+            <div class="col-xs-6 visible-sm visible-xs">
+                <div class="panel panel-info">
+                    <div class="panel-body text-info">
+                        <div class="row">
+                            <div class="col-xs-3 col-md-2"><span class="fa fa-group icon-overview"></span></div>
+                            <div class="col-xs-9 col-md-10"><div class="text-right" waiting-queue-display-counter="" data-event-name="ctrl.event.shortName" data-just-count="true" data-style-class="event-statistic-highlighted"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-6 visible-sm visible-xs">
+                <div class="panel panel-info">
+                    <div class="panel-body text-info">
+                        <div class="row">
+                            <div class="col-xs-3 col-md-2"><span class="fa fa-dollar icon-overview"></span></div>
+                            <div class="col-xs-9 col-md-10 text-right"><a ui-sref="events.single.pending-payments({eventName: ctrl.event.shortName})" pending-payments-badge="" data-event-name="{{ctrl.event.shortName}}" data-style-class="event-statistic-highlighted"></a></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="col-xs-12 col-md-6" data-ng-if="!ctrl.event.freeOfCharge">
                 <div class="panel panel-info">
                     <div class="panel-heading  hidden-xs hidden-sm">

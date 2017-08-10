@@ -55,9 +55,10 @@
         </div>
     </div>
 </div>
-<div class="row">
-    <div class="col-xs-12"><button type="button" class="btn btn-success" data-ng-click="ctrl.edit()" data-ng-if="!ctrl.editActive" data-ng-disabled="ctrl.eventIsFreeOfCharge"><i class="fa fa-plus"></i> Add new</button></div>
+<div class="row" data-ng-if="!ctrl.eventIsFreeOfCharge">
+    <div class="col-xs-12"><button type="button" class="btn btn-success" data-ng-click="ctrl.edit()" data-ng-if="!ctrl.editActive"><i class="fa fa-plus"></i> Add new</button></div>
 </div>
 <div class="alert alert-warning" data-ng-if="ctrl.eventIsFreeOfCharge">
-    <span class="fa fa-warning"></span> Cannot add donations to an event marked as "free of charge". Please change this setting, add a default price > 0, specify currency and VAT
+    <p><span class="fa fa-warning"></span> Cannot add <span ng-if="ctrl.type == 'DONATION'">donations</span><span ng-if="ctrl.type != 'DONATION'">additional options</span> to an event marked as "free of charge".</p>
+    <p>Please change this setting, add a default price > 0, specify currency and VAT</p>
 </div>

@@ -64,7 +64,7 @@ form.force-show-errors textarea.ng-invalid + field-error > div.text-danger {
 }
 
 .category-name {
-    margin-top:4px
+    margin-top:4px;
 }
 
 .category-danger {

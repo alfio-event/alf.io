@@ -1,4 +1,8 @@
-<div class="pull-right">
-    <button type="button" class="btn btn-lg btn-default" data-ng-disabled="formObj.$waiting" data-ng-click="cancel()" style="margin-bottom:20px">Cancel</button>
-    <button type="submit" class="btn btn-lg btn-warning" data-ng-disabled="formObj.$waiting" data-ng-click="ok(formObj)" style="margin-bottom:20px">{{successText}}</button>
+<div class="row">
+    <div class="col-md-4 col-md-push-8 col-xs-12">
+        <button class="btn btn-lg btn-warning btn-block" data-ng-disabled="formObj.$waiting" data-ng-click="ok(formObj)" style="margin-bottom: 10px">{{successText}}</button>
+    </div>
+    <div class="col-md-4 col-md-pull-4 col-xs-12">
+        <button type="button" class="btn btn-lg btn-default btn-block" data-ng-disabled="formObj.$waiting" data-ng-click="cancel()" style="margin-bottom: 10px">Cancel</button>
+    </div>
 </div>

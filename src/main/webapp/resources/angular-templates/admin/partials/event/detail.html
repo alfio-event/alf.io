@@ -55,7 +55,7 @@
                                         <uib-bar ng-if="!ticketCategory.bounded" value="event.dynamicAllocation" type="default" uib-tooltip="Dynamically allocated ({{event.dynamicAllocation}})">{{event.dynamicAllocation}}</uib-bar>
                                     </uib-progress>
                                 </div>
-                                <div class="col-xs-9 col-md-5">
+                                <div class="col-xs-12 col-md-5">
                                     <div class="pull-right">
                                         <a class="btn btn-sm btn-default" data-ng-click="editCategory(ticketCategory, event)"><i class="fa fa-edit"></i> edit</a>
                                         <a class="btn btn-sm btn-default" data-ng-click="toggleTicketViewCollapse(ticketCategory)" data-ng-if="ticketCategory.containingTickets">
@@ -118,9 +118,15 @@
                             <hr>
                             <button class="close" aria-label="Close" data-ng-click="toggleTokenViewCollapse(ticketCategory)"><i class="fa fa-close"></i></button>
                             <h4>Tokens</h4>
-                            <ul class="list-inline">
+                            <ul class="list-inline" ng-if="containsValidTokens(ticketCategory.tokenStatus)">
                                 <li data-ng-repeat="token in ::ticketCategory.tokenStatus | orderBy: ['id']"><i class="status-icon" data-ng-class="evaluateClass(token)" title="{{::token.status}}"></i> {{::token.code}}</li>
                             </ul>
+                            <div class="alert alert-info" ng-if="!containsValidTokens(ticketCategory.tokenStatus)">
+                                <div class="row">
+                                    <div class="col-xs-1"><i class="fa fa-info-circle fa-3x"></i></div>
+                                    <div class="col-xs-11">Token generation in progress. Please wait 30s and then reload the page.</div>
+                                </div>
+                            </div>
                         </div>
                         <div data-ng-if="ticketCategory.containingTickets && !isTicketViewCollapsed(ticketCategory)">
                             <hr>

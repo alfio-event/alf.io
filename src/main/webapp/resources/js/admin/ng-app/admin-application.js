@@ -305,15 +305,24 @@
         return deferred.promise;
     };
 
-    admin.controller('MenuController', ['$scope', '$http', '$window', 'UtilsService', function($scope, $http, $window, UtilsService) {
+    admin.controller('MenuController', ['$scope', '$http', '$window', 'UtilsService', '$state', '$rootScope', 'EventService', function($scope, $http, $window, UtilsService, $state, $rootScope, EventService) {
         var ctrl = this;
         ctrl.menuCollapsed = true;
+        ctrl.eventName = $state.params.eventName;
+        $rootScope.$on('$stateChangeSuccess', function(event, toState, toParams) {
+            ctrl.eventName = toParams.eventName;
+        });
         ctrl.toggleCollapse = function(currentStatus) {
             ctrl.menuCollapsed = !currentStatus;
         };
         ctrl.doLogout = function() {
             UtilsService.logout().then(function() {
                 $window.location.reload();
+            });
+        };
+        ctrl.openDeleteWarning = function() {
+            EventService.deleteEvent(ctrl.event).then(function(result) {
+                $state.go('index');
             });
         };
     }]);
@@ -693,6 +702,12 @@
                 if(result === 'OK') {
                     loadData();
                 }
+            });
+        };
+
+        $scope.containsValidTokens = function(tokens) {
+            return _.all(tokens, function(t) {
+                return t.status !== 'WAITING';
             });
         };
 
