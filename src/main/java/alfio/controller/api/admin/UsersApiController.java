@@ -26,6 +26,7 @@ import alfio.util.ImageUtil;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -35,9 +36,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.IOException;
 import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,7 +48,6 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 public class UsersApiController {
 
     private static final String OK = "OK";
-    private static final String USER_WITH_PASSWORD_KEY = "USER_WITH_PASSWORD";
     private final UserManager userManager;
 
 
@@ -143,36 +140,24 @@ public class UsersApiController {
     }
 
     @RequestMapping(value = "/users/new", method = POST)
-    public UserWithPassword insertUser(@RequestBody UserModification userModification, HttpSession session, Principal principal) {
+    public UserWithPasswordAndQRCode insertUser(@RequestBody UserModification userModification, @RequestParam("baseUrl") String baseUrl, Principal principal) {
         Role requested = Role.valueOf(userModification.getRole());
         Validate.isTrue(userManager.getAvailableRoles(principal.getName()).stream().anyMatch(requested::equals), String.format("Requested role %s is not available for current user", userModification.getRole()));
         UserWithPassword userWithPassword = userManager.insertUser(userModification.getOrganizationId(), userModification.getUsername(),
             userModification.getFirstName(), userModification.getLastName(),
             userModification.getEmailAddress(), requested,
             User.Type.INTERNAL);
-        storePasswordImage(session, userWithPassword);
-        return userWithPassword;
+        return new UserWithPasswordAndQRCode(userWithPassword, toBase64QRCode(userWithPassword, baseUrl));
     }
 
-    @RequestMapping(value = "/users/{identifier}.png", method = GET)
-    public void loadUserImage(@PathVariable("identifier") String identifier, @RequestParam("baseUrl") String baseUrl, HttpSession session, HttpServletResponse response) throws IOException {
-        Optional<UserWithPassword> optional = Optional.ofNullable((UserWithPassword) session.getAttribute(USER_WITH_PASSWORD_KEY))
-                                                       .filter(a -> identifier.equals(a.getUniqueId()));
-        if(!optional.isPresent()) {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return;
-        }
-        UserWithPassword userWithPassword = optional.get();
-        response.setContentType("image/png");
 
+    private static String toBase64QRCode(UserWithPassword userWithPassword, String baseUrl) {
         Map<String, Object> info = new HashMap<>();
         info.put("username", userWithPassword.getUsername());
         info.put("password", userWithPassword.getPassword());
         info.put("baseUrl", baseUrl);
-        //
-        response.getOutputStream().write(ImageUtil.createQRCode(Json.GSON.toJson(info)));
+        return Base64.getEncoder().encodeToString(ImageUtil.createQRCode(Json.GSON.toJson(info)));
     }
-
 
     @RequestMapping(value = "/users/{id}", method = DELETE)
     public String deleteUser(@PathVariable("id") int userId, Principal principal) {
@@ -201,14 +186,20 @@ public class UsersApiController {
     }
 
     @RequestMapping(value = "/users/{id}/reset-password", method = PUT)
-    public UserWithPassword resetPassword(@PathVariable("id") int userId, HttpSession session) {
+    public UserWithPasswordAndQRCode resetPassword(@PathVariable("id") int userId, @RequestParam("baseUrl") String baseUrl) {
         UserWithPassword userWithPassword = userManager.resetPassword(userId);
-        storePasswordImage(session, userWithPassword);
-        return userWithPassword;
+        return new UserWithPasswordAndQRCode(userWithPassword, toBase64QRCode(userWithPassword, baseUrl));
     }
 
-    private void storePasswordImage(HttpSession session, UserWithPassword userWithPassword) {
-        session.setAttribute(USER_WITH_PASSWORD_KEY, userWithPassword);
+    @Getter
+    public static class UserWithPasswordAndQRCode extends UserWithPassword {
+
+        private final String qrCode;
+
+        UserWithPasswordAndQRCode(UserWithPassword userWithPassword, String qrCode) {
+            super(userWithPassword.getUser(), userWithPassword.getPassword(), userWithPassword.getUniqueId());
+            this.qrCode = qrCode;
+        }
     }
 
     private static final class RoleDescriptor {

@@ -6,7 +6,7 @@
 <span class="user-detail">Username: {{user.username}}</span>
 <span class="user-detail">Password: {{user.password}}</span>
 
-        <img class="img-thumbnail center-block" alt="qr code" data-ng-src="/admin/api/users/{{user.uniqueId}}.png?baseUrl={{baseUrl}}">
+        <img class="img-thumbnail center-block" alt="qr code" data-ng-src="data:image/png;base64,{{user.qrCode}}">
     </pre>
 </div>
 <div class="modal-footer">
