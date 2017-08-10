@@ -25,8 +25,11 @@ import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketFieldConfiguration.Context;
-import alfio.model.modification.*;
+import alfio.model.modification.EventModification;
 import alfio.model.modification.EventModification.AdditionalField;
+import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
+import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.TicketFieldDescriptionModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.system.Configuration;
@@ -419,10 +422,15 @@ public class EventManager {
             TicketCategory targetCategory = target.get();
             ticketCategoryRepository.updateSeatsAvailability(targetCategory.getId(), targetCategory.getMaxTickets() + locked);
             ticketRepository.moveToAnotherCategory(lockedTickets, targetCategory.getId(), targetCategory.getSrcPriceCts());
-            insertTokens(targetCategory, locked);
+            if(targetCategory.isAccessRestricted()) {
+                insertTokens(targetCategory, locked);
+            } else {
+                ticketRepository.resetTickets(lockedTickets);
+            }
         } else {
             int result = ticketRepository.unbindTicketsFromCategory(event.getId(), src.getId(), lockedTickets);
             Validate.isTrue(result == locked, String.format("Expected %d modified tickets, got %d.", locked, result));
+            ticketRepository.resetTickets(lockedTickets);
         }
         specialPriceRepository.cancelExpiredTokens(src.getId());
     }

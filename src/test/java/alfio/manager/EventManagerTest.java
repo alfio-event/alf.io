@@ -283,7 +283,6 @@ public class EventManagerTest {{
             verify(ticketCategoryRepository).countUnboundedCategoriesByEventId(eq(eventId));
             verify(userManager).findUserOrganizations(eq(username));
             verify(eventRepository).findByShortName(eq(eventName));
-            //verifyNoMoreInteractions(ticketCategoryRepository, userManager, eventRepository, ticketRepository);
         });
 
         it.should("unbind tickets from a bounded category", expect -> {
@@ -310,7 +309,6 @@ public class EventManagerTest {{
             verify(ticketRepository).selectTicketInCategoryForUpdate(eq(eventId), eq(categoryId), eq(notSold), eq(singletonList(Ticket.TicketStatus.FREE.name())));
             verify(ticketRepository).unbindTicketsFromCategory(eq(eventId), eq(categoryId), eq(lockedTickets));
             verify(ticketCategoryRepository).updateSeatsAvailability(eq(categoryId), eq(0));
-            //verifyNoMoreInteractions(ticketCategoryRepository, userManager, eventRepository, ticketRepository);
         });
 
     });
