@@ -96,15 +96,11 @@ public class EventStatisticsManager {
         return getAllEventsWithStatisticsFilteredBy(username, (e) -> true);
     }
 
-    private Map<String, String> descriptionForTicketCategory(int ticketCategory) {
-        return ticketCategoryDescriptionRepository.findByTicketCategoryId(ticketCategory).stream().collect(Collectors.toMap(TicketCategoryDescription::getLocale, TicketCategoryDescription::getDescription));
-    }
-
     public List<TicketCategoryWithStatistic> loadTicketCategoriesWithStats(Event event) {
         return loadTicketCategories(event).stream()
                 .map(tc -> new TicketCategoryWithStatistic(tc, loadModifiedTickets(tc.getEventId(), tc.getId()),
                     specialPriceRepository.findAllByCategoryId(tc.getId()), event,
-                    descriptionForTicketCategory(tc.getId())))
+                    ticketCategoryDescriptionRepository.descriptionForTicketCategory(tc.getId())))
                 .sorted()
                 .collect(toList());
     }

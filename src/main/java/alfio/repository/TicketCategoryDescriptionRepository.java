@@ -22,7 +22,9 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @QueryRepository
 public interface TicketCategoryDescriptionRepository {
@@ -38,4 +40,9 @@ public interface TicketCategoryDescriptionRepository {
 
     @Query("delete from ticket_category_text where ticket_category_id_fk = :ticketCategoryId")
     int delete(@Bind("ticketCategoryId") int ticketCategoryId);
+
+
+    default Map<String, String> descriptionForTicketCategory(int ticketCategory) {
+        return findByTicketCategoryId(ticketCategory).stream().collect(Collectors.toMap(TicketCategoryDescription::getLocale, TicketCategoryDescription::getDescription));
+    }
 }
