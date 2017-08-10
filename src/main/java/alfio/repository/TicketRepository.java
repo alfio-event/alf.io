@@ -34,6 +34,7 @@ public interface TicketRepository {
     String RELEASED = "RELEASED";
     String REVERT_TO_FREE = "update ticket set status = 'FREE' where status = 'RELEASED' and event_id = :eventId";
 
+
     @Query(type = QueryType.TEMPLATE, value = "insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts, src_price_cts)"
             + "values(:uuid, :creation, :categoryId, :eventId, :status, 0, 0, :srcPriceCts)")
     String bulkTicketInitialization();
@@ -168,21 +169,27 @@ public interface TicketRepository {
     @Query("select distinct tickets_reservation_id from ticket where category_id in (:categories) and status = 'PENDING'")
     List<String> findPendingReservationIdInCategories(@Bind("categories") List<Integer> categories);
 
-    @Query("select " +
-            " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
-            " t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id," +
-            " t.full_name t_full_name, t.first_name t_first_name, t.last_name t_last_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment," +
-            " t.user_language t_user_language," +
-            " tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address," +
-            " tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, " +
-            " tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language, tr.direct_assignment tr_direct_assignment, tr.invoice_number tr_invoice_number, tr.invoice_model tr_invoice_model, " +
-            " tr.vat_status tr_vat_status, tr.vat_nr tr_vat_nr, tr.vat_country tr_vat_country, tr.invoice_requested tr_invoice_requested," +
-            " tc.id tc_id, tc.inception tc_inception, tc.expiration tc_expiration, tc.max_tickets tc_max_tickets, tc.name tc_name, tc.src_price_cts tc_src_price_cts, tc.access_restricted tc_access_restricted, tc.tc_status tc_tc_status, tc.event_id tc_event_id, tc.bounded tc_bounded," +
-            " ltu.last_update " +
-            " from ticket t " +
-            " inner join tickets_reservation tr on t.tickets_reservation_id = tr.id " +
-            " inner join ticket_category tc on t.category_id = tc.id " +
-            " left outer join latest_ticket_update ltu on t.id = ltu.ticket_id and ltu.event_id = :eventId " +
+    String FIND_FULL_TICKET_INFO = "select " +
+        " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
+        " t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id," +
+        " t.full_name t_full_name, t.first_name t_first_name, t.last_name t_last_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment," +
+        " t.user_language t_user_language," +
+        " tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address," +
+        " tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, " +
+        " tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language, tr.direct_assignment tr_direct_assignment, tr.invoice_number tr_invoice_number, tr.invoice_model tr_invoice_model, " +
+        " tr.vat_status tr_vat_status, tr.vat_nr tr_vat_nr, tr.vat_country tr_vat_country, tr.invoice_requested tr_invoice_requested," +
+        " tc.id tc_id, tc.inception tc_inception, tc.expiration tc_expiration, tc.max_tickets tc_max_tickets, tc.name tc_name, tc.src_price_cts tc_src_price_cts, tc.access_restricted tc_access_restricted, tc.tc_status tc_tc_status, tc.event_id tc_event_id, tc.bounded tc_bounded," +
+        " ltu.last_update " +
+        " from ticket t " +
+        " inner join tickets_reservation tr on t.tickets_reservation_id = tr.id " +
+        " inner join ticket_category tc on t.category_id = tc.id " +
+        " left outer join latest_ticket_update ltu on t.id = ltu.ticket_id and ltu.event_id = :eventId ";
+
+    @Query(FIND_FULL_TICKET_INFO +
+        " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null order by t.id asc")
+    List<FullTicketInfo> findAllFullTicketInfoAssignedByEventId(@Bind("eventId") int eventId);
+
+    @Query(FIND_FULL_TICKET_INFO +
             " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null and t.id in (:ids) order by t.id asc")
     List<FullTicketInfo> findAllFullTicketInfoAssignedByEventId(@Bind("eventId") int eventId, @Bind("ids") List<Integer> ids);
 

@@ -146,7 +146,7 @@ public class CheckInManager {
     }
 
     public List<FullTicketInfo> findAllFullTicketInfo(int eventId) {
-        return ticketRepository.findAllFullTicketInfoAssignedByEventId(eventId, null);
+        return ticketRepository.findAllFullTicketInfoAssignedByEventId(eventId);
     }
 
     public TicketAndCheckInResult evaluateTicketStatus(int eventId, String ticketIdentifier, Optional<String> ticketCode) {

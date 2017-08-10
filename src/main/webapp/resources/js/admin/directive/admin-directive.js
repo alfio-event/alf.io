@@ -521,7 +521,7 @@
                     });
                 };
                 getPendingPayments();
-                var promise = $interval(getPendingPayments, 1000);
+                var promise = $interval(getPendingPayments, 10000);
 
                 $scope.$on('$destroy', function() {
                     $interval.cancel(promise);
