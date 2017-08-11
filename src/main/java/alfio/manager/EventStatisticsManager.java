@@ -36,7 +36,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static alfio.util.OptionalWrapper.optionally;
 import static java.util.stream.Collectors.toList;
 
 @Component
@@ -155,7 +154,7 @@ public class EventStatisticsManager {
         Event event = eventRepository.findById(eventId);
         return ticketRepository.findAllModifiedTickets(eventId, categoryId).stream()
                 .map(t -> new TicketWithStatistic(t, event, ticketReservationRepository.findReservationById(t.getTicketsReservationId()),
-                        event.getZoneId(), optionally(() -> transactionRepository.loadByReservationId(t.getTicketsReservationId()))))
+                        event.getZoneId(), transactionRepository.loadOptionalByReservationId(t.getTicketsReservationId())))
                 .sorted()
                 .collect(Collectors.toList());
     }
