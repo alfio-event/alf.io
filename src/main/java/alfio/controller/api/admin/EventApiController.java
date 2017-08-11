@@ -102,6 +102,7 @@ public class EventApiController {
     private final FileUploadManager fileUploadManager;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final SpecialPriceRepository specialPriceRepository;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -181,9 +182,26 @@ public class EventApiController {
 
         private final Map<String, String> description;
 
+        private final List<SpecialPrice> tokenStatus;
+
         //TODO: to remove it
         @Deprecated
         private final List<TicketWithStatistic> tickets = Collections.emptyList();
+
+        @JsonIgnore
+        public Event getEvent() {
+            return event;
+        }
+
+        @JsonIgnore
+        public TicketCategory getTicketCategory() {
+            return ticketCategory;
+        }
+
+        @JsonIgnore
+        public TicketCategoryStatisticView getTicketCategoryStatisticView() {
+            return ticketCategoryStatisticView;
+        }
 
 
         public String getFormattedInception() {
@@ -289,6 +307,16 @@ public class EventApiController {
 
         private final BigDecimal grossIncome;
 
+        @JsonIgnore
+        public Event getEvent() {
+            return event;
+        }
+
+        @JsonIgnore
+        public EventStatistic getEventStatistic() {
+           return eventStatistic;
+        }
+
         @Override
         @JsonIgnore
         public int getSrcPriceCts() {
@@ -337,11 +365,14 @@ public class EventApiController {
 
 
                 List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
-                Map<Integer, Map<String, String>> descriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList()));
-
+                List<Integer> ticketCategoriesIds = ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList());
+                Map<Integer, Map<String, String>> descriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoriesIds);
                 Map<Integer, TicketCategoryStatisticView> ticketCategoriesStatistics = ticketCategoryRepository.findStatisticsForEventIdByCategoryId(event.getId());
+                Map<Integer, List<SpecialPrice>> specialPrices = specialPriceRepository.findAllByCategoriesIdsMapped(ticketCategoriesIds);
 
-                List<TicketCategoryWithAdditionalInfo> tWithInfo = ticketCategories.stream().map(t -> new TicketCategoryWithAdditionalInfo(event, t, ticketCategoriesStatistics.get(t.getId()), descriptions.get(t.getId()))).collect(Collectors.toList());
+                List<TicketCategoryWithAdditionalInfo> tWithInfo = ticketCategories.stream()
+                    .map(t -> new TicketCategoryWithAdditionalInfo(event, t, ticketCategoriesStatistics.get(t.getId()), descriptions.get(t.getId()), specialPrices.get(t.getId())))
+                    .collect(Collectors.toList());
 
                 EventWithAdditionalInfo e = new EventWithAdditionalInfo(event, tWithInfo, eventStatistic, description, grossIncome);
 

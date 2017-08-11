@@ -23,13 +23,19 @@ import ch.digitalfondue.npjt.QueryRepository;
 import ch.digitalfondue.npjt.QueryType;
 
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @QueryRepository
 public interface SpecialPriceRepository {
 
     @Query("select * from special_price where ticket_category_id = :ticketCategoryId")
     List<SpecialPrice> findAllByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
+
+    @Query("select * from special_price where ticket_category_id in (:ticketCategoryIds)")
+    List<SpecialPrice> findAllByCategoriesIds(@Bind("ticketCategoryIds") Collection<Integer> ticketCategoryIds);
 
     @Query("select * from special_price where ticket_category_id = :ticketCategoryId and status = 'FREE'")
     List<SpecialPrice> findActiveByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
@@ -83,4 +89,9 @@ public interface SpecialPriceRepository {
 
     @Query("select * from special_price where status = 'WAITING' and ticket_category_id = :categoryId for update")
     List<SpecialPrice> findWaitingElementsForCategory(@Bind("categoryId") int categoryId);
+
+
+    default Map<Integer,List<SpecialPrice>> findAllByCategoriesIdsMapped(Collection<Integer> ticketCategoriesIds) {
+        return findAllByCategoriesIds(ticketCategoriesIds).stream().collect(Collectors.groupingBy(SpecialPrice::getTicketCategoryId));
+    }
 }
