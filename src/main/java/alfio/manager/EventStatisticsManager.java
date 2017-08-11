@@ -18,7 +18,6 @@ package alfio.manager;
 
 import alfio.manager.user.UserManager;
 import alfio.model.*;
-import alfio.model.modification.EventWithStatistics;
 import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketWithStatistic;
 import alfio.repository.*;
@@ -117,12 +116,6 @@ public class EventStatisticsManager {
 
     public BigDecimal getGrossIncomeForEvent(int eventId) {
         return MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(eventId));
-    }
-
-    @Deprecated
-    public EventWithStatistics getSingleEventWithStatistics(String eventName, String username) {
-        Event event = getSingleEvent(eventName, username);
-        return new EventWithStatistics(event, eventDescriptionRepository.findByEventId(event.getId()), loadTicketCategoriesWithStats(event), ticketRepository.countReleasedUnboundedTickets(event.getId()));
     }
 
     private Event getSingleEvent(String eventName, String username) {

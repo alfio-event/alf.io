@@ -16,16 +16,13 @@
  */
 package alfio.model;
 
-import alfio.model.modification.EventWithStatistics;
 import alfio.model.modification.StatisticsContainer;
 import alfio.model.transaction.PaymentProxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 
