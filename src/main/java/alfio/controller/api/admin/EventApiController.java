@@ -521,7 +521,7 @@ public class EventApiController {
         Event event = loadEvent(eventName, principal);
         return eventStatisticsManager.loadTicketCategoriesWithStats(event).stream()
                 .filter(tc -> !tc.getTickets().isEmpty())
-                .map(tc -> TicketCategoryModification.fromTicketCategory(tc.getTicketCategory(), ticketCategoryDescriptionRepository.findByTicketCategoryId(tc.getId()), event.getZoneId()))
+                .map(tc -> TicketCategoryModification.fromTicketCategory(tc.getTicketCategory(), tc.getDescription(), event.getZoneId()))
                 .collect(toList());
     }
 

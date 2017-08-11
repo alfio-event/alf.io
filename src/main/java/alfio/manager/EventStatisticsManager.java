@@ -105,7 +105,6 @@ public class EventStatisticsManager {
         BigDecimal grossIncome = MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(event.getId()));
 
         List<TicketCategory> ticketCategories = loadTicketCategories(event);
-
         List<Integer> ticketCategoriesIds = ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList());
 
         Map<Integer, Map<String, String>> descriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoriesIds);
@@ -120,10 +119,15 @@ public class EventStatisticsManager {
     }
 
     public List<TicketCategoryWithStatistic> loadTicketCategoriesWithStats(Event event) {
+
+        List<TicketCategory> categories = loadTicketCategories(event);
+        List<Integer> ticketCategoriesIds = categories.stream().map(TicketCategory::getId).collect(Collectors.toList());
+        Map<Integer, Map<String, String>> descriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoriesIds);
+        Map<Integer, List<SpecialPrice>> specialPrices = specialPriceRepository.findAllByCategoriesIdsMapped(ticketCategoriesIds);
+
         return loadTicketCategories(event).stream()
                 .map(tc -> new TicketCategoryWithStatistic(tc, loadModifiedTickets(tc.getEventId(), tc.getId()),
-                    specialPriceRepository.findAllByCategoryId(tc.getId()), event,
-                    ticketCategoryDescriptionRepository.descriptionForTicketCategory(tc.getId())))
+                    specialPrices.get(tc.getId()), event, descriptions.get(tc.getId())))
                 .sorted()
                 .collect(toList());
     }

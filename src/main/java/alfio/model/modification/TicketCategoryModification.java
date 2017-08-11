@@ -71,13 +71,13 @@ public class TicketCategoryModification {
         return Optional.ofNullable(price).map(MonetaryUtil::unitToCents).orElse(0);
     }
 
-    public static TicketCategoryModification fromTicketCategory(TicketCategory tc, List<TicketCategoryDescription> ticketCategoryDescriptions, ZoneId zoneId) {
+    public static TicketCategoryModification fromTicketCategory(TicketCategory tc, Map<String, String> ticketCategoryDescriptions, ZoneId zoneId) {
         return new TicketCategoryModification(tc.getId(),
                 tc.getName(),
                 tc.getMaxTickets(),
                 DateTimeModification.fromZonedDateTime(tc.getInception(zoneId)),
                 DateTimeModification.fromZonedDateTime(tc.getExpiration(zoneId)),
-                ticketCategoryDescriptions.stream().collect(Collectors.toMap(TicketCategoryDescription::getLocale, TicketCategoryDescription::getDescription)),
+                ticketCategoryDescriptions,
                 tc.getPrice(),
                 tc.isAccessRestricted(), "", tc.isBounded());
     }
