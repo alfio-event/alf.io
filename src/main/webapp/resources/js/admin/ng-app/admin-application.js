@@ -687,6 +687,9 @@
 
         $scope.toggleTicketViewCollapse = function(category) {
             category.isTicketViewExpanded = !category.isTicketViewExpanded;
+            EventService.getTicketsForCategory($scope.event, category).then(function(res) {
+                category.tickets = res.data;
+            });
         };
 
         $scope.isPending = function(token) {

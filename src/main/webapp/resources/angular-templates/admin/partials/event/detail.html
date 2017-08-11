@@ -58,7 +58,7 @@
                                 <div class="col-xs-12 col-md-5">
                                     <div class="pull-right">
                                         <a class="btn btn-sm btn-default" data-ng-click="editCategory(ticketCategory, event)"><i class="fa fa-edit"></i> edit</a>
-                                        <a class="btn btn-sm btn-default" data-ng-click="toggleTicketViewCollapse(ticketCategory)" data-ng-if="ticketCategory.containingTickets">
+                                        <a class="btn btn-sm btn-default" data-ng-click="toggleTicketViewCollapse(ticketCategory)">
                                             <i class="fa fa-ticket"></i> tickets
                                         </a>
                                         <a class="btn btn-sm btn-default" data-ng-click="toggleTokenViewCollapse(ticketCategory)" data-ng-if="ticketCategory.accessRestricted">
@@ -128,7 +128,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div data-ng-if="ticketCategory.containingTickets && !isTicketViewCollapsed(ticketCategory)">
+                        <div data-ng-if="!isTicketViewCollapsed(ticketCategory)">
                             <hr>
                             <button class="close" aria-label="Close" data-ng-click="toggleTicketViewCollapse(ticketCategory)"><i class="fa fa-close"></i></button>
                             <h4><i class="fa fa-ticket"></i> Tickets</h4>

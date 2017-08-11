@@ -525,6 +525,12 @@ public class EventApiController {
                 .collect(toList());
     }
 
+    @RequestMapping(value = "/events/{eventName}/category/{categoryId}/ticket", method = GET)
+    public List<TicketWithStatistic> getTicketsInCategory(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId, Principal principal) {
+        Event event = loadEvent(eventName, principal);
+        return eventStatisticsManager.loadModifiedTickets(event.getId(), categoryId);
+    }
+
     private Event loadEvent(String eventName, Principal principal) {
         Optional<Event> singleEvent = optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()));
         Validate.isTrue(singleEvent.isPresent(), "event not found");

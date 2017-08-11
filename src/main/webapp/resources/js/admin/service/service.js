@@ -89,6 +89,9 @@
                 }
 
             },
+            getTicketsForCategory: function(event, ticketCategory) {
+              return $http.get('/admin/api/events/'+event.shortName+'/category/'+ticketCategory.id+'/ticket');
+            },
             updateEventPrices: function(eventPrices) {
                 return $http['post']('/admin/api/events/'+eventPrices.id+'/prices/update', eventPrices).error(HttpErrorHandler.handle);
             },

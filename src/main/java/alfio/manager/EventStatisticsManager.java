@@ -147,7 +147,7 @@ public class EventStatisticsManager {
                 .orElseThrow(IllegalArgumentException::new);
     }
 
-    private List<TicketWithStatistic> loadModifiedTickets(int eventId, int categoryId) {
+    public List<TicketWithStatistic> loadModifiedTickets(int eventId, int categoryId) {
         Event event = eventRepository.findById(eventId);
         return ticketRepository.findAllModifiedTickets(eventId, categoryId).stream()
                 .map(t -> new TicketWithStatistic(t, event, ticketReservationRepository.findReservationById(t.getTicketsReservationId()),
@@ -163,4 +163,5 @@ public class EventStatisticsManager {
             return ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().allMatch(tc -> EventUtil.determineAvailableSeats(stats.get(tc.getId()), eventStatisticView) == 0);
         };
     }
+
 }
