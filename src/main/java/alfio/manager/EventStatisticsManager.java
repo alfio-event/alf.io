@@ -92,13 +92,31 @@ public class EventStatisticsManager {
         }
     }
 
-    public EventStatistic getEventStatistic(int eventId) {
-        return new EventStatistic(eventRepository.findById(eventId), eventRepository.findStatisticsFor(eventId));
-    }
 
     @Cacheable
     public List<EventStatistic> getAllEventsWithStatistics(String username) {
         return getAllEventsWithStatisticsFilteredBy(username, (e) -> true);
+    }
+
+    public EventWithAdditionalInfo getEventWithAdditionalInfo(String eventName, String username) {
+        Event event = getSingleEvent(eventName, username);
+        Map<String, String> description = eventDescriptionRepository.findByEventIdAsMap(event.getId());
+        EventStatistic eventStatistic = new EventStatistic(event, eventRepository.findStatisticsFor(event.getId()));
+        BigDecimal grossIncome = MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(event.getId()));
+
+        List<TicketCategory> ticketCategories = loadTicketCategories(event);
+
+        List<Integer> ticketCategoriesIds = ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList());
+
+        Map<Integer, Map<String, String>> descriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoriesIds);
+        Map<Integer, TicketCategoryStatisticView> ticketCategoriesStatistics = ticketCategoryRepository.findStatisticsForEventIdByCategoryId(event.getId());
+        Map<Integer, List<SpecialPrice>> specialPrices = specialPriceRepository.findAllByCategoriesIdsMapped(ticketCategoriesIds);
+
+        List<TicketCategoryWithAdditionalInfo> tWithInfo = ticketCategories.stream()
+            .map(t -> new TicketCategoryWithAdditionalInfo(event, t, ticketCategoriesStatistics.get(t.getId()), descriptions.get(t.getId()), specialPrices.get(t.getId())))
+            .collect(Collectors.toList());
+
+        return new EventWithAdditionalInfo(event, tWithInfo, eventStatistic, description, grossIncome);
     }
 
     public List<TicketCategoryWithStatistic> loadTicketCategoriesWithStats(Event event) {
@@ -112,10 +130,6 @@ public class EventStatisticsManager {
 
     private List<TicketCategory> loadTicketCategories(Event event) {
         return ticketCategoryRepository.findByEventId(event.getId());
-    }
-
-    public BigDecimal getGrossIncomeForEvent(int eventId) {
-        return MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(eventId));
     }
 
     private Event getSingleEvent(String eventName, String username) {
