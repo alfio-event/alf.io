@@ -26,19 +26,20 @@ import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.result.ValidationResult;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
-import alfio.repository.DynamicFieldTemplateRepository;
-import alfio.repository.SponsorScanRepository;
-import alfio.repository.TicketCategoryDescriptionRepository;
-import alfio.repository.TicketFieldRepository;
+import alfio.repository.*;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.Validator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Delegate;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -60,8 +61,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.Principal;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -97,6 +100,9 @@ public class EventApiController {
     private final PaymentManager paymentManager;
     private final TemplateManager templateManager;
     private final FileUploadManager fileUploadManager;
+    private final EventDescriptionRepository eventDescriptionRepository;
+    private final TicketCategoryRepository ticketCategoryRepository;
+    private final SpecialPriceRepository specialPriceRepository;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -151,14 +157,226 @@ public class EventApiController {
         return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> event.expiredSince(14));
     }
 
+
+    @AllArgsConstructor
+    @Getter
+    public static class EventAndOrganization {
+        private final EventWithAdditionalInfo event;
+        private final Organization organization;
+    }
+
+
+    @AllArgsConstructor
+    @Getter
+    public static class TicketCategoryWithAdditionalInfo implements StatisticsContainer, PriceContainer {
+
+        @JsonIgnore
+        private final Event event;
+
+        @JsonIgnore
+        @Delegate
+        private final TicketCategory ticketCategory;
+
+        @JsonIgnore
+        private final TicketCategoryStatisticView ticketCategoryStatisticView;
+
+        private final Map<String, String> description;
+
+        private final List<SpecialPrice> tokenStatus;
+
+        //TODO: to remove it
+        @Deprecated
+        private final List<TicketWithStatistic> tickets = Collections.emptyList();
+
+        @JsonIgnore
+        public Event getEvent() {
+            return event;
+        }
+
+        @JsonIgnore
+        public TicketCategory getTicketCategory() {
+            return ticketCategory;
+        }
+
+        @JsonIgnore
+        public TicketCategoryStatisticView getTicketCategoryStatisticView() {
+            return ticketCategoryStatisticView;
+        }
+
+
+        public String getFormattedInception() {
+            return getInception(event.getZoneId()).format(EventStatistic.JSON_DATE_FORMATTER);
+        }
+
+        public String getFormattedExpiration() {
+            return getExpiration(event.getZoneId()).format(EventStatistic.JSON_DATE_FORMATTER);
+        }
+
+        private static BigDecimal calcSoldTicketsPercent(TicketCategory ticketCategory, int soldTickets) {
+            int maxTickets = Math.max(1, ticketCategory.getMaxTickets());
+            return BigDecimal.valueOf(soldTickets).divide(BigDecimal.valueOf(maxTickets), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED);
+        }
+
+        public BigDecimal getSoldTicketsPercent() {
+            return calcSoldTicketsPercent(ticketCategory, getSoldTickets());
+        }
+
+        public BigDecimal getNotSoldTicketsPercent() {
+            return MonetaryUtil.HUNDRED.subtract(getSoldTicketsPercent());
+        }
+
+        @Override
+        public int getNotAllocatedTickets() {
+            return 0;
+        }
+
+        @Override
+        public int getDynamicAllocation() {
+            return 0;
+        }
+
+        @Override
+        public int getNotSoldTickets() {
+            return ticketCategoryStatisticView.getNotSoldTicketsCount();
+        }
+
+        @Override
+        public int getSoldTickets() {
+            return ticketCategoryStatisticView.getSoldTicketsCount();
+        }
+
+        @Override
+        public int getCheckedInTickets() {
+            return ticketCategoryStatisticView.getCheckedInCount();
+        }
+
+        @Override
+        public int getPendingTickets() {
+            return ticketCategoryStatisticView.getPendingCount();
+        }
+
+        public boolean isExpired() {
+            return ZonedDateTime.now(event.getZoneId()).isAfter(ticketCategory.getExpiration(event.getZoneId()));
+        }
+
+        public boolean isContainingOrphans() {
+            return ticketCategoryStatisticView.isContainsOrphanTickets();
+        }
+
+        public boolean isContainingStuckTickets() {
+            return ticketCategoryStatisticView.isContainsStuckTickets();
+        }
+
+        public BigDecimal getActualPrice() {
+            return getFinalPrice();
+        }
+
+        @Override
+        public String getCurrencyCode() {
+            return event.getCurrency();
+        }
+
+        @Override
+        public Optional<BigDecimal> getOptionalVatPercentage() {
+            return Optional.ofNullable(event.getVat());
+        }
+
+        @Override
+        public VatStatus getVatStatus() {
+            return event.getVatStatus();
+        }
+    }
+
+
+
+    @AllArgsConstructor
+    @Getter
+    public static class EventWithAdditionalInfo implements StatisticsContainer, PriceContainer {
+
+        @Delegate(excludes = {EventHiddenFieldContainer.class, PriceContainer.class})
+        @JsonIgnore
+        private final Event event;
+
+        private final List<TicketCategoryWithAdditionalInfo> ticketCategories;
+
+        @Delegate(excludes = {Event.class})
+        @JsonIgnore
+        private final EventStatistic eventStatistic;
+
+        private final Map<String, String> description;
+
+        private final BigDecimal grossIncome;
+
+        @JsonIgnore
+        public Event getEvent() {
+            return event;
+        }
+
+        @JsonIgnore
+        public EventStatistic getEventStatistic() {
+           return eventStatistic;
+        }
+
+        @Override
+        @JsonIgnore
+        public int getSrcPriceCts() {
+            return event.getSrcPriceCts();
+        }
+
+        @Override
+        public String getCurrencyCode() {
+            return getCurrency();
+        }
+
+        @Override
+        @JsonIgnore
+        public Optional<BigDecimal> getOptionalVatPercentage() {
+            return getVatStatus() != VatStatus.NONE ? Optional.ofNullable(event.getVat()) : Optional.empty();
+        }
+
+        @Override
+        public VatStatus getVatStatus() {
+            return event.getVatStatus();
+        }
+
+        public BigDecimal getVatPercentage() {
+            return getVatPercentageOrZero();
+        }
+
+        public BigDecimal getVat() {
+            return getVAT();
+        }
+
+        public boolean isAddCategoryEnabled() {
+            return ticketCategories.stream()
+                .mapToInt(TicketCategoryWithAdditionalInfo::getMaxTickets)
+                .sum() < getAvailableSeats();
+        }
+    }
+
     @RequestMapping(value = "/events/{name}", method = GET)
-    public ResponseEntity<Map<String, Object>> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
+    public ResponseEntity<EventAndOrganization> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
         final String username = principal.getName();
-        return optionally(() -> eventStatisticsManager.getSingleEventWithStatistics(eventName, username))
+        return optionally(() -> eventManager.getSingleEvent(eventName, username) /*eventStatisticsManager.getSingleEventWithStatistics(eventName, username)*/)
             .map(event -> {
-                Map<String, Object> out = new HashMap<>();
-                out.put("event", event);
-                out.put("organization", eventManager.loadOrganizer(event.getEvent(), username));
+                Map<String, String> description = eventDescriptionRepository.findByEventIdAsMap(event.getId());
+                EventStatistic eventStatistic = eventStatisticsManager.getEventStatistic(event.getId());
+                BigDecimal grossIncome = eventStatisticsManager.getGrossIncomeForEvent(event.getId());
+
+
+                List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
+                List<Integer> ticketCategoriesIds = ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList());
+                Map<Integer, Map<String, String>> descriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoriesIds);
+                Map<Integer, TicketCategoryStatisticView> ticketCategoriesStatistics = ticketCategoryRepository.findStatisticsForEventIdByCategoryId(event.getId());
+                Map<Integer, List<SpecialPrice>> specialPrices = specialPriceRepository.findAllByCategoriesIdsMapped(ticketCategoriesIds);
+
+                List<TicketCategoryWithAdditionalInfo> tWithInfo = ticketCategories.stream()
+                    .map(t -> new TicketCategoryWithAdditionalInfo(event, t, ticketCategoriesStatistics.get(t.getId()), descriptions.get(t.getId()), specialPrices.get(t.getId())))
+                    .collect(Collectors.toList());
+
+                EventWithAdditionalInfo e = new EventWithAdditionalInfo(event, tWithInfo, eventStatistic, description, grossIncome);
+
+                EventAndOrganization out = new EventAndOrganization(e, eventManager.loadOrganizer(event, username));
                 return ResponseEntity.ok(out);
             }).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }

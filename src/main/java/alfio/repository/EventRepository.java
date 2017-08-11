@@ -112,4 +112,7 @@ public interface EventRepository {
 
     @Query("update event set status = 'DISABLED' where org_id in (select org_id from j_user_organization where user_id in (:userIds))")
     int disableEventsForUsers(@Bind("userIds") List<Integer> userIds);
+
+    @Query("select sum(final_price_cts) from ticket where event_id = :eventId")
+    long getGrossIncome(@Bind("eventId") int eventId);
 }

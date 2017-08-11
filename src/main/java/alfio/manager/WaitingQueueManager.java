@@ -108,7 +108,7 @@ public class WaitingQueueManager {
 
     private WaitingQueueSubscription.Type getSubscriptionType(Event event) {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        return eventStatisticsManager.loadTicketCategories(event).stream()
+        return ticketCategoryRepository.findByEventId(event.getId()).stream()
                 .findFirst()
                 .filter(tc -> now.isBefore(tc.getInception(event.getZoneId())))
                 .map(tc -> WaitingQueueSubscription.Type.PRE_SALES)

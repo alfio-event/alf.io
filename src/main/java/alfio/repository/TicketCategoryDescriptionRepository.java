@@ -21,9 +21,8 @@ import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @QueryRepository
@@ -41,8 +40,25 @@ public interface TicketCategoryDescriptionRepository {
     @Query("delete from ticket_category_text where ticket_category_id_fk = :ticketCategoryId")
     int delete(@Bind("ticketCategoryId") int ticketCategoryId);
 
+    @Query("select * from ticket_category_text where ticket_category_id_fk in (:ticketCategoryIds)")
+    List<TicketCategoryDescription> findByTicketCategoryIds(@Bind("ticketCategoryIds") Collection<Integer> ticketCategoryIds);
+
 
     default Map<String, String> descriptionForTicketCategory(int ticketCategory) {
         return findByTicketCategoryId(ticketCategory).stream().collect(Collectors.toMap(TicketCategoryDescription::getLocale, TicketCategoryDescription::getDescription));
+    }
+
+    default Map<Integer, Map<String, String>> descriptionsByTicketCategory(Collection<Integer> ticketCategoryIds) {
+        if(ticketCategoryIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+
+        Map<Integer, Map<String, String>> res = new HashMap<>();
+        findByTicketCategoryIds(ticketCategoryIds).forEach(t -> {
+            res.putIfAbsent(t.getTicketCategoryId(), new HashMap<>());
+            res.get(t.getTicketCategoryId()).put(t.getLocale(), t.getDescription());
+        });
+        return res;
     }
 }
