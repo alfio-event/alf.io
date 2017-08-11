@@ -22,6 +22,8 @@
                         return ctrl.counter % 2 !== 0;
                     };
                     ctrl.ticketsConfirmed = ctrl.event.soldTickets + ctrl.event.checkedInTickets;
+
+                    // FIXME remove
                     ctrl.allTickets = _.chain(ctrl.event.ticketCategories)
                         .map('tickets')
                         .flatten()
@@ -29,14 +31,9 @@
                     ctrl.confirmedTickets = _.filter(ctrl.allTickets, function(t) {
                         return t.ticketReservation.confirmationTimestamp;
                     });
-                    ctrl.pendingReservations = _.chain(ctrl.allTickets)
-                        .filter(function(t) {
-                            return !t.ticketReservation.confirmationTimestamp;
-                        })
-                        .map(function(t) {
-                            return t.ticketReservation.id;
-                        })
-                        .uniq().value().length;
+                    //
+
+                    ctrl.pendingReservations = ctrl.event.pendingTickets;
                 }
             }
         }])
