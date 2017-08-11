@@ -61,8 +61,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.Principal;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -99,6 +101,7 @@ public class EventApiController {
     private final TemplateManager templateManager;
     private final FileUploadManager fileUploadManager;
     private final EventDescriptionRepository eventDescriptionRepository;
+    private final TicketCategoryRepository ticketCategoryRepository;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -157,8 +160,113 @@ public class EventApiController {
     @AllArgsConstructor
     @Getter
     public static class EventAndOrganization {
-        private final EventWithStatistics event;
+        private final EventWithAdditionalInfo event;
         private final Organization organization;
+    }
+
+
+    @AllArgsConstructor
+    @Getter
+    public static class TicketCategoryWithAdditionalInfo implements StatisticsContainer, PriceContainer {
+
+        @JsonIgnore
+        private final Event event;
+
+        @JsonIgnore
+        @Delegate
+        private final TicketCategory ticketCategory;
+
+        @JsonIgnore
+        private final TicketCategoryStatisticView ticketCategoryStatisticView;
+
+        private final Map<String, String> description;
+
+        //TODO: to remove it
+        @Deprecated
+        private final List<TicketWithStatistic> tickets = Collections.emptyList();
+
+
+        public String getFormattedInception() {
+            return getInception(event.getZoneId()).format(EventStatistic.JSON_DATE_FORMATTER);
+        }
+
+        public String getFormattedExpiration() {
+            return getExpiration(event.getZoneId()).format(EventStatistic.JSON_DATE_FORMATTER);
+        }
+
+        private static BigDecimal calcSoldTicketsPercent(TicketCategory ticketCategory, int soldTickets) {
+            int maxTickets = Math.max(1, ticketCategory.getMaxTickets());
+            return BigDecimal.valueOf(soldTickets).divide(BigDecimal.valueOf(maxTickets), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED);
+        }
+
+        public BigDecimal getSoldTicketsPercent() {
+            return calcSoldTicketsPercent(ticketCategory, getSoldTickets());
+        }
+
+        public BigDecimal getNotSoldTicketsPercent() {
+            return MonetaryUtil.HUNDRED.subtract(getSoldTicketsPercent());
+        }
+
+        @Override
+        public int getNotAllocatedTickets() {
+            return 0;
+        }
+
+        @Override
+        public int getDynamicAllocation() {
+            return 0;
+        }
+
+        @Override
+        public int getNotSoldTickets() {
+            return ticketCategoryStatisticView.getNotSoldTicketsCount();
+        }
+
+        @Override
+        public int getSoldTickets() {
+            return ticketCategoryStatisticView.getSoldTicketsCount();
+        }
+
+        @Override
+        public int getCheckedInTickets() {
+            return ticketCategoryStatisticView.getCheckedInCount();
+        }
+
+        @Override
+        public int getPendingTickets() {
+            return ticketCategoryStatisticView.getPendingCount();
+        }
+
+        public boolean isExpired() {
+            return ZonedDateTime.now(event.getZoneId()).isAfter(ticketCategory.getExpiration(event.getZoneId()));
+        }
+
+        public boolean isContainingOrphans() {
+            return ticketCategoryStatisticView.isContainsOrphanTickets();
+        }
+
+        public boolean isContainingStuckTickets() {
+            return ticketCategoryStatisticView.isContainsStuckTickets();
+        }
+
+        public BigDecimal getActualPrice() {
+            return getFinalPrice();
+        }
+
+        @Override
+        public String getCurrencyCode() {
+            return event.getCurrency();
+        }
+
+        @Override
+        public Optional<BigDecimal> getOptionalVatPercentage() {
+            return Optional.ofNullable(event.getVat());
+        }
+
+        @Override
+        public VatStatus getVatStatus() {
+            return event.getVatStatus();
+        }
     }
 
 
@@ -170,6 +278,8 @@ public class EventApiController {
         @Delegate(excludes = {EventHiddenFieldContainer.class, PriceContainer.class})
         @JsonIgnore
         private final Event event;
+
+        private final List<TicketCategoryWithAdditionalInfo> ticketCategories;
 
         @Delegate(excludes = {Event.class})
         @JsonIgnore
@@ -208,18 +318,34 @@ public class EventApiController {
         public BigDecimal getVat() {
             return getVAT();
         }
+
+        public boolean isAddCategoryEnabled() {
+            return ticketCategories.stream()
+                .mapToInt(TicketCategoryWithAdditionalInfo::getMaxTickets)
+                .sum() < getAvailableSeats();
+        }
     }
 
     @RequestMapping(value = "/events/{name}", method = GET)
     public ResponseEntity<EventAndOrganization> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
         final String username = principal.getName();
-        return optionally(() -> /*eventManager.getSingleEvent(eventName, username)*/ eventStatisticsManager.getSingleEventWithStatistics(eventName, username))
+        return optionally(() -> eventManager.getSingleEvent(eventName, username) /*eventStatisticsManager.getSingleEventWithStatistics(eventName, username)*/)
             .map(event -> {
                 Map<String, String> description = eventDescriptionRepository.findByEventIdAsMap(event.getId());
                 EventStatistic eventStatistic = eventStatisticsManager.getEventStatistic(event.getId());
                 BigDecimal grossIncome = eventStatisticsManager.getGrossIncomeForEvent(event.getId());
-                //EventWithAdditionalInfo e = new EventWithAdditionalInfo(event.getEvent(), eventStatistic, description, grossIncome);
-                EventAndOrganization out = new EventAndOrganization(event, eventManager.loadOrganizer(event.getEvent(), username));
+
+
+                List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
+                Map<Integer, Map<String, String>> descriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList()));
+
+                Map<Integer, TicketCategoryStatisticView> ticketCategoriesStatistics = ticketCategoryRepository.findStatisticsForEventIdByCategoryId(event.getId());
+
+                List<TicketCategoryWithAdditionalInfo> tWithInfo = ticketCategories.stream().map(t -> new TicketCategoryWithAdditionalInfo(event, t, ticketCategoriesStatistics.get(t.getId()), descriptions.get(t.getId()))).collect(Collectors.toList());
+
+                EventWithAdditionalInfo e = new EventWithAdditionalInfo(event, tWithInfo, eventStatistic, description, grossIncome);
+
+                EventAndOrganization out = new EventAndOrganization(e, eventManager.loadOrganizer(event, username));
                 return ResponseEntity.ok(out);
             }).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
