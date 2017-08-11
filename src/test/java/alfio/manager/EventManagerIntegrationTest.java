@@ -24,7 +24,9 @@ import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
-import alfio.model.modification.*;
+import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.EventModification;
+import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.Result;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
@@ -461,7 +463,9 @@ public class EventManagerIntegrationTest {
             categoryDescription, category.getPrice(), false, "", false);
         Result<TicketCategory> result = eventManager.updateCategory(category.getId(), event, tcm, username);
         assertTrue(result.isSuccess());
-        assertEquals(new Integer(AVAILABLE_SEATS), ticketRepository.countFreeTicketsForUnbounded(event.getId()));
+        assertEquals(AVAILABLE_SEATS, ticketRepository.countReleasedUnboundedTickets(event.getId()).intValue());
+        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
+        assertEquals(AVAILABLE_SEATS, ticketRepository.countFreeTicketsForUnbounded(event.getId()).intValue());
     }
 
     @Test
