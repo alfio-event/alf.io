@@ -19,6 +19,7 @@ package alfio.repository;
 import alfio.model.PriceContainer;
 import alfio.model.TicketReservation;
 import alfio.model.TicketReservationInfo;
+import alfio.model.TicketSoldStatistic;
 import ch.digitalfondue.npjt.*;
 
 import java.time.ZonedDateTime;
@@ -59,13 +60,13 @@ public interface TicketReservationRepository {
     @Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and offline_payment_reminder_sent = false")
     @QueriesOverride({
         @QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false", db = "PGSQL"),
-        @QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date('day') <= :expiration and offline_payment_reminder_sent = false", db = "MYSQL")})
+        @QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date(validity) <= :expiration and offline_payment_reminder_sent = false", db = "MYSQL")})
     List<TicketReservation> findAllOfflinePaymentReservationForNotification(@Bind("expiration") Date expiration);
 
     @Query("select id, full_name, first_name, last_name, email_address, event_id_fk from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and event_id_fk = :eventId")
     @QueriesOverride({
         @QueryOverride(value = "select id, full_name, first_name, last_name, email_address, event_id_fk from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and event_id_fk = :eventId", db = "PGSQL"),
-        @QueryOverride(value = "select id, full_name, first_name, last_name, email_address, event_id_fk from tickets_reservation where status = 'OFFLINE_PAYMENT' and date('day') <= :expiration and event_id_fk = :eventId", db = "MYSQL")})
+        @QueryOverride(value = "select id, full_name, first_name, last_name, email_address, event_id_fk from tickets_reservation where status = 'OFFLINE_PAYMENT' and date(validity) <= :expiration and event_id_fk = :eventId", db = "MYSQL")})
     List<TicketReservationInfo> findAllOfflinePaymentReservationWithExpirationBefore(@Bind("expiration") ZonedDateTime expiration, @Bind("eventId") int eventId);
 
     @Query("update tickets_reservation set offline_payment_reminder_sent = true where id = :reservationId")
@@ -125,4 +126,11 @@ public interface TicketReservationRepository {
                           @Bind("vatCountry") String country,
                           @Bind("invoiceRequested") boolean invoiceRequested,
                           @Bind("reservationId") String reservationId);
+
+
+    @Query("select count(ticket.id) ticket_sold, trunc(confirmation_ts) as day from ticket inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where confirmation_ts is not null and confirmation_ts >= :from and confirmation_ts <= :to group by day order by day asc")
+    @QueriesOverride({
+        @QueryOverride(value = "select count(ticket.id) ticket_sold, date_trunc('day', confirmation_ts) as day from ticket inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where confirmation_ts is not null and confirmation_ts >= :from and confirmation_ts <= :to  group by day order by day asc", db = "PGSQL"),
+        @QueryOverride(value = "select count(ticket.id) ticket_sold, date(confirmation_ts) as day from ticket inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where confirmation_ts is not null and confirmation_ts >= :from and confirmation_ts <= :to group by day order by day asc", db = "MYSQL")})
+    List<TicketSoldStatistic> getSoldStatistic(@Bind("from") Date from, @Bind("to") Date to);
 }

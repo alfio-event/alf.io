@@ -27,6 +27,7 @@ import alfio.model.modification.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
@@ -66,8 +67,7 @@ public class TicketReservationManagerIntegrationTest {
 
     @Autowired
     private EventManager eventManager;
-    @Autowired
-    private EventStatisticsManager eventStatisticsManager;
+
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
@@ -78,6 +78,8 @@ public class TicketReservationManagerIntegrationTest {
     private TicketCategoryRepository ticketCategoryRepository;
     @Autowired
     private TicketReservationManager ticketReservationManager;
+    @Autowired
+    private TicketReservationRepository ticketReservationRepository;
 
     @Autowired
     private ConfigurationRepository configurationRepository;
@@ -166,7 +168,14 @@ public class TicketReservationManagerIntegrationTest {
 
         assertEquals(1, ticketReservationManager.getPendingPayments(event).size());
 
+        Date now = new Date();
+        Date from = DateUtils.addDays(now, -1);
+        Date to = DateUtils.addDays(now, 1);
+
+        assertTrue(ticketReservationRepository.getSoldStatistic(from, to).isEmpty()); // -> no reservations
         ticketReservationManager.validateAndConfirmOfflinePayment(reservationId, event, new BigDecimal("190.00"));
+
+        assertEquals(19, ticketReservationRepository.getSoldStatistic(from, to).get(0).getTicketSoldCount()); // -> 19 tickets reserved
 
         assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, ticketReservationManager.findById(reservationId).get().getStatus());
 
@@ -187,7 +196,6 @@ public class TicketReservationManagerIntegrationTest {
         ticketReservationManager.deleteOfflinePayment(event, reservationId2, false);
 
         Assert.assertFalse(ticketReservationManager.findById(reservationId2).isPresent());
-
     }
 
     @Test
