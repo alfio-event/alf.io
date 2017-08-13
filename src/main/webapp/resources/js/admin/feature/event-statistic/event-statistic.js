@@ -24,13 +24,7 @@
                     ctrl.ticketsConfirmed = ctrl.event.soldTickets + ctrl.event.checkedInTickets;
 
                     // FIXME remove
-                    ctrl.allTickets = _.chain(ctrl.event.ticketCategories)
-                        .map('tickets')
-                        .flatten()
-                        .value();
-                    ctrl.confirmedTickets = _.filter(ctrl.allTickets, function(t) {
-                        return t.ticketReservation.confirmationTimestamp;
-                    });
+                    ctrl.allTickets = [];
                     //
 
                     ctrl.pendingReservations = ctrl.event.pendingTickets;
@@ -120,7 +114,7 @@
                 }
             }
         }])
-        .directive("eventTwoWeeksBar", ['$filter', function($filter) {
+        .directive("eventTwoWeeksBar", ['$filter', 'EventService', function($filter, EventService) {
             return {
                 scope: {
                     tickets: '=',
@@ -128,61 +122,52 @@
                 },
                 bindToController: true,
                 templateUrl: '/resources/angular-templates/admin/partials/event/statistic/two-weeks-bar.html',
-                controller: function() {},
-                controllerAs: 'ctrl',
-                link: function ($scope, element, attrs) {
-                    var dateFilter = $filter('formatDate');
-                    var now = moment().startOf('day');
-                    var eventEnd = moment($scope.ctrl.event.end).endOf('day');
-                    var end = now.isAfter(eventEnd) ? eventEnd : now;
-                    var start = end.subtract(15, 'days').startOf('day');
-                    var tickets = _.chain($scope.ctrl.tickets).filter(function(t) {
-                        var reservationTimestamp = t.ticketReservation.confirmationTimestamp;
-                        return reservationTimestamp && moment(dateFilter(reservationTimestamp, 'YYYY-MM-DD HH:mm:ss')).isBetween(start, end);
-                    }).value();
-                    var labels = _.range(0, end.diff(start, 'days') + 1).map(function(d) {
-                        return start.clone().add(d, 'days');
-                    });
-                    var ticketsByDay = _.countBy(tickets, function(t) {
-                        var translatedDate = dateFilter(t.ticketReservation.confirmationTimestamp, 'YYYY-MM-DD HH:mm:ss');
-                        return moment(translatedDate).format('YYYY-MM-DD');
-                    });
+                controller: function($element) {
+                    var element = $element;
+                    var ctrl = this;
 
-                    new Chartist.Bar(element.find('.event-tw').get(0), {
-                        //labels: _.map(labels, (function(m) {return m.format('Do')})),
-                        series: [_.map(labels, function(l) {
-                            return {
-                                value: ticketsByDay[l.format('YYYY-MM-DD')],
-                                name: l.format('MMM Do'),
-                                meta: l.format('MMM Do')
-                            };
-                        })]
-                    }, {
-                        ignoreEmptyValues:true,
-                        showLabels: false,
-                        fullWidth: true,
-                        plugins: [
-                            Chartist.plugins.ctAccessibility({
-                                caption: 'Last two weeks trend',
-                                seriesHeader: 'Day',
-                                summary: 'How many tickets have been confirmed during the last two weeks',
-                                valueTransform: function(value) {
-                                    return value + ' tickets';
-                                }
-                            }),
-                            Chartist.plugins.tooltip({
-                                tooltipOffset: {
-                                    x: 0,
-                                    y: -40
-                                },
-                                appendToBody: true
-                            })
-                        ]
+                    var twoWeeksAgo = moment().subtract(15, 'days').format('YYYY-MM-DD');
+                    var now = moment().format('YYYY-MM-DD');
+
+                    EventService.getSoldStatistics(ctrl.event.shortName, twoWeeksAgo, now).then(function(res) {
+                        new Chartist.Bar(element.find('.event-tw').get(0), {
+                            series: [_.map(res.data, function(l) {
+                                var mDate =  moment.utc(l.date);
+                                return {
+                                    value: l.ticketSoldCount,
+                                    name: mDate.format('MMM Do'),
+                                    meta: mDate.format('MMM Do')
+                                };
+                            })]
+                        }, {
+                            ignoreEmptyValues:true,
+                            showLabels: false,
+                            fullWidth: true,
+                            plugins: [
+                                Chartist.plugins.ctAccessibility({
+                                    caption: 'Last two weeks trend',
+                                    seriesHeader: 'Day',
+                                    summary: 'How many tickets have been confirmed during the last two weeks',
+                                    valueTransform: function(value) {
+                                        return value + ' tickets';
+                                    }
+                                }),
+                                Chartist.plugins.tooltip({
+                                    tooltipOffset: {
+                                        x: 0,
+                                        y: -40
+                                    },
+                                    appendToBody: true
+                                })
+                            ]
+                        });
                     });
-                }
+                },
+                controllerAs: 'ctrl',
+                link: function () {}
             };
         }])
-        .directive("eventAllTicketsByDay", ['$filter', function($filter) {
+        .directive("eventAllTicketsByDay", ['$filter', 'EventService', function($filter, EventService) {
             return {
                 scope: {
                     tickets: '=',
@@ -190,90 +175,85 @@
                 },
                 bindToController: true,
                 templateUrl: '/resources/angular-templates/admin/partials/event/statistic/tickets-by-day.html',
-                controller: function() {
+                controller: function($element) {
+                    var element = $element;
+                    var ctrl = this;
+                    EventService.getSoldStatistics(ctrl.event.shortName).then(function(res) {
+                        var statsByDay = res.data;
+                        var labels = [];
+                        var serie = [];
+                        for(var i = 0; i < statsByDay.length; i++) {
+                            labels.push(statsByDay[i].date);
 
+                            var mDate = moment.utc(statsByDay[i].date);
+                            var serieVal = {
+                                value: statsByDay[i].ticketSoldCount,
+                                name: mDate.format('MMM Do YYYY'),
+                                meta: mDate.format('MMM Do YYYY')
+                            }
+                            serie.push(serieVal);
+                        }
+                        var start = statsByDay.length > 0 ? moment.utc(statsByDay[0].date) : undefined;
+                        var labelMutableStart = undefined;
+
+
+                        new Chartist.Line(element.find('.event-tl').get(0), {
+                            labels: labels,
+                            series: [serie]
+                        }, {
+                            ignoreEmptyValues:true,
+                            showLabels: false,
+                            fullWidth: true,
+                            lineSmooth: Chartist.Interpolation.cardinal({
+                                fillHoles: true
+                            }),
+                            chartPadding: {
+                                right: 10
+                            },
+                            low: 0,
+                            axisX: {
+                                labelInterpolationFnc: function(lStr, index) {
+                                    var l = moment.utc(lStr);
+                                    if(!labelMutableStart) {
+                                        labelMutableStart = moment.utc(start);
+                                        return labelMutableStart.format('MMMM');
+                                    }
+                                    if(labelMutableStart.month() != l.month()) {
+                                        var sameMonth = function(m) {
+                                            return l.month() === m.month();
+                                        };
+                                        var first = _.findIndex(labels, sameMonth);
+                                        var last = _.findLastIndex(labels, sameMonth);
+                                        if(index > first && index < last && index >= (last - first)/2) {
+                                            return labelMutableStart.add(1, 'months').format('MMMM');
+                                        }
+                                    }
+                                    return "";
+                                }
+                            },
+                            plugins: [
+                                Chartist.plugins.ctAccessibility({
+                                    caption: 'Today',
+                                    seriesHeader: 'Hour',
+                                    summary: 'How many tickets have been confirmed today',
+                                    valueTransform: function(value) {
+                                        return value + ' tickets';
+                                    }
+                                }),
+                                Chartist.plugins.tooltip({
+                                    tooltipOffset: {
+                                        x: 0,
+                                        y: -40
+                                    },
+                                    appendToBody: true
+                                })
+                            ]
+                        });
+
+                    });
                 },
                 controllerAs: 'ctrl',
-                link: function ($scope, element, attrs) {
-                    var dateFilter = $filter('formatDate');
-                    var ticketsConfirmationTs = _.chain($scope.ctrl.tickets)
-                        .map(function(t) {
-                            return moment(dateFilter(t.ticketReservation.confirmationTimestamp, 'YYYY-MM-DD HH:mm:ss') || 'invalid');
-                        }).filter(function(ts) {return ts.isValid();})
-                        .sortBy()
-                        .map(function(ts) {return moment(ts);})
-                        .value();
-
-                        var ticketsByDay = _.chain(ticketsConfirmationTs).countBy(function(t) {
-                            return t.format('YYYY-MM-DD');
-                        }).value();
-                    var start = ticketsConfirmationTs.length > 0 ? ticketsConfirmationTs[0] : moment().subtract(1, 'days');
-                    var labelMutableStart = undefined;
-                    var now = moment();
-                    var eventEnd = moment($scope.ctrl.event.end);
-                    var end = now.isAfter(eventEnd) ? eventEnd : now;
-
-                    var labels = _.range(0, Math.abs(start.diff(end, 'days'))).map(function(t) {return moment(start).add(t, 'd');});
-
-                    new Chartist.Line(element.find('.event-tl').get(0), {
-                        labels: labels,
-                        series: [_.map(labels, function(l) {
-                            var n = ticketsByDay[l.format('YYYY-MM-DD')] || null;
-                            return {
-                                value: n,
-                                name: l.format('MMM Do YYYY'),
-                                meta: l.format('MMM Do YYYY')
-                            };
-                        })]
-                    }, {
-                        ignoreEmptyValues:true,
-                        showLabels: false,
-                        fullWidth: true,
-                        lineSmooth: Chartist.Interpolation.cardinal({
-                            fillHoles: true
-                        }),
-                        chartPadding: {
-                            right: 10
-                        },
-                        low: 0,
-                        axisX: {
-                            labelInterpolationFnc: function(l, index) {
-                                if(!labelMutableStart) {
-                                    labelMutableStart = moment(start);
-                                    return labelMutableStart.format('MMMM');
-                                }
-                                if(labelMutableStart.month() != l.month()) {
-                                    var sameMonth = function(m) {
-                                        return l.month() === m.month();
-                                    };
-                                    var first = _.findIndex(labels, sameMonth);
-                                    var last = _.findLastIndex(labels, sameMonth);
-                                    if(index > first && index < last && index >= (last - first)/2) {
-                                        return labelMutableStart.add(1, 'months').format('MMMM');
-                                    }
-                                }
-                                return "";
-                            }
-                        },
-                        plugins: [
-                            Chartist.plugins.ctAccessibility({
-                                caption: 'Today',
-                                seriesHeader: 'Hour',
-                                summary: 'How many tickets have been confirmed today',
-                                valueTransform: function(value) {
-                                    return value + ' tickets';
-                                }
-                            }),
-                            Chartist.plugins.tooltip({
-                                tooltipOffset: {
-                                    x: 0,
-                                    y: -40
-                                },
-                                appendToBody: true
-                            })
-                        ]
-                    });
-                }
+                link: function () {}
             };
         }]);
 })();

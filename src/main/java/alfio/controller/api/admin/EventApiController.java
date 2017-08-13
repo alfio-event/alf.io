@@ -40,6 +40,7 @@ import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.dao.DataAccessException;
@@ -59,6 +60,9 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -532,10 +536,14 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/ticket-sold-statistics", method = GET)
-    public List<TicketSoldStatistic> getTicketSoldStatistics(@PathVariable("eventName") String eventName, @RequestParam("from") Long fromEpoch, @RequestParam("to") Long toEpoch, Principal principal) {
+    public List<TicketSoldStatistic> getTicketSoldStatistics(@PathVariable("eventName") String eventName, @RequestParam(value = "from", required = false) String f, @RequestParam(value = "to", required = false) String t, Principal principal) throws ParseException {
         Event event = loadEvent(eventName, principal);
-        Date from = fromEpoch == null ? new Date(0) : new Date(fromEpoch);
-        Date to = toEpoch == null ? new Date() : new Date(toEpoch);
+        DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        //TODO: cleanup
+        Date from = DateUtils.truncate(f == null ? new Date(0) : format.parse(f), Calendar.HOUR);
+        Date to = DateUtils.addMilliseconds(DateUtils.ceiling(t == null ? new Date() : format.parse(t), Calendar.DATE), -1);
+        //
+
         return eventStatisticsManager.getTicketSoldStatistics(event.getId(), from, to);
     }
 

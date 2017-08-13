@@ -19,15 +19,13 @@ package alfio.model;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
-import java.util.Date;
-
 @Getter
 public class TicketSoldStatistic {
     private final long ticketSoldCount;
-    private final Date date;
+    private final String date;
 
     public TicketSoldStatistic(@Column("ticket_sold") long ticketSoldCount,
-                               @Column("day") Date date) {
+                               @Column("day") String date) {
         this.ticketSoldCount = ticketSoldCount;
         this.date = date;
     }

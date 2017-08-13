@@ -75,11 +75,11 @@
                     </div>
                     <div class="col-xs-2"><a ng-click="ctrl.increment()" class="pull-right"><i class="fa fa-chevron-circle-right fa-2x"></i></a></div>
                 </div>
-                <div ng-if="ctrl.confirmedTickets.length > 0">
+                <div ng-if="ctrl.ticketsConfirmed > 0">
                     <event-two-weeks-bar ng-if="ctrl.isEven()" tickets="ctrl.confirmedTickets" event="ctrl.event"></event-two-weeks-bar>
                     <event-all-tickets-by-day ng-if="ctrl.isOdd()" tickets="ctrl.confirmedTickets" event="ctrl.event"></event-all-tickets-by-day>
                 </div>
-                <div ng-if="ctrl.confirmedTickets.length == 0">
+                <div ng-if="ctrl.ticketsConfirmed == 0">
                     <p class="text-warning text-center wMarginTop30px">Not enough data yet. Spread the word!</p>
                 </div>
             </div>

@@ -128,9 +128,25 @@ public interface TicketReservationRepository {
                           @Bind("reservationId") String reservationId);
 
 
-    @Query("select count(ticket.id) ticket_sold, trunc(confirmation_ts) as day from ticket inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where ticket.event_id = :eventId and confirmation_ts is not null and confirmation_ts >= :from and confirmation_ts <= :to group by day order by day asc")
+    @Query("select count(ticket.id) ticket_sold, to_char(trunc(confirmation_ts), 'yyyy-MM-dd') as day from ticket " +
+        "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
+        "ticket.event_id = :eventId and " +
+        "confirmation_ts is not null and " +
+        "confirmation_ts >= :from and " +
+        "confirmation_ts <= :to " +
+        "group by day order by day asc")
     @QueriesOverride({
-        @QueryOverride(value = "select count(ticket.id) ticket_sold, date_trunc('day', confirmation_ts) as day from ticket inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where ticket.event_id = :eventId and confirmation_ts is not null and confirmation_ts >= :from and confirmation_ts <= :to  group by day order by day asc", db = "PGSQL"),
-        @QueryOverride(value = "select count(ticket.id) ticket_sold, date(confirmation_ts) as day from ticket inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where ticket.event_id = :eventId and confirmation_ts is not null and confirmation_ts >= :from and confirmation_ts <= :to group by day order by day asc", db = "MYSQL")})
+        @QueryOverride(value = "select count(ticket.id) ticket_sold, to_char(date_trunc('day', confirmation_ts), 'YYYY-MM-DD') as day from ticket " +
+            "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
+            "ticket.event_id = :eventId and " +
+            "confirmation_ts is not null and " +
+            "confirmation_ts >= :from and " +
+            "confirmation_ts <= :to  group by day order by day asc", db = "PGSQL"),
+        @QueryOverride(value = "select count(ticket.id) ticket_sold, date_format(date(confirmation_ts), '%Y-%m-%d') as day from ticket " +
+            "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
+            "ticket.event_id = :eventId and " +
+            "confirmation_ts is not null and " +
+            "confirmation_ts >= :from and " +
+            "confirmation_ts <= :to group by day order by day asc", db = "MYSQL")})
     List<TicketSoldStatistic> getSoldStatistic(@Bind("eventId") int eventId, @Bind("from") Date from, @Bind("to") Date to);
 }
