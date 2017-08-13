@@ -172,10 +172,10 @@ public class TicketReservationManagerIntegrationTest {
         Date from = DateUtils.addDays(now, -1);
         Date to = DateUtils.addDays(now, 1);
 
-        assertTrue(ticketReservationRepository.getSoldStatistic(from, to).isEmpty()); // -> no reservations
+        assertTrue(ticketReservationRepository.getSoldStatistic(event.getId(), from, to).isEmpty()); // -> no reservations
         ticketReservationManager.validateAndConfirmOfflinePayment(reservationId, event, new BigDecimal("190.00"));
 
-        assertEquals(19, ticketReservationRepository.getSoldStatistic(from, to).get(0).getTicketSoldCount()); // -> 19 tickets reserved
+        assertEquals(19, ticketReservationRepository.getSoldStatistic(event.getId(), from, to).get(0).getTicketSoldCount()); // -> 19 tickets reserved
 
         assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, ticketReservationManager.findById(reservationId).get().getStatus());
 

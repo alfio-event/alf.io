@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -167,4 +168,7 @@ public class EventStatisticsManager {
         };
     }
 
+    public List<TicketSoldStatistic> getTicketSoldStatistics(int eventId, Date from, Date to) {
+        return ticketReservationRepository.getSoldStatistic(eventId, from, to);
+    }
 }

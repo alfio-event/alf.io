@@ -531,6 +531,14 @@ public class EventApiController {
         return eventStatisticsManager.loadModifiedTickets(event.getId(), categoryId);
     }
 
+    @RequestMapping(value = "/events/{eventName}/ticket-sold-statistics", method = GET)
+    public List<TicketSoldStatistic> getTicketSoldStatistics(@PathVariable("eventName") String eventName, @RequestParam("from") Long fromEpoch, @RequestParam("to") Long toEpoch, Principal principal) {
+        Event event = loadEvent(eventName, principal);
+        Date from = fromEpoch == null ? new Date(0) : new Date(fromEpoch);
+        Date to = toEpoch == null ? new Date() : new Date(toEpoch);
+        return eventStatisticsManager.getTicketSoldStatistics(event.getId(), from, to);
+    }
+
     private Event loadEvent(String eventName, Principal principal) {
         Optional<Event> singleEvent = optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()));
         Validate.isTrue(singleEvent.isPresent(), "event not found");
