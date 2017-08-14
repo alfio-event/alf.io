@@ -90,7 +90,7 @@
 
             },
             getTicketsForCategory: function(event, ticketCategory) {
-              return $http.get('/admin/api/events/'+event.shortName+'/category/'+ticketCategory.id+'/ticket');
+              return $http.get('/admin/api/events/'+event.shortName+'/category/'+ticketCategory.id+'/ticket').error(HttpErrorHandler.handle);
             },
             updateEventPrices: function(eventPrices) {
                 return $http['post']('/admin/api/events/'+eventPrices.id+'/prices/update', eventPrices).error(HttpErrorHandler.handle);

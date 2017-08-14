@@ -76,6 +76,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/view/reservation-view.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservations-list/reservations-list.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js"></script>
 
     <link rel="stylesheet" href="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />
 

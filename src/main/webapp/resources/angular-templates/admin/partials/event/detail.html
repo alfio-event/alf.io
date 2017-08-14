@@ -58,7 +58,7 @@
                                 <div class="col-xs-12 col-md-5">
                                     <div class="pull-right">
                                         <a class="btn btn-sm btn-default" data-ng-click="editCategory(ticketCategory, event)"><i class="fa fa-edit"></i> edit</a>
-                                        <a class="btn btn-sm btn-default" data-ng-click="toggleTicketViewCollapse(ticketCategory)">
+                                        <a class="btn btn-sm btn-default" ui-sref="events.single.ticketsList({eventName: event.shortName, categoryId: ticketCategory.id})">
                                             <i class="fa fa-ticket"></i> tickets
                                         </a>
                                         <a class="btn btn-sm btn-default" data-ng-click="toggleTokenViewCollapse(ticketCategory)" data-ng-if="ticketCategory.accessRestricted">
@@ -125,40 +125,6 @@
                                 <div class="row">
                                     <div class="col-xs-1"><i class="fa fa-info-circle fa-3x"></i></div>
                                     <div class="col-xs-11">Token generation in progress. Please wait 30s and then reload the page.</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div data-ng-if="!isTicketViewCollapsed(ticketCategory)">
-                            <hr>
-                            <button class="close" aria-label="Close" data-ng-click="toggleTicketViewCollapse(ticketCategory)"><i class="fa fa-close"></i></button>
-                            <h4><i class="fa fa-ticket"></i> Tickets</h4>
-                            <div class="h4">&nbsp;</div>
-                            <label><div class="input-group"><div class="input-group-addon"><i class="fa fa-search"></i></div><input name="ticket-{{ticketCategory.id}}-filter" type="text" class="form-control input-sm" data-ng-model="ticketCategory.ticketFilter" data-grab-focus=""></div></label>
-                            <div class="list-group">
-                                <div class="list-group-item" data-ng-repeat="ticket in ticketCategory.tickets | filter:ticketCategory.ticketFilter | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
-                                    <div class="list-group-item-heading">
-                                        <button type="button" class="btn btn-sm btn-default pull-right" data-ng-click="toggleLocking(event, ticket, ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-uib-tooltip="forbid ticket reassignment" data-tooltip-placement="left" data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button>
-                                        <button type="button" class="btn btn-sm btn-default pull-right" ng-click="removeTicket(event, ticket)"><i class="fa fa-trash"></i> remove</button>
-                                        <h4><i data-ng-class="evaluateTicketStatus(ticket.status)" data-uib-tooltip="{{ticket.status | statusText}}"></i> {{::ticket.uuid | limitTo:8}} <span data-ng-if="ticket.paid">Confirmed on: {{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span> by {{::ticket.ticketReservation.fullName}}</h4>
-                                    </div>
-                                    <div class="list-group-item-text">
-                                        <dl class="dl-horizontal">
-                                            <dt>id</dt>
-                                            <dd><a data-ui-sref="events.single.view-reservation({eventName:event.shortName, reservationId: ticket.ticketReservation.id})" target="_blank">{{::ticket.uuid}}</a></dd>
-                                            <dt>Reservation by</dt>
-                                            <dd>{{::ticket.ticketReservation.fullName}} &lt;{{::ticket.ticketReservation.email}}&gt;</dd>
-                                            <dt data-ng-if="!ticket.pending">Confirmed on</dt>
-                                            <dd data-ng-if="!ticket.pending">{{::ticket.ticketReservation.confirmationTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</dd>
-                                            <dt data-ng-class="{'text-warning': !ticket.fullName}">Assignee</dt>
-                                            <dd>{{::ticket.fullName}} <span data-ng-if="ticket.email">&lt;{{::ticket.email}}&gt;</span></dd>
-                                            <dt data-ng-if="ticket.appliedDiscount > 0">Discount</dt>
-                                            <dd data-ng-if="ticket.appliedDiscount > 0"><samp>- {{::ticket.appliedDiscount | currency:ticket.currencyCode}}</samp></dd>
-                                            <dt data-ng-if="ticket.paid">Payment</dt>
-                                            <dd data-ng-if="ticket.paid"><samp>{{::ticket.finalPrice | currency:event.currency}}</samp> ({{::ticket.ticketReservation.paymentMethod}}) on {{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</dd>
-                                            <dt data-ng-if="ticket.paid">Transaction info</dt>
-                                            <dd data-ng-if="ticket.paid"><samp>{{::ticket.transaction.transactionId}}</samp> on {{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</dd>
-                                        </dl>
-                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -183,6 +183,16 @@
                 },
                 controllerAs: 'ctrl'
             })
+            .state('events.single.ticketsList', {
+                url: '/category/:categoryId/tickets',
+                template: '<tickets-list event="$ctrl.event" category-id="$ctrl.categoryId"></tickets-list>',
+                controller: ['loadEvent', '$stateParams', function(loadEvent, $stateParams) {
+                    this.event = loadEvent.data.event;
+                    this.categoryId = $stateParams.categoryId;
+                }],
+                controllerAs: '$ctrl',
+                resolve: loadEvent
+            })
             .state('events.single.pending-payments', {
                 url: '/pending-payments/',
                 templateUrl: BASE_STATIC_URL + '/pending-payments/index.html',
@@ -685,13 +695,6 @@
             category.isTokenViewExpanded = !category.isTokenViewExpanded;
         };
 
-        $scope.toggleTicketViewCollapse = function(category) {
-            category.isTicketViewExpanded = !category.isTicketViewExpanded;
-            EventService.getTicketsForCategory($scope.event, category).then(function(res) {
-                category.tickets = res.data;
-            });
-        };
-
         $scope.isPending = function(token) {
             return token.status === 'WAITING';
         };
@@ -890,18 +893,6 @@
                         });
                     };
                 }
-            });
-        };
-
-        $scope.toggleLocking = function(event, ticket, category) {
-            EventService.toggleTicketLocking(event, ticket, category).then(function() {
-                loadData();
-            });
-        };
-
-        $scope.removeTicket = function(event, ticket) {
-            EventService.removeTicketModal(event, ticket.ticketReservation.id, ticket.id).then(function() {
-                loadData();
             });
         };
 
