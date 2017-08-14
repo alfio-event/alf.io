@@ -18,7 +18,6 @@ package alfio.manager;
 
 import alfio.manager.user.UserManager;
 import alfio.model.*;
-import alfio.model.modification.TicketCategoryWithStatistic;
 import alfio.model.modification.TicketWithStatistic;
 import alfio.repository.*;
 import alfio.util.EventUtil;
@@ -116,20 +115,6 @@ public class EventStatisticsManager {
             .collect(Collectors.toList());
 
         return new EventWithAdditionalInfo(event, tWithInfo, eventStatistic, description, grossIncome);
-    }
-
-    public List<TicketCategoryWithStatistic> loadTicketCategoriesWithStats(Event event) {
-
-        List<TicketCategory> categories = loadTicketCategories(event);
-        List<Integer> ticketCategoriesIds = categories.stream().map(TicketCategory::getId).collect(Collectors.toList());
-        Map<Integer, Map<String, String>> descriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoriesIds);
-        Map<Integer, List<SpecialPrice>> specialPrices = specialPriceRepository.findAllByCategoriesIdsMapped(ticketCategoriesIds);
-
-        return loadTicketCategories(event).stream()
-                .map(tc -> new TicketCategoryWithStatistic(tc, loadModifiedTickets(tc.getEventId(), tc.getId()),
-                    specialPrices.get(tc.getId()), event, descriptions.get(tc.getId())))
-                .sorted()
-                .collect(toList());
     }
 
     private List<TicketCategory> loadTicketCategories(Event event) {

@@ -17,7 +17,6 @@
 package alfio.util;
 
 import alfio.model.TicketCategoryStatisticView;
-import alfio.model.modification.TicketCategoryWithStatistic;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;

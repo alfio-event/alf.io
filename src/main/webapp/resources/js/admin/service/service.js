@@ -164,9 +164,6 @@
                 var queryString = angular.isDefined(categoryId) && categoryId !== "" ? '?categoryId='+categoryId : '';
                 return $http['post']('/admin/api/events/'+eventName+'/messages/send'+queryString, messages).error(HttpErrorHandler.handle);
             },
-            getCategoriesContainingTickets: function(eventName) {
-                return $http['get']('/admin/api/events/'+eventName+'/categories-containing-tickets')
-            },
             getFields : function(eventName) {
                 return $http['get']('/admin/api/events/'+eventName+'/fields');
             },

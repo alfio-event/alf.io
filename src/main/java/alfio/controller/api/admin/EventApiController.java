@@ -520,15 +520,6 @@ public class EventApiController {
         return i18nManager.getSupportedLanguages();
     }
 
-    @RequestMapping(value = "/events/{eventName}/categories-containing-tickets", method = GET)
-    public List<TicketCategoryModification> getCategoriesWithTickets(@PathVariable("eventName") String eventName, Principal principal) {
-        Event event = loadEvent(eventName, principal);
-        return eventStatisticsManager.loadTicketCategoriesWithStats(event).stream()
-                .filter(tc -> !tc.getTickets().isEmpty())
-                .map(tc -> TicketCategoryModification.fromTicketCategory(tc.getTicketCategory(), tc.getDescription(), event.getZoneId()))
-                .collect(toList());
-    }
-
     @RequestMapping(value = "/events/{eventName}/category/{categoryId}/ticket", method = GET)
     public List<TicketWithStatistic> getTicketsInCategory(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId, Principal principal) {
         Event event = loadEvent(eventName, principal);

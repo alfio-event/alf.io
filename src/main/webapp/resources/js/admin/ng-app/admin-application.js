@@ -1445,7 +1445,7 @@
 
 
         $q.all([EventService.getSelectedLanguages($stateParams.eventName),
-            EventService.getCategoriesContainingTickets($stateParams.eventName), EventService.getEvent($stateParams.eventName)])
+            EventService.getEvent($stateParams.eventName)])
         .then(function(results) {
                 $scope.messages = _.map(results[0].data, function(r) {
                     return {
@@ -1459,10 +1459,10 @@
                 });
                 $scope.fullName = 'John Doe';
 
-                $scope.categories = results[1].data;
+                $scope.categories = results[1].data.event.ticketCategories;
                 $scope.categoryId = undefined;
 
-                var eventDescriptor = results[2].data;
+                var eventDescriptor = results[1].data;
                 $scope.organization = eventDescriptor.organization;
                 $scope.eventName = eventDescriptor.event.shortName;
         });
