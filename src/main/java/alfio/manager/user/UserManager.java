@@ -128,6 +128,9 @@ public class UserManager {
     }
 
     public List<Organization> findUserOrganizations(User user) {
+
+        organizationRepository.findAllForUser(user.getUsername());
+
         if (isAdmin(user)) {
             return organizationRepository.findAll();
         }
