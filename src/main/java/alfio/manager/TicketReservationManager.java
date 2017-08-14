@@ -1240,14 +1240,6 @@ public class TicketReservationManager {
         confirmOfflinePayment(event, reservation.getId());
     }
 
-    private List<String> pendingReservationIdInEvent(int eventId) {
-        List<Integer> categories = ticketCategoryRepository.findIdsByEventId(eventId);
-        if(categories.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return ticketRepository.findPendingReservationIdInCategories(categories);
-    }
-
     private List<Pair<TicketReservation, OrderSummary>> fetchWaitingForPayment(int eventId, Event event, Locale locale) {
         return ticketReservationRepository.findAllReservationsWaitingForPaymentInEventId(eventId).stream()
             .map(id -> Pair.of(ticketReservationRepository.findReservationById(id), orderSummaryForReservationId(id, event, locale)))

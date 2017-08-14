@@ -59,9 +59,6 @@ public interface TicketCategoryRepository {
     
     @Query("select * from ticket_category where event_id = :eventId")
     List<TicketCategory> findByEventId(@Bind("eventId") int eventId);
-
-    @Query("select id from ticket_category where event_id = :eventId")
-    List<Integer> findIdsByEventId(@Bind("eventId") int eventId);
     
     @Query("select count(*) from ticket_category where event_id = :eventId and access_restricted = true")
     Integer countAccessRestrictedRepositoryByEventId(@Bind("eventId") int eventId);
