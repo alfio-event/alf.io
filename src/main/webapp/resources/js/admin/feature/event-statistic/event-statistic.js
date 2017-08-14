@@ -220,7 +220,7 @@
                                     }
                                     if(labelMutableStart.month() != l.month()) {
                                         var sameMonth = function(m) {
-                                            return l.month() === m.month();
+                                            return l.month() === moment.utc(m).month();
                                         };
                                         var first = _.findIndex(labels, sameMonth);
                                         var last = _.findLastIndex(labels, sameMonth);
