@@ -78,7 +78,7 @@
             <li><h4 class="text-muted">Status</h4></li>
             <li>
                 <ul class="nav nav-pills nav-stacked" data-ng-if="ctrl.internal">
-                    <li role="presentation" data-ui-sref-active="active">
+                    <li role="presentation" ng-if="ctrl.event" data-ui-sref-active="active">
                         <waiting-queue-display-counter style-class="emulate-nav-pills-link" event-name="ctrl.event.shortName"></waiting-queue-display-counter>
                     </li>
                     <li role="presentation" data-ng-if="ctrl.event" data-ui-sref-active="active">
