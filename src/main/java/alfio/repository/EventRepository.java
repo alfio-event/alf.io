@@ -47,7 +47,7 @@ public interface EventRepository {
     @Query("select * from event order by start_ts asc")
     List<Event> findAll();
 
-    @Query("select * from event where org_id = in (:organizationIds)")
+    @Query("select * from event where org_id in (:organizationIds)")
     List<Event> findByOrganizationIds(@Bind("organizationIds") Collection<Integer> organizationIds);
 
     @Query("insert into event(short_name, type, display_name, website_url, external_url, website_t_c_url, image_url, file_blob_id, location, latitude, longitude, start_ts, end_ts, time_zone, regular_price_cts, currency, available_seats, vat_included, vat, allowed_payment_proxies, private_key, org_id, locales, vat_status, src_price_cts, version, status) " +
