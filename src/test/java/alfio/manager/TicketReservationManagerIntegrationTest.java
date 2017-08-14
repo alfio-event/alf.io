@@ -80,6 +80,8 @@ public class TicketReservationManagerIntegrationTest {
     private TicketReservationManager ticketReservationManager;
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
+    @Autowired
+    private EventStatisticsManager eventStatisticsManager;
 
     @Autowired
     private ConfigurationRepository configurationRepository;
@@ -130,6 +132,9 @@ public class TicketReservationManagerIntegrationTest {
         TicketCategory bounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
         TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
+        assertEquals(0, eventStatisticsManager.loadModifiedTickets(event.getId(), bounded.getId()).size());
+        assertEquals(0, eventStatisticsManager.loadModifiedTickets(event.getId(), unbounded.getId()).size());
+
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(10);
         tr.setTicketCategoryId(bounded.getId());
@@ -176,6 +181,9 @@ public class TicketReservationManagerIntegrationTest {
         ticketReservationManager.validateAndConfirmOfflinePayment(reservationId, event, new BigDecimal("190.00"));
 
         assertEquals(19, ticketReservationRepository.getSoldStatistic(event.getId(), from, to).get(0).getTicketSoldCount()); // -> 19 tickets reserved
+
+        assertEquals(10, eventStatisticsManager.loadModifiedTickets(event.getId(), bounded.getId()).size());
+        assertEquals(9, eventStatisticsManager.loadModifiedTickets(event.getId(), unbounded.getId()).size());
 
         assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, ticketReservationManager.findById(reservationId).get().getStatus());
 

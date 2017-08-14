@@ -19,6 +19,7 @@ package alfio.repository;
 import alfio.model.FullTicketInfo;
 import alfio.model.Ticket;
 import alfio.model.TicketCSVInfo;
+import alfio.model.TicketWithReservationAndTransaction;
 import ch.digitalfondue.npjt.*;
 
 import java.util.Date;
@@ -54,8 +55,8 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status in ("+CONFIRMED+") and category_id = :categoryId and event_id = :eventId and full_name is not null and email_address is not null")
     Integer countAssignedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
-    @Query("select * from ticket where status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and category_id = :categoryId and event_id = :eventId")
-    List<Ticket> findAllModifiedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
+    @Query("select * from ticket_and_reservation_and_tx where t_status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and t_category_id = :categoryId and t_event_id = :eventId")
+    List<TicketWithReservationAndTransaction> findAllModifiedTicketsWithReservationAndTransaction(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
     @Query("select count(*) from ticket where status in ("+CONFIRMED+", 'PENDING') and category_id = :categoryId and event_id = :eventId")
     Integer countConfirmedAndPendingTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);

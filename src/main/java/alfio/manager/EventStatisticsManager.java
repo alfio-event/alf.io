@@ -134,11 +134,10 @@ public class EventStatisticsManager {
 
     public List<TicketWithStatistic> loadModifiedTickets(int eventId, int categoryId) {
         Event event = eventRepository.findById(eventId);
-        return ticketRepository.findAllModifiedTickets(eventId, categoryId).stream()
-                .map(t -> new TicketWithStatistic(t, event, ticketReservationRepository.findReservationById(t.getTicketsReservationId()),
-                        event.getZoneId(), transactionRepository.loadOptionalByReservationId(t.getTicketsReservationId())))
-                .sorted()
-                .collect(Collectors.toList());
+        return ticketRepository.findAllModifiedTicketsWithReservationAndTransaction(eventId, categoryId).stream()
+            .map(t -> new TicketWithStatistic(t.getTicket(), event, t.getTicketReservation(), event.getZoneId(), t.getTransaction()))
+            .sorted()
+            .collect(Collectors.toList());
     }
 
     public Predicate<Event> noSeatsAvailable() {
