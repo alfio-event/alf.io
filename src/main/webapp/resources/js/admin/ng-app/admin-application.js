@@ -808,18 +808,20 @@
             });
             editPrices.result.then(function(seatsModified) {
                 var message = "Modification applied. " + (seatsModified ? "Seats modification will become effective in 30s. The page will be reloaded automatically." : "");
-                NotificationHandler.showSuccess(message);
-                if(seatsModified) {
-                    $timeout(function() {
-                        NotificationHandler.showInfo("Reloading data...");
-                        $window.location.reload();
-                    }, 30000 )
-
-                } else {
-                    loadData().then(function(res) {
-                        $rootScope.$emit('ReloadEventPie', res.data.event);
-                    });
-                }
+                loadData().then(function(res) {
+                    NotificationHandler.showSuccess(message);
+                    $rootScope.$emit('ReloadEventPie', res.data.event);
+                    if(seatsModified) {
+                        $timeout(function() {
+                            var info = NotificationHandler.showInfo("Reloading data...");
+                            loadData().then(function(res2) {
+                                info.destroy();
+                                NotificationHandler.showSuccess("Success!");
+                                $rootScope.$emit('ReloadEventPie', res2.data.event);
+                            });
+                        }, 30000 );
+                    }
+                });
             });
         };
 

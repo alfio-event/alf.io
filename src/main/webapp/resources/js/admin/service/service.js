@@ -461,16 +461,16 @@
         var config = {ttl: 5000, disableCountDown: true};
         return {
             showSuccess: function (message) {
-                growl.success(message, config);
+                return growl.success(message, config);
             },
             showWarning: function (message) {
-                growl.warning(message, config);
+                return growl.warning(message, config);
             },
             showInfo : function (message) {
-                growl.info(message, config);
+                return growl.info(message, config);
             },
             showError : function (message) {
-                growl.error(message, config);
+                return growl.error(message, config);
             }
         }
 
