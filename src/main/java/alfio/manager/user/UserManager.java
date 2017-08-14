@@ -116,7 +116,7 @@ public class UserManager {
     }
 
     public List<Organization> findUserOrganizations(String username) {
-        return findUserOrganizations(userRepository.getByUsername(username));
+        return organizationRepository.findAllForUser(username);
     }
 
     public Organization findOrganizationById(int id, String username) {
@@ -125,19 +125,6 @@ public class UserManager {
                 .filter(o -> o.getId() == id)
                 .findFirst()
                 .orElseThrow(IllegalArgumentException::new);
-    }
-
-    public List<Organization> findUserOrganizations(User user) {
-
-        organizationRepository.findAllForUser(user.getUsername());
-
-        if (isAdmin(user)) {
-            return organizationRepository.findAll();
-        }
-        return userOrganizationRepository.findByUserId(user.getId())
-                .stream()
-                .map(uo -> organizationRepository.getById(uo.getOrganizationId()))
-                .collect(toList());
     }
 
     public boolean isAdmin(User user) {

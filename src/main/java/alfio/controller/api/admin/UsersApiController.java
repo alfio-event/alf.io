@@ -174,14 +174,14 @@ public class UsersApiController {
     @RequestMapping(value = "/users/{id}", method = GET)
     public UserModification loadUser(@PathVariable("id") int userId) {
         User user = userManager.findUser(userId);
-        List<Organization> userOrganizations = userManager.findUserOrganizations(user);
+        List<Organization> userOrganizations = userManager.findUserOrganizations(user.getUsername());
         return new UserModification(user.getId(), userOrganizations.get(0).getId(), userManager.getUserRole(user).name(), user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress());
     }
 
     @RequestMapping(value = "/users/current", method = GET)
     public UserModification loadCurrentUser(Principal principal) {
         User user = userManager.findUserByUsername(principal.getName());
-        List<Organization> userOrganizations = userManager.findUserOrganizations(user);
+        List<Organization> userOrganizations = userManager.findUserOrganizations(user.getUsername());
         return new UserModification(user.getId(), userOrganizations.get(0).getId(), userManager.getUserRole(user).name(), user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress());
     }
 
