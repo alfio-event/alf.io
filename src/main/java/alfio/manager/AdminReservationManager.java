@@ -68,6 +68,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 @Component
 @Log4j2
 @RequiredArgsConstructor
+@Transactional
 public class AdminReservationManager {
 
     private final EventManager eventManager;
@@ -142,7 +143,6 @@ public class AdminReservationManager {
         }
     }
 
-    @Transactional
     public Result<Boolean> notify(String eventName, String reservationId, AdminReservationModification arm, String username) {
         AdminReservationModification.Notification notification = arm.getNotification();
         return eventRepository.findOptionalByShortName(eventName)
@@ -185,7 +185,6 @@ public class AdminReservationManager {
         return Result.success(true);
     }
 
-    @Transactional
     public Result<Triple<TicketReservation, List<Ticket>, Event>> loadReservation(String eventName, String reservationId, String username) {
         return eventRepository.findOptionalByShortName(eventName)
             .flatMap(e -> optionally(() -> {
@@ -420,7 +419,6 @@ public class AdminReservationManager {
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
     }
 
-    @Transactional
     public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, String username) {
         loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
             Event e = res.getRight();
@@ -455,7 +453,6 @@ public class AdminReservationManager {
     }
 
 
-    @Transactional
     public void removeReservation(String eventName, String reservationId, boolean refund, boolean notify, String username) {
         loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
             Event e = res.getRight();
