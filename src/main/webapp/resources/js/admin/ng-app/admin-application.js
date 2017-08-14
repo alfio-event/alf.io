@@ -807,7 +807,7 @@
                 }
             });
             editPrices.result.then(function(seatsModified) {
-                var message = "Modification applied. " + (seatsModified ? "Seats modification will become effective in 30s. The page will be reloaded automatically." : "");
+                var message = "Modification applied. " + (seatsModified ? "Seats modification will become effective in 30s. The data will be reloaded automatically." : "");
                 loadData().then(function(res) {
                     NotificationHandler.showSuccess(message);
                     $rootScope.$emit('ReloadEventPie', res.data.event);
