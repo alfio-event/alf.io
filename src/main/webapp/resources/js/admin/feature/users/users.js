@@ -10,7 +10,7 @@
         }
     }).filter('orgSelected', function() {
         return function(list, orgId) {
-            if(!orgId) {
+            if(orgId == null || orgId == undefined) {
                 return list;
             }
             return _.filter(list, function(e) { return _.any(e.memberOf, function(i) { return i.id === orgId })})
