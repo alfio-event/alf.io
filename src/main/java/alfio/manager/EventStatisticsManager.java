@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.TicketWithStatistic;
+import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
@@ -28,10 +29,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -73,10 +71,8 @@ public class EventStatisticsManager {
     }
 
     private List<Event> getAllEvents(String username) {
-        return userManager.findUserOrganizations(username)
-                .parallelStream()
-                .flatMap(o -> eventRepository.findByOrganizationId(o.getId()).stream())
-                .collect(Collectors.toList());
+        List<Integer> orgIds = userManager.findUserOrganizations(username).stream().map(Organization::getId).collect(toList());
+        return orgIds.isEmpty() ? Collections.emptyList() : eventRepository.findByOrganizationIds(orgIds);
     }
 
 

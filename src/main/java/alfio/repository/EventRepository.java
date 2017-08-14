@@ -24,6 +24,7 @@ import ch.digitalfondue.npjt.*;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -46,8 +47,8 @@ public interface EventRepository {
     @Query("select * from event order by start_ts asc")
     List<Event> findAll();
 
-    @Query("select * from event where org_id = :organizationId")
-    List<Event> findByOrganizationId(@Bind("organizationId") int organizationId);
+    @Query("select * from event where org_id = in (:organizationIds)")
+    List<Event> findByOrganizationIds(@Bind("organizationIds") Collection<Integer> organizationIds);
 
     @Query("insert into event(short_name, type, display_name, website_url, external_url, website_t_c_url, image_url, file_blob_id, location, latitude, longitude, start_ts, end_ts, time_zone, regular_price_cts, currency, available_seats, vat_included, vat, allowed_payment_proxies, private_key, org_id, locales, vat_status, src_price_cts, version, status) " +
             "values(:shortName, :type, :displayName, :websiteUrl, :externalUrl, :termsUrl, :imageUrl, :fileBlobId, :location, :latitude, :longitude, :start_ts, :end_ts, :time_zone, 0, :currency, :available_seats, :vat_included, :vat, :paymentProxies, :privateKey, :organizationId, :locales, :vatStatus, :srcPriceCts, :version, :status)")
