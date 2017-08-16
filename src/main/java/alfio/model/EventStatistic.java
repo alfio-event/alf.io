@@ -51,7 +51,7 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
     }
 
     public int getAvailableSeats() {
-        return event.getAvailableSeats();
+        return eventStatisticView.getAvailableSeats();
     }
 
     public String getFormattedBegin() {

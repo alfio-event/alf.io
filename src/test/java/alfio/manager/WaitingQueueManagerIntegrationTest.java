@@ -103,7 +103,7 @@ public class WaitingQueueManagerIntegrationTest {
     @Test
     public void testDistributeSeatsFirstCategoryIsUnbounded() throws Exception {
         List<TicketCategoryModification> categories = getTicketCategoryModifications(false, AVAILABLE_SEATS, true, 10);
-        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         TicketCategory firstCategory = eventManager.loadTicketCategories(event).stream().filter(t->t.getName().equals("defaultFirst")).findFirst().orElseThrow(IllegalStateException::new);
         configurationManager.saveCategoryConfiguration(firstCategory.getId(), event.getId(), Collections.singletonList(new ConfigurationModification(null, ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "1")), pair.getRight()+"_owner");
@@ -125,7 +125,7 @@ public class WaitingQueueManagerIntegrationTest {
     @Test
     public void testDistributeSeatsFirstCategoryIsBounded() throws Exception {
         List<TicketCategoryModification> categories = getTicketCategoryModifications(true, 10, true, 10);
-        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         TicketCategory firstCategory = eventManager.loadTicketCategories(event).stream().filter(t->t.getName().equals("defaultFirst")).findFirst().orElseThrow(IllegalStateException::new);
         configurationManager.saveCategoryConfiguration(firstCategory.getId(), event.getId(), Collections.singletonList(new ConfigurationModification(null, ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "1")), pair.getRight()+"_owner");
@@ -151,7 +151,7 @@ public class WaitingQueueManagerIntegrationTest {
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager).getKey();
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).get(0);
 
@@ -180,7 +180,7 @@ public class WaitingQueueManagerIntegrationTest {
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
 
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager).getKey();
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).get(0);
 
@@ -234,7 +234,7 @@ public class WaitingQueueManagerIntegrationTest {
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
 
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager).getKey();
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory bounded = ticketCategoryRepository.findByEventId(event.getId()).get(0);
 
@@ -293,7 +293,7 @@ public class WaitingQueueManagerIntegrationTest {
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
 
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager).getKey();
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         List<TicketCategory> ticketCategories = ticketCategoryRepository.findByEventId(event.getId());
         TicketCategory first = ticketCategories.get(0);

@@ -28,11 +28,13 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
+import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.Assert;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -89,7 +91,8 @@ public class IntegrationTestUtil {
     public static Pair<Event, String> initEvent(List<TicketCategoryModification> categories,
                                                 OrganizationRepository organizationRepository,
                                                 UserManager userManager,
-                                                EventManager eventManager) {
+                                                EventManager eventManager,
+                                                EventRepository eventRepository) {
 
         String organizationName = UUID.randomUUID().toString();
         String username = UUID.randomUUID().toString();
@@ -114,7 +117,9 @@ public class IntegrationTestUtil {
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, null);
         eventManager.createEvent(em);
-        return Pair.of(eventManager.getSingleEvent(eventName, username), username);
+        Event event = eventManager.getSingleEvent(eventName, username);
+        Assert.assertEquals(AVAILABLE_SEATS, eventRepository.countExistingTickets(event.getId()).intValue());
+        return Pair.of(event, username);
     }
 
     public static void initAdminUser(UserRepository userRepository, AuthorityRepository authorityRepository) {

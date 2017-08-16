@@ -160,7 +160,7 @@ public class WaitingQueueManager {
                 .sorted(TicketCategory.COMPARATOR)
                 .findFirst()
                 .filter(t -> ZonedDateTime.now(event.getZoneId()).isBefore(t.getInception(event.getZoneId()).minusMinutes(5)));
-        int ticketsNeeded = Math.min(waitingPeople, event.getAvailableSeats());
+        int ticketsNeeded = Math.min(waitingPeople, eventRepository.countExistingTickets(event.getId()));
         if(ticketsNeeded > 0) {
             preReserveIfNeeded(event, ticketsNeeded);
             if(!categoryWithInceptionInFuture.isPresent()) {

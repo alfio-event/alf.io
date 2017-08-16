@@ -25,6 +25,7 @@ import alfio.model.Event;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.UploadBase64FileModification;
+import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
@@ -82,6 +83,8 @@ public class UploadedResourceIntegrationTest {
 
     @Autowired
     OrganizationRepository organizationRepository;
+    @Autowired
+    private EventRepository eventRepository;
 
     Event event;
     String user;
@@ -95,7 +98,7 @@ public class UploadedResourceIntegrationTest {
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager);
+        Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 
         event = eventAndUser.getKey();
         user = eventAndUser.getValue() + "_owner";

@@ -144,22 +144,22 @@ public class DataMigratorIntegrationTest {
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Pair<Event, String> eventUsername = initEvent(categories); 
+        Pair<Event, String> eventUsername = initEvent(categories);
         Event event = eventUsername.getKey();
 
         try {
 	        eventRepository.updatePrices("CHF", 40, false, BigDecimal.ONE, "STRIPE", event.getId(), PriceContainer.VatStatus.NOT_INCLUDED, 1000);
-	
+
 	        dataMigrator.migrateEventsToCurrentVersion();
 	        EventMigration eventMigration = eventMigrationRepository.loadEventMigration(event.getId());
 	        assertNotNull(eventMigration);
 	        //assertEquals(buildTimestamp, eventMigration.getBuildTimestamp().toString());
 	        assertEquals(currentVersion, eventMigration.getCurrentVersion());
-	
+
 	        List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
 	        assertNotNull(tickets);
 	        assertFalse(tickets.isEmpty());
-	        assertEquals(40, tickets.size());
+	        assertEquals(AVAILABLE_SEATS, tickets.size());
 	        assertTrue(tickets.stream().allMatch(t -> t.getCategoryId() == null));
         } finally {
         	eventManager.deleteEvent(event.getId(), eventUsername.getValue());
@@ -188,7 +188,7 @@ public class DataMigratorIntegrationTest {
 	        List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
 	        assertNotNull(tickets);
 	        assertFalse(tickets.isEmpty());
-	        assertEquals(40, tickets.size());
+	        assertEquals(20, tickets.size());
 	        assertTrue(tickets.stream().allMatch(t -> t.getCategoryId() == null));
         } finally {
         	eventManager.deleteEvent(event.getId(), eventUsername.getValue());

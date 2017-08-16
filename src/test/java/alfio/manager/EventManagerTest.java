@@ -195,14 +195,15 @@ public class EventManagerTest {{
         int eventId = 0;
         TicketCategoryRepository ticketCategoryRepository = it.usesMock(TicketCategoryRepository.class);
         TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository = it.usesMock(TicketCategoryDescriptionRepository.class);
-        EventManager eventManager = new EventManager(null, null, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, pluginManager, null, null, null, null, null, null);
+        EventRepository eventRepository = it.usesMock(EventRepository.class);
+        EventManager eventManager = new EventManager(null, eventRepository, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, pluginManager, null, null, null, null, null, null);
         Event event = mock(Event.class);
         int availableSeats = 20;
-        when(event.getAvailableSeats()).thenReturn(availableSeats);
+        when(eventRepository.countExistingTickets(0)).thenReturn(availableSeats);
         it.should("create tickets for the unbounded category", expect -> {
             List<TicketCategory> categories = generateCategoryStream().limit(3).collect(Collectors.toList());
             when(ticketCategoryRepository.findByEventId(eq(eventId))).thenReturn(categories);
-            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(), event, Ticket.TicketStatus.FREE);
+            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(), event, availableSeats, Ticket.TicketStatus.FREE);
             expect.that(parameterSources).isNotNull();
             expect.that(parameterSources.length).is(availableSeats);
             expect.that(Arrays.stream(parameterSources).allMatch(ps -> Ticket.TicketStatus.FREE.name().equals(ps.getValue("status")))).is(true);
@@ -211,7 +212,7 @@ public class EventManagerTest {{
         it.should("create tickets for the unbounded categories", expect -> {
             List<TicketCategory> categories = generateCategoryStream().limit(6).collect(Collectors.toList());
             when(ticketCategoryRepository.findByEventId(eq(eventId))).thenReturn(categories);
-            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(), event, Ticket.TicketStatus.FREE);
+            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(), event, availableSeats, Ticket.TicketStatus.FREE);
             expect.that(parameterSources).isNotNull();
             expect.that(parameterSources.length).is(availableSeats);
             expect.that(Arrays.stream(parameterSources).allMatch(ps -> Ticket.TicketStatus.FREE.name().equals(ps.getValue("status")))).is(true);
@@ -220,7 +221,7 @@ public class EventManagerTest {{
         it.should("create tickets only for the bounded categories", expect -> {
             List<TicketCategory> categories = generateCategoryStream().limit(2).collect(Collectors.toList());
             when(ticketCategoryRepository.findByEventId(eq(eventId))).thenReturn(categories);
-            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(), event, Ticket.TicketStatus.FREE);
+            MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(), event, availableSeats, Ticket.TicketStatus.FREE);
             expect.that(parameterSources).isNotNull();
             expect.that(parameterSources.length).is(20);
             expect.that(Arrays.stream(parameterSources).filter(p -> p.getValue("categoryId") != null).count()).is(4L);

@@ -154,7 +154,7 @@ public class EventManager {
         createAllAdditionalServices(eventId, em.getAdditionalServices(), event.getZoneId());
         createAdditionalFields(event, em);
         createCategoriesForEvent(em, event);
-        createAllTicketsForEvent(event);
+        createAllTicketsForEvent(event, em);
         initPlugins(event);
     }
 
@@ -282,7 +282,7 @@ public class EventManager {
     public void updateEventPrices(Event original, EventModification em, String username) {
         checkOwnership(original, username, em.getOrganizationId());
         int eventId = original.getId();
-        int seatsDifference = em.getAvailableSeats() - original.getAvailableSeats();
+        int seatsDifference = em.getAvailableSeats() - eventRepository.countExistingTickets(original.getId());
         if(seatsDifference < 0) {
             int allocatedSeats = ticketCategoryRepository.findByEventId(original.getId()).stream()
                     .filter(TicketCategory::isBounded)
@@ -330,7 +330,7 @@ public class EventManager {
             int notAllocated = ticketRepository.countNotAllocatedFreeAndReleasedTicket(eventId);
             int requestedTickets = tcm.isBounded() ? tcm.getMaxTickets() : 1;
             return new Result.Builder<>(() -> insertCategory(tcm, event))
-                .addValidation(() -> sum + requestedTickets <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
+                .addValidation(() -> sum + requestedTickets <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
                 .addValidation(() -> requestedTickets <= notAllocated, ErrorCode.CategoryError.ALL_TICKETS_ASSIGNED)
                 .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
                 .build();
@@ -368,7 +368,7 @@ public class EventManager {
                     return ticketCategoryRepository.getById(categoryId, eventId);
                 })
                 .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
-                .addValidation(() -> tcm.getMaxTickets() - existing.getMaxTickets() + categories.stream().mapToInt(TicketCategory::getMaxTickets).sum() <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
+                .addValidation(() -> tcm.getMaxTickets() - existing.getMaxTickets() + categories.stream().mapToInt(TicketCategory::getMaxTickets).sum() <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
                 .addValidation(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
                 .addValidation(() -> tcm.isBounded() == existing.isBounded() || ticketRepository.countPendingOrReleasedForCategory(eventId, existing.getId()) == 0, ErrorCode.custom("", "It is not safe to change allocation strategy right now because there are pending reservations."))
                 .addValidation(() -> !existing.isAccessRestricted() || tcm.isBounded() == existing.isAccessRestricted(), ErrorCode.custom("", "Dynamic allocation is not compatible with restricted access"))
@@ -444,7 +444,7 @@ public class EventManager {
     }
 
     MapSqlParameterSource[] prepareTicketsBulkInsertParameters(ZonedDateTime creation,
-                                                               Event event, TicketStatus ticketStatus) {
+                                                               Event event, int requestedTickets, TicketStatus ticketStatus) {
 
         //FIXME: the date should be inserted as ZonedDateTime !
         Date creationDate = Date.from(creation.toInstant());
@@ -453,15 +453,15 @@ public class EventManager {
         Stream<MapSqlParameterSource> boundedTickets = categories.stream()
                 .filter(IS_CATEGORY_BOUNDED)
                 .flatMap(tc -> generateTicketsForCategory(tc, event, creationDate, 0));
-        int existingTickets = categories.stream()
+        int generatedTickets = categories.stream()
                 .filter(IS_CATEGORY_BOUNDED)
                 .mapToInt(TicketCategory::getMaxTickets)
                 .sum();
-        if(existingTickets >= event.getAvailableSeats()) {
+        if(generatedTickets >= requestedTickets) {
             return boundedTickets.toArray(MapSqlParameterSource[]::new);
         }
 
-        return Stream.concat(boundedTickets, generateEmptyTickets(event, creationDate, event.getAvailableSeats() - existingTickets, ticketStatus)).toArray(MapSqlParameterSource[]::new);
+        return Stream.concat(boundedTickets, generateEmptyTickets(event, creationDate, requestedTickets - generatedTickets, ticketStatus)).toArray(MapSqlParameterSource[]::new);
     }
 
     private Stream<MapSqlParameterSource> generateTicketsForCategory(TicketCategory tc,
@@ -469,7 +469,7 @@ public class EventManager {
                                                                      Date creationDate,
                                                                      int existing) {
         Optional<TicketCategory> filteredTC = Optional.of(tc).filter(TicketCategory::isBounded);
-        int missingTickets = filteredTC.map(c -> Math.abs(c.getMaxTickets() - existing)).orElseGet(() -> event.getAvailableSeats() - existing);
+        int missingTickets = filteredTC.map(c -> Math.abs(c.getMaxTickets() - existing)).orElseGet(() -> eventRepository.countExistingTickets(event.getId()) - existing);
         return generateStreamForTicketCreation(missingTickets)
                     .map(ps -> buildTicketParams(event.getId(), creationDate, filteredTC, tc.getSrcPriceCts(), ps));
     }
@@ -485,7 +485,7 @@ public class EventManager {
                 .sum();
         int notAssignedTickets = em.getAvailableSeats() - requestedSeats;
         Validate.isTrue(notAssignedTickets >= 0, "Total categories' seats cannot be more than the actual event seats");
-        Validate.isTrue(notAssignedTickets > 0 || em.getTicketCategories().stream().noneMatch(tc -> !tc.isBounded()), "Cannot add an unbounded category if there aren't any free tickets");
+        Validate.isTrue(notAssignedTickets > 0 || em.getTicketCategories().stream().allMatch(TicketCategoryModification::isBounded), "Cannot add an unbounded category if there aren't any free tickets");
 
         em.getTicketCategories().forEach(tc -> {
             final int price = evaluatePrice(tc.getPriceInCents(), freeOfCharge);
@@ -659,8 +659,8 @@ public class EventManager {
                 .toArray(MapSqlParameterSource[]::new);
     }
 
-    private void createAllTicketsForEvent(Event event) {
-        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(ZonedDateTime.now(event.getZoneId()), event, TicketStatus.FREE);
+    private void createAllTicketsForEvent(Event event, EventModification em) {
+        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(ZonedDateTime.now(event.getZoneId()), event, em.getAvailableSeats(), TicketStatus.FREE);
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
     }
 

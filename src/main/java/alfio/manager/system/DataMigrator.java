@@ -16,15 +16,18 @@
  */
 package alfio.manager.system;
 
-import alfio.model.*;
+import alfio.model.AdditionalService;
+import alfio.model.Event;
+import alfio.model.PriceContainer;
+import alfio.model.PromoCodeDiscount;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.EventMigration;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.plugin.PluginConfigurationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
-import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
@@ -121,7 +124,7 @@ public class DataMigrator {
             transactionTemplate.execute(s -> {
                 //optional.ifPresent(eventMigration -> eventMigrationRepository.lockEventMigrationForUpdate(eventMigration.getId()));
                 if(ZonedDateTime.now(event.getZoneId()).isBefore(event.getEnd())) {
-                    createMissingTickets(event);
+                    fixAvailableSeats(event);
                     fillDescriptions(event);
                     migratePluginConfig(event);
                 }
@@ -174,12 +177,13 @@ public class DataMigrator {
         }
     }
 
-    private void createMissingTickets(Event event) {
-        int existingTickets = ticketRepository.countExistingTicketsForEvent(event.getId());
-        if(existingTickets < event.getAvailableSeats()) {
-            MapSqlParameterSource[] tickets = EventUtil.generateEmptyTickets(event, new Date(), event.getAvailableSeats() - existingTickets, Ticket.TicketStatus.FREE).toArray(MapSqlParameterSource[]::new);
-            jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), tickets);
-        }
+    /*
+     * even if we don't actively use the "available_seats" event property anymore, it makes sense to keep it synchronized
+     * in order to ensure backward compatibility
+     */
+    private void fixAvailableSeats(Event event) {
+        int availableSeats = eventRepository.countExistingTickets(event.getId());
+        eventRepository.updatePrices(event.getCurrency(), availableSeats, event.isVatIncluded(), event.getVat(), event.getAllowedPaymentProxies().stream().map(PaymentProxy::name).collect(joining(",")), event.getId(), event.getVatStatus(), event.getSrcPriceCts());
     }
 
     boolean needsFixing(EventMigration eventMigration) {

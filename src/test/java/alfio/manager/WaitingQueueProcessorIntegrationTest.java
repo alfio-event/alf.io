@@ -27,6 +27,7 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.system.ConfigurationKeys;
+import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.WaitingQueueRepository;
@@ -94,9 +95,10 @@ public class WaitingQueueProcessorIntegrationTest {
     private ConfigurationManager configurationManager;
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
-
     @Autowired
     private ConfigurationRepository configurationRepository;
+    @Autowired
+    private EventRepository eventRepository;
 
     @Before
     public void setup() {
@@ -113,7 +115,7 @@ public class WaitingQueueProcessorIntegrationTest {
                         new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                         new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event), "peppino@garibaldi.com", null, Locale.ENGLISH);
         waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event), "bixio@mille.org", null, Locale.ITALIAN);
@@ -159,7 +161,7 @@ public class WaitingQueueProcessorIntegrationTest {
         EventModification eventModification = new EventModification(event.getId(), event.getType(), event.getWebsiteUrl(),
             event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
             event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
-            event.getRegularPrice(), event.getCurrency(), event.getAvailableSeats()+1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
+            event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
             Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList());
         eventManager.updateEventPrices(event, eventModification, "admin");
         //that should create an additional "RELEASED" ticket
@@ -178,7 +180,7 @@ public class WaitingQueueProcessorIntegrationTest {
         EventModification eventModification = new EventModification(event.getId(), event.getType(), event.getWebsiteUrl(),
             event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
             event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
-            event.getRegularPrice(), event.getCurrency(), event.getAvailableSeats()+1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
+            event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
             Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList());
         eventManager.updateEventPrices(event, eventModification, "admin");
         //that should create an additional "RELEASED" ticket, but it won't be linked to any category, so the following call won't have any effect
@@ -217,7 +219,7 @@ public class WaitingQueueProcessorIntegrationTest {
                  DESCRIPTION, BigDecimal.ZERO, false, "", false));
         }
 
-        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
         TicketCategory bounded = ticketCategories.stream().filter(t->t.getName().equals("default")).findFirst().orElseThrow(IllegalStateException::new);

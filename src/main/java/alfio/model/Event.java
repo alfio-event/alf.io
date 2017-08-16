@@ -69,7 +69,6 @@ public class Event implements EventHiddenFieldContainer {
     private final ZonedDateTime begin;
     private final ZonedDateTime end;
     private final String currency;
-    private final int availableSeats;
     private final boolean vatIncluded;
     private final BigDecimal vat;
     private final List<PaymentProxy> allowedPaymentProxies;
@@ -101,7 +100,6 @@ public class Event implements EventHiddenFieldContainer {
                  @Column("website_t_c_url") String termsAndConditionsUrl,
                  @Column("image_url") String imageUrl,
                  @Column("currency") String currency,
-                 @Column("available_seats") int availableSeats,
                  @Column("vat") BigDecimal vat,
                  @Column("allowed_payment_proxies") String allowedPaymentProxies,
                  @Column("private_key") String privateKey,
@@ -130,7 +128,6 @@ public class Event implements EventHiddenFieldContainer {
         this.begin = begin.withZoneSameInstant(zoneId);
         this.end = end.withZoneSameInstant(zoneId);
         this.currency = currency;
-        this.availableSeats = availableSeats;
         this.vatIncluded = vatStatus == PriceContainer.VatStatus.INCLUDED;
         this.vat = vat;
         this.privateKey = privateKey;
@@ -287,10 +284,8 @@ public class Event implements EventHiddenFieldContainer {
 
 
     private static boolean mustUseFirstAndLastName(Event event) {
-        if(event.getVersion() == null) {
-            return false;
-        }
-        return MigrationVersion.fromVersion(event.getVersion()).compareTo(MigrationVersion.fromVersion(VERSION_FOR_FIRST_AND_LAST_NAME)) >= 0;
+        return event.getVersion() != null
+            && MigrationVersion.fromVersion(event.getVersion()).compareTo(MigrationVersion.fromVersion(VERSION_FOR_FIRST_AND_LAST_NAME)) >= 0;
     }
 
     public boolean expired() {

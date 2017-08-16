@@ -23,8 +23,12 @@ import alfio.config.RepositoryConfiguration;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
-import alfio.model.modification.*;
+import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.TicketReservationModification;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.transaction.PaymentProxy;
+import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
@@ -87,6 +91,8 @@ public class TicketReservationManagerIntegrationTest {
     private ConfigurationRepository configurationRepository;
     @Autowired
     private WaitingQueueManager waitingQueueManager;
+    @Autowired
+    private EventRepository eventRepository;
 
     @Before
     public void ensureConfiguration() {
@@ -100,7 +106,7 @@ public class TicketReservationManagerIntegrationTest {
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager).getKey();
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(2);
@@ -127,7 +133,7 @@ public class TicketReservationManagerIntegrationTest {
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", true));
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager).getKey();
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory bounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
         TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
@@ -213,7 +219,7 @@ public class TicketReservationManagerIntegrationTest {
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager).getKey();
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
@@ -273,7 +279,7 @@ public class TicketReservationManagerIntegrationTest {
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager).getKey();
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
@@ -292,7 +298,7 @@ public class TicketReservationManagerIntegrationTest {
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager).getKey();
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).get(0);
 

@@ -383,7 +383,7 @@ public class AdminReservationManager {
             createMissingTickets(event, missingTickets);
             //update seats and reload event
             log.debug("adding {} extra seats to the event", missingTickets);
-            eventRepository.updateAvailableSeats(event.getId(), event.getAvailableSeats() + missingTickets);
+            eventRepository.updateAvailableSeats(event.getId(), eventRepository.countExistingTickets(event.getId()) + missingTickets);
             modified = eventRepository.findById(event.getId());
         }
         return modified;
@@ -476,12 +476,9 @@ public class AdminReservationManager {
         return loadReservation(eventName, reservationId, username).map((res) -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
-
-            if(reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
-                return paymentManager.refund(reservation, e, Optional.of(MonetaryUtil.unitToCents(refundAmount)), username);
-            } else {
-                return false;
-            }
+            return reservation.getPaymentMethod() != null
+                && reservation.getPaymentMethod().isSupportRefund()
+                && paymentManager.refund(reservation, e, Optional.of(MonetaryUtil.unitToCents(refundAmount)), username);
         });
     }
 

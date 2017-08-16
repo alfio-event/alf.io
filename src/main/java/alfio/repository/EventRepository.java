@@ -19,7 +19,6 @@ package alfio.repository;
 import alfio.model.Event;
 import alfio.model.EventStatisticView;
 import alfio.model.PriceContainer;
-import alfio.util.OptionalWrapper;
 import ch.digitalfondue.npjt.*;
 
 import java.math.BigDecimal;
@@ -110,6 +109,9 @@ public interface EventRepository {
 
     @Query("select * from events_statistics where id = :eventId")
     EventStatisticView findStatisticsFor(@Bind("eventId") int eventId);
+
+    @Query("select available_seats from events_statistics where id = :eventId")
+    Integer countExistingTickets(@Bind("eventId") int eventId);
 
     @Query("update event set status = 'DISABLED' where org_id in (select org_id from j_user_organization where user_id in (:userIds))")
     int disableEventsForUsers(@Bind("userIds") List<Integer> userIds);
