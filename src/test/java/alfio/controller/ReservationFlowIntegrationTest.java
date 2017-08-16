@@ -350,6 +350,7 @@ public class ReservationFlowIntegrationTest {
         Model confirmationPageModel = new BindingAwareModelMap();
         String confirmationPageSuccess = reservationController.showConfirmationPage(eventName, reservationIdentifier, false, false, confirmationPageModel, Locale.ENGLISH, new MockHttpServletRequest());
         assertEquals("/event/reservation-page-complete", confirmationPageSuccess);
+        @SuppressWarnings("unchecked")
         List<Pair<?, List<TicketDecorator>>> tickets = (List<Pair<?, List<TicketDecorator>>>) confirmationPageModel.asMap().get("ticketsByCategory");
         assertEquals(1, tickets.size());
         assertEquals(1, tickets.get(0).getRight().size());
