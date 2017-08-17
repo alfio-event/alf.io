@@ -43,6 +43,9 @@ public interface TicketCategoryDescriptionRepository {
     @Query("select * from ticket_category_text where ticket_category_id_fk in (:ticketCategoryIds)")
     List<TicketCategoryDescription> findByTicketCategoryIds(@Bind("ticketCategoryIds") Collection<Integer> ticketCategoryIds);
 
+    @Query("select * from ticket_category_text where ticket_category_id_fk in (:ticketCategoryIds) and locale = :locale")
+    List<TicketCategoryDescription> findByTicketCategoryIds(@Bind("ticketCategoryIds") Collection<Integer> ticketCategoryIds, @Bind("locale") String locale);
+
 
     default Map<String, String> descriptionForTicketCategory(int ticketCategory) {
         return findByTicketCategoryId(ticketCategory).stream().collect(Collectors.toMap(TicketCategoryDescription::getLocale, TicketCategoryDescription::getDescription));
@@ -60,5 +63,9 @@ public interface TicketCategoryDescriptionRepository {
             res.get(t.getTicketCategoryId()).put(t.getLocale(), t.getDescription());
         });
         return res;
+    }
+
+    default Map<Integer,String> descriptionsByTicketCategory(Collection<Integer> ticketCategoryIds, String language) {
+        return findByTicketCategoryIds(ticketCategoryIds, language).stream().collect(Collectors.toMap(TicketCategoryDescription::getTicketCategoryId, TicketCategoryDescription::getDescription));
     }
 }

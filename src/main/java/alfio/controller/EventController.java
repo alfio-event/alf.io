@@ -205,9 +205,12 @@ public class EventController {
 
             final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             //hide access restricted ticket categories
-            List<SaleableTicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
+            List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+            Map<Integer, String> categoriesDescription = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList()), locale.getLanguage());
+
+            List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
                 .filter((c) -> !c.isAccessRestricted() || (specialCode.filter(sc -> sc.getTicketCategoryId() == c.getId()).isPresent()))
-                .map((m) -> new SaleableTicketCategory(m, ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(m.getId(), locale.getLanguage()).orElse(""),
+                .map((m) -> new SaleableTicketCategory(m, categoriesDescription.getOrDefault(m.getId(), ""),
                     now, event, ticketReservationManager.countAvailableTickets(event, m), configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5),
                     promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null)))
                 .collect(Collectors.toList());
@@ -222,8 +225,8 @@ public class EventController {
             String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
 
             final EventDescriptor eventDescriptor = new EventDescriptor(event, eventDescription);
-            List<SaleableTicketCategory> expiredCategories = ticketCategories.stream().filter(SaleableTicketCategory::getExpired).collect(Collectors.toList());
-            List<SaleableTicketCategory> validCategories = ticketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
+            List<SaleableTicketCategory> expiredCategories = saleableTicketCategories.stream().filter(SaleableTicketCategory::getExpired).collect(Collectors.toList());
+            List<SaleableTicketCategory> validCategories = saleableTicketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
             List<SaleableAdditionalService> additionalServices = additionalServiceRepository.loadAllForEvent(event.getId()).stream().map((as) -> getSaleableAdditionalService(event, locale, as, promoCodeDiscount.orElse(null))).collect(Collectors.toList());
             Predicate<SaleableTicketCategory> waitingQueueTargetCategory = tc -> !tc.getExpired() && !tc.isBounded();
             boolean validPaymentConfigured = isEventHasValidPaymentConfigurations(event, configurationManager);
@@ -245,17 +248,17 @@ public class EventController {
                 .addAttribute("pageTitle", "show-event.header.title")
                 .addAttribute("hasPromoCodeDiscount", promoCodeDiscount.isPresent())
                 .addAttribute("promoCodeDiscount", promoCodeDiscount.orElse(null))
-                .addAttribute("displayWaitingQueueForm", EventUtil.displayWaitingQueueForm(event, ticketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable()))
-                .addAttribute("displayCategorySelectionForWaitingQueue", ticketCategories.stream().filter(waitingQueueTargetCategory).count() > 1)
-                .addAttribute("unboundedCategories", ticketCategories.stream().filter(waitingQueueTargetCategory).collect(Collectors.toList()))
-                .addAttribute("preSales", EventUtil.isPreSales(event, ticketCategories))
+                .addAttribute("displayWaitingQueueForm", EventUtil.displayWaitingQueueForm(event, saleableTicketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable()))
+                .addAttribute("displayCategorySelectionForWaitingQueue", saleableTicketCategories.stream().filter(waitingQueueTargetCategory).count() > 1)
+                .addAttribute("unboundedCategories", saleableTicketCategories.stream().filter(waitingQueueTargetCategory).collect(Collectors.toList()))
+                .addAttribute("preSales", EventUtil.isPreSales(event, saleableTicketCategories))
                 .addAttribute("userLanguage", locale.getLanguage())
                 .addAttribute("showAdditionalServices", !notExpiredServices.isEmpty())
                 .addAttribute("showAdditionalServicesDonations", !donations.isEmpty())
                 .addAttribute("showAdditionalServicesSupplements", !supplements.isEmpty())
                 .addAttribute("enabledAdditionalServicesDonations", donations)
                 .addAttribute("enabledAdditionalServicesSupplements", supplements)
-                .addAttribute("forwardButtonDisabled", (ticketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable)) || !validPaymentConfigured)
+                .addAttribute("forwardButtonDisabled", (saleableTicketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable)) || !validPaymentConfigured)
                 .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
                 .addAttribute("validPaymentMethodAvailable", validPaymentConfigured);
 
