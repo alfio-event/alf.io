@@ -116,6 +116,10 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
         return event.getStatus();
     }
 
+    public String getFileBlobId() {
+        return event.getFileBlobId();
+    }
+
     @Override
     public int compareTo(EventStatistic o) {
         CompareToBuilder builder = new CompareToBuilder();

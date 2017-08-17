@@ -893,6 +893,18 @@
             scope: {},
             template: '<div class="markdown-help text-right"><img class="markdown-logo" src="../resources/images/markdown-logo.svg" /> <a href="http://commonmark.org/help/" target="_blank">Markdown (CommonMark) supported</a></div> '
         };
-    })
+    });
+
+    directives.directive('containerFluidResponsive', ['$window', function($window) {
+        return {
+            restrict: 'A',
+            scope: false,
+            link: function(scope, element, attrs) {
+                if($window.matchMedia('screen and (max-width: 991px)').matches) {
+                    element.removeClass('container');
+                }
+            }
+        };
+    }])
     
 })();
