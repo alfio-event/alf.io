@@ -304,7 +304,7 @@ public class EventController {
                 } else {
                     Optional<SpecialPrice> specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId()).stream().findFirst();
                     if(!specialPrice.isPresent()) {
-                        return "redirect:/";
+                        return redirectToEvent;
                     }
                     savePromoCode(eventName, specialPrice.get().getCode(), model, request.getRequest());
                     return makeSimpleReservation(eventName, request, redirectAttributes, locale, specialPrice.get().getCode(), event, category.getId());
