@@ -1,4 +1,4 @@
-<div class="container">
+<div class="container" container-fluid-responsive="">
     <div class="text-center" data-ng-if="eventConf.loading">
         <i class="fa fa-cog fa-spin fa-3x"></i><span class="sr-only">Loading...</span>
     </div>
@@ -19,17 +19,17 @@
         <form name="settingsForm" novalidate data-ng-submit="eventConf.saveSettings(settingsForm)">
             <div data-ng-if="eventConf.general">
                 <div data-ng-repeat="setting in eventConf.general.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="eventConf.globalSettings" data-delete-handler="eventConf.delete(config)" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="eventConf.globalSettings" data-delete-handler="eventConf.delete(config)" ></setting>
                 </div>
             </div>
 
             <div class="page-header" data-ng-if="eventConf.mail">
                 <h2>E-Mail</h2>
-                <span>E-Mail settings</span>
+                <span>E-Mail settings <span class="label label-info">system</span></span>
             </div>
 
             <div data-ng-if="eventConf.mail">
-                <div data-ng-if="eventConf.mail.type" class="system-setting">
+                <div data-ng-if="eventConf.mail.type">
                     <div class="radio-inline">
                         <label>
                             <input type="radio" name="mailer.type" data-ng-model="eventConf.mail.type.value" data-ng-value="'smtp'">
@@ -48,24 +48,24 @@
                             Mailjet.com
                         </label>
                     </div>
-                    <div data-ng-repeat="setting in eventConf.mail.settings | mailSettingsFilter:eventConf.mail.type.value" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                    <div data-ng-repeat="setting in eventConf.mail.settings | mailSettingsFilter:eventConf.mail.type.value" >
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
                     </div>
                     <div>
-                        <setting obj="eventConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" class="system-setting"></setting>
+                        <setting obj="eventConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
                     </div>
                     <div>
-                        <setting obj="eventConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                        <setting obj="eventConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
                     </div>
                     <div>
-                        <setting obj="eventConf.mail.mailAttemptsCount" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                        <setting obj="eventConf.mail.mailAttemptsCount" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
                     </div>
                     <div>
-                        <setting obj="eventConf.mail.cc" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                        <setting obj="eventConf.mail.cc" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
                     </div>
                 </div>
-                <div data-ng-repeat="setting in eventConf.mail.settings" data-ng-if="!eventConf.mail.type" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                <div data-ng-repeat="setting in eventConf.mail.settings" data-ng-if="!eventConf.mail.type" >
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
                 </div>
             </div>
 
@@ -78,7 +78,7 @@
             </div>
             <div>
                 <div data-ng-repeat="setting in eventConf.settings.INVOICE">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
                 </div>
             </div>
 
@@ -88,9 +88,18 @@
             </div>
 
             <div data-ng-if="eventConf.payment">
-                <div data-ng-repeat="setting in eventConf.payment.settings" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                <div data-ng-repeat="setting in eventConf.payment.settings" >
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"  display-system-badge="true"></setting>
                 </div>
+            </div>
+
+            <div class="page-header">
+                <h2>Offline check-in and Badge printing</h2>
+                <span>Enable/Disable offline check-in with <a href="https://github.com/exteso/alf.io-PI" target="_blank">Alf.io-PI</a></span>
+            </div>
+
+            <div data-ng-repeat="setting in eventConf.payment.settings">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
             </div>
 
             <div data-ng-if="eventConf.pluginSettingsByPluginId">
@@ -102,7 +111,7 @@
                 <div data-ng-repeat="(key, settings) in eventConf.pluginSettingsByPluginId">
                     <div class="page-header"><h3 data-ng-bind="key"></h3></div>
                     <div data-ng-repeat="setting in settings">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-organization="systemConf.organization"></setting>
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-organization="systemConf.organization" display-system-badge="true"></setting>
                     </div>
                 </div>
             </div>

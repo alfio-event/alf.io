@@ -21,7 +21,7 @@
                 </div>
 
                 <div data-ng-if="organizationConf.general">
-                    <div data-ng-repeat="setting in organizationConf.general.settings | orderBy:'configurationPathLevel'" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
+                    <div data-ng-repeat="setting in organizationConf.general.settings | orderBy:'configurationPathLevel'" >
                         <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="organizationConf.globalSettings" data-delete-handler="organizationConf.delete(config)"></setting>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                 </div>
 
                 <div data-ng-if="organizationConf.mail">
-                    <div data-ng-if="organizationConf.mail.type" class="system-setting">
+                    <div data-ng-if="organizationConf.mail.type">
                         <div class="radio-inline">
                             <label>
                                 <input type="radio" name="mailer.type" data-ng-model="organizationConf.mail.type.value" data-ng-value="'smtp'">
@@ -51,11 +51,11 @@
                                 Mailjet.com
                             </label>
                         </div>
-                        <div data-ng-repeat="setting in organizationConf.mail.settings | mailSettingsFilter:organizationConf.mail.type.value"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
+                        <div data-ng-repeat="setting in organizationConf.mail.settings | mailSettingsFilter:organizationConf.mail.type.value"  >
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
                         <div>
-                            <setting obj="organizationConf.mail.maxEmailPerCycle" class="system-setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                            <setting obj="organizationConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
                         <div>
                             <setting obj="organizationConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
@@ -67,7 +67,7 @@
                             <setting obj="organizationConf.mail.cc" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
                     </div>
-                    <div data-ng-repeat="setting in organizationConf.mail.settings" data-ng-if="!organizationConf.mail.type"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
+                    <div data-ng-repeat="setting in organizationConf.mail.settings" data-ng-if="!organizationConf.mail.type"  >
                         <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                     </div>
                 </div>
@@ -80,7 +80,7 @@
                 </div>
                 <div>
                     <div data-ng-repeat="setting in organizationConf.settings.INVOICE">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                     </div>
                 </div>
 
@@ -90,7 +90,7 @@
                     </div>
                     <div class="panel-body">
                         <div data-ng-repeat="setting in organizationConf.invoiceEu.settings">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(setting)" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}" list-values="setting.listValues"></setting>
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(setting)"  list-values="setting.listValues"></setting>
                         </div>
                     </div>
                 </div>
@@ -107,7 +107,7 @@
                     <div class="panel-body">
                         <div class="alert alert-info"><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></div>
                         <div data-ng-repeat="setting in organizationConf.paymentStripe.settings">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
                     </div>
                 </div>
@@ -122,7 +122,7 @@
                             <p>Once you have created your app and tested the integration, you can enable live payments by inserting the <strong>Live</strong> Client ID and Secret, and enabling the "live mode" below.</p>
                         </div>
                         <div data-ng-repeat="setting in organizationConf.paymentPaypal.settings">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
                     </div>
                 </div>
@@ -136,7 +136,7 @@
                             <p><i class="fa fa-info-circle"></i> in order to accept payments through Mollie, you must have Live API key.</p>
                         </div>
                         <div data-ng-repeat="setting in organizationConf.paymentMollie.settings">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
                     </div>
                 </div>-->
@@ -150,7 +150,7 @@
                             <p><i class="fa fa-info-circle"></i> In order to be able to accept offline payments, you must fill your <strong>Bank Account</strong> data.</p>
                         </div>
                         <div data-ng-repeat="setting in organizationConf.paymentOffline.settings">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
                     </div>
                 </div>

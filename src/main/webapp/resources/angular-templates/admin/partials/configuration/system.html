@@ -79,7 +79,7 @@
         </div>
         <div>
             <div data-ng-repeat="setting in systemConf.settings.INVOICE">
-                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
             </div>
         </div>
         <div class="panel panel-default">
@@ -89,7 +89,7 @@
             <div class="panel-body">
                 <div class="alert alert-info"><i class="fa fa-info-circle"></i> You'll need to build and deploy the <a href="https://github.com/stephanj/ServerlessEUVATChecker" target="_blank">ServerlessEUVATChecker</a> Lambda Function on AWS.</div>
                 <div data-ng-repeat="setting in systemConf.invoiceEu.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(setting)" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}" list-values="setting.listValues"></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(setting)" list-values="setting.listValues"></setting>
                 </div>
             </div>
         </div>
@@ -107,7 +107,7 @@
             <div class="panel-body">
                 <div class="alert alert-info"><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></div>
                 <div data-ng-repeat="setting in systemConf.paymentStripe.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
                 </div>
             </div>
         </div>
@@ -122,7 +122,7 @@
                     <p>Once you have created your app and tested the integration, you can enable live payments by inserting the <strong>Live</strong> Client ID and Secret, and enabling the "live mode" below.</p>
                 </div>
                 <div data-ng-repeat="setting in systemConf.paymentPaypal.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
                 </div>
             </div>
         </div>
@@ -136,7 +136,7 @@
                     <p><i class="fa fa-info-circle"></i> in order to accept payments through Mollie, you must have Live API key.</p>
                 </div>
                 <div data-ng-repeat="setting in systemConf.paymentMollie.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
                 </div>
             </div>
         </div>-->
@@ -150,14 +150,11 @@
                     <p><i class="fa fa-info-circle"></i> In order to be able to accept offline payments, you must fill your <strong>Bank Account</strong> data.</p>
                 </div>
                 <div data-ng-repeat="setting in systemConf.paymentOffline.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
                 </div>
             </div>
         </div>
 
-        <div class="pull-right wMarginBottom wMarginTop">
-            <button type="submit" class="btn btn-success" data-ng-disabled="systemConf.loading">save</button>
-            <a class="btn btn-default" data-ui-sref="index">cancel</a>
-        </div>
+        <control-buttons data-form-obj="systemConf" data-success-text="Save" data-cancel-handler="Cancel"></control-buttons>
     </form>
 </div>

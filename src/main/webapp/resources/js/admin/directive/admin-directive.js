@@ -636,6 +636,10 @@
                     $scope.loading = true;
                     $scope.deleteHandler({config: config}).then(function() {$rootScope.$broadcast('ReloadSettings');});
                 };
+                $scope.getLabelValue = function(setting) {
+                    return (setting && setting.configurationPathLevel) ? setting.configurationPathLevel.toLowerCase() : "";
+                };
+                $scope.showDeleteBtn = $scope.displayDelete && $scope.setting.id > -1 && $scope.setting.componentType !== 'BOOLEAN';
             }
         }
     });
