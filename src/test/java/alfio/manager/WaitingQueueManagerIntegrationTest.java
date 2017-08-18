@@ -150,9 +150,8 @@ public class WaitingQueueManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
-
         TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).get(0);
 
         TicketReservationModification tr = new TicketReservationModification();
@@ -176,7 +175,7 @@ public class WaitingQueueManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null));
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
 
@@ -230,7 +229,7 @@ public class WaitingQueueManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null));
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
 
@@ -285,11 +284,11 @@ public class WaitingQueueManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null),
             new TicketCategoryModification(null, "default2", AVAILABLE_SEATS,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null));
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
 
@@ -361,10 +360,10 @@ public class WaitingQueueManagerIntegrationTest {
             new TicketCategoryModification(null, "defaultFirst", firstSeats,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", firstBounded),
+                DESCRIPTION, BigDecimal.TEN, false, "", firstBounded, null),
             new TicketCategoryModification(null, "defaultLast", lastSeats,
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", lastBounded));
+                DESCRIPTION, BigDecimal.TEN, false, "", lastBounded, null));
     }
 }

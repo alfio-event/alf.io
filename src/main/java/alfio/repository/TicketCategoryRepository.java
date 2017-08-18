@@ -48,6 +48,9 @@ public interface TicketCategoryRepository {
     @Query("select * from ticket_category where id = :id and tc_status = 'ACTIVE'")
     Optional<TicketCategory> getById(@Bind("id") int id);
 
+    @Query("select * from ticket_category where event_id = :eventId and category_code = :code and tc_status = 'ACTIVE'")
+    Optional<TicketCategory> findCodeInEvent(@Bind("eventId") int eventId, @Bind("code") String code);
+
     @Query("select count(*) from ticket_category where event_id = :eventId and tc_status = 'ACTIVE' and bounded = false")
     Integer countUnboundedCategoriesByEventId(@Bind("eventId") int eventId);
 
@@ -64,14 +67,15 @@ public interface TicketCategoryRepository {
     Integer countAccessRestrictedRepositoryByEventId(@Bind("eventId") int eventId);
 
     @Query("update ticket_category set name = :name, inception = :inception, expiration = :expiration, " +
-            "max_tickets = :max_tickets, src_price_cts = :price, access_restricted = :accessRestricted where id = :id")
+            "max_tickets = :max_tickets, src_price_cts = :price, access_restricted = :accessRestricted, category_code = :code where id = :id")
     int update(@Bind("id") int id,
                @Bind("name") String name,
                @Bind("inception") ZonedDateTime inception,
                @Bind("expiration") ZonedDateTime expiration,
                @Bind("max_tickets") int maxTickets,
                @Bind("accessRestricted") boolean accessRestricted,
-               @Bind("price") int price);
+               @Bind("price") int price,
+               @Bind("code") String code);
 
     @Query("update ticket_category set max_tickets = :max_tickets where id = :id")
     int updateSeatsAvailability(@Bind("id") int id, @Bind("max_tickets") int maxTickets);

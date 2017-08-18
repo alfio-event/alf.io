@@ -46,6 +46,7 @@ public class TicketCategory {
     private final int eventId;
     private final boolean bounded;
     private final int srcPriceCts;
+    private final String code;
 
     public TicketCategory(@JsonProperty("id") @Column("id") int id,
                           @JsonProperty("utcInception") @Column("inception") ZonedDateTime utcInception,
@@ -56,7 +57,8 @@ public class TicketCategory {
                           @JsonProperty("status") @Column("tc_status") Status status,
                           @JsonProperty("eventId") @Column("event_id") int eventId,
                           @JsonProperty("bounded") @Column("bounded") boolean bounded,
-                          @JsonProperty("srcPriceCts") @Column("src_price_cts") int srcPriceCts) {
+                          @JsonProperty("srcPriceCts") @Column("src_price_cts") int srcPriceCts,
+                          @JsonProperty("code") @Column("category_code") String code) {
         this.id = id;
         this.utcInception = utcInception;
         this.utcExpiration = utcExpiration;
@@ -67,6 +69,7 @@ public class TicketCategory {
         this.eventId = eventId;
         this.bounded = bounded;
         this.srcPriceCts = srcPriceCts;
+        this.code = code;
     }
 
     public BigDecimal getPrice() {

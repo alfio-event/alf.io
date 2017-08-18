@@ -176,15 +176,12 @@ public interface TicketRepository {
         " tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, " +
         " tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language, tr.direct_assignment tr_direct_assignment, tr.invoice_number tr_invoice_number, tr.invoice_model tr_invoice_model, " +
         " tr.vat_status tr_vat_status, tr.vat_nr tr_vat_nr, tr.vat_country tr_vat_country, tr.invoice_requested tr_invoice_requested," +
-        " tc.id tc_id, tc.inception tc_inception, tc.expiration tc_expiration, tc.max_tickets tc_max_tickets, tc.name tc_name, tc.src_price_cts tc_src_price_cts, tc.access_restricted tc_access_restricted, tc.tc_status tc_tc_status, tc.event_id tc_event_id, tc.bounded tc_bounded," +
+        " tc.id tc_id, tc.inception tc_inception, tc.expiration tc_expiration, tc.max_tickets tc_max_tickets, tc.name tc_name, tc.src_price_cts tc_src_price_cts, tc.access_restricted tc_access_restricted, tc.tc_status tc_tc_status, tc.event_id tc_event_id, tc.bounded tc_bounded, tc.category_code tc_category_code " +
         " ltu.last_update " +
         " from ticket t " +
         " inner join tickets_reservation tr on t.tickets_reservation_id = tr.id " +
         " inner join ticket_category tc on t.category_id = tc.id " +
         " left outer join latest_ticket_update ltu on t.id = ltu.ticket_id and ltu.event_id = :eventId ";
-
-    @Query(FIND_FULL_TICKET_INFO +
-        " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null order by t.id asc")
     List<FullTicketInfo> findAllFullTicketInfoAssignedByEventId(@Bind("eventId") int eventId);
 
     @Query(FIND_FULL_TICKET_INFO +

@@ -649,6 +649,7 @@
                 };
             });
         };
+        $scope.baseUrl = window.location.origin;
         loadData().then(function() {
             initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS);
         });
@@ -908,6 +909,7 @@
                 description: category.description,
                 maxTickets: category.maxTickets,
                 bounded: category.bounded,
+                code: category.code,
                 inception: {
                     date: inception.format('YYYY-MM-DD'),
                     time: inception.format('HH:mm')

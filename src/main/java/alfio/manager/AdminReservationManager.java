@@ -371,7 +371,7 @@ public class AdminReservationManager {
 
         int tickets = attendees.size();
         TicketCategoryModification tcm = new TicketCategoryModification(category.getExistingCategoryId(), category.getName(), tickets,
-            inception, reservation.getExpiration(), Collections.emptyMap(), category.getPrice(), true, "", true);
+            inception, reservation.getExpiration(), Collections.emptyMap(), category.getPrice(), true, "", true, null);
         int notAllocated = getNotAllocatedTickets(event);
         int missingTickets = Math.max(tickets - notAllocated, 0);
         Event modified = increaseSeatsIfNeeded(ti, event, missingTickets, event);
@@ -408,7 +408,7 @@ public class AdminReservationManager {
             int maxTickets = existing.getMaxTickets() + (tickets - freeTicketsInCategory);
             TicketCategoryModification tcm = new TicketCategoryModification(existingCategoryId, existing.getName(), maxTickets,
                 DateTimeModification.fromZonedDateTime(existing.getInception(modified.getZoneId())), DateTimeModification.fromZonedDateTime(existing.getExpiration(event.getZoneId())),
-                Collections.emptyMap(), existing.getPrice(), existing.isAccessRestricted(), "", true);
+                Collections.emptyMap(), existing.getPrice(), existing.isAccessRestricted(), "", true, existing.getCode());
             return eventManager.updateCategory(existingCategoryId, modified, tcm, username);
         }
         return Result.success(existing);

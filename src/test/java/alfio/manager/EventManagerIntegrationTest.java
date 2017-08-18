@@ -89,7 +89,7 @@ public class EventManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
@@ -104,7 +104,7 @@ public class EventManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true));
+                        DESCRIPTION, BigDecimal.TEN, false, "", true, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
@@ -119,7 +119,7 @@ public class EventManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
@@ -137,15 +137,16 @@ public class EventManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null),
             new TicketCategoryModification(null, "default", 9,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null),
             new TicketCategoryModification(null, "default", 0,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
@@ -160,15 +161,15 @@ public class EventManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true),
+                        DESCRIPTION, BigDecimal.TEN, false, "", true, null),
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true),
+                        DESCRIPTION, BigDecimal.TEN, false, "", true, null),
                 new TicketCategoryModification(null, "default", 0,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
@@ -191,13 +192,13 @@ public class EventManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true));
+                        DESCRIPTION, BigDecimal.TEN, false, "", true, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         TicketCategoryModification tcm = new TicketCategoryModification(null, "default", -1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false);
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null);
         eventManager.insertCategory(event.getId(), tcm, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
@@ -213,7 +214,7 @@ public class EventManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true));
+                        DESCRIPTION, BigDecimal.TEN, false, "", true, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         //shrink the original category to AVAILABLE_SEATS - 2, this would free two seats
@@ -221,14 +222,14 @@ public class EventManagerIntegrationTest {
         TicketCategoryModification shrink = new TicketCategoryModification(categoryId, "default", AVAILABLE_SEATS - 2,
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
-            DESCRIPTION, BigDecimal.TEN, false, "", true);
+            DESCRIPTION, BigDecimal.TEN, false, "", true, null);
         eventManager.updateCategory(categoryId, event.getId(), shrink, pair.getRight());
 
         //now insert an unbounded ticket category
         TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false);
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null);
         eventManager.insertCategory(event.getId(), tcm, pair.getValue());
 
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -246,7 +247,7 @@ public class EventManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null,
@@ -271,7 +272,7 @@ public class EventManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true));
+                        DESCRIPTION, BigDecimal.TEN, false, "", true, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null,
@@ -293,7 +294,7 @@ public class EventManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null,
@@ -314,7 +315,7 @@ public class EventManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true));
+                        DESCRIPTION, BigDecimal.TEN, false, "", true, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null,
@@ -335,13 +336,13 @@ public class EventManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", 0,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true);
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null);
         Result<Integer> result = eventManager.insertCategory(event, tcm, pair.getValue());
         assertTrue(result.isSuccess());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
@@ -358,14 +359,14 @@ public class EventManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), "default", 20,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false);
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null);
         eventManager.updateCategory(category.getId(), event.getId(), tcm, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
@@ -380,7 +381,7 @@ public class EventManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getLeft();
         String username = pair.getRight();
@@ -424,7 +425,7 @@ public class EventManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getLeft();
         String username = pair.getRight();
@@ -434,7 +435,7 @@ public class EventManagerIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), AVAILABLE_SEATS,
             DateTimeModification.fromZonedDateTime(category.getUtcInception()),
             DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
-            categoryDescription, category.getPrice(), false, "", true);
+            categoryDescription, category.getPrice(), false, "", true, null);
         Result<TicketCategory> result = eventManager.updateCategory(category.getId(), event, tcm, username);
         assertTrue(result.isSuccess());
         assertEquals(new Integer(0), ticketRepository.countFreeTicketsForUnbounded(event.getId()));
@@ -446,7 +447,7 @@ public class EventManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getLeft();
         String username = pair.getRight();
@@ -458,7 +459,7 @@ public class EventManagerIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), AVAILABLE_SEATS,
             DateTimeModification.fromZonedDateTime(category.getUtcInception()),
             DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
-            categoryDescription, category.getPrice(), false, "", false);
+            categoryDescription, category.getPrice(), false, "", false, null);
         Result<TicketCategory> result = eventManager.updateCategory(category.getId(), event, tcm, username);
         assertTrue(result.isSuccess());
         assertEquals(AVAILABLE_SEATS, ticketRepository.countReleasedUnboundedTickets(event.getId()).intValue());
@@ -472,8 +473,10 @@ public class EventManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, true, "", true));
+
+                DESCRIPTION, BigDecimal.TEN, true, "", true, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+
         Event event = pair.getLeft();
         String username = pair.getRight();
 
@@ -483,7 +486,7 @@ public class EventManagerIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), 10,
             DateTimeModification.fromZonedDateTime(category.getUtcInception()),
             DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
-            categoryDescription, category.getPrice(), true, "", false);
+            categoryDescription, category.getPrice(), true, "", false, null);
         Result<TicketCategory> result = eventManager.updateCategory(category.getId(), event, tcm, username);
         assertFalse(result.isSuccess());
     }
@@ -494,7 +497,7 @@ public class EventManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getLeft();
         String username = pair.getRight();
@@ -509,7 +512,7 @@ public class EventManagerIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), 10,
             DateTimeModification.fromZonedDateTime(category.getUtcInception()),
             DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
-            categoryDescription, category.getPrice(), false, "", false);
+            categoryDescription, category.getPrice(), false, "", false, null);
         Result<TicketCategory> result = eventManager.updateCategory(category.getId(), event, tcm, username);
         assertFalse(result.isSuccess());
     }
@@ -520,8 +523,10 @@ public class EventManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, true, "", true));
+
+                DESCRIPTION, BigDecimal.TEN, true, "", true, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+
         Event event = pair.getLeft();
         String username = pair.getRight();
 
@@ -531,7 +536,7 @@ public class EventManagerIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), 11,
             DateTimeModification.fromZonedDateTime(category.getUtcInception()),
             DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
-            categoryDescription, category.getPrice(), true, "", true);
+            categoryDescription, category.getPrice(), true, "", true, null);
         Result<TicketCategory> result = eventManager.updateCategory(category.getId(), event, tcm, username);
         assertTrue(result.isSuccess());
         assertEquals(11, ticketRepository.countFreeTickets(event.getId(), category.getId()).intValue());
@@ -543,8 +548,10 @@ public class EventManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, true, "", true));
+
+                DESCRIPTION, BigDecimal.TEN, true, "", true, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+
         Event event = pair.getLeft();
         String username = pair.getRight();
 
@@ -554,7 +561,7 @@ public class EventManagerIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), 9,
             DateTimeModification.fromZonedDateTime(category.getUtcInception()),
             DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
-            categoryDescription, category.getPrice(), true, "", true);
+            categoryDescription, category.getPrice(), true, "", true, null);
         Result<TicketCategory> result = eventManager.updateCategory(category.getId(), event, tcm, username);
         assertTrue(result.isSuccess());
         assertEquals(9, ticketRepository.countFreeTickets(event.getId(), category.getId()).intValue());
@@ -570,7 +577,7 @@ public class EventManagerIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(null, "additional", 20,
             DateTimeModification.fromZonedDateTime(ZonedDateTime.now(event.getZoneId()).minusMinutes(1)),
             DateTimeModification.fromZonedDateTime(ZonedDateTime.now(event.getZoneId()).plusDays(5)),
-            Collections.emptyMap(), BigDecimal.TEN, false, "", true);
+            Collections.emptyMap(), BigDecimal.TEN, false, "", true, null);
         Result<Integer> result = eventManager.insertCategory(event, tcm, username);
         assertTrue(result.isSuccess());
         assertEquals(20, ticketRepository.countReleasedTicketInCategory(event.getId(), result.getData()).intValue());
@@ -585,7 +592,7 @@ public class EventManagerIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(null, "additional", 20,
             DateTimeModification.fromZonedDateTime(ZonedDateTime.now(event.getZoneId()).minusMinutes(1)),
             DateTimeModification.fromZonedDateTime(ZonedDateTime.now(event.getZoneId()).plusDays(5)),
-            Collections.emptyMap(), BigDecimal.TEN, true, "", true);
+            Collections.emptyMap(), BigDecimal.TEN, true, "", true, null);
         Result<Integer> result = eventManager.insertCategory(event, tcm, username);
         assertTrue(result.isSuccess());
         assertEquals(20, ticketRepository.countFreeTickets(event.getId(), result.getData()).intValue());
@@ -598,8 +605,9 @@ public class EventManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+
         Event event = pair.getKey();
         if(newEventSize != AVAILABLE_SEATS) {
             EventModification update = new EventModification(event.getId(), Event.EventType.INTERNAL, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,

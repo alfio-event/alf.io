@@ -25,11 +25,23 @@
             <button type="button" class="btn btn-success" data-ng-disabled="!event.addCategoryEnabled" data-ng-click="addCategory(event)"><i class="fa fa-plus"></i> add category</button>
         </div>
 
+<<<<<<< HEAD
         <div class="form-inline">
             <label class="btn btn-sm btn-default" data-ng-model="selection.active" data-uib-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.active, 'fa-square-o': !selection.active}"></i> Active <span class="badge">{{countActive(event.ticketCategories)}}</span></label>
             <label class="btn btn-sm btn-default" data-ng-model="selection.expired" data-uib-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.expired, 'fa-square-o': !selection.expired}"></i> Expired <span class="badge">{{countExpired(event.ticketCategories)}}</span></label>
             <label><div class="input-group"><div class="input-group-addon"><i class="fa fa-search"></i></div><input type="text" class="form-control input-sm" data-ng-model="selection.freeText" data-ng-change="updateSelectionText(selection.freeText)"></div></label>
         </div>
+=======
+                <div data-ng-switch="(event.ticketCategories | showSelectedCategories : selection).length">
+                    <div data-ng-switch-when="0" class="alert alert-warning">
+                        No categories matching the selected criteria have been found.
+                    </div>
+                    <div data-ng-switch-default="">
+                        <div class="panel panel-default" data-ng-repeat="ticketCategory in event.ticketCategories | orderBy: ['formattedInception', 'id'] | showSelectedCategories : selection"
+                             data-ng-class="{'panel-danger':ticketCategory.containingOrphans, 'panel-warning':ticketCategory.containingStuckTickets}"
+                             data-ng-init="displayWarning = ticketCategory.containingStuckTickets || ticketCategory.containingOrphans"
+                             id="ticket-category-{{ticketCategory.id}}">
+>>>>>>> 72885f61... implement #328 event code url (#329)
 
         <div data-ng-switch="(event.ticketCategories | showSelectedCategories : selection).length">
             <div data-ng-switch-when="0" class="alert alert-warning">
@@ -96,12 +108,38 @@
                                     <div class="col-sm-8" data-ng-if="!ticketCategory.bounded">dynamic</div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-sm-4"><strong>Initial sale date</strong></div>
-                                    <div class="col-sm-8">{{::ticketCategory.formattedInception | formatDate}} </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-sm-4"><strong>End sale date</strong></div>
-                                    <div class="col-sm-8">{{::ticketCategory.formattedExpiration | formatDate}} </div>
+                                    <div class="col-xs-12 col-md-12">
+                                        <div class="row">
+                                            <div class="col-sm-2"><strong>Max tickets</strong></div>
+                                            <div class="col-sm-8" data-ng-if="ticketCategory.bounded">{{::ticketCategory.maxTickets}}</div>
+                                            <div class="col-sm-8" data-ng-if="!ticketCategory.bounded">dynamic</div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-2"><strong>Initial sale date</strong></div>
+                                            <div class="col-sm-8">{{::ticketCategory.formattedInception | formatDate}} </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-2"><strong>End sale date</strong></div>
+                                            <div class="col-sm-8">{{::ticketCategory.formattedExpiration | formatDate}} </div>
+                                        </div>
+                                        <div class="row" data-ng-if="!event.freeOfCharge">
+                                            <div class="col-sm-2"><strong>Price</strong></div>
+                                            <div class="col-sm-8">{{::ticketCategory.price | currency : (event.currency || "")}}</div>
+                                        </div>
+                                        <div class="row" data-ng-if="!event.freeOfCharge">
+                                            <div class="col-sm-2"><strong>Final price</strong></div>
+                                            <div class="col-sm-8">{{::ticketCategory.actualPrice | currency : (event.currency || "")}}</div>
+                                        </div>
+                                        <div class="row" ng-if="ticketCategory.code && ticketCategory.code.length > 0">
+                                            <div class="col-sm-2"><strong>Category code</strong></div>
+                                            <div class="col-sm-8">{{::ticketCategory.code}}</div>
+                                        </div>
+                                        <div class="row" ng-if="ticketCategory.code && ticketCategory.code.length > 0">
+                                            <div class="col-sm-2"><strong>Category code url</strong></div>
+                                            <div class="col-sm-8">{{::baseUrl}}/event/{{::event.shortName}}/code/{{::ticketCategory.code}}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-7 hidden-xs"><p class="text-muted" data-ng-repeat="(lang, desc) in ticketCategory.description" title="{{lang}}"><display-commonmark-preview text="desc"></display-commonmark-preview> {{desc}}</p></div>
                                 </div>
                                 <div class="row" data-ng-if="!event.freeOfCharge">
                                     <div class="col-sm-4"><strong>Price</strong></div>

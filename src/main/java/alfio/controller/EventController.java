@@ -28,6 +28,7 @@ import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
@@ -44,6 +45,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
@@ -57,6 +59,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static alfio.controller.EventController.CodeType.TICKET_CATEGORY_CODE;
 import static alfio.controller.support.SessionUtil.addToFlash;
 import static alfio.util.OptionalWrapper.optionally;
 
@@ -163,8 +166,8 @@ public class EventController {
         Event event = optional.get();
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
-        Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
-        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode)));
+        Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> specialPriceRepository.getByCode(trimmedCode));
+        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
         
         if(specialCode.isPresent()) {
             if (!optionally(() -> eventManager.getTicketCategoryById(specialCode.get().getTicketCategoryId(), event.getId())).isPresent()) {
@@ -198,10 +201,10 @@ public class EventController {
 
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
             Optional<String> maybeSpecialCode = SessionUtil.retrieveSpecialPriceCode(request);
-            Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
+            Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> specialPriceRepository.getByCode(trimmedCode));
 
             Optional<PromoCodeDiscount> promoCodeDiscount = SessionUtil.retrievePromotionCodeDiscount(request)
-                .flatMap((code) -> optionally(() -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), code)));
+                .flatMap((code) -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), code));
 
             final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             //hide access restricted ticket categories
@@ -267,6 +270,67 @@ public class EventController {
         }).orElse(REDIRECT + "/");
     }
 
+
+    enum CodeType {
+        SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
+    }
+
+    //not happy with that code...
+    private CodeType getCodeType(int eventId, String code) {
+        String trimmedCode = StringUtils.trimToNull(code);
+        if(trimmedCode == null) {
+            return CodeType.NOT_FOUND;
+        }  else if(specialPriceRepository.getByCode(trimmedCode).isPresent()) {
+            return CodeType.SPECIAL_PRICE;
+        } else if (promoCodeRepository.findPromoCodeInEventOrOrganization(eventId, trimmedCode).isPresent()) {
+            return CodeType.PROMO_CODE_DISCOUNT;
+        } else if (ticketCategoryRepository.findCodeInEvent(eventId, trimmedCode).isPresent()) {
+            return CodeType.TICKET_CATEGORY_CODE;
+        } else {
+            return CodeType.NOT_FOUND;
+        }
+    }
+
+    @RequestMapping(value = "/event/{eventName}/code/{code}", method = {RequestMethod.GET, RequestMethod.HEAD})
+    public String handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code, Model model, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale) {
+        String trimmedCode = StringUtils.trimToNull(code);
+        return eventRepository.findOptionalByShortName(eventName).map(event -> {
+            String redirectToEvent = "redirect:/event/" + eventName + "/";
+            ValidationResult res = savePromoCode(eventName, trimmedCode, model, request.getRequest());
+            CodeType codeType = getCodeType(event.getId(), trimmedCode);
+            if(res.isSuccess() && codeType == CodeType.PROMO_CODE_DISCOUNT) {
+                return redirectToEvent;
+            } else if (codeType == CodeType.TICKET_CATEGORY_CODE) {
+                TicketCategory category = ticketCategoryRepository.findCodeInEvent(event.getId(), trimmedCode).get();
+                if(!category.isAccessRestricted()) {
+                    return makeSimpleReservation(eventName, request, redirectAttributes, locale, null, event, category.getId());
+                } else {
+                    Optional<SpecialPrice> specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId()).stream().findFirst();
+                    if(!specialPrice.isPresent()) {
+                        return redirectToEvent;
+                    }
+                    savePromoCode(eventName, specialPrice.get().getCode(), model, request.getRequest());
+                    return makeSimpleReservation(eventName, request, redirectAttributes, locale, specialPrice.get().getCode(), event, category.getId());
+                }
+            } else if (res.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {
+                int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).get().getTicketCategoryId();
+                return makeSimpleReservation(eventName, request, redirectAttributes, locale, trimmedCode, event, ticketCategoryId);
+            } else {
+                return redirectToEvent;
+            }
+        }).orElse("redirect:/");
+    }
+
+    private String makeSimpleReservation(String eventName, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale, String trimmedCode, Event event, int ticketCategoryId) {
+        ReservationForm form = new ReservationForm();
+        form.setPromoCode(trimmedCode);
+        TicketReservationModification reservation = new TicketReservationModification();
+        reservation.setAmount(1);
+        reservation.setTicketCategoryId(ticketCategoryId);
+        form.setReservation(Collections.singletonList(reservation));
+        return validateAndReserve(eventName, form, new BeanPropertyBindingResult(form, "reservationForm"), request, redirectAttributes, locale, event);
+    }
+
     @RequestMapping(value = "/event/{eventName}/calendar/locale/{locale}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public void calendar(@PathVariable("eventName") String eventName, @PathVariable("locale") String locale, @RequestParam(value = "type", required = false) String calendarType, HttpServletResponse response) throws IOException {
         Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
@@ -302,46 +366,47 @@ public class EventController {
             ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale) {
 
         return eventRepository.findOptionalByShortName(eventName).map(event -> {
-
-            final String redirectToEvent = "redirect:/event/" + eventName + "/";
-
             if (request.getHttpMethod() == HttpMethod.GET) {
-                return redirectToEvent;
+                return "redirect:/event/" + eventName + "/";
+            } else {
+                return validateAndReserve(eventName, reservation, bindingResult, request, redirectAttributes, locale, event);
             }
-
-            return reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event)
-                .map(selected -> {
-
-                    Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
-
-                    try {
-                        String reservationId = ticketReservationManager.createTicketReservation(event,
-                                selected.getLeft(), selected.getRight(), expiration,
-                                SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()),
-                                SessionUtil.retrievePromotionCodeDiscount(request.getRequest()),
-                                locale, false);
-                        return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/book";
-                    } catch (TicketReservationManager.NotEnoughTicketsException nete) {
-                        bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
-                        addToFlash(bindingResult, redirectAttributes);
-                        return redirectToEvent;
-                    } catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
-                        bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
-                        addToFlash(bindingResult, redirectAttributes);
-                        return redirectToEvent;
-                    } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
-                        bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
-                        addToFlash(bindingResult, redirectAttributes);
-                        SessionUtil.removeSpecialPriceData(request.getRequest());
-                        return redirectToEvent;
-                    }
-                }).orElseGet(() -> {
-                    addToFlash(bindingResult, redirectAttributes);
-                    return redirectToEvent;
-                });
-
         }).orElse("redirect:/");
 
+    }
+
+    private String validateAndReserve(String eventName, ReservationForm reservation, BindingResult bindingResult, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale, Event event) {
+        final String redirectToEvent = "redirect:/event/" + eventName + "/";
+        return reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event)
+            .map(selected -> {
+
+                Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
+
+                try {
+                    String reservationId = ticketReservationManager.createTicketReservation(event,
+                            selected.getLeft(), selected.getRight(), expiration,
+                            SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()),
+                            SessionUtil.retrievePromotionCodeDiscount(request.getRequest()),
+                            locale, false);
+                    return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/book";
+                } catch (TicketReservationManager.NotEnoughTicketsException nete) {
+                    bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
+                    addToFlash(bindingResult, redirectAttributes);
+                    return redirectToEvent;
+                } catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
+                    bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
+                    addToFlash(bindingResult, redirectAttributes);
+                    return redirectToEvent;
+                } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
+                    bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
+                    addToFlash(bindingResult, redirectAttributes);
+                    SessionUtil.removeSpecialPriceData(request.getRequest());
+                    return redirectToEvent;
+                }
+            }).orElseGet(() -> {
+                addToFlash(bindingResult, redirectAttributes);
+                return redirectToEvent;
+            });
     }
 
     private SaleableAdditionalService getSaleableAdditionalService(Event event, Locale locale, AdditionalService as, PromoCodeDiscount promoCodeDiscount) {

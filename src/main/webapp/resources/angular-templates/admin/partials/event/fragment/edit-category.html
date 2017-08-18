@@ -115,6 +115,20 @@
         </div>
     </div>
     <div class="row">
+        <div class="col-sm-12 col-md-4">
+            <div class="form-group" bs-form-error="ticketCategory.code">
+                <label for="{{buildPrefix($index, 'code')}}">Category code</label>
+                <input type="text" ng-model="ticketCategory.code" id="{{buildPrefix($index, 'code')}}" name="{{buildPrefix($index, 'code')}}" class="form-control" >
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-8" ng-if="ticketCategory.code && ticketCategory.code.length > 0">
+            <label>Access url</label>
+            <p class="form-control-static">
+                {{baseUrl}}/event/{{event.shortName}}/code/{{ticketCategory.code}}
+            </p>
+        </div>
+    </div>
+    <div class="row">
         <div data-ng-repeat="(lang, language) in allLanguagesMapping" class="col-sm-6 col-md-4">
             <div data-ng-if="isLanguagePresent(event.locales, language.value)" class="form-group">
                 <label for="{{buildPrefix($index, 'description.'+lang)}}">Description: {{language.displayLanguage}} <display-commonmark-preview text="ticketCategory.description[language.locale]"></display-commonmark-preview></label>

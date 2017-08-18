@@ -134,7 +134,7 @@ public class ReservationForm {
         List<TicketReservationWithOptionalCodeModification> res = new ArrayList<>();
         //
         Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode)).flatMap(
-                (trimmedCode) -> OptionalWrapper.optionally(() -> tickReservationManager.getSpecialPriceByCode(trimmedCode)));
+                (trimmedCode) -> tickReservationManager.getSpecialPriceByCode(trimmedCode));
         //
         final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         maxTicketsByTicketReservation.forEach((pair) -> validateCategory(bindingResult, tickReservationManager, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft()));

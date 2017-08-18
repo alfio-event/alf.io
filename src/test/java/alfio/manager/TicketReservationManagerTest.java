@@ -465,7 +465,7 @@ public class TicketReservationManagerTest {
     public void renewSpecialPrice() {
         when(ticketCategory.isAccessRestricted()).thenReturn(true);
         when(specialPrice.getStatus()).thenReturn(SpecialPrice.Status.FREE);
-        when(specialPriceRepository.getByCode(eq(SPECIAL_PRICE_CODE))).thenReturn(specialPrice);
+        when(specialPriceRepository.getByCode(eq(SPECIAL_PRICE_CODE))).thenReturn(Optional.of(specialPrice));
         Optional<SpecialPrice> renewed = trm.renewSpecialPrice(Optional.of(specialPrice), Optional.of(SPECIAL_PRICE_SESSION_ID));
         verify(specialPriceRepository).bindToSession(eq(SPECIAL_PRICE_ID), eq(SPECIAL_PRICE_SESSION_ID));
         assertTrue(renewed.isPresent());
@@ -486,7 +486,7 @@ public class TicketReservationManagerTest {
         when(reservation.getId()).thenReturn(RESERVATION_ID);
         when(ticketRepository.freeFromReservation(eq(singletonList(RESERVATION_ID)))).thenReturn(1);
         when(ticketReservationRepository.remove(eq(singletonList(RESERVATION_ID)))).thenReturn(1);
-        when(specialPriceRepository.getByCode(eq(SPECIAL_PRICE_CODE))).thenReturn(specialPrice);
+        when(specialPriceRepository.getByCode(eq(SPECIAL_PRICE_CODE))).thenReturn(Optional.of(specialPrice));
         when(specialPrice.getStatus()).thenReturn(SpecialPrice.Status.PENDING);
         when(specialPrice.getSessionIdentifier()).thenReturn(SPECIAL_PRICE_SESSION_ID);
         Optional<SpecialPrice> renewed = trm.renewSpecialPrice(Optional.of(specialPrice), Optional.of(SPECIAL_PRICE_SESSION_ID));
