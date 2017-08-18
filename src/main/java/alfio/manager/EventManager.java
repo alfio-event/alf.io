@@ -551,7 +551,7 @@ public class EventManager {
         final int price = evaluatePrice(tc.getPriceInCents(), freeOfCharge);
         TicketCategory original = ticketCategoryRepository.getById(tc.getId(), eventId);
         ticketCategoryRepository.update(tc.getId(), tc.getName(), tc.getInception().toZonedDateTime(zoneId),
-                tc.getExpiration().toZonedDateTime(zoneId), tc.getMaxTickets(), tc.isTokenGenerationRequested(), price, tc.getCode());
+                tc.getExpiration().toZonedDateTime(zoneId), tc.getMaxTickets(), tc.isTokenGenerationRequested(), price, StringUtils.trimToNull(tc.getCode()));
         TicketCategory updated = ticketCategoryRepository.getById(tc.getId(), eventId);
         int addedTickets = 0;
         if(original.isBounded() ^ tc.isBounded()) {

@@ -511,6 +511,8 @@
                     return angular.isDefined(index) ? index + "-" + name : name;
                 }
 
+                $scope.baseUrl = window.location.origin;
+
                 $scope.isLanguagePresent = function(locales, value) {
                     return (locales & value) === value;
                 }
