@@ -59,6 +59,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static alfio.controller.EventController.CodeType.TICKET_CATEGORY_CODE;
 import static alfio.controller.support.SessionUtil.addToFlash;
 import static alfio.util.OptionalWrapper.optionally;
 
@@ -268,7 +269,7 @@ public class EventController {
 
 
     enum CodeType {
-        SPECIAL_PRICE, PROMO_CODE_DISCOUNT, NOT_FOUND
+        SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
     }
 
     //not happy with that code...
@@ -280,6 +281,8 @@ public class EventController {
             return CodeType.SPECIAL_PRICE;
         } else if (promoCodeRepository.findPromoCodeInEventOrOrganization(eventId, trimmedCode).isPresent()) {
             return CodeType.PROMO_CODE_DISCOUNT;
+        } else if (ticketCategoryRepository.findCodeInEvent(eventId, trimmedCode).isPresent()) {
+            return CodeType.TICKET_CATEGORY_CODE;
         } else {
             return CodeType.NOT_FOUND;
         }
@@ -294,19 +297,35 @@ public class EventController {
             CodeType codeType = getCodeType(event.getId(), trimmedCode);
             if(res.isSuccess() && codeType == CodeType.PROMO_CODE_DISCOUNT) {
                 return redirectToEvent;
+            } else if (codeType == CodeType.TICKET_CATEGORY_CODE) {
+                TicketCategory category = ticketCategoryRepository.findCodeInEvent(event.getId(), trimmedCode).get();
+                if(!category.isAccessRestricted()) {
+                    return makeSimpleReservation(eventName, request, redirectAttributes, locale, null, event, category.getId());
+                } else {
+                    Optional<SpecialPrice> specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId()).stream().findFirst();
+                    if(!specialPrice.isPresent()) {
+                        return "redirect:/";
+                    }
+                    savePromoCode(eventName, specialPrice.get().getCode(), model, request.getRequest());
+                    return makeSimpleReservation(eventName, request, redirectAttributes, locale, specialPrice.get().getCode(), event, category.getId());
+                }
             } else if (res.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {
                 int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).get().getTicketCategoryId();
-                ReservationForm form = new ReservationForm();
-                form.setPromoCode(trimmedCode);
-                TicketReservationModification reservation = new TicketReservationModification();
-                reservation.setAmount(1);
-                reservation.setTicketCategoryId(ticketCategoryId);
-                form.setReservation(Collections.singletonList(reservation));
-                return validateAndReserve(eventName, form, new BeanPropertyBindingResult(form, "reservationForm"), request, redirectAttributes, locale, event);
+                return makeSimpleReservation(eventName, request, redirectAttributes, locale, trimmedCode, event, ticketCategoryId);
             } else {
                 return redirectToEvent;
             }
         }).orElse("redirect:/");
+    }
+
+    private String makeSimpleReservation(String eventName, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale, String trimmedCode, Event event, int ticketCategoryId) {
+        ReservationForm form = new ReservationForm();
+        form.setPromoCode(trimmedCode);
+        TicketReservationModification reservation = new TicketReservationModification();
+        reservation.setAmount(1);
+        reservation.setTicketCategoryId(ticketCategoryId);
+        form.setReservation(Collections.singletonList(reservation));
+        return validateAndReserve(eventName, form, new BeanPropertyBindingResult(form, "reservationForm"), request, redirectAttributes, locale, event);
     }
 
     @RequestMapping(value = "/event/{eventName}/calendar/locale/{locale}", method = {RequestMethod.GET, RequestMethod.HEAD})
