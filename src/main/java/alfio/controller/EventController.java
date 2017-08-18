@@ -163,8 +163,8 @@ public class EventController {
         Event event = optional.get();
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
-        Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
-        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode)));
+        Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> specialPriceRepository.getByCode(trimmedCode));
+        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
         
         if(specialCode.isPresent()) {
             if (!optionally(() -> eventManager.getTicketCategoryById(specialCode.get().getTicketCategoryId(), event.getId())).isPresent()) {
@@ -198,10 +198,10 @@ public class EventController {
 
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
             Optional<String> maybeSpecialCode = SessionUtil.retrieveSpecialPriceCode(request);
-            Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
+            Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> specialPriceRepository.getByCode(trimmedCode));
 
             Optional<PromoCodeDiscount> promoCodeDiscount = SessionUtil.retrievePromotionCodeDiscount(request)
-                .flatMap((code) -> optionally(() -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), code)));
+                .flatMap((code) -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), code));
 
             final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             //hide access restricted ticket categories
@@ -262,6 +262,41 @@ public class EventController {
             model.asMap().putIfAbsent("hasErrors", false);//
             return "/event/show-event";
         }).orElse(REDIRECT + "/");
+    }
+
+
+    enum CodeType {
+        SPECIAL_PRICE, PROMO_CODE_DISCOUNT, NOT_FOUND
+    }
+
+    //not happy with that code...
+    private CodeType getCodeType(int eventId, String code) {
+        String trimmedCode = StringUtils.trimToNull(code);
+        if(trimmedCode == null) {
+            return CodeType.NOT_FOUND;
+        }  else if(specialPriceRepository.getByCode(trimmedCode).isPresent()) {
+            return CodeType.SPECIAL_PRICE;
+        } else if (promoCodeRepository.findPromoCodeInEventOrOrganization(eventId, trimmedCode).isPresent()) {
+            return CodeType.PROMO_CODE_DISCOUNT;
+        } else {
+            return CodeType.NOT_FOUND;
+        }
+    }
+
+    @RequestMapping(value = "/event/{eventName}/code/{code}", method = {RequestMethod.GET, RequestMethod.HEAD})
+    public String handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code, Model model, HttpServletRequest request) {
+        return eventRepository.findOptionalByShortName(eventName).map(event -> {
+
+            String redirectToEvent = "redirect:/event/" + eventName + "/";
+
+            ValidationResult res = savePromoCode(eventName, code, model, request);
+            if(res.isSuccess()) {
+                return redirectToEvent;
+            } else {
+                return redirectToEvent;
+            }
+
+        }).orElse("redirect:/");
     }
 
     @RequestMapping(value = "/event/{eventName}/calendar/locale/{locale}", method = {RequestMethod.GET, RequestMethod.HEAD})

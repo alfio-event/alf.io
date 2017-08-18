@@ -101,7 +101,7 @@ public class RestEventApiController {
     @RequestMapping("events/{shortName}")
     public ResponseEntity<PublicEvent> showEvent(@PathVariable("shortName") String shortName, @RequestParam(value="specialCode", required = false) String specialCodeParam, HttpServletRequest request) {
 
-        Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(specialCodeParam)).flatMap((trimmedCode) -> optionally(() -> specialPriceRepository.getByCode(trimmedCode)));
+        Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(specialCodeParam)).flatMap((trimmedCode) -> specialPriceRepository.getByCode(trimmedCode));
 
         return eventRepository.findOptionalByShortName(shortName).map((e) -> {
             List<PublicCategory> categories = ticketCategoryRepository.findAllTicketCategories(e.getId()).stream()

@@ -23,6 +23,7 @@ import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface PromoCodeDiscountRepository {
@@ -52,7 +53,7 @@ public interface PromoCodeDiscountRepository {
         +" (event_id_fk = :eventId and organization_id_fk is null) or "
         +" (event_id_fk is null and organization_id_fk = (select org_id from event where id = :eventId))) "
         +" order by event_id_fk is null limit 1")
-    PromoCodeDiscount findPromoCodeInEventOrOrganization(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
+    Optional<PromoCodeDiscount> findPromoCodeInEventOrOrganization(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
 
     @Query("select count(*) from promo_code where (event_id_fk = :eventId and organization_id_fk is null) or (event_id_fk is null and organization_id_fk = :organizationId)")
     Integer countByEventAndOrganizationId(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);

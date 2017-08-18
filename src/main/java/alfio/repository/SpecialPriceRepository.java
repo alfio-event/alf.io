@@ -24,6 +24,7 @@ import ch.digitalfondue.npjt.QueryType;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface SpecialPriceRepository {
@@ -44,7 +45,7 @@ public interface SpecialPriceRepository {
     int clearRecipientData(@Bind("id") int id, @Bind("ticketCategoryId") int ticketCategoryId);
 
     @Query("select * from special_price where code = :code")
-    SpecialPrice getByCode(@Bind("code") String code);
+    Optional<SpecialPrice> getByCode(@Bind("code") String code);
 
     @Query("select count(*) from special_price where code = :code")
     Integer countByCode(@Bind("code") String code);

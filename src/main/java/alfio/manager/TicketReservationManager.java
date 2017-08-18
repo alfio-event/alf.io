@@ -202,7 +202,7 @@ public class TicketReservationManager {
                                           boolean forWaitingQueue) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
         String reservationId = UUID.randomUUID().toString();
         
-        Optional<PromoCodeDiscount> discount = promotionCodeDiscount.flatMap((promoCodeDiscount) -> optionally(() -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount)));
+        Optional<PromoCodeDiscount> discount = promotionCodeDiscount.flatMap((promoCodeDiscount) -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
         
         ticketReservationRepository.createNewReservation(reservationId, reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null), locale.getLanguage(), event.getId());
         list.forEach(t -> reserveTicketsForCategory(event, specialPriceSessionId, reservationId, t, locale, forWaitingQueue, discount.orElse(null)));
@@ -872,7 +872,7 @@ public class TicketReservationManager {
         Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);
     }
 
-    public SpecialPrice getSpecialPriceByCode(String code) {
+    public Optional<SpecialPrice> getSpecialPriceByCode(String code) {
         return specialPriceRepository.getByCode(code);
     }
 
@@ -893,12 +893,12 @@ public class TicketReservationManager {
 
         if(price.getStatus() == Status.FREE) {
             specialPriceRepository.bindToSession(price.getId(), specialPriceSessionId.get());
-            return Optional.of(getSpecialPriceByCode(price.getCode()));
+            return getSpecialPriceByCode(price.getCode());
         } else if(price.getStatus() == Status.PENDING) {
             Optional<Ticket> optionalTicket = optionally(() -> ticketRepository.findBySpecialPriceId(price.getId()));
             if(optionalTicket.isPresent()) {
                 cancelPendingReservation(optionalTicket.get().getTicketsReservationId(), false);
-                return Optional.of(getSpecialPriceByCode(price.getCode()));
+                return getSpecialPriceByCode(price.getCode());
             }
         }
 
