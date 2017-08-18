@@ -139,11 +139,19 @@
                                             <div class="col-sm-8">{{::baseUrl}}/event/{{::event.shortName}}/code/{{::ticketCategory.code}}</div>
                                         </div>
                                     </div>
-                                    <div class="col-md-7 hidden-xs"><p class="text-muted" data-ng-repeat="(lang, desc) in ticketCategory.description" title="{{lang}}"><display-commonmark-preview text="desc"></display-commonmark-preview> {{desc}}</p></div>
                                 </div>
                                 <div class="row" data-ng-if="!event.freeOfCharge">
                                     <div class="col-sm-4"><strong>Price</strong></div>
                                     <div class="col-sm-8">{{::ticketCategory.price | currency : (event.currency || "")}}</div>
+                                <hr ng-if="categoryHasDescriptions(ticketCategory)">
+                                <div class="col-md-12 hidden-xs"><p class="text-muted" data-ng-repeat="(lang, desc) in ticketCategory.description" title="{{lang}}"><display-commonmark-preview text="desc"></display-commonmark-preview> {{desc}}</p></div>
+                                <div data-ng-if="ticketCategory.accessRestricted" class="wMarginBottom" data-uib-collapse="isTokenViewCollapsed(ticketCategory)">
+                                    <hr>
+                                    <button class="close" aria-label="Close" data-ng-click="toggleTokenViewCollapse(ticketCategory)"><i class="fa fa-close"></i></button>
+                                    <h4>Tokens</h4>
+                                    <ul class="list-inline">
+                                        <li data-ng-repeat="token in ::ticketCategory.tokenStatus | orderBy: ['id']"><i class="status-icon" data-ng-class="evaluateClass(token)" title="{{::token.status}}"></i> {{::token.code}}</li>
+                                    </ul>
                                 </div>
                                 <div class="row" data-ng-if="!event.freeOfCharge">
                                     <div class="col-sm-4"><strong>Final price</strong></div>
