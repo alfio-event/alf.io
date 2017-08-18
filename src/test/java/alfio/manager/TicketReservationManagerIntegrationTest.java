@@ -92,7 +92,7 @@ public class TicketReservationManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
 
         TicketReservationModification tr = new TicketReservationModification();
@@ -115,11 +115,11 @@ public class TicketReservationManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false),
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null),
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true));
+                        DESCRIPTION, BigDecimal.TEN, false, "", true, null));
         EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
 
         TicketCategoryWithStatistic bounded = event.getTicketCategories().stream().filter(TicketCategoryWithStatistic::isBounded).findFirst().orElseThrow(IllegalStateException::new);
@@ -193,7 +193,7 @@ public class TicketReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
 
         TicketCategoryWithStatistic unbounded = event.getTicketCategories().stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
@@ -253,7 +253,7 @@ public class TicketReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
 
         TicketCategoryWithStatistic unbounded = event.getTicketCategories().stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
@@ -272,7 +272,7 @@ public class TicketReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null));
         EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
 
         TicketCategoryWithStatistic unbounded = event.getTicketCategories().get(0);
