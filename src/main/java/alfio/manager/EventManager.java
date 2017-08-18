@@ -491,7 +491,7 @@ public class EventManager {
             final int price = evaluatePrice(tc.getPriceInCents(), freeOfCharge);
             final int maxTickets = tc.isBounded() ? tc.getMaxTickets() : 0;
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
-                tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price);
+                tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()));
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
@@ -508,7 +508,7 @@ public class EventManager {
         int eventId = event.getId();
         final int price = evaluatePrice(tc.getPriceInCents(), event.isFreeOfCharge());
         final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
-            tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.isBounded() ? tc.getMaxTickets() : 0, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price);
+            tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.isBounded() ? tc.getMaxTickets() : 0, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()));
         TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
