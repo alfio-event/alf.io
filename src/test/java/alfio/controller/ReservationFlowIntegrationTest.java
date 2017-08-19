@@ -29,10 +29,7 @@ import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TicketDecorator;
-import alfio.manager.EuVatChecker;
-import alfio.manager.EventManager;
-import alfio.manager.EventStatisticsManager;
-import alfio.manager.TicketReservationManager;
+import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
@@ -160,6 +157,9 @@ public class ReservationFlowIntegrationTest {
     @Autowired
     private TicketCategoryRepository ticketCategoryRepository;
 
+    @Autowired
+    private CheckInManager checkInManager;
+
     private ReservationApiController reservationApiController;
 
 
@@ -201,6 +201,8 @@ public class ReservationFlowIntegrationTest {
     public void reservationFlowTest() throws Exception{
 
         String eventName = event.getShortName();
+
+        assertTrue(checkInManager.findAllFullTicketInfo(event.getId()).isEmpty());
 
 
         eventManager.toggleActiveFlag(event.getId(), user, true);
@@ -276,6 +278,8 @@ public class ReservationFlowIntegrationTest {
 
         //assign ticket to person
         assignTicket(eventName, reservationIdentifier, ticketIdentifier, fname1, lname1);
+
+        assertEquals(1, checkInManager.findAllFullTicketInfo(event.getId()).size());
 
         assertEquals("/event/update-ticket", ticketController.showTicketForUpdate(eventName, ticketIdentifier, new BindingAwareModelMap(), Locale.ENGLISH));
 
