@@ -1017,7 +1017,7 @@
         });
 
         $scope.categoryHasDescriptions = function(category) {
-            return Object.keys(category.description).length > 0;
+            return category && category.description ? Object.keys(category.description).length > 0 : false;
         };
 
     });
