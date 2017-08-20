@@ -332,7 +332,16 @@ public class ReservationFlowIntegrationTest {
 
         TicketAndCheckInResult ticketAndCheckInResultOk = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
         assertEquals(CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
-        
+
+
+        //test revert check in
+        assertTrue(checkInApiController.revertCheckIn(event.getId(), ticketIdentifier, principal));
+        assertFalse(checkInApiController.revertCheckIn(event.getId(), ticketIdentifier, principal));
+        TicketAndCheckInResult ticketAndCheckInResult2 = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
+        assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult2.getResult().getStatus());
+        CheckInApiController.TicketCode tc2 = new CheckInApiController.TicketCode();
+        tc2.setCode(ticketCode);
+        assertEquals(CheckInStatus.SUCCESS, checkInApiController.checkIn(event.getId(), ticketIdentifier, tc2, new TestingAuthenticationToken("ciccio","ciccio")).getResult().getStatus());
         //
         
         eventManager.deleteEvent(event.getId(), principal.getName());
