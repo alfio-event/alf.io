@@ -20,10 +20,12 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.config.RepositoryConfiguration;
+import alfio.controller.api.AttendeeApiController;
 import alfio.controller.api.ReservationApiController;
 import alfio.controller.api.admin.CheckInApiController;
 import alfio.controller.api.admin.EventApiController;
 import alfio.controller.api.admin.SerializablePair;
+import alfio.controller.api.admin.UsersApiController;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
@@ -31,7 +33,6 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TicketDecorator;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
-import alfio.manager.support.CheckInResult;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
@@ -42,6 +43,7 @@ import alfio.model.audit.ScanAudit;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
+import alfio.model.modification.UserModification;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
@@ -50,6 +52,7 @@ import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.EventUtil;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -85,6 +88,7 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
@@ -114,9 +118,6 @@ public class ReservationFlowIntegrationTest {
 
     @Autowired
     private ConfigurationRepository configurationRepository;
-
-    @Autowired
-    private EventStatisticsManager eventStatisticsManager;
 
     @Autowired
     private OrganizationRepository organizationRepository;
@@ -164,6 +165,12 @@ public class ReservationFlowIntegrationTest {
 
     @Autowired
     private CheckInManager checkInManager;
+
+    @Autowired
+    private AttendeeApiController attendeeApiController;
+
+    @Autowired
+    private UsersApiController usersApiController;
 
     private ReservationApiController reservationApiController;
 
@@ -372,6 +379,17 @@ public class ReservationFlowIntegrationTest {
         assertEquals(ticket.getUuid(), jsonPayload.get("uuid"));
         assertEquals("testmctest@test.com", jsonPayload.get("email"));
         assertEquals("CHECKED_IN", jsonPayload.get("status"));
+        //
+
+
+        // check register sponsor scan
+        UsersApiController.UserWithPasswordAndQRCode sponsorUser = usersApiController.insertUser(new UserModification(null, event.getOrganizationId(), "SPONSOR", "sponsor", "first", "last", "email@email.com"), "http://localhost:8080", principal);
+        Principal sponsorPrincipal = Mockito.mock(Principal.class);
+        Mockito.when(sponsorPrincipal.getName()).thenReturn(sponsorUser.getUsername());
+
+        assertTrue(attendeeApiController.getScannedBadges(event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().isEmpty());
+        assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid()), sponsorPrincipal).getBody().getResult().getStatus());
+        assertEquals(1, attendeeApiController.getScannedBadges(event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
         //
         
         eventManager.deleteEvent(event.getId(), principal.getName());
