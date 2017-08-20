@@ -218,7 +218,7 @@ public class CheckInManager {
         }
     }
 
-    static String encrypt(String key, String payload)  {
+    public static String encrypt(String key, String payload)  {
         try {
             Pair<Cipher, SecretKeySpec> cipherAndSecret = getCypher(key);
             Cipher cipher = cipherAndSecret.getKey();
@@ -231,7 +231,7 @@ public class CheckInManager {
         }
     }
 
-    static String decrypt(String key, String payload) {
+    public static String decrypt(String key, String payload) {
         try {
             Pair<Cipher, SecretKeySpec> cipherAndSecret = getCypher(key);
             Cipher cipher = cipherAndSecret.getKey();

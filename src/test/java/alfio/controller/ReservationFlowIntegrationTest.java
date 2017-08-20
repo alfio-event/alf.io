@@ -31,10 +31,12 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TicketDecorator;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.support.CheckInResult;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.audit.ScanAudit;
 import alfio.model.modification.DateTimeModification;
@@ -48,8 +50,11 @@ import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.Json;
 import alfio.util.TemplateManager;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.opencsv.CSVReader;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Before;
@@ -341,7 +346,32 @@ public class ReservationFlowIntegrationTest {
         assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult2.getResult().getStatus());
         CheckInApiController.TicketCode tc2 = new CheckInApiController.TicketCode();
         tc2.setCode(ticketCode);
-        assertEquals(CheckInStatus.SUCCESS, checkInApiController.checkIn(event.getId(), ticketIdentifier, tc2, new TestingAuthenticationToken("ciccio","ciccio")).getResult().getStatus());
+        TicketAndCheckInResult ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, tc2, new TestingAuthenticationToken("ciccio", "ciccio"));
+        assertEquals(CheckInStatus.SUCCESS, ticketAndcheckInResult.getResult().getStatus());
+        //
+
+
+        //
+        List<Integer> offlineIdentifiers = checkInApiController.getOfflineIdentifiers(event.getShortName(), 0L, new MockHttpServletResponse());
+        assertFalse(offlineIdentifiers.isEmpty());
+        Map<String, String> payload = checkInApiController.getOfflineEncryptedInfo(event.getShortName(), Collections.emptyList(), offlineIdentifiers);
+        assertEquals(1, payload.size());
+        Ticket ticket = ticketAndcheckInResult.getTicket();
+        String ticketKey = ticket.hmacTicketInfo(event.getPrivateKey());
+        String hashedTicketKey = DigestUtils.sha256Hex(ticketKey);
+        String encJson = payload.get(hashedTicketKey);
+        assertNotNull(encJson);
+        String ticketPayload = CheckInManager.decrypt(ticket.getUuid() + "/" + ticketKey, encJson);
+        Map<String, String> jsonPayload = Json.fromJson(ticketPayload, new TypeReference<Map<String, String>>() {
+        });
+        assertNotNull(jsonPayload);
+        assertEquals(6, jsonPayload.size());
+        assertEquals("Test", jsonPayload.get("firstName"));
+        assertEquals("OTest", jsonPayload.get("lastName"));
+        assertEquals("Test OTest", jsonPayload.get("fullName"));
+        assertEquals(ticket.getUuid(), jsonPayload.get("uuid"));
+        assertEquals("testmctest@test.com", jsonPayload.get("email"));
+        assertEquals("CHECKED_IN", jsonPayload.get("status"));
         //
         
         eventManager.deleteEvent(event.getId(), principal.getName());
