@@ -227,7 +227,7 @@ public class ReservationFlowIntegrationTest {
         eventManager.toggleActiveFlag(event.getId(), user, true);
         // list events
         String eventList = eventController.listEvents(new BindingAwareModelMap(), Locale.ENGLISH);
-        if(eventManager.getActiveEvents().size() == 1) {
+        if(eventManager.getPublishedEvents().size() == 1) {
             Assert.assertTrue(eventList.startsWith("redirect:/"));
         } else {
             assertEquals("/event/event-list", eventList);
