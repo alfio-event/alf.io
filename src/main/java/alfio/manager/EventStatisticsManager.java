@@ -23,6 +23,7 @@ import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
+import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
 
 @Component
+@AllArgsConstructor
 public class EventStatisticsManager {
 
     private final EventRepository eventRepository;
@@ -47,28 +49,6 @@ public class EventStatisticsManager {
     private final TicketReservationRepository ticketReservationRepository;
     private final SpecialPriceRepository specialPriceRepository;
     private final UserManager userManager;
-    private final TransactionRepository transactionRepository;
-
-    @Autowired
-    public EventStatisticsManager(EventRepository eventRepository,
-                                  EventDescriptionRepository eventDescriptionRepository,
-                                  TicketRepository ticketRepository,
-                                  TicketCategoryRepository ticketCategoryRepository,
-                                  TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
-                                  TicketReservationRepository ticketReservationRepository,
-                                  SpecialPriceRepository specialPriceRepository,
-                                  UserManager userManager,
-                                  TransactionRepository transactionRepository) {
-        this.eventRepository = eventRepository;
-        this.eventDescriptionRepository = eventDescriptionRepository;
-        this.ticketRepository = ticketRepository;
-        this.ticketCategoryRepository = ticketCategoryRepository;
-        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
-        this.ticketReservationRepository = ticketReservationRepository;
-        this.specialPriceRepository = specialPriceRepository;
-        this.userManager = userManager;
-        this.transactionRepository = transactionRepository;
-    }
 
     private List<Event> getAllEvents(String username) {
         List<Integer> orgIds = userManager.findUserOrganizations(username).stream().map(Organization::getId).collect(toList());
@@ -94,7 +74,7 @@ public class EventStatisticsManager {
     }
 
     public EventWithAdditionalInfo getEventWithAdditionalInfo(String eventName, String username) {
-        Event event = getSingleEvent(eventName, username);
+        Event event = getEventAndCheckOwnership(eventName, username);
         Map<String, String> description = eventDescriptionRepository.findByEventIdAsMap(event.getId());
         EventStatistic eventStatistic = new EventStatistic(event, eventRepository.findStatisticsFor(event.getId()));
         BigDecimal grossIncome = MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(event.getId()));
@@ -117,19 +97,10 @@ public class EventStatisticsManager {
         return ticketCategoryRepository.findByEventId(event.getId());
     }
 
-    private Event getSingleEvent(String eventName, String username) {
-        final Event event = eventRepository.findByShortName(eventName);
-        checkOwnership(event, username, event.getOrganizationId());
+    private Event getEventAndCheckOwnership(String eventName, String username) {
+        Event event = eventRepository.findByShortName(eventName);
+        userManager.findOrganizationById(event.getId(), username);
         return event;
-    }
-
-    private void checkOwnership(Event event, String username, int organizationId) {
-        Validate.isTrue(organizationId == event.getOrganizationId(), "invalid organizationId");
-        userManager.findUserOrganizations(username)
-                .stream()
-                .filter(o -> o.getId() == organizationId)
-                .findAny()
-                .orElseThrow(IllegalArgumentException::new);
     }
 
     public List<TicketWithStatistic> loadModifiedTickets(int eventId, int categoryId) {

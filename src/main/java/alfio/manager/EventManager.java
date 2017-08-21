@@ -116,11 +116,7 @@ public class EventManager {
 
     public void checkOwnership(Event event, String username, int organizationId) {
         Validate.isTrue(organizationId == event.getOrganizationId(), "invalid organizationId");
-        userManager.findUserOrganizations(username)
-                .stream()
-                .filter(o -> o.getId() == organizationId)
-                .findAny()
-                .orElseThrow(IllegalArgumentException::new);
+        userManager.findOrganizationById(organizationId, username);
     }
 
     public List<TicketCategory> loadTicketCategories(Event event) {

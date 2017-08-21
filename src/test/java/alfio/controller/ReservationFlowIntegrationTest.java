@@ -36,9 +36,7 @@ import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
+import alfio.model.*;
 import alfio.model.audit.ScanAudit;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -90,10 +88,7 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.Assert.*;
@@ -136,6 +131,9 @@ public class ReservationFlowIntegrationTest {
 
     @Autowired
     private EventController eventController;
+
+    @Autowired
+    private EventStatisticsManager eventStatisticsManager;
 
     @Autowired
     private ReservationController reservationController;
@@ -215,6 +213,14 @@ public class ReservationFlowIntegrationTest {
         String eventName = event.getShortName();
 
         assertTrue(checkInManager.findAllFullTicketInfo(event.getId()).isEmpty());
+
+        List<EventStatistic> eventStatistic = eventStatisticsManager.getAllEventsWithStatistics(user);
+        assertEquals(1, eventStatistic.size());
+        assertTrue(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), new Date()).isEmpty());
+        EventWithAdditionalInfo eventWithAdditionalInfo = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
+        assertEquals(0, eventWithAdditionalInfo.getNotSoldTickets());
+        assertEquals(0, eventWithAdditionalInfo.getSoldTickets());
+        assertEquals(20, eventWithAdditionalInfo.getAvailableSeats());
 
 
         eventManager.toggleActiveFlag(event.getId(), user, true);
@@ -330,6 +336,16 @@ public class ReservationFlowIntegrationTest {
         //ticket has changed, update
         ticketDecorator = checkReservationComplete(eventName, reservationIdentifier);
 
+
+        // check stats after selling one ticket
+        assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), new Date()).isEmpty());
+        EventWithAdditionalInfo eventWithAdditionalInfo2 = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
+        assertEquals(0, eventWithAdditionalInfo2.getNotSoldTickets());
+        assertEquals(1, eventWithAdditionalInfo2.getSoldTickets());
+        assertEquals(20, eventWithAdditionalInfo2.getAvailableSeats());
+        assertEquals(0, eventWithAdditionalInfo2.getCheckedInTickets());
+
+
         //--- check in sequence
         String ticketCode = ticketDecorator.ticketCode(event.getPrivateKey());
         TicketAndCheckInResult ticketAndCheckInResult = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
@@ -345,12 +361,32 @@ public class ReservationFlowIntegrationTest {
         TicketAndCheckInResult ticketAndCheckInResultOk = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
         assertEquals(CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
 
+        // check stats after check in one ticket
+        assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), new Date()).isEmpty());
+        EventWithAdditionalInfo eventWithAdditionalInfo3 = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
+        assertEquals(0, eventWithAdditionalInfo3.getNotSoldTickets());
+        assertEquals(0, eventWithAdditionalInfo3.getSoldTickets());
+        assertEquals(20, eventWithAdditionalInfo3.getAvailableSeats());
+        assertEquals(1, eventWithAdditionalInfo3.getCheckedInTickets());
+
+
 
         //test revert check in
         assertTrue(checkInApiController.revertCheckIn(event.getId(), ticketIdentifier, principal));
         assertFalse(checkInApiController.revertCheckIn(event.getId(), ticketIdentifier, principal));
         TicketAndCheckInResult ticketAndCheckInResult2 = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
         assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult2.getResult().getStatus());
+
+
+        // check stats after revert check in one ticket
+        assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), new Date()).isEmpty());
+        EventWithAdditionalInfo eventWithAdditionalInfo4 = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
+        assertEquals(0, eventWithAdditionalInfo4.getNotSoldTickets());
+        assertEquals(1, eventWithAdditionalInfo4.getSoldTickets());
+        assertEquals(20, eventWithAdditionalInfo4.getAvailableSeats());
+        assertEquals(0, eventWithAdditionalInfo4.getCheckedInTickets());
+
+
         CheckInApiController.TicketCode tc2 = new CheckInApiController.TicketCode();
         tc2.setCode(ticketCode);
         TicketAndCheckInResult ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, tc2, new TestingAuthenticationToken("ciccio", "ciccio"));
