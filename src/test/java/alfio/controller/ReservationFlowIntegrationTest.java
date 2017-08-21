@@ -56,6 +56,7 @@ import alfio.util.TemplateManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.opencsv.CSVReader;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Before;
@@ -338,7 +339,7 @@ public class ReservationFlowIntegrationTest {
 
 
         // check stats after selling one ticket
-        assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), new Date()).isEmpty());
+        assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), DateUtils.addDays(new Date(), 2)).isEmpty());
         EventWithAdditionalInfo eventWithAdditionalInfo2 = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
         assertEquals(0, eventWithAdditionalInfo2.getNotSoldTickets());
         assertEquals(1, eventWithAdditionalInfo2.getSoldTickets());
