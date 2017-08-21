@@ -33,6 +33,9 @@ public interface EventRepository {
 
     @Query("select * from event where id = :eventId")
     Event findById(@Bind("eventId") int eventId);
+
+    @Query("select * from event where id = :eventId")
+    Optional<Event> findOptionalById(@Bind("eventId") int eventId);
     
     @Query("select org_id from event where id = :eventId")
     int findOrganizationIdByEventId(@Bind("eventId") int eventId);

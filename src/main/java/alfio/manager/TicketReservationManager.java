@@ -449,7 +449,7 @@ public class TicketReservationManager {
     }
 
     private Locale findReservationLanguage(String reservationId) {
-        return Optional.ofNullable(ticketReservationRepository.findReservationById(reservationId).getUserLanguage()).map(Locale::forLanguageTag).orElse(Locale.ENGLISH);
+        return ticketReservationRepository.findOptionalReservationById(reservationId).map(TicketReservation::getUserLanguage).map(Locale::forLanguageTag).orElse(Locale.ENGLISH);
     }
 
     public void deleteOfflinePayment(Event event, String reservationId, boolean expired) {
@@ -832,7 +832,7 @@ public class TicketReservationManager {
     }
     
     public Optional<TicketReservation> findById(String reservationId) {
-        return optionally(() -> ticketReservationRepository.findReservationById(reservationId));
+        return ticketReservationRepository.findOptionalReservationById(reservationId);
     }
 
     private Optional<TicketReservation> findByIdForNotification(String reservationId, ZoneId eventZoneId, int quietPeriod) {
@@ -894,7 +894,7 @@ public class TicketReservationManager {
             specialPriceRepository.bindToSession(price.getId(), specialPriceSessionId.get());
             return getSpecialPriceByCode(price.getCode());
         } else if(price.getStatus() == Status.PENDING) {
-            Optional<Ticket> optionalTicket = optionally(() -> ticketRepository.findBySpecialPriceId(price.getId()));
+            Optional<Ticket> optionalTicket = ticketRepository.findBySpecialPriceId(price.getId());
             if(optionalTicket.isPresent()) {
                 cancelPendingReservation(optionalTicket.get().getTicketsReservationId(), false);
                 return getSpecialPriceByCode(price.getCode());

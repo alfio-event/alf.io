@@ -27,7 +27,7 @@ import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.EventUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -35,26 +35,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static alfio.util.OptionalWrapper.optionally;
-
 @Component
+@AllArgsConstructor
 public class AttendeeManager {
 
     private final SponsorScanRepository sponsorScanRepository;
     private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
-
-    @Autowired
-    public AttendeeManager(SponsorScanRepository sponsorScanRepository,
-                           EventRepository eventRepository,
-                           TicketRepository ticketRepository,
-                           UserRepository userRepository) {
-        this.sponsorScanRepository = sponsorScanRepository;
-        this.eventRepository = eventRepository;
-        this.ticketRepository = ticketRepository;
-        this.userRepository = userRepository;
-    }
 
     public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String username) {
         int userId = userRepository.getByUsername(username).getId();
@@ -63,7 +51,7 @@ public class AttendeeManager {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.EVENT_NOT_FOUND, "event not found"));
         }
         Event event = maybeEvent.get();
-        Optional<Ticket> maybeTicket = optionally(() -> ticketRepository.findByUUID(ticketUid));
+        Optional<Ticket> maybeTicket = ticketRepository.findOptionalByUUID(ticketUid);
         if(!maybeTicket.isPresent()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.TICKET_NOT_FOUND, "ticket not found"));
         }

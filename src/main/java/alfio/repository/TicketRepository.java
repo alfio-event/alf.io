@@ -159,7 +159,7 @@ public interface TicketRepository {
     List<Ticket> findByIds(@Bind("ids") List<Integer> ticketIds);
 
     @Query("select * from ticket where special_price_id_fk = :specialPriceId")
-    Ticket findBySpecialPriceId(@Bind("specialPriceId") int specialPriceId);
+    Optional<Ticket> findBySpecialPriceId(@Bind("specialPriceId") int specialPriceId);
 
     @Query("update ticket set category_id = :targetCategoryId, src_price_cts = :srcPriceCts where id in (:ticketIds)")
     int moveToAnotherCategory(@Bind("ticketIds") List<Integer> ticketIds, @Bind("targetCategoryId") int targetCategoryId, @Bind("srcPriceCts") int srcPriceCts);

@@ -53,7 +53,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static alfio.manager.support.CheckInStatus.*;
-import static alfio.util.OptionalWrapper.optionally;
 
 @Component
 @Transactional
@@ -150,15 +149,15 @@ public class CheckInManager {
     }
 
     public TicketAndCheckInResult evaluateTicketStatus(int eventId, String ticketIdentifier, Optional<String> ticketCode) {
-        return extractStatus(optionally(() -> eventRepository.findById(eventId)), optionally(() -> ticketRepository.findByUUID(ticketIdentifier)), ticketIdentifier, ticketCode);
+        return extractStatus(eventRepository.findOptionalById(eventId), ticketRepository.findOptionalByUUID(ticketIdentifier), ticketIdentifier, ticketCode);
     }
 
     public TicketAndCheckInResult evaluateTicketStatus(String eventName, String ticketIdentifier, Optional<String> ticketCode) {
-        return extractStatus(eventRepository.findOptionalByShortName(eventName), optionally(() -> ticketRepository.findByUUID(ticketIdentifier)), ticketIdentifier, ticketCode);
+        return extractStatus(eventRepository.findOptionalByShortName(eventName), ticketRepository.findOptionalByUUID(ticketIdentifier), ticketIdentifier, ticketCode);
     }
 
     private TicketAndCheckInResult extractStatus(int eventId, Optional<Ticket> maybeTicket, String ticketIdentifier, Optional<String> ticketCode) {
-        return extractStatus(optionally(() -> eventRepository.findById(eventId)), maybeTicket, ticketIdentifier, ticketCode);
+        return extractStatus(eventRepository.findOptionalById(eventId), maybeTicket, ticketIdentifier, ticketCode);
     }
 
     private TicketAndCheckInResult extractStatus(Optional<Event> maybeEvent, Optional<Ticket> maybeTicket, String ticketIdentifier, Optional<String> ticketCode) {

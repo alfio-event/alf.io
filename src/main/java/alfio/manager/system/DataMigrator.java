@@ -63,7 +63,6 @@ public class DataMigrator {
     private static final Map<String, String> PRICE_UPDATE_BY_KEY = new LinkedHashMap<>();
     private final EventMigrationRepository eventMigrationRepository;
     private final EventRepository eventRepository;
-    private final TicketRepository ticketRepository;
     private final BigDecimal currentVersion;
     private final String currentVersionAsString;
     private final ZonedDateTime buildTimestamp;
@@ -86,12 +85,10 @@ public class DataMigrator {
                         @Value("${alfio.version}") String currentVersion,
                         @Value("${alfio.build-ts}") String buildTimestamp,
                         PlatformTransactionManager transactionManager,
-                        TicketRepository ticketRepository,
                         ConfigurationRepository configurationRepository,
                         PluginConfigurationRepository pluginConfigurationRepository, NamedParameterJdbcTemplate jdbc) {
         this.eventMigrationRepository = eventMigrationRepository;
         this.eventRepository = eventRepository;
-        this.ticketRepository = ticketRepository;
         this.configurationRepository = configurationRepository;
         this.pluginConfigurationRepository = pluginConfigurationRepository;
         this.jdbc = jdbc;

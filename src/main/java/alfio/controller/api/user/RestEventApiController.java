@@ -49,8 +49,6 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static alfio.util.OptionalWrapper.optionally;
-
 @RestController
 @RequestMapping("/api/public/")
 public class RestEventApiController {
@@ -63,7 +61,6 @@ public class RestEventApiController {
     private final ConfigurationManager configurationManager;
     private final SpecialPriceRepository specialPriceRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
-    private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
 
 
@@ -76,7 +73,6 @@ public class RestEventApiController {
                                   ConfigurationManager configurationManager,
                                   SpecialPriceRepository specialPriceRepository,
                                   TicketCategoryRepository ticketCategoryRepository,
-                                  TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
                                   AdditionalServiceRepository additionalServiceRepository) {
         this.eventManager = eventManager;
         this.organizationRepository = organizationRepository;
@@ -86,7 +82,6 @@ public class RestEventApiController {
         this.configurationManager = configurationManager;
         this.specialPriceRepository = specialPriceRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
-        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
         this.additionalServiceRepository = additionalServiceRepository;
     }
 

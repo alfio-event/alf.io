@@ -216,7 +216,7 @@ public class TicketReservationManagerTest {
         initUpdateTicketOwner(original, modified, ticketId, originalEmail, originalName, form);
         TicketReservation reservation = mock(TicketReservation.class);
         when(original.getTicketsReservationId()).thenReturn(ticketReservationId);
-        when(ticketReservationRepository.findReservationById(eq(ticketReservationId))).thenReturn(reservation);
+        when(ticketReservationRepository.findOptionalReservationById(eq(ticketReservationId))).thenReturn(Optional.of(reservation));
         UserDetails userDetails = new User("user", "password", singletonList(new SimpleGrantedAuthority(Role.ADMIN.getRoleName())));
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null,(b) -> null, Optional.of(userDetails));
         verify(messageSource, never()).getMessage(eq("ticket-has-changed-owner-subject"), eq(new Object[] {"short-name"}), eq(Locale.ITALIAN));
@@ -313,6 +313,7 @@ public class TicketReservationManagerTest {
         when(reservation.getUserLanguage()).thenReturn("en");
         when(reservation.getValidity()).thenReturn(new Date());
         when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
+        when(ticketReservationRepository.findOptionalReservationById(eq("abcd"))).thenReturn(Optional.of(reservation));
 
         when(eventRepository.findByReservationId("abcd")).thenReturn(event);
 
@@ -350,6 +351,7 @@ public class TicketReservationManagerTest {
         when(reservation.getUserLanguage()).thenReturn("en");
         when(reservation.getValidity()).thenReturn(new Date());
         when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
+        when(ticketReservationRepository.findOptionalReservationById(eq("abcd"))).thenReturn(Optional.of(reservation));
 
         when(eventRepository.findByReservationId("abcd")).thenReturn(event);
         when(event.getZoneId()).thenReturn(ZoneId.of("GMT-4"));
@@ -479,7 +481,7 @@ public class TicketReservationManagerTest {
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
         when(ticketRepository.findTicketsInReservation(eq(RESERVATION_ID))).thenReturn(Collections.singletonList(ticket));
         when(ticket.getTicketsReservationId()).thenReturn(RESERVATION_ID);
-        when(ticketRepository.findBySpecialPriceId(eq(SPECIAL_PRICE_ID))).thenReturn(ticket);
+        when(ticketRepository.findBySpecialPriceId(eq(SPECIAL_PRICE_ID))).thenReturn(Optional.of(ticket));
         TicketReservation reservation = mock(TicketReservation.class);
         when(ticketReservationRepository.findReservationById(eq(RESERVATION_ID))).thenReturn(reservation);
         when(reservation.getStatus()).thenReturn(TicketReservationStatus.PENDING);
@@ -763,7 +765,7 @@ public class TicketReservationManagerTest {
         when(reservation.getUserLanguage()).thenReturn("en");
         when(reservation.getFullName()).thenReturn("Full Name");
         when(reservation.getValidity()).thenReturn(new Date());
-        when(ticketReservationRepository.findReservationById(eq(RESERVATION_ID))).thenReturn(reservation);
+        when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(reservation));
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.OFFLINE.toString()))).thenReturn(1);
         when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.of("vatnr"));
@@ -771,6 +773,7 @@ public class TicketReservationManagerTest {
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
 
         trm.confirmOfflinePayment(event, RESERVATION_ID);
+        verify(ticketReservationRepository, atLeastOnce()).findOptionalReservationById(RESERVATION_ID);
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(ticketReservationRepository).confirmOfflinePayment(eq(RESERVATION_ID), eq(COMPLETE.toString()), any(ZonedDateTime.class));
@@ -822,7 +825,7 @@ public class TicketReservationManagerTest {
         int ticketId = 2;
         when(ticket.getId()).thenReturn(ticketId);
         when(ticketRepository.findAllAssignedButNotYetNotified(EVENT_ID)).thenReturn(singletonList(ticket));
-        when(ticketReservationRepository.findReservationById(eq(RESERVATION_ID))).thenReturn(ticketReservation);
+        when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
 
         when(eventRepository.findByReservationId(RESERVATION_ID)).thenReturn(event);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
