@@ -24,9 +24,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
-import alfio.model.modification.DateTimeModification;
-import alfio.model.modification.EventModification;
-import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.*;
 import alfio.model.result.Result;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
@@ -82,6 +80,9 @@ public class EventManagerIntegrationTest {
     private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
     @Autowired
     private TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
+
+    @Autowired
+    private TicketReservationManager ticketReservationManager;
 
     @Test
     public void testUnboundedTicketsGeneration() {
@@ -598,7 +599,35 @@ public class EventManagerIntegrationTest {
         assertEquals(20, ticketRepository.countFreeTickets(event.getId(), result.getData()).intValue());
     }
 
-
+    @Test
+    public void testNewBoundedCategoryWithExistingBoundedAndPendingTicket() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = pair.getLeft();
+        String username = pair.getRight();
+        assertEquals(new Integer(AVAILABLE_SEATS), ticketRepository.countFreeTicketsForUnbounded(event.getId()));
+        TicketReservationModification trm = new TicketReservationModification();
+        trm.setAmount(1);
+        trm.setTicketCategoryId(ticketCategoryRepository.findByEventId(event.getId()).get(0).getId());
+        TicketReservationWithOptionalCodeModification reservation = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
+        ticketReservationManager.createTicketReservation(event, Collections.singletonList(reservation), Collections.emptyList(),
+            DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        TicketCategoryModification tcm = new TicketCategoryModification(null, "new", 1,
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now()),
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1)),
+            Collections.emptyMap(), BigDecimal.TEN, false, "", true, null);
+        Result<Integer> insertResult = eventManager.insertCategory(event, tcm, username);
+        assertTrue(insertResult.isSuccess());
+        Integer categoryID = insertResult.getData();
+        tcm = new TicketCategoryModification(categoryID, tcm.getName(), AVAILABLE_SEATS,
+            tcm.getInception(), tcm.getExpiration(), tcm.getDescription(), tcm.getPrice(), false, "", true, null);
+        Result<TicketCategory> result = eventManager.updateCategory(categoryID, event, tcm, username);
+        assertFalse(result.isSuccess());
+    }
 
     private Pair<Event, String> generateAndEditEvent(int newEventSize) {
         List<TicketCategoryModification> categories = Collections.singletonList(

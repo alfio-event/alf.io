@@ -340,4 +340,27 @@ public class DataMigratorIntegrationTest {
 			eventManager.deleteEvent(event.getId(), eventUsername.getValue());
 		}
     }
+
+    @Test
+    public void testFixCategoriesSize() throws Exception {
+        List<TicketCategoryModification> categories = Arrays.asList(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS -1,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null),
+            new TicketCategoryModification(null, "default", 1,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null));
+        Pair<Event, String> eventUsername = initEvent(categories);
+        Event event = eventUsername.getKey();
+        TicketCategory firstCategory = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
+        int firstCategoryID = firstCategory.getId();
+        ticketCategoryRepository.updateSeatsAvailability(firstCategoryID, AVAILABLE_SEATS + 1);
+        dataMigrator.fixCategoriesSize(event);
+        assertEquals(AVAILABLE_SEATS - 1, ticketRepository.countAllocatedTicketsForEvent(event.getId()).intValue());
+        assertEquals(1, ticketRepository.countFreeTicketsForUnbounded(event.getId()).intValue());
+        assertEquals(AVAILABLE_SEATS - 1, ticketRepository.countFreeTickets(event.getId(), firstCategoryID).intValue());
+        assertEquals(AVAILABLE_SEATS - 1, firstCategory.getMaxTickets());
+    }
 }
