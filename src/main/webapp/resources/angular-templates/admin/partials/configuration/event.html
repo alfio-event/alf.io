@@ -116,6 +116,17 @@
                 </div>
             </div>
 
+            <div data-ng-if="systemConf.alfioPi" class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="panel-title"><i class="fa fa-check"></i> Offline scan and label printing with Alf.io-PI</div>
+                </div>
+                <div class="panel-body">
+                    <div data-ng-repeat="setting in systemConf.alfioPi.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                    </div>
+                </div>
+            </div>
+
             <div class="pull-left wMarginBottom wMarginTop" data-ng-if="eventConf.eventName">
                 <a class="btn btn-default" data-ng-if="eventConf.eventName" data-ui-sref="events.single.detail({eventName: eventConf.eventName})">back to event</a>
             </div>

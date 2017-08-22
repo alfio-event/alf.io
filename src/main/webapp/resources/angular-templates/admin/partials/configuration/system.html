@@ -155,6 +155,20 @@
             </div>
         </div>
 
+        <div data-ng-if="systemConf.alfioPi" class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title"><i class="fa fa-check"></i> Alf.io-PI integration for offline check-in and label printing</div>
+            </div>
+            <div class="panel-body">
+                <div class="alert alert-info">
+                    <p><i class="fa fa-info-circle"></i> See <a href="https://github.com/exteso/alf.io-PI">Alf.io-PI repository</a> for more information.</p>
+                </div>
+                <div data-ng-repeat="setting in systemConf.alfioPiOptions">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                </div>
+            </div>
+        </div>
+
         <control-buttons data-form-obj="systemConf" data-success-text="Save" data-cancel-handler="Cancel"></control-buttons>
     </form>
 </div>

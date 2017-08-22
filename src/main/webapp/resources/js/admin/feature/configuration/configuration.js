@@ -113,7 +113,7 @@
                         mailAttemptsCount: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_ATTEMPTS_COUNT';})
                     };
                 }
-                _.forEach(['PAYMENT_STRIPE', 'PAYMENT_PAYPAL', 'PAYMENT_MOLLIE', 'PAYMENT_OFFLINE', 'INVOICE_EU'], function(group) {
+                _.forEach(['PAYMENT_STRIPE', 'PAYMENT_PAYPAL', 'PAYMENT_MOLLIE', 'PAYMENT_OFFLINE', 'INVOICE_EU', 'ALFIO_PI'], function(group) {
                     if(angular.isDefined(original[group]) && original[group].length > 0) {
                         transformed[_.camelCase(group)] = {
                             settings: original[group]
@@ -173,6 +173,9 @@
                     systemConf.general.selectedLanguages = _.chain(systemConf.allLanguages).map('value').filter(function(x) {return parseInt(systemConf.general.supportedTranslations.value) & x;}).value();
                 }
                 handleEuCountries(systemConf, results[2].data);
+                if(systemConf.alfioPi) {
+                    systemConf.alfioPiOptions = _.filter(systemConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT'});
+                }
             }, function() {
                 systemConf.loading = false;
             });

@@ -20,9 +20,12 @@ import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.DefaultCheckInResult;
 import alfio.manager.support.OnSitePaymentResult;
 import alfio.manager.support.TicketAndCheckInResult;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.audit.ScanAudit;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
@@ -49,6 +52,7 @@ import java.security.GeneralSecurityException;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -66,6 +70,7 @@ public class CheckInManager {
     private final TicketFieldRepository ticketFieldRepository;
     private final ScanAuditRepository scanAuditRepository;
     private final AuditingRepository auditingRepository;
+    private final ConfigurationManager configurationManager;
 
 
     private void checkIn(String uuid) {
@@ -247,12 +252,21 @@ public class CheckInManager {
 
     public List<Integer> getAttendeesIdentifiers(String eventName, Date changedSince) {
         return eventRepository.findOptionalByShortName(eventName)
+            .filter(isOfflineCheckInEnabled())
             .map(event -> ticketRepository.findAllAssignedByEventId(event.getId(), changedSince))
             .orElseGet(Collections::emptyList);
     }
 
+    private Predicate<Event> isOfflineCheckInEnabled() {
+        return event -> {
+            Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathGenerator = Configuration.from(event.getOrganizationId(), event.getId());
+            return configurationManager.getBooleanConfigValue(pathGenerator.apply(ConfigurationKeys.ALFIO_PI_INTEGRATION_ENABLED), false)
+                && configurationManager.getBooleanConfigValue(pathGenerator.apply(ConfigurationKeys.OFFLINE_CHECKIN_ENABLED), false);
+        };
+    }
+
     public Map<String,String> getEncryptedAttendeesInformation(String eventName, Set<String> additionalFields, List<Integer> ids) {
-        return eventRepository.findOptionalByShortName(eventName).map(event -> {
+        return eventRepository.findOptionalByShortName(eventName).filter(isOfflineCheckInEnabled()).map(event -> {
             String eventKey = event.getPrivateKey();
 
             Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
