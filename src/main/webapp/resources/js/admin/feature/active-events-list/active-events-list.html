@@ -25,7 +25,7 @@
                         </a>
                     </h4>
                 </div>
-                <div class="col-md-7 col-xs-12">
+                <div class="col-md-6 col-xs-12">
                     <div class="list-group-item-heading">
                         <h4>
                             <span class="label label-danger" data-ng-if="event.warningNeeded"><i class="fa fa-warning" data-uib-tooltip="something wrong is happening..."></i></span>
@@ -37,7 +37,7 @@
                         {{event.formattedBegin | formatDate}} / {{event.formattedEnd | formatDate}}
                     </div>
                 </div>
-                <div class="col-xs-12 col-md-4 text-right wMarginTop10px">
+                <div class="col-xs-12 col-md-5 text-right wMarginTop10px">
                     <a class="btn btn-primary btn-xs" data-ui-sref="events.single.detail({eventName: event.shortName})" data-ng-if="!event.expired">
                         <i class="fa fa-ticket"></i> {{(event.soldTickets + event.checkedInTickets)}} / {{event.availableSeats}}
                     </a>
