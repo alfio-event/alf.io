@@ -91,6 +91,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 
+import static alfio.manager.support.CheckInStatus.EVENT_NOT_FOUND;
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.Assert.*;
 
@@ -378,6 +379,17 @@ public class ReservationFlowIntegrationTest {
         TicketAndCheckInResult ticketAndCheckInResult2 = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
         assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult2.getResult().getStatus());
 
+        UsersApiController.UserWithPasswordAndQRCode sponsorUser = usersApiController.insertUser(new UserModification(null, event.getOrganizationId(), "SPONSOR", "sponsor", "first", "last", "email@email.com"), "http://localhost:8080", principal);
+        Principal sponsorPrincipal = Mockito.mock(Principal.class);
+        Mockito.when(sponsorPrincipal.getName()).thenReturn(sponsorUser.getUsername());
+
+        // check failures
+        assertEquals(CheckInStatus.EVENT_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest("not-existing-event", "not-existing-ticket"), sponsorPrincipal).getBody().getResult().getStatus());
+        assertEquals(CheckInStatus.TICKET_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, "not-existing-ticket"), sponsorPrincipal).getBody().getResult().getStatus());
+        assertEquals(CheckInStatus.INVALID_TICKET_STATE, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketIdentifier), sponsorPrincipal).getBody().getResult().getStatus());
+        //
+
+
 
         // check stats after revert check in one ticket
         assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), new Date()).isEmpty());
@@ -418,12 +430,7 @@ public class ReservationFlowIntegrationTest {
         assertEquals("CHECKED_IN", jsonPayload.get("status"));
         //
 
-
-        // check register sponsor scan
-        UsersApiController.UserWithPasswordAndQRCode sponsorUser = usersApiController.insertUser(new UserModification(null, event.getOrganizationId(), "SPONSOR", "sponsor", "first", "last", "email@email.com"), "http://localhost:8080", principal);
-        Principal sponsorPrincipal = Mockito.mock(Principal.class);
-        Mockito.when(sponsorPrincipal.getName()).thenReturn(sponsorUser.getUsername());
-
+        // check register sponsor scan success flow
         assertTrue(attendeeApiController.getScannedBadges(event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().isEmpty());
         assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid()), sponsorPrincipal).getBody().getResult().getStatus());
         assertEquals(1, attendeeApiController.getScannedBadges(event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
