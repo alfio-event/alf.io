@@ -426,3 +426,9 @@ a.emulate-nav-pills-link {
     max-width: 64px;
     height: auto;
 }
+
+canvas.qrcode {
+    margin-top: 20px;
+    position: relative;
+    left: -18px;
+}

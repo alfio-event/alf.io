@@ -32,6 +32,9 @@
     <script src="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-animate/angular-animate.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/qrcode-generator/js/qrcode.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/qrcode-generator/js/qrcode_UTF8.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/angular-qrcode/angular-qrcode.js"></script>
     <script src="{{request.contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/ng-app/admin-application.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/directive/admin-directive.js"></script>
@@ -77,6 +80,7 @@
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservations-list/reservations-list.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>
 
     <link rel="stylesheet" href="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />
 

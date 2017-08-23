@@ -102,6 +102,20 @@
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
             </div>
 
+            <div data-ng-if="eventConf.alfioPi" class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="panel-title"><i class="fa fa-check"></i> Offline scan and label printing with Alf.io-PI</div>
+                </div>
+                <div class="panel-body">
+                    <div data-ng-repeat="setting in eventConf.alfioPiOptions">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                    </div>
+                    <div ng-if="eventConf.isLabelPrintingEnabled()" class="hidden-xs hidden-sm">
+                        <label-template config="eventConf.labelLayout" data-delete-handler="eventConf.delete(config)"></label-template>
+                    </div>
+                </div>
+            </div>
+
             <div data-ng-if="eventConf.pluginSettingsByPluginId">
                 <div class="page-header">
                     <h2>Plugins</h2>
@@ -111,21 +125,11 @@
                 <div data-ng-repeat="(key, settings) in eventConf.pluginSettingsByPluginId">
                     <div class="page-header"><h3 data-ng-bind="key"></h3></div>
                     <div data-ng-repeat="setting in settings">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-organization="systemConf.organization" display-system-badge="true"></setting>
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-organization="eventConf.organization" display-system-badge="true"></setting>
                     </div>
                 </div>
             </div>
 
-            <div data-ng-if="systemConf.alfioPi" class="panel panel-default">
-                <div class="panel-heading">
-                    <div class="panel-title"><i class="fa fa-check"></i> Offline scan and label printing with Alf.io-PI</div>
-                </div>
-                <div class="panel-body">
-                    <div data-ng-repeat="setting in systemConf.alfioPi.settings">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
-                    </div>
-                </div>
-            </div>
 
             <div class="pull-left wMarginBottom wMarginTop" data-ng-if="eventConf.eventName">
                 <a class="btn btn-default" data-ng-if="eventConf.eventName" data-ui-sref="events.single.detail({eventName: eventConf.eventName})">back to event</a>

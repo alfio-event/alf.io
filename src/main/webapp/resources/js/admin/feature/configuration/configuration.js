@@ -286,12 +286,20 @@
                     loadSettings(eventConf, result[1].data, ConfigurationService);
                     eventConf.pluginSettings = result[2].data;
                     eventConf.pluginSettingsByPluginId = _.groupBy(result[2].data, 'pluginId');
+                    if(eventConf.alfioPi) {
+                        eventConf.alfioPiOptions = _.filter(eventConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT'});
+                        eventConf.labelLayout = _.find(eventConf.alfioPi.settings, function(pi) { return pi.key === 'LABEL_LAYOUT'});
+                    }
                     eventConf.loading = false;
                 }, function() {
                     eventConf.loading = false;
                 });
         };
         load();
+
+        eventConf.isLabelPrintingEnabled = function() {
+            return _.any(eventConf.alfioPi.settings, function(pi) { return pi.key === 'LABEL_PRINTING_ENABLED' && pi.value === "true"});
+        };
 
         eventConf.saveSettings = function(frm) {
             if(!frm.$valid) {

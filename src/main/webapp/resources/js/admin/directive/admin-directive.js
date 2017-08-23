@@ -628,7 +628,8 @@
                 setting: '=obj',
                 displayDeleteIfNeeded: '=',
                 deleteHandler: '&',
-                listValues: '='
+                listValues: '=',
+                updateHandler: '&'
             },
             templateUrl:'/resources/angular-templates/admin/partials/configuration/setting.html',
             link: angular.noop,
@@ -642,6 +643,11 @@
                     return (setting && setting.configurationPathLevel) ? setting.configurationPathLevel.toLowerCase() : "";
                 };
                 $scope.showDeleteBtn = $scope.displayDelete && $scope.setting.id > -1 && $scope.setting.componentType !== 'BOOLEAN';
+                if(angular.isFunction($scope.updateHandler)) {
+                    $scope.onValueChange = function(newVal) {
+                        $scope.updateHandler({config: newVal})
+                    };
+                }
             }
         }
     });
