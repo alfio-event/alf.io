@@ -24,13 +24,14 @@ import alfio.repository.*;
 import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.Validate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -99,7 +100,7 @@ public class EventStatisticsManager {
 
     private Event getEventAndCheckOwnership(String eventName, String username) {
         Event event = eventRepository.findByShortName(eventName);
-        userManager.findOrganizationById(event.getId(), username);
+        userManager.findOrganizationById(event.getOrganizationId(), username);
         return event;
     }
 
