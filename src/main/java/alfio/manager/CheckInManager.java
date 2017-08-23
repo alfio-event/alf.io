@@ -265,6 +265,11 @@ public class CheckInManager {
         };
     }
 
+    public Predicate<Event> isOfflineCheckInAndLabelPrintingEnabled() {
+        return isOfflineCheckInEnabled()
+            .and(event -> configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId()).apply(ConfigurationKeys.LABEL_PRINTING_ENABLED), false));
+    }
+
     public Map<String,String> getEncryptedAttendeesInformation(String eventName, Set<String> additionalFields, List<Integer> ids) {
         return eventRepository.findOptionalByShortName(eventName).filter(isOfflineCheckInEnabled()).map(event -> {
             String eventKey = event.getPrivateKey();
