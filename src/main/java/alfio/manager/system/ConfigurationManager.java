@@ -42,10 +42,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationKeys.PARTIAL_RESERVATION_ID_LENGTH;
-import static alfio.model.system.ConfigurationPathLevel.EVENT;
-import static alfio.model.system.ConfigurationPathLevel.ORGANIZATION;
-import static alfio.model.system.ConfigurationPathLevel.SYSTEM;
+import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.model.system.ConfigurationPathLevel.*;
 import static alfio.util.OptionalWrapper.optionally;
 
 @Component
@@ -294,7 +292,22 @@ public class ConfigurationManager {
         }
         boolean isAdmin = userManager.isAdmin(user);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().filter(checkActualConfigurationLevel(isAdmin, EVENT)).sorted().collect(groupByCategory());
-        return groupByCategory(isAdmin ? union(SYSTEM, EVENT) : EVENT_CONFIGURATION, existing);
+        boolean offlineCheckInEnabled = areBooleanSettingsEnabledForEvent(ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED).test(event);
+        return removeAlfioPISettingsIfNeeded(offlineCheckInEnabled, groupByCategory(isAdmin ? union(SYSTEM, EVENT) : EVENT_CONFIGURATION, existing));
+    }
+
+    public Predicate<Event> areBooleanSettingsEnabledForEvent(ConfigurationKeys... keys) {
+        return event -> Arrays.stream(keys)
+            .allMatch(k -> getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId()).apply(k), false));
+    }
+
+    private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> removeAlfioPISettingsIfNeeded(boolean offlineCheckInEnabled, Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {
+        if(offlineCheckInEnabled) {
+            return settings;
+        }
+        return settings.entrySet().stream()
+            .filter(e -> e.getKey() != ConfigurationKeys.SettingCategory.ALFIO_PI)
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     static Map<ConfigurationKeys.SettingCategory, List<Configuration>> union(ConfigurationPathLevel... levels) {

@@ -24,8 +24,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.audit.ScanAudit;
-import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
@@ -57,6 +55,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static alfio.manager.support.CheckInStatus.*;
+import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @Transactional
@@ -258,16 +257,11 @@ public class CheckInManager {
     }
 
     private Predicate<Event> isOfflineCheckInEnabled() {
-        return event -> {
-            Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathGenerator = Configuration.from(event.getOrganizationId(), event.getId());
-            return configurationManager.getBooleanConfigValue(pathGenerator.apply(ConfigurationKeys.ALFIO_PI_INTEGRATION_ENABLED), false)
-                && configurationManager.getBooleanConfigValue(pathGenerator.apply(ConfigurationKeys.OFFLINE_CHECKIN_ENABLED), false);
-        };
+        return configurationManager.areBooleanSettingsEnabledForEvent(ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED);
     }
 
     public Predicate<Event> isOfflineCheckInAndLabelPrintingEnabled() {
-        return isOfflineCheckInEnabled()
-            .and(event -> configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId()).apply(ConfigurationKeys.LABEL_PRINTING_ENABLED), false));
+        return isOfflineCheckInEnabled().and(configurationManager.areBooleanSettingsEnabledForEvent(LABEL_PRINTING_ENABLED));
     }
 
     public Map<String,String> getEncryptedAttendeesInformation(String eventName, Set<String> additionalFields, List<Integer> ids) {
