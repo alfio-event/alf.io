@@ -130,9 +130,8 @@ public class CheckInApiController {
     public ResponseEntity<LabelLayout> getLabelLayoutForEvent(@PathVariable("eventName") String eventName, Principal principal) {
         return optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
             .filter(checkInManager.isOfflineCheckInAndLabelPrintingEnabled())
-            .flatMap(this::parseLabelLayout)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> new ResponseEntity<>(HttpStatus.NO_CONTENT));
+            .map(this::parseLabelLayout)
+            .orElseGet(() -> new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED));
     }
 
     @RequestMapping(value = "/check-in/{eventName}/offline-identifiers", method = GET)
@@ -147,18 +146,39 @@ public class CheckInApiController {
     @RequestMapping(value = "/check-in/{eventName}/offline", method = POST)
     public Map<String, String> getOfflineEncryptedInfo(@PathVariable("eventName") String eventName,
                                                        @RequestParam(value = "additionalField", required = false) List<String> additionalFields,
-                                                       @RequestBody List<Integer> ids) {
+                                                       @RequestBody List<Integer> ids,
+                                                       Principal principal) {
 
         Validate.isTrue(ids!= null && !ids.isEmpty());
         Validate.isTrue(ids.size() <= 200, "Cannot ask more than 200 ids");
-        Set<String> addFields = Collections.singleton("company");
-        if(additionalFields != null && !additionalFields.isEmpty()) {
-            addFields = new HashSet<>(additionalFields);
-        }
-        return checkInManager.getEncryptedAttendeesInformation(eventName, addFields, ids);
+        return optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
+            .map(event -> {
+                Set<String> addFields = loadLabelLayout(event)
+                    .map(layout -> {
+                        Set<String> union = new HashSet<>(layout.content.thirdRow);
+                        union.addAll(layout.qrCode.additionalInfo);
+                        if(additionalFields != null && !additionalFields.isEmpty()) {
+                            union.addAll(additionalFields);
+                        }
+                        return union;
+                    })
+                    .orElseGet(() -> {
+                        if(additionalFields != null && !additionalFields.isEmpty()) {
+                            return new HashSet<>(additionalFields);
+                        }
+                        return Collections.singleton("company");
+                    });
+                return checkInManager.getEncryptedAttendeesInformation(event, addFields, ids);
+            }).orElse(Collections.emptyMap());
     }
 
-    private Optional<LabelLayout> parseLabelLayout(Event event) {
+    private ResponseEntity<LabelLayout> parseLabelLayout(Event event) {
+        return loadLabelLayout(event)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> new ResponseEntity<>(HttpStatus.NO_CONTENT));
+    }
+
+    private Optional<LabelLayout> loadLabelLayout(Event event) {
         return configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.LABEL_LAYOUT))
             .flatMap(str -> optionally(() -> Json.fromJson(str, LabelLayout.class)));
     }

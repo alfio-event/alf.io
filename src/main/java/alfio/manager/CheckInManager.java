@@ -264,8 +264,8 @@ public class CheckInManager {
         return isOfflineCheckInEnabled().and(configurationManager.areBooleanSettingsEnabledForEvent(LABEL_PRINTING_ENABLED));
     }
 
-    public Map<String,String> getEncryptedAttendeesInformation(String eventName, Set<String> additionalFields, List<Integer> ids) {
-        return eventRepository.findOptionalByShortName(eventName).filter(isOfflineCheckInEnabled()).map(event -> {
+    public Map<String,String> getEncryptedAttendeesInformation(Event ev, Set<String> additionalFields, List<Integer> ids) {
+        return Optional.ofNullable(ev).filter(isOfflineCheckInEnabled()).map(event -> {
             String eventKey = event.getPrivateKey();
 
             Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
@@ -279,8 +279,8 @@ public class CheckInManager {
                 info.put("status", ticket.getStatus().toString());
                 info.put("uuid", ticket.getUuid());
                 if(!additionalFields.isEmpty()) {
-                    ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields)
-                        .forEach(field -> info.put(field.getName(), field.getValue()));
+                    Map<String, String> map = ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
+                    info.put("additionalInfoJson", Json.toJson(map));
                 }
                 String key = ticket.ticketCode(eventKey);
                 return encrypt(key, Json.toJson(info));
