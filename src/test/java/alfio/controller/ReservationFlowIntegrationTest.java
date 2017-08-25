@@ -414,7 +414,7 @@ public class ReservationFlowIntegrationTest {
         configurationRepository.insert(ConfigurationKeys.ALFIO_PI_INTEGRATION_ENABLED.name(), "true", null);
         offlineIdentifiers = checkInApiController.getOfflineIdentifiers(event.getShortName(), 0L, new MockHttpServletResponse());
         assertFalse(offlineIdentifiers.isEmpty());
-        Map<String, String> payload = checkInApiController.getOfflineEncryptedInfo(event.getShortName(), Collections.emptyList(), offlineIdentifiers);
+        Map<String, String> payload = checkInApiController.getOfflineEncryptedInfo(event.getShortName(), Collections.emptyList(), offlineIdentifiers, principal);
         assertEquals(1, payload.size());
         Ticket ticket = ticketAndcheckInResult.getTicket();
         String ticketKey = ticket.hmacTicketInfo(event.getPrivateKey());
@@ -425,7 +425,7 @@ public class ReservationFlowIntegrationTest {
         Map<String, String> jsonPayload = Json.fromJson(ticketPayload, new TypeReference<Map<String, String>>() {
         });
         assertNotNull(jsonPayload);
-        assertEquals(6, jsonPayload.size());
+        assertEquals(7, jsonPayload.size());
         assertEquals("Test", jsonPayload.get("firstName"));
         assertEquals("OTest", jsonPayload.get("lastName"));
         assertEquals("Test OTest", jsonPayload.get("fullName"));
