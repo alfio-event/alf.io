@@ -278,6 +278,7 @@ public class CheckInManager {
                 info.put("email", ticket.getEmail());
                 info.put("status", ticket.getStatus().toString());
                 info.put("uuid", ticket.getUuid());
+                info.put("category", ticket.getTicketCategory().getName());
                 if(!additionalFields.isEmpty()) {
                     Map<String, String> map = ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
                     info.put("additionalInfoJson", Json.toJson(map));

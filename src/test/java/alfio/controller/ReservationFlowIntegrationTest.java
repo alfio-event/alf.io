@@ -425,13 +425,15 @@ public class ReservationFlowIntegrationTest {
         Map<String, String> jsonPayload = Json.fromJson(ticketPayload, new TypeReference<Map<String, String>>() {
         });
         assertNotNull(jsonPayload);
-        assertEquals(7, jsonPayload.size());
+        assertEquals(8, jsonPayload.size());
         assertEquals("Test", jsonPayload.get("firstName"));
         assertEquals("OTest", jsonPayload.get("lastName"));
         assertEquals("Test OTest", jsonPayload.get("fullName"));
         assertEquals(ticket.getUuid(), jsonPayload.get("uuid"));
         assertEquals("testmctest@test.com", jsonPayload.get("email"));
         assertEquals("CHECKED_IN", jsonPayload.get("status"));
+        String categoryName = ticketCategoryRepository.findByEventId(event.getId()).stream().findFirst().orElseThrow(IllegalStateException::new).getName();
+        assertEquals(categoryName, jsonPayload.get("category"));
         //
 
         // check register sponsor scan success flow
