@@ -106,18 +106,18 @@
                     <div class="navbar-left">
                         <div class="collapse navbar-collapse" data-uib-collapse="ctrl.menuCollapsed">
                             <ul class="nav navbar-nav">
-                                <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="organizations">Organizations</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="users">Users</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="configuration.system">Configuration</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="index" ng-click="ctrl.menuCollapsed = true">Dashboard</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="organizations" ng-click="ctrl.menuCollapsed = true">Organizations</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="users" ng-click="ctrl.menuCollapsed = true">Users</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="configuration.system" ng-click="ctrl.menuCollapsed = true">Configuration</a></li>
                             </ul>
                             <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
                                 <li class="navbar-header"><h4>Actions</h4></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.create-reservation({eventName: ctrl.eventName})"><i class="fa fa-magic"></i> create reservation</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.configuration({eventName: ctrl.eventName})"><i class="fa fa-wrench"></i> edit configuration</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.show-resources({eventName: ctrl.eventName})"><i class="fa fa-file-text-o" aria-hidden="true"></i> customize templates</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.compose-custom-message({eventName: ctrl.eventName})"><i class="fa fa-envelope"></i> compose message</a></li>
-                                <li data-ui-sref-active="active" data-ng-if="!ctrl.event.expired"><a data-ui-sref="events.single.checkIn({eventName: ctrl.eventName})"><i class="fa fa-check"></i> Check-in</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.create-reservation({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-magic"></i> create reservation</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.configuration({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-wrench"></i> edit configuration</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.show-resources({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-file-text-o" aria-hidden="true"></i> customize templates</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.compose-custom-message({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-envelope"></i> compose message</a></li>
+                                <li data-ui-sref-active="active" data-ng-if="!ctrl.event.expired"><a data-ui-sref="events.single.checkIn({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-check"></i> Check-in</a></li>
                             </ul>
                             <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
                                 <li class="navbar-header"><h4>Status</h4></li>
@@ -128,32 +128,32 @@
                             <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
                                 <li class="navbar-header"><h4>Navigate</h4></li>
                                 <li role="presentation" data-ui-sref-active="active">
-                                    <a ui-sref="events.single.dataToCollect({eventName: ctrl.eventName})"><i class="fa fa-info-circle"></i> Attendees' data to collect</a>
+                                    <a ui-sref="events.single.dataToCollect({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-info-circle"></i> Attendees' data to collect</a>
                                 </li>
                                 <li role="presentation" data-ui-sref-active="active">
-                                    <a ui-sref="events.single.promoCodes({eventName: ctrl.eventName})"><i class="fa fa-percent"></i> Promo Codes</a>
+                                    <a ui-sref="events.single.promoCodes({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-percent"></i> Promo Codes</a>
                                 </li>
                                 <li role="presentation" data-ui-sref-active="active">
-                                    <a ui-sref="events.single.additionalServices({eventName: ctrl.eventName})"><i class="fa fa-money"></i> Additional options</a>
+                                    <a ui-sref="events.single.additionalServices({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-money"></i> Additional options</a>
                                 </li>
                                 <li role="presentation" data-ui-sref-active="active">
-                                    <a ui-sref="events.single.donations({eventName: ctrl.eventName})"><i class="fa fa-gift"></i> Donation options</a>
+                                    <a ui-sref="events.single.donations({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-gift"></i> Donation options</a>
                                 </li>
                                 <li role="presentation" data-ui-sref-active="active">
-                                    <a data-ui-sref="events.single.reservationsList({eventName:ctrl.eventName})"><i class="fa fa-ticket"></i> Reservations</a>
+                                    <a data-ui-sref="events.single.reservationsList({eventName:ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-ticket"></i> Reservations</a>
                                 </li>
                                 <li role="presentation" data-ui-sref-active="active">
-                                    <a data-ui-sref="events.single.email-log({eventName:ctrl.eventName})"><i class="fa fa-paper-plane-o"></i> E-mail log</a>
+                                    <a data-ui-sref="events.single.email-log({eventName:ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-paper-plane-o"></i> E-mail log</a>
                                 </li>
                                 <li role="presentation" data-ui-sref-active="active">
-                                    <a data-ui-sref="events.single.plugin-log({eventName:ctrl.eventName})"><i class="fa fa-plug"></i> Plugins log</a>
+                                    <a data-ui-sref="events.single.plugin-log({eventName:ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-plug"></i> Plugins log</a>
                                 </li>
                             </ul>
                             <ul class="nav navbar-nav visible-sm visible-xs">
                                 <li class="nav-divider"></li>
                                 <li class="visible-xs visible-sm">
-                                    <div class="pull-left"><a href="#" class="navbar-link" data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-user"></i> {{username}}</a></div>
-                                    <div class="pull-right"><a href="" class="navbar-link" data-ng-click="ctrl.doLogout()"><i class="fa fa-sign-out"></i> Log out</a></div>
+                                    <div class="pull-left"><a href="#" class="navbar-link" ng-click="ctrl.menuCollapsed = true" data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-user"></i> {{username}}</a></div>
+                                    <div class="pull-right"><a href="" class="navbar-link" ng-click="ctrl.menuCollapsed = true" data-ng-click="ctrl.doLogout()"><i class="fa fa-sign-out"></i> Log out</a></div>
                                 </li>
                             </ul>
                         </div>
