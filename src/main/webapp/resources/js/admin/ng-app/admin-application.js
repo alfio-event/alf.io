@@ -718,6 +718,22 @@
             });
         };
 
+        $scope.groupTokensByStatus = function(tokens) {
+            return _.chain(tokens)
+                .filter(function(t) { return t.status !== 'CANCELLED'; })
+                .sortByOrder(['id'], ['desc'])
+                .groupBy(function(token) {
+                    switch(token.status) {
+                        case 'FREE':
+                            return token.sentTimestamp === null ? 'Free' : 'Invitation Sent';
+                        case 'PENDING':
+                            return 'Pending';
+                        case 'TAKEN':
+                            return 'Confirmed';
+                    }
+                }).value();
+        };
+
         $scope.eventHeader = {};
         $scope.eventPrices = {};
 

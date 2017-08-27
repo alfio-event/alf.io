@@ -26,11 +26,11 @@
     </div>
     <div class="panel-body">
         <div class="row">
-            <div class="col-xs-1 hide-overflowing-text">
+            <div class="col-md-1 hide-overflowing-text hidden-xs hidden-sm">
                 <img data-ng-if="event.fileBlobIdIsPresent" data-ng-src="/file/{{event.fileBlobId}}" class="img-responsive event-logo">
                 <a href="{{event.imageUrl}}" data-ng-if="!event.fileBlobIdIsPresent" target="_blank">{{event.imageUrl}}</a>
             </div>
-            <div class="col-xs-6">
+            <div class="col-md-6 col-xs-12">
                 <dl class="dl-horizontal">
                     <dt>Public URL</dt>
                     <dd><a ng-href="{{eventPublicURL}}" target="_blank">{{eventPublicURL}}</a></dd>
@@ -54,7 +54,7 @@
                     <dd>{{event.timeZone}}</dd>
                 </dl>
             </div>
-            <div class="col-xs-5">
+            <div class="col-md-5 hidden-xs hidden-sm">
                 <div data-ng-repeat="cl in event.contentLanguages">
                     <p class="text-muted"><display-commonmark-preview text="event.description[cl.locale]"></display-commonmark-preview> {{event.description[cl.locale]}}</p>
                 </div>

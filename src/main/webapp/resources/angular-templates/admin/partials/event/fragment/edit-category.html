@@ -117,12 +117,17 @@
     <div class="row">
         <div class="col-sm-12 col-md-4">
             <div class="form-group" bs-form-error="ticketCategory.code">
-                <label for="{{buildPrefix($index, 'code')}}">Category code</label>
+                <label for="{{buildPrefix($index, 'code')}}">Access Code</label> <a class="btn btn-xs btn-default" uib-popover-template="'helpCategoryCode.html'" popover-placement="bottom"><i class="fa fa-info-circle"></i> help</a>
+                <script type="text/ng-template" id="helpCategoryCode.html">
+                    <h4>Access Code:</h4>
+                    <p>You can define an access code for each category, either public or restricted, and then distribute the resulting URL.</p>
+                    <p>If someone access the URL, a new 1-ticket reservation will be created for this category.</p>
+                </script>
                 <input type="text" ng-model="ticketCategory.code" id="{{buildPrefix($index, 'code')}}" name="{{buildPrefix($index, 'code')}}" class="form-control" >
             </div>
         </div>
         <div class="col-sm-12 col-md-8" ng-if="ticketCategory.code && ticketCategory.code.length > 0">
-            <label>Access url</label>
+            <label>Access URL</label>
             <p class="form-control-static">
                 {{baseUrl}}/event/{{event.shortName}}/code/{{ticketCategory.code}}
             </p>
