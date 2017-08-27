@@ -218,7 +218,7 @@ public class ReservationFlowIntegrationTest {
 
         List<EventStatistic> eventStatistic = eventStatisticsManager.getAllEventsWithStatistics(user);
         assertEquals(1, eventStatistic.size());
-        assertTrue(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), new Date()).isEmpty());
+        assertTrue(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), DateUtils.addDays(new Date(), 1)).isEmpty());
         EventWithAdditionalInfo eventWithAdditionalInfo = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
         assertEquals(0, eventWithAdditionalInfo.getNotSoldTickets());
         assertEquals(0, eventWithAdditionalInfo.getSoldTickets());
@@ -364,7 +364,7 @@ public class ReservationFlowIntegrationTest {
         assertEquals(CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
 
         // check stats after check in one ticket
-        assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), new Date()).isEmpty());
+        assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), DateUtils.addDays(new Date(), 1)).isEmpty());
         EventWithAdditionalInfo eventWithAdditionalInfo3 = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
         assertEquals(0, eventWithAdditionalInfo3.getNotSoldTickets());
         assertEquals(0, eventWithAdditionalInfo3.getSoldTickets());
@@ -392,7 +392,7 @@ public class ReservationFlowIntegrationTest {
 
 
         // check stats after revert check in one ticket
-        assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), new Date()).isEmpty());
+        assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), DateUtils.addDays(new Date(), 1)).isEmpty());
         EventWithAdditionalInfo eventWithAdditionalInfo4 = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
         assertEquals(0, eventWithAdditionalInfo4.getNotSoldTickets());
         assertEquals(1, eventWithAdditionalInfo4.getSoldTickets());
