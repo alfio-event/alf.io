@@ -121,8 +121,8 @@
                             <hr>
                             <button class="close" aria-label="Close" data-ng-click="toggleTokenViewCollapse(ticketCategory)"><i class="fa fa-close"></i></button>
                             <h4>Tokens</h4>
-                            <div ng-if="containsValidTokens(ticketCategory.tokenStatus)">
-                                <div ng-repeat="(status, tokens) in groupTokensByStatus(ticketCategory.tokenStatus)">
+                            <div ng-if="containsValidTokens(ticketCategory.tokenStatus)" ng-init="tokensByStatus = groupTokensByStatus(ticketCategory.tokenStatus)">
+                                <div ng-repeat="(status, tokens) in tokensByStatus">
                                     <h5><strong>{{status}}</strong></h5>
                                     <ul class="list-inline">
                                         <li data-ng-repeat="token in ::tokens">{{::token.code}}</li>
