@@ -30,7 +30,7 @@ public enum PaymentProxy {
     NONE("no payment required", false, false, Collections.emptySet(), false, Collections.emptySet()),
     ADMIN("manual", false, false, Collections.emptySet(), false, Collections.emptySet()),
     PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL), true, Collections.emptySet()),
-    MOLLIE("mollie", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_MOLLIE), true, Collections.singleton("EUR"));
+    MOLLIE("mollie", false, false, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_MOLLIE), true, Collections.singleton("EUR"));//disabled MOLLIE
 
     private final String description;
     private final boolean deskPayment;

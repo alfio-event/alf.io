@@ -6,8 +6,8 @@
         'STRIPE': 'Credit card payments',
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)',
-        'PAYPAL' : 'PayPal',
-        'MOLLIE' : 'Mollie (€ only): (iDEAL, SOFORT, credit cards, etc.)'
+        'PAYPAL' : 'PayPal'/*,
+        'MOLLIE' : 'Mollie (€ only): (iDEAL, SOFORT, credit cards, etc.)'*/
     });
 
     filters.filter('printSelectedOrganization', function() {
