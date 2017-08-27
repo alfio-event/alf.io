@@ -30,6 +30,6 @@ public class TransactionAndPaymentInfo {
     private final PaymentInformations paymentInformations;
 
     public boolean isSupportRefund() {
-        return paymentMethod.isSupportRefund();
+        return paymentMethod != null && paymentMethod.isSupportRefund();
     }
 }

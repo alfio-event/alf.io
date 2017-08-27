@@ -27,7 +27,6 @@ import alfio.repository.AuditingRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.ErrorsCode;
-import alfio.util.Json;
 import com.paypal.base.rest.PayPalRESTException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
@@ -36,7 +35,6 @@ import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -174,7 +172,7 @@ public class PaymentManager {
                 default:
                     return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, new PaymentInformations(reservation.getPaidAmount(), null));
             }
-        }).orElse(new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformations(reservation.getPaidAmount(), null)));
+        }).orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformations(reservation.getPaidAmount(), null)));
     }
 
     @Data
