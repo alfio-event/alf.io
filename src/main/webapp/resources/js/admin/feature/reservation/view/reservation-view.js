@@ -9,12 +9,12 @@
             onClose: '<',
             onConfirm: '<'
         },
-        controller: ReservationViewCtrl,
+        controller: ['AdminReservationService', 'EventService', '$window', '$stateParams', 'NotificationHandler', ReservationViewCtrl],
         templateUrl: '../resources/js/admin/feature/reservation/view/reservation-view.html'
     });
 
 
-    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams) {
+    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler) {
         var ctrl = this;
 
         ctrl.notification = {
@@ -114,15 +114,13 @@
             ctrl.loading = true;
             var notifyError = function(message) {
                 ctrl.loading = false;
-                delete ctrl.confirmationMessage;
-                ctrl.errorMessage = message || 'An unexpected error has occurred. Please retry';
+                NotificationHandler.showError(message || 'An unexpected error has occurred. Please retry');
             };
             AdminReservationService.notify(ctrl.event.shortName, ctrl.reservation.id, {notification: {customer: customer, attendees:(!customer)}}).then(function(r) {
                 var result = r.data;
                 ctrl.loading = false;
                 if(result.success) {
-                    ctrl.confirmationMessage = 'Success!';
-                    delete ctrl.errorMessage;
+                    NotificationHandler.showSuccess('Success!');
                 } else {
                     notifyError(result.errors.map(function (e) {
                         return e.description;
@@ -131,11 +129,6 @@
             }, function() {
                 notifyError();
             });
-        };
-
-        ctrl.hideMessages = function() {
-            delete ctrl.errorMessage;
-            delete ctrl.confirmationMessage;
         };
 
         ctrl.notifyCustomer = function() {

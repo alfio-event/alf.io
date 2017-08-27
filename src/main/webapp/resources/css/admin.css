@@ -210,6 +210,16 @@ td.cell-wrap {
     .settings-label-top {
         display: inline-block!important;
     }
+
+    .refund-button {
+        margin-top: 10px;
+    }
+
+    .btn-block-xs {
+        display: block;
+        width: 100%;
+        margin-bottom: 5px;
+    }
 }
 
 @media screen and (min-width: 991px) {
@@ -223,6 +233,11 @@ td.cell-wrap {
         left: 20px;
         top: 9px;
     }
+
+    .pull-right-md {
+        float: right !important;
+    }
+
 }
 
 .ngf-hide {
