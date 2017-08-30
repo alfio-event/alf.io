@@ -5,3 +5,4 @@ qrcode-generator/php/*
 qrcode-generator/python/*
 qrcode-generator/ruby/*
 qrcode-generator/ts/*
+dexie/addons/*

@@ -49,3 +49,9 @@
 /ace-builds/src-min/**
 /ace-builds/src-noconflict/**
 /ace-builds/textarea/**
+/dexie/*.json
+/dexie/*.md
+/dexie/addons/**
+/dexie/dist/*.ts
+/dexie/dist/dexie.js*
+/dexie/dist/dexie.es6.js*

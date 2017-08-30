@@ -51,6 +51,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @RequiredArgsConstructor
 public class CheckInApiController {
 
+    private static final String ALFIO_TIMESTAMP_HEADER = "Alfio-TIME";
     private final CheckInManager checkInManager;
     private final EventManager eventManager;
     private final ConfigurationManager configurationManager;
@@ -121,9 +122,21 @@ public class CheckInApiController {
             .orElseGet(() -> new OnSitePaymentConfirmation(false, "Ticket with uuid " + ticketIdentifier + " not found"));
     }
     
-    @RequestMapping(value = "/check-in/{eventId}/ticket", method = GET)
-    public List<FullTicketInfo> listAllTickets(@PathVariable("eventId") int eventId) {
-        return checkInManager.findAllFullTicketInfo(eventId);
+    @RequestMapping(value = "/check-in/{eventId}/ticket-identifiers", method = GET)
+    public List<Integer> findAllIdentifiersForAdminCheckIn(@PathVariable("eventId") int eventId,
+                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
+                                               HttpServletResponse response,
+                                               Principal principal) {
+        response.setHeader(ALFIO_TIMESTAMP_HEADER, Long.toString(new Date().getTime()));
+        return checkInManager.getAttendeesIdentifiers(eventId, changedSince == null ? new Date(0) : new Date(changedSince), principal.getName());
+    }
+
+    @RequestMapping(value = "/check-in/{eventId}/tickets", method = POST)
+    public List<FullTicketInfo> findAllTicketsForAdminCheckIn(@PathVariable("eventId") int eventId,
+                                                              @RequestBody List<Integer> ids,
+                                                              Principal principal) {
+        validateIdList(ids);
+        return checkInManager.getAttendeesInformation(eventId, ids, principal.getName());
     }
 
     @RequestMapping(value = "/check-in/{eventName}/label-layout", method = GET)
@@ -137,9 +150,10 @@ public class CheckInApiController {
     @RequestMapping(value = "/check-in/{eventName}/offline-identifiers", method = GET)
     public List<Integer> getOfflineIdentifiers(@PathVariable("eventName") String eventName,
                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
-                                              HttpServletResponse resp) {
-        resp.setHeader("Alfio-TIME", Long.toString(new Date().getTime()));
-        return checkInManager.getAttendeesIdentifiers(eventName, changedSince == null ? new Date(0) : new Date(changedSince));
+                                              HttpServletResponse resp,
+                                              Principal principal) {
+        resp.setHeader(ALFIO_TIMESTAMP_HEADER, Long.toString(new Date().getTime()));
+        return checkInManager.getAttendeesIdentifiers(eventName, changedSince == null ? new Date(0) : new Date(changedSince), principal.getName());
 
     }
 
@@ -149,8 +163,7 @@ public class CheckInApiController {
                                                        @RequestBody List<Integer> ids,
                                                        Principal principal) {
 
-        Validate.isTrue(ids!= null && !ids.isEmpty());
-        Validate.isTrue(ids.size() <= 200, "Cannot ask more than 200 ids");
+        validateIdList(ids);
         return optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
             .map(event -> {
                 Set<String> addFields = loadLabelLayout(event)
@@ -170,6 +183,11 @@ public class CheckInApiController {
                     });
                 return checkInManager.getEncryptedAttendeesInformation(event, addFields, ids);
             }).orElse(Collections.emptyMap());
+    }
+
+    private static void validateIdList(@RequestBody List<Integer> ids) {
+        Validate.isTrue(ids!= null && !ids.isEmpty());
+        Validate.isTrue(ids.size() <= 200, "Cannot ask more than 200 ids");
     }
 
     private ResponseEntity<LabelLayout> parseLabelLayout(Event event) {

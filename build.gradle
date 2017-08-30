@@ -90,7 +90,7 @@ ext {
         case 'dev-pgsql':
             datasourceDialect = 'PGSQL'
             datasourceDriver = 'org.postgresql.Driver'
-            datasourceUrl = 'jdbc:postgresql://localhost:5432/alfio'
+            datasourceUrl = 'jdbc:postgresql://localhost:5432/k8s_test_alfio'
             datasourceUsername = 'postgres'
             datasourcePassword = 'password'
             datasourceValidationQuery = 'SELECT 1'

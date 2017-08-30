@@ -7,10 +7,18 @@
         <i class="fa fa-info-circle"></i> Scan tickets for event <i>{{event.displayName}}</i> using the <a href="https://play.google.com/store/apps/details?id=alfio.backoffice" target="_blank">Android app</a>, <a href="https://itunes.apple.com/us/app/alf-io/id1203898610" target="_blank">iOS app</a> or the <a data-ng-click="goToScanPage()">embedded scan functionality</a>
     </div>
 
-    <uib-tabset active="active">
+    <div uib-alert type="warning" ng-if="disabled">
+        <i class="fa fa-warning"></i> This page requires state-of-the-art features which your browser doesn't have yet. Try updating it or <a href="https://browsehappy.com" target="_blank">download a new one</a>
+    </div>
+
+    <div class="wMarginBottom" ng-if="!disabled">
+        <uib-progressbar class="progress-striped" value="completedChunks" max="chunks" title="loading..." ng-if="loading" type="success">loading...</uib-progressbar>
+    </div>
+
+    <uib-tabset active="active" ng-if="!disabled">
         <uib-tab index="0">
             <uib-tab-heading>
-                <i class="fa fa-qrcode"></i> To be checked in <span class="badge">{{(tickets | filter: toBeCheckedIn).length}}</span>
+                <i class="fa fa-qrcode"></i> To be checked in <span class="badge">{{count}}</span>
             </uib-tab-heading>
             <div style="margin: 15px 0 15px 0;">
                 <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button>
@@ -19,63 +27,8 @@
             <div>
                 <div class="input-group wMarginBottom">
                     <div class="input-group-addon"><i class="fa fa-search"></i></div>
-                    <input type="text" class="form-control input-sm" data-ng-model="selection.freeText">
-                    <div class="input-group-addon cursor-pointer" data-ng-click="selection.freeText = undefined">Reset</div>
-                </div>
-                <div class="checkbox">
-                    <label><input type="checkbox" data-ng-model="selection.showAdvancedSearch" data-ng-click="toggledAdvancedSearch(selection.showAdvancedSearch)"> advanced search</label>
-                </div>
-                <div data-ng-if="selection.showAdvancedSearch" class="wMarginBottom">
-                    <div class="form-group">
-                        <label>Holder's name</label>
-                        <div>
-                            <input type="text" class="form-control" data-ng-model="advancedSearch.fullName">
-                        </div>
-                    </div>
-                    <div class="form-group" ng-show="event.useFirstAndLastName">
-                        <label>Holder's first name</label>
-                        <div>
-                            <input type="text" class="form-control" data-ng-model="advancedSearch.firstName">
-                        </div>
-                    </div>
-                    <div class="form-group" ng-show="event.useFirstAndLastName">
-                        <label>Holder's last name</label>
-                        <div>
-                            <input type="text" class="form-control" data-ng-model="advancedSearch.lastName">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Holder's e-mail</label>
-                        <div>
-                            <input type="text" class="form-control" data-ng-model="advancedSearch.email">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Reference Number</label>
-                        <div>
-                            <input type="text" class="form-control" data-ng-model="advancedSearch.uuid">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Customer's name</label>
-                        <div>
-                            <input type="text" class="form-control" data-ng-model="advancedSearch.ticketReservation.fullName">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Customer's e-mail</label>
-                        <div>
-                            <input type="text" class="form-control" data-ng-model="advancedSearch.ticketReservation.email">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Order identifier</label>
-                        <div>
-                            <input type="text" class="form-control" data-ng-model="advancedSearch.ticketsReservationId">
-                        </div>
-                    </div>
-
-                    <button class="btn btn-default" data-ng-click="resetAdvancedSearch()">Reset</button>
+                    <input type="text" class="form-control input-sm" data-ng-model="selection.freeText" ng-change="triggerSearch()" ng-model-options="{'debounce':500}" placeholder="Search by first, last name, category name or ticket uuid">
+                    <div class="input-group-addon cursor-pointer" data-ng-click="selection.freeText = undefined; triggerSearch()">Reset</div>
                 </div>
                 <table class="table check-in-data">
                     <thead>
@@ -91,7 +44,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr data-ng-repeat="ticket in tickets | filter: toBeCheckedIn | filter: selection.freeText | filter: advancedSearch | orderBy: ['timestamp', 'ticketReservationId' , 'uuid'] as filterResult">
+                    <tr data-ng-repeat="ticket in tickets">
                         <td data-ng-class-even="'active'" data-label="Status"><i data-ng-class="evaluateTicketStatus(ticket.status)" title="{{::ticket.status | statusText}}"></i></td>
                         <td data-ng-class-even="'active'" data-label="Holder's name">{{::ticket.fullName}}</td>
                         <td data-ng-class-even="'active'" data-label="Holder's e-mail">{{::ticket.email}}</td>
@@ -104,10 +57,13 @@
                     </tbody>
                 </table>
             </div>
+            <div class="text-center wMarginBottom" ng-if="count > itemsPerPage">
+                <uib-pagination total-items="count" ng-model="currentPage" items-per-page="itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
+            </div>
         </uib-tab>
         <uib-tab index="1">
             <uib-tab-heading>
-                <i class="fa fa-check"></i> Checked in <span class="badge">{{(tickets | filter: {status: 'CHECKED_IN'}).length}}</span>
+                <i class="fa fa-check"></i> Checked in <span class="badge">{{ checkedInCount }}</span>
             </uib-tab-heading>
             <div style="margin: 15px 15px 15px 0;">
                 <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button>
@@ -136,7 +92,7 @@
                     <th>Actions</th>
                     </thead>
                     <tbody>
-                    <tr data-ng-repeat="ticket in tickets | filter: {status: 'CHECKED_IN'} | filter: checkedInSelection.freeText | orderBy: ['timestamp', 'ticketReservationId' , 'uuid']">
+                    <tr data-ng-repeat="ticket in checkedInTickets | filter: checkedInSelection.freeText">
                         <td data-ng-class-even="'active'" data-label="Status">{{::ticket.status | statusText}}</td>
                         <td data-ng-class-even="'active'" data-label="Owner's name">{{::ticket.fullName}}</td>
                         <td data-ng-class-even="'active'" data-label="Owner's first name" ng-show="event.useFirstAndLastName">{{::ticket.firstName}}</td>
@@ -154,6 +110,9 @@
                     </tr>
                     </tbody>
                 </table>
+            </div>
+            <div class="text-center wMarginBottom" ng-if="checkedInCount > itemsPerPage">
+                <uib-pagination total-items="checkedInCount" ng-model="currentPageCheckedIn" ng-change="updatePage()" items-per-page="itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
             </div>
         </uib-tab>
     </uib-tabset>

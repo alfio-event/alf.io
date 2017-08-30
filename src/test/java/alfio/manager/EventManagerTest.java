@@ -24,6 +24,7 @@ import alfio.model.TicketCategory;
 import alfio.model.TicketCategoryStatisticView;
 import alfio.model.user.Organization;
 import alfio.repository.*;
+import alfio.repository.user.OrganizationRepository;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -33,10 +34,7 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.manager.testSupport.TicketCategoryGenerator.generateCategoryStream;
@@ -57,7 +55,7 @@ public class EventManagerTest {{
         TicketCategory updated = mock(TicketCategory.class);
         TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
         NamedParameterJdbcTemplate jdbc = it.usesMock(NamedParameterJdbcTemplate.class);
-        EventManager eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, jdbc, null, pluginManager, null, null, null, null, null, null);
+        EventManager eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, jdbc, null, pluginManager, null, null, null, null, null, null, null);
         when(original.getId()).thenReturn(20);
         when(updated.getId()).thenReturn(30);
         when(original.getSrcPriceCts()).thenReturn(1000);
@@ -94,7 +92,7 @@ public class EventManagerTest {{
 
     describe("handlePriceChange", it -> {
         TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
-        EventManager eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, null, null, pluginManager, null, null, null, null, null, null);
+        EventManager eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, null, null, pluginManager, null, null, null, null, null, null, null);
         TicketCategory original = mock(TicketCategory.class);
         TicketCategory updated = mock(TicketCategory.class);
         Event event = mock(Event.class);
@@ -132,7 +130,7 @@ public class EventManagerTest {{
     describe("handleTokenModification", it -> {
         SpecialPriceRepository specialPriceRepository = it.usesMock(SpecialPriceRepository.class);
         NamedParameterJdbcTemplate jdbc = it.usesMock(NamedParameterJdbcTemplate.class);
-        EventManager eventManager = new EventManager(null, null, null, null, null, null, specialPriceRepository, null, jdbc, null, pluginManager, null, null, null, null, null, null);
+        EventManager eventManager = new EventManager(null, null, null, null, null, null, specialPriceRepository, null, jdbc, null, pluginManager, null, null, null, null, null, null, null);
         TicketCategory original = mock(TicketCategory.class);
         TicketCategory updated = mock(TicketCategory.class);
 
@@ -196,7 +194,7 @@ public class EventManagerTest {{
         TicketCategoryRepository ticketCategoryRepository = it.usesMock(TicketCategoryRepository.class);
         TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository = it.usesMock(TicketCategoryDescriptionRepository.class);
         EventRepository eventRepository = it.usesMock(EventRepository.class);
-        EventManager eventManager = new EventManager(null, eventRepository, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, pluginManager, null, null, null, null, null, null);
+        EventManager eventManager = new EventManager(null, eventRepository, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, pluginManager, null, null, null, null, null, null, null);
         Event event = mock(Event.class);
         int availableSeats = 20;
         when(eventRepository.countExistingTickets(0)).thenReturn(availableSeats);
@@ -250,8 +248,8 @@ public class EventManagerTest {{
         Event event = mock(Event.class);
         TicketCategory ticketCategory = it.usesMock(TicketCategory.class);
 
-
-        EventManager eventManager = new EventManager(userManager, eventRepository, eventDescriptionRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository, ticketRepository, specialPriceRepository, null, null, null, pluginManager, null, null, null, null, null, null);
+        OrganizationRepository organizationRepository = it.usesMock(OrganizationRepository.class);
+        EventManager eventManager = new EventManager(userManager, eventRepository, eventDescriptionRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository, ticketRepository, specialPriceRepository, null, null, null, pluginManager, null, null, null, null, null, null, organizationRepository);
         when(event.getId()).thenReturn(eventId);
         when(event.getOrganizationId()).thenReturn(organizationId);
         Organization organization = mock(Organization.class);
@@ -259,7 +257,9 @@ public class EventManagerTest {{
 
         it.isSetupWith(() -> {
             when(eventRepository.findByShortName(eq(eventName))).thenReturn(event);
+            when(eventRepository.findOptionalByShortName(eq(eventName))).thenReturn(Optional.of(event));
             when(ticketCategory.getId()).thenReturn(categoryId);
+            when(organizationRepository.findOrganizationForUser(anyString(), anyInt())).thenReturn(Optional.of(organization));
         });
 
         it.should("not unbind from an event which doesn't contain unbounded categories", expect -> {
@@ -267,8 +267,8 @@ public class EventManagerTest {{
             when(userManager.findUserOrganizations(eq(username))).thenReturn(singletonList(organization));
             expect.exception(IllegalArgumentException.class, () -> eventManager.unbindTickets(eventName, categoryId, username));
             verify(ticketCategoryRepository).countUnboundedCategoriesByEventId(eq(eventId));
-            verify(userManager).findUserOrganizations(eq(username));
-            verify(eventRepository).findByShortName(eq(eventName));
+            verify(organizationRepository).findOrganizationForUser(eq(username), eq(organizationId));
+            verify(eventRepository).findOptionalByShortName(eq(eventName));
             verifyNoMoreInteractions(ticketCategoryRepository, userManager, eventRepository, ticketRepository);
         });
 
@@ -282,8 +282,8 @@ public class EventManagerTest {{
 
             expect.exception(IllegalArgumentException.class, () -> eventManager.unbindTickets(eventName, categoryId, username));
             verify(ticketCategoryRepository).countUnboundedCategoriesByEventId(eq(eventId));
-            verify(userManager).findUserOrganizations(eq(username));
-            verify(eventRepository).findByShortName(eq(eventName));
+            verify(organizationRepository).findOrganizationForUser(eq(username), eq(organizationId));
+            verify(eventRepository).findOptionalByShortName(eq(eventName));
         });
 
         it.should("unbind tickets from a bounded category", expect -> {
@@ -305,8 +305,8 @@ public class EventManagerTest {{
             eventManager.unbindTickets(eventName, categoryId, username);
 
             verify(ticketCategoryRepository).countUnboundedCategoriesByEventId(eq(eventId));
-            verify(userManager).findUserOrganizations(eq(username));
-            verify(eventRepository).findByShortName(eq(eventName));
+            verify(organizationRepository).findOrganizationForUser(eq(username), eq(organizationId));
+            verify(eventRepository).findOptionalByShortName(eq(eventName));
             verify(ticketRepository).selectTicketInCategoryForUpdate(eq(eventId), eq(categoryId), eq(notSold), eq(singletonList(Ticket.TicketStatus.FREE.name())));
             verify(ticketRepository).unbindTicketsFromCategory(eq(eventId), eq(categoryId), eq(lockedTickets));
             verify(ticketCategoryRepository).updateSeatsAvailability(eq(categoryId), eq(0));

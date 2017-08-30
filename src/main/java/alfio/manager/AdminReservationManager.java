@@ -517,7 +517,7 @@ public class AdminReservationManager {
     }
 
     private void handleTicketsRefund(List<Integer> toRefund, Event e, TicketReservation reservation, Map<Integer, Ticket> ticketsById, String username) {
-        if(!reservation.getPaymentMethod().isSupportRefund()) {
+        if(reservation.getPaymentMethod() == null || !reservation.getPaymentMethod().isSupportRefund()) {
             return;
         }
         // refund each selected ticket

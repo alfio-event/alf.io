@@ -37,6 +37,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
@@ -100,23 +101,28 @@ public class EventManager {
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final Flyway flyway;
     private final Environment environment;
+    private final OrganizationRepository organizationRepository;
 
 
     public Event getSingleEvent(String eventName, String username) {
-        final Event event = eventRepository.findByShortName(eventName);
-        checkOwnership(event, username, event.getOrganizationId());
-        return event;
+        return eventRepository.findOptionalByShortName(eventName)
+            .filter(checkOwnership(username, organizationRepository))
+            .orElseThrow(IllegalStateException::new);
     }
 
     public Event getSingleEventById(int eventId, String username) {
-        final Event event = eventRepository.findById(eventId);
-        checkOwnership(event, username, event.getOrganizationId());
-        return event;
+        return optionally(() -> eventRepository.findById(eventId))
+            .filter(checkOwnership(username, organizationRepository))
+            .orElseThrow(IllegalStateException::new);
     }
 
     public void checkOwnership(Event event, String username, int organizationId) {
         Validate.isTrue(organizationId == event.getOrganizationId(), "invalid organizationId");
-        userManager.findOrganizationById(organizationId, username);
+        Validate.isTrue(checkOwnership(username, organizationRepository).test(event), "User is not authorized");
+    }
+
+    public static Predicate<Event> checkOwnership(String username, OrganizationRepository organizationRepository) {
+        return event -> organizationRepository.findOrganizationForUser(username, event.getOrganizationId()).isPresent();
     }
 
     public List<TicketCategory> loadTicketCategories(Event event) {

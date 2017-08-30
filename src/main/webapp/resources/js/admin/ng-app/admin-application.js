@@ -325,8 +325,19 @@
         ctrl.toggleCollapse = function(currentStatus) {
             ctrl.menuCollapsed = !currentStatus;
         };
+        var deleteCheckInDatabase = function () {
+            try {
+                Dexie.delete('AlfioDatabase');
+                $window.sessionStorage.clear();
+            } catch (e) {
+
+            }
+        };
+        $window.onClose = deleteCheckInDatabase;
         ctrl.doLogout = function() {
             UtilsService.logout().then(function() {
+                //delete alf.io IndexedDb
+                deleteCheckInDatabase();
                 $window.location.reload();
             });
         };
@@ -1082,13 +1093,29 @@
         };
         $scope.uploadUrl = '/admin/api/events/'+$stateParams.eventName+'/categories/'+$stateParams.categoryId+'/link-codes';
     });
-    
-    admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService, AdminReservationService, $uibModal) {
+
+
+    admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log,
+                                                        $state, EventService, CheckInService,
+                                                        AdminReservationService, $uibModal, $window, $q,
+                                                        NotificationHandler) {
 
         $scope.selection = {};
         $scope.checkedInSelection = {};
-
+        $scope.itemsPerPage = 50;
+        $scope.currentPage = 1;
+        $scope.currentPageCheckedIn = 1;
         $scope.advancedSearch = {};
+        $scope.tickets = [];
+        $scope.checkedInTickets = [];
+
+        var db = new Dexie('AlfioDatabase', {autoOpen: false});
+        db.version(1).stores({
+            alfioCheckIn: "id, status, lastName"
+        });
+        db.open()['catch'](function(err) {
+            $scope.disabled = true;
+        });
 
         $scope.resetAdvancedSearch = function() {
             $scope.advancedSearch = {};
@@ -1108,19 +1135,38 @@
 
         EventService.getEvent($stateParams.eventName).success(function(result) {
             $scope.event = result.event;
-            CheckInService.findAllTickets(result.event.id).success(function(tickets) {
-                $scope.tickets = tickets;
-            });
+            loadTickets(result.event.id);
         });
 
-        $scope.toBeCheckedIn = function(ticket) {
-            return  ['TO_BE_PAID', 'ACQUIRED'].indexOf(ticket.status) >= 0;
-        };
-
-
         function reloadTickets() {
-            CheckInService.findAllTickets($scope.event.id).success(function(tickets) {
-                $scope.tickets = tickets;
+            loadTickets($scope.event.id);
+        }
+
+        function loadTickets(eventId) {
+            return CheckInService.findAllTicketIds(eventId).then(function(resp) {
+                var chain = $q.when([]);
+                if(resp.data.length > 0) {
+                    var chunks = _.chunk(resp.data, 200);
+                    $scope.chunks = chunks.length;
+                    $scope.loading = true;
+                    var completedChunks = 0;
+                    $scope.completedChunks = completedChunks;
+                    _.forEach(chunks, function(array) {
+                        chain = chain.then(function() {
+                            return CheckInService.downloadTickets(eventId, array)
+                                .then(function(resp) {
+                                    $scope.completedChunks = ++completedChunks;
+                                    db.transaction('rw', db.alfioCheckIn, function() {
+                                        return db.alfioCheckIn.bulkPut(resp.data);
+                                    });
+                                    return resp.data;
+                                });
+                        });
+                    });
+                }
+                return chain.then(function() {
+                    loadTicketsFromDB(db, $scope);
+                });
             });
         }
         
@@ -1157,7 +1203,7 @@
                     }
                 }
             })
-        }
+        };
 
         var parentScope = $scope;
 
@@ -1199,9 +1245,17 @@
         };
 
         $scope.manualCheckIn = function(ticket) {
-            CheckInService.manualCheckIn(ticket).then($scope.reloadTickets).then(function() {
-                $scope.selection = {};
-            });
+            CheckInService.manualCheckIn(ticket)
+                .then(function(result) {
+                    if(result.data) {
+                        return NotificationHandler.showSuccess(ticket.fullName+" checked in!")
+                    } else {
+                        return NotificationHandler.showWarning("Can't check-in "+ticket.fullName)
+                    }
+                })
+                .then($scope.reloadTickets).then(function() {
+                    $scope.selection = {};
+                });
         };
 
         $scope.showQrCode = function(ticket, event) {
@@ -1222,7 +1276,81 @@
         };
 
         $scope.revertCheckIn = function(ticket) {
-            CheckInService.revertCheckIn(ticket).then($scope.reloadTickets);
+            CheckInService.revertCheckIn(ticket).then(function(result) {
+                if(result.data) {
+                    NotificationHandler.showSuccess("Reverted "+ticket.fullName);
+                }
+            }).then($scope.reloadTickets);
+        };
+
+        $scope.triggerSearch = function() {
+            loadTicketsFromDB(db, $scope);
+        };
+
+        var loadTicketsFromDB = function (db, $scope) {
+
+            var eventId = $scope.event.id;
+            var query = $scope.selection.freeText;
+            var offset = query ? 0 : $scope.itemsPerPage * ($scope.currentPage - 1);
+            var filter = function(ticket) {
+                return ticket.eventId === eventId && (!query || query === '' || (ticket.fullName +"/"+ ticket.email +"/"+ ticket.ticketCategory.name +"/"+ ticket.uuid).toLowerCase().indexOf(query.toLowerCase()) > -1);
+            };
+
+            var deferred1 = $q.defer();
+            var deferred2 = $q.defer();
+            db.alfioCheckIn
+                .where("status")
+                .notEqual('CHECKED_IN')
+                .and(filter)
+                .offset(offset)
+                .limit($scope.itemsPerPage)
+                .toArray()
+                .then(function (tickets) {
+                    $scope.$apply(function () {
+                        $scope.tickets = tickets;
+                        deferred1.resolve();
+                    });
+                });
+
+            db.alfioCheckIn
+                .where("status")
+                .equals('CHECKED_IN')
+                .and(filter)
+                .offset(offset)
+                .limit($scope.itemsPerPage)
+                .toArray()
+                .then(function(tickets) {
+                    $scope.$apply(function() {
+                        $scope.checkedInTickets = tickets;
+                        deferred2.resolve();
+                    });
+                });
+
+            db.alfioCheckIn
+                .where("status")
+                .notEqual('CHECKED_IN')
+                .and(filter)
+                .count()
+                .then(function (count) {
+                    $scope.$apply(function () {
+                        $scope.count = count;
+                    });
+                });
+
+            db.alfioCheckIn
+                .where("status")
+                .equals('CHECKED_IN')
+                .and(filter)
+                .count()
+                .then(function(count) {
+                    $scope.checkedInCount = count;
+                });
+
+            $q.all([deferred1.promise, deferred2.promise]).then(function() {
+                $scope.loading = false;
+            })
+
+
         };
     });
 
@@ -1579,6 +1707,11 @@
     }]);
 
     admin.run(function($rootScope, PriceCalculator) {
+
+        window.onClose = function() {
+
+        };
+
         $rootScope.evaluateBarType = function(index) {
             var barClasses = ['warning', 'info', 'success'];
             if(index < barClasses.length) {

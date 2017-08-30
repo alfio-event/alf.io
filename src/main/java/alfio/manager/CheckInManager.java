@@ -27,6 +27,7 @@ import alfio.model.audit.ScanAudit;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
@@ -56,6 +57,7 @@ import java.util.stream.Collectors;
 
 import static alfio.manager.support.CheckInStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.OptionalWrapper.optionally;
 
 @Component
 @Transactional
@@ -70,6 +72,7 @@ public class CheckInManager {
     private final ScanAuditRepository scanAuditRepository;
     private final AuditingRepository auditingRepository;
     private final ConfigurationManager configurationManager;
+    private final OrganizationRepository organizationRepository;
 
 
     private void checkIn(String uuid) {
@@ -249,11 +252,26 @@ public class CheckInManager {
         }
     }
 
-    public List<Integer> getAttendeesIdentifiers(String eventName, Date changedSince) {
+    public List<Integer> getAttendeesIdentifiers(String eventName, Date changedSince, String username) {
         return eventRepository.findOptionalByShortName(eventName)
+            .filter(EventManager.checkOwnership(username, organizationRepository))
             .filter(isOfflineCheckInEnabled())
             .map(event -> ticketRepository.findAllAssignedByEventId(event.getId(), changedSince))
             .orElseGet(Collections::emptyList);
+    }
+
+    public List<Integer> getAttendeesIdentifiers(int eventId, Date changedSince, String username) {
+        return optionally(() -> eventRepository.findById(eventId))
+            .filter(EventManager.checkOwnership(username, organizationRepository))
+            .map(event -> ticketRepository.findAllAssignedByEventId(event.getId(), changedSince))
+            .orElse(Collections.emptyList());
+    }
+
+    public List<FullTicketInfo> getAttendeesInformation(int eventId, List<Integer> ids, String username) {
+        return optionally(() -> eventRepository.findById(eventId))
+            .filter(EventManager.checkOwnership(username, organizationRepository))
+            .map(event -> ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId(), ids))
+            .orElse(Collections.emptyList());
     }
 
     private Predicate<Event> isOfflineCheckInEnabled() {
