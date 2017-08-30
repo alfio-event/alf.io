@@ -20,16 +20,23 @@
             <uib-tab-heading>
                 <i class="fa fa-qrcode"></i> Pending <span class="badge">{{count}}</span>
             </uib-tab-heading>
-            <div style="margin: 15px 0 15px 0;">
-                <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button>
-                <button ng-click="newReservationsModal(event)" class="btn btn-success pull-right" type="button"><i class="fa fa-plus"></i> Add new attendees</button>
+            <div class="row" style="margin: 15px 0 15px 0">
+                <div class="col-xs-6 col-md-2 col-md-push-8">
+                    <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button>
+                </div>
+                <div class="col-xs-6 col-md-2 col-md-push-8">
+                    <button ng-click="newReservationsModal(event)" class="btn btn-success pull-right" type="button"><i class="fa fa-plus"></i> Add new attendees</button>
+                </div>
+                <div class="col-xs-12 col-md-8 col-md-pull-4">
+                    <div class="input-group">
+                        <div class="input-group-addon"><i class="fa fa-search"></i></div>
+                        <input type="text" class="form-control" data-ng-model="selection.freeText" ng-change="triggerSearch()" ng-model-options="{'debounce':500}" placeholder="Search by first, last name, category name or ticket uuid">
+                        <div class="input-group-addon cursor-pointer" data-ng-click="selection.freeText = undefined; triggerSearch()">Reset</div>
+                    </div>
+                </div>
+
             </div>
             <div>
-                <div class="input-group wMarginBottom">
-                    <div class="input-group-addon"><i class="fa fa-search"></i></div>
-                    <input type="text" class="form-control input-sm" data-ng-model="selection.freeText" ng-change="triggerSearch()" ng-model-options="{'debounce':500}" placeholder="Search by first, last name, category name or ticket uuid">
-                    <div class="input-group-addon cursor-pointer" data-ng-click="selection.freeText = undefined; triggerSearch()">Reset</div>
-                </div>
                 <table class="table check-in-data">
                     <thead>
                     <tr>
@@ -58,20 +65,24 @@
                 </table>
             </div>
             <div class="text-center wMarginBottom" ng-if="count > itemsPerPage">
-                <uib-pagination total-items="count" ng-model="currentPage" items-per-page="itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
+                <uib-pagination total-items="count" ng-model="currentPage" ng-change="updatePage(currentPage)" items-per-page="itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
             </div>
         </uib-tab>
         <uib-tab index="1">
             <uib-tab-heading>
                 <i class="fa fa-check"></i> Checked in <span class="badge">{{ checkedInCount }}</span>
             </uib-tab-heading>
-            <div style="margin: 15px 15px 15px 0;">
-                <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button>
-            </div>
-            <div class="input-group wMarginBottom">
-                <div class="input-group-addon"><i class="fa fa-search"></i></div>
-                <input type="text" class="form-control input-sm" data-ng-model="checkedInSelection.freeText">
-                <div class="input-group-addon cursor-pointer" data-ng-click="checkedInSelection.freeText = undefined">Reset</div>
+            <div style="margin: 15px 0 15px 0;" class="row">
+                <div class="col-xs-1">
+                    <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button>
+                </div>
+                <div class="col-xs-11">
+                    <div class="input-group">
+                        <div class="input-group-addon"><i class="fa fa-search"></i></div>
+                        <input type="text" class="form-control" data-ng-model="checkedInSelection.freeText">
+                        <div class="input-group-addon cursor-pointer" data-ng-click="checkedInSelection.freeText = undefined">Reset</div>
+                    </div>
+                </div>
             </div>
             <div>
                 <table class="table check-in-data">

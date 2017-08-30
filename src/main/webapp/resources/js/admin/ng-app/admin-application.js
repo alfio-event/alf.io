@@ -1102,7 +1102,7 @@
 
         $scope.selection = {};
         $scope.checkedInSelection = {};
-        $scope.itemsPerPage = 50;
+        $scope.itemsPerPage = 20;
         $scope.currentPage = 1;
         $scope.currentPageCheckedIn = 1;
         $scope.advancedSearch = {};
@@ -1289,11 +1289,16 @@
             loadTicketsFromDB(db, $scope);
         };
 
-        var loadTicketsFromDB = function (db, $scope) {
+        $scope.updatePage = function(newPage) {
+            loadTicketsFromDB(db, $scope, newPage);
+        };
+
+        var loadTicketsFromDB = function (db, $scope, newPage) {
 
             var eventId = $scope.event.id;
             var query = $scope.selection.freeText;
-            var offset = query ? 0 : $scope.itemsPerPage * ($scope.currentPage - 1);
+            var page = newPage || $scope.currentPage;
+            var offset = query ? 0 : $scope.itemsPerPage * (page - 1);
             var filter = function(ticket) {
                 return ticket.eventId === eventId && (!query || query === '' || (ticket.fullName +"/"+ ticket.email +"/"+ ticket.ticketCategory.name +"/"+ ticket.uuid).toLowerCase().indexOf(query.toLowerCase()) > -1);
             };
@@ -1353,8 +1358,6 @@
             $q.all([deferred1.promise, deferred2.promise]).then(function() {
                 $scope.loading = false;
             })
-
-
         };
     });
 
