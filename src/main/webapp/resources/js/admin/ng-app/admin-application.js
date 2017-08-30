@@ -1712,10 +1712,6 @@
 
     admin.run(function($rootScope, PriceCalculator) {
 
-        window.onClose = function() {
-
-        };
-
         $rootScope.evaluateBarType = function(index) {
             var barClasses = ['warning', 'info', 'success'];
             if(index < barClasses.length) {
