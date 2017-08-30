@@ -830,6 +830,7 @@
 
                 ctrl.currentView = detectCurrentView($state.current);
                 ctrl.isDetail = ctrl.currentView === 'EVENT_DETAIL';
+                ctrl.displayEventData = $state.current.data && $state.current.data.displayEventData;
                 loadEventData();
                 toUnbind.push($rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
                     ctrl.currentView = detectCurrentView(toState);

@@ -1145,6 +1145,7 @@
         function loadTickets(eventId) {
             return CheckInService.findAllTicketIds(eventId).then(function(resp) {
                 var chain = $q.when([]);
+                var transactions = [];
                 if(resp.data.length > 0) {
                     var chunks = _.chunk(resp.data, 200);
                     $scope.chunks = chunks.length;
@@ -1156,16 +1157,17 @@
                             return CheckInService.downloadTickets(eventId, array)
                                 .then(function(resp) {
                                     $scope.completedChunks = ++completedChunks;
-                                    db.transaction('rw', db.alfioCheckIn, function() {
+                                    transactions.push(db.transaction('rw', db.alfioCheckIn, function() {
                                         return db.alfioCheckIn.bulkPut(resp.data);
-                                    });
-                                    return resp.data;
+                                    }));
                                 });
                         });
                     });
                 }
                 return chain.then(function() {
-                    loadTicketsFromDB(db, $scope);
+                    $q.all(transactions).then(function() {
+                        loadTicketsFromDB(db, $scope);
+                    });
                 });
             });
         }
@@ -1306,10 +1308,10 @@
                 .limit($scope.itemsPerPage)
                 .toArray()
                 .then(function (tickets) {
-                    $scope.$apply(function () {
+                    $timeout(function () {
                         $scope.tickets = tickets;
                         deferred1.resolve();
-                    });
+                    }, 50);
                 });
 
             db.alfioCheckIn
@@ -1320,10 +1322,10 @@
                 .limit($scope.itemsPerPage)
                 .toArray()
                 .then(function(tickets) {
-                    $scope.$apply(function() {
+                    $timeout(function() {
                         $scope.checkedInTickets = tickets;
                         deferred2.resolve();
-                    });
+                    }, 50);
                 });
 
             db.alfioCheckIn
@@ -1332,9 +1334,9 @@
                 .and(filter)
                 .count()
                 .then(function (count) {
-                    $scope.$apply(function () {
+                    $timeout(function () {
                         $scope.count = count;
-                    });
+                    }, 50);
                 });
 
             db.alfioCheckIn
@@ -1343,7 +1345,9 @@
                 .and(filter)
                 .count()
                 .then(function(count) {
-                    $scope.checkedInCount = count;
+                    $timeout(function() {
+                        $scope.checkedInCount = count;
+                    }, 50);
                 });
 
             $q.all([deferred1.promise, deferred2.promise]).then(function() {

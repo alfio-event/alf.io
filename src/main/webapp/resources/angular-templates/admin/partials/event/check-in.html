@@ -1,4 +1,4 @@
-<div class="container">
+<div class="container" container-fluid-responsive="">
     <div class="page-header">
         <h1>Check-In: {{event.displayName}}</h1>
     </div>
@@ -18,7 +18,7 @@
     <uib-tabset active="active" ng-if="!disabled">
         <uib-tab index="0">
             <uib-tab-heading>
-                <i class="fa fa-qrcode"></i> To be checked in <span class="badge">{{count}}</span>
+                <i class="fa fa-qrcode"></i> Pending <span class="badge">{{count}}</span>
             </uib-tab-heading>
             <div style="margin: 15px 0 15px 0;">
                 <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button>

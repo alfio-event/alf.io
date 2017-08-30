@@ -171,20 +171,17 @@
         </div>
     </div>
     <div growl></div>
-    <div data-ng-controller="LayoutController as ctrl" data-ng-switch="ctrl.displaySidebar">
-        <div class="container-fluid menu-spacer" data-ng-show="ctrl.displaySidebar">
+    <div data-ng-controller="LayoutController as ctrl">
+        <div class="container-fluid menu-spacer">
             <div class="row">
-                <div class="hidden-xs hidden-sm col-md-3 col-lg-2">
+                <div class="hidden-xs hidden-sm col-md-3 col-lg-2" ng-if="ctrl.displaySidebar">
                     <alfio-sidebar></alfio-sidebar>
                 </div>
-                <div class="col-sm-12 col-xs-12 col-md-9">
+                <div class="col-sm-12 col-xs-12" ng-class="{'col-md-9': ctrl.displaySidebar}">
                     <div data-ui-view></div>
                 </div>
             </div>
-        </div>
-        <div class="container-fluid menu-spacer" data-ng-if="!ctrl.displaySidebar">
-            <div data-ui-view></div>
-            <footer class="text-center">
+            <footer class="text-center" ng-if="!ctrl.displaySidebar">
                 <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{alfioVersion}}</h5>
                 <small><a href="https://github.com/exteso/alf.io/issues" target="_blank">report an issue</a> or <a href="https://groups.google.com/d/forum/alfio" target="_blank">ask for help</a></small>
                 <div class="wMarginTop10px">
