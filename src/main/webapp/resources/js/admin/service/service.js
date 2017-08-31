@@ -610,6 +610,12 @@
 
     baseServices.service('WaitingQueueService', ['$http', 'HttpErrorHandler', function($http, HttpErrorHandler) {
         return {
+            getWaitingQueueStatus: function(eventName) {
+                return $http.get('/admin/api/event/'+eventName+'/waiting-queue/status').error(HttpErrorHandler.handle);
+            },
+            setPaused: function(eventName, status) {
+                return $http.put('/admin/api/event/'+eventName+'/waiting-queue/status', {status: status}).error(HttpErrorHandler.handle);
+            },
             countSubscribers: function(eventName) {
                 return $http.get('/admin/api/event/'+eventName+'/waiting-queue/count').error(HttpErrorHandler.handle);
             },

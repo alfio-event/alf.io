@@ -72,6 +72,10 @@ public class WaitingQueueManager {
 
     public boolean subscribe(Event event, CustomerName customerName, String email, Integer selectedCategoryId, Locale userLanguage) {
         try {
+            if(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), STOP_WAITING_QUEUE_SUBSCRIPTIONS), false)) {
+                log.info("waiting queue subscription denied for event {} ({})", event.getShortName(), event.getId());
+                return false;
+            }
             WaitingQueueSubscription.Type subscriptionType = getSubscriptionType(event);
             validateSubscriptionType(event, subscriptionType);
             validateSelectedCategoryId(event.getId(), selectedCategoryId);

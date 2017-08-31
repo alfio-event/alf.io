@@ -9,6 +9,8 @@
         <button class="btn btn-sm btn-default" data-ng-click="editPrices()"><i class="fa fa-edit"></i> edit</button>
     </prices>
 
+    <waiting-queue-status event-name="event.shortName"></waiting-queue-status>
+
     <div class="page-header visible-sm visible-xs" data-ng-if="isInternal(event) && pendingReservations.length > 0">
         <h3>Payments to be confirmed</h3>
         <h5>There are reservations for which a payment has not yet confirmed.</h5>

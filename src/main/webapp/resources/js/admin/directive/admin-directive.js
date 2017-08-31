@@ -692,6 +692,30 @@
         }
     });
 
+    directives.directive('waitingQueueStatus', function() {
+        return {
+            restrict: 'E',
+            bindToController: true,
+            scope: {
+                eventName: '='
+            },
+            controllerAs: 'ctrl',
+            controller: ['WaitingQueueService', function(WaitingQueueService) {
+                var ctrl = this;
+                var storeStatus = function (result) {
+                    var status = result.data;
+                    ctrl.active = status.active;
+                    ctrl.paused = status.paused;
+                };
+                WaitingQueueService.getWaitingQueueStatus(ctrl.eventName).then(storeStatus);
+                ctrl.togglePaused = function() {
+                    WaitingQueueService.setPaused(ctrl.eventName, !ctrl.paused).then(storeStatus);
+                }
+            }],
+            templateUrl: '/resources/angular-templates/admin/partials/waiting-queue/status.html'
+        }
+    });
+
     directives.directive('validateShortName', ['UtilsService', function(UtilsService) {
         return {
             require: 'ngModel',
