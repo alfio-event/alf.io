@@ -152,9 +152,13 @@ public class CheckInApiController {
                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
                                               HttpServletResponse resp,
                                               Principal principal) {
-        resp.setHeader(ALFIO_TIMESTAMP_HEADER, Long.toString(new Date().getTime()));
-        return checkInManager.getAttendeesIdentifiers(eventName, changedSince == null ? new Date(0) : new Date(changedSince), principal.getName());
+        Date since = changedSince == null ? new Date(0) : new Date(changedSince);
+        Optional<List<Integer>> ids = optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
+            .filter(checkInManager.isOfflineCheckInEnabled())
+            .map(event -> checkInManager.getAttendeesIdentifiers(event, since, principal.getName()));
 
+        resp.setHeader(ALFIO_TIMESTAMP_HEADER, ids.isPresent() ? Long.toString(new Date().getTime()) : "0");
+        return ids.orElse(Collections.emptyList());
     }
 
     @RequestMapping(value = "/check-in/{eventName}/offline", method = POST)

@@ -252,8 +252,8 @@ public class CheckInManager {
         }
     }
 
-    public List<Integer> getAttendeesIdentifiers(String eventName, Date changedSince, String username) {
-        return eventRepository.findOptionalByShortName(eventName)
+    public List<Integer> getAttendeesIdentifiers(Event ev, Date changedSince, String username) {
+        return Optional.ofNullable(ev)
             .filter(EventManager.checkOwnership(username, organizationRepository))
             .filter(isOfflineCheckInEnabled())
             .map(event -> ticketRepository.findAllAssignedByEventId(event.getId(), changedSince))
@@ -274,7 +274,7 @@ public class CheckInManager {
             .orElse(Collections.emptyList());
     }
 
-    private Predicate<Event> isOfflineCheckInEnabled() {
+    public Predicate<Event> isOfflineCheckInEnabled() {
         return configurationManager.areBooleanSettingsEnabledForEvent(ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED);
     }
 
