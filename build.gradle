@@ -258,7 +258,7 @@ bootRun {
     def externalConfig = new File("./custom.jvmargs")
     def opts = []
     opts += [
-        "-Dspring.profiles.active=${project.springProfilesActive}",
+        "-Dspring.profiles.active=${project.springProfilesActive},jdbc-session",
         "-Ddatasource.dialect=${project.datasourceDialect}",
         "-Ddatasource.driver=${project.datasourceDriver}",
         "-Ddatasource.url=${project.datasourceUrl}",
