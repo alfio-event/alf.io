@@ -28,7 +28,6 @@ import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.repository.AdditionalServiceRepository;
-import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.OptionalWrapper;
 import lombok.Data;
@@ -36,11 +35,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.Errors;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -50,7 +49,7 @@ import static java.util.stream.Collectors.toList;
 
 //step 1 : choose tickets
 @Data
-public class ReservationForm {
+public class ReservationForm implements Serializable {
 
     private String promoCode;
     private List<TicketReservationModification> reservation;
