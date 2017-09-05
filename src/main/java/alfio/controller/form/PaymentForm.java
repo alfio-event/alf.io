@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,7 +36,7 @@ import java.util.Optional;
 // step 2 : payment/claim tickets
 //
 @Data
-public class PaymentForm {
+public class PaymentForm implements Serializable {
     private String stripeToken;
     private String paypalPaymentId;
     private String paypalPayerID;

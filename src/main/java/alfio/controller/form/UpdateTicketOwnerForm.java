@@ -18,11 +18,12 @@ package alfio.controller.form;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 @Data
-public class UpdateTicketOwnerForm {
+public class UpdateTicketOwnerForm implements Serializable {
     private String email;
     private String fullName;
     private String firstName;
