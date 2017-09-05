@@ -499,6 +499,23 @@
                 $scope.isLanguagePresent = function(locales, value) {
                     return (locales & value) === value;
                 }
+
+                $scope.helpAllocationStrategyCollapse = true;
+                $scope.toggleAllocationStrategyCollapse = function() {
+                    $scope.helpCategoryVisibilityCollapse = true;
+                    $scope.helpAllocationStrategyCollapse = !$scope.helpAllocationStrategyCollapse;
+                };
+
+                $scope.helpCategoryVisibilityCollapse = true;
+                $scope.toggleCategoryVisibilityCollapse = function() {
+                    $scope.helpAllocationStrategyCollapse = true;
+                    $scope.helpCategoryVisibilityCollapse = !$scope.helpCategoryVisibilityCollapse;
+                };
+
+                $scope.helpAccessCodeCollapse = true;
+                $scope.toggleAccessCodeCollapse = function() {
+                    $scope.helpAccessCodeCollapse = !$scope.helpAccessCodeCollapse;
+                };
             }
         };
     });
