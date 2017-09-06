@@ -534,9 +534,11 @@
                 var ctrl = this;
                 ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
                 var getPendingPayments = function() {
-                    EventService.getPendingPaymentsCount(ctrl.eventName).then(function(count) {
-                        $rootScope.$broadcast('PendingReservationsFound', count);
-                    });
+                    if(ctrl.eventName != null && ctrl.eventName.length > 0) {
+                        EventService.getPendingPaymentsCount(ctrl.eventName).then(function(count) {
+                            $rootScope.$broadcast('PendingReservationsFound', count);
+                        });
+                    }
                 };
                 getPendingPayments();
                 var promise = $interval(getPendingPayments, 10000);
@@ -557,7 +559,7 @@
                 var eventName = attrs.eventName;
                 scope.pendingReservationsCount = 0;
                 scope.styleClass = attrs.styleClass || "badge";
-                if(angular.isDefined(eventName)) {
+                if(angular.isDefined(eventName) && eventName != null && eventName.length > 0) {
                     var getPendingPayments = function() {
                         EventService.getPendingPaymentsCount(eventName).then(function(count) {
                             scope.pendingReservationsCount = count;
