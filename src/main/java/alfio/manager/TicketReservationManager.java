@@ -633,7 +633,7 @@ public class TicketReservationManager {
             return;
         }
         
-        specialPriceRepository.updateStatusForReservation(expiredReservationIds, Status.FREE.toString());
+        specialPriceRepository.resetToFreeAndCleanupForReservation(expiredReservationIds);
         ticketRepository.resetCategoryIdForUnboundedCategories(expiredReservationIds);
         ticketFieldRepository.deleteAllValuesForReservations(expiredReservationIds);
         ticketRepository.freeFromReservation(expiredReservationIds);
@@ -854,7 +854,7 @@ public class TicketReservationManager {
 
     private void cancelReservation(String reservationId, boolean expired) {
         List<String> reservationIdsToRemove = singletonList(reservationId);
-        specialPriceRepository.updateStatusForReservation(reservationIdsToRemove, Status.FREE.toString());
+        specialPriceRepository.resetToFreeAndCleanupForReservation(reservationIdsToRemove);
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
         ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
         Event event = eventRepository.findByReservationId(reservationId);

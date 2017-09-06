@@ -492,7 +492,7 @@ public class TicketReservationManagerTest {
         when(specialPrice.getStatus()).thenReturn(SpecialPrice.Status.PENDING);
         when(specialPrice.getSessionIdentifier()).thenReturn(SPECIAL_PRICE_SESSION_ID);
         Optional<SpecialPrice> renewed = trm.renewSpecialPrice(Optional.of(specialPrice), Optional.of(SPECIAL_PRICE_SESSION_ID));
-        verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.FREE.toString()));
+        verify(specialPriceRepository).resetToFreeAndCleanupForReservation(eq(singletonList(RESERVATION_ID)));
         verify(ticketRepository).resetCategoryIdForUnboundedCategories(eq(singletonList(RESERVATION_ID)));
         verify(ticketRepository).releaseExpiredTicket(RESERVATION_ID, EVENT_ID, TICKET_ID);
         verify(ticketReservationRepository).remove(eq(singletonList(RESERVATION_ID)));
@@ -570,7 +570,7 @@ public class TicketReservationManagerTest {
         when(ticketReservationRepository.findExpiredReservation(eq(now))).thenReturn(reservationIds);
         trm.cleanupExpiredReservations(now);
         verify(ticketReservationRepository).findExpiredReservation(eq(now));
-        verify(specialPriceRepository).updateStatusForReservation(eq(reservationIds), eq(SpecialPrice.Status.FREE.toString()));
+        verify(specialPriceRepository).resetToFreeAndCleanupForReservation(eq(reservationIds));
         verify(ticketRepository).resetCategoryIdForUnboundedCategories(eq(reservationIds));
         verify(ticketRepository).freeFromReservation(eq(reservationIds));
         verify(ticketReservationRepository).remove(eq(reservationIds));
