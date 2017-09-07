@@ -61,14 +61,14 @@ public interface TicketRepository {
         "  tr_full_name like :search or tr_first_name like :search or tr_last_name like :search or tr_email_address like :search)) " +
         " order by tr_confirmation_ts asc, tr_id, t_uuid";
 
-    @Query("select * from (" + FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION + " limit :pageSize offset :page) ")
+    @Query("select * from (" + FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION + " limit :pageSize offset :page) as d_tbl")
     List<TicketWithReservationAndTransaction> findAllModifiedTicketsWithReservationAndTransaction(@Bind("eventId") int eventId,
                                                                                                   @Bind("categoryId") int categoryId,
                                                                                                   @Bind("page") int page,
                                                                                                   @Bind("pageSize") int pageSize,
                                                                                                   @Bind("search") String search);
 
-    @Query("select count(*) from (" + FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION +" )")
+    @Query("select count(*) from (" + FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION +" ) as d_tbl")
     Integer countAllModifiedTicketsWithReservationAndTransaction(@Bind("eventId") int eventId,
                                                                  @Bind("categoryId") int categoryId,
                                                                  @Bind("search") String search);
