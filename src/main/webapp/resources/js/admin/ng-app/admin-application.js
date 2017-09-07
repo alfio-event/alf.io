@@ -1290,6 +1290,12 @@
         };
 
         $scope.updatePage = function(newPage) {
+            $scope.currentPage = newPage;
+            loadTicketsFromDB(db, $scope, newPage);
+        };
+
+        $scope.updatePageCheckedIn = function(newPage) {
+            $scope.currentPageCheckedIn = newPage;
             loadTicketsFromDB(db, $scope, newPage);
         };
 
@@ -1297,8 +1303,12 @@
 
             var eventId = $scope.event.id;
             var query = $scope.selection.freeText;
-            var page = newPage || $scope.currentPage;
-            var offset = query ? 0 : $scope.itemsPerPage * (page - 1);
+            var pageNotCheckedIn = $scope.currentPage;
+            var offsetNotCheckedIn = query ? 0 : $scope.itemsPerPage * (pageNotCheckedIn - 1);
+
+            var pageCheckedIn = $scope.currentPageCheckedIn;
+            var offsetCheckedIn = query ? 0 : $scope.itemsPerPage * (pageCheckedIn - 1);
+
             var filter = function(ticket) {
                 return ticket.eventId === eventId && (!query || query === '' || (ticket.fullName +"/"+ ticket.email +"/"+ ticket.ticketCategory.name +"/"+ ticket.uuid).toLowerCase().indexOf(query.toLowerCase()) > -1);
             };
@@ -1309,7 +1319,7 @@
                 .where("status")
                 .notEqual('CHECKED_IN')
                 .and(filter)
-                .offset(offset)
+                .offset(offsetNotCheckedIn)
                 .limit($scope.itemsPerPage)
                 .toArray()
                 .then(function (tickets) {
@@ -1323,7 +1333,7 @@
                 .where("status")
                 .equals('CHECKED_IN')
                 .and(filter)
-                .offset(offset)
+                .offset(offsetCheckedIn)
                 .limit($scope.itemsPerPage)
                 .toArray()
                 .then(function(tickets) {

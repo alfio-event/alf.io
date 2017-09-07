@@ -64,7 +64,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="text-center wMarginBottom" ng-if="count > itemsPerPage">
+            <div class="text-center wMarginBottom">
                 <uib-pagination total-items="count" ng-model="currentPage" ng-change="updatePage(currentPage)" items-per-page="itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
             </div>
         </uib-tab>
@@ -122,8 +122,8 @@
                     </tbody>
                 </table>
             </div>
-            <div class="text-center wMarginBottom" ng-if="checkedInCount > itemsPerPage">
-                <uib-pagination total-items="checkedInCount" ng-model="currentPageCheckedIn" ng-change="updatePage()" items-per-page="itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
+            <div class="text-center wMarginBottom">
+                <uib-pagination total-items="checkedInCount" ng-model="currentPageCheckedIn" ng-change="updatePageCheckedIn(currentPageCheckedIn)" items-per-page="itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
             </div>
         </uib-tab>
     </uib-tabset>
