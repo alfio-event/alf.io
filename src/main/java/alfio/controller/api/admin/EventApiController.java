@@ -521,9 +521,12 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/category/{categoryId}/ticket", method = GET)
-    public List<TicketWithStatistic> getTicketsInCategory(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId, Principal principal) {
+    public SerializablePair<List<TicketWithStatistic>, Integer> getTicketsInCategory(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId,
+                                                          @RequestParam(value = "page", required = false) Integer page,
+                                                          @RequestParam(value = "search", required = false) String search,
+                                                          Principal principal) {
         Event event = loadEvent(eventName, principal);
-        return eventStatisticsManager.loadModifiedTickets(event.getId(), categoryId);
+        return SerializablePair.of(eventStatisticsManager.loadModifiedTickets(event.getId(), categoryId, page == null ? 0 : page, search), eventStatisticsManager.countModifiedTicket(event.getId(), categoryId, search));
     }
 
     @RequestMapping(value = "/events/{eventName}/ticket-sold-statistics", method = GET)

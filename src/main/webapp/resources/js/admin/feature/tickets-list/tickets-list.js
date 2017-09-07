@@ -6,19 +6,21 @@
             event: '<',
             categoryId: '<'
         },
-        controller: ['EventService', '$filter', TicketsListCtrl],
+        controller: ['EventService', '$location', TicketsListCtrl],
         templateUrl: '../resources/js/admin/feature/tickets-list/tickets-list.html'
     });
     
     
     
-    function TicketsListCtrl(EventService, $filter) {
+    function TicketsListCtrl(EventService, $location) {
         var ctrl = this;
 
-        ctrl.currentPage = 1;
+        var currentSearch = $location.search();
+
+        ctrl.currentPage = currentSearch.page || 1;
         ctrl.itemsPerPage = 30;
         ctrl.statusFilter = '';
-        ctrl.toSearch = '';
+        ctrl.toSearch = currentSearch.search || '';
         ctrl.loading = false;
         ctrl.formatFullName = formatFullName;
         ctrl.updateFilteredData = updateFilteredData;
@@ -26,8 +28,6 @@
         ctrl.truncateReservationId = truncateReservationId;
         ctrl.removeTicket = removeTicket;
         ctrl.toggleLocking = toggleLocking;
-
-        var filter = $filter('filter');
 
         this.$onInit = function() {
             ctrl.ticketCategory = _.find(ctrl.event.ticketCategories, function(c) {
@@ -54,7 +54,7 @@
         }
 
         function updateFilteredData() {
-            ctrl.filteredTickets = filter(ctrl.tickets, ctrl.toSearch);
+            loadData()
         }
 
         function evaluateTicketStatus(status) {
@@ -84,9 +84,12 @@
 
         function loadData() {
             ctrl.loading = true;
-            EventService.getTicketsForCategory(ctrl.event, ctrl.ticketCategory).then(function(res) {
-                ctrl.tickets = res.data;
-                updateFilteredData();
+
+            $location.search({page: ctrl.currentPage, search: ctrl.toSearch});
+
+            EventService.getTicketsForCategory(ctrl.event, ctrl.ticketCategory, ctrl.currentPage - 1, ctrl.toSearch).then(function(res) {
+                ctrl.tickets = res.data.left;
+                ctrl.totalItems = res.data.right;
             })['finally'](function() {ctrl.loading = false;});
         }
 

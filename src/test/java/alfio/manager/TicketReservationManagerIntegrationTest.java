@@ -138,8 +138,9 @@ public class TicketReservationManagerIntegrationTest {
         TicketCategory bounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
         TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
-        assertEquals(0, eventStatisticsManager.loadModifiedTickets(event.getId(), bounded.getId()).size());
-        assertEquals(0, eventStatisticsManager.loadModifiedTickets(event.getId(), unbounded.getId()).size());
+        assertEquals(0, eventStatisticsManager.loadModifiedTickets(event.getId(), bounded.getId(), 0, null).size());
+        assertEquals(Integer.valueOf(0), eventStatisticsManager.countModifiedTicket(event.getId(), bounded.getId(), null));
+        assertEquals(0, eventStatisticsManager.loadModifiedTickets(event.getId(), unbounded.getId(), 0, null).size());
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(10);
@@ -188,8 +189,8 @@ public class TicketReservationManagerIntegrationTest {
 
         assertEquals(19, ticketReservationRepository.getSoldStatistic(event.getId(), from, to).get(0).getTicketSoldCount()); // -> 19 tickets reserved
 
-        assertEquals(10, eventStatisticsManager.loadModifiedTickets(event.getId(), bounded.getId()).size());
-        assertEquals(9, eventStatisticsManager.loadModifiedTickets(event.getId(), unbounded.getId()).size());
+        assertEquals(10, eventStatisticsManager.loadModifiedTickets(event.getId(), bounded.getId(), 0, null).size());
+        assertEquals(9, eventStatisticsManager.loadModifiedTickets(event.getId(), unbounded.getId(), 0, null).size());
 
         assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, ticketReservationManager.findById(reservationId).get().getStatus());
 

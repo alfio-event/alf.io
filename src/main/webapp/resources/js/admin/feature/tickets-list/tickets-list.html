@@ -31,14 +31,14 @@
         </div>
     </div>
 
-    <div class="alert alert-info text-center" ng-if="$ctrl.filteredTickets.length == 0"><i class="fa fa-info-circle"></i> No tickets have been found</div>
+    <div class="alert alert-info text-center" ng-if="$ctrl.totalItems == 0"><i class="fa fa-info-circle"></i> No tickets have been found</div>
     <div class="text-center text-muted wMarginTop30px" ng-if="$ctrl.loading">
         <span><i class="fa fa-circle-o-notch fa-3x fa-spin"></i></span>
     </div>
 
-    <div ng-if="$ctrl.filteredTickets.length > 0">
+    <div ng-if="$ctrl.totalItems > 0">
         <div class="list-group">
-            <div class="list-group-item" data-ng-repeat="ticket in $ctrl.filteredTickets | limitTo: $ctrl.itemsPerPage : $ctrl.itemsPerPage * ($ctrl.currentPagePending - 1) | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
+            <div class="list-group-item" data-ng-repeat="ticket in $ctrl.tickets | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
                 <div class="list-group-item-heading">
                     <button type="button" class="btn btn-sm btn-default pull-right" data-ng-click="$ctrl.toggleLocking($ctrl.event, ticket, $ctrl.ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-uib-tooltip="forbid ticket reassignment" data-tooltip-placement="left" data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button>
                     <button type="button" class="btn btn-sm btn-default pull-right" ng-click="$ctrl.removeTicket($ctrl.event, ticket)"><i class="fa fa-trash"></i> remove</button>
@@ -64,8 +64,8 @@
                 </div>
             </div>
         </div>
-        <div class="text-center wMarginBottom" ng-if="$ctrl.filteredTickets.length > $ctrl.itemsPerPage">
-            <uib-pagination total-items="$ctrl.filteredTickets.length" ng-model="$ctrl.currentPagePending" items-per-page="$ctrl.itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
+        <div class="text-center wMarginBottom" ng-if="$ctrl.totalItems > $ctrl.itemsPerPage">
+            <uib-pagination total-items="$ctrl.totalItems" ng-model="$ctrl.currentPage" ng-change="$ctrl.updateFilteredData()" items-per-page="$ctrl.itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
         </div>
     </div>
 </div>

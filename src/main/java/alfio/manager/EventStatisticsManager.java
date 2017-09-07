@@ -24,6 +24,7 @@ import alfio.repository.*;
 import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
@@ -104,12 +105,24 @@ public class EventStatisticsManager {
         return event;
     }
 
-    public List<TicketWithStatistic> loadModifiedTickets(int eventId, int categoryId) {
+    private static String prepareSearchTerm(String search) {
+        String toSearch = StringUtils.trimToNull(search);
+        return toSearch == null ? null : ("%" + toSearch + "%");
+    }
+
+    public List<TicketWithStatistic> loadModifiedTickets(int eventId, int categoryId, int page, String search) {
         Event event = eventRepository.findById(eventId);
-        return ticketRepository.findAllModifiedTicketsWithReservationAndTransaction(eventId, categoryId).stream()
+        String toSearch = prepareSearchTerm(search);
+        final int pageSize = 30;
+        return ticketRepository.findAllModifiedTicketsWithReservationAndTransaction(eventId, categoryId, page * pageSize, pageSize, toSearch).stream()
             .map(t -> new TicketWithStatistic(t.getTicket(), event, t.getTicketReservation(), event.getZoneId(), t.getTransaction()))
             .sorted()
             .collect(Collectors.toList());
+    }
+
+    public Integer countModifiedTicket(int eventId, int categoryId, String search) {
+        String toSearch = prepareSearchTerm(search);
+        return ticketRepository.countAllModifiedTicketsWithReservationAndTransaction(eventId, categoryId, toSearch);
     }
 
     public Predicate<Event> noSeatsAvailable() {
@@ -123,4 +136,6 @@ public class EventStatisticsManager {
     public List<TicketSoldStatistic> getTicketSoldStatistics(int eventId, Date from, Date to) {
         return ticketReservationRepository.getSoldStatistic(eventId, from, to);
     }
+
+
 }
