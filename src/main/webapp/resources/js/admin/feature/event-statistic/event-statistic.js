@@ -47,12 +47,12 @@
                             value: event.checkedInTickets,
                             name: 'Checked in',
                             className: 'slice-success',
-                            meta: 'Checked in tickets  ('+event.checkedInTickets+')'
+                            meta: 'Checked in ('+event.checkedInTickets+')'
                         },{
                             value: event.soldTickets,
                             name: 'Sold',
                             className: 'slice-warning',
-                            meta: 'Sold tickets ('+event.soldTickets+')'
+                            meta: 'Sold ('+event.soldTickets+')'
                         },{
                             value: event.pendingTickets,
                             name: 'Reservation in progress',
@@ -60,19 +60,19 @@
                             meta: 'Reservation in progress ('+event.pendingTickets+')'
                         },{
                             value: event.notSoldTickets,
-                            name: 'Still Available',
+                            name: 'Reserved for categories',
                             className: 'slice-info',
-                            meta: 'Tickets still available ('+event.notSoldTickets+')'
+                            meta: 'Reserved for categories ('+event.notSoldTickets+')'
                         }, {
                             value: event.notAllocatedTickets,
                             name: 'Not yet allocated',
                             className: 'slice-danger',
-                            meta: 'Tickets not yet allocated ('+event.notAllocatedTickets+')'
+                            meta: 'Not yet allocated ('+event.notAllocatedTickets+')'
                         }, {
                             value: event.dynamicAllocation,
-                            name: 'Dinamically allocated',
+                            name: 'Available',
                             className: 'slice-default',
-                            meta: 'Tickets dinamically allocated ('+event.dynamicAllocation+')'
+                            meta: 'Available ('+event.dynamicAllocation+')'
                         }], function(s) {return s.value > 0});
                     };
                     var buildOptions = function(series) {
