@@ -51,6 +51,7 @@ import com.ryantenney.passkit4j.sign.PassSigningException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -64,10 +65,7 @@ import org.springframework.util.StreamUtils;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -377,8 +375,12 @@ public class NotificationManager {
         }
     }
 
-    public List<LightweightMailMessage> loadAllMessagesForEvent(int eventId) {
-        return emailMessageRepository.findByEventId(eventId);
+    public Pair<Integer, List<LightweightMailMessage>> loadAllMessagesForEvent(int eventId, Integer page, String search) {
+        final int pageSize = 50;
+        int offset = page == null ? 0 : page * pageSize;
+        String toSearch = StringUtils.trimToNull(search);
+        toSearch = toSearch == null ? null : ("%" + toSearch + "%");
+        return Pair.of(emailMessageRepository.countFindByEventId(eventId, toSearch), emailMessageRepository.findByEventId(eventId, offset, pageSize, toSearch));
     }
 
     public Optional<EmailMessage> loadSingleMessageForEvent(int eventId, int messageId) {
