@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.12-RC3](https://github.com/exteso/alf.io/tree/1.12-RC3) (2017-09-08)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.12-RC2...1.12-RC3)
+
+**Fixed bugs:**
+
+- error while checking for pending payments [\#332](https://github.com/exteso/alf.io/issues/332)
+
+**Closed issues:**
+
+- handle specific paypal error codes [\#303](https://github.com/exteso/alf.io/issues/303)
+
 ## [1.12-RC2](https://github.com/exteso/alf.io/tree/1.12-RC2) (2017-09-05)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.12-RC1...1.12-RC2)
 
