@@ -49,8 +49,8 @@
         function loadData() {
             $location.search({page: ctrl.currentPage, search: ctrl.toSearch});
             EmailService.loadEmailLog(ctrl.eventName, ctrl.currentPage - 1, ctrl.toSearch).success(function(results) {
-                ctrl.totalItems = results.left;
-                ctrl.emailMessages = results.right;
+                ctrl.emailMessages = results.left;
+                ctrl.totalItems = results.right;
             });
         }
 

@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.controller.api.support.PageAndContent;
 import alfio.manager.EventManager;
 import alfio.manager.NotificationManager;
 import alfio.model.EmailMessage;
@@ -52,16 +53,16 @@ public class EmailMessageApiController {
     }
 
     @RequestMapping("/")
-    public SerializablePair<Integer, List<LightweightEmailMessage>> loadEmailMessages(@PathVariable("eventName") String eventName,
-                                                           @RequestParam(value = "page", required = false) Integer page,
-                                                           @RequestParam(value = "search", required = false) String search,
-                                                           Principal principal) {
+    public PageAndContent<List<LightweightEmailMessage>> loadEmailMessages(@PathVariable("eventName") String eventName,
+                                                                                    @RequestParam(value = "page", required = false) Integer page,
+                                                                                    @RequestParam(value = "search", required = false) String search,
+                                                                                    Principal principal) {
         Event event = eventManager.getSingleEvent(eventName, principal.getName());
         ZoneId zoneId = event.getZoneId();
         Pair<Integer, List<LightweightMailMessage>> found = notificationManager.loadAllMessagesForEvent(event.getId(), page, search);
-        return SerializablePair.of(found.getLeft(), found.getRight().stream()
+        return new PageAndContent<>(found.getRight().stream()
             .map(m -> new LightweightEmailMessage(m, zoneId, true))
-            .collect(Collectors.toList()));
+            .collect(Collectors.toList()), found.getLeft());
     }
 
     @RequestMapping("/{messageId}")
