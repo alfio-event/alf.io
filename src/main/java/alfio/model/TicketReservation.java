@@ -51,6 +51,7 @@ public class TicketReservation {
     private final String userLanguage;
     private final boolean directAssignmentRequested;
     private final String invoiceNumber;
+    @JsonIgnore
     private final String invoiceModel;
     private final PriceContainer.VatStatus vatStatus;
     private final String vatNr;

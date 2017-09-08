@@ -36,6 +36,7 @@ import alfio.util.Validator;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -521,12 +522,19 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/category/{categoryId}/ticket", method = GET)
-    public SerializablePair<List<TicketWithStatistic>, Integer> getTicketsInCategory(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId,
+    public PageAndContent<List<TicketWithStatistic>> getTicketsInCategory(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId,
                                                           @RequestParam(value = "page", required = false) Integer page,
                                                           @RequestParam(value = "search", required = false) String search,
                                                           Principal principal) {
         Event event = loadEvent(eventName, principal);
-        return SerializablePair.of(eventStatisticsManager.loadModifiedTickets(event.getId(), categoryId, page == null ? 0 : page, search), eventStatisticsManager.countModifiedTicket(event.getId(), categoryId, search));
+        return new PageAndContent<>(eventStatisticsManager.loadModifiedTickets(event.getId(), categoryId, page == null ? 0 : page, search), eventStatisticsManager.countModifiedTicket(event.getId(), categoryId, search));
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class PageAndContent<T> {
+        private final T left;
+        private final Integer right;
     }
 
     @RequestMapping(value = "/events/{eventName}/ticket-sold-statistics", method = GET)
