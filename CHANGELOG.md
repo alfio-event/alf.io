@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.12-RC2](https://github.com/exteso/alf.io/tree/1.12-RC2) (2017-09-05)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.12-RC1...1.12-RC2)
+
+**Fixed bugs:**
+
+- Serialization issue with profile jdbc-session [\#331](https://github.com/exteso/alf.io/issues/331)
+
 ## [1.12-RC1](https://github.com/exteso/alf.io/tree/1.12-RC1) (2017-09-04)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.11.1...1.12-RC1)
 
