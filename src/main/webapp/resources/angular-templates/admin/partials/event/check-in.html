@@ -73,15 +73,15 @@
                 <i class="fa fa-check"></i> Checked in <span class="badge">{{ checkedInCount }}</span>
             </uib-tab-heading>
             <div style="margin: 15px 0 15px 0;" class="row">
-                <div class="col-xs-1">
-                    <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button>
-                </div>
                 <div class="col-xs-11">
                     <div class="input-group">
                         <div class="input-group-addon"><i class="fa fa-search"></i></div>
                         <input type="text" class="form-control" data-ng-model="checkedInSelection.freeText">
                         <div class="input-group-addon cursor-pointer" data-ng-click="checkedInSelection.freeText = undefined">Reset</div>
                     </div>
+                </div>
+                <div class="col-xs-1">
+                    <button data-ng-click="reloadTickets()" class="btn btn-default" type="button"><i class="fa fa-refresh "></i> Refresh</button>
                 </div>
             </div>
             <div>

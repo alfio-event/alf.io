@@ -330,10 +330,11 @@
                 Dexie.delete('AlfioDatabase');
                 $window.sessionStorage.clear();
             } catch (e) {
-
             }
         };
-        $window.onClose = deleteCheckInDatabase;
+
+        $window.addEventListener("beforeunload", deleteCheckInDatabase);
+
         ctrl.doLogout = function() {
             UtilsService.logout().then(function() {
                 //delete alf.io IndexedDb
@@ -1310,7 +1311,8 @@
             var offsetCheckedIn = query ? 0 : $scope.itemsPerPage * (pageCheckedIn - 1);
 
             var filter = function(ticket) {
-                return ticket.eventId === eventId && (!query || query === '' || (ticket.fullName +"/"+ ticket.email +"/"+ ticket.ticketCategory.name +"/"+ ticket.uuid).toLowerCase().indexOf(query.toLowerCase()) > -1);
+                return ticket.eventId === eventId && (!query || query === '' ||
+                    ([ticket.fullName, ticket.email, ticket.ticketCategory.name, ticket.uuid, ticket.ticketsReservationId].join('/')).toLowerCase().indexOf(query.toLowerCase()) > -1);
             };
 
             var deferred1 = $q.defer();
