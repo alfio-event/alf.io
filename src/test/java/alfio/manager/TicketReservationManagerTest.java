@@ -695,6 +695,7 @@ public class TicketReservationManagerTest {
         verify(ticketReservationRepository).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(any(), anyString(), anyString(), anyBoolean(), anyString());
+        verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
         verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 
@@ -735,6 +736,7 @@ public class TicketReservationManagerTest {
         verify(ticketReservationRepository).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(any(), anyString(), anyString(), anyBoolean(), anyString());
+        verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
         verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 

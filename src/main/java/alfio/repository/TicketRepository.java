@@ -278,10 +278,6 @@ public interface TicketRepository {
     @Query("select * from ticket where status = 'FREE' and event_id = :eventId")
     List<Ticket> findFreeByEventId(@Bind("eventId") int eventId);
 
-
-    @Query("select count(*) from ticket where event_id = :eventId and status <> 'INVALIDATED'")
-    Integer countExistingTicketsForEvent(@Bind("eventId") int eventId);
-
     @Query("select count(*) from ticket where event_id = :eventId and category_id is not null and status <> 'INVALIDATED'")
     Integer countAllocatedTicketsForEvent(@Bind("eventId") int eventId);
 
