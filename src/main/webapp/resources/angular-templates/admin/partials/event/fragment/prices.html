@@ -12,7 +12,7 @@
             <dt>Tickets Price</dt>
             <dd><span data-ng-if="event.freeOfCharge">Free of charge</span> <span data-ng-if="!event.freeOfCharge">{{event.regularPrice | currency : (event.currency || "")}}</span></dd>
             <dt data-ng-if="!event.freeOfCharge">Payment methods</dt>
-            <dd data-ng-if="!event.freeOfCharge">{{event.allowedPaymentProxies | translatePaymentProxies}} <div class="text-danger" data-ng-if="(allowedPaymentProxies | paymentMethodFilter : true : event.currency).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter : true : event.currency">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check that the provider support the selected currency or the <a data-ui-sref="configuration.organization({organizationId: event.organizationId})">configuration</a>.</div></dd>
+            <dd data-ng-if="!event.freeOfCharge">{{event.allowedPaymentProxies | translatePaymentProxies}} <div class="text-warning" data-ng-if="(allowedPaymentProxies | paymentMethodFilter : true : event.currency).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter : true : event.currency">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check that the provider support the selected currency or the <a data-ui-sref="configuration.organization({organizationId: event.organizationId})">configuration</a>.</div></dd>
             <dt>Max tickets</dt>
             <dd>{{event.availableSeats}}</dd>
             <dt data-ng-if="!event.freeOfCharge">VAT (%)</dt>

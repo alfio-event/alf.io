@@ -441,7 +441,7 @@
         }
     });
 
-    directives.directive('editPrices', ['UtilsService', function(UtilsService) {
+    directives.directive('editPrices', ['UtilsService', '$filter', function(UtilsService, $filter) {
         return {
             scope: {
                 obj: '=targetObj',
@@ -464,9 +464,32 @@
                     return PriceCalculator.calculateTotalPrice(event, false);
                 };
 
+                var initPaymentProxies = function() {
+                    console.log($scope);
+                    $scope.paymentProxies = _.map($filter('paymentMethodFilter')($scope.allowedPaymentProxies,  false, $scope.obj.currency), function(it) {
+                        return {
+                            proxy: it,
+                            selected: _.findIndex($scope.obj.allowedPaymentProxies, function(pp) { return pp === it.id; }) > -1
+                        }
+                    });
+                };
+
+                initPaymentProxies();
+
+                $scope.updatePaymentProxies = function() {
+                    $scope.obj.allowedPaymentProxies = _.chain($scope.paymentProxies)
+                        .filter(function(it) { return it.selected; })
+                        .map(function(it) { return it.proxy.id; })
+                        .value();
+                };
+
                 UtilsService.getAvailableCurrencies().then(function(result) {
                     $scope.currencies = result.data;
                 });
+
+                $scope.$watch("allowedPaymentProxies", function() {
+                    initPaymentProxies();
+                }, true);
 
             }
         }
