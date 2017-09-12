@@ -33,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -152,7 +153,7 @@ public class CheckInApiController {
                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
                                               HttpServletResponse resp,
                                               Principal principal) {
-        Date since = changedSince == null ? new Date(0) : new Date(changedSince);
+        Date since = changedSince == null ? new Date(0) : DateUtils.addSeconds(new Date(changedSince), -1);
         Optional<List<Integer>> ids = optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
             .filter(checkInManager.isOfflineCheckInEnabled())
             .map(event -> checkInManager.getAttendeesIdentifiers(event, since, principal.getName()));
