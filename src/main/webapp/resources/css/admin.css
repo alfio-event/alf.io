@@ -232,6 +232,18 @@ td.cell-wrap {
         position: absolute;
         left: 20px;
         top: 9px;
+        width: 75px;
+    }
+
+    .category-conf .setting input[type="text"],
+    .category-conf .setting input:not([type]),
+    .category-conf .setting textarea,
+    .category-conf .setting select {
+        padding-left: 110px;
+    }
+
+    .category-conf .settings-label {
+        width: 90px;
     }
 
     .pull-right-md {

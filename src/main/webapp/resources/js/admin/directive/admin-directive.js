@@ -659,7 +659,7 @@
                     $scope.deleteHandler({config: config}).then(function() {$rootScope.$broadcast('ReloadSettings');});
                 };
                 $scope.getLabelValue = function(setting) {
-                    return (setting && setting.configurationPathLevel) ? setting.configurationPathLevel.toLowerCase() : "";
+                    return (setting && setting.configurationPathLevel) ? setting.configurationPathLevel.toLowerCase().replace('_', ' ') : "";
                 };
                 $scope.showDeleteBtn = $scope.displayDelete && $scope.setting.id > -1 && $scope.setting.componentType !== 'BOOLEAN';
                 if(angular.isFunction($scope.updateHandler)) {
