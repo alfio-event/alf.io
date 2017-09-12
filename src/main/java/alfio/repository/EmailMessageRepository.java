@@ -69,8 +69,15 @@ public interface EmailMessageRepository {
     @Query("update email_message set status = 'SENT', sent_ts = :sentTimestamp where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatusToSent(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("sentTimestamp") ZonedDateTime sentTimestamp, @Bind("expectedStatuses") List<String> expectedStatuses);
 
-    @Query("select id, event_id, status, recipient, subject, message, checksum, request_ts, sent_ts, attempts, email_cc from email_message where event_id = :eventId")
-    List<LightweightMailMessage> findByEventId(@Bind("eventId") int eventId);
+    String FIND_MAILS = "select id, event_id, status, recipient, subject, message, checksum, request_ts, sent_ts, attempts, email_cc from email_message where event_id = :eventId and " +
+        " (:search is null or (recipient like :search or subject like :search or message like :search)) order by sent_ts desc, id ";
+
+    @Query("select * from (" + FIND_MAILS +"limit :pageSize offset :page) as d_tbl")
+    List<LightweightMailMessage> findByEventId(@Bind("eventId") int eventId, @Bind("page") int page, @Bind("pageSize") int pageSize, @Bind("search") String search);
+
+    @Query("select count(*) from (" + FIND_MAILS + ") as d_tbl")
+    Integer countFindByEventId(@Bind("eventId") int eventId, @Bind("search") String search);
+
 
     @Query("select * from email_message where id = :id")
     EmailMessage findById(@Bind("id") int id);
