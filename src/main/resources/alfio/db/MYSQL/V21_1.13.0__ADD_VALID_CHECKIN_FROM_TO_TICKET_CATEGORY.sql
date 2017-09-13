@@ -15,5 +15,5 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-alter table ticket_category add column valid_checkin_from timestamp;
-alter table ticket_category add column valid_checkin_to timestamp;
+alter table ticket_category add column valid_checkin_from timestamp NULL DEFAULT NULL;
+alter table ticket_category add column valid_checkin_to timestamp NULL DEFAULT NULL;
