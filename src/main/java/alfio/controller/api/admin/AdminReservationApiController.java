@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.controller.api.support.PageAndContent;
 import alfio.manager.AdminReservationManager;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
@@ -25,8 +26,10 @@ import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.repository.EventRepository;
 import alfio.util.MonetaryUtil;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -41,33 +44,35 @@ import java.util.stream.Collectors;
 
 @RequestMapping("/admin/api/reservation")
 @RestController
+@AllArgsConstructor
 public class AdminReservationApiController {
+
     private final AdminReservationManager adminReservationManager;
     private final EventManager eventManager;
     private final EventRepository eventRepository;
     private final TicketReservationManager ticketReservationManager;
-
-    @Autowired
-    public AdminReservationApiController(AdminReservationManager adminReservationManager,
-                                         EventManager eventManager,
-                                         EventRepository eventRepository,
-                                         TicketReservationManager ticketReservationManager) {
-        this.adminReservationManager = adminReservationManager;
-        this.eventManager = eventManager;
-        this.eventRepository = eventRepository;
-        this.ticketReservationManager = ticketReservationManager;
-    }
 
     @RequestMapping(value = "/event/{eventName}/new", method = RequestMethod.POST)
     public Result<String> createNew(@PathVariable("eventName") String eventName, @RequestBody AdminReservationModification reservation, Principal principal) {
         return adminReservationManager.createReservation(reservation, eventName, principal.getName()).map(r -> r.getLeft().getId());
     }
 
+
+    @RequestMapping(value = "/event/{eventName}/reservations/all-status", method = RequestMethod.GET)
+    public TicketReservation.TicketReservationStatus[] getAllStatus(@PathVariable("eventName") String eventName) {
+        return TicketReservation.TicketReservationStatus.values();
+    }
+
     @RequestMapping(value = "/event/{eventName}/reservations/list", method = RequestMethod.GET)
-    public List<TicketReservation> findAll(@PathVariable("eventName") String eventName, Principal principal) {
+    public PageAndContent<List<TicketReservation>> findAll(@PathVariable("eventName") String eventName,
+                                                          @RequestParam(value = "page", required = false) Integer page,
+                                                          @RequestParam(value = "search", required = false) String search,
+                                                          @RequestParam(value = "status", required = false) List<TicketReservation.TicketReservationStatus> status,
+                                                          Principal principal) {
         Event event = eventRepository.findByShortName(eventName);
         eventManager.checkOwnership(event, principal.getName(), event.getOrganizationId());
-        return ticketReservationManager.findAllReservationsInEvent(event.getId());
+        Pair<List<TicketReservation>, Integer> res = ticketReservationManager.findAllReservationsInEvent(event.getId(), page, search, status);
+        return new PageAndContent<>(res.getLeft(), res.getRight());
     }
 
     @RequestMapping(value = "/event/{eventName}/{reservationId}/confirm", method = RequestMethod.PUT)

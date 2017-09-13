@@ -10,7 +10,7 @@
                 <div class="input-group-addon">
                     <i class="fa fa-search"></i>
                 </div>
-                <input type="text" class="form-control input-sm" ng-model="$ctrl.toSearch" ng-change="$ctrl.updateFilteredData()" placeholder="Filter Reservations">
+                <input type="text" class="form-control input-sm" ng-model="$ctrl.toSearch" ng-change="$ctrl.updateFilteredData({pending:true, completed: true})" ng-model-options='{ debounce: 1000 }' placeholder="Filter Reservations">
             </div>
         </label>
     </div>
@@ -18,8 +18,8 @@
         <h3>Pending Reservations</h3>
     </div>
 
-    <div class="alert alert-info text-center" ng-if="$ctrl.filteredPendingReservations.length == 0"><i class="fa fa-info-circle"></i> No pending reservations have been found</div>
-    <div class="table-responsive" ng-if="$ctrl.filteredPendingReservations.length > 0">
+    <div class="alert alert-info text-center" ng-if="$ctrl.foundPendingReservations == 0"><i class="fa fa-info-circle"></i> No pending reservations have been found</div>
+    <div class="table-responsive" ng-if="$ctrl.foundPendingReservations > 0">
         <table class="table table-striped">
             <thead>
             <tr>
@@ -32,7 +32,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr ng-repeat="r in $ctrl.filteredPendingReservations | limitTo: $ctrl.itemsPerPage : $ctrl.itemsPerPage * ($ctrl.currentPagePending - 1)">
+            <tr ng-repeat="r in $ctrl.pendingReservations">
                 <td><i class="fa fa-shopping-cart"></i><span class="sr-only">PENDING</span></td>
                 <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="$ctrl.truncateReservationId(r.id)"></a></td>
                 <td ng-bind="$ctrl.formatFullName(r)"></td>
@@ -42,8 +42,8 @@
             </tr>
             </tbody>
         </table>
-        <div class="text-center wMarginBottom" ng-if="$ctrl.filteredPendingReservations.length > $ctrl.itemsPerPage">
-            <uib-pagination total-items="$ctrl.filteredPendingReservations.length" ng-model="$ctrl.currentPagePending" items-per-page="$ctrl.itemsPerPage"></uib-pagination>
+        <div class="text-center wMarginBottom">
+            <uib-pagination ng-change="$ctrl.updateFilteredData({pending:true})" total-items="$ctrl.foundPendingReservations" ng-model="$ctrl.currentPagePending" items-per-page="$ctrl.itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
         </div>
     </div>
 
@@ -51,9 +51,9 @@
         <h3>Completed Reservations</h3>
     </div>
 
-    <div class="alert alert-info text-center" ng-if="$ctrl.filteredReservations.length == 0"><i class="fa fa-info-circle"></i> No completed reservations have been found</div>
+    <div class="alert alert-info text-center" ng-if="$ctrl.foundReservations == 0"><i class="fa fa-info-circle"></i> No completed reservations have been found</div>
 
-    <div class="table-responsive" ng-if="$ctrl.filteredReservations.length > 0">
+    <div class="table-responsive" ng-if="$ctrl.foundReservations > 0">
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -66,7 +66,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr ng-repeat="r in $ctrl.filteredReservations | limitTo: $ctrl.itemsPerPage : $ctrl.itemsPerPage * ($ctrl.currentPage - 1)">
+                <tr ng-repeat="r in $ctrl.reservations">
                     <td ng-class="{'text-danger': r.status != 'COMPLETE', 'text-success': r.status == 'COMPLETE'}"><i uib-tooltip="{{r.status}}" ng-class="{'fa fa-check-circle': r.status == 'COMPLETE', 'fa fa-exclamation': r.status != 'COMPLETE'}"></i></td>
                     <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="$ctrl.truncateReservationId(r.id)"></a></td>
                     <td ng-bind="$ctrl.formatFullName(r)"></td>
@@ -76,8 +76,8 @@
                 </tr>
             </tbody>
         </table>
-        <div class="text-center wMarginBottom" ng-if="$ctrl.filteredReservations.length > $ctrl.itemsPerPage">
-            <uib-pagination total-items="$ctrl.filteredReservations.length" ng-model="$ctrl.currentPage" items-per-page="$ctrl.itemsPerPage"></uib-pagination>
+        <div class="text-center wMarginBottom">
+            <uib-pagination ng-change="$ctrl.updateFilteredData({completed:true})" total-items="$ctrl.foundReservations" ng-model="$ctrl.currentPage" items-per-page="$ctrl.itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
         </div>
     </div>
 </div>

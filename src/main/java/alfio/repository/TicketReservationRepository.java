@@ -117,8 +117,22 @@ public interface TicketReservationRepository {
     @Query("select count(*) from tickets_reservation where invoice_number is not null and event_id_fk = :eventId")
     Integer countInvoices(@Bind("eventId") int eventId);
 
-    @Query("select * from tickets_reservation where event_id_fk = :eventId order by confirmation_ts desc, validity desc")
-    List<TicketReservation> findAllReservationsInEvent(@Bind("eventId") int eventId);
+
+    String FIND_RESERVATIONS_IN_EVENT = " select * from tickets_reservation where event_id_fk = :eventId and status in (:status) " +
+        " and (:search is null or (full_name like :search or first_name like :search or last_name like :search or email_address like :search or billing_address like :search)) " +
+        " order by confirmation_ts desc, validity desc ";
+
+    @Query("select * from (" + FIND_RESERVATIONS_IN_EVENT +"limit :pageSize offset :offset) as r_tbl")
+    List<TicketReservation> findAllReservationsInEvent(@Bind("eventId") int eventId,
+                                                       @Bind("offset") int offset,
+                                                       @Bind("pageSize") int pageSize,
+                                                       @Bind("search") String toSearch,
+                                                       @Bind("status") List<String> toFilter);
+
+    @Query("select count(*) from (" + FIND_RESERVATIONS_IN_EVENT + ") as r_tbl")
+    Integer countAllReservationsInEvent(@Bind("eventId") int eventId,
+                                        @Bind("search") String toSearch,
+                                        @Bind("status") List<String> toFilter);
 
     @Query("update tickets_reservation set vat_status = :vatStatus, vat_nr = :vatNr, vat_country = :vatCountry, invoice_requested = :invoiceRequested where id = :reservationId")
     int updateBillingData(@Bind("vatStatus") PriceContainer.VatStatus vatStatus,

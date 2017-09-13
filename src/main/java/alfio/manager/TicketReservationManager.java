@@ -237,8 +237,13 @@ public class TicketReservationManager {
         return reservationId;
     }
 
-    public List<TicketReservation> findAllReservationsInEvent(int eventId) {
-        return ticketReservationRepository.findAllReservationsInEvent(eventId);
+    public Pair<List<TicketReservation>, Integer> findAllReservationsInEvent(int eventId, Integer page, String search, List<TicketReservationStatus> status) {
+        final int pageSize = 50;
+        int offset = page == null ? 0 : page * pageSize;
+        String toSearch = StringUtils.trimToNull(search);
+        toSearch = toSearch == null ? null : ("%" + toSearch + "%");
+        List<String> toFilter = (status == null || status.isEmpty() ? Arrays.asList(TicketReservationStatus.values()) : status).stream().map(TicketReservationStatus::toString).collect(toList());
+        return Pair.of(ticketReservationRepository.findAllReservationsInEvent(eventId, offset, pageSize, toSearch, toFilter), ticketReservationRepository.countAllReservationsInEvent(eventId, toSearch, toFilter));
     }
 
     void reserveTicketsForCategory(Event event, Optional<String> specialPriceSessionId, String transactionId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale, boolean forWaitingQueue, PromoCodeDiscount discount) {

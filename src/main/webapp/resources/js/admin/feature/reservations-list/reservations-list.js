@@ -5,38 +5,53 @@
         bindings: {
             event: '<'
         },
-        controller: ['EventService', '$filter', ReservationsListCtrl],
+        controller: ['EventService', '$filter', '$location', ReservationsListCtrl],
         templateUrl: '../resources/js/admin/feature/reservations-list/reservations-list.html'
     });
     
     
     
-    function ReservationsListCtrl(EventService, $filter) {
+    function ReservationsListCtrl(EventService, $filter, $location) {
         var ctrl = this;
 
-        ctrl.currentPagePending = 1;
-        ctrl.currentPage = 1;
+        var currentSearch = $location.search();
+
+        ctrl.currentPagePending = currentSearch.pendingPage || 1;
+        ctrl.currentPage = currentSearch.page || 1;
+        ctrl.toSearch = currentSearch.search || '';
+
         ctrl.itemsPerPage = 50;
-        ctrl.statusFilter = '';
-        ctrl.toSearch = '';
         ctrl.formatFullName = formatFullName;
-        ctrl.updateFilteredData = updateFilteredData;
+        ctrl.updateFilteredData = loadData;
         ctrl.truncateReservationId = truncateReservationId;
 
-        var filter = $filter('filter');
-
         this.$onInit = function() {
-            EventService.findAllReservations(ctrl.event.shortName).then(function(res) {
-                var statuses = {};
-                ctrl.reservations = res.data;
-                angular.forEach(res.data, function(r) {
-                    statuses[r.status] = true;
-                });
-                ctrl.allStatus = Object.keys(statuses).sort().map(function(v) {return {value: v, label: v}});
-                ctrl.allStatus.unshift({value: '', label: 'Show all'});
-                updateFilteredData();
-            })
+            EventService.getAllReservationStatus(ctrl.event.shortName).then(function(res) {
+                ctrl.otherStatuses = $filter('filter')(res.data, '!PENDING');
+                loadData()
+            });
         };
+
+        function loadData(loadPartially) {
+
+            loadPartially = loadPartially || {pending: true, completed: true};
+
+            $location.search({pendingPage: ctrl.currentPagePending, page: ctrl.currentPage, search: ctrl.toSearch});
+
+            if(loadPartially.completed) {
+                EventService.findAllReservations(ctrl.event.shortName, ctrl.currentPage - 1, ctrl.toSearch, ctrl.otherStatuses).then(function (res) {
+                    ctrl.reservations = res.data.left;
+                    ctrl.foundReservations = res.data.right;
+                });
+            }
+
+            if(loadPartially.pending) {
+                EventService.findAllReservations(ctrl.event.shortName, ctrl.currentPagePending -1, ctrl.toSearch, ['PENDING']).then(function(res) {
+                    ctrl.pendingReservations = res.data.left;
+                    ctrl.foundPendingReservations = res.data.right;
+                });
+            }
+        }
 
         function formatFullName(r) {
             if(r.firstName && r.lastName) {
@@ -48,11 +63,6 @@
 
         function truncateReservationId(id) {
             return id.substring(0,8).toUpperCase();
-        }
-
-        function updateFilteredData() {
-            ctrl.filteredReservations = filter(filter(_.filter(ctrl.reservations, function(r) {return r.status !== 'PENDING'}), ctrl.toSearch), {status: ctrl.statusFilter});
-            ctrl.filteredPendingReservations = filter(filter(_.filter(ctrl.reservations, function(r) {return r.status === 'PENDING'}), ctrl.toSearch), {status: ctrl.statusFilter});
         }
     }
 })();

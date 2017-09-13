@@ -154,7 +154,7 @@ public class TicketReservationManagerIntegrationTest {
         TicketReservationWithOptionalCodeModification mod2 = new TicketReservationWithOptionalCodeModification(tr2, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event, Arrays.asList(mod, mod2), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
-        List<TicketReservation> reservations = ticketReservationManager.findAllReservationsInEvent(event.getId());
+        List<TicketReservation> reservations = ticketReservationManager.findAllReservationsInEvent(event.getId(), 0, null, null).getKey();
         assertTrue(reservations.size() == 1);
         assertEquals(reservationId, reservations.get(0).getId());
 
