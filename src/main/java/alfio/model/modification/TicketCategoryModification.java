@@ -45,6 +45,9 @@ public class TicketCategoryModification {
     private final boolean bounded;
     private final String code;
 
+    private final DateTimeModification validCheckInFrom;
+    private final DateTimeModification validCheckInTo;
+
     @JsonCreator
     public TicketCategoryModification(@JsonProperty("id") Integer id,
                                       @JsonProperty("name") String name,
@@ -56,7 +59,9 @@ public class TicketCategoryModification {
                                       @JsonProperty("tokenGenerationRequested") boolean tokenGenerationRequested,
                                       @JsonProperty("dateString") String dateString,
                                       @JsonProperty("bounded") boolean bounded,
-                                      @JsonProperty("code") String code) {
+                                      @JsonProperty("code") String code,
+                                      @JsonProperty("validCheckInFrom") DateTimeModification validCheckInFrom,
+                                      @JsonProperty("validCheckInTo") DateTimeModification validCheckInTo) {
         this.id = id;
         this.name = name;
         this.maxTickets = maxTickets;
@@ -68,6 +73,8 @@ public class TicketCategoryModification {
         this.dateString = dateString;
         this.bounded = bounded;
         this.code = code;
+        this.validCheckInFrom = validCheckInFrom;
+        this.validCheckInTo = validCheckInTo;
     }
 
     public int getPriceInCents() {
@@ -82,6 +89,8 @@ public class TicketCategoryModification {
                 DateTimeModification.fromZonedDateTime(tc.getExpiration(zoneId)),
                 ticketCategoryDescriptions,
                 tc.getPrice(),
-                tc.isAccessRestricted(), "", tc.isBounded(), tc.getCode());
+                tc.isAccessRestricted(), "", tc.isBounded(), tc.getCode(),
+                DateTimeModification.fromZonedDateTime(tc.getValidCheckInFrom(zoneId)),
+                DateTimeModification.fromZonedDateTime(tc.getValidCheckInTo(zoneId)));
     }
 }

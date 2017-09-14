@@ -94,4 +94,12 @@ public class TicketCategory {
     public ZonedDateTime getExpiration(ZoneId zoneId) {
         return utcExpiration.withZoneSameInstant(zoneId);
     }
+
+    public ZonedDateTime getValidCheckInFrom(ZoneId zoneId) {
+        return validCheckInFrom == null ? null : validCheckInFrom.withZoneSameInstant(zoneId);
+    }
+
+    public ZonedDateTime getValidCheckInTo(ZoneId zoneId) {
+        return validCheckInTo == null ? null : validCheckInTo.withZoneSameInstant(zoneId);
+    }
 }

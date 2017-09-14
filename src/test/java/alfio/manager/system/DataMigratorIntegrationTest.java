@@ -143,7 +143,7 @@ public class DataMigratorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories);
         Event event = eventUsername.getKey();
 
@@ -172,7 +172,7 @@ public class DataMigratorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
 
@@ -201,7 +201,7 @@ public class DataMigratorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
         
@@ -231,7 +231,7 @@ public class DataMigratorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories, null); 
         Event event = eventUsername.getKey();
 
@@ -257,7 +257,7 @@ public class DataMigratorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
         try {
@@ -281,7 +281,7 @@ public class DataMigratorIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
         try {
@@ -322,7 +322,7 @@ public class DataMigratorIntegrationTest {
     	List<TicketCategoryModification> categories = Collections.singletonList(new TicketCategoryModification(null,
 				"default", AVAILABLE_SEATS, new DateTimeModification(LocalDate.now(), LocalTime.now()),
 				new DateTimeModification(LocalDate.now(), LocalTime.now()), DESCRIPTION, BigDecimal.TEN, false, "",
-				false, null));
+				false, null, null, null));
     	Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
 		try {
@@ -347,11 +347,11 @@ public class DataMigratorIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS -1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null),
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories);
         Event event = eventUsername.getKey();
         TicketCategory firstCategory = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
