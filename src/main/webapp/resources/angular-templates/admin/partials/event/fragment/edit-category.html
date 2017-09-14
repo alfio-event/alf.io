@@ -129,6 +129,16 @@
     </p>
 </div>
 
+<div class="form-group" bs-form-error="ticketCategory.validCheckInFromString">
+    <label for="{{buildPrefix($index, 'validCheckInFromString')}}">Valid check-in from</label>
+    <input ng-model="ticketCategory.validCheckInFromString" single-date no-init-date="true" start-model="ticketCategory.validCheckInFrom" id="{{buildPrefix($index, 'validCheckInFromString')}}" class="form-control">
+</div>
+<div class="form-group" bs-form-error="ticketCategory.validCheckInToString">
+    <label for="{{buildPrefix($index, 'validCheckInToString')}}">Valid check-in to</label>
+    <input ng-model="ticketCategory.validCheckInToString" single-date no-init-date="true" start-model="ticketCategory.validCheckInTo" id="{{buildPrefix($index, 'validCheckInToString')}}" class="form-control">
+</div>
+
+
 <div data-ng-if="isLanguagePresent(event.locales, language.value)" class="form-group" data-ng-repeat="(lang, language) in allLanguagesMapping">
     <label for="{{buildPrefix($index, 'description.'+lang)}}">Description: {{language.displayLanguage}} <display-commonmark-preview text="ticketCategory.description[language.locale]"></display-commonmark-preview></label>
     <textarea data-ng-model="ticketCategory.description[language.locale]" name="{{buildPrefix($index, 'description.'+lang)}}" id="{{buildPrefix($index, 'description.'+lang)}}" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>

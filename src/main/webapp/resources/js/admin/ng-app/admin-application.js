@@ -930,6 +930,19 @@
         $scope.editCategory = function(category, event) {
             var inception = moment(category.formattedInception);
             var expiration = moment(category.formattedExpiration);
+
+            function prepareValidCheckIn(date) {
+                if(date) {
+                    var m = moment(date);
+                    return {date: m.format('YYYY-MM-DD'), time: m.format('HH:mm')}
+                } else {
+                    return null
+                }
+            }
+
+            var validCheckInFrom = prepareValidCheckIn(category.formattedValidCheckInFrom);
+            var validCheckInTo = prepareValidCheckIn(category.formattedValidCheckInTo);
+
             var categoryObj = {
                 id: category.id,
                 name: category.name,
@@ -946,6 +959,8 @@
                     date: expiration.format('YYYY-MM-DD'),
                     time: expiration.format('HH:mm')
                 },
+                validCheckInTo: validCheckInTo,
+                validCheckInFrom: validCheckInFrom,
                 tokenGenerationRequested: category.accessRestricted,
                 sticky: false
             };

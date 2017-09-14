@@ -114,6 +114,12 @@
                             <dt ng-if="ticketCategory.code && ticketCategory.code.length > 0">Direct Access URL</dt>
                             <dd ng-if="ticketCategory.code && ticketCategory.code.length > 0">{{::baseUrl}}/event/{{::event.shortName}}/code/{{::ticketCategory.code}}</dd>
 
+                            <dt ng-if="ticketCategory.formattedValidCheckInFrom">Valid check-in from</dt>
+                            <dd ng-if="ticketCategory.formattedValidCheckInFrom">{{::ticketCategory.formattedValidCheckInFrom | formatDate}}</dd>
+
+                            <dt ng-if="ticketCategory.formattedValidCheckInTo">Valid check-in to</dt>
+                            <dd ng-if="ticketCategory.formattedValidCheckInTo">{{::ticketCategory.formattedValidCheckInTo | formatDate}}</dd>
+
                         </dl>
                         <div class="row hidden-xs hidden-sm" ng-if="categoryHasDescriptions(ticketCategory)">
                             <hr />
