@@ -208,7 +208,7 @@ public interface TicketRepository {
     @Query("select t.id " +
             " from ticket t " +
             " left outer join latest_ticket_update ltu on t.id = ltu.ticket_id and ltu.event_id = :eventId " +
-            " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null and (ltu.last_update is null or ltu.last_update > :changedSince)  order by t.id asc")
+            " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null and (coalesce(ltu.last_update, t.creation) > :changedSince)  order by t.id asc")
     List<Integer> findAllAssignedByEventId(@Bind("eventId") int eventId, @Bind("changedSince") Date changedSince);
 
     @Query("select " +
