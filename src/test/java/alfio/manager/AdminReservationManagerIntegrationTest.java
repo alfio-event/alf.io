@@ -185,7 +185,7 @@ public class AdminReservationManagerIntegrationTest {
         Event modified = eventManager.getSingleEvent(event.getShortName(), username);
         assertEquals(attendees + 1, eventRepository.countExistingTickets(event.getId()).intValue());
         assertEquals(attendees, ticketRepository.findPendingTicketsInCategories(Collections.singletonList(categoryId)).size());
-        TicketCategory categoryModified = ticketCategoryRepository.getById(categoryId, event.getId());
+        TicketCategory categoryModified = ticketCategoryRepository.getByIdAndActive(categoryId, event.getId());
         assertEquals(categoryModified.getMaxTickets(), attendees);
         ticketCategoryRepository.findByEventId(event.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.PENDING)));
         adminReservationManager.confirmReservation(event.getShortName(), data.getLeft().getId(), username);
@@ -311,7 +311,7 @@ public class AdminReservationManagerIntegrationTest {
         if(bounded) {
             final Iterator<Integer> iterator = attendeesNr.iterator();
             existingCategories.forEach(existingCategory -> {
-                TicketCategory categoryModified = ticketCategoryRepository.getById(existingCategory.getId(), event.getId());
+                TicketCategory categoryModified = ticketCategoryRepository.getByIdAndActive(existingCategory.getId(), event.getId());
                 assertEquals(categoryModified.getMaxTickets(), iterator.next().intValue());
             });
         }

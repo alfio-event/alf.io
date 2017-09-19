@@ -256,7 +256,7 @@ public class TicketReservationManager {
             throw new NotEnoughTicketsException();
         }
 
-        TicketCategory category = ticketCategoryRepository.getById(ticketReservation.getTicketCategoryId(), event.getId());
+        TicketCategory category = ticketCategoryRepository.getByIdAndActive(ticketReservation.getTicketCategoryId(), event.getId());
         if (specialPrice.isPresent()) {
             if(reservedForUpdate.size() != 1) {
                 throw new NotEnoughTicketsException();
@@ -295,7 +295,7 @@ public class TicketReservationManager {
     }
 
     List<Integer> reserveTickets(int eventId , int categoryId, int qty, List<TicketStatus> requiredStatuses) {
-        TicketCategory category = ticketCategoryRepository.getById(categoryId, eventId);
+        TicketCategory category = ticketCategoryRepository.getByIdAndActive(categoryId, eventId);
         List<String> statusesAsString = requiredStatuses.stream().map(TicketStatus::name).collect(toList());
         if(category.isBounded()) {
             return ticketRepository.selectTicketInCategoryForUpdate(eventId, categoryId, qty, statusesAsString);
@@ -305,7 +305,7 @@ public class TicketReservationManager {
 
     Optional<SpecialPrice> fixToken(Optional<SpecialPrice> token, int ticketCategoryId, int eventId, Optional<String> specialPriceSessionId, TicketReservationWithOptionalCodeModification ticketReservation) {
 
-        TicketCategory ticketCategory = ticketCategoryRepository.getById(ticketCategoryId, eventId);
+        TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticketCategoryId, eventId);
         if(!ticketCategory.isAccessRestricted()) {
             return Optional.empty();
         }
@@ -752,7 +752,7 @@ public class TicketReservationManager {
             .map(Ticket::getCategoryId)
             .collect(toSet())
             .stream()
-            .map(categoryId -> ticketCategoryRepository.getById(categoryId, promoCodeDiscount.getEventId()).getName())
+            .map(categoryId -> ticketCategoryRepository.getByIdAndActive(categoryId, promoCodeDiscount.getEventId()).getName())
             .collect(Collectors.joining(", ", "(", ")"));
 
 
@@ -787,7 +787,7 @@ public class TicketReservationManager {
                 TicketPriceContainer firstTicket = ticketsByCategory.get(0);
                 final int ticketPriceCts = firstTicket.getSummarySrcPriceCts();
                 final int priceBeforeVat = firstTicket.getSummaryPriceBeforeVatCts();
-                String categoryName = ticketCategoryRepository.getById(categoryId, event.getId()).getName();
+                String categoryName = ticketCategoryRepository.getByIdAndActive(categoryId, event.getId()).getName();
                 summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts), formatCents(priceBeforeVat), ticketsByCategory.size(), formatCents(subTotal), formatCents(subTotalBeforeVat), subTotal, SummaryRow.SummaryType.TICKET));
             });
 
@@ -1044,7 +1044,7 @@ public class TicketReservationManager {
     void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder) {
         try {
             TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
-            TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
+            TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
             notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, reservation, ticketCategory);
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -1214,7 +1214,7 @@ public class TicketReservationManager {
     }
 
     public void releaseTicket(Event event, TicketReservation ticketReservation, Ticket ticket) {
-        TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
+        TicketCategory category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
         if(!CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket)) {
             throw new IllegalStateException("Cannot release reserved tickets");
         }

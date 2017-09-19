@@ -46,10 +46,13 @@ public interface TicketCategoryRepository {
                                            @Bind("validCheckInTo") ZonedDateTime validCheckInTo);
 
     @Query("select * from ticket_category where id = :id and event_id = :eventId and tc_status = 'ACTIVE'")
-    TicketCategory getById(@Bind("id") int id, @Bind("eventId") int eventId);
+    TicketCategory getByIdAndActive(@Bind("id") int id, @Bind("eventId") int eventId);
 
     @Query("select * from ticket_category where id = :id and tc_status = 'ACTIVE'")
-    Optional<TicketCategory> getById(@Bind("id") int id);
+    Optional<TicketCategory> getByIdAndActive(@Bind("id") int id);
+
+    @Query("select * from ticket_category where id = :id")
+    TicketCategory getById(@Bind("id") int id);
 
     @Query("select * from ticket_category where event_id = :eventId and category_code = :code and tc_status = 'ACTIVE'")
     Optional<TicketCategory> findCodeInEvent(@Bind("eventId") int eventId, @Bind("code") String code);

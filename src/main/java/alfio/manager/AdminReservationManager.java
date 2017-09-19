@@ -332,7 +332,7 @@ public class AdminReservationManager {
                         attendees.addAll(ti2.getAttendees());
                         return new TicketsInfo(ti1.getCategory(), attendees, ti1.isAddSeatsIfNotAvailable() && ti2.isAddSeatsIfNotAvailable(), ti1.isUpdateAttendees() && ti2.isUpdateAttendees());
                     }).orElse(empty);
-                return Pair.of(ticketCategoryRepository.getById(entry.getKey(), event.getId()), ticketsInfo);
+                return Pair.of(ticketCategoryRepository.getByIdAndActive(entry.getKey(), event.getId()), ticketsInfo);
             });
     }
 
@@ -375,7 +375,7 @@ public class AdminReservationManager {
         int notAllocated = getNotAllocatedTickets(event);
         int missingTickets = Math.max(tickets - notAllocated, 0);
         Event modified = increaseSeatsIfNeeded(ti, event, missingTickets, event);
-        return eventManager.insertCategory(modified, tcm, username).map(id -> ticketCategoryRepository.getById(id, event.getId()));
+        return eventManager.insertCategory(modified, tcm, username).map(id -> ticketCategoryRepository.getByIdAndActive(id, event.getId()));
     }
 
     private Event increaseSeatsIfNeeded(TicketsInfo ti, Event event, int missingTickets, Event modified) {
@@ -398,7 +398,7 @@ public class AdminReservationManager {
         List<Attendee> attendees = ti.getAttendees();
         int tickets = attendees.size();
         int eventId = event.getId();
-        TicketCategory existing = ticketCategoryRepository.getById(category.getExistingCategoryId(), eventId);
+        TicketCategory existing = ticketCategoryRepository.getByIdAndActive(category.getExistingCategoryId(), eventId);
         int existingCategoryId = existing.getId();
         int freeTicketsInCategory = ticketRepository.countFreeTickets(eventId, existingCategoryId);
         int notAllocated = getNotAllocatedTickets(event);

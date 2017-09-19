@@ -262,7 +262,7 @@ public class TicketReservationManagerUnitTest {
         when(ticket.getSrcPriceCts()).thenReturn(ticketPaidPrice);
         when(ticket.getCategoryId()).thenReturn(1);
         when(ticketRepository.findTicketsInReservation(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(ticket));
-        when(ticketCategoryRepository.getById(eq(1), eq(1))).thenReturn(ticketCategory);
+        when(ticketCategoryRepository.getByIdAndActive(eq(1), eq(1))).thenReturn(ticketCategory);
     }
 
     private void initReservationWithAdditionalServices(boolean eventVatIncluded, AdditionalService.VatType additionalServiceVatType, int ticketSrcPrice, int asSrcPrice) {

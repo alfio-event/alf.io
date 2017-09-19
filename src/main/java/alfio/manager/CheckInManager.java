@@ -49,6 +49,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -69,6 +70,7 @@ public class CheckInManager {
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketFieldRepository ticketFieldRepository;
+    private final TicketCategoryRepository ticketCategoryRepository;
     private final ScanAuditRepository scanAuditRepository;
     private final AuditingRepository auditingRepository;
     private final ConfigurationManager configurationManager;
@@ -184,6 +186,19 @@ public class CheckInManager {
         Ticket ticket = maybeTicket.get();
         Event event = maybeEvent.get();
         String code = ticketCode.get();
+
+        TicketCategory tc = ticketCategoryRepository.getById(ticket.getCategoryId());
+
+        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        if(!tc.hasValidCheckIn(now, event.getZoneId())) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - hh:mm");
+            String from = tc.getValidCheckInFrom() == null ? ".." : formatter.format(tc.getValidCheckInFrom(event.getZoneId()));
+            String to = tc.getValidCheckInTo() == null ? ".." : formatter.format(tc.getValidCheckInTo(event.getZoneId()));
+            String formattedNow = formatter.format(now);
+            return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(INVALID_TICKET_CATEGORY_CHECK_IN_DATE,
+                String.format("Invalid check-in date: valid range for category %s is from %s to %s, current time is: %s",
+                    tc.getName(), from, to, formattedNow)));
+        }
 
         log.trace("scanned code is {}", code);
         log.trace("true code    is {}", ticket.ticketCode(event.getPrivateKey()));

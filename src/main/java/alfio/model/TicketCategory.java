@@ -102,4 +102,10 @@ public class TicketCategory {
     public ZonedDateTime getValidCheckInTo(ZoneId zoneId) {
         return validCheckInTo == null ? null : validCheckInTo.withZoneSameInstant(zoneId);
     }
+
+    public boolean hasValidCheckIn(ZonedDateTime now, ZoneId eventZoneId) {
+        // check from boundary -> from cannot be after now
+        // check to boundary -> to cannot be before now
+        return (validCheckInFrom == null || !getValidCheckInFrom(eventZoneId).isAfter(now)) && (validCheckInTo == null || !getValidCheckInTo(eventZoneId).isBefore(now));
+    }
 }

@@ -80,7 +80,7 @@ public class SpecialPriceTokenGenerator {
 
     private void generateCode(SpecialPrice specialPrice) {
 
-        TicketCategory ticketCategory = ticketCategoryRepository.getById(specialPrice.getTicketCategoryId()).orElseThrow(IllegalStateException::new);
+        TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(specialPrice.getTicketCategoryId()).orElseThrow(IllegalStateException::new);
         Event event = eventRepository.findById(ticketCategory.getEventId());
         int maxLength = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticketCategory.getId(), ConfigurationKeys.SPECIAL_PRICE_CODE_LENGTH), 6);
 
