@@ -315,17 +315,17 @@ public class CheckInManager {
                 info.put("status", ticket.getStatus().toString());
                 info.put("uuid", ticket.getUuid());
                 info.put("category", ticket.getTicketCategory().getName());
-                if(!additionalFields.isEmpty()) {
+                if (!additionalFields.isEmpty()) {
                     Map<String, String> map = ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
                     info.put("additionalInfoJson", Json.toJson(map));
                 }
 
                 //
                 TicketCategory tc = categories.get(ticket.getCategoryId());
-                if(tc.getValidCheckInTo() != null) {
+                if (tc.getValidCheckInFrom() != null) {
                     info.put("validCheckInFrom", Long.toString(tc.getValidCheckInFrom(event.getZoneId()).toEpochSecond()));
                 }
-                if(tc.getValidCheckInFrom() != null) {
+                if (tc.getValidCheckInTo() != null) {
                     info.put("validCheckInTo", Long.toString(tc.getValidCheckInTo(event.getZoneId()).toEpochSecond()));
                 }
                 //
