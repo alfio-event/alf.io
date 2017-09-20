@@ -139,10 +139,6 @@ public class ReservationController {
                         }
                         model.addAttribute("delayForOfflinePayment", 0);
                     }
-                    if(event.getAllowedPaymentProxies().stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {
-                        model.addAttribute("captchaRequestedForOffline", configurationManager.isRecaptchaForOfflinePaymentEnabled(event))
-                            .addAttribute("recaptchaApiKey", configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null));
-                    }
 
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
                     List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
@@ -150,6 +146,13 @@ public class ReservationController {
                         .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
                         .map(PaymentManager.PaymentMethod::getPaymentProxy)
                         .collect(toList());
+
+                    if(orderSummary.getFree() || activePaymentMethods.stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {
+                        boolean captchaForOfflinePaymentEnabled = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
+                        model.addAttribute("captchaRequestedForOffline", captchaForOfflinePaymentEnabled)
+                            .addAttribute("recaptchaApiKey", configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null))
+                            .addAttribute("captchaRequestedFreeOfCharge", orderSummary.getFree() && captchaForOfflinePaymentEnabled);
+                    }
 
                     boolean invoiceAllowed = orderSummary.getDisplayVat()
                         && (configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isVatCheckingEnabledFor(event.getOrganizationId()));
@@ -408,12 +411,12 @@ public class ReservationController {
             bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
         }
 
-        if(isCaptchaInvalid(paymentForm.getPaymentMethod(), request, event)) {
+        final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentMethod(), request, event)) {
             log.debug("captcha validation failed.");
             bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
         }
 
-        final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         if(paymentForm.getPaymentMethod() != PaymentProxy.PAYPAL || !paymentForm.hasPaypalTokens()) {
             if(!paymentForm.isPostponeAssignment() && !ticketRepository.checkTicketUUIDs(reservationId, paymentForm.getTickets().keySet())) {
                 bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
@@ -487,8 +490,8 @@ public class ReservationController {
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
     }
 
-    private boolean isCaptchaInvalid(PaymentProxy paymentMethod, HttpServletRequest request, Event event) {
-        return (paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
+    private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, HttpServletRequest request, Event event) {
+        return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
                 && configurationManager.isRecaptchaForOfflinePaymentEnabled(event)
                 && !recaptchaService.checkRecaptcha(request);
     }

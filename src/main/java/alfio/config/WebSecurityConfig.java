@@ -17,6 +17,7 @@
 package alfio.config;
 
 import alfio.manager.RecaptchaService;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.user.Role;
 import alfio.model.user.User;
@@ -48,6 +49,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.util.regex.Pattern;
+
+import static alfio.model.system.Configuration.getSystemConfiguration;
+import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 
 @Configuration
 @EnableWebSecurity
@@ -119,6 +123,8 @@ public class WebSecurityConfig {
 
         @Autowired
         private RecaptchaService recaptchaService;
+        @Autowired
+        private ConfigurationManager configurationManager;
 
         @Bean
         public CsrfTokenRepository getCsrfTokenRepository() {
@@ -181,7 +187,7 @@ public class WebSecurityConfig {
 
             //
 
-            http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed"), UsernamePasswordAuthenticationFilter.class);
+            http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
 
             if(environment.acceptsProfiles(Initializer.PROFILE_DEMO)) {
                 http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, "/authenticate"), RecaptchaLoginFilter.class);
@@ -193,12 +199,17 @@ public class WebSecurityConfig {
             private final RequestMatcher requestMatcher;
             private final RecaptchaService recaptchaService;
             private final String recaptchaFailureUrl;
+            private final ConfigurationManager configurationManager;
 
 
-            RecaptchaLoginFilter(RecaptchaService recaptchaService, String loginProcessingUrl, String recaptchaFailureUrl) {
+            RecaptchaLoginFilter(RecaptchaService recaptchaService,
+                                 String loginProcessingUrl,
+                                 String recaptchaFailureUrl,
+                                 ConfigurationManager configurationManager) {
                 this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
                 this.recaptchaService = recaptchaService;
                 this.recaptchaFailureUrl = recaptchaFailureUrl;
+                this.configurationManager = configurationManager;
             }
 
 
@@ -206,8 +217,8 @@ public class WebSecurityConfig {
             public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
                 HttpServletRequest req = (HttpServletRequest) request;
                 HttpServletResponse res = (HttpServletResponse) response;
-
-                if(requestMatcher.matches(req) && !recaptchaService.checkRecaptcha(req)) {
+                boolean captchaEnabled = configurationManager.getBooleanConfigValue(getSystemConfiguration(ENABLE_CAPTCHA_FOR_LOGIN), true);
+                if(captchaEnabled && requestMatcher.matches(req) && !recaptchaService.checkRecaptcha(req)) {
                     res.sendRedirect(recaptchaFailureUrl);
                     return;
                 }

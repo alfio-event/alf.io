@@ -20,7 +20,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +27,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.security.Principal;
+
+import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 
 @Controller
 @AllArgsConstructor
@@ -46,10 +47,12 @@ public class LoginController {
         model.addAttribute("recaptchaFailed", recaptchaFailed != null);
         model.addAttribute("hasRecaptchaApiKey", false);
 
-        configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.RECAPTCHA_API_KEY)).ifPresent(key -> {
-            model.addAttribute("hasRecaptchaApiKey", true);
-            model.addAttribute("recaptchaApiKey", key);
-        });
+        configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.RECAPTCHA_API_KEY))
+            .filter(key -> configurationManager.getBooleanConfigValue(Configuration.getSystemConfiguration(ENABLE_CAPTCHA_FOR_LOGIN), true))
+            .ifPresent(key -> {
+                model.addAttribute("hasRecaptchaApiKey", true);
+                model.addAttribute("recaptchaApiKey", key);
+            });
 
         return "/login/login";
     }
