@@ -53,4 +53,10 @@ public interface AuditingRepository {
 
     @Query("select * from auditing_user where reservation_id = :reservationId order by event_time asc")
     List<Audit> findAllForReservation(@Bind("reservationId") String reservationId);
+
+
+
+    @Query("insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) " +
+        " select tickets_reservation_id, null, event_id, 'UPDATE_TICKET_CATEGORY', sysdate, 'TICKET', concat('', id), null from ticket where category_id = :ticketCategoryId and tickets_reservation_id is not null")
+    int insertUpdateTicketInCategoryId(@Bind("ticketCategoryId") int id);
 }

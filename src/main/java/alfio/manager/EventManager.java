@@ -99,6 +99,7 @@ public class EventManager {
     private final Flyway flyway;
     private final Environment environment;
     private final OrganizationRepository organizationRepository;
+    private final AuditingRepository auditingRepository;
 
 
     public Event getSingleEvent(String eventName, String username) {
@@ -568,6 +569,11 @@ public class EventManager {
         handlePriceChange(event, original, updated);
 
         insertOrUpdateTicketCategoryDescription(tc.getId(), tc, event);
+
+        //
+
+        auditingRepository.insertUpdateTicketInCategoryId(tc.getId());
+
     }
 
     private void handleTicketAllocationStrategyChange(Event event, TicketCategory original, TicketCategoryModification updated) {
