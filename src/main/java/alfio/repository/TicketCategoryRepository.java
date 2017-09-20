@@ -68,6 +68,10 @@ public interface TicketCategoryRepository {
     
     @Query("select * from ticket_category where event_id = :eventId")
     List<TicketCategory> findByEventId(@Bind("eventId") int eventId);
+
+    default Map<Integer, TicketCategory> findByEventIdAsMap(int eventId) {
+        return findByEventId(eventId).stream().collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
+    }
     
     @Query("select count(*) from ticket_category where event_id = :eventId and access_restricted = true")
     Integer countAccessRestrictedRepositoryByEventId(@Bind("eventId") int eventId);

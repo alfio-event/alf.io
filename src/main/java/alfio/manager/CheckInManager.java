@@ -298,6 +298,9 @@ public class CheckInManager {
     }
 
     public Map<String,String> getEncryptedAttendeesInformation(Event ev, Set<String> additionalFields, List<Integer> ids) {
+
+        Map<Integer, TicketCategory> categories = ticketCategoryRepository.findByEventIdAsMap(ev.getId());
+
         return Optional.ofNullable(ev).filter(isOfflineCheckInEnabled()).map(event -> {
             String eventKey = event.getPrivateKey();
 
@@ -316,6 +319,16 @@ public class CheckInManager {
                     Map<String, String> map = ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
                     info.put("additionalInfoJson", Json.toJson(map));
                 }
+
+                //
+                TicketCategory tc = categories.get(ticket.getCategoryId());
+                if(tc.getValidCheckInTo() != null) {
+                    info.put("validCheckInFrom", Long.toString(tc.getValidCheckInFrom(event.getZoneId()).toEpochSecond()));
+                }
+                if(tc.getValidCheckInFrom() != null) {
+                    info.put("validCheckInTo", Long.toString(tc.getValidCheckInTo(event.getZoneId()).toEpochSecond()));
+                }
+                //
                 String key = ticket.ticketCode(eventKey);
                 return encrypt(key, Json.toJson(info));
             };
