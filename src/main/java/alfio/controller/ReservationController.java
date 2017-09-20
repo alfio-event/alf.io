@@ -84,6 +84,7 @@ public class ReservationController {
     private final TicketRepository ticketRepository;
     private final EuVatChecker vatChecker;
     private final MollieManager mollieManager;
+    private final RecaptchaService recaptchaService;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
     public String showPaymentPage(@PathVariable("eventName") String eventName,
@@ -137,6 +138,10 @@ public class ReservationController {
                             log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName() , e);
                         }
                         model.addAttribute("delayForOfflinePayment", 0);
+                    }
+                    if(event.getAllowedPaymentProxies().stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {
+                        model.addAttribute("captchaRequestedForOffline", configurationManager.isRecaptchaForOfflinePaymentEnabled(event))
+                            .addAttribute("recaptchaApiKey", configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null));
                     }
 
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
@@ -403,6 +408,11 @@ public class ReservationController {
             bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
         }
 
+        if(isCaptchaInvalid(paymentForm.getPaymentMethod(), request, event)) {
+            log.debug("captcha validation failed.");
+            bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
+        }
+
         final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         if(paymentForm.getPaymentMethod() != PaymentProxy.PAYPAL || !paymentForm.hasPaypalTokens()) {
             if(!paymentForm.isPostponeAssignment() && !ticketRepository.checkTicketUUIDs(reservationId, paymentForm.getTickets().keySet())) {
@@ -475,6 +485,12 @@ public class ReservationController {
         }
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
+    }
+
+    private boolean isCaptchaInvalid(PaymentProxy paymentMethod, HttpServletRequest request, Event event) {
+        return (paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
+                && configurationManager.isRecaptchaForOfflinePaymentEnabled(event)
+                && !recaptchaService.checkRecaptcha(request);
     }
 
     private void assignTickets(String eventName, String reservationId, PaymentForm paymentForm, BindingResult bindingResult, HttpServletRequest request, boolean preAssign) {

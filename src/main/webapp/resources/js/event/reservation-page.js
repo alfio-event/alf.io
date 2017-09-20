@@ -238,6 +238,7 @@
 
                 } else {
                     $('#payment-method-STRIPE').find('input').val('').removeAttr('required');
+                    methodSelected(method);
                 }
             });
         }
@@ -375,4 +376,27 @@
             }
         })
     });
+
+    window.recaptchaLoadCallback = function() {
+        window.recaptchaReady = true;
+        var methods = $('input[name=paymentMethod]');
+        if(methods.length === 1) {
+            methodSelected(methods.val());
+        }
+    };
+
+    var methodSelected = function(method) {
+        if((method === 'OFFLINE' || method === 'ON_SITE') && window.recaptchaReady) {
+            $('.g-recaptcha').each(function(i, e) {
+                try {
+                    grecaptcha.reset(e.id);
+                } catch(x) {}
+            });
+            try {
+                grecaptcha.render('captcha-'+method, {'sitekey': $('#captcha-'+method).attr('data-sitekey')});
+            } catch(x) {}
+        }
+    };
+
+
 })();
