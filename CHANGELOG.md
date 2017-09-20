@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.12-RC4](https://github.com/exteso/alf.io/tree/1.12-RC4) (2017-09-12)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.12-RC3...1.12-RC4)
+
+**Implemented enhancements:**
+
+- improve email log UI/UX [\#288](https://github.com/exteso/alf.io/issues/288)
+
+**Merged pull requests:**
+
+- 288 email log [\#336](https://github.com/exteso/alf.io/pull/336) ([syjer](https://github.com/syjer))
+
 ## [1.12-RC3](https://github.com/exteso/alf.io/tree/1.12-RC3) (2017-09-08)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.12-RC2...1.12-RC3)
 
