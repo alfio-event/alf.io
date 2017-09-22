@@ -47,7 +47,7 @@ public class CategoryEvaluatorTest {
         when(ticket.getCategoryId()).thenReturn(categoryId);
         when(ticket.getEventId()).thenReturn(eventId);
         when(ticket.getStatus()).thenReturn(Ticket.TicketStatus.ACQUIRED);
-        when(tcr.getById(eq(categoryId), eq(eventId))).thenReturn(category);
+        when(tcr.getByIdAndActive(eq(categoryId), eq(eventId))).thenReturn(category);
     }
 
     @Test

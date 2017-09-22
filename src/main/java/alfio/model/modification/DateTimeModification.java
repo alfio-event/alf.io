@@ -49,7 +49,11 @@ public class DateTimeModification {
     }
 
     public static DateTimeModification fromZonedDateTime(ZonedDateTime zonedDateTime) {
-        return new DateTimeModification(zonedDateTime.toLocalDate(), zonedDateTime.toLocalTime());
+        return zonedDateTime == null ? null : new DateTimeModification(zonedDateTime.toLocalDate(), zonedDateTime.toLocalTime());
+    }
+
+    public static ZonedDateTime toZonedDateTime(DateTimeModification t, ZoneId zoneId) {
+        return t == null ? null : t.toZonedDateTime(zoneId);
     }
 
 }

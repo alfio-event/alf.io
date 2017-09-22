@@ -114,7 +114,7 @@ public class CustomMessageManager {
                     List<Mailer.Attachment> attachments = new ArrayList<>();
                     if(m.isAttachTicket()) {
                         ticketReservationManager.findById(ticket.getTicketsReservationId()).ifPresent(reservation -> {
-                            ticketCategoryRepository.getById(ticket.getCategoryId()).ifPresent(ticketCategory -> {
+                            ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId()).ifPresent(ticketCategory -> {
                                 attachments.add(generateTicketAttachment(ticket, reservation, ticketCategory, organization));
                             });
                         });

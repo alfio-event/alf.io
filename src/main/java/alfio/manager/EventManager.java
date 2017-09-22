@@ -25,11 +25,8 @@ import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketFieldConfiguration.Context;
-import alfio.model.modification.EventModification;
+import alfio.model.modification.*;
 import alfio.model.modification.EventModification.AdditionalField;
-import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
-import alfio.model.modification.TicketCategoryModification;
-import alfio.model.modification.TicketFieldDescriptionModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.system.Configuration;
@@ -102,6 +99,7 @@ public class EventManager {
     private final Flyway flyway;
     private final Environment environment;
     private final OrganizationRepository organizationRepository;
+    private final AuditingRepository auditingRepository;
 
 
     public Event getSingleEvent(String eventName, String username) {
@@ -367,7 +365,7 @@ public class EventManager {
         return categories.stream().filter(tc -> tc.getId() == categoryId).findFirst()
             .map(existing -> new Result.Builder<>(() -> {
                     updateCategory(tcm, event.isFreeOfCharge(), event.getZoneId(), event);
-                    return ticketCategoryRepository.getById(categoryId, eventId);
+                    return ticketCategoryRepository.getByIdAndActive(categoryId, eventId);
                 })
                 .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
                 .addValidation(() -> tcm.getMaxTickets() - existing.getMaxTickets() + ticketRepository.countAllocatedTicketsForEvent(eventId) <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
@@ -405,7 +403,7 @@ public class EventManager {
 
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
         Event event = eventRepository.findById(eventId);
-        reallocateTickets(ticketCategoryRepository.findStatisticWithId(srcCategoryId, eventId), Optional.of(ticketCategoryRepository.getById(targetCategoryId, event.getId())), event);
+        reallocateTickets(ticketCategoryRepository.findStatisticWithId(srcCategoryId, eventId), Optional.of(ticketCategoryRepository.getByIdAndActive(targetCategoryId, event.getId())), event);
     }
 
     void reallocateTickets(TicketCategoryStatisticView src, Optional<TicketCategory> target, Event event) {
@@ -493,12 +491,13 @@ public class EventManager {
             final int price = evaluatePrice(tc.getPriceInCents(), freeOfCharge);
             final int maxTickets = tc.isBounded() ? tc.getMaxTickets() : 0;
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
-                tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()));
+                tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
+                DateTimeModification.toZonedDateTime(tc.getValidCheckInFrom(), zoneId), DateTimeModification.toZonedDateTime(tc.getValidCheckInTo(), zoneId));
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
             if (tc.isTokenGenerationRequested()) {
-                final TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getKey(), event.getId());
+                final TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), event.getId());
                 final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategory, ticketCategory.getMaxTickets());
                 jdbc.batchUpdate(specialPriceRepository.bulkInsert(), args);
             }
@@ -510,8 +509,10 @@ public class EventManager {
         int eventId = event.getId();
         final int price = evaluatePrice(tc.getPriceInCents(), event.isFreeOfCharge());
         final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
-            tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.isBounded() ? tc.getMaxTickets() : 0, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()));
-        TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getKey(), eventId);
+            tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.isBounded() ? tc.getMaxTickets() : 0, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
+            DateTimeModification.toZonedDateTime(tc.getValidCheckInFrom(), zoneId),
+            DateTimeModification.toZonedDateTime(tc.getValidCheckInTo(), zoneId));
+        TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
             jdbc.batchUpdate(ticketRepository.bulkTicketUpdate(), lockedTickets.stream().map(id -> new MapSqlParameterSource("id", id).addValue("categoryId", ticketCategory.getId()).addValue("srcPriceCts", ticketCategory.getSrcPriceCts())).toArray(MapSqlParameterSource[]::new));
@@ -551,10 +552,12 @@ public class EventManager {
     private void updateCategory(TicketCategoryModification tc, boolean freeOfCharge, ZoneId zoneId, Event event) {
         int eventId = event.getId();
         final int price = evaluatePrice(tc.getPriceInCents(), freeOfCharge);
-        TicketCategory original = ticketCategoryRepository.getById(tc.getId(), eventId);
+        TicketCategory original = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         ticketCategoryRepository.update(tc.getId(), tc.getName(), tc.getInception().toZonedDateTime(zoneId),
-                tc.getExpiration().toZonedDateTime(zoneId), tc.getMaxTickets(), tc.isTokenGenerationRequested(), price, StringUtils.trimToNull(tc.getCode()));
-        TicketCategory updated = ticketCategoryRepository.getById(tc.getId(), eventId);
+                tc.getExpiration().toZonedDateTime(zoneId), tc.getMaxTickets(), tc.isTokenGenerationRequested(), price, StringUtils.trimToNull(tc.getCode()),
+                DateTimeModification.toZonedDateTime(tc.getValidCheckInFrom(), zoneId),
+                DateTimeModification.toZonedDateTime(tc.getValidCheckInTo(), (zoneId)));
+        TicketCategory updated = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         int addedTickets = 0;
         if(original.isBounded() ^ tc.isBounded()) {
             handleTicketAllocationStrategyChange(event, original, tc);
@@ -566,6 +569,11 @@ public class EventManager {
         handlePriceChange(event, original, updated);
 
         insertOrUpdateTicketCategoryDescription(tc.getId(), tc, event);
+
+        //
+
+        auditingRepository.insertUpdateTicketInCategoryId(tc.getId());
+
     }
 
     private void handleTicketAllocationStrategyChange(Event event, TicketCategory original, TicketCategoryModification updated) {
@@ -687,7 +695,7 @@ public class EventManager {
     }
 
     public TicketCategory getTicketCategoryById(int id, int eventId) {
-        return ticketCategoryRepository.getById(id, eventId);
+        return ticketCategoryRepository.getByIdAndActive(id, eventId);
     }
 
     public AdditionalService getAdditionalServiceById(int id, int eventId) {

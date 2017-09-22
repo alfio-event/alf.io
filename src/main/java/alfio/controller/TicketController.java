@@ -134,7 +134,7 @@ public class TicketController {
         }
         Triple<Event, TicketReservation, Ticket> data = oData.get();
         Event event = data.getLeft();
-        TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId(), event.getId());
+        TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(data.getRight().getCategoryId(), event.getId());
         Organization organization = organizationRepository.getById(event.getOrganizationId());
 
         boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticketCategory.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false);
@@ -176,7 +176,7 @@ public class TicketController {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         notificationManager.sendTicketByEmail(ticket,
             event, locale, TemplateProcessor.buildPartialEmail(event, organization, reservation, templateManager, ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid()), request),
-            reservation, ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId()));
+            reservation, ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId()));
         return ticket;
     }
 
@@ -234,7 +234,7 @@ public class TicketController {
     }
 
     private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
-        TicketCategory ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId(), event.getId());
+        TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation.getId());
         return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation,
@@ -249,7 +249,7 @@ public class TicketController {
         Triple<Event, TicketReservation, Ticket> data = oData.get();
 
 
-        TicketCategory ticketCategory = ticketCategoryRepository.getById(data.getRight().getCategoryId(), data.getLeft().getId());
+        TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(data.getRight().getCategoryId(), data.getLeft().getId());
         Organization organization = organizationRepository.getById(data.getLeft().getOrganizationId());
         Event event = data.getLeft();
 

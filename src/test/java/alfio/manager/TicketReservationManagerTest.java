@@ -175,7 +175,7 @@ public class TicketReservationManagerTest {
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
         when(event.mustUseFirstAndLastName()).thenReturn(false);
-        when(ticketCategoryRepository.getById(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
+        when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(specialPrice.getCode()).thenReturn(SPECIAL_PRICE_CODE);
         when(specialPrice.getId()).thenReturn(SPECIAL_PRICE_ID);
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
@@ -601,7 +601,7 @@ public class TicketReservationManagerTest {
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
         when(ticket.getCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
-        when(ticketCategoryRepository.getById(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
+        when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(organizationRepository.getById(eq(ORGANIZATION_ID))).thenReturn(organization);
         when(event.getShortName()).thenReturn(EVENT_NAME);
     }
@@ -628,7 +628,7 @@ public class TicketReservationManagerTest {
     @Test(expected = IllegalStateException.class)
     public void cannotReleaseRestrictedTicketIfNoUnboundedCategory() throws Exception {
         initReleaseTicket();
-        when(ticketCategoryRepository.getById(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
+        when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(ticketCategoryRepository.countUnboundedCategoriesByEventId(eq(EVENT_ID))).thenReturn(0);
         when(ticketCategory.isAccessRestricted()).thenReturn(true);
         trm.releaseTicket(event, ticketReservation, ticket);
@@ -640,7 +640,7 @@ public class TicketReservationManagerTest {
         initReleaseTicket();
         when(ticketCategory.getId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.releaseTicket(eq(RESERVATION_ID), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(1);
-        when(ticketCategoryRepository.getById(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
+        when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(ticketCategory.isAccessRestricted()).thenReturn(true);
         when(ticketCategoryRepository.countUnboundedCategoriesByEventId(eq(EVENT_ID))).thenReturn(1);
         List<String> expectedReservations = singletonList(RESERVATION_ID);

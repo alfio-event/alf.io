@@ -124,7 +124,8 @@
                 maxDate: '=',
                 startDate: '=',
                 startModelObj: '=startModel',
-                watchObj: '='
+                watchObj: '=',
+                noInitDate: '='
             },
             require: '^ngModel',
             link: function(scope, element, attrs, ctrl) {
@@ -141,7 +142,7 @@
                 };
 
                 var initDateUsingNow = function(modelObj) {
-                    if(!angular.isDefined(modelObj) || !angular.isDefined(modelObj.date) || !angular.isDefined(modelObj.time)) {
+                    if(!(modelObj && modelObj.date && modelObj.time)) {
                         return getNowAtStartOfHour();
                     }
                     var date = moment(modelObj.date + 'T' + modelObj.time);
@@ -152,8 +153,12 @@
                 var startDate = initDateUsingNow(scope.startModelObj);
 
                 var result = startDate.format(dateFormat);
-                ctrl.$setViewValue(result);
-                element.val(result);
+
+                if(!scope.noInitDate || (scope.startModelObj && scope.startModelObj.date && scope.startModelObj.time)) {
+                    ctrl.$setViewValue(result);
+                    element.val(result);
+                }
+
 
                 var minDate = scope.minDate || getNowAtStartOfHour();
 
@@ -169,9 +174,10 @@
                     singleDatePicker: true
                 });
 
-                scope.startModelObj['date'] = startDate.format('YYYY-MM-DD');
-                scope.startModelObj['time'] = startDate.format('HH:mm');
-
+                if(!scope.noInitDate) {
+                    scope.startModelObj['date'] = startDate.format('YYYY-MM-DD');
+                    scope.startModelObj['time'] = startDate.format('HH:mm');
+                }
 
                 function updateDates(picker, override) {
                     if(angular.isDefined(picker)) {
@@ -182,7 +188,17 @@
                 }
 
                 function updateInDigest(picker, override) {
+
+                    if(picker.element.val() == "") {
+                        scope.startModelObj = null;
+                        ctrl.$setViewValue(element.val());
+                        return;
+                    }
+
                     var start = picker.startDate;
+
+                    scope.startModelObj = scope.startModelObj || {};
+
                     scope.startModelObj['date'] = start.format('YYYY-MM-DD');
                     scope.startModelObj['time'] = start.format('HH:mm');
                     if (override) {

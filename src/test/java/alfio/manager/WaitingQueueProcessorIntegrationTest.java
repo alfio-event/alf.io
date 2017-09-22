@@ -114,7 +114,7 @@ public class WaitingQueueProcessorIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                         new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event), "peppino@garibaldi.com", null, Locale.ENGLISH);
@@ -127,7 +127,7 @@ public class WaitingQueueProcessorIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null);
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null);
         eventManager.insertCategory(event.getId(), tcm, pair.getValue());
 
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -192,7 +192,7 @@ public class WaitingQueueProcessorIntegrationTest {
         TicketCategory category = eventManager.loadTicketCategories(event).get(0);
         eventManager.updateCategory(category.getId(), event.getId(), new TicketCategoryModification(category.getId(), category.getName(), category.getMaxTickets() + 1,
             fromZonedDateTime(category.getInception(event.getZoneId())), fromZonedDateTime(category.getExpiration(event.getZoneId())), emptyMap(), category.getPrice(),
-            category.isAccessRestricted(), "", category.isBounded(), null), "admin");
+            category.isAccessRestricted(), "", category.isBounded(), null, null, null), "admin");
 
         //now the waiting queue processor should create the reservation for the first in line
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -210,13 +210,13 @@ public class WaitingQueueProcessorIntegrationTest {
             new TicketCategoryModification(null, "default", boundedCategorySize,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                DESCRIPTION, BigDecimal.ZERO, false, "", true, null));
+                DESCRIPTION, BigDecimal.ZERO, false, "", true, null, null, null));
 
         if(withUnboundedCategory) {
              categories.add(new TicketCategoryModification(null, "unbounded", 0,
                  new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                  new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                 DESCRIPTION, BigDecimal.ZERO, false, "", false, null));
+                 DESCRIPTION, BigDecimal.ZERO, false, "", false, null, null, null));
         }
 
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
