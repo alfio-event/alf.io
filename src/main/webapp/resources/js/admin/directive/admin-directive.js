@@ -608,14 +608,14 @@
                     getPendingPayments();
                     var promise = $interval(getPendingPayments, 10000);
 
-                    element.on('$destroy', function() {
+                    scope.$on('$destroy', function() {
                         $interval.cancel(promise);
                     });
                 } else {
                     var listener = $rootScope.$on('PendingReservationsFound', function(data) {
                         scope.pendingReservationsCount = data;
                     });
-                    element.on('$destroy', function() {
+                    scope.$on('$destroy', function() {
                         listener();
                     });
                 }
