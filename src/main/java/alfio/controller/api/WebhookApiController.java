@@ -16,26 +16,36 @@
  */
 package alfio.controller.api;
 
-import alfio.manager.MollieManager;
-import alfio.manager.TicketReservationManager;
+import alfio.manager.StripeManager;
 import lombok.AllArgsConstructor;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/webhook")
 @AllArgsConstructor
 public class WebhookApiController {
 
+    //private final MollieManager mollieManager;
+    //private final TicketReservationManager ticketReservationManager;
+    private final StripeManager stripeManager;
 
-    private final MollieManager mollieManager;
-    private final TicketReservationManager ticketReservationManager;
-
-    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/webhook/mollie", method = RequestMethod.POST)
+    @RequestMapping(value = "/mollie/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
     public void handleMollie(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) throws Exception {
         // mollieManager.handleWebhook(eventName, reservationId, null);
         // call ticketReservationManager.confirm... if handlewebhoook return status paid
+    }
+
+    @RequestMapping(value = "/stripe/notification", method = RequestMethod.POST)
+    public ResponseEntity<Boolean> handleStripeMessage(@RequestBody String body,
+                                                      @RequestHeader(value = "Stripe-Signature", required = false) String stripeSignature) {
+        return Optional.ofNullable(body)
+            .flatMap(b -> stripeManager.processWebhookEvent(body, stripeSignature))
+            .filter(b -> b)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> new ResponseEntity<>(HttpStatus.BAD_REQUEST));
     }
 }

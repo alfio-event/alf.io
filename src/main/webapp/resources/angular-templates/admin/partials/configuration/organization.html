@@ -95,20 +95,42 @@
                     </div>
                 </div>
 
-                <div class="page-header" data-ng-if="organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
+                <div class="page-header" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
                     <h2>Payment</h2>
                     <span>Payment provider settings</span>
+                </div>
+
+                <div data-ng-if="organizationConf.payment" class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-dollar"></i> General</div>
+                    </div>
+                    <div class="panel-body">
+                        <div data-ng-repeat="setting in organizationConf.payment.settings">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                        </div>
+                    </div>
                 </div>
 
                 <div data-ng-if="organizationConf.paymentStripe" class="panel panel-default">
                     <div class="panel-heading">
                         <div class="panel-title"><i class="fa fa-cc-stripe"></i> Stripe configuration</div>
                     </div>
-                    <div class="panel-body">
+                    <div class="panel-body" ng-if="!organizationConf.platformModeEnabled">
                         <div class="alert alert-info"><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></div>
                         <div data-ng-repeat="setting in organizationConf.paymentStripe.settings">
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
+                    </div>
+                    <div class="panel-body" ng-if="organizationConf.platformModeEnabled">
+                        <div class="row">
+                            <div class="col-xs-4 col-md-3">
+                                <a class="stripe-connect" ng-href="configuration/payment/stripe/connect/{{organizationConf.organizationId}}"><span>Connect with Stripe</span></a>
+                            </div>
+                            <div class="col-xs-8 col-md-9" ng-class="{'text-success': organizationConf.stripeConnected}">
+                                <i class="fa" ng-class="{'fa-check': organizationConf.stripeConnected, 'fa-question': !organizationConf.stripeConnected}"></i> <span ng-if="organizationConf.stripeConnected">Connected</span> <span ng-if="!organizationConf.stripeConnected">NOT Connected</span>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 

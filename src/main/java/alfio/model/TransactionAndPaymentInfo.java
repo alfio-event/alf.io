@@ -27,7 +27,7 @@ import lombok.Getter;
 public class TransactionAndPaymentInfo {
     private final PaymentProxy paymentMethod;
     private final Transaction transaction;
-    private final PaymentInformations paymentInformations;
+    private final PaymentInformation paymentInformation;
 
     public boolean isSupportRefund() {
         return paymentMethod != null && paymentMethod.isSupportRefund();

@@ -17,6 +17,7 @@
 package alfio.util;
 
 import java.math.BigDecimal;
+import java.util.function.Function;
 
 import static java.math.RoundingMode.*;
 
@@ -40,9 +41,13 @@ public final class MonetaryUtil {
     }
 
     public static int calcPercentage(int priceInCents, BigDecimal vat) {
-        return new BigDecimal(priceInCents).multiply(vat.divide(HUNDRED, 5, UP))
-                .setScale(0, HALF_UP)
-                .intValueExact();
+        return calcPercentage((long) priceInCents, vat, BigDecimal::intValueExact);
+    }
+
+    public static <T extends Number> T calcPercentage(long priceInCents, BigDecimal vat, Function<BigDecimal, T> converter) {
+        BigDecimal result = new BigDecimal(priceInCents).multiply(vat.divide(HUNDRED, 5, UP))
+            .setScale(0, HALF_UP);
+        return converter.apply(result);
     }
 
     public static BigDecimal calcVat(BigDecimal price, BigDecimal percentage) {
@@ -58,7 +63,12 @@ public final class MonetaryUtil {
     }
 
     public static int unitToCents(BigDecimal unit) {
-        return unit.multiply(HUNDRED).setScale(0, HALF_UP).intValueExact();
+        return unitToCents(unit, BigDecimal::intValueExact);
+    }
+
+    public static <T extends Number> T unitToCents(BigDecimal unit, Function<BigDecimal, T> converter) {
+        BigDecimal result = unit.multiply(HUNDRED).setScale(0, HALF_UP);
+        return converter.apply(result);
     }
 
     public static String formatCents(long cents) {

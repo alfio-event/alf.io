@@ -69,13 +69,13 @@ public class PaymentManager {
      * @return PaymentResult
      * @throws java.lang.IllegalStateException if there is an error after charging the credit card
      */
-    public PaymentResult processStripePayment(String reservationId,
-                                              String gatewayToken,
-                                              int price,
-                                              Event event,
-                                              String email,
-                                              CustomerName customerName,
-                                              String billingAddress) {
+    PaymentResult processStripePayment(String reservationId,
+                                       String gatewayToken,
+                                       int price,
+                                       Event event,
+                                       String email,
+                                       CustomerName customerName,
+                                       String billingAddress) {
         try {
             final Charge charge = stripeManager.chargeCreditCard(gatewayToken, price,
                     event, reservationId, email, customerName.getFullName(), billingAddress);
@@ -92,11 +92,11 @@ public class PaymentManager {
 
     }
 
-    public PaymentResult processPaypalPayment(String reservationId,
-                                              String token,
-                                              String payerId,
-                                              int price,
-                                              Event event) {
+    PaymentResult processPayPalPayment(String reservationId,
+                                       String token,
+                                       String payerId,
+                                       int price,
+                                       Event event) {
         try {
             Pair<String, String> captureAndPaymentId = paypalManager.commitPayment(reservationId, token, payerId, event);
             String captureId = captureAndPaymentId.getLeft();
@@ -136,7 +136,7 @@ public class PaymentManager {
 
     public boolean refund(TicketReservation reservation, Event event, Optional<Integer> amount, String username) {
         Transaction transaction = transactionRepository.loadByReservationId(reservation.getId());
-        boolean res = false;
+        boolean res;
         switch(reservation.getPaymentMethod()) {
             case PAYPAL:
                 res = paypalManager.refund(transaction, event, amount);
@@ -150,7 +150,7 @@ public class PaymentManager {
 
         if(res) {
             Map<String, Object> changes = new HashMap<>();
-            changes.put("refund", amount.map(i -> i.toString()).orElse("full"));
+            changes.put("refund", amount.map(Object::toString).orElse("full"));
             changes.put("paymentMethod", reservation.getPaymentMethod().toString());
             auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null),
                 event.getId(),
@@ -161,7 +161,7 @@ public class PaymentManager {
         return res;
     }
 
-    public TransactionAndPaymentInfo getInfo(TicketReservation reservation, Event event) {
+    TransactionAndPaymentInfo getInfo(TicketReservation reservation, Event event) {
         Optional<Transaction> maybeTransaction = transactionRepository.loadOptionalByReservationId(reservation.getId());
         return maybeTransaction.map(transaction -> {
             switch(reservation.getPaymentMethod()) {
@@ -170,9 +170,9 @@ public class PaymentManager {
                 case STRIPE:
                     return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, stripeManager.getInfo(transaction, event).orElse(null));
                 default:
-                    return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, new PaymentInformations(reservation.getPaidAmount(), null));
+                    return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, new PaymentInformation(reservation.getPaidAmount(), null, null, null));
             }
-        }).orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformations(reservation.getPaidAmount(), null)));
+        }).orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformation(reservation.getPaidAmount(), null, null, null)));
     }
 
     @Data

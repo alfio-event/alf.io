@@ -172,6 +172,7 @@ dependencies {
     compile 'com.ryantenney.passkit4j:passkit4j:2.0.1'
     compile 'com.github.ben-manes.caffeine:caffeine:2.5.3'
     compile 'de.danielbechler:java-object-diff:0.95-RC5'
+    compile 'com.github.scribejava:scribejava-core:4.2.0'
 
     testCompile "org.springframework:spring-test:$springVersion"
     testCompile "com.insightfullogic:lambda-behave:0.3"

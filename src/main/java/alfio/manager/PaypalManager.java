@@ -16,15 +16,14 @@
  */
 package alfio.manager;
 
-import alfio.model.*;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.*;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketReservationRepository;
 import alfio.util.MonetaryUtil;
 import com.paypal.api.payments.*;
-import com.paypal.api.payments.Transaction;
 import com.paypal.base.rest.APIContext;
 import com.paypal.base.rest.PayPalRESTException;
 import lombok.AllArgsConstructor;
@@ -236,7 +235,7 @@ public class PaypalManager {
         return Pair.of(captureId, payment.getId());
     }
 
-    public Optional<PaymentInformations> getInfo(alfio.model.transaction.Transaction transaction, Event event) {
+    public Optional<PaymentInformation> getInfo(alfio.model.transaction.Transaction transaction, Event event) {
         try {
             String refund = null;
 
@@ -255,7 +254,7 @@ public class PaypalManager {
                 //
             }
             Capture c = Capture.get(getApiContext(event), transaction.getTransactionId());
-            return Optional.ofNullable(new PaymentInformations(c.getAmount().getTotal(), refund));
+            return Optional.of(new PaymentInformation(c.getAmount().getTotal(), refund, c.getTransactionFee().getValue(), null));
         } catch (PayPalRESTException ex) {
             log.warn("Paypal: error while fetching information for payment id " + transaction.getTransactionId(), ex);
             return Optional.empty();

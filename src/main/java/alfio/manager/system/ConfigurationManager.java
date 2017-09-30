@@ -26,12 +26,12 @@ import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +49,7 @@ import static alfio.util.OptionalWrapper.optionally;
 @Component
 @Transactional
 @Log4j2
+@AllArgsConstructor
 public class ConfigurationManager {
 
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ORGANIZATION);
@@ -61,15 +62,6 @@ public class ConfigurationManager {
     private final ConfigurationRepository configurationRepository;
     private final UserManager userManager;
     private final EventRepository eventRepository;
-
-    @Autowired
-    public ConfigurationManager(ConfigurationRepository configurationRepository,
-                                UserManager userManager,
-                                EventRepository eventRepository) {
-        this.configurationRepository = configurationRepository;
-        this.userManager = userManager;
-        this.eventRepository = eventRepository;
-    }
 
     //TODO: refactor, not the most beautiful code, find a better solution...
     private Configuration findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
@@ -151,28 +143,59 @@ public class ConfigurationManager {
 
     // begin SYSTEM related configuration methods
 
+    public void saveConfig(ConfigurationPathKey pathKey, String value) {
+        ConfigurationPath path = pathKey.getPath();
+        switch (path.pathLevel()) {
+            case SYSTEM:
+                saveSystemConfiguration(pathKey.getKey(), value);
+                break;
+            case ORGANIZATION:
+                OrganizationConfigurationPath orgPath = (OrganizationConfigurationPath) path;
+                saveOrganizationConfiguration(orgPath.getId(), pathKey.getKey().name(), value);
+                break;
+            case EVENT:
+                EventConfigurationPath eventPath = (EventConfigurationPath) path;
+                saveEventConfiguration(eventPath.getId(), eventPath.getOrganizationId(), pathKey.getKey().name(), value);
+                break;
+        }
+    }
+
     public void saveAllSystemConfiguration(List<ConfigurationModification> list) {
         list.forEach(c -> saveSystemConfiguration(ConfigurationKeys.fromString(c.getKey()), c.getValue()));
+    }
+
+    private void saveOrganizationConfiguration(int organizationId, String key, String optionValue) {
+        Optional<String> value = evaluateValue(key, optionValue);
+        Optional<Configuration> existing = configurationRepository.findByKeyAtOrganizationLevel(organizationId, key);
+        if (!value.isPresent()) {
+            configurationRepository.deleteOrganizationLevelByKey(key, organizationId);
+        } else if (existing.isPresent()) {
+            configurationRepository.updateOrganizationLevel(organizationId, key, value.get());
+        } else {
+            configurationRepository.insertOrganizationLevel(organizationId, key, value.get(), ConfigurationKeys.fromString(key).getDescription());
+        }
     }
 
     public void saveAllOrganizationConfiguration(int organizationId, List<ConfigurationModification> list, String username) {
         Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "Cannot update settings, user is not owner");
         list.stream()
             .filter(TO_BE_SAVED)
-            .forEach(c -> {
-                Optional<String> value = evaluateValue(c.getKey(), c.getValue());
-                Optional<Configuration> existing = configurationRepository.findByKeyAtOrganizationLevel(organizationId, c.getKey());
-                if (!value.isPresent()) {
-                    configurationRepository.deleteOrganizationLevelByKey(c.getKey(), organizationId);
-                } else if (existing.isPresent()) {
-                    configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), value.get());
-                } else {
-                    configurationRepository.insertOrganizationLevel(organizationId, c.getKey(), value.get(), ConfigurationKeys.fromString(c.getKey()).getDescription());
-                }
-            });
+            .forEach(c -> saveOrganizationConfiguration(organizationId, c.getKey(), c.getValue()));
     }
 
-    public void saveEventConfiguration(int eventId, int organizationId, List<ConfigurationModification> list, String username) {
+    private void saveEventConfiguration(int eventId, int organizationId, String key, String optionValue) {
+        Optional<Configuration> existing = configurationRepository.findByKeyAtEventLevel(eventId, organizationId, key);
+        Optional<String> value = evaluateValue(key, optionValue);
+        if(!value.isPresent()) {
+            configurationRepository.deleteEventLevelByKey(key, eventId);
+        } else if (existing.isPresent()) {
+            configurationRepository.updateEventLevel(eventId, organizationId, key, value.get());
+        } else {
+            configurationRepository.insertEventLevel(organizationId, eventId, key, value.get(), ConfigurationKeys.fromString(key).getDescription());
+        }
+    }
+
+    public void saveAllEventConfiguration(int eventId, int organizationId, List<ConfigurationModification> list, String username) {
         User user = userManager.findUserByUsername(username);
         Validate.isTrue(userManager.isOwnerOfOrganization(user, organizationId), "Cannot update settings, user is not owner");
         Event event = eventRepository.findById(eventId);
@@ -182,17 +205,7 @@ public class ConfigurationManager {
         }
         list.stream()
             .filter(TO_BE_SAVED)
-            .forEach(c -> {
-                Optional<Configuration> existing = configurationRepository.findByKeyAtEventLevel(eventId, organizationId, c.getKey());
-                Optional<String> value = evaluateValue(c.getKey(), c.getValue());
-                if(!value.isPresent()) {
-                    configurationRepository.deleteEventLevelByKey(c.getKey(), eventId);
-                } else if (existing.isPresent()) {
-                    configurationRepository.updateEventLevel(eventId, organizationId, c.getKey(), value.get());
-                } else {
-                    configurationRepository.insertEventLevel(organizationId, eventId, c.getKey(), value.get(), ConfigurationKeys.fromString(c.getKey()).getDescription());
-                }
-            });
+            .forEach(c -> saveEventConfiguration(eventId, organizationId, c.getKey(), c.getValue()));
     }
 
     public void saveCategoryConfiguration(int categoryId, int eventId, List<ConfigurationModification> list, String username) {

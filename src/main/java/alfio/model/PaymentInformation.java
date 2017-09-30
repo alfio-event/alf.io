@@ -21,9 +21,11 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class PaymentInformations {
+public class PaymentInformation {
     private final String paidAmount;
     private final String refundedAmount;
+    private final String fee;
+    private final String applicationFee;
 
     public boolean isFullyRefunded() {
         return paidAmount.equals(refundedAmount);

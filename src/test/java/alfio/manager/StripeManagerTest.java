@@ -25,7 +25,7 @@ import static com.insightfullogic.lambdabehave.Suite.describe;
 @RunWith(JunitSuiteRunner.class)
 public class StripeManagerTest {{
 
-    StripeManager stripeManager = new StripeManager(null, null);
+    StripeManager stripeManager = new StripeManager(null, null, null);
 
     describe("Exception handler", it -> {
 

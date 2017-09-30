@@ -82,7 +82,7 @@ public class AdminWaitingQueueApiController {
     public Map<String, Boolean> setStatusForEvent(@PathVariable("eventName") String eventName, @RequestBody SetStatusForm form, Principal principal) {
         return optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
             .map(event -> {
-                configurationManager.saveEventConfiguration(event.getId(), event.getOrganizationId(),
+                configurationManager.saveAllEventConfiguration(event.getId(), event.getOrganizationId(),
                     singletonList(new ConfigurationModification(null, ConfigurationKeys.STOP_WAITING_QUEUE_SUBSCRIPTIONS.name(), String.valueOf(form.status))),
                     principal.getName());
                 return loadStatus(event);
