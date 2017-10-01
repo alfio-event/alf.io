@@ -116,4 +116,7 @@ public interface ConfigurationRepository {
 
     @Query("UPDATE configuration set c_value = :value where c_key = :key")
     int update(@Bind("key") String existingKey, @Bind("value") String newValue);
+
+    @Query("SELECT organization_id_fk FROM configuration_organization where c_key = :key and c_value = :value")
+    Optional<Integer> findOrganizationIdByKeyAndValue(@Bind("key") String key, @Bind("value") String value);
 }

@@ -178,6 +178,11 @@
                     <alfio-sidebar></alfio-sidebar>
                 </div>
                 <div class="col-sm-12 col-xs-12" ng-class="{'col-md-9': ctrl.displaySidebar}">
+                    {{#errorMessage}}
+                        <div class="container wMarginTop10px">
+                            <div class="alert alert-danger text-center"><i class="fa fa-warning"></i> <strong>{{errorMessage}}</strong></div>
+                        </div>
+                    {{/errorMessage}}
                     <div data-ui-view></div>
                 </div>
             </div>

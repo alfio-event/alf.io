@@ -93,6 +93,9 @@
             loadPluginsConfig: function(eventId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/plugin/load').error(HttpErrorHandler.handle);
             },
+            getPlatformModeStatus: function(orgId) {
+                return $http.get('/admin/api/configuration/platform-mode/status/'+orgId).error(HttpErrorHandler.handle);
+            },
             bulkUpdatePlugins: function(eventId, pluginConfigOptions) {
                 return $http.post('/admin/api/configuration/events/'+eventId+'/plugin/update-bulk', pluginConfigOptions).error(HttpErrorHandler.handle);
             },
@@ -113,7 +116,7 @@
                         mailAttemptsCount: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_ATTEMPTS_COUNT';})
                     };
                 }
-                _.forEach(['PAYMENT_STRIPE', 'PAYMENT_PAYPAL', /*'PAYMENT_MOLLIE',*/ 'PAYMENT_OFFLINE', 'INVOICE_EU', 'ALFIO_PI'], function(group) {
+                _.forEach(['PAYMENT', 'PAYMENT_STRIPE', 'PAYMENT_PAYPAL', /*'PAYMENT_MOLLIE',*/ 'PAYMENT_OFFLINE', 'INVOICE_EU', 'ALFIO_PI'], function(group) {
                     if(angular.isDefined(original[group]) && original[group].length > 0) {
                         transformed[_.camelCase(group)] = {
                             settings: original[group]
@@ -217,11 +220,17 @@
         organizationConf.organizationId = $stateParams.organizationId;
         var load = function() {
             organizationConf.loading = true;
-            $q.all([OrganizationService.getOrganization(organizationConf.organizationId), ConfigurationService.loadOrganizationConfig(organizationConf.organizationId), ConfigurationService.loadEUCountries()])
-                .then(function(result) {
+            $q.all([OrganizationService.getOrganization(organizationConf.organizationId),
+                ConfigurationService.loadOrganizationConfig(organizationConf.organizationId),
+                ConfigurationService.loadEUCountries(),
+                ConfigurationService.getPlatformModeStatus(organizationConf.organizationId)
+            ]).then(function(result) {
                     organizationConf.organization = result[0].data;
                     loadSettings(organizationConf, result[1].data, ConfigurationService);
                     handleEuCountries(organizationConf, result[2].data);
+                    var platformModeStatus = result[3].data;
+                    organizationConf.platformModeEnabled = platformModeStatus.enabled;
+                    organizationConf.stripeConnected = platformModeStatus.stripeConnected;
                 }, function() {
                     organizationConf.loading = false;
                 });

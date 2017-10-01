@@ -71,7 +71,7 @@ public class MollieManager {
         String description = messageSource.getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(event, reservationId), event.getDisplayName()}, locale);
         payload.put("description", description);
         payload.put("redirectUrl", bookUrl);
-        payload.put("webhookUrl", baseUrl + "/api/event/" + eventName + "/reservation/" + reservationId + "/webhook/mollie"); //for testing: "https://test.alf.io/api/webhook/mollie"
+        payload.put("webhookUrl", baseUrl + "/webhook/mollie/api/event/" + eventName + "/reservation/" + reservationId);
 
 
         Map<String, String> initialMetadata = new HashMap<>();

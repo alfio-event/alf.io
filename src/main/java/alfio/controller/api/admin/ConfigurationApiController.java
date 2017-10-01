@@ -26,6 +26,7 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,18 +38,21 @@ import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.Configuration.from;
 import static alfio.model.system.Configuration.getSystemConfiguration;
+import static alfio.model.system.ConfigurationKeys.PLATFORM_MODE_ENABLED;
+import static alfio.model.system.ConfigurationKeys.STRIPE_CONNECTED_ID;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
 @RequestMapping("/admin/api")
-public class SettingsApiController {
+public class ConfigurationApiController {
 
     private final ConfigurationManager configurationManager;
     private final PluginManager pluginManager;
 
     @Autowired
-    public SettingsApiController(ConfigurationManager configurationManager, PluginManager pluginManager) {
+    public ConfigurationApiController(ConfigurationManager configurationManager, PluginManager pluginManager) {
         this.configurationManager = configurationManager;
         this.pluginManager = pluginManager;
     }
@@ -91,7 +95,7 @@ public class SettingsApiController {
     @RequestMapping(value = "/configuration/organizations/{organizationId}/events/{eventId}/update", method = POST)
     public boolean updateEventConfiguration(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId,
                                                     @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
-        configurationManager.saveEventConfiguration(eventId, organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), principal.getName());
+        configurationManager.saveAllEventConfiguration(eventId, organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), principal.getName());
         return true;
     }
 
@@ -145,6 +149,16 @@ public class SettingsApiController {
     @RequestMapping(value = "/configuration/eu-countries", method = GET)
     public List<Pair<String, String>> loadEUCountries(Locale locale) {
         return TicketHelper.getLocalizedEUCountries(locale, configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)));
+    }
+
+    @RequestMapping(value = "/configuration/platform-mode/status/{organizationId}", method = GET)
+    public Map<String, Boolean> loadPlatformModeStatus(@PathVariable("organizationId") int organizationId) {
+        Map<String, Boolean> result = new HashMap<>();
+        boolean platformModeEnabled = configurationManager.getBooleanConfigValue(getSystemConfiguration(PLATFORM_MODE_ENABLED), false);
+        boolean stripeConnected = platformModeEnabled && StringUtils.isNotBlank(configurationManager.getStringConfigValue(from(organizationId, STRIPE_CONNECTED_ID), null));
+        result.put("enabled", platformModeEnabled);
+        result.put("stripeConnected", stripeConnected);
+        return result;
     }
 
     @Data

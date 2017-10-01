@@ -209,6 +209,10 @@ public class Configuration implements Comparable<Configuration> {
         return (p) -> from(organizationId, eventId, p);
     }
 
+    public static Function<ConfigurationKeys, ConfigurationPathKey> from(int organizationId) {
+        return p -> from(organizationId, p);
+    }
+
     public static ConfigurationPathKey from(int organizationId, int eventId, int ticketCategoryId, ConfigurationKeys key) {
         return from(Optional.of(organizationId), Optional.of(eventId), Optional.of(ticketCategoryId), key);
     }
@@ -222,7 +226,7 @@ public class Configuration implements Comparable<Configuration> {
             .filter(path -> path == ConfigurationPathLevel.ORGANIZATION && organizationAvailable
                 || path == ConfigurationPathLevel.EVENT && organizationAvailable && eventAvailable
                 || path == ConfigurationPathLevel.TICKET_CATEGORY && organizationAvailable && eventAvailable && categoryAvailable)
-            .findFirst().orElseGet(() -> ConfigurationPathLevel.SYSTEM);
+            .findFirst().orElse(ConfigurationPathLevel.SYSTEM);
         switch(mostSensible) {
             case ORGANIZATION:
                 return getOrganizationConfiguration(organizationId.get(), key);

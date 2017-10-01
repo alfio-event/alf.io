@@ -81,9 +81,7 @@ import static alfio.util.MonetaryUtil.unitToCents;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
 
@@ -361,7 +359,7 @@ public class TicketReservationManager {
                         }
                         break;
                     case PAYPAL:
-                        paymentResult = paymentManager.processPaypalPayment(reservationId, gatewayToken, payerId, reservationCost.getPriceWithVAT(), event);
+                        paymentResult = paymentManager.processPayPalPayment(reservationId, gatewayToken, payerId, reservationCost.getPriceWithVAT(), event);
                         if(!paymentResult.isSuccessful()) {
                             reTransitionToPending(reservationId);
                             return paymentResult;

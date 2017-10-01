@@ -17,7 +17,7 @@
 package alfio.controller;
 
 import alfio.manager.system.ConfigurationManager;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,15 +26,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.security.Principal;
 
 @Controller
+@AllArgsConstructor
 @RequestMapping("/admin")
 public class AdminController {
 
     private final ConfigurationManager configurationManager;
-
-    @Autowired
-    public AdminController(ConfigurationManager configurationManager) {
-        this.configurationManager = configurationManager;
-    }
 
     //catch both "/admin" and "/admin/"
     @RequestMapping("")

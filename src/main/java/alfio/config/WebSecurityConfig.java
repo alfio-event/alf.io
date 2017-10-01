@@ -48,6 +48,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static alfio.model.system.Configuration.getSystemConfiguration;
@@ -161,10 +162,14 @@ public class WebSecurityConfig {
                     .headers().cacheControl().disable()
                     .and()
                     .csrf();
+
+            Pattern pattern = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
+            Predicate<HttpServletRequest> csrfWhitelistPredicate = r -> r.getRequestURI().startsWith("/api/webhook/") || pattern.matcher(r.getMethod()).matches();
             if(environment.acceptsProfiles(Initializer.PROFILE_DEBUG_CSP)) {
-                Pattern whiteList = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
-                configurer.requireCsrfProtectionMatcher(new NegatedRequestMatcher((r) -> whiteList.matcher(r.getMethod()).matches() || r.getRequestURI().equals("/report-csp-violation")));
+                csrfWhitelistPredicate = csrfWhitelistPredicate.or(r -> r.getRequestURI().equals("/report-csp-violation"));
             }
+            configurer.requireCsrfProtectionMatcher(new NegatedRequestMatcher(csrfWhitelistPredicate::test));
+
             configurer.csrfTokenRepository(getCsrfTokenRepository())
                 .and()
                 .authorizeRequests()
