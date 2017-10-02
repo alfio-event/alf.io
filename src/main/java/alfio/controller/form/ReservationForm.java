@@ -87,9 +87,8 @@ public class ReservationForm implements Serializable {
                                                                                                                                          EventManager eventManager,
                                                                                                                                          Event event) {
         int selectionCount = ticketSelectionCount();
-        int additionalServicesCount = additionalServicesSelectionCount(additionalServiceRepository, event.getId());
 
-        if (selectionCount + additionalServicesCount <= 0) {
+        if (selectionCount <= 0) {
             bindingResult.reject(ErrorsCode.STEP_1_SELECT_AT_LEAST_ONE);
             return Optional.empty();
         }
