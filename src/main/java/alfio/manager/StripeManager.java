@@ -169,7 +169,7 @@ public class StripeManager {
         int tickets = ticketRepository.countTicketsInReservation(reservationId);
         Map<String, Object> chargeParams = new HashMap<>();
         chargeParams.put("amount", amountInCent);
-        chargeParams.put("application_fee", calculateFee(event, tickets, amountInCent));
+        Optional.ofNullable(calculateFee(event, tickets, amountInCent)).ifPresent(fee -> chargeParams.put("application_fee", fee));
         chargeParams.put("currency", event.getCurrency());
         chargeParams.put("card", stripeToken);
 
