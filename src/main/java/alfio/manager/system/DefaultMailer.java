@@ -29,7 +29,6 @@ import java.util.*;
 import static alfio.model.system.ConfigurationKeys.MAILER_TYPE;
 
 @Component
-@Profile(Initializer.PROFILE_LIVE)
 public class DefaultMailer implements Mailer {
 
     private final ConfigurationManager configurationManager;
@@ -46,6 +45,7 @@ public class DefaultMailer implements Mailer {
         mailers.put("smtp", defaultMailer);
         mailers.put("mailgun", new MailgunMailer(configurationManager));
         mailers.put("mailjet", new MailjetMailer(configurationManager));
+        mailers.put("disabled", new MockMailer(configurationManager, environment));
     }
 
     @Override
@@ -54,7 +54,7 @@ public class DefaultMailer implements Mailer {
 
         subject = decorateSubjectIfDemo(subject, environment);
 
-        String mailerType = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILER_TYPE), "smtp").toLowerCase(Locale.ENGLISH);
+        String mailerType = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILER_TYPE), "disabled").toLowerCase(Locale.ENGLISH);
 
         mailers.getOrDefault(mailerType, defaultMailer)
                 .send(event, to, cc, subject, text, html, attachments);

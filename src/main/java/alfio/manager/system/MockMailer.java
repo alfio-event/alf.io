@@ -16,15 +16,11 @@
  */
 package alfio.manager.system;
 
-import alfio.config.Initializer;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,8 +31,6 @@ import java.util.stream.Collectors;
 import static alfio.model.system.ConfigurationKeys.MAIL_REPLY_TO;
 
 @Log4j2
-@Component
-@Profile(Initializer.PROFILE_DEV)
 @AllArgsConstructor
 public class MockMailer implements Mailer {
 
