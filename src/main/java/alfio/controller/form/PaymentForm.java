@@ -51,7 +51,7 @@ public class PaymentForm implements Serializable {
     private String vatCountryCode;
     private String vatNr;
     private boolean invoiceRequested = false;
-    private Map<String, UpdateTicketOwnerForm> tickets = Collections.emptyMap();
+    private Map<String, UpdateTicketOwnerForm> tickets = new HashMap<>();
 
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
             String value, int maxLength) {
