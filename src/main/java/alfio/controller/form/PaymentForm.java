@@ -28,10 +28,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 // step 2 : payment/claim tickets
 //
@@ -54,7 +51,7 @@ public class PaymentForm implements Serializable {
     private String vatCountryCode;
     private String vatNr;
     private boolean invoiceRequested = false;
-    private Map<String, UpdateTicketOwnerForm> tickets;
+    private Map<String, UpdateTicketOwnerForm> tickets = Collections.emptyMap();
 
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
             String value, int maxLength) {
