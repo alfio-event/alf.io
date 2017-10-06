@@ -27,11 +27,11 @@ import java.util.stream.Collectors;
 @EqualsAndHashCode
 public class ContentLanguage {
 
-    public static final int ENGLISH_IDENTIFIER = 0b0010;
-    public static final ContentLanguage ITALIAN = new ContentLanguage(Locale.ITALIAN, 0b0001, Locale.ITALIAN);
+    public static final int ENGLISH_IDENTIFIER = 0b00010;
+    public static final ContentLanguage ITALIAN = new ContentLanguage(Locale.ITALIAN, 0b00001, Locale.ITALIAN);
     public static final ContentLanguage ENGLISH = new ContentLanguage(Locale.ENGLISH, ENGLISH_IDENTIFIER, Locale.ENGLISH);
-    private static final ContentLanguage GERMAN = new ContentLanguage(Locale.GERMAN,   0b0100, Locale.GERMAN);
-    private static final ContentLanguage DUTCH = new ContentLanguage(new Locale("nl"), 0b1000, new Locale("nl"));
+    private static final ContentLanguage GERMAN = new ContentLanguage(Locale.GERMAN,   0b00100, Locale.GERMAN);
+    private static final ContentLanguage DUTCH = new ContentLanguage(new Locale("nl"), 0b01000, new Locale("nl"));
     private static final ContentLanguage FRENCH = new ContentLanguage(Locale.FRENCH,0b10000, Locale.FRENCH);
 
     public static final List<ContentLanguage> ALL_LANGUAGES = Arrays.asList(ITALIAN, ENGLISH, GERMAN, DUTCH,FRENCH);
