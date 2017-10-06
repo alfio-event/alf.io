@@ -43,6 +43,7 @@ import com.stripe.net.Webhook;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -62,13 +63,16 @@ public class StripeManager {
     private final ConfigurationManager configurationManager;
     private final TicketRepository ticketRepository;
     private final ConfigurationRepository configurationRepository;
+    private final Environment environment;
 
     public StripeManager(ConfigurationManager configurationManager,
                          TicketRepository ticketRepository,
-                         ConfigurationRepository configurationRepository) {
+                         ConfigurationRepository configurationRepository,
+                         Environment environment) {
         this.configurationManager = configurationManager;
         this.ticketRepository = ticketRepository;
         this.configurationRepository = configurationRepository;
+        this.environment = environment;
 
         handlers = new HashMap<>();
         handlers.put(CardException.class, this::handleCardException);
@@ -131,7 +135,9 @@ public class StripeManager {
     public Optional<Boolean> processWebhookEvent(String body, String signature) {
         try {
             com.stripe.model.Event event = Webhook.constructEvent(body, signature, getWebhookSignatureKey());
-            if(event.getType().equals("account.application.deauthorized")) {
+            if("account.application.deauthorized".equals(event.getType())
+                && event.getLivemode() != null
+                && event.getLivemode() == environment.acceptsProfiles("dev", "test", "demo")) {
                 return Optional.of(revokeToken(event.getAccount()));
             }
             return Optional.of(true);
