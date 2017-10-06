@@ -129,7 +129,10 @@ public class EventStatisticsManager {
         return event -> {
             Map<Integer, TicketCategoryStatisticView> stats = ticketCategoryRepository.findStatisticsForEventIdByCategoryId(event.getId());
             EventStatisticView eventStatisticView = eventRepository.findStatisticsFor(event.getId());
-            return ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().allMatch(tc -> EventUtil.determineAvailableSeats(stats.get(tc.getId()), eventStatisticView) == 0);
+            return ticketCategoryRepository.findAllTicketCategories(event.getId())
+                .stream()
+                .filter(tc -> !tc.isAccessRestricted())
+                .allMatch(tc -> EventUtil.determineAvailableSeats(stats.get(tc.getId()), eventStatisticView) == 0);
         };
     }
 
