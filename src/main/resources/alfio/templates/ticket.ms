@@ -86,7 +86,7 @@
 			</tr>
 			<tr>
 				<td>{{#i18n}}ticket.order-information{{/i18n}}</td>
-				<td>{{reservationId}} by {{reservation.fullName}}</td>
+				<td>{{#i18n}}ticket.order-information-values [{{reservationId}}] [{{reservation.fullName}}]{{/i18n}}</td>
 			</tr>
 		</table>
 		{{#deskPaymentRequired}}
