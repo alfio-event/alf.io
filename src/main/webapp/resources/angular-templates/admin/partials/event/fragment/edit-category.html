@@ -95,6 +95,26 @@
     <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.dateString" data-show-existing-errors="showExistingErrors"></field-error>
 </div>
 
+<div class="form-group">
+    <label class="control-label cursor-pointer" ng-click="customCheckInCollapsed = !customCheckInCollapsed"><i class="fa" ng-class="{'fa-angle-right': customCheckInCollapsed, 'fa-angle-down': !customCheckInCollapsed}"></i> Custom check-in</label>
+</div>
+
+<div class="row" uib-collapse="customCheckInCollapsed">
+    <div class="col-xs-12 col-md-6">
+        <div class="form-group" bs-form-error="ticketCategory.validCheckInFromString">
+            <label for="{{buildPrefix($index, 'validCheckInFromString')}}">Check-in from</label>
+            <input ng-model="ticketCategory.validCheckInFromString" single-date no-init-date="true" start-model="ticketCategory.validCheckInFrom" id="{{buildPrefix($index, 'validCheckInFromString')}}" class="form-control">
+        </div>
+    </div>
+    <div class="col-xs-12 col-md-6">
+        <div class="form-group" bs-form-error="ticketCategory.validCheckInToString">
+            <label for="{{buildPrefix($index, 'validCheckInToString')}}">Check-in to</label>
+            <input ng-model="ticketCategory.validCheckInToString" single-date no-init-date="true" start-model="ticketCategory.validCheckInTo" id="{{buildPrefix($index, 'validCheckInToString')}}" class="form-control">
+        </div>
+    </div>
+</div>
+
+
 <div class="form-group" bs-form-error="ticketCategory.price" ng-if="!event.freeOfCharge">
     <label for="{{buildPrefix($index, 'price')}}">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event, editMode)}}%)</span></label>
     <div class="input-group">
@@ -128,16 +148,6 @@
         {{baseUrl}}/event/{{event.shortName}}/code/{{ticketCategory.code}}
     </p>
 </div>
-
-<div class="form-group" bs-form-error="ticketCategory.validCheckInFromString">
-    <label for="{{buildPrefix($index, 'validCheckInFromString')}}">Valid check-in from</label>
-    <input ng-model="ticketCategory.validCheckInFromString" single-date no-init-date="true" start-model="ticketCategory.validCheckInFrom" id="{{buildPrefix($index, 'validCheckInFromString')}}" class="form-control">
-</div>
-<div class="form-group" bs-form-error="ticketCategory.validCheckInToString">
-    <label for="{{buildPrefix($index, 'validCheckInToString')}}">Valid check-in to</label>
-    <input ng-model="ticketCategory.validCheckInToString" single-date no-init-date="true" start-model="ticketCategory.validCheckInTo" id="{{buildPrefix($index, 'validCheckInToString')}}" class="form-control">
-</div>
-
 
 <div data-ng-if="isLanguagePresent(event.locales, language.value)" class="form-group" data-ng-repeat="(lang, language) in allLanguagesMapping">
     <label for="{{buildPrefix($index, 'description.'+lang)}}">Description: {{language.displayLanguage}} <display-commonmark-preview text="ticketCategory.description[language.locale]"></display-commonmark-preview></label>

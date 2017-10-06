@@ -555,6 +555,8 @@
                 $scope.toggleAccessCodeCollapse = function() {
                     $scope.helpAccessCodeCollapse = !$scope.helpAccessCodeCollapse;
                 };
+
+                $scope.customCheckInCollapsed = true;
             }
         };
     });
