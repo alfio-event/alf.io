@@ -116,8 +116,10 @@ public class PaymentManager {
     }
 
     public List<PaymentMethod> getPaymentMethods(int organizationId) {
+        String blacklist = configurationManager.getStringConfigValue(Configuration.from(organizationId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST), "");
         return PaymentProxy.availableProxies()
             .stream()
+            .filter(p -> !blacklist.contains(p.getKey()))
             .map(p -> {
                 PaymentMethod.PaymentMethodStatus status = ConfigurationKeys.byCategory(p.getSettingCategories()).stream()
                     .allMatch(c -> c.isBackedByDefault() || configurationManager.getStringConfigValue(Configuration.from(organizationId, c)).filter(StringUtils::isNotEmpty).isPresent()) ? PaymentMethod.PaymentMethodStatus.ACTIVE : PaymentMethod.PaymentMethodStatus.ERROR;

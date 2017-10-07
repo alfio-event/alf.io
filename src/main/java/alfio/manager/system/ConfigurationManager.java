@@ -23,6 +23,7 @@ import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
@@ -293,7 +294,21 @@ public class ConfigurationManager {
         }
         boolean isAdmin = userManager.isAdmin(user);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().filter(checkActualConfigurationLevel(isAdmin, ORGANIZATION)).sorted().collect(groupByCategory());
-        return groupByCategory(isAdmin ? union(SYSTEM, ORGANIZATION) : ORGANIZATION_CONFIGURATION, existing);
+        String paymentMethodsBlacklist = getStringConfigValue(Configuration.from(organizationId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST), "");
+        Map<SettingCategory, List<Configuration>> result = groupByCategory(isAdmin ? union(SYSTEM, ORGANIZATION) : ORGANIZATION_CONFIGURATION, existing);
+        List<SettingCategory> toBeRemoved = PaymentProxy.availableProxies()
+            .stream()
+            .filter(pp -> paymentMethodsBlacklist.contains(pp.getKey()))
+            .flatMap(pp -> pp.getSettingCategories().stream())
+            .collect(Collectors.toList());
+
+        if(toBeRemoved.isEmpty()) {
+            return result;
+        } else {
+            return result.entrySet().stream()
+                .filter(entry -> !toBeRemoved.contains(entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
     }
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfig(int eventId, String username) {
