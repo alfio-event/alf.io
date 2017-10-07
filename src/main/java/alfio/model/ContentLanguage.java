@@ -28,11 +28,11 @@ import java.util.stream.Collectors;
 public class ContentLanguage {
 
     public static final int ENGLISH_IDENTIFIER = 0b00010;
-    public static final ContentLanguage ITALIAN = new ContentLanguage(Locale.ITALIAN, 0b00001, Locale.ITALIAN);
-    public static final ContentLanguage ENGLISH = new ContentLanguage(Locale.ENGLISH, ENGLISH_IDENTIFIER, Locale.ENGLISH);
-    private static final ContentLanguage GERMAN = new ContentLanguage(Locale.GERMAN,   0b00100, Locale.GERMAN);
-    private static final ContentLanguage DUTCH = new ContentLanguage(new Locale("nl"), 0b01000, new Locale("nl"));
-    private static final ContentLanguage FRENCH = new ContentLanguage(Locale.FRENCH,0b10000, Locale.FRENCH);
+    public static final ContentLanguage ITALIAN = new ContentLanguage(Locale.ITALIAN, 0b00001, Locale.ITALIAN, "it");
+    public static final ContentLanguage ENGLISH = new ContentLanguage(Locale.ENGLISH, ENGLISH_IDENTIFIER, Locale.ENGLISH, "gb");
+    private static final ContentLanguage GERMAN = new ContentLanguage(Locale.GERMAN,   0b00100, Locale.GERMAN, "de");
+    private static final ContentLanguage DUTCH = new ContentLanguage(new Locale("nl"), 0b01000, new Locale("nl"), "nl");
+    private static final ContentLanguage FRENCH = new ContentLanguage(Locale.FRENCH,0b10000, Locale.FRENCH, "fr");
 
     public static final List<ContentLanguage> ALL_LANGUAGES = Arrays.asList(ITALIAN, ENGLISH, GERMAN, DUTCH,FRENCH);
 
@@ -45,11 +45,13 @@ public class ContentLanguage {
     private final Locale locale;
     private final int value;
     private final Locale displayLocale;
+    private final String flag;
 
-    private ContentLanguage(Locale locale, int value, Locale displayLocale) {
+    private ContentLanguage(Locale locale, int value, Locale displayLocale, String flag) {
         this.locale = locale;
         this.value = value;
         this.displayLocale = displayLocale;
+        this.flag = flag;
     }
 
     public String getLanguage() {
@@ -64,12 +66,14 @@ public class ContentLanguage {
         return locale;
     }
 
+    public String getFlag() { return flag; }
+
     public int getValue() {
         return value;
     }
 
     private ContentLanguage switchDisplayLocaleTo(Locale displayLocale) {
-        return new ContentLanguage(this.locale, this.value, displayLocale);
+        return new ContentLanguage(this.locale, this.value, displayLocale, this.flag);
     }
 
     public static Function<ContentLanguage, ContentLanguage> toLanguage(Locale targetLanguage) {

@@ -45,7 +45,9 @@
                     <dt>Location</dt>
                     <dd><a ng-href="{{event.geolocation.mapUrl}}" target="_blank">{{event.location}}</a></dd>
                     <dt data-ng-if="isInternal(event)">Languages</dt>
-                    <dd data-ng-if="isInternal(event)"><span data-ng-repeat="cl in event.contentLanguages">{{cl.displayLanguage}}<span data-ng-if="!$last">, </span></span></dd>
+                    <dd data-ng-if="isInternal(event)">
+                        <ul class="list-inline"><li data-ng-repeat="cl in event.contentLanguages"><img ng-src="../resources/images/flags/{{cl.flag}}.gif" class="img-center"> {{cl.displayLanguage}}</li></ul>
+                    </dd>
                     <dt>Start Date/Time</dt>
                     <dd>{{event.formattedBegin | formatDate}}</dd>
                     <dt>End Date/Time</dt>

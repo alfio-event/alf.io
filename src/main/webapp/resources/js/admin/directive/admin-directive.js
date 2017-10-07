@@ -351,6 +351,19 @@
                     });
                 });
 
+                $scope.isLanguageSelected = function(lang) {
+                    return lang && $scope.selectedLanguages.langs && $scope.selectedLanguages.langs.indexOf(lang.value) > -1;
+                };
+
+                $scope.toggleLanguageSelection = function(lang) {
+                    if($scope.isLanguageSelected(lang)) {
+                        _.remove($scope.selectedLanguages.langs, function(l) { return l === lang.value });
+                    } else {
+                        $scope.selectedLanguages.langs.push(lang.value);
+                    }
+                    $scope.updateLocales();
+                };
+
 
                 $scope.updateLocales = function() {
                     var locales = 0;

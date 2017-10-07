@@ -174,6 +174,17 @@
                 loadSettings(systemConf, results[1].data, ConfigurationService);
                 if(systemConf.general) {
                     systemConf.general.selectedLanguages = _.chain(systemConf.allLanguages).map('value').filter(function(x) {return parseInt(systemConf.general.supportedTranslations.value) & x;}).value();
+                    systemConf.isLanguageSelected = function(lang) {
+                        return systemConf.general.selectedLanguages.indexOf(lang.value) > -1;
+                    };
+                    systemConf.toggleLanguageSelection = function(lang) {
+                        if(systemConf.isLanguageSelected(lang)) {
+                            _.remove(systemConf.general.selectedLanguages, function(l) { return l === lang.value });
+                        } else {
+                            systemConf.general.selectedLanguages.push(lang.value);
+                        }
+                        systemConf.updateLocales();
+                    }
                 }
                 handleEuCountries(systemConf, results[2].data);
                 if(systemConf.alfioPi) {
