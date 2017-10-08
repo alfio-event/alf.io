@@ -173,7 +173,7 @@ public class EventManagerTest {{
             when(updated.isAccessRestricted()).thenReturn(true);
             when(updated.getId()).thenReturn(20);
             final List<Integer> ids = Arrays.asList(1, 2);
-            when(specialPriceRepository.lockTokens(eq(20), eq(2))).thenReturn(ids);
+            when(specialPriceRepository.lockNotSentTokens(eq(20), eq(2))).thenReturn(ids);
             eventManager.handleTokenModification(original, updated, -2);
             verify(specialPriceRepository, times(1)).cancelTokens(ids);
         });
@@ -183,7 +183,7 @@ public class EventManagerTest {{
             when(updated.isAccessRestricted()).thenReturn(true);
             when(updated.getId()).thenReturn(20);
             final List<Integer> ids = singletonList(1);
-            when(specialPriceRepository.lockTokens(eq(20), eq(2))).thenReturn(ids);
+            when(specialPriceRepository.lockNotSentTokens(eq(20), eq(2))).thenReturn(ids);
             expect.exception(IllegalArgumentException.class, () -> eventManager.handleTokenModification(original, updated, -2));
             verify(specialPriceRepository, never()).cancelTokens(anyListOf(Integer.class));
         });

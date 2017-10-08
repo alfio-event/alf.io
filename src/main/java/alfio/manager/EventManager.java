@@ -361,8 +361,7 @@ public class EventManager {
     public Result<TicketCategory> updateCategory(int categoryId, Event event, TicketCategoryModification tcm, String username) {
         checkOwnership(event, username, event.getOrganizationId());
         int eventId = event.getId();
-        final List<TicketCategory> categories = ticketCategoryRepository.findByEventId(eventId);
-        return categories.stream().filter(tc -> tc.getId() == categoryId).findFirst()
+        return Optional.of(ticketCategoryRepository.getById(categoryId)).filter(tc -> tc.getId() == categoryId)
             .map(existing -> new Result.Builder<>(() -> {
                     updateCategory(tcm, event.isFreeOfCharge(), event.getZoneId(), event);
                     return ticketCategoryRepository.getByIdAndActive(categoryId, eventId);
@@ -372,6 +371,19 @@ public class EventManager {
                 .addValidation(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
                 .addValidation(() -> tcm.isBounded() == existing.isBounded() || ticketRepository.countPendingOrReleasedForCategory(eventId, existing.getId()) == 0, ErrorCode.custom("", "It is not safe to change allocation strategy right now because there are pending reservations."))
                 .addValidation(() -> !existing.isAccessRestricted() || tcm.isBounded() == existing.isAccessRestricted(), ErrorCode.custom("", "Dynamic allocation is not compatible with restricted access"))
+                .addValidation(() -> {
+                    // see https://github.com/exteso/alf.io/issues/335
+                    // handle the case when the user try to shrink a category with tokens that are already sent
+                    // we should fail if there are not enough free token left
+                    int addedTicket = tcm.getMaxTickets() - existing.getMaxTickets();
+                    if(addedTicket < 0 &&
+                        existing.isAccessRestricted() &&
+                        specialPriceRepository.countNotSentToken(categoryId) < Math.abs(addedTicket)) {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                }, ErrorCode.CategoryError.NOT_ENOUGH_FREE_TOKEN_FOR_SHRINK)
                 .addValidation(() -> {
                     if(tcm.isBounded() && !existing.isBounded()) {
                         int newSize = tcm.getMaxTickets();
@@ -618,7 +630,7 @@ public class EventManager {
                 jdbc.batchUpdate(specialPriceRepository.bulkInsert(), prepareTokenBulkInsertParameters(updated, addedTickets));
             } else {
                 int absDifference = Math.abs(addedTickets);
-                final List<Integer> ids = specialPriceRepository.lockTokens(updated.getId(), absDifference);
+                final List<Integer> ids = specialPriceRepository.lockNotSentTokens(updated.getId(), absDifference);
                 Validate.isTrue(ids.size() - absDifference == 0, "not enough tokens");
                 specialPriceRepository.cancelTokens(ids);
             }

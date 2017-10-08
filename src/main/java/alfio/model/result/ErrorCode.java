@@ -38,7 +38,8 @@ public interface ErrorCode {
         NOT_FOUND("not_found", "Category not found"),
         NOT_ENOUGH_SEATS("not_enough_tickets", "Not enough seats"),
         ALL_TICKETS_ASSIGNED("all_tickets_assigned", "All the tickets have already been assigned to a category. Try increasing the total seats number."),
-        EXPIRATION_AFTER_EVENT_END("expiration_after_event_end", "expiration must be before the end of the event");
+        EXPIRATION_AFTER_EVENT_END("expiration_after_event_end", "expiration must be before the end of the event"),
+        NOT_ENOUGH_FREE_TOKEN_FOR_SHRINK("not_enough_free_token_for_shrink", "Cannot downsize this category: not enough free token can be removed");
 
         private final String code;
         private final String description;

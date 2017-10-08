@@ -25,6 +25,7 @@ import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.modification.*;
+import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
@@ -80,7 +81,10 @@ public class EventManagerIntegrationTest {
     private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
     @Autowired
     private TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
-
+    @Autowired
+    private SpecialPriceManager specialPriceManager;
+    @Autowired
+    private SpecialPriceTokenGenerator specialPriceTokenGenerator;
     @Autowired
     private TicketReservationManager ticketReservationManager;
 
@@ -567,6 +571,49 @@ public class EventManagerIntegrationTest {
         assertTrue(result.isSuccess());
         assertEquals(9, ticketRepository.countFreeTickets(event.getId(), category.getId()).intValue());
         assertEquals(1, ticketRepository.countReleasedUnboundedTickets(event.getId()).intValue());
+    }
+
+    //https://github.com/exteso/alf.io/issues/335
+    @Test
+    public void testDecreaseRestrictedCategoryWithAlreadySentToken() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", 4,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+
+                DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+
+        Event event = pair.getLeft();
+        String username = pair.getRight();
+
+        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
+
+        specialPriceTokenGenerator.generatePendingCodesForCategory(category.getId());
+
+        List<SendCodeModification> linked = specialPriceManager.linkAssigneeToCode(Arrays.asList(
+            new SendCodeModification(null, "test1", "test@test.com", "it"),
+            new SendCodeModification(null, "test2", "test@test.com", "it")),event.getShortName(), category.getId(), username);
+
+        specialPriceManager.sendCodeToAssignee(linked, event.getShortName(), category.getId(), username);
+
+        
+        TicketCategoryModification tcmOk = new TicketCategoryModification(category.getId(), category.getName(), 2,
+            DateTimeModification.fromZonedDateTime(category.getUtcInception()),
+            DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
+            categoryDescription, category.getPrice(), true, "", true, null, null, null);
+        Result<TicketCategory> resOk = eventManager.updateCategory(category.getId(), event, tcmOk, username);
+        Assert.assertTrue(resOk.isSuccess());
+
+
+        TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), 1,
+            DateTimeModification.fromZonedDateTime(category.getUtcInception()),
+            DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
+            categoryDescription, category.getPrice(), true, "", true, null, null, null);
+        Result<TicketCategory> res = eventManager.updateCategory(category.getId(), event, tcm, username);
+        Assert.assertFalse(res.isSuccess());
+        Assert.assertTrue(res.getErrors().contains(ErrorCode.CategoryError.NOT_ENOUGH_FREE_TOKEN_FOR_SHRINK));
     }
 
     @Test

@@ -446,7 +446,7 @@
                 case 403:
                     return 'Your account is not authorized to perform this operation.';
                 case 500:
-                    return 'Internal Server Error';
+                    return 'Internal Server Error: ' + body;
                 default:
                     return 'Connection Error';
             }
