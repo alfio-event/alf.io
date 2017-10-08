@@ -28,6 +28,7 @@ import alfio.model.modification.*;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.repository.*;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -62,6 +63,9 @@ public class EventManagerIntegrationTest {
         initSystemProperties();
     }
 
+    @Autowired
+    private ConfigurationRepository configurationRepository;
+    
     @Autowired
     private EventRepository eventRepository;
 
@@ -576,6 +580,9 @@ public class EventManagerIntegrationTest {
     //https://github.com/exteso/alf.io/issues/335
     @Test
     public void testDecreaseRestrictedCategoryWithAlreadySentToken() {
+
+        ensureMinimalConfiguration(configurationRepository);
+
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", 4,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
@@ -598,7 +605,7 @@ public class EventManagerIntegrationTest {
 
         specialPriceManager.sendCodeToAssignee(linked, event.getShortName(), category.getId(), username);
 
-        
+
         TicketCategoryModification tcmOk = new TicketCategoryModification(category.getId(), category.getName(), 2,
             DateTimeModification.fromZonedDateTime(category.getUtcInception()),
             DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
