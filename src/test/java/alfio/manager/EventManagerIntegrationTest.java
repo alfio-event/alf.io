@@ -65,7 +65,7 @@ public class EventManagerIntegrationTest {
 
     @Autowired
     private ConfigurationRepository configurationRepository;
-    
+
     @Autowired
     private EventRepository eventRepository;
 

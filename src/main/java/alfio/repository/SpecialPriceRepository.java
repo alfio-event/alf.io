@@ -76,8 +76,8 @@ public interface SpecialPriceRepository {
     @Query("update special_price set code = :code, status = 'FREE' where id = :id")
     int updateCode(@Bind("code") String code, @Bind("id") int id);
 
-    @Query(type = QueryType.TEMPLATE, value = "insert into special_price (code, price_cts, ticket_category_id, status) " +
-            "values(:code, :priceInCents, :ticketCategoryId, :status)")
+    @Query(type = QueryType.TEMPLATE, value = "insert into special_price (code, price_cts, ticket_category_id, status, sent_ts) " +
+            "values(:code, :priceInCents, :ticketCategoryId, :status, null)")
     String bulkInsert();
 
 
