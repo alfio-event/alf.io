@@ -28,6 +28,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.repository.user.UserRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
@@ -75,6 +76,7 @@ public class CheckInManager {
     private final AuditingRepository auditingRepository;
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
+    private final UserRepository userRepository;
 
 
     private void checkIn(String uuid) {
@@ -114,7 +116,7 @@ public class CheckInManager {
         if(descriptor.getResult().getStatus() == OK_READY_TO_BE_CHECKED_IN) {
             checkIn(ticketIdentifier);
             scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, SUCCESS, ScanAudit.Operation.SCAN);
-            auditingRepository.insert(descriptor.getTicket().getTicketsReservationId(), null, eventId, Audit.EventType.CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
+            auditingRepository.insert(descriptor.getTicket().getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, Audit.EventType.CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
             return new TicketAndCheckInResult(descriptor.getTicket(), new DefaultCheckInResult(SUCCESS, "success"));
         }
         return descriptor;
@@ -130,7 +132,7 @@ public class CheckInManager {
 
             checkIn(ticketIdentifier);
             scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, SUCCESS, ScanAudit.Operation.SCAN);
-            auditingRepository.insert(t.getTicketsReservationId(), null, eventId, Audit.EventType.CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(t.getId()));
+            auditingRepository.insert(t.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, Audit.EventType.MANUAL_CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(t.getId()));
             return true;
         }).orElse(false);
     }
@@ -142,7 +144,7 @@ public class CheckInManager {
                 TicketStatus revertedStatus = reservation.getPaymentMethod() == PaymentProxy.ON_SITE ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
                 ticketRepository.updateTicketStatusWithUUID(ticketIdentifier, revertedStatus.toString());
                 scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, OK_READY_TO_BE_CHECKED_IN, ScanAudit.Operation.REVERT);
-                auditingRepository.insert(t.getTicketsReservationId(), null, eventId, Audit.EventType.REVERT_CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(t.getId()));
+                auditingRepository.insert(t.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, Audit.EventType.REVERT_CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(t.getId()));
                 return true;
             }
             return false;
