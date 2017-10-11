@@ -806,6 +806,24 @@
             });
         };
 
+        var reloadIfSeatsModification = function(seatsModified) {
+            var message = "Modification applied. " + (seatsModified ? "Seats modification will become effective in 30s. The data will be reloaded automatically." : "");
+            return loadData().then(function(res) {
+                NotificationHandler.showSuccess(message);
+                $rootScope.$emit('ReloadEventPie', res.data.event);
+                if(seatsModified) {
+                    $timeout(function() {
+                        var info = NotificationHandler.showInfo("Reloading data...");
+                        loadData().then(function(res2) {
+                            info.destroy();
+                            NotificationHandler.showSuccess("Success!");
+                            $rootScope.$emit('ReloadEventPie', res2.data.event);
+                        });
+                    }, 30000 );
+                }
+            });
+        };
+
         $scope.editPrices = function() {
             var parentScope = $scope;
             var editPrices = $uibModal.open({
@@ -835,23 +853,7 @@
                     };
                 }
             });
-            editPrices.result.then(function(seatsModified) {
-                var message = "Modification applied. " + (seatsModified ? "Seats modification will become effective in 30s. The data will be reloaded automatically." : "");
-                loadData().then(function(res) {
-                    NotificationHandler.showSuccess(message);
-                    $rootScope.$emit('ReloadEventPie', res.data.event);
-                    if(seatsModified) {
-                        $timeout(function() {
-                            var info = NotificationHandler.showInfo("Reloading data...");
-                            loadData().then(function(res2) {
-                                info.destroy();
-                                NotificationHandler.showSuccess("Success!");
-                                $rootScope.$emit('ReloadEventPie', res2.data.event);
-                            });
-                        }, 30000 );
-                    }
-                });
-            });
+            editPrices.result.then(reloadIfSeatsModification);
         };
 
         $scope.openDeleteWarning = function(event) {
@@ -870,6 +872,7 @@
                 backdrop: 'static',
                 controller: function($scope) {
                     $scope.allLanguagesMapping = parentScope.allLanguagesMapping;
+                    var original = angular.extend({}, category);
                     $scope.ticketCategory = category;
                     $scope.event = event;
                     $scope.editMode = true;
@@ -882,10 +885,10 @@
                         }
                         EventService.saveTicketCategory(event, category).then(function(result) {
                             validationErrorHandler(result, form, form).then(function() {
-                                loadData().then(function(res) {
-                                    $rootScope.$emit('ReloadEventPie', res.data.event);
-                                });
-                                $scope.$close(true);
+                                reloadIfSeatsModification(!original || (original.bounded ^ category.bounded || original.maxTickets !== category.maxTickets))
+                                    .then(function() {
+                                        $scope.$close(true);
+                                    });
                             });
                         });
                     };
