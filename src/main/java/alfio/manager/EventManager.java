@@ -241,7 +241,7 @@ public class EventManager {
             String val = Json.GSON.toJson(value.getDescription());
             if(0 == ticketFieldRepository.updateDescription(id, locale, val)) {
                 ticketFieldRepository.insertDescription(id, locale, val);
-            };
+            }
         });
     }
 
@@ -358,44 +358,49 @@ public class EventManager {
         }
     }
 
-    public Result<TicketCategory> updateCategory(int categoryId, Event event, TicketCategoryModification tcm, String username) {
+    Result<TicketCategory> updateCategory(int categoryId, Event event, TicketCategoryModification tcm,
+                                          String username, boolean resetTicketsToFree) {
         checkOwnership(event, username, event.getOrganizationId());
         int eventId = event.getId();
         return Optional.of(ticketCategoryRepository.getById(categoryId)).filter(tc -> tc.getId() == categoryId)
             .map(existing -> new Result.Builder<>(() -> {
-                    updateCategory(tcm, event.isFreeOfCharge(), event.getZoneId(), event);
+                    updateCategory(tcm, event.isFreeOfCharge(), event.getZoneId(), event, resetTicketsToFree);
                     return ticketCategoryRepository.getByIdAndActive(categoryId, eventId);
                 })
-                .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
-                .addValidation(() -> tcm.getMaxTickets() - existing.getMaxTickets() + ticketRepository.countAllocatedTicketsForEvent(eventId) <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
-                .addValidation(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
-                .addValidation(() -> tcm.isBounded() == existing.isBounded() || ticketRepository.countPendingOrReleasedForCategory(eventId, existing.getId()) == 0, ErrorCode.custom("", "It is not safe to change allocation strategy right now because there are pending reservations."))
-                .addValidation(() -> !existing.isAccessRestricted() || tcm.isBounded() == existing.isAccessRestricted(), ErrorCode.custom("", "Dynamic allocation is not compatible with restricted access"))
-                .addValidation(() -> {
-                    // see https://github.com/exteso/alf.io/issues/335
-                    // handle the case when the user try to shrink a category with tokens that are already sent
-                    // we should fail if there are not enough free token left
-                    int addedTicket = tcm.getMaxTickets() - existing.getMaxTickets();
-                    if(addedTicket < 0 &&
-                        existing.isAccessRestricted() &&
-                        specialPriceRepository.countNotSentToken(categoryId) < Math.abs(addedTicket)) {
-                        return false;
-                    } else {
-                        return true;
-                    }
-                }, ErrorCode.CategoryError.NOT_ENOUGH_FREE_TOKEN_FOR_SHRINK)
-                .addValidation(() -> {
-                    if(tcm.isBounded() && !existing.isBounded()) {
-                        int newSize = tcm.getMaxTickets();
-                        int confirmed = ticketRepository.countConfirmedForCategory(eventId, existing.getId());
-                        return newSize >= confirmed;
-                    } else {
-                        return true;
-                    }
-                }, ErrorCode.custom("", "Not enough tickets"))
-                .build()
-             )
+                    .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
+                    .addValidation(() -> tcm.getMaxTickets() - existing.getMaxTickets() + ticketRepository.countAllocatedTicketsForEvent(eventId) <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
+                    .addValidation(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
+                    .addValidation(() -> tcm.isBounded() == existing.isBounded() || ticketRepository.countPendingOrReleasedForCategory(eventId, existing.getId()) == 0, ErrorCode.custom("", "It is not safe to change allocation strategy right now because there are pending reservations."))
+                    .addValidation(() -> !existing.isAccessRestricted() || tcm.isBounded() == existing.isAccessRestricted(), ErrorCode.custom("", "Dynamic allocation is not compatible with restricted access"))
+                    .addValidation(() -> {
+                        // see https://github.com/exteso/alf.io/issues/335
+                        // handle the case when the user try to shrink a category with tokens that are already sent
+                        // we should fail if there are not enough free token left
+                        int addedTicket = tcm.getMaxTickets() - existing.getMaxTickets();
+                        if(addedTicket < 0 &&
+                            existing.isAccessRestricted() &&
+                            specialPriceRepository.countNotSentToken(categoryId) < Math.abs(addedTicket)) {
+                            return false;
+                        } else {
+                            return true;
+                        }
+                    }, ErrorCode.CategoryError.NOT_ENOUGH_FREE_TOKEN_FOR_SHRINK)
+                    .addValidation(() -> {
+                        if(tcm.isBounded() && !existing.isBounded()) {
+                            int newSize = tcm.getMaxTickets();
+                            int confirmed = ticketRepository.countConfirmedForCategory(eventId, existing.getId());
+                            return newSize >= confirmed;
+                        } else {
+                            return true;
+                        }
+                    }, ErrorCode.custom("", "Not enough tickets"))
+                    .build()
+            )
             .orElseGet(() -> Result.error(ErrorCode.CategoryError.NOT_FOUND));
+    }
+
+    Result<TicketCategory> updateCategory(int categoryId, Event event, TicketCategoryModification tcm, String username) {
+        return updateCategory(categoryId, event, tcm, username, false);
     }
 
     void fixOutOfRangeCategories(EventModification em, String username, ZoneId zoneId, ZonedDateTime end) {
@@ -561,7 +566,12 @@ public class EventManager {
         }));
     }
 
-    private void updateCategory(TicketCategoryModification tc, boolean freeOfCharge, ZoneId zoneId, Event event) {
+    private void updateCategory(TicketCategoryModification tc,
+                                boolean freeOfCharge,
+                                ZoneId zoneId,
+                                Event event,
+                                boolean resetTicketsToFree) {
+
         int eventId = event.getId();
         final int price = evaluatePrice(tc.getPriceInCents(), freeOfCharge);
         TicketCategory original = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
@@ -575,7 +585,7 @@ public class EventManager {
             handleTicketAllocationStrategyChange(event, original, tc);
         } else {
             addedTickets = updated.getMaxTickets() - original.getMaxTickets();
-            handleTicketNumberModification(event, original, updated, addedTickets);
+            handleTicketNumberModification(event, original, updated, addedTickets, resetTicketsToFree);
         }
         handleTokenModification(original, updated, addedTickets);
         handlePriceChange(event, original, updated);
@@ -638,7 +648,7 @@ public class EventManager {
 
     }
 
-    void handleTicketNumberModification(Event event, TicketCategory original, TicketCategory updated, int addedTickets) {
+    void handleTicketNumberModification(Event event, TicketCategory original, TicketCategory updated, int addedTickets, boolean resetToFree) {
         if(addedTickets == 0) {
             log.debug("ticket handling not required since the number of ticket wasn't modified");
             return;
@@ -656,6 +666,8 @@ public class EventManager {
             if(updated.isAccessRestricted()) {
                 //since the updated category is not public, the tickets shouldn't be distributed to waiting people.
                 ticketRepository.revertToFree(event.getId(), updated.getId(), lockedTickets);
+            } else if(!resetToFree) {
+                ticketRepository.resetTickets(lockedTickets);
             }
 
         } else {
@@ -849,6 +861,7 @@ public class EventManager {
 		eventDeleterRepository.deleteEventMigration(eventId);
 		eventDeleterRepository.deleteSponsorScan(eventId);
 		eventDeleterRepository.deleteTicket(eventId);
+		eventDeleterRepository.deleteTransactions(eventId);
 		eventDeleterRepository.deleteReservation(eventId);
 		
 		eventDeleterRepository.deletePromoCode(eventId);

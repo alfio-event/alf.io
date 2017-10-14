@@ -26,10 +26,12 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
+import alfio.model.result.Result;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.time.DateUtils;
@@ -46,13 +48,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.model.modification.DateTimeModification.fromZonedDateTime;
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.Assert.*;
 
@@ -84,6 +84,8 @@ public class WaitingQueueManagerIntegrationTest {
     private ConfigurationRepository configurationRepository;
     @Autowired
     private EventRepository eventRepository;
+    @Autowired
+    private TicketRepository ticketRepository;
 
     @BeforeClass
     public static void initEnv() {
@@ -101,7 +103,7 @@ public class WaitingQueueManagerIntegrationTest {
 
     @Test
     public void testSubscribeDenied() {
-        List<TicketCategoryModification> categories = getTicketCategoryModifications(false, AVAILABLE_SEATS, true, 10);
+        List<TicketCategoryModification> categories = getPreSalesTicketCategoryModifications(false, AVAILABLE_SEATS, true, 10);
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         TicketCategory firstCategory = eventManager.loadTicketCategories(event).stream().filter(t->t.getName().equals("defaultFirst")).findFirst().orElseThrow(IllegalStateException::new);
@@ -116,7 +118,7 @@ public class WaitingQueueManagerIntegrationTest {
 
     @Test
     public void testDistributeSeatsFirstCategoryIsUnbounded() throws Exception {
-        List<TicketCategoryModification> categories = getTicketCategoryModifications(false, AVAILABLE_SEATS, true, 10);
+        List<TicketCategoryModification> categories = getPreSalesTicketCategoryModifications(false, AVAILABLE_SEATS, true, 10);
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         TicketCategory firstCategory = eventManager.loadTicketCategories(event).stream().filter(t->t.getName().equals("defaultFirst")).findFirst().orElseThrow(IllegalStateException::new);
@@ -138,7 +140,7 @@ public class WaitingQueueManagerIntegrationTest {
 
     @Test
     public void testDistributeSeatsFirstCategoryIsBounded() throws Exception {
-        List<TicketCategoryModification> categories = getTicketCategoryModifications(true, 10, true, 10);
+        List<TicketCategoryModification> categories = getPreSalesTicketCategoryModifications(true, 10, true, 10);
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         TicketCategory firstCategory = eventManager.loadTicketCategories(event).stream().filter(t->t.getName().equals("defaultFirst")).findFirst().orElseThrow(IllegalStateException::new);
@@ -312,10 +314,6 @@ public class WaitingQueueManagerIntegrationTest {
         TicketCategory first = ticketCategories.get(0);
         TicketCategory second = ticketCategories.get(1);
 
-        TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(AVAILABLE_SEATS - 2);
-        tr.setTicketCategoryId(first.getId());
-
         TicketReservationModification tr2 = new TicketReservationModification();
         tr2.setAmount(1);
         tr2.setTicketCategoryId(second.getId());
@@ -324,24 +322,10 @@ public class WaitingQueueManagerIntegrationTest {
         tr3.setAmount(1);
         tr3.setTicketCategoryId(first.getId());
 
-        TicketReservationWithOptionalCodeModification multi = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
-        TicketReservationWithOptionalCodeModification single = new TicketReservationWithOptionalCodeModification(tr2, Optional.empty());
+        reserveTickets(event, first, AVAILABLE_SEATS - 2);
 
-        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(multi), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        PaymentResult result = ticketReservationManager.confirm("", null, event, reservationId, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
-        assertTrue(result.isSuccessful());
-
-        String reservationIdSingleFirst = ticketReservationManager.createTicketReservation(event, Collections.singletonList(single), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCostSingle = ticketReservationManager.totalReservationCostWithVAT(reservationIdSingleFirst);
-        PaymentResult resultSingleFirst = ticketReservationManager.confirm("", null, event, reservationIdSingleFirst, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, "", reservationCostSingle, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
-        assertTrue(resultSingleFirst.isSuccessful());
-
-        String reservationIdSingleSecond = ticketReservationManager.createTicketReservation(event, Collections.singletonList(single), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCostSingleSecond = ticketReservationManager.totalReservationCostWithVAT(reservationIdSingleSecond);
-        PaymentResult resultSingleSecond = ticketReservationManager.confirm("", null, event, reservationIdSingleSecond, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, "", reservationCostSingleSecond, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
-        assertTrue(resultSingleSecond.isSuccessful());
-
+        String reservationIdSingleFirst = reserveTickets(event, second, 1);
+        String reservationIdSingleSecond = reserveTickets(event, second, 1);
 
         assertEquals(0, eventRepository.findStatisticsFor(event.getId()).getDynamicAllocation());
 
@@ -368,7 +352,54 @@ public class WaitingQueueManagerIntegrationTest {
         assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now()));
     }
 
-    private List<TicketCategoryModification> getTicketCategoryModifications(boolean firstBounded, int firstSeats, boolean lastBounded, int lastSeats) {
+    private String reserveTickets(Event event, TicketCategory category, int num) {
+        TicketReservationModification tr = new TicketReservationModification();
+        tr.setAmount(num);
+        tr.setTicketCategoryId(category.getId());
+        TicketReservationWithOptionalCodeModification tcm = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
+        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(tcm), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        PaymentResult result = ticketReservationManager.confirm("", null, event, reservationId, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
+        assertTrue(result.isSuccessful());
+        return reservationId;
+    }
+
+    @Test
+    public void testNoPublicCategoryAvailable() {
+        LocalDateTime start = LocalDateTime.now().minusHours(1);
+        LocalDateTime end = LocalDateTime.now().plusHours(1);
+
+        List<TicketCategoryModification> categories = Arrays.asList(
+            new TicketCategoryModification(null, "default", 2,
+                new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
+                new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null),
+            new TicketCategoryModification(null, "default2", 10,
+                new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
+                new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
+                DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null));
+
+        configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
+        Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = eventAndUsername.getKey();
+        List<TicketCategory> ticketCategories = ticketCategoryRepository.findByEventId(event.getId());
+        TicketCategory first = ticketCategories.get(0);
+        reserveTickets(event, first, 2);
+        assertTrue(waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", null, Locale.ENGLISH));
+        assertTrue(waitingQueueManager.subscribe(event, new CustomerName("John Doe 2", "John", "Doe 2", event), "john@doe2.com", null, Locale.ENGLISH));
+
+        ZoneId zoneId = event.getZoneId();
+        Result<TicketCategory> ticketCategoryResult = eventManager.updateCategory(first.getId(), event, new TicketCategoryModification(first.getId(), first.getName(), 3,
+            fromZonedDateTime(first.getInception(zoneId)), fromZonedDateTime(first.getExpiration(zoneId)), Collections.emptyMap(),
+            first.getPrice(), false, "", true, null, null, null), eventAndUsername.getValue());
+        assertTrue(ticketCategoryResult.isSuccess());
+        assertEquals(1, ticketRepository.countReleasedTicketInCategory(event.getId(), first.getId()).intValue());
+        //now we should have an extra available ticket
+        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
+        assertEquals(1, subscriptions.size());
+    }
+
+    private List<TicketCategoryModification> getPreSalesTicketCategoryModifications(boolean firstBounded, int firstSeats, boolean lastBounded, int lastSeats) {
         LocalDateTime start = LocalDateTime.now().plusMinutes(4);
         return Arrays.asList(
             new TicketCategoryModification(null, "defaultFirst", firstSeats,

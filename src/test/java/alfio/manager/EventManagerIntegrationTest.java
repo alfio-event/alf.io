@@ -377,6 +377,7 @@ public class EventManagerIntegrationTest {
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null);
         eventManager.updateCategory(category.getId(), event.getId(), tcm, pair.getValue());
+        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());

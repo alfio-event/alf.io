@@ -411,7 +411,7 @@ public class AdminReservationManager {
                 Collections.emptyMap(), existing.getPrice(), existing.isAccessRestricted(), "", true, existing.getCode(),
                 DateTimeModification.fromZonedDateTime(existing.getValidCheckInFrom(modified.getZoneId())),
                 DateTimeModification.fromZonedDateTime(existing.getValidCheckInTo(modified.getZoneId())));
-            return eventManager.updateCategory(existingCategoryId, modified, tcm, username);
+            return eventManager.updateCategory(existingCategoryId, modified, tcm, username, true);
         }
         return Result.success(existing);
     }

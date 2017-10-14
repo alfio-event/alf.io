@@ -65,24 +65,24 @@ public class EventManagerTest {{
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         it.should("throw exception if there are tickets already sold", expect -> {
             when(ticketRepository.lockTicketsToInvalidate(eventId, 30, 2)).thenReturn(singletonList(1));
-            expect.exception(IllegalStateException.class, () -> eventManager.handleTicketNumberModification(event, original, updated, -2));
+            expect.exception(IllegalStateException.class, () -> eventManager.handleTicketNumberModification(event, original, updated, -2, false));
             verify(ticketRepository, never()).invalidateTickets(anyListOf(Integer.class));
         });
         it.should("invalidate exceeding tickets", expect -> {
             final List<Integer> ids = Arrays.asList(1, 2);
             when(ticketRepository.lockTicketsToInvalidate(eventId, 30, 2)).thenReturn(ids);
-            eventManager.handleTicketNumberModification(event, original, updated, -2);
+            eventManager.handleTicketNumberModification(event, original, updated, -2, false);
             verify(ticketRepository, times(1)).invalidateTickets(ids);
         });
         it.should("do nothing if the difference is zero", expect -> {
-            eventManager.handleTicketNumberModification(event, original, updated, 0);
+            eventManager.handleTicketNumberModification(event, original, updated, 0, false);
             verify(ticketRepository, never()).invalidateTickets(anyListOf(Integer.class));
             verify(jdbc, never()).batchUpdate(anyString(), any(SqlParameterSource[].class));
         });
 
         it.should("insert a new Ticket if the difference is 1", expect -> {
             when(ticketRepository.selectNotAllocatedTicketsForUpdate(eq(eventId), eq(1), eq(Arrays.asList(Ticket.TicketStatus.FREE.name(), Ticket.TicketStatus.RELEASED.name())))).thenReturn(singletonList(1));
-            eventManager.handleTicketNumberModification(event, original, updated, 1);
+            eventManager.handleTicketNumberModification(event, original, updated, 1, false);
             verify(ticketRepository, never()).invalidateTickets(anyListOf(Integer.class));
             ArgumentCaptor<SqlParameterSource[]> captor = ArgumentCaptor.forClass(SqlParameterSource[].class);
             verify(jdbc, times(1)).batchUpdate(anyString(), captor.capture());
