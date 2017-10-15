@@ -227,7 +227,7 @@ public class WaitingQueueProcessorIntegrationTest {
         assertEquals(boundedCategorySize, boundedReserved.size());
         List<Integer> reserved = new ArrayList<>(boundedReserved);
         String reservationId = UUID.randomUUID().toString();
-        ticketReservationRepository.createNewReservation(reservationId, DateUtils.addHours(new Date(), 1), null, Locale.ITALIAN.getLanguage(), event.getId(), event.getVat());
+        ticketReservationRepository.createNewReservation(reservationId, DateUtils.addHours(new Date(), 1), null, Locale.ITALIAN.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded());
         List<Integer> reservedForUpdate = withUnboundedCategory ? reserved.subList(0, 19) : reserved;
         ticketRepository.reserveTickets(reservationId, reservedForUpdate, bounded.getId(), Locale.ITALIAN.getLanguage(), 0);
         if(withUnboundedCategory) {

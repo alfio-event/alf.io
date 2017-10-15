@@ -16,7 +16,10 @@
 --
 
 alter table tickets_reservation add column used_vat_percent decimal(5,2);
-update tickets_reservation set used_vat_percent = (select vat from event where event.id = event_id_fk);
+alter table tickets_reservation add column vat_included boolean;
+update tickets_reservation set
+    used_vat_percent = (select vat from event where event.id = event_id_fk),
+    vat_included = (select event.vat_included from event where event.id = event_id_fk);
 
 drop view ticket_and_reservation_and_tx;
 
@@ -64,6 +67,7 @@ tickets_reservation.vat_nr tr_vat_nr,
 tickets_reservation.vat_country tr_vat_country,
 tickets_reservation.invoice_requested tr_invoice_requested,
 tickets_reservation.used_vat_percent tr_used_vat_percent,
+tickets_reservation.vat_included tr_vat_included,
 
 b_transaction.id bt_id,
 b_transaction.gtw_tx_id bt_gtw_tx_id,

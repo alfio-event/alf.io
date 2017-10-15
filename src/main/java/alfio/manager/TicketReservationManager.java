@@ -204,7 +204,7 @@ public class TicketReservationManager {
         
         Optional<PromoCodeDiscount> discount = promotionCodeDiscount.flatMap((promoCodeDiscount) -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
         
-        ticketReservationRepository.createNewReservation(reservationId, reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null), locale.getLanguage(), event.getId(), event.getVat());
+        ticketReservationRepository.createNewReservation(reservationId, reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null), locale.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded());
         list.forEach(t -> reserveTicketsForCategory(event, specialPriceSessionId, reservationId, t, locale, forWaitingQueue, discount.orElse(null)));
 
         int ticketCount = list

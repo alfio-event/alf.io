@@ -179,4 +179,6 @@ insert into ticket_field_description(ticket_field_configuration_id_fk, field_loc
 
 
 -- migration
-update tickets_reservation set used_vat_percent = (select vat from event where event.id = event_id_fk);
+update tickets_reservation set
+    used_vat_percent = (select vat from event where event.id = event_id_fk),
+    vat_included = (select event.vat_included from event where event.id = event_id_fk);

@@ -8,11 +8,11 @@
 {{#orderSummary.summary}}
 {{#i18n}}email-confirmation.summary [{{name}}] [{{amount}}] [{{subTotal}}] [{{event.currency}}]{{/i18n}}
 {{/orderSummary.summary}}
-{{^orderSummary.free}}{{^event.vatIncluded}}
-{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}]{{/i18n}}: {{orderSummary.totalVAT}} {{event.currency}}{{/event.vatIncluded}}{{/orderSummary.free}}
+{{^orderSummary.free}}{{^ticketReservation.vatIncluded}}
+{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}]{{/i18n}}: {{orderSummary.totalVAT}} {{event.currency}}{{/ticketReservation.vatIncluded}}{{/orderSummary.free}}
 {{#i18n}}reservation-page.total{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}
-{{^orderSummary.free}}{{#event.vatIncluded}}
-{{#i18n}}reservation-page.vat-included [{{ticketReservation.usedVatPercent}}]{{/i18n}}: {{orderSummary.totalVAT}} {{event.currency}}{{/event.vatIncluded}}{{/orderSummary.free}}
+{{^orderSummary.free}}{{#ticketReservation.vatIncluded}}
+{{#i18n}}reservation-page.vat-included [{{ticketReservation.usedVatPercent}}]{{/i18n}}: {{orderSummary.totalVAT}} {{event.currency}}{{/ticketReservation.vatIncluded}}{{/orderSummary.free}}
 
 {{#orderSummary.notYetPaid}}{{#i18n}}reservation.not-yet-paid [{{orderSummary.totalPrice}} {{event.currency}}]{{/i18n}}{{/orderSummary.notYetPaid}}
 

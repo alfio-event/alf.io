@@ -59,6 +59,7 @@ public class TicketReservation {
     private final String vatCountryCode;
     private final boolean invoiceRequested;
     private final BigDecimal usedVatPercent;
+    private final Boolean vatIncluded;
 
     public TicketReservation(@Column("id") String id,
                              @Column("validity") Date validity,
@@ -82,7 +83,8 @@ public class TicketReservation {
                              @Column("vat_nr") String vatNr,
                              @Column("vat_country") String vatCountryCode,
                              @Column("invoice_requested") boolean invoiceRequested,
-                             @Column("used_vat_percent") BigDecimal usedVatPercent) {
+                             @Column("used_vat_percent") BigDecimal usedVatPercent,
+                             @Column("vat_included") Boolean vatIncluded) {
         this.id = id;
         this.validity = validity;
         this.status = status;
@@ -106,6 +108,7 @@ public class TicketReservation {
         this.vatCountryCode = vatCountryCode;
         this.invoiceRequested = invoiceRequested;
         this.usedVatPercent = usedVatPercent;
+        this.vatIncluded = vatIncluded;
     }
 
     public boolean isStuck() {
