@@ -24,6 +24,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -211,7 +212,7 @@ public enum TemplateResource {
     private static TicketReservation sampleTicketReservation() {
         return new TicketReservation("597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", new Date(), TicketReservation.TicketReservationStatus.COMPLETE,
             "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(), ZonedDateTime.now(),
-            PaymentProxy.STRIPE, true, null, false, "en", false, null, null, null, "123456", "CH", false);
+            PaymentProxy.STRIPE, true, null, false, "en", false, null, null, null, "123456", "CH", false, new BigDecimal("8.00"));
     }
 
     private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {

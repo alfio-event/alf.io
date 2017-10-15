@@ -21,6 +21,7 @@ import alfio.model.transaction.Transaction;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Optional;
@@ -74,6 +75,7 @@ public class TicketWithReservationAndTransaction {
                                                @Column("tr_vat_nr") String vatNr,
                                                @Column("tr_vat_country") String vatCountryCode,
                                                @Column("tr_invoice_requested") boolean invoiceRequested,
+                                               @Column("tr_used_vat_percent") BigDecimal usedVadPercent,
                                                //
                                                @Column("bt_id") Integer btId,
                                                @Column("bt_gtw_tx_id") String transactionId,
@@ -94,7 +96,8 @@ public class TicketWithReservationAndTransaction {
             trFullName, trFirstName, trLastName, trEmail,
             billingAddress, confirmationTimestamp, latestReminder, paymentMethod,
             reminderSent, promoCodeDiscountId, automatic, trUserLanguage,
-            directAssignmentRequested, invoiceNumber, invoiceModel, vatStatus, vatNr, vatCountryCode, invoiceRequested);
+            directAssignmentRequested, invoiceNumber, invoiceModel, vatStatus, vatNr, vatCountryCode, invoiceRequested,
+            usedVadPercent);
 
         if(btId != null) {
             this.transaction = Optional.of(new Transaction(btId, transactionId, paymentId, reservationId,

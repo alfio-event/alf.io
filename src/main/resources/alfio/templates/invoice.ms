@@ -163,7 +163,7 @@
             <tfoot>
                 {{^orderSummary.free}}
                     {{#orderSummary.displayVat}}
-                        <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</th><th class="text-right">{{orderSummary.totalVAT}}</th></tr>
+                        <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}]{{/i18n}}</th><th class="text-right">{{orderSummary.totalVAT}}</th></tr>
                     {{/orderSummary.displayVat}}
                     {{^orderSummary.displayVat}}
                         <tr><th colspan="4" class="no-padding">{{#i18n}}invoice.vat-voided{{/i18n}}</th></tr>

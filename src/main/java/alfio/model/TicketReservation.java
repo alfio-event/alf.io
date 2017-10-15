@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -57,6 +58,7 @@ public class TicketReservation {
     private final String vatNr;
     private final String vatCountryCode;
     private final boolean invoiceRequested;
+    private final BigDecimal usedVatPercent;
 
     public TicketReservation(@Column("id") String id,
                              @Column("validity") Date validity,
@@ -79,7 +81,8 @@ public class TicketReservation {
                              @Column("vat_status") PriceContainer.VatStatus vatStatus,
                              @Column("vat_nr") String vatNr,
                              @Column("vat_country") String vatCountryCode,
-                             @Column("invoice_requested") boolean invoiceRequested) {
+                             @Column("invoice_requested") boolean invoiceRequested,
+                             @Column("used_vat_percent") BigDecimal usedVatPercent) {
         this.id = id;
         this.validity = validity;
         this.status = status;
@@ -102,6 +105,7 @@ public class TicketReservation {
         this.vatNr = vatNr;
         this.vatCountryCode = vatCountryCode;
         this.invoiceRequested = invoiceRequested;
+        this.usedVatPercent = usedVatPercent;
     }
 
     public boolean isStuck() {

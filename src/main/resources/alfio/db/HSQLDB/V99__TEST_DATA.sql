@@ -176,3 +176,7 @@ insert into ticket_field_description(ticket_field_configuration_id_fk, field_loc
     select id, 'it', '{"label": "Note", "placeholder" : "Hai qualche esigenza particolare (ad esempio per quanto riguarda cibo o accessibilit\u00E0)? Per favore, faccelo sapere!"}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'notes'  and short_name = 'eventname';
 insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description)
     select id, 'de', '{"label": "Bemerkungen", "placeholder" : "Gerne nehmen wir auf Ihre Bed\u00FCrfnisse R\u00FCcksicht, falls du aussergew\u00F6hnliche Essensgewohnheiten oder eingeschr\u00E4nkte Zutrittsm\u00F6glichkeiten hast, informiere uns bitte."}' from ticket_field_configuration inner join event on event_id_fk = event.id where field_name = 'notes'  and short_name = 'eventname';
+
+
+-- migration
+update tickets_reservation set used_vat_percent = (select vat from event where event.id = event_id_fk);

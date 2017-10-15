@@ -22,6 +22,7 @@ import alfio.model.TicketReservationInfo;
 import alfio.model.TicketSoldStatistic;
 import ch.digitalfondue.npjt.*;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
@@ -30,8 +31,8 @@ import java.util.Optional;
 @QueryRepository
 public interface TicketReservationRepository {
 
-    @Query("insert into tickets_reservation(id, validity, promo_code_id_fk, status, user_language, event_id_fk) values (:id, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId)")
-    int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity, @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId, @Bind("userLanguage") String userLanguage, @Bind("eventId") int eventId);
+    @Query("insert into tickets_reservation(id, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent) values (:id, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :eventVat)")
+    int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity, @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId, @Bind("userLanguage") String userLanguage, @Bind("eventId") int eventId, @Bind("eventVat") BigDecimal eventVat);
 
     @Query("update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email, user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod where id = :reservationId")
     int updateTicketReservation(@Bind("reservationId") String reservationId, @Bind("status") String status,

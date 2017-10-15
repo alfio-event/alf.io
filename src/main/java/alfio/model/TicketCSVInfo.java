@@ -21,6 +21,7 @@ import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
@@ -71,11 +72,13 @@ public class TicketCSVInfo {
                          @Column("tr_vat_status") PriceContainer.VatStatus reservationVatStatus,
                          @Column("tr_vat_nr") String vatNr,
                          @Column("tr_vat_country") String vatCountry,
-                         @Column("tr_invoice_requested") boolean invoiceRequested) {
+                         @Column("tr_invoice_requested") boolean invoiceRequested,
+                         @Column("tr_used_vat_percent") BigDecimal usedVatPercent) {
 
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email,
             lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trFirstName, trLastName, trEmail, trBillingAddress,
-            trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage, directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested);
+            trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage, directAssignment,
+            invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested, usedVatPercent);
     }
 }
