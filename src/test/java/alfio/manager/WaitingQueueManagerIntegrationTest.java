@@ -383,7 +383,7 @@ public class WaitingQueueManagerIntegrationTest {
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
         List<TicketCategory> ticketCategories = ticketCategoryRepository.findByEventId(event.getId());
-        TicketCategory first = ticketCategories.get(0);
+        TicketCategory first = ticketCategories.stream().filter(tc -> !tc.isAccessRestricted()).findFirst().orElseThrow(IllegalStateException::new);
         reserveTickets(event, first, 2);
         assertTrue(waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", null, Locale.ENGLISH));
         assertTrue(waitingQueueManager.subscribe(event, new CustomerName("John Doe 2", "John", "Doe 2", event), "john@doe2.com", null, Locale.ENGLISH));
