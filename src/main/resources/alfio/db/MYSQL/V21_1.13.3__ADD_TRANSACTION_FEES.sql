@@ -15,12 +15,11 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-alter table b_transaction add column plat_fee integer DEFAULT 0 NOT null;
-alter table b_transaction add column gtw_fee integer DEFAULT 0 NOT null;
+alter table b_transaction add column plat_fee integer not null DEFAULT 0;
+alter table b_transaction add column gtw_fee integer not null DEFAULT 0;
 
 drop view ticket_and_reservation_and_tx;
 create view ticket_and_reservation_and_tx as (select
-
     ticket.id t_id,
     ticket.uuid t_uuid,
     ticket.creation t_creation,
@@ -38,7 +37,6 @@ create view ticket_and_reservation_and_tx as (select
     ticket.final_price_cts t_final_price_cts,
     ticket.vat_cts t_vat_cts,
     ticket.discount_cts t_discount_cts,
-
 
     tickets_reservation.id tr_id,
     tickets_reservation.validity tr_validity,
@@ -62,6 +60,8 @@ create view ticket_and_reservation_and_tx as (select
     tickets_reservation.vat_nr tr_vat_nr,
     tickets_reservation.vat_country tr_vat_country,
     tickets_reservation.invoice_requested tr_invoice_requested,
+    tickets_reservation.used_vat_percent tr_used_vat_percent,
+    tickets_reservation.vat_included tr_vat_included,
 
     b_transaction.id bt_id,
     b_transaction.gtw_tx_id bt_gtw_tx_id,
@@ -76,5 +76,5 @@ create view ticket_and_reservation_and_tx as (select
     b_transaction.plat_fee bt_plat_fee
 
 from ticket
-inner join tickets_reservation on ticket.tickets_reservation_id = tickets_reservation.id
-left outer join b_transaction on ticket.tickets_reservation_id = b_transaction.reservation_id);
+  inner join tickets_reservation on ticket.tickets_reservation_id = tickets_reservation.id
+  left outer join b_transaction on ticket.tickets_reservation_id = b_transaction.reservation_id);
