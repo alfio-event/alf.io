@@ -77,6 +77,7 @@ public class CheckInManager {
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
+    private final TicketReservationManager ticketReservationManager;
 
 
     private void checkIn(String uuid) {
@@ -87,8 +88,10 @@ public class CheckInManager {
     }
 
     private void acquire(String uuid) {
-        Validate.isTrue(ticketRepository.findByUUID(uuid).getStatus() == TicketStatus.TO_BE_PAID);
+        Ticket ticket = ticketRepository.findByUUID(uuid);
+        Validate.isTrue(ticket.getStatus() == TicketStatus.TO_BE_PAID);
         ticketRepository.updateTicketStatusWithUUID(uuid, TicketStatus.ACQUIRED.toString());
+        ticketReservationManager.registerAlfioTransaction(eventRepository.findById(ticket.getEventId()), ticket.getTicketsReservationId(), PaymentProxy.ON_SITE);
     }
 
     public TicketAndCheckInResult confirmOnSitePayment(String eventName, String ticketIdentifier, Optional<String> ticketCode, String user) {

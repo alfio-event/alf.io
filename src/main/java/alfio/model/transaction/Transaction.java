@@ -33,6 +33,8 @@ public class Transaction {
     private final String currency;
     private final String description;
     private final PaymentProxy paymentProxy;
+    private final long platformFee;
+    private final long gatewayFee;
 
 
     public Transaction(@Column("id") int id,
@@ -43,7 +45,9 @@ public class Transaction {
                        @Column("price_cts") int priceInCents,
                        @Column("currency") String currency,
                        @Column("description") String description,
-                       @Column("payment_proxy") String paymentProxy) {
+                       @Column("payment_proxy") String paymentProxy,
+                       @Column("plat_fee") long platformFee,
+                       @Column("gtw_fee") long gatewayFee) {
         this.id = id;
         this.transactionId = transactionId;
         this.paymentId = paymentId;
@@ -53,5 +57,7 @@ public class Transaction {
         this.currency = currency;
         this.description = description;
         this.paymentProxy = PaymentProxy.valueOf(paymentProxy);
+        this.platformFee = platformFee;
+        this.gatewayFee = gatewayFee;
     }
 }

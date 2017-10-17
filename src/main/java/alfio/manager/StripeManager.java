@@ -17,6 +17,7 @@
 package alfio.manager;
 
 
+import alfio.manager.support.FeeCalculator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
@@ -46,12 +47,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Function;
 
 import static alfio.model.system.ConfigurationKeys.*;
-import static org.apache.commons.lang3.StringUtils.*;
 
 @Component
 @Log4j2
@@ -175,7 +174,7 @@ public class StripeManager {
         int tickets = ticketRepository.countTicketsInReservation(reservationId);
         Map<String, Object> chargeParams = new HashMap<>();
         chargeParams.put("amount", amountInCent);
-        Optional.ofNullable(calculateFee(event, tickets, amountInCent)).ifPresent(fee -> chargeParams.put("application_fee", fee));
+        FeeCalculator.getCalculator(event, configurationManager).apply(tickets, amountInCent).ifPresent(fee -> chargeParams.put("application_fee", fee));
         chargeParams.put("currency", event.getCurrency());
         chargeParams.put("card", stripeToken);
 
@@ -189,16 +188,20 @@ public class StripeManager {
             initialMetadata.put("billingAddress", billingAddress);
         }
         chargeParams.put("metadata", initialMetadata);
-        return Charge.create(chargeParams, options(event));
+        RequestOptions options = options(event);
+        Charge charge = Charge.create(chargeParams, options);
+        if(charge.getBalanceTransactionObject() == null) {
+            try {
+                charge.setBalanceTransactionObject(retrieveBalanceTransaction(charge.getBalanceTransaction(), options));
+            } catch(Exception e) {
+                log.warn("can't retrieve balance transaction", e);
+            }
+        }
+        return charge;
     }
 
-    private Long calculateFee(Event event, int numTickets, long amountInCent) {
-        if(isConnectEnabled(event)) {
-            String feeAsString = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), PLATFORM_FEE), "0");
-            String minimumFee = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), PLATFORM_MINIMUM_FEE), "0");
-            return new FeeCalculator(feeAsString, minimumFee, numTickets).calculate(amountInCent);
-        }
-        return null;
+    private BalanceTransaction retrieveBalanceTransaction(String balanceTransaction, RequestOptions options) throws AuthenticationException, InvalidRequestException, APIConnectionException, CardException, APIException {
+        return BalanceTransaction.retrieve(balanceTransaction, options);
     }
 
 
@@ -218,14 +221,14 @@ public class StripeManager {
             Charge charge = Charge.retrieve(transaction.getTransactionId(), options);
             String paidAmount = MonetaryUtil.formatCents(charge.getAmount());
             String refundedAmount = MonetaryUtil.formatCents(charge.getAmountRefunded());
-            List<Fee> fees = BalanceTransaction.retrieve(charge.getBalanceTransaction(), options).getFeeDetails();
+            List<Fee> fees = retrieveBalanceTransaction(charge.getBalanceTransaction(), options).getFeeDetails();
             return Optional.of(new PaymentInformation(paidAmount, refundedAmount, getFeeAmount(fees, "stripe_fee"), getFeeAmount(fees, "application_fee")));
         } catch (StripeException e) {
             return Optional.empty();
         }
     }
 
-    private String getFeeAmount(List<Fee> fees, String feeType) {
+    static String getFeeAmount(List<Fee> fees, String feeType) {
         return fees.stream()
             .filter(f -> f.getType().equals(feeType))
             .findFirst()
@@ -356,26 +359,6 @@ public class StripeManager {
         private final String authorizationURL;
         private final String state;
         private final String code;
-    }
-
-    private static class FeeCalculator {
-        private final BigDecimal fee;
-        private final BigDecimal minimumFee;
-        private final boolean percentage;
-        private final int numTickets;
-
-        private FeeCalculator(String feeAsString, String minimumFeeAsString, int numTickets) {
-            this.percentage = feeAsString.endsWith("%");
-            this.fee = new BigDecimal(defaultIfEmpty(substringBefore(feeAsString, "%"), "0"));
-            this.minimumFee = new BigDecimal(defaultIfEmpty(trimToNull(minimumFeeAsString), "0"));
-            this.numTickets = numTickets;
-        }
-
-        private long calculate(long price) {
-            long result = percentage ? MonetaryUtil.calcPercentage(price, fee, BigDecimal::longValueExact) : MonetaryUtil.unitToCents(fee);
-            long minFee = MonetaryUtil.unitToCents(minimumFee, BigDecimal::longValueExact) * numTickets;
-            return Math.max(result, minFee);
-        }
     }
 
 }

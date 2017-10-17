@@ -21,6 +21,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
+import alfio.repository.user.UserRepository;
 import alfio.util.TemplateManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -102,6 +103,8 @@ public class TicketReservationManagerUnitTest {
     private InvoiceSequencesRepository invoiceSequencesRepository;
     @Mock
     private AuditingRepository auditingRepository;
+    @Mock
+    private UserRepository userRepository;
 
     @Before
     public void setUp() {
@@ -127,7 +130,7 @@ public class TicketReservationManagerUnitTest {
             additionalServiceItemRepository,
             additionalServiceTextRepository,
             invoiceSequencesRepository,
-            auditingRepository);
+            auditingRepository, userRepository);
     }
 
     @Test

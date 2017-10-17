@@ -27,8 +27,8 @@ import java.util.Optional;
 @QueryRepository
 public interface TransactionRepository {
 
-    @Query("insert into b_transaction(gtw_tx_id, gtw_payment_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy) " +
-            "values(:transactionId, :paymentId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy)")
+    @Query("insert into b_transaction(gtw_tx_id, gtw_payment_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy, plat_fee, gtw_fee) " +
+            "values(:transactionId, :paymentId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy, :platformFee, :gatewayFee)")
     int insert(@Bind("transactionId") String transactionId,
                @Bind("paymentId") String paymentId,
                @Bind("reservationId") String reservationId,
@@ -36,11 +36,19 @@ public interface TransactionRepository {
                @Bind("priceInCents") int priceInCents,
                @Bind("currency") String currency,
                @Bind("description") String description,
-               @Bind("paymentProxy") String paymentProxy);
+               @Bind("paymentProxy") String paymentProxy,
+               @Bind("platformFee") long platformFee,
+               @Bind("gatewayFee") long gatewayFee);
 
     @Query("select * from b_transaction where reservation_id = :reservationId")
     Transaction loadByReservationId(@Bind("reservationId") String reservationId);
 
     @Query("select * from b_transaction where reservation_id = :reservationId")
     Optional<Transaction> loadOptionalByReservationId(@Bind("reservationId") String reservationId);
+
+    @Query("update b_transaction set plat_fee = :platformFee, gtw_fee = :gatewayFee where gtw_tx_id = :transactionId and reservation_id = :reservationId")
+    int updateFees(@Bind("transactionId") String transactionId,
+                   @Bind("reservationId") String reservationId,
+                   @Bind("platformFee") long platformFee,
+                   @Bind("gatewayFee") long gatewayFee);
 }

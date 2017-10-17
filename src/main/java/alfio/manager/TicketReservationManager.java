@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.CategoryEvaluator;
+import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
@@ -42,6 +43,7 @@ import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
+import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import de.danielbechler.diff.ObjectDifferBuilder;
 import de.danielbechler.diff.node.DiffNode;
@@ -117,7 +119,7 @@ public class TicketReservationManager {
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final InvoiceSequencesRepository invoiceSequencesRepository;
     private final AuditingRepository auditingRepository;
-
+    private final UserRepository userRepository;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -156,7 +158,7 @@ public class TicketReservationManager {
                                     AdditionalServiceItemRepository additionalServiceItemRepository,
                                     AdditionalServiceTextRepository additionalServiceTextRepository,
                                     InvoiceSequencesRepository invoiceSequencesRepository,
-                                    AuditingRepository auditingRepository) {
+                                    AuditingRepository auditingRepository, UserRepository userRepository) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -180,6 +182,7 @@ public class TicketReservationManager {
         this.additionalServiceTextRepository = additionalServiceTextRepository;
         this.invoiceSequencesRepository = invoiceSequencesRepository;
         this.auditingRepository = auditingRepository;
+        this.userRepository = userRepository;
     }
     
     /**
@@ -412,15 +415,18 @@ public class TicketReservationManager {
         return true;
     }
 
-    public void confirmOfflinePayment(Event event, String reservationId) {
+    public void confirmOfflinePayment(Event event, String reservationId, String username) {
         TicketReservation ticketReservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
         ticketReservationRepository.lockReservationForUpdate(reservationId);
         Validate.isTrue(ticketReservation.getPaymentMethod() == PaymentProxy.OFFLINE, "invalid payment method");
         Validate.isTrue(ticketReservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT, "invalid status");
 
-        ticketReservationRepository.confirmOfflinePayment(reservationId, TicketReservationStatus.COMPLETE.name(), ZonedDateTime.now());
 
-        auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.RESERVATION_OFFLINE_PAYMENT_CONFIRMED, new Date(), Audit.EntityType.RESERVATION, ticketReservation.getId());
+        ticketReservationRepository.confirmOfflinePayment(reservationId, TicketReservationStatus.COMPLETE.name(), ZonedDateTime.now(event.getZoneId()));
+
+        registerAlfioTransaction(event, reservationId, PaymentProxy.OFFLINE);
+
+        auditingRepository.insert(reservationId, userRepository.findIdByUserName(username).orElse(null), event.getId(), Audit.EventType.RESERVATION_OFFLINE_PAYMENT_CONFIRMED, new Date(), Audit.EntityType.RESERVATION, ticketReservation.getId());
 
         CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event);
         acquireItems(TicketStatus.ACQUIRED, AdditionalServiceItemStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), customerName, ticketReservation.getUserLanguage(), ticketReservation.getBillingAddress(), event.getId());
@@ -431,6 +437,25 @@ public class TicketReservationManager {
 
         pluginManager.handleReservationConfirmation(ticketReservationRepository.findReservationById(reservationId), event.getId());
     }
+
+    void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
+        int priceWithVAT = totalReservationCostWithVAT(reservationId).getPriceWithVAT();
+        Long platformFee = FeeCalculator.getCalculator(event, configurationManager)
+            .apply(ticketRepository.countTicketsInReservation(reservationId), (long) priceWithVAT)
+            .orElse(0L);
+
+        //FIXME we must support multiple transactions for a reservation, otherwise we can't handle properly the case of ON_SITE payments
+
+        if(paymentProxy != PaymentProxy.ON_SITE || !transactionRepository.loadOptionalByReservationId(reservationId).isPresent()) {
+            String transactionId = paymentProxy.getKey() + "-" + System.currentTimeMillis();
+            transactionRepository.insert(transactionId, null, reservationId, ZonedDateTime.now(event.getZoneId()),
+                priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(), platformFee, 0L);
+        } else {
+            log.warn("ON-Site check-in: ignoring transaction registration for reservationId {}", reservationId);
+        }
+
+    }
+
 
     public void sendConfirmationEmail(Event event, TicketReservation ticketReservation, Locale language) {
         String reservationId = ticketReservation.getId();
@@ -1252,13 +1277,13 @@ public class TicketReservationManager {
         return configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), RESERVATION_TIMEOUT), 25);
     }
 
-    public void validateAndConfirmOfflinePayment(String reservationId, Event event, BigDecimal paidAmount) {
+    public void validateAndConfirmOfflinePayment(String reservationId, Event event, BigDecimal paidAmount, String username) {
         TicketReservation reservation = findByPartialID(reservationId);
         Optional<OrderSummary> optionalOrderSummary = optionally(() -> orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage())));
         Validate.isTrue(optionalOrderSummary.isPresent(), "Reservation not found");
         OrderSummary orderSummary = optionalOrderSummary.get();
         Validate.isTrue(MonetaryUtil.centsToUnit(orderSummary.getOriginalTotalPrice().getPriceWithVAT()).compareTo(paidAmount) == 0, "paid price differs from due price");
-        confirmOfflinePayment(event, reservation.getId());
+        confirmOfflinePayment(event, reservation.getId(), username);
     }
 
     private List<Pair<TicketReservation, OrderSummary>> fetchWaitingForPayment(int eventId, Event event, Locale locale) {

@@ -16,14 +16,17 @@
  */
 package alfio.manager;
 
+import alfio.manager.support.FeeCalculator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.util.MonetaryUtil;
 import com.paypal.api.payments.*;
+import com.paypal.api.payments.Currency;
 import com.paypal.base.rest.APIContext;
 import com.paypal.base.rest.PayPalRESTException;
 import lombok.AllArgsConstructor;
@@ -41,6 +44,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import static alfio.util.MonetaryUtil.formatCents;
 
@@ -53,6 +57,7 @@ public class PaypalManager {
     private final MessageSource messageSource;
     private final ConcurrentHashMap<String, String> cachedWebProfiles = new ConcurrentHashMap<>();
     private final TicketReservationRepository ticketReservationRepository;
+    private final TicketRepository ticketRepository;
 
     private APIContext getApiContext(Event event) {
         int orgId = event.getOrganizationId();
@@ -235,14 +240,14 @@ public class PaypalManager {
         return Pair.of(captureId, payment.getId());
     }
 
-    public Optional<PaymentInformation> getInfo(alfio.model.transaction.Transaction transaction, Event event) {
+    Optional<PaymentInformation> getInfo(String paymentId, String transactionId, Event event, Supplier<String> platformFeeSupplier) {
         try {
             String refund = null;
 
             //check for backward compatibility  reason...
-            if(transaction.getPaymentId() != null) {
+            if(paymentId != null) {
                 //navigate in all refund objects and sum their amount
-                refund = Payment.get(getApiContext(event), transaction.getPaymentId()).getTransactions().stream()
+                refund = Payment.get(getApiContext(event), paymentId).getTransactions().stream()
                     .map(Transaction::getRelatedResources)
                     .flatMap(List::stream)
                     .filter(f -> f.getRefund() != null)
@@ -253,12 +258,29 @@ public class PaypalManager {
                     .reduce(BigDecimal.ZERO, BigDecimal::add).toPlainString();
                 //
             }
-            Capture c = Capture.get(getApiContext(event), transaction.getTransactionId());
-            return Optional.of(new PaymentInformation(c.getAmount().getTotal(), refund, c.getTransactionFee().getValue(), null));
+            Capture c = Capture.get(getApiContext(event), transactionId);
+            String gatewayFee = Optional.ofNullable(c.getTransactionFee())
+                .map(Currency::getValue)
+                .map(BigDecimal::new)
+                .map(MonetaryUtil::unitToCents)
+                .map(String::valueOf)
+                .orElse(null);
+            return Optional.of(new PaymentInformation(c.getAmount().getTotal(), refund, gatewayFee, platformFeeSupplier.get()));
         } catch (PayPalRESTException ex) {
-            log.warn("Paypal: error while fetching information for payment id " + transaction.getTransactionId(), ex);
+            log.warn("Paypal: error while fetching information for payment id " + transactionId, ex);
             return Optional.empty();
         }
+    }
+    Optional<PaymentInformation> getInfo(alfio.model.transaction.Transaction transaction, Event event) {
+        return getInfo(transaction.getPaymentId(), transaction.getTransactionId(), event, () -> {
+            if(transaction.getPlatformFee() > 0) {
+                return String.valueOf(transaction.getPlatformFee());
+            }
+            return FeeCalculator.getCalculator(event, configurationManager)
+                    .apply(ticketRepository.countTicketsInReservation(transaction.getReservationId()), (long) transaction.getPriceInCents())
+                    .map(String::valueOf)
+                    .orElse("0");
+        });
     }
 
     public boolean refund(alfio.model.transaction.Transaction transaction, Event event, Optional<Integer> amount) {

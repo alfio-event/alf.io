@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -24,12 +25,14 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
 import alfio.repository.AuditingRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.ErrorsCode;
 import com.paypal.base.rest.PayPalRESTException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
+import com.stripe.model.Fee;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -39,6 +42,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Component
@@ -53,6 +57,7 @@ public class PaymentManager {
     private final ConfigurationManager configurationManager;
     private final AuditingRepository auditingRepository;
     private final UserRepository userRepository;
+    private final TicketRepository ticketRepository;
 
     /**
      * This method processes the pending payment using the configured payment gateway (at the time of writing, only STRIPE)
@@ -80,8 +85,15 @@ public class PaymentManager {
             final Charge charge = stripeManager.chargeCreditCard(gatewayToken, price,
                     event, reservationId, email, customerName.getFullName(), billingAddress);
             log.info("transaction {} paid: {}", reservationId, charge.getPaid());
+            Pair<Long, Long> fees = Optional.ofNullable(charge.getBalanceTransactionObject()).map(bt -> {
+                List<Fee> feeDetails = bt.getFeeDetails();
+                return Pair.of(Optional.ofNullable(StripeManager.getFeeAmount(feeDetails, "application_fee")).map(Long::parseLong).orElse(0L),
+                               Optional.ofNullable(StripeManager.getFeeAmount(feeDetails, "stripe_fee")).map(Long::parseLong).orElse(0L));
+            }).orElse(null);
+
             transactionRepository.insert(charge.getId(), null, reservationId,
-                    ZonedDateTime.now(), price, event.getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name());
+                    ZonedDateTime.now(), price, event.getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
+                    fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L);
             return PaymentResult.successful(charge.getId());
         } catch (Exception e) {
             if(e instanceof StripeException) {
@@ -101,8 +113,18 @@ public class PaymentManager {
             Pair<String, String> captureAndPaymentId = paypalManager.commitPayment(reservationId, token, payerId, event);
             String captureId = captureAndPaymentId.getLeft();
             String paymentId = captureAndPaymentId.getRight();
+            Supplier<String> feeSupplier = () -> FeeCalculator.getCalculator(event, configurationManager)
+                .apply(ticketRepository.countTicketsInReservation(reservationId), (long) price)
+                .map(String::valueOf)
+                .orElse("0");
+            Pair<Long, Long> fees = paypalManager.getInfo(paymentId, captureId, event, feeSupplier).map(i -> {
+                Long platformFee = Optional.ofNullable(i.getPlatformFee()).map(Long::parseLong).orElse(0L);
+                Long gatewayFee = Optional.ofNullable(i.getFee()).map(Long::parseLong).orElse(0L);
+                return Pair.of(platformFee, gatewayFee);
+            }).orElseGet(() -> Pair.of(0L, 0L));
             transactionRepository.insert(captureId, paymentId, reservationId,
-                ZonedDateTime.now(), price, event.getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name());
+                ZonedDateTime.now(), price, event.getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name(),
+                fees.getLeft(), fees.getRight());
             return PaymentResult.successful(captureId);
         } catch (Exception e) {
             log.warn("errow while processing paypal payment: " + e.getMessage(), e);
@@ -164,18 +186,33 @@ public class PaymentManager {
     }
 
     TransactionAndPaymentInfo getInfo(TicketReservation reservation, Event event) {
-        Optional<Transaction> maybeTransaction = transactionRepository.loadOptionalByReservationId(reservation.getId());
-        return maybeTransaction.map(transaction -> {
-            switch(reservation.getPaymentMethod()) {
-                case PAYPAL:
-                    return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, paypalManager.getInfo(transaction, event).orElse(null));
-                case STRIPE:
-                    return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, stripeManager.getInfo(transaction, event).orElse(null));
-                default:
-                    return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, new PaymentInformation(reservation.getPaidAmount(), null, null, null));
+        Optional<TransactionAndPaymentInfo> maybeTransaction = transactionRepository.loadOptionalByReservationId(reservation.getId())
+            .map(transaction -> {
+                switch(reservation.getPaymentMethod()) {
+                    case PAYPAL:
+                        return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, paypalManager.getInfo(transaction, event).orElse(null));
+                    case STRIPE:
+                        return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, stripeManager.getInfo(transaction, event).orElse(null));
+                    default:
+                        return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, new PaymentInformation(reservation.getPaidAmount(), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee())));
+                }
+            });
+        maybeTransaction.ifPresent(info -> {
+            try {
+                Transaction transaction = info.getTransaction();
+                String transactionId = transaction.getTransactionId();
+                PaymentInformation paymentInformation = info.getPaymentInformation();
+                if(paymentInformation != null) {
+                    transactionRepository.updateFees(transactionId, reservation.getId(), Long.parseLong(paymentInformation.getPlatformFee()), Long.parseLong(paymentInformation.getFee()));
+                }
+            } catch (Exception e) {
+                log.warn("cannot update fees", e);
             }
-        }).orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformation(reservation.getPaidAmount(), null, null, null)));
+        });
+        return maybeTransaction.orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformation(reservation.getPaidAmount(), null, null, null)));
     }
+
+
 
     @Data
     public static final class PaymentMethod {

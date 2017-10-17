@@ -29,7 +29,10 @@ import alfio.model.modification.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
-import alfio.repository.*;
+import alfio.repository.DynamicFieldTemplateRepository;
+import alfio.repository.SponsorScanRepository;
+import alfio.repository.TicketCategoryDescriptionRepository;
+import alfio.repository.TicketFieldRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
@@ -433,7 +436,7 @@ public class EventApiController {
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)
     public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal,
                                  Model model, HttpServletRequest request) {
-        ticketReservationManager.confirmOfflinePayment(loadEvent(eventName, principal), reservationId);
+        ticketReservationManager.confirmOfflinePayment(loadEvent(eventName, principal), reservationId, principal.getName());
         ticketReservationManager.findById(reservationId)
             .filter(TicketReservation::isDirectAssignmentRequested)
             .ifPresent(reservation -> ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), reservation.getUserLanguage(), Optional.empty(), request, model));
@@ -459,7 +462,7 @@ public class EventApiController {
                         try {
                             Validate.isTrue(line.length >= 2);
                             reservationID = line[0];
-                            ticketReservationManager.validateAndConfirmOfflinePayment(reservationID, event, new BigDecimal(line[1]));
+                            ticketReservationManager.validateAndConfirmOfflinePayment(reservationID, event, new BigDecimal(line[1]), principal.getName());
                             return Triple.of(Boolean.TRUE, reservationID, "");
                         } catch (Exception e) {
                             return Triple.of(Boolean.FALSE, Optional.ofNullable(reservationID).orElse(""), e.getMessage());

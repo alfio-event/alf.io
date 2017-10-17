@@ -33,6 +33,7 @@ import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
+import alfio.repository.user.UserRepository;
 import alfio.util.TemplateManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -145,6 +146,8 @@ public class TicketReservationManagerTest {
     private TicketReservation ticketReservation;
     @Mock
     private Organization organization;
+    @Mock
+    private UserRepository userRepository;
 
     @Before
     public void init() {
@@ -170,7 +173,7 @@ public class TicketReservationManagerTest {
             additionalServiceItemRepository,
             additionalServiceTextRepository,
             invoiceSequencesRepository,
-            auditingRepository);
+            auditingRepository, userRepository);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -190,6 +193,7 @@ public class TicketReservationManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
         when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
+        when(userRepository.findIdByUserName(anyString())).thenReturn(Optional.empty());
     }
 
     private void initUpdateTicketOwner(Ticket original, Ticket modified, String ticketId, String originalEmail, String originalName, UpdateTicketOwnerForm form) {
@@ -774,7 +778,7 @@ public class TicketReservationManagerTest {
         when(ticketRepository.findTicketsInReservation(eq(RESERVATION_ID))).thenReturn(Collections.emptyList());
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
 
-        trm.confirmOfflinePayment(event, RESERVATION_ID);
+        trm.confirmOfflinePayment(event, RESERVATION_ID, "username");
         verify(ticketReservationRepository, atLeastOnce()).findOptionalReservationById(RESERVATION_ID);
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
@@ -787,6 +791,8 @@ public class TicketReservationManagerTest {
         verify(configurationManager, atLeastOnce()).getStringConfigValue(any());
         verify(configurationManager, atLeastOnce()).getRequiredValue(any());
         verify(configurationManager, atLeastOnce()).getShortReservationID(eq(event), eq(RESERVATION_ID));
+        verify(ticketRepository).countTicketsInReservation(eq(RESERVATION_ID));
+        verify(configurationManager).getBooleanConfigValue(any(), eq(false));
         verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 
