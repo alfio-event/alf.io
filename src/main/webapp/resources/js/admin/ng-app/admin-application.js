@@ -241,6 +241,16 @@
                 data: {
                     view: 'CREATE_RESERVATION'
                 }
+            }).state('events.single.import-reservation', {
+                url:'/reservation/import',
+                template: '<reservation-import event="ctrl.event"></reservation-import>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                },
+                controllerAs: 'ctrl',
+                data: {
+                    view: 'IMPORT_RESERVATION'
+                }
             }).state('events.single.view-reservation', {
                 url:'/reservation/:reservationId?fromCreation',
                 template: '<reservation-view event="ctrl.event" reservation-descriptor="ctrl.reservationDescriptor"></reservation-view>',

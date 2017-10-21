@@ -333,7 +333,7 @@ public class AdminReservationManagerIntegrationTest {
 
     private List<Attendee> generateAttendees(int count) {
         return IntStream.range(0, count)
-            .mapToObj(i -> new Attendee(null, "Attendee "+i, "Test" + i, "attendee"+i+"@test.ch"))
+            .mapToObj(i -> new Attendee(null, "Attendee "+i, "Test" + i, "attendee"+i+"@test.ch", "en",false, null, Collections.emptyMap()))
             .collect(toList());
     }
 }

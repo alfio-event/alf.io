@@ -22,14 +22,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
 
 @Getter
-public class AdminReservationModification {
+public class AdminReservationModification implements Serializable {
 
     private final DateTimeModification expiration;
     private final CustomerData customerData;
@@ -124,16 +129,28 @@ public class AdminReservationModification {
         private final String firstName;
         private final String lastName;
         private final String emailAddress;
+        private final String language;
+        private final boolean reassignmentForbidden;
+        private final String reference;
+        private final Map<String, List<String>> additionalInfo;
 
         @JsonCreator
         public Attendee(@JsonProperty("ticketId") Integer ticketId,
                         @JsonProperty("firstName") String firstName,
                         @JsonProperty("lastName") String lastName,
-                        @JsonProperty("emailAddress") String emailAddress) {
+                        @JsonProperty("emailAddress") String emailAddress,
+                        @JsonProperty("language") String language,
+                        @JsonProperty("forbidReassignment") Boolean reassignmentForbidden,
+                        @JsonProperty("reference") String reference,
+                        @JsonProperty("additionalInfo") Map<String, List<String>> additionalInfo) {
             this.ticketId = ticketId;
             this.firstName = firstName;
             this.lastName = lastName;
             this.emailAddress = emailAddress;
+            this.language = language;
+            this.reassignmentForbidden = Optional.ofNullable(reassignmentForbidden).orElse(false);
+            this.reference = reference;
+            this.additionalInfo = Optional.ofNullable(additionalInfo).orElse(Collections.emptyMap());
         }
 
         public boolean isEmpty() {
@@ -175,7 +192,7 @@ public class AdminReservationModification {
             List<TicketsInfo> ticketsInfo = src.ticketsInfo.stream().map(ti -> {
                 List<Attendee> attendees = ti.getAttendees()
                     .stream()
-                    .map(a -> new Attendee(a.ticketId, placeholderIfNotEmpty(a.firstName), placeholderIfNotEmpty(a.lastName), placeholderIfNotEmpty(a.emailAddress))).collect(toList());
+                    .map(a -> new Attendee(a.ticketId, placeholderIfNotEmpty(a.firstName), placeholderIfNotEmpty(a.lastName), placeholderIfNotEmpty(a.emailAddress), a.language, a.reassignmentForbidden, a.reference,singletonMap("hasAdditionalInfo", singletonList(String.valueOf(a.additionalInfo.isEmpty()))))).collect(toList());
                 return new TicketsInfo(ti.getCategory(), attendees, ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees());
             }).collect(toList());
             return Json.toJson(new AdminReservationModification(src.expiration, summaryForCustomerData(src.customerData), ticketsInfo, src.getLanguage(), src.updateContactData, src.notification));

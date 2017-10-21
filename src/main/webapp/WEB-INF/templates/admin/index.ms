@@ -76,6 +76,7 @@
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/reservation.service.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/import/reservation-import.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/view/reservation-view.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservations-list/reservations-list.js"></script>
@@ -88,6 +89,7 @@
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/ace-builds/src-min-noconflict/ace.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/angular-ui-ace/ui-ace.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/dexie/dist/dexie.min.js"></script>
+    <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/papaparse/papaparse.min.js"></script>
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
 <body>

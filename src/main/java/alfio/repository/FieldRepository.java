@@ -19,6 +19,9 @@ package alfio.repository;
 import alfio.model.TicketFieldConfiguration;
 import ch.digitalfondue.npjt.*;
 
+import java.util.List;
+import java.util.Set;
+
 @QueryRepository
 interface FieldRepository {
 
@@ -37,5 +40,8 @@ interface FieldRepository {
 
     @Query("update ticket_field_description set description = :description where ticket_field_configuration_id_fk = :ticketConfigurationId and field_locale = :locale")
     int updateDescription(@Bind("ticketConfigurationId") int ticketConfigurationId, @Bind("locale") String locale, @Bind("description") String description);
+
+    @Query("select distinct lower(field_name) from ticket_field_configuration where lower(field_name) in (:fieldNames) and event_id_fk = :eventId")
+    List<String> getExistingFields(@Bind("eventId") int eventId, @Bind("fieldNames") Set<String> fieldName);
 
 }

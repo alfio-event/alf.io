@@ -103,9 +103,12 @@ public class EventManager {
 
 
     public Event getSingleEvent(String eventName, String username) {
+        return getOptionalByName(eventName, username).orElseThrow(IllegalStateException::new);
+    }
+
+    public Optional<Event> getOptionalByName(String eventName, String username) {
         return eventRepository.findOptionalByShortName(eventName)
-            .filter(checkOwnership(username, organizationRepository))
-            .orElseThrow(IllegalStateException::new);
+            .filter(checkOwnership(username, organizationRepository));
     }
 
     public Event getSingleEventById(int eventId, String username) {

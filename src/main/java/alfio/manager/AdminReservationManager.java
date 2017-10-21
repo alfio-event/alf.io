@@ -216,7 +216,10 @@ public class AdminReservationManager {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
         TransactionStatus status = transactionManager.getTransaction(definition);
         try {
-            Result<Pair<TicketReservation, List<Ticket>>> result = transactionalCreateReservation(input, eventName, username);
+            Result<Pair<TicketReservation, List<Ticket>>> result = eventRepository.findOptionalByShortNameForUpdate(eventName)
+                .map(e -> validateTickets(input, e))
+                .map(r -> r.flatMap(p -> transactionalCreateReservation(p.getRight(), p.getLeft(), username)))
+                .orElse(Result.error(ErrorCode.EventError.NOT_FOUND));
             if(result.isSuccess()) {
                 transactionManager.commit(status);
             } else {
@@ -231,12 +234,33 @@ public class AdminReservationManager {
         }
     }
 
-    private Result<Pair<TicketReservation, List<Ticket>>> transactionalCreateReservation(AdminReservationModification input, String eventName, String username) {
-        return eventRepository.findOptionalByShortNameForUpdate(eventName)
-            .flatMap(e -> optionally(() -> {
-                eventManager.checkOwnership(e, username, e.getOrganizationId());
-                return e;
-            })).map(event -> processReservation(input, username, event))
+    Result<Pair<Event, AdminReservationModification>> validateTickets(AdminReservationModification input, Event event) {
+        Set<String> keys = input.getTicketsInfo().stream().flatMap(ti -> ti.getAttendees().stream())
+            .flatMap(a -> a.getAdditionalInfo().keySet().stream())
+            .map(String::toLowerCase)
+            .distinct()
+            .collect(toSet());
+
+        if(keys.size() == 0) {
+            return Result.success(Pair.of(event, input));
+        }
+
+        List<String> existing = ticketFieldRepository.getExistingFields(event.getId(), keys);
+        if(existing.size() == keys.size()) {
+            return Result.success(Pair.of(event, input));
+        }
+
+        return Result.error(keys.stream()
+                     .filter(k -> !existing.contains(k))
+                     .map(k -> ErrorCode.custom("error.notfound."+k, k+" not found"))
+                     .collect(toList()));
+    }
+
+    private Result<Pair<TicketReservation, List<Ticket>>> transactionalCreateReservation(AdminReservationModification input, Event event, String username) {
+        return optionally(() -> {
+                eventManager.checkOwnership(event, username, event.getOrganizationId());
+                return event;
+            }).map(e -> processReservation(input, username, e))
             .orElseGet(() -> Result.error(singletonList(ErrorCode.EventError.NOT_FOUND)));
     }
 
@@ -291,7 +315,7 @@ public class AdminReservationManager {
         TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event, null);
         ticketRepository.updateTicketPrice(reservedForUpdate, categoryId, event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
         List<SpecialPrice> codes = category.isAccessRestricted() ? bindSpecialPriceTokens(specialPriceSessionId, categoryId, attendees) : Collections.emptyList();
-        assignTickets(attendees, reservedForUpdate, codes, reservationId, arm.getLanguage(), category.getSrcPriceCts());
+        assignTickets(event, attendees, categoryId, reservedForUpdate, codes, reservationId, arm.getLanguage(), category.getSrcPriceCts());
         List<Ticket> tickets = reservedForUpdate.stream().map(id -> ticketRepository.findById(id, categoryId)).collect(toList());
         return Result.success(tickets);
     }
@@ -346,13 +370,27 @@ public class AdminReservationManager {
         return codes;
     }
 
-    private void assignTickets(List<Attendee> attendees, List<Integer> reservedForUpdate, List<SpecialPrice> codes, String reservationId, String userLanguage, int srcPriceCts) {
+    private void assignTickets(Event event,
+                               List<Attendee> attendees,
+                               int categoryId,
+                               List<Integer> reservedForUpdate,
+                               List<SpecialPrice> codes,
+                               String reservationId,
+                               String userLanguage,
+                               int srcPriceCts) {
+
         Optional<Iterator<SpecialPrice>> specialPriceIterator = Optional.of(codes).filter(c -> !c.isEmpty()).map(Collection::iterator);
         for(int i=0; i<reservedForUpdate.size(); i++) {
             Attendee attendee = attendees.get(i);
             if(!attendee.isEmpty()) {
                 Integer ticketId = reservedForUpdate.get(i);
                 ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmailAddress(), attendee.getFullName(), attendee.getFirstName(), attendee.getLastName());
+                if(attendee.isReassignmentForbidden()) {
+                    ticketRepository.toggleTicketLocking(ticketId, categoryId, true);
+                }
+                if(!attendee.getAdditionalInfo().isEmpty()) {
+                    ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId());
+                }
                 specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts));
             }
         }
