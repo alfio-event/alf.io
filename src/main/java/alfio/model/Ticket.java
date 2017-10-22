@@ -60,6 +60,7 @@ public class Ticket {
     private final int finalPriceCts;
     private final int vatCts;
     private final int discountCts;
+    private final String extReference;
 
     public Ticket(@JsonProperty("id") @Column("id") int id,
                   @JsonProperty("uuid") @Column("uuid") String uuid,
@@ -77,7 +78,8 @@ public class Ticket {
                   @JsonProperty("srcPriceCts") @Column("src_price_cts") int srcPriceCts,
                   @JsonProperty("finalPriceCts") @Column("final_price_cts") int finalPriceCts,
                   @JsonProperty("vatCts") @Column("vat_cts") int vatCts,
-                  @JsonProperty("discountCts") @Column("discount_cts") int discountCts) {
+                  @JsonProperty("discountCts") @Column("discount_cts") int discountCts,
+                  @JsonProperty("extReference") @Column("ext_reference") String extReference) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
@@ -96,6 +98,7 @@ public class Ticket {
         this.finalPriceCts = finalPriceCts;
         this.vatCts = vatCts;
         this.discountCts = discountCts;
+        this.extReference = extReference;
     }
     
     public boolean getAssigned() {

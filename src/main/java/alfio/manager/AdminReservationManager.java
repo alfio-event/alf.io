@@ -385,8 +385,8 @@ public class AdminReservationManager {
             if(!attendee.isEmpty()) {
                 Integer ticketId = reservedForUpdate.get(i);
                 ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmailAddress(), attendee.getFullName(), attendee.getFirstName(), attendee.getLastName());
-                if(attendee.isReassignmentForbidden()) {
-                    ticketRepository.toggleTicketLocking(ticketId, categoryId, true);
+                if(StringUtils.isNotBlank(attendee.getReference()) || attendee.isReassignmentForbidden()) {
+                    ticketRepository.updateExternalReferenceAndLocking(ticketId, categoryId, StringUtils.trimToNull(attendee.getReference()), attendee.isReassignmentForbidden());
                 }
                 if(!attendee.getAdditionalInfo().isEmpty()) {
                     ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId());

@@ -39,6 +39,7 @@ public class AdminReservationRequest {
     private final RequestType requestType;
     private final Status status;
     private final AdminReservationModification body;
+    private final String failureCode;
 
     public AdminReservationRequest(@Column("id") long id,
                                    @Column("request_id") String requestId,
@@ -46,7 +47,8 @@ public class AdminReservationRequest {
                                    @Column("reservation_id") String reservationId,
                                    @Column("request_type") RequestType requestType,
                                    @Column("status") Status status,
-                                   @Column("body") String body) {
+                                   @Column("body") String body,
+                                   @Column("failure_code") String failureCode) {
         this.id = id;
         this.requestId = requestId;
         this.userId = userId;
@@ -54,6 +56,7 @@ public class AdminReservationRequest {
         this.requestType = requestType;
         this.status = status;
         this.body = Json.fromJson(body, AdminReservationModification.class);
+        this.failureCode = failureCode;
     }
 
 }
