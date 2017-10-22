@@ -260,6 +260,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
             buildTrigger(SendOfflinePaymentReminder.class, "SendOfflinePaymentReminder", SendOfflinePaymentReminder.INTERVAL),
             buildTrigger(SendTicketAssignmentReminder.class, "SendTicketAssignmentReminder", SendTicketAssignmentReminder.INTERVAL),
             buildTrigger(GenerateSpecialPriceCodes.class, "GenerateSpecialPriceCodes", GenerateSpecialPriceCodes.INTERVAL),
+            buildTrigger(ProcessReservationRequests.class, "ProcessReservationRequests", ProcessReservationRequests.INTERVAL),
             buildTrigger(SendEmails.class, "SendEmails", SendEmails.INTERVAL),
             buildTrigger(ProcessReleasedTickets.class, "ProcessReleasedTickets", ProcessReleasedTickets.INTERVAL),
             buildTrigger(CleanupUnreferencedBlobFiles.class, "CleanupUnreferencedBlobFiles", CleanupUnreferencedBlobFiles.INTERVAL),

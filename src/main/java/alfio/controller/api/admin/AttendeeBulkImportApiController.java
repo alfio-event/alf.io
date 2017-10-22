@@ -17,14 +17,13 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.AdminReservationRequestManager;
-import alfio.model.AdminReservationRequest;
+import alfio.model.AdminReservationRequestStats;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.result.Result;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.List;
 
 @RequestMapping("/admin/api/event/{eventName}/attendees/import")
 @RestController
@@ -42,9 +41,9 @@ public class AttendeeBulkImportApiController {
     }
 
     @RequestMapping(value = "/{requestId}/status", method = RequestMethod.GET)
-    public Result<List<AdminReservationRequest>> getRequestsStatus(@PathVariable("eventName") String eventName,
-                                                                   @PathVariable("requestId") String requestId,
-                                                                   Principal principal) {
+    public Result<AdminReservationRequestStats> getRequestsStatus(@PathVariable("eventName") String eventName,
+                                                                  @PathVariable("requestId") String requestId,
+                                                                  Principal principal) {
         return requestManager.getRequestStatus(requestId, eventName, principal.getName());
     }
 

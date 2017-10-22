@@ -87,8 +87,8 @@ public class TicketWithReservationAndTransaction {
                                                @Column("bt_currency") String currency,
                                                @Column("bt_description") String description,
                                                @Column("bt_payment_proxy") String paymentProxy,
-                                               @Column("bt_plat_fee") long platformFee,
-                                               @Column("bt_gtw_fee") long gatewayFee
+                                               @Column("bt_plat_fee") Long platformFee,
+                                               @Column("bt_gtw_fee") Long gatewayFee
                                                ) {
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
             fullName, firstName, lastName, email, lockedAssignment, userLanguage,
@@ -104,7 +104,7 @@ public class TicketWithReservationAndTransaction {
 
         if(btId != null) {
             this.transaction = Optional.of(new Transaction(btId, transactionId, paymentId, reservationId,
-                timestamp, priceInCents, currency, description, paymentProxy, platformFee, gatewayFee));
+                timestamp, priceInCents, currency, description, paymentProxy, Optional.ofNullable(platformFee).orElse(0L), Optional.ofNullable(gatewayFee).orElse(0L)));
         } else {
             this.transaction = Optional.empty();
         }

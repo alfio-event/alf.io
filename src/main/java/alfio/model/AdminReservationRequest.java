@@ -35,6 +35,7 @@ public class AdminReservationRequest {
     private final long id;
     private final String requestId;
     private final long userId;
+    private final long eventId;
     private final String reservationId;
     private final RequestType requestType;
     private final Status status;
@@ -44,6 +45,7 @@ public class AdminReservationRequest {
     public AdminReservationRequest(@Column("id") long id,
                                    @Column("request_id") String requestId,
                                    @Column("user_id") long userId,
+                                   @Column("event_id") long eventId,
                                    @Column("reservation_id") String reservationId,
                                    @Column("request_type") RequestType requestType,
                                    @Column("status") Status status,
@@ -52,6 +54,7 @@ public class AdminReservationRequest {
         this.id = id;
         this.requestId = requestId;
         this.userId = userId;
+        this.eventId = eventId;
         this.reservationId = reservationId;
         this.requestType = requestType;
         this.status = status;

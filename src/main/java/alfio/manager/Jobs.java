@@ -25,6 +25,7 @@ import alfio.model.user.User;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -54,10 +55,9 @@ public class Jobs {
     private final UserManager userManager;
     private final EventManager eventManager;
     private final ConfigurationManager configurationManager;
+    private final AdminReservationRequestManager adminReservationRequestManager;
 
-
-
-    public void cleanupExpiredPendingReservation() {
+    void cleanupExpiredPendingReservation() {
         //cleanup reservation that have a expiration older than "now minus 10 minutes": this give some additional slack.
         final Date expirationDate = DateUtils.addMinutes(new Date(), -10);
         ticketReservationManager.cleanupExpiredReservations(expirationDate);
@@ -65,36 +65,36 @@ public class Jobs {
         ticketReservationManager.markExpiredInPaymentReservationAsStuck(expirationDate);
     }
 
-    public void sendOfflinePaymentReminder() {
+    void sendOfflinePaymentReminder() {
         ticketReservationManager.sendReminderForOfflinePayments();
     }
 
-    public void sendOfflinePaymentReminderToEventOrganizers() {
+    void sendOfflinePaymentReminderToEventOrganizers() {
         ticketReservationManager.sendReminderForOfflinePaymentsToEventManagers();
     }
 
-    public void sendTicketAssignmentReminder() {
+    void sendTicketAssignmentReminder() {
         ticketReservationManager.sendReminderForTicketAssignment();
         ticketReservationManager.sendReminderForOptionalData();
     }
 
-    public void generateSpecialPriceCodes() {
+    void generateSpecialPriceCodes() {
         specialPriceTokenGenerator.generatePendingCodes();
     }
 
-    public void sendEmails() {
+    void sendEmails() {
         notificationManager.sendWaitingMessages();
     }
 
-    public void processReleasedTickets() {
+    void processReleasedTickets() {
         waitingQueueSubscriptionProcessor.handleWaitingTickets();
     }
 
-    public void cleanupUnreferencedBlobFiles() {
+    void cleanupUnreferencedBlobFiles() {
         fileUploadManager.cleanupUnreferencedBlobFiles();
     }
 
-    public void cleanupForDemoMode() {
+    void cleanupForDemoMode() {
         if(environment.acceptsProfiles(Initializer.PROFILE_DEMO)) {
             int expirationDate = configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS), 20);
             List<Integer> userIds = userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
@@ -102,6 +102,10 @@ public class Jobs {
                 eventManager.disableEventsFromUsers(userIds);
             }
         }
+    }
+
+    Pair<Integer, Integer> processReservationRequests() {
+        return adminReservationRequestManager.processPendingReservations();
     }
 
     @DisallowConcurrentExecution
@@ -225,6 +229,26 @@ public class Jobs {
         public void execute(JobExecutionContext context) throws JobExecutionException {
             log.trace("running job " + getClass().getSimpleName());
             jobs.sendEmails();
+        }
+    }
+
+    @DisallowConcurrentExecution
+    @Log4j2
+    public static class ProcessReservationRequests implements Job {
+
+        public static long INTERVAL = FIVE_SECONDS;
+
+        @Autowired
+        private Jobs jobs;
+
+        @Override
+        public void execute(JobExecutionContext context) throws JobExecutionException {
+            log.trace("running job " + getClass().getSimpleName());
+            long start = System.currentTimeMillis();
+            Pair<Integer, Integer> result = jobs.processReservationRequests();
+            if(result.getLeft() > 0 || result.getRight() > 0) {
+                log.info("ProcessReservationRequests: got {} success and {} failures. Elapsed {} ms", result.getLeft(), result.getRight(), System.currentTimeMillis() - start);
+            }
         }
     }
 

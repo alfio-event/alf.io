@@ -33,8 +33,15 @@ public interface AdminReservationRequestRepository {
         type = QueryType.TEMPLATE)
     String insertRequest();
 
-    @Query("select * from admin_reservation_request where request_id = :requestId and event_id = :eventId")
-    List<AdminReservationRequest> findByRequestIdAndEventId(@Bind("requestId") String requestId, @Bind("eventId") long eventId);
+    @Query("select id from admin_reservation_request where status = 'PENDING' order by request_id limit :limit for update")
+    List<Long> findPendingForUpdate(@Bind("limit") int limit);
+
+    @Query("select * from admin_reservation_request where id = :id")
+    AdminReservationRequest fetchCompleteById(@Bind("id") long id);
+
+    @Query(value = "update admin_reservation_request set status = :status, reservation_id = :reservationId, failure_code = :failureCode where id = :id", type = QueryType.TEMPLATE)
+    String updateStatus();
+
 
     @Query("select * from admin_reservation_request_stats where request_id = :requestId and event_id = :eventId")
     Optional<AdminReservationRequestStats> findStatsByRequestIdAndEventId(@Bind("requestId") String requestId, @Bind("eventId") long eventId);

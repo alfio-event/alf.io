@@ -16,28 +16,33 @@
  */
 package alfio.manager;
 
-import alfio.model.AdminReservationRequest;
-import alfio.model.Event;
+import alfio.model.*;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.AdminReservationModification.CustomerData;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.repository.AdminReservationRequestRepository;
+import alfio.repository.EventRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.Json;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Collections.singletonList;
 
 @Component
@@ -51,10 +56,12 @@ public class AdminReservationRequestManager {
     private final NamedParameterJdbcTemplate jdbc;
     private final UserRepository userRepository;
     private final AdminReservationRequestRepository adminReservationRequestRepository;
+    private final EventRepository eventRepository;
 
-    public Result<List<AdminReservationRequest>> getRequestStatus(String requestId, String eventName, String username) {
+    public Result<AdminReservationRequestStats> getRequestStatus(String requestId, String eventName, String username) {
         return eventManager.getOptionalByName(eventName, username)
-            .map(event -> Result.success(adminReservationRequestRepository.findByRequestIdAndEventId(requestId, event.getId())))
+            .flatMap(e -> adminReservationRequestRepository.findStatsByRequestIdAndEventId(requestId, e.getId()))
+            .map(Result::success)
             .orElseGet(() -> Result.error(ErrorCode.EventError.ACCESS_DENIED));
     }
 
@@ -63,10 +70,54 @@ public class AdminReservationRequestManager {
                                                boolean singleReservation,
                                                String username) {
 
+        //safety check: if there are more than 150 people in a single reservation, the reservation page could take a while before showing up.
+        //therefore we will limit the maximum amount of people in a single reservation to 100. This will be addressed in rel. 2.0
+
+        if(singleReservation && body.getTicketsInfo().stream().mapToLong(ti -> ti.getAttendees().size()).sum() > 100) {
+            return Result.error(ErrorCode.custom("MAX_NUMBER_EXCEEDED", "Maximum allowed attendees per reservation is 100"));
+        }
+
         return eventManager.getOptionalByName(eventName, username)
             .map(event -> adminReservationManager.validateTickets(body, event))
             .map(request -> request.flatMap(pair -> insertRequest(pair.getRight(), pair.getLeft(), singleReservation, username)))
             .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED));
+    }
+
+    Pair<Integer, Integer> processPendingReservations() {
+        Map<Boolean, List<MapSqlParameterSource>> result = adminReservationRequestRepository.findPendingForUpdate(1000)
+            .stream()
+            .map(id -> {
+                AdminReservationRequest request = adminReservationRequestRepository.fetchCompleteById(id);
+
+                Result<Triple<TicketReservation, List<Ticket>, Event>> reservationResult = Result.fromNullable(optionally(() -> eventRepository.findById((int) request.getEventId())).orElse(null), ErrorCode.EventError.NOT_FOUND)
+                    .flatMap(e -> Result.fromNullable(optionally(() -> userRepository.findById((int) request.getUserId())).map(u -> Pair.of(e, u)).orElse(null), ErrorCode.EventError.ACCESS_DENIED))
+                    .flatMap(p -> {
+                        String eventName = p.getLeft().getShortName();
+                        String username = p.getRight().getUsername();
+                        return adminReservationManager.createReservation(request.getBody(), eventName, username)
+                            .flatMap(r -> adminReservationManager.confirmReservation(eventName, r.getLeft().getId(), username));
+                    });
+                return buildParameterSource(id, reservationResult);
+            }).collect(Collectors.partitioningBy(ps -> AdminReservationRequest.Status.SUCCESS.name().equals(ps.getValue("status"))));
+
+        result.values().forEach(list -> {
+            try {
+                jdbc.batchUpdate(adminReservationRequestRepository.updateStatus(), list.toArray(new MapSqlParameterSource[list.size()]));
+            } catch(Exception e) {
+                log.fatal("cannot update the status of "+list.size()+" reservations", e);
+            }
+        });
+
+        return Pair.of(CollectionUtils.size(result.get(true)), CollectionUtils.size(result.get(false)));
+
+    }
+
+    private MapSqlParameterSource buildParameterSource(Long id, Result<Triple<TicketReservation, List<Ticket>, Event>> result) {
+        boolean success = result.isSuccess();
+        return new MapSqlParameterSource("id", id)
+            .addValue("status", success ? AdminReservationRequest.Status.SUCCESS.name() : AdminReservationRequest.Status.ERROR.name())
+            .addValue("reservationId", success ? result.getData().getLeft().getId() : null)
+            .addValue("failureCode", success ? null : result.getFirstErrorOrNull());
     }
 
     private Result<String> insertRequest(AdminReservationModification body, Event event, boolean singleReservation, String username) {

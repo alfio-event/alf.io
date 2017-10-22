@@ -19,6 +19,7 @@ package alfio.model.result;
 import alfio.model.result.ValidationResult.ErrorDescriptor;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.ObjectError;
 
@@ -76,6 +77,13 @@ public class Result<T> {
         return Result.error(this.errors);
     }
 
+    public ErrorCode getFirstErrorOrNull() {
+        if(isSuccess() || CollectionUtils.size(errors) == 0) {
+            return null;
+        }
+        return errors.get(0);
+    }
+
     public enum ResultStatus {
         OK, VALIDATION_ERROR, ERROR
     }
@@ -101,6 +109,13 @@ public class Result<T> {
                 .orElseGet(() -> Result.success(valueSupplier.get()));
         }
 
+    }
+
+    public static <T> Result<T> fromNullable(T nullable, ErrorCode justInCase) {
+        if(nullable == null) {
+            return Result.error(justInCase);
+        }
+        return Result.success(nullable);
     }
 
     @FunctionalInterface
