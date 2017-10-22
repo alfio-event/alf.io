@@ -32,9 +32,10 @@ create index "admin_reservation_request_res_idx" on admin_reservation_request(re
 create view admin_reservation_request_stats as (
     select request_id,
         user_id,
+        event_id,
         sum(case (status = 'PENDING') when true then 1 else 0 end) as count_pending,
         sum(case (status = 'SUCCESS') when true then 1 else 0 end) as count_success,
         sum(case (status = 'ERROR') when true then 1 else 0 end) as count_error
     from admin_reservation_request
-    group by request_id, user_id
+    group by request_id, event_id, user_id
 );

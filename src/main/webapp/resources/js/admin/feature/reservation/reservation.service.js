@@ -40,6 +40,9 @@
                         url += '?oneReservationPerAttendee=true'
                     }
                     return $http.post(url, descriptor).error(HttpErrorHandler.handle);
+                },
+                retrieveStats: function(eventName, requestId) {
+                    return $http.get('/admin/api/event/'+eventName+'/attendees/import/'+requestId+'/status').error(HttpErrorHandler.handle);
                 }
             }
         }])

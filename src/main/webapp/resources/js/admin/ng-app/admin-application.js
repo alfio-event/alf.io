@@ -251,6 +251,16 @@
                 data: {
                     view: 'IMPORT_RESERVATION'
                 }
+            }).state('events.single.import-status', {
+                url:'/reservation/import/:requestId/status',
+                template: '<reservation-import-progress event="ctrl.event"></reservation-import-progress>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                },
+                controllerAs: 'ctrl',
+                data: {
+                    view: 'IMPORT_STATUS'
+                }
             }).state('events.single.view-reservation', {
                 url:'/reservation/:reservationId?fromCreation',
                 template: '<reservation-view event="ctrl.event" reservation-descriptor="ctrl.reservationDescriptor"></reservation-view>',

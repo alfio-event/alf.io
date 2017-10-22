@@ -10,10 +10,41 @@
         },
         controller: ReservationImportCtrl,
         templateUrl: '../resources/js/admin/feature/reservation/import/reservation-import.html'
+    }).component('reservationImportProgress', {
+        bindings: {
+            event: '<'
+        },
+        controller: ImportProgressCtrl,
+        templateUrl: '../resources/js/admin/feature/reservation/import/import-progress.html'
+
     });
 
+    function ImportProgressCtrl(AdminImportService, $interval, $stateParams) {
+        var ctrl = this;
+        ctrl.loading = true;
+        ctrl.total = 0;
+        ctrl.processed = 0;
+        ctrl.$onInit = function() {
+            var interval = $interval(function() {
+                AdminImportService.retrieveStats(ctrl.event.shortName, $stateParams.requestId)
+                    .then(function(res) {
+                        var data = res.data.data;
+                        ctrl.countSuccess = data.countSuccess;
+                        ctrl.countError = data.countError;
+                        ctrl.processed = data.countSuccess + data.countError;
+                        ctrl.total = data.countSuccess + data.countError + data.countPending;
+                        if(ctrl.countSuccess + ctrl.countError === ctrl.total) {
+                            $interval.cancel(interval);
+                            ctrl.success = ctrl.countError === 0;
+                        }
+                        ctrl.loading = false;
+                    });
+            }, 1000);
 
-    function ReservationImportCtrl(AdminImportService, $state, PriceCalculator, $timeout) {
+        };
+    }
+
+    function ReservationImportCtrl(AdminImportService, PriceCalculator, $timeout, $state) {
         var ctrl = this;
 
         var handleError = function(error) {
@@ -135,7 +166,7 @@
                 AdminImportService.importAttendees(ctrl.event.shortName, ctrl.reservation, ctrl.createSingleReservations).then(function(r) {
                     var result = r.data;
                     if(result.success) {
-
+                        $state.go('events.single.import-status', {eventName: ctrl.event.shortName, requestId: result.data});
                     } else {
                         handleError(result.errors);
                     }
