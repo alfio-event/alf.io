@@ -26,8 +26,8 @@ create table admin_reservation_request (
     body mediumtext
 ) ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
 
-create index "admin_reservation_request_req_idx" on admin_reservation_request(request_id);
-create index "admin_reservation_request_res_idx" on admin_reservation_request(reservation_id);
+create index admin_reservation_request_req_idx on admin_reservation_request(request_id);
+create index admin_reservation_request_res_idx on admin_reservation_request(reservation_id);
 
 create view admin_reservation_request_stats as (
     select request_id,
