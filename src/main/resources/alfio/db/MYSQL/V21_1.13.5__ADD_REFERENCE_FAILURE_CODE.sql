@@ -17,4 +17,4 @@
 
 alter table ticket add column ext_reference varchar(255);
 alter table admin_reservation_request add column failure_code varchar(255);
-create index "admin_reservation_request_sts_idx" on admin_reservation_request(status);
+create index admin_reservation_request_sts_idx on admin_reservation_request(status);
