@@ -304,9 +304,9 @@ public class CheckInManager {
 
     public Map<String,String> getEncryptedAttendeesInformation(Event ev, Set<String> additionalFields, List<Integer> ids) {
 
-        Map<Integer, TicketCategory> categories = ticketCategoryRepository.findByEventIdAsMap(ev.getId());
 
         return Optional.ofNullable(ev).filter(isOfflineCheckInEnabled()).map(event -> {
+            Map<Integer, TicketCategory> categories = ticketCategoryRepository.findByEventIdAsMap(event.getId());
             String eventKey = event.getPrivateKey();
 
             Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));

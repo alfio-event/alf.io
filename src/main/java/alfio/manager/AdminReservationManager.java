@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.support.DuplicateReferenceException;
 import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.TicketPriceContainer;
@@ -42,10 +43,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.context.MessageSource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -112,7 +115,9 @@ public class AdminReservationManager {
             return result;
         } catch (Exception e) {
             log.error("Error during confirmation of reservation eventName: {} reservationId: {}, username: {}", eventName, reservationId, username);
-            transactionManager.rollback(status);
+            if(!(e instanceof TransactionException)) {
+                transactionManager.rollback(status);
+            }
             return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
         }
     }
@@ -138,7 +143,9 @@ public class AdminReservationManager {
             return result;
         } catch (Exception e) {
             log.error("Error during update of reservation eventName: {} reservationId: {}, username: {}, reservation: {}", eventName, reservationId, username, AdminReservationModification.summary(adminReservationModification));
-            transactionManager.rollback(status);
+            if(!(e instanceof TransactionException)) {
+                transactionManager.rollback(status);
+            }
             return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
         }
     }
@@ -229,8 +236,10 @@ public class AdminReservationManager {
             return result;
         } catch(Exception e) {
             log.error("Error during update of reservation eventName: {}, username: {}, reservation: {}", eventName, username, AdminReservationModification.summary(input));
-            transactionManager.rollback(status);
-            return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
+            if(!(e instanceof TransactionException)) {
+                transactionManager.rollback(status);
+            }
+            return Result.error(singletonList(ErrorCode.custom(e instanceof DuplicateReferenceException ? "duplicate-reference" : "", e.getMessage())));
         }
     }
 
@@ -386,13 +395,22 @@ public class AdminReservationManager {
                 Integer ticketId = reservedForUpdate.get(i);
                 ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmailAddress(), attendee.getFullName(), attendee.getFirstName(), attendee.getLastName());
                 if(StringUtils.isNotBlank(attendee.getReference()) || attendee.isReassignmentForbidden()) {
-                    ticketRepository.updateExternalReferenceAndLocking(ticketId, categoryId, StringUtils.trimToNull(attendee.getReference()), attendee.isReassignmentForbidden());
+                    updateExtRefAndLocking(categoryId, attendee, ticketId);
                 }
                 if(!attendee.getAdditionalInfo().isEmpty()) {
                     ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId());
                 }
                 specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts));
             }
+        }
+    }
+
+    private void updateExtRefAndLocking(int categoryId, Attendee attendee, Integer ticketId) {
+        try {
+            ticketRepository.updateExternalReferenceAndLocking(ticketId, categoryId, StringUtils.trimToNull(attendee.getReference()), attendee.isReassignmentForbidden());
+        } catch (DataIntegrityViolationException ex) {
+            log.warn("Duplicate found for external reference: "+attendee.getReference()+" and ticketID: " + ticketId);
+            throw new DuplicateReferenceException("Duplicated Reference: "+attendee.getReference(), ex);
         }
     }
 

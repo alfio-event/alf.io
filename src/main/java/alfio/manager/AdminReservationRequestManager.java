@@ -21,6 +21,7 @@ import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.AdminReservationModification.CustomerData;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
+import alfio.model.user.User;
 import alfio.repository.AdminReservationRequestRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.user.UserRepository;
@@ -34,7 +35,12 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.util.List;
 import java.util.Map;
@@ -44,6 +50,7 @@ import java.util.stream.Stream;
 
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Collections.singletonList;
+import static java.util.Optional.ofNullable;
 
 @Component
 @Transactional
@@ -57,6 +64,7 @@ public class AdminReservationRequestManager {
     private final UserRepository userRepository;
     private final AdminReservationRequestRepository adminReservationRequestRepository;
     private final EventRepository eventRepository;
+    private final PlatformTransactionManager transactionManager;
 
     public Result<AdminReservationRequestStats> getRequestStatus(String requestId, String eventName, String username) {
         return eventManager.getOptionalByName(eventName, username)
@@ -91,12 +99,7 @@ public class AdminReservationRequestManager {
 
                 Result<Triple<TicketReservation, List<Ticket>, Event>> reservationResult = Result.fromNullable(optionally(() -> eventRepository.findById((int) request.getEventId())).orElse(null), ErrorCode.EventError.NOT_FOUND)
                     .flatMap(e -> Result.fromNullable(optionally(() -> userRepository.findById((int) request.getUserId())).map(u -> Pair.of(e, u)).orElse(null), ErrorCode.EventError.ACCESS_DENIED))
-                    .flatMap(p -> {
-                        String eventName = p.getLeft().getShortName();
-                        String username = p.getRight().getUsername();
-                        return adminReservationManager.createReservation(request.getBody(), eventName, username)
-                            .flatMap(r -> adminReservationManager.confirmReservation(eventName, r.getLeft().getId(), username));
-                    });
+                    .flatMap(p -> processReservation(request, p));
                 return buildParameterSource(id, reservationResult);
             }).collect(Collectors.partitioningBy(ps -> AdminReservationRequest.Status.SUCCESS.name().equals(ps.getValue("status"))));
 
@@ -112,12 +115,33 @@ public class AdminReservationRequestManager {
 
     }
 
+    private Result<Triple<TicketReservation, List<Ticket>, Event>> processReservation(AdminReservationRequest request, Pair<Event, User> p) {
+        TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
+        try {
+            String eventName = p.getLeft().getShortName();
+            String username = p.getRight().getUsername();
+            Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.createReservation(request.getBody(), eventName, username)
+                .flatMap(r -> adminReservationManager.confirmReservation(eventName, r.getLeft().getId(), username));
+            if(result.isSuccess()) {
+                transactionManager.commit(transaction);
+            } else {
+                transactionManager.rollback(transaction);
+            }
+            return result;
+        } catch(Exception ex) {
+            if(!(ex instanceof TransactionException)) {
+                transactionManager.rollback(transaction);
+            }
+            return Result.error(singletonList(ErrorCode.custom("", ex.getMessage())));
+        }
+    }
+
     private MapSqlParameterSource buildParameterSource(Long id, Result<Triple<TicketReservation, List<Ticket>, Event>> result) {
         boolean success = result.isSuccess();
         return new MapSqlParameterSource("id", id)
             .addValue("status", success ? AdminReservationRequest.Status.SUCCESS.name() : AdminReservationRequest.Status.ERROR.name())
             .addValue("reservationId", success ? result.getData().getLeft().getId() : null)
-            .addValue("failureCode", success ? null : result.getFirstErrorOrNull());
+            .addValue("failureCode", success ? null : ofNullable(result.getFirstErrorOrNull()).map(ErrorCode::getCode).orElse(null));
     }
 
     private Result<String> insertRequest(AdminReservationModification body, Event event, boolean singleReservation, String username) {
