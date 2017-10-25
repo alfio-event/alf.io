@@ -291,4 +291,7 @@ public interface TicketRepository {
     default boolean checkTicketUUIDs(String reservationId, Set<String> uuids) {
         return countFoundTicketsInReservation(reservationId, uuids) == uuids.size();
     }
+
+    @Query("update ticket set status = 'FREE' where event_id = :eventId and category_id in(:categoryId) and status = '"+RELEASED+"'")
+    int revertToFreeForRestrictedCategories(@Bind("eventId") int eventId, @Bind("categoryId") List<Integer> categoryId);
 }

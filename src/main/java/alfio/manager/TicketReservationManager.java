@@ -1312,4 +1312,15 @@ public class TicketReservationManager {
     public boolean hasPaidSupplements(String reservationId) {
         return additionalServiceItemRepository.hasPaidSupplements(reservationId);
     }
+
+    void revertTicketsToFreeIfAccessRestricted(int eventId) {
+        List<Integer> restrictedCategories = ticketCategoryRepository.findByEventId(eventId).stream()
+            .filter(TicketCategory::isAccessRestricted)
+            .map(TicketCategory::getId)
+            .collect(toList());
+        if(!restrictedCategories.isEmpty()) {
+            int count = ticketRepository.revertToFreeForRestrictedCategories(eventId, restrictedCategories);
+            log.debug("reverted {} tickets for categories {}", count, restrictedCategories);
+        }
+    }
 }
