@@ -1,11 +1,84 @@
 # Change Log
 
-## [1.12-RC4](https://github.com/exteso/alf.io/tree/1.12-RC4) (2017-09-12)
-[Full Changelog](https://github.com/exteso/alf.io/compare/1.12-RC3...1.12-RC4)
+## [Unreleased](https://github.com/exteso/alf.io/tree/HEAD)
+
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.13-RC1...HEAD)
 
 **Implemented enhancements:**
 
+- Waiting queue form should be displayed if all "public" tickets have been sold [\#348](https://github.com/exteso/alf.io/issues/348)
+
+**Closed issues:**
+
+- Upload existing attendees [\#354](https://github.com/exteso/alf.io/issues/354)
+- multi-tenancy: add support for platform mode [\#343](https://github.com/exteso/alf.io/issues/343)
+
+## [1.13-RC1](https://github.com/exteso/alf.io/tree/1.13-RC1) (2017-10-24)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.12.1...1.13-RC1)
+
+**Implemented enhancements:**
+
+- save used vat% in each ticket [\#347](https://github.com/exteso/alf.io/issues/347)
+
+## [1.12.1](https://github.com/exteso/alf.io/tree/1.12.1) (2017-10-08)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.12...1.12.1)
+
+**Implemented enhancements:**
+
+- Add possibility to disable email sending when mode is PROFILE\_LIVE [\#346](https://github.com/exteso/alf.io/issues/346)
+
+**Fixed bugs:**
+
+- Search from Check-in view has 2 separate fields, but only 1 is used [\#342](https://github.com/exteso/alf.io/issues/342)
+- Consider invitations when invalidating tokens [\#335](https://github.com/exteso/alf.io/issues/335)
+
+**Closed issues:**
+
+- Set Checkin-date on category [\#333](https://github.com/exteso/alf.io/issues/333)
+
+**Merged pull requests:**
+
+- add support for french [\#350](https://github.com/exteso/alf.io/pull/350) ([bjamet](https://github.com/bjamet))
+- \#343 - configure "platform mode" in order to collect fees for each ti… [\#344](https://github.com/exteso/alf.io/pull/344) ([cbellone](https://github.com/cbellone))
+- implement \#333 checkin date category [\#341](https://github.com/exteso/alf.io/pull/341) ([syjer](https://github.com/syjer))
+
+## [1.12](https://github.com/exteso/alf.io/tree/1.12) (2017-09-20)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.12-RC4...1.12)
+
+**Implemented enhancements:**
+
+- misc optimizations [\#325](https://github.com/exteso/alf.io/issues/325)
+- remove UserApiController.storePasswordImage, switch to a post+base64img -\> data url [\#324](https://github.com/exteso/alf.io/issues/324)
+- offline check-in data: support delta requests + optional data [\#319](https://github.com/exteso/alf.io/issues/319)
+- Lazy loading of tickets [\#318](https://github.com/exteso/alf.io/issues/318)
+- add spring-session with jdbc backend [\#312](https://github.com/exteso/alf.io/issues/312)
+- edit fields: should be able to add additional elements to select and switch from mandatory to optional [\#306](https://github.com/exteso/alf.io/issues/306)
 - improve email log UI/UX [\#288](https://github.com/exteso/alf.io/issues/288)
+- Suspend waiting queue [\#201](https://github.com/exteso/alf.io/issues/201)
+
+**Fixed bugs:**
+
+- error while checking for pending payments [\#332](https://github.com/exteso/alf.io/issues/332)
+- Serialization issue with profile jdbc-session [\#331](https://github.com/exteso/alf.io/issues/331)
+- Add feedback on save at organization / event level [\#317](https://github.com/exteso/alf.io/issues/317)
+- Can't configure EU-Billing country at organization level [\#316](https://github.com/exteso/alf.io/issues/316)
+
+**Closed issues:**
+
+- fix getOfflineIdentifiers to handle the case a ticket does not have a last\_update time [\#339](https://github.com/exteso/alf.io/issues/339)
+- Add captcha if offline payment has been selected [\#338](https://github.com/exteso/alf.io/issues/338)
+- select box values are not saved with webkit [\#307](https://github.com/exteso/alf.io/issues/307)
+- google maps geo api: switch to client side only \(remove server side timezone api\) [\#304](https://github.com/exteso/alf.io/issues/304)
+- handle specific paypal error codes [\#303](https://github.com/exteso/alf.io/issues/303)
+- Demo mode [\#299](https://github.com/exteso/alf.io/issues/299)
+- Feature Request: Show which tokens have already been sent out [\#290](https://github.com/exteso/alf.io/issues/290)
+
+**Merged pull requests:**
+
+- use the correct geoapi, fix \#314 [\#315](https://github.com/exteso/alf.io/pull/315) ([syjer](https://github.com/syjer))
+
+## [1.12-RC4](https://github.com/exteso/alf.io/tree/1.12-RC4) (2017-09-12)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.12-RC3...1.12-RC4)
 
 **Merged pull requests:**
 
@@ -14,20 +87,8 @@
 ## [1.12-RC3](https://github.com/exteso/alf.io/tree/1.12-RC3) (2017-09-08)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.12-RC2...1.12-RC3)
 
-**Fixed bugs:**
-
-- error while checking for pending payments [\#332](https://github.com/exteso/alf.io/issues/332)
-
-**Closed issues:**
-
-- handle specific paypal error codes [\#303](https://github.com/exteso/alf.io/issues/303)
-
 ## [1.12-RC2](https://github.com/exteso/alf.io/tree/1.12-RC2) (2017-09-05)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.12-RC1...1.12-RC2)
-
-**Fixed bugs:**
-
-- Serialization issue with profile jdbc-session [\#331](https://github.com/exteso/alf.io/issues/331)
 
 ## [1.12-RC1](https://github.com/exteso/alf.io/tree/1.12-RC1) (2017-09-04)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.11.1...1.12-RC1)
@@ -35,19 +96,11 @@
 **Implemented enhancements:**
 
 - fast code url  + code for category [\#328](https://github.com/exteso/alf.io/issues/328)
-- misc optimizations [\#325](https://github.com/exteso/alf.io/issues/325)
-- remove UserApiController.storePasswordImage, switch to a post+base64img -\> data url [\#324](https://github.com/exteso/alf.io/issues/324)
-- offline check-in data: support delta requests + optional data [\#319](https://github.com/exteso/alf.io/issues/319)
-- Lazy loading of tickets [\#318](https://github.com/exteso/alf.io/issues/318)
-- add spring-session with jdbc backend [\#312](https://github.com/exteso/alf.io/issues/312)
-- Suspend waiting queue [\#201](https://github.com/exteso/alf.io/issues/201)
 
 **Fixed bugs:**
 
 - increase category size could lead to incoherency [\#330](https://github.com/exteso/alf.io/issues/330)
 - Cannot download Event data CSV [\#320](https://github.com/exteso/alf.io/issues/320)
-- Add feedback on save at organization / event level [\#317](https://github.com/exteso/alf.io/issues/317)
-- Can't configure EU-Billing country at organization level [\#316](https://github.com/exteso/alf.io/issues/316)
 - Proper error screen when "Cannot confirm an offline reservation after event start" [\#197](https://github.com/exteso/alf.io/issues/197)
 
 **Closed issues:**
@@ -55,7 +108,6 @@
 - Empty zip when there are no invoices [\#321](https://github.com/exteso/alf.io/issues/321)
 - geoapi take2 [\#314](https://github.com/exteso/alf.io/issues/314)
 - Japanese characters in iOS App are garbled characters [\#302](https://github.com/exteso/alf.io/issues/302)
-- Feature Request: Show which tokens have already been sent out [\#290](https://github.com/exteso/alf.io/issues/290)
 - stateless csrf [\#279](https://github.com/exteso/alf.io/issues/279)
 - add mysql 5.7 in the travis test matrix [\#140](https://github.com/exteso/alf.io/issues/140)
 
@@ -63,15 +115,10 @@
 
 - implement \#328 event code url [\#329](https://github.com/exteso/alf.io/pull/329) ([syjer](https://github.com/syjer))
 - \#318 remove last single event with statistics: WIP [\#326](https://github.com/exteso/alf.io/pull/326) ([syjer](https://github.com/syjer))
-- use the correct geoapi, fix \#314 [\#315](https://github.com/exteso/alf.io/pull/315) ([syjer](https://github.com/syjer))
 - add mysql 5.7 in travis test matrix [\#313](https://github.com/exteso/alf.io/pull/313) ([syjer](https://github.com/syjer))
 
 ## [1.11.1](https://github.com/exteso/alf.io/tree/1.11.1) (2017-08-01)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.11...1.11.1)
-
-**Implemented enhancements:**
-
-- edit fields: should be able to add additional elements to select and switch from mandatory to optional [\#306](https://github.com/exteso/alf.io/issues/306)
 
 **Fixed bugs:**
 
@@ -82,9 +129,6 @@
 
 **Closed issues:**
 
-- select box values are not saved with webkit [\#307](https://github.com/exteso/alf.io/issues/307)
-- google maps geo api: switch to client side only \(remove server side timezone api\) [\#304](https://github.com/exteso/alf.io/issues/304)
-- Demo mode [\#299](https://github.com/exteso/alf.io/issues/299)
 - xhr handling issue when handling js geolocation task [\#250](https://github.com/exteso/alf.io/issues/250)
 - UX: no feedback provided when clicking save button in config section [\#247](https://github.com/exteso/alf.io/issues/247)
 
