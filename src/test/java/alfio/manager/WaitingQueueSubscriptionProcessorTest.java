@@ -29,6 +29,7 @@ import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.runner.RunWith;
 import org.springframework.context.MessageSource;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -50,7 +51,8 @@ public class WaitingQueueSubscriptionProcessorTest {{
         MessageSource messageSource = it.usesMock(MessageSource.class);
         TemplateManager templateManager = it.usesMock(TemplateManager.class);
         WaitingQueueRepository waitingQueueRepository = it.usesMock(WaitingQueueRepository.class);
-        WaitingQueueSubscriptionProcessor processor = new WaitingQueueSubscriptionProcessor(eventManager, ticketReservationManager, configurationManager, waitingQueueManager, notificationManager, waitingQueueRepository, messageSource, templateManager);
+        PlatformTransactionManager transactionManager = it.usesMock(PlatformTransactionManager.class);
+        WaitingQueueSubscriptionProcessor processor = new WaitingQueueSubscriptionProcessor(eventManager, ticketReservationManager, configurationManager, waitingQueueManager, notificationManager, waitingQueueRepository, messageSource, templateManager, transactionManager);
         final int eventId = 1;
         Event event = mock(Event.class);
         final String reservationId = "reservation-id";
