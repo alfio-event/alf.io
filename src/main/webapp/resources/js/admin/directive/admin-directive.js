@@ -494,7 +494,6 @@
                 };
 
                 var initPaymentProxies = function() {
-                    console.log($scope);
                     $scope.paymentProxies = _.map($filter('paymentMethodFilter')($scope.allowedPaymentProxies,  false, $scope.obj.currency), function(it) {
                         return {
                             proxy: it,
