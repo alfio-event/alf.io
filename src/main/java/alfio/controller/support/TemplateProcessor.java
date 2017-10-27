@@ -52,11 +52,12 @@ public final class TemplateProcessor {
     public static PartialTicketTextGenerator buildPartialEmail(Event event,
                                                                Organization organization,
                                                                TicketReservation ticketReservation,
+                                                               TicketCategory category,
                                                                TemplateManager templateManager,
                                                                String ticketURL,
                                                                HttpServletRequest request) {
         return (ticket) -> {
-            Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, ticketURL, ticket);
+            Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, ticketURL, ticket, category);
             Locale language = LocaleUtil.getTicketLanguage(ticket, request);
             return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, language);
         };

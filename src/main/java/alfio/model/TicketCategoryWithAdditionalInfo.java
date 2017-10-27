@@ -86,6 +86,14 @@ public class TicketCategoryWithAdditionalInfo implements StatisticsContainer, Pr
         return getValidCheckInTo() != null ? getValidCheckInTo(event.getZoneId()).format(EventStatistic.JSON_DATE_FORMATTER) : null;
     }
 
+    public String getFormattedTicketValidityStart() {
+        return getTicketValidityStart() != null ? getTicketValidityStart(event.getZoneId()).format(EventStatistic.JSON_DATE_FORMATTER) : null;
+    }
+
+    public String getFormattedTicketValidityEnd() {
+        return getTicketValidityEnd() != null ? getTicketValidityEnd(event.getZoneId()).format(EventStatistic.JSON_DATE_FORMATTER) : null;
+    }
+
     private static BigDecimal calcSoldTicketsPercent(TicketCategory ticketCategory, int soldTickets) {
         int maxTickets = Math.max(1, ticketCategory.getMaxTickets());
         return BigDecimal.valueOf(soldTickets).divide(BigDecimal.valueOf(maxTickets), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED);

@@ -174,8 +174,9 @@ public class TicketController {
 
         TicketReservation reservation = data.getMiddle();
         Organization organization = organizationRepository.getById(event.getOrganizationId());
+        TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId());
         notificationManager.sendTicketByEmail(ticket,
-            event, locale, TemplateProcessor.buildPartialEmail(event, organization, reservation, templateManager, ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid()), request),
+            event, locale, TemplateProcessor.buildPartialEmail(event, organization, reservation, category, templateManager, ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid()), request),
             reservation, ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId()));
         return ticket;
     }
@@ -265,7 +266,10 @@ public class TicketController {
             .addAttribute("backSuffix", backSuffix)
             .addAttribute("userLanguage", locale.getLanguage())
             .addAttribute("pageTitle", "show-ticket.header.title")
-            .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName());
+            .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
+            .addAttribute("validityStart", Optional.ofNullable(ticketCategory.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin()))
+            .addAttribute("validityEnd", Optional.ofNullable(ticketCategory.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd()))
+            .addAttribute("ticketIdParam", "ticketId="+ticketIdentifier);
 
         return "/event/show-ticket";
     }

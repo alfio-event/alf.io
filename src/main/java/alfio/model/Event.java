@@ -18,10 +18,6 @@ package alfio.model;
 
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
-import biweekly.ICalVersion;
-import biweekly.ICalendar;
-import biweekly.component.VEvent;
-import biweekly.io.text.ICalWriter;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
@@ -29,17 +25,15 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.flywaydb.core.api.MigrationVersion;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 @Getter
@@ -224,50 +218,6 @@ public class Event implements EventHiddenFieldContainer {
 
     public List<ContentLanguage> getContentLanguages() {
         return ContentLanguage.findAllFor(getLocales());
-    }
-
-    @Override
-    @JsonIgnore
-    public String getGoogleCalendarUrl() {
-        return getGoogleCalendarUrl("");//used by the email
-    }
-
-    @Override
-    @JsonIgnore
-    public String getGoogleCalendarUrl(String description) {
-        //format described at http://stackoverflow.com/a/19867654
-        // sprop does not seems to have any effect http://useroffline.blogspot.ch/2009/06/making-google-calendar-link.html
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyMMdd'T'HHmmss");
-        return UriComponentsBuilder.fromUriString("https://www.google.com/calendar/event")
-                .queryParam("action", "TEMPLATE")
-                .queryParam("dates", getBegin().format(formatter) + "/" + getEnd().format(formatter))
-                .queryParam("ctz", getTimeZone())
-                .queryParam("text", getDisplayName())
-                .queryParam("details", description)
-                .queryParam("location", getLocation())
-                .toUriString();
-    }
-
-    @Override
-    @JsonIgnore
-    public Optional<byte[]> getIcal(String description) {
-        ICalendar ical = new ICalendar();
-        VEvent vEvent = new VEvent();
-        vEvent.setSummary(getDisplayName());
-        vEvent.setDescription(description);
-        vEvent.setLocation(StringUtils.replacePattern(getLocation(), "[\n\r\t]+", " "));
-        vEvent.setDateStart(Date.from(getBegin().toInstant()));
-        vEvent.setDateEnd(Date.from(getEnd().toInstant()));
-        vEvent.setUrl(getWebsiteUrl());
-        ical.addEvent(vEvent);
-        StringWriter strWriter = new StringWriter();
-        try (ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V2_0)) {
-            writer.write(ical);
-            return Optional.of(strWriter.toString().getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            log.warn("was not able to generate iCal for event " + getShortName(), e);
-            return Optional.empty();
-        }
     }
 
     public boolean isInternal() {

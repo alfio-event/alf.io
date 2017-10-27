@@ -1320,7 +1320,9 @@ public class TicketReservationManager {
             .collect(toList());
         if(!restrictedCategories.isEmpty()) {
             int count = ticketRepository.revertToFreeForRestrictedCategories(eventId, restrictedCategories);
-            log.debug("reverted {} tickets for categories {}", count, restrictedCategories);
+            if(count > 0) {
+                log.debug("reverted {} tickets for categories {}", count, restrictedCategories);
+            }
         }
     }
 }

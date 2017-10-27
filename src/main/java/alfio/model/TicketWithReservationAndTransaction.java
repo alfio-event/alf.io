@@ -52,6 +52,7 @@ public class TicketWithReservationAndTransaction {
                                                @Column("t_final_price_cts") int finalPriceCts,
                                                @Column("t_vat_cts") int vatCts,
                                                @Column("t_discount_cts") int discountCts,
+                                               @Column("t_ext_reference") String extReference,
                                                //
                                                @Column("tr_id") String trId,
                                                @Column("tr_validity") Date validity,
@@ -92,7 +93,7 @@ public class TicketWithReservationAndTransaction {
                                                ) {
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
             fullName, firstName, lastName, email, lockedAssignment, userLanguage,
-            srcPriceCts, finalPriceCts, vatCts, discountCts);
+            srcPriceCts, finalPriceCts, vatCts, discountCts, extReference);
 
 
         this.ticketReservation = new TicketReservation(trId, validity, trStatus,

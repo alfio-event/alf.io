@@ -28,11 +28,9 @@ import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
-import alfio.repository.EmailMessageRepository;
-import alfio.repository.EventDescriptionRepository;
-import alfio.repository.EventRepository;
-import alfio.repository.TicketReservationRepository;
+import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.EventUtil;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -65,7 +63,10 @@ import org.springframework.util.StreamUtils;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -114,7 +115,8 @@ public class NotificationManager {
                                ConfigurationManager configurationManager,
                                FileUploadManager fileUploadManager,
                                TemplateManager templateManager,
-                               TicketReservationRepository ticketReservationRepository) {
+                               TicketReservationRepository ticketReservationRepository,
+                               TicketCategoryRepository ticketCategoryRepository) {
         this.messageSource = messageSource;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
@@ -131,17 +133,21 @@ public class NotificationManager {
         attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, (model) -> {
             Event event;
             Locale locale;
+            Integer categoryId;
             if(model.containsKey("eventId")) {
                 //legacy branch, now we generate the ics as a reinterpreted ticket
                 event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
                 locale = Json.fromJson(model.get("locale"), Locale.class);
+                categoryId = null;
             } else {
                 Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
                 event = eventRepository.findById(ticket.getEventId());
                 locale = Locale.forLanguageTag(ticket.getUserLanguage());
+                categoryId = ticket.getCategoryId();
             }
+            TicketCategory category = Optional.ofNullable(categoryId).map(ticketCategoryRepository::getById).orElse(null);
             String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
-            return event.getIcal(description).orElse(null);
+            return EventUtil.getIcalForEvent(event, category, description).orElse(null);
         });
 
         attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, receiptOrInvoiceFactory(

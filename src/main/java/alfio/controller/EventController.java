@@ -38,9 +38,9 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.EventUtil;
+import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -59,11 +59,11 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static alfio.controller.EventController.CodeType.TICKET_CATEGORY_CODE;
 import static alfio.controller.support.SessionUtil.addToFlash;
 import static alfio.util.OptionalWrapper.optionally;
 
 @Controller
+@AllArgsConstructor
 public class EventController {
 
     private static final String REDIRECT = "redirect:";
@@ -81,37 +81,8 @@ public class EventController {
     private final EventStatisticsManager eventStatisticsManager;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
+    private final TicketRepository ticketRepository;
 
-    @Autowired
-    public EventController(ConfigurationManager configurationManager,
-                           EventRepository eventRepository,
-                           EventDescriptionRepository eventDescriptionRepository,
-                           I18nManager i18nManager,
-                           OrganizationRepository organizationRepository,
-                           TicketCategoryRepository ticketCategoryRepository,
-                           TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
-                           SpecialPriceRepository specialPriceRepository,
-                           PromoCodeDiscountRepository promoCodeRepository,
-                           EventManager eventManager,
-                           TicketReservationManager ticketReservationManager,
-                           EventStatisticsManager eventStatisticsManager,
-                           AdditionalServiceRepository additionalServiceRepository,
-                           AdditionalServiceTextRepository additionalServiceTextRepository) {
-        this.configurationManager = configurationManager;
-        this.eventRepository = eventRepository;
-        this.eventDescriptionRepository = eventDescriptionRepository;
-        this.i18nManager = i18nManager;
-        this.organizationRepository = organizationRepository;
-        this.ticketCategoryRepository = ticketCategoryRepository;
-        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
-        this.specialPriceRepository = specialPriceRepository;
-        this.promoCodeRepository = promoCodeRepository;
-        this.eventManager = eventManager;
-        this.ticketReservationManager = ticketReservationManager;
-        this.eventStatisticsManager = eventStatisticsManager;
-        this.additionalServiceRepository = additionalServiceRepository;
-        this.additionalServiceTextRepository = additionalServiceTextRepository;
-    }
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
     public ResponseEntity<String> replyToProxy() {
@@ -263,7 +234,9 @@ public class EventController {
                 .addAttribute("enabledAdditionalServicesSupplements", supplements)
                 .addAttribute("forwardButtonDisabled", (saleableTicketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable)) || !validPaymentConfigured)
                 .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
-                .addAttribute("validPaymentMethodAvailable", validPaymentConfigured);
+                .addAttribute("validPaymentMethodAvailable", validPaymentConfigured)
+                .addAttribute("validityStart", event.getBegin())
+                .addAttribute("validityEnd", event.getEnd());
 
             model.asMap().putIfAbsent("hasErrors", false);//
             return "/event/show-event";
@@ -332,7 +305,11 @@ public class EventController {
     }
 
     @RequestMapping(value = "/event/{eventName}/calendar/locale/{locale}", method = {RequestMethod.GET, RequestMethod.HEAD})
-    public void calendar(@PathVariable("eventName") String eventName, @PathVariable("locale") String locale, @RequestParam(value = "type", required = false) String calendarType, HttpServletResponse response) throws IOException {
+    public void calendar(@PathVariable("eventName") String eventName,
+                         @PathVariable("locale") String locale,
+                         @RequestParam(value = "type", required = false) String calendarType,
+                         @RequestParam(value = "ticketId", required = false) String ticketId,
+                         HttpServletResponse response) throws IOException {
         Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
         if (!event.isPresent()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -343,11 +320,12 @@ public class EventController {
         Event ev = event.get();
 
         String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(ev.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale).orElse("");
+        TicketCategory category = ticketRepository.findOptionalByUUID(ticketId).map(t -> ticketCategoryRepository.getById(t.getCategoryId())).orElse(null);
 
         if("google".equals(calendarType)) {
-            response.sendRedirect(ev.getGoogleCalendarUrl(description));
+            response.sendRedirect(EventUtil.getGoogleCalendarURL(ev, category, description));
         } else {
-            Optional<byte[]> ical = ev.getIcal(description);
+            Optional<byte[]> ical = EventUtil.getIcalForEvent(ev, category, description);
             //meh, checked exceptions don't work well with Function & co :(
             if(ical.isPresent()) {
                 response.setContentType("text/calendar");

@@ -21,7 +21,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
-import java.util.Optional;
 
 public interface EventHiddenFieldContainer {
     @JsonIgnore
@@ -34,14 +33,5 @@ public interface EventHiddenFieldContainer {
     ZoneId getZoneId();
 
     @JsonIgnore
-    String getGoogleCalendarUrl();
-
-    @JsonIgnore
     BigDecimal getVat();
-
-    @JsonIgnore
-    String getGoogleCalendarUrl(String description);
-
-    @JsonIgnore
-    Optional<byte[]> getIcal(String description);
 }

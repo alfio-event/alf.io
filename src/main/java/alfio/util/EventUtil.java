@@ -20,9 +20,19 @@ import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.system.Configuration;
+import biweekly.ICalVersion;
+import biweekly.ICalendar;
+import biweekly.component.VEvent;
+import biweekly.io.text.ICalWriter;
 import lombok.experimental.UtilityClass;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -34,6 +44,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 import static java.time.temporal.ChronoField.*;
 
 @UtilityClass
+@Log4j2
 public class EventUtil {
 
     private static final DateTimeFormatter JSON_TIME_FORMATTER = new DateTimeFormatterBuilder()
@@ -128,6 +139,42 @@ public class EventUtil {
 
     public static int determineAvailableSeats(TicketCategoryStatisticView tc, EventStatisticView e) {
         return tc.isBounded() ? tc.getNotSoldTicketsCount() : e.getDynamicAllocation();
+    }
+
+    public static Optional<byte[]> getIcalForEvent(Event event, TicketCategory ticketCategory, String description) {
+        ICalendar ical = new ICalendar();
+        VEvent vEvent = new VEvent();
+        vEvent.setSummary(event.getDisplayName());
+        vEvent.setDescription(description);
+        vEvent.setLocation(StringUtils.replacePattern(event.getLocation(), "[\n\r\t]+", " "));
+        ZonedDateTime begin = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin());
+        ZonedDateTime end = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd());
+        vEvent.setDateStart(Date.from(begin.toInstant()));
+        vEvent.setDateEnd(Date.from(end.toInstant()));
+        vEvent.setUrl(event.getWebsiteUrl());
+        ical.addEvent(vEvent);
+        StringWriter strWriter = new StringWriter();
+        try (ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V2_0)) {
+            writer.write(ical);
+            return Optional.of(strWriter.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            log.warn("was not able to generate iCal for event " + event.getShortName(), e);
+            return Optional.empty();
+        }
+    }
+
+    public static String getGoogleCalendarURL(Event event, TicketCategory category, String description) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyMMdd'T'HHmmss");
+        ZonedDateTime validityStart = Optional.ofNullable(category).map(TicketCategory::getTicketValidityStart).map(d -> d.withZoneSameInstant(event.getZoneId())).orElse(event.getBegin());
+        ZonedDateTime validityEnd = Optional.ofNullable(category).map(TicketCategory::getTicketValidityEnd).map(d -> d.withZoneSameInstant(event.getZoneId())).orElse(event.getEnd());
+        return UriComponentsBuilder.fromUriString("https://www.google.com/calendar/event")
+            .queryParam("action", "TEMPLATE")
+            .queryParam("dates", validityStart.format(formatter) + "/" + validityEnd.format(formatter))
+            .queryParam("ctz", event.getTimeZone())
+            .queryParam("text", event.getDisplayName())
+            .queryParam("location", event.getLocation())
+            .queryParam("detail", description)
+            .toUriString();
     }
 
 

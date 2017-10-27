@@ -61,6 +61,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.modification.DateTimeModification.fromZonedDateTime;
 import static alfio.util.EventUtil.generateEmptyTickets;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Collections.singletonList;
@@ -421,11 +422,12 @@ public class AdminReservationManager {
     private Result<TicketCategory> createCategory(TicketsInfo ti, Event event, AdminReservationModification reservation, String username) {
         Category category = ti.getCategory();
         List<Attendee> attendees = ti.getAttendees();
-        DateTimeModification inception = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(event.getZoneId()));
+        DateTimeModification inception = fromZonedDateTime(ZonedDateTime.now(event.getZoneId()));
 
         int tickets = attendees.size();
         TicketCategoryModification tcm = new TicketCategoryModification(category.getExistingCategoryId(), category.getName(), tickets,
-            inception, reservation.getExpiration(), Collections.emptyMap(), category.getPrice(), true, "", true, null, null, null);
+            inception, reservation.getExpiration(), Collections.emptyMap(), category.getPrice(), true, "",
+            true, null, null, null, null, null);
         int notAllocated = getNotAllocatedTickets(event);
         int missingTickets = Math.max(tickets - notAllocated, 0);
         Event modified = increaseSeatsIfNeeded(ti, event, missingTickets, event);
@@ -461,10 +463,12 @@ public class AdminReservationManager {
         if(freeTicketsInCategory < tickets && existing.isBounded()) {
             int maxTickets = existing.getMaxTickets() + (tickets - freeTicketsInCategory);
             TicketCategoryModification tcm = new TicketCategoryModification(existingCategoryId, existing.getName(), maxTickets,
-                DateTimeModification.fromZonedDateTime(existing.getInception(modified.getZoneId())), DateTimeModification.fromZonedDateTime(existing.getExpiration(event.getZoneId())),
+                fromZonedDateTime(existing.getInception(modified.getZoneId())), fromZonedDateTime(existing.getExpiration(event.getZoneId())),
                 Collections.emptyMap(), existing.getPrice(), existing.isAccessRestricted(), "", true, existing.getCode(),
-                DateTimeModification.fromZonedDateTime(existing.getValidCheckInFrom(modified.getZoneId())),
-                DateTimeModification.fromZonedDateTime(existing.getValidCheckInTo(modified.getZoneId())));
+                fromZonedDateTime(existing.getValidCheckInFrom(modified.getZoneId())),
+                fromZonedDateTime(existing.getValidCheckInTo(modified.getZoneId())),
+                fromZonedDateTime(existing.getTicketValidityStart(modified.getZoneId())),
+                fromZonedDateTime(existing.getTicketValidityEnd(modified.getZoneId())));
             return eventManager.updateCategory(existingCategoryId, modified, tcm, username, true);
         }
         return Result.success(existing);

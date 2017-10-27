@@ -222,8 +222,9 @@ public class TicketHelper {
                 .filter(StringUtils::isNotBlank)
                 .map(Locale::forLanguageTag)
                 .orElseGet(() -> RequestContextUtils.getLocale(request));
+        TicketCategory category = ticketCategoryRepository.getById(t.getCategoryId());
         ticketReservationManager.updateTicketOwner(t, language, event, updateTicketOwner,
-                getConfirmationTextBuilder(request, event, ticketReservation, t),
+                getConfirmationTextBuilder(request, event, ticketReservation, t, category),
                 getOwnerChangeTextBuilder(request, t, event),
                 userDetails);
     }
@@ -234,10 +235,10 @@ public class TicketHelper {
         return TemplateProcessor.buildEmailForOwnerChange(event, t, organization, ticketUrl, templateManager, LocaleUtil.getTicketLanguage(t, request));
     }
 
-    private PartialTicketTextGenerator getConfirmationTextBuilder(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) {
+    private PartialTicketTextGenerator getConfirmationTextBuilder(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket, TicketCategory ticketCategory) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         String ticketUrl = ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid());
-        return TemplateProcessor.buildPartialEmail(event, organization, ticketReservation, templateManager, ticketUrl, request);
+        return TemplateProcessor.buildPartialEmail(event, organization, ticketReservation, ticketCategory, templateManager, ticketUrl, request);
     }
 
 }

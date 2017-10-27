@@ -193,7 +193,7 @@ public class ReservationFlowIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 
         event = eventAndUser.getKey();
@@ -448,11 +448,11 @@ public class ReservationFlowIntegrationTest {
 
     private void checkCalendar(String eventName) throws IOException {
         MockHttpServletResponse resIcal = new MockHttpServletResponse();
-        eventController.calendar(eventName, "en", null, resIcal);
+        eventController.calendar(eventName, "en", null, null, resIcal);
         assertEquals("text/calendar", resIcal.getContentType());
 
         MockHttpServletResponse resGoogleCal = new MockHttpServletResponse();
-        eventController.calendar(eventName, "en", "google", resGoogleCal);
+        eventController.calendar(eventName, "en", "google", null, resGoogleCal);
         Assert.assertTrue(resGoogleCal.getRedirectedUrl().startsWith("https://www.google.com/calendar/event"));
     }
 

@@ -954,7 +954,7 @@
             var inception = moment(category.formattedInception);
             var expiration = moment(category.formattedExpiration);
 
-            function prepareValidCheckIn(date) {
+            function prepareValidDate(date) {
                 if(date) {
                     var m = moment(date);
                     return {date: m.format('YYYY-MM-DD'), time: m.format('HH:mm')}
@@ -963,8 +963,10 @@
                 }
             }
 
-            var validCheckInFrom = prepareValidCheckIn(category.formattedValidCheckInFrom);
-            var validCheckInTo = prepareValidCheckIn(category.formattedValidCheckInTo);
+            var validCheckInFrom = prepareValidDate(category.formattedValidCheckInFrom);
+            var validCheckInTo = prepareValidDate(category.formattedValidCheckInTo);
+            var ticketValidityStart = prepareValidDate(category.formattedTicketValidityStart);
+            var ticketValidityEnd = prepareValidDate(category.formattedTicketValidityEnd);
 
             var categoryObj = {
                 id: category.id,
@@ -984,6 +986,8 @@
                 },
                 validCheckInTo: validCheckInTo,
                 validCheckInFrom: validCheckInFrom,
+                ticketValidityStart: ticketValidityStart,
+                ticketValidityEnd: ticketValidityEnd,
                 tokenGenerationRequested: category.accessRestricted,
                 sticky: false
             };

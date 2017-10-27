@@ -543,13 +543,13 @@
             controller: function($scope) {
                 $scope.buildPrefix = function(index, name) {
                     return angular.isDefined(index) ? index + "-" + name : name;
-                }
+                };
 
                 $scope.baseUrl = window.location.origin;
 
                 $scope.isLanguagePresent = function(locales, value) {
                     return (locales & value) === value;
-                }
+                };
 
                 $scope.helpAllocationStrategyCollapse = true;
                 $scope.toggleAllocationStrategyCollapse = function() {
@@ -569,6 +569,7 @@
                 };
 
                 $scope.customCheckInCollapsed = true;
+                $scope.customValidityCollapsed = true;
             }
         };
     });
