@@ -48,10 +48,9 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionException;
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 
 import java.math.BigDecimal;
@@ -71,7 +70,6 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 @Component
 @Log4j2
 @RequiredArgsConstructor
-@Transactional
 public class AdminReservationManager {
 
     private final EventManager eventManager;
@@ -93,63 +91,85 @@ public class AdminReservationManager {
     private final AuditingRepository auditingRepository;
     private final UserRepository userRepository;
 
+    //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
-        TransactionStatus status = transactionManager.getTransaction(definition);
-        try {
-            Result<Triple<TicketReservation, List<Ticket>, Event>> result = eventRepository.findOptionalByShortName(eventName)
-                .flatMap(e -> optionally(() -> {
-                    eventManager.checkOwnership(e, username, e.getOrganizationId());
-                    return e;
-                })).map(event -> ticketReservationRepository.findOptionalReservationById(reservationId)
-                    .filter(r -> r.getStatus() == TicketReservationStatus.PENDING)
-                    .map(r -> performConfirmation(reservationId, event, r))
-                    .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
-                ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
-            if(result.isSuccess()) {
-                transactionManager.commit(status);
-            } else {
-                log.debug("Reservation confirmation failed for eventName: {} reservationId: {}, username: {}", eventName, reservationId, username);
-                transactionManager.rollback(status);
+        TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
+        return template.execute(status -> {
+            try {
+                Result<Triple<TicketReservation, List<Ticket>, Event>> result = eventRepository.findOptionalByShortName(eventName)
+                    .flatMap(e -> optionally(() -> {
+                        eventManager.checkOwnership(e, username, e.getOrganizationId());
+                        return e;
+                    })).map(event -> ticketReservationRepository.findOptionalReservationById(reservationId)
+                        .filter(r -> r.getStatus() == TicketReservationStatus.PENDING)
+                        .map(r -> performConfirmation(reservationId, event, r))
+                        .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
+                    ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
+                if(!result.isSuccess()) {
+                    log.debug("Reservation confirmation failed for eventName: {} reservationId: {}, username: {}", eventName, reservationId, username);
+                    status.setRollbackOnly();
+                }
+                return result;
+            } catch (Exception e) {
+                log.error("Error during confirmation of reservation eventName: {} reservationId: {}, username: {}", eventName, reservationId, username);
+                status.setRollbackOnly();
+                return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
             }
-            return result;
-        } catch (Exception e) {
-            log.error("Error during confirmation of reservation eventName: {} reservationId: {}, username: {}", eventName, reservationId, username);
-            if(!(e instanceof TransactionException)) {
-                transactionManager.rollback(status);
-            }
-            return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
-        }
+        });
     }
 
     public Result<Boolean> updateReservation(String eventName, String reservationId, AdminReservationModification adminReservationModification, String username) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
-        TransactionStatus status = transactionManager.getTransaction(definition);
-        try {
-            Result<Boolean> result = eventRepository.findOptionalByShortName(eventName)
-                .flatMap(e -> optionally(() -> {
-                    eventManager.checkOwnership(e, username, e.getOrganizationId());
-                    return e;
-                })).map(event -> ticketReservationRepository.findOptionalReservationById(reservationId)
-                    .map(r -> performUpdate(reservationId, event, r, adminReservationModification))
-                    .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
-                ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
-            if(result.isSuccess()) {
-                transactionManager.commit(status);
-            } else {
-                log.debug("Application error detected eventName: {} reservationId: {}, username: {}, reservation: {}", eventName, reservationId, username, AdminReservationModification.summary(adminReservationModification));
-                transactionManager.rollback(status);
+        TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
+        return template.execute(status -> {
+            try {
+                Result<Boolean> result = eventRepository.findOptionalByShortName(eventName)
+                    .flatMap(e -> optionally(() -> {
+                        eventManager.checkOwnership(e, username, e.getOrganizationId());
+                        return e;
+                    })).map(event -> ticketReservationRepository.findOptionalReservationById(reservationId)
+                        .map(r -> performUpdate(reservationId, event, r, adminReservationModification))
+                        .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
+                    ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
+                if(!result.isSuccess()) {
+                    log.debug("Application error detected eventName: {} reservationId: {}, username: {}, reservation: {}", eventName, reservationId, username, AdminReservationModification.summary(adminReservationModification));
+                    status.setRollbackOnly();
+                }
+                return result;
+            } catch (Exception e) {
+                log.error("Error during update of reservation eventName: {} reservationId: {}, username: {}, reservation: {}", eventName, reservationId, username, AdminReservationModification.summary(adminReservationModification));
+                status.setRollbackOnly();
+                return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
             }
-            return result;
-        } catch (Exception e) {
-            log.error("Error during update of reservation eventName: {} reservationId: {}, username: {}, reservation: {}", eventName, reservationId, username, AdminReservationModification.summary(adminReservationModification));
-            if(!(e instanceof TransactionException)) {
-                transactionManager.rollback(status);
-            }
-            return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
-        }
+        });
     }
 
+    public Result<Pair<TicketReservation, List<Ticket>>> createReservation(AdminReservationModification input, String eventName, String username) {
+        DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
+        TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
+        return template.execute(status -> {
+            try {
+                Result<Pair<TicketReservation, List<Ticket>>> result = eventRepository.findOptionalByShortNameForUpdate(eventName)
+                    .map(e -> validateTickets(input, e))
+                    .map(r -> r.flatMap(p -> transactionalCreateReservation(p.getRight(), p.getLeft(), username)))
+                    .orElse(Result.error(ErrorCode.EventError.NOT_FOUND));
+                if (!result.isSuccess()) {
+                    log.debug("Error during update of reservation eventName: {}, username: {}, reservation: {}", eventName, username, AdminReservationModification.summary(input));
+                    status.setRollbackOnly();
+                }
+                return result;
+            } catch (Exception e) {
+                log.error("Error during update of reservation eventName: {}, username: {}, reservation: {}", eventName, username, AdminReservationModification.summary(input));
+                status.setRollbackOnly();
+                return Result.error(singletonList(ErrorCode.custom(e instanceof DuplicateReferenceException ? "duplicate-reference" : "", e.getMessage())));
+            }
+        });
+    }
+
+    //end - the public / package protected methods below must be annotated with @Transactional
+
+    @Transactional
     public Result<Boolean> notify(String eventName, String reservationId, AdminReservationModification arm, String username) {
         AdminReservationModification.Notification notification = arm.getNotification();
         return eventRepository.findOptionalByShortName(eventName)
@@ -192,6 +212,7 @@ public class AdminReservationManager {
         return Result.success(true);
     }
 
+    @Transactional
     public Result<Triple<TicketReservation, List<Ticket>, Event>> loadReservation(String eventName, String reservationId, String username) {
         return eventRepository.findOptionalByShortName(eventName)
             .flatMap(e -> optionally(() -> {
@@ -219,30 +240,7 @@ public class AdminReservationManager {
         }
     }
 
-    public Result<Pair<TicketReservation, List<Ticket>>> createReservation(AdminReservationModification input, String eventName, String username) {
-        DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
-        TransactionStatus status = transactionManager.getTransaction(definition);
-        try {
-            Result<Pair<TicketReservation, List<Ticket>>> result = eventRepository.findOptionalByShortNameForUpdate(eventName)
-                .map(e -> validateTickets(input, e))
-                .map(r -> r.flatMap(p -> transactionalCreateReservation(p.getRight(), p.getLeft(), username)))
-                .orElse(Result.error(ErrorCode.EventError.NOT_FOUND));
-            if(result.isSuccess()) {
-                transactionManager.commit(status);
-            } else {
-                log.debug("Error during update of reservation eventName: {}, username: {}, reservation: {}", eventName, username, AdminReservationModification.summary(input));
-                transactionManager.rollback(status);
-            }
-            return result;
-        } catch(Exception e) {
-            log.error("Error during update of reservation eventName: {}, username: {}, reservation: {}", eventName, username, AdminReservationModification.summary(input));
-            if(!(e instanceof TransactionException)) {
-                transactionManager.rollback(status);
-            }
-            return Result.error(singletonList(ErrorCode.custom(e instanceof DuplicateReferenceException ? "duplicate-reference" : "", e.getMessage())));
-        }
-    }
-
+    @Transactional
     Result<Pair<Event, AdminReservationModification>> validateTickets(AdminReservationModification input, Event event) {
         Set<String> keys = input.getTicketsInfo().stream().flatMap(ti -> ti.getAttendees().stream())
             .flatMap(a -> a.getAdditionalInfo().keySet().stream())
@@ -477,6 +475,7 @@ public class AdminReservationManager {
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
     }
 
+    @Transactional
     public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, String username) {
         loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
             Event e = res.getRight();
@@ -501,16 +500,18 @@ public class AdminReservationManager {
         });
     }
 
+    @Transactional
     public Result<List<Audit>> getAudit(String eventName, String reservationId, String username) {
         return loadReservation(eventName, reservationId, username).map((res) -> auditingRepository.findAllForReservation(reservationId));
     }
 
+    @Transactional
     public Result<TransactionAndPaymentInfo> getPaymentInfo(String eventName, String reservationId, String username) {
         return loadReservation(eventName, reservationId, username)
             .map((res) -> paymentManager.getInfo(res.getLeft(), res.getRight()));
     }
 
-
+    @Transactional
     public void removeReservation(String eventName, String reservationId, boolean refund, boolean notify, String username) {
         loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
             Event e = res.getRight();
@@ -530,6 +531,7 @@ public class AdminReservationManager {
         });
     }
 
+    @Transactional
     public Result<Boolean> refund(String eventName, String reservationId, BigDecimal refundAmount, String username) {
         return loadReservation(eventName, reservationId, username).map((res) -> {
             Event e = res.getRight();

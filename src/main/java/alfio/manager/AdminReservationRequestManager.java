@@ -37,10 +37,9 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionException;
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -116,24 +115,23 @@ public class AdminReservationRequestManager {
     }
 
     private Result<Triple<TicketReservation, List<Ticket>, Event>> processReservation(AdminReservationRequest request, Pair<Event, User> p) {
-        TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
-        try {
-            String eventName = p.getLeft().getShortName();
-            String username = p.getRight().getUsername();
-            Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.createReservation(request.getBody(), eventName, username)
-                .flatMap(r -> adminReservationManager.confirmReservation(eventName, r.getLeft().getId(), username));
-            if(result.isSuccess()) {
-                transactionManager.commit(transaction);
-            } else {
-                transactionManager.rollback(transaction);
+        DefaultTransactionDefinition definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
+        return template.execute(status -> {
+            try {
+                String eventName = p.getLeft().getShortName();
+                String username = p.getRight().getUsername();
+                Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.createReservation(request.getBody(), eventName, username)
+                    .flatMap(r -> adminReservationManager.confirmReservation(eventName, r.getLeft().getId(), username));
+                if(!result.isSuccess()) {
+                    status.setRollbackOnly();
+                }
+                return result;
+            } catch(Exception ex) {
+                status.setRollbackOnly();
+                return Result.error(singletonList(ErrorCode.custom("", ex.getMessage())));
             }
-            return result;
-        } catch(Exception ex) {
-            if(!(ex instanceof TransactionException)) {
-                transactionManager.rollback(transaction);
-            }
-            return Result.error(singletonList(ErrorCode.custom("", ex.getMessage())));
-        }
+        });
     }
 
     private MapSqlParameterSource buildParameterSource(Long id, Result<Triple<TicketReservation, List<Ticket>, Event>> result) {
