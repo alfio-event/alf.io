@@ -662,6 +662,9 @@ public class TicketReservationManager {
             model.put("ticketReservation", reservation);
             model.put("ticketUrl", ticketUpdateUrl(event, t.getUuid()));
             model.put("ticket", t);
+            TicketCategory category = ticketCategoryRepository.getById(t.getCategoryId());
+            TemplateResource.fillTicketValidity(event, category, model);
+            model.put("googleCalendarUrl", EventUtil.getGoogleCalendarURL(event, category, null));
             return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, locale);
         };
     }

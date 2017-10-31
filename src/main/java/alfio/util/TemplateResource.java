@@ -353,7 +353,7 @@ public enum TemplateResource {
         return model;
     }
 
-    private static void fillTicketValidity(Event event, TicketCategory ticketCategory, Map<String, Object> model) {
+    public static void fillTicketValidity(Event event, TicketCategory ticketCategory, Map<String, Object> model) {
         model.put("validityStart", Optional.ofNullable(ticketCategory.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin()));
         model.put("validityEnd", Optional.ofNullable(ticketCategory.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd()));
     }
