@@ -110,9 +110,11 @@
                         <div class="collapse navbar-collapse" data-uib-collapse="ctrl.menuCollapsed">
                             <ul class="nav navbar-nav">
                                 <li data-ui-sref-active="active"><a data-ui-sref="index" ng-click="ctrl.menuCollapsed = true">Dashboard</a></li>
+                                {{#isOwner}}
                                 <li data-ui-sref-active="active"><a data-ui-sref="organizations" ng-click="ctrl.menuCollapsed = true">Organizations</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="users" ng-click="ctrl.menuCollapsed = true">Users</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="configuration.system" ng-click="ctrl.menuCollapsed = true">Configuration</a></li>
+                                {{/isOwner}}
                             </ul>
                             <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
                                 <li class="navbar-header"><h4>Actions</h4></li>

@@ -120,6 +120,8 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
         return event.getFileBlobId();
     }
 
+    public boolean isVisibleForCurrentUser() { return eventStatisticView.isLiveData(); }
+
     @Override
     public int compareTo(EventStatistic o) {
         CompareToBuilder builder = new CompareToBuilder();

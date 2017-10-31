@@ -23,13 +23,8 @@ import ch.digitalfondue.npjt.QueryRepository;
 import ch.digitalfondue.npjt.QueryType;
 
 import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.List;
-
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import java.util.Optional;
 
 @QueryRepository
 public interface SpecialPriceRepository {
@@ -101,6 +96,9 @@ public interface SpecialPriceRepository {
 
 
     default Map<Integer,List<SpecialPrice>> findAllByCategoriesIdsMapped(Collection<Integer> ticketCategoriesIds) {
+        if(ticketCategoriesIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
         return findAllByCategoriesIds(ticketCategoriesIds).stream().collect(Collectors.groupingBy(SpecialPrice::getTicketCategoryId));
     }
 }

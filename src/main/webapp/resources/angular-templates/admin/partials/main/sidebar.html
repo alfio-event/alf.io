@@ -1,7 +1,7 @@
 <div class="sidebar menu-spacer">
     <section data-ng-if="ctrl.event">
         <ul class="list-inline">
-            <li role="presentation" data-uib-dropdown data-ng-if="ctrl.internal">
+            <li role="presentation" data-uib-dropdown data-ng-if="ctrl.internal && ctrl.owner">
                 <a data-uib-dropdown-toggle id="actions-dpdwn" class="btn btn-default"><i class="fa fa-pencil"></i> Actions <span class="caret"></span></a>
                 <ul class="dropdown-menu" data-uib-dropdown-menu role="menu" aria-labelledby="actions-dpdwn">
                     <li role="menuitem" data-ui-sref-active="active"><a data-ui-sref="events.single.create-reservation({eventName: ctrl.event.shortName})"><i class="fa fa-magic"></i> create reservation</a></li>
@@ -14,7 +14,7 @@
                     <li role="menuitem" data-ui-sref-active="active"><a ng-click="ctrl.openDeleteWarning(ctrl.event)"><i class="fa fa-trash"></i> Delete</a></li>
                 </ul>
             </li>
-            <li role="presentation" data-uib-dropdown data-is-open="ctrl.isDownloadOpen" >
+            <li role="presentation" data-uib-dropdown data-is-open="ctrl.isDownloadOpen" ng-if="ctrl.owner">
                 <a data-uib-dropdown-toggle id="download-dpdwn" class="btn btn-default"><i class="fa fa-download"></i> Download <span class="caret"></span></a>
                 <ul class="dropdown-menu" data-uib-dropdown-menu role="menu" aria-labelledby="download-dpdwn">
                     <li role="menuitem"><a data-ng-click="ctrl.openFieldSelectionModal()"><i class="fa fa-users"></i> attendees' data</a></li>
@@ -23,7 +23,17 @@
                 </ul>
             </li>
         </ul>
-        <ul class="list-unstyled">
+        <ul class="nav nav-pills nav-stacked" data-ng-if="!ctrl.owner">
+            <li>
+                <h4 class="text-muted">Actions</h4>
+            </li>
+            <li data-ng-if="!ctrl.isDetail">
+                <a data-ui-sref="events.single.detail({eventName: ctrl.event.shortName})"><i class="fa fa-arrow-left"></i> back to event detail</a>
+            </li>
+            <li><a data-ui-sref="events.single.create-reservation({eventName: ctrl.event.shortName})"><i class="fa fa-magic"></i> create reservation</a></li>
+            <li><a data-ui-sref="events.single.checkIn({eventName: ctrl.event.shortName})"><i class="fa fa-check"></i> Check-in</a></li>
+        </ul>
+        <ul class="list-unstyled" ng-if="ctrl.owner">
             <li data-ng-if="ctrl.internal && ctrl.isDetail">
                 <label class="control-label text-muted" for="sidebarCategoryFilter"><h4>Categories</h4></label>
             </li>
@@ -44,7 +54,7 @@
                 </ul>
             </li>
         </ul>
-        <ul class="list-unstyled">
+        <ul class="list-unstyled" ng-if="ctrl.owner">
             <li>
                 <h4 class="text-muted">Details</h4>
             </li>
@@ -76,8 +86,8 @@
                     </li>
                 </ul>
             </li>
-            <li><h4 class="text-muted">Status</h4></li>
-            <li>
+            <li ng-if="ctrl.owner"><h4 class="text-muted">Status</h4></li>
+            <li ng-if="ctrl.owner">
                 <ul class="nav nav-pills nav-stacked" data-ng-if="ctrl.internal">
                     <li role="presentation" ng-if="ctrl.event" data-ui-sref-active="active">
                         <waiting-queue-display-counter style-class="emulate-nav-pills-link" event-name="ctrl.event.shortName"></waiting-queue-display-counter>

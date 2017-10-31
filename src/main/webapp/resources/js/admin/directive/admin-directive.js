@@ -875,6 +875,7 @@
                         EventService.getEvent($state.params.eventName).success(function(event) {
                             ctrl.event = event.event;
                             ctrl.internal = (ctrl.event.type === 'INTERNAL');
+                            ctrl.owner = ctrl.event.visibleForCurrentUser;
                             ctrl.openDeleteWarning = function() {
                                 EventService.deleteEvent(ctrl.event).then(function(result) {
                                     $state.go('index');

@@ -30,13 +30,13 @@
                     </div>
                 </div>
                 <div class="col-xs-12 col-md-4 text-right wMarginTop10px">
-                    <a class="btn btn-primary btn-xs" data-ui-sref="events.single.detail({eventName: event.shortName})">
+                    <a class="btn btn-primary btn-xs" data-ui-sref="events.single.detail({eventName: event.shortName})" ng-if="event.visibleForCurrentUser">
                         <i class="fa fa-ticket"></i> {{(event.soldTickets + event.checkedInTickets)}} / {{event.availableSeats}}
                     </a>
                     <a class="btn btn-primary btn-xs hidden-xs hidden-sm" data-ui-sref="events.single.detail({eventName: event.shortName})">
                         <i class="fa fa-bar-chart"></i> Detail
                     </a>
-                    <a class="btn btn-primary btn-xs hidden-xs hidden-sm" data-ui-sref="events.single.configuration({eventName: event.shortName})">
+                    <a class="btn btn-primary btn-xs hidden-xs hidden-sm" data-ui-sref="events.single.configuration({eventName: event.shortName})" ng-if="event.visibleForCurrentUser">
                         <i class="fa fa-wrench"></i> Settings
                     </a>
                 </div>

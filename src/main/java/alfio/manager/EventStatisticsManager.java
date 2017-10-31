@@ -29,15 +29,14 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 @Component
 @AllArgsConstructor
@@ -62,8 +61,10 @@ public class EventStatisticsManager {
         List<Event> events = getAllEvents(username).stream().filter(predicate).collect(toList());
         Map<Integer, Event> mappedEvent = events.stream().collect(Collectors.toMap(Event::getId, Function.identity()));
         if(!mappedEvent.isEmpty()) {
-            List<EventStatisticView> stats = eventRepository.findStatisticsFor(mappedEvent.keySet());
-            return stats.stream().map(stat -> new EventStatistic(mappedEvent.get(stat.getEventId()), stat)).sorted().collect(Collectors.toList());
+            boolean isOwner = userManager.isOwner(userManager.findUserByUsername(username));
+            Set<Integer> ids = mappedEvent.keySet();
+            Stream<EventStatisticView> stats = isOwner ? eventRepository.findStatisticsFor(ids).stream() : ids.stream().map(EventStatisticView::empty);
+            return stats.map(stat -> new EventStatistic(mappedEvent.get(stat.getEventId()), stat)).sorted().collect(Collectors.toList());
         } else {
             return Collections.emptyList();
         }
@@ -78,15 +79,17 @@ public class EventStatisticsManager {
     public EventWithAdditionalInfo getEventWithAdditionalInfo(String eventName, String username) {
         Event event = getEventAndCheckOwnership(eventName, username);
         Map<String, String> description = eventDescriptionRepository.findByEventIdAsMap(event.getId());
-        EventStatistic eventStatistic = new EventStatistic(event, eventRepository.findStatisticsFor(event.getId()));
-        BigDecimal grossIncome = MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(event.getId()));
+        boolean owner = userManager.isOwner(userManager.findUserByUsername(username));
+        EventStatisticView statistics = owner ? eventRepository.findStatisticsFor(event.getId()) : EventStatisticView.empty(event.getId());
+        EventStatistic eventStatistic = new EventStatistic(event, statistics);
+        BigDecimal grossIncome = owner ? MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(event.getId())) : BigDecimal.ZERO;
 
         List<TicketCategory> ticketCategories = loadTicketCategories(event);
         List<Integer> ticketCategoriesIds = ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList());
 
         Map<Integer, Map<String, String>> descriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoriesIds);
-        Map<Integer, TicketCategoryStatisticView> ticketCategoriesStatistics = ticketCategoryRepository.findStatisticsForEventIdByCategoryId(event.getId());
-        Map<Integer, List<SpecialPrice>> specialPrices = specialPriceRepository.findAllByCategoriesIdsMapped(ticketCategoriesIds);
+        Map<Integer, TicketCategoryStatisticView> ticketCategoriesStatistics = owner ? ticketCategoryRepository.findStatisticsForEventIdByCategoryId(event.getId()) : ticketCategoriesIds.stream().collect(toMap(Function.identity(), id -> TicketCategoryStatisticView.empty(id, event.getId())));
+        Map<Integer, List<SpecialPrice>> specialPrices = ticketCategoriesIds.isEmpty() ? Collections.emptyMap() : specialPriceRepository.findAllByCategoriesIdsMapped(ticketCategoriesIds);
 
         List<TicketCategoryWithAdditionalInfo> tWithInfo = ticketCategories.stream()
             .map(t -> new TicketCategoryWithAdditionalInfo(event, t, ticketCategoriesStatistics.get(t.getId()), descriptions.get(t.getId()), specialPrices.get(t.getId())))

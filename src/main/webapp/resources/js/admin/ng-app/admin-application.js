@@ -1003,12 +1003,14 @@
             });
         };
 
-        getPendingPayments();
         $scope.registerPayment = function(eventName, id) {
             $scope.loading = true;
             EventService.registerPayment(eventName, id).success(function() {
-                loadData();
-                getPendingPayments();
+                loadData().then(function(res) {
+                    if(res.data.event.visibleForCurrentUser) {
+                        getPendingPayments();
+                    }
+                });
             }).error(function() {
                 $scope.loading = false;
             });
@@ -1016,8 +1018,11 @@
         $scope.deletePayment = function(eventName, id) {
             $scope.loading = true;
             EventService.cancelPayment(eventName, id).success(function() {
-                loadData();
-                getPendingPayments();
+                loadData().then(function(res) {
+                    if(res.data.event.visibleForCurrentUser) {
+                        getPendingPayments();
+                    }
+                });
             }).error(function() {
                 $scope.loading = false;
             });

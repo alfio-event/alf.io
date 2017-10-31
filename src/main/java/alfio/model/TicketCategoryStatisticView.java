@@ -61,4 +61,8 @@ public class TicketCategoryStatisticView {
         this.containsOrphanTickets = containsOrphanTickets;
         this.containsStuckTickets = containsStuckTickets;
     }
+
+    public static TicketCategoryStatisticView empty(int ticketCategoryId, int eventId) {
+        return new TicketCategoryStatisticView(ticketCategoryId, 0, false, false, eventId, 0, 0, 0, 0, 0, false, false);
+    }
 }

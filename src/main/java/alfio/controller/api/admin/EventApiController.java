@@ -429,8 +429,12 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{eventName}/pending-payments-count")
     public Integer getPendingPaymentsCount(@PathVariable("eventName") String eventName, Principal principal) {
-        Event event = eventManager.getSingleEvent(eventName, principal.getName());
-        return ticketReservationManager.getPendingPaymentsCount(event.getId());
+        if(Optional.ofNullable(principal).map(Principal::getName).map(userManager::findUserByUsername).map(userManager::isOwner).orElse(false)) {
+            Event event = eventManager.getSingleEvent(eventName, principal.getName());
+            return ticketReservationManager.getPendingPaymentsCount(event.getId());
+        } else {
+            return 0;
+        }
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)

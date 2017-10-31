@@ -87,19 +87,23 @@
         };
 
         function loadAudit() {
-            AdminReservationService.getAudit(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
-                ctrl.audit = res.data.data;
-            });
+            if(ctrl.event.visibleForCurrentUser) {
+                AdminReservationService.getAudit(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+                    ctrl.audit = res.data.data;
+                });
+            }
         }
 
         function loadPaymentInfo() {
-            ctrl.loadingPaymentInfo = true;
-            AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
-                ctrl.paymentInfo = res.data.data;
-                ctrl.loadingPaymentInfo = false;
-            }, function() {
-                ctrl.loadingPaymentInfo = false;
-            });
+            if(ctrl.event.visibleForCurrentUser) {
+                ctrl.loadingPaymentInfo = true;
+                AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+                    ctrl.paymentInfo = res.data.data;
+                    ctrl.loadingPaymentInfo = false;
+                }, function() {
+                    ctrl.loadingPaymentInfo = false;
+                });
+            }
         }
 
         ctrl.update = function(frm) {
