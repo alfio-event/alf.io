@@ -1,15 +1,16 @@
 # Change Log
 
-## [Unreleased](https://github.com/exteso/alf.io/tree/HEAD)
-
-[Full Changelog](https://github.com/exteso/alf.io/compare/1.13-RC1...HEAD)
+## [1.13-RC2](https://github.com/exteso/alf.io/tree/1.13-RC2) (2017-10-28)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.13-RC1...1.13-RC2)
 
 **Implemented enhancements:**
 
+- Show ticket validity date instead of event date [\#357](https://github.com/exteso/alf.io/issues/357)
 - Waiting queue form should be displayed if all "public" tickets have been sold [\#348](https://github.com/exteso/alf.io/issues/348)
 
 **Closed issues:**
 
+- waiting list: revert access restricted tickets to free [\#355](https://github.com/exteso/alf.io/issues/355)
 - Upload existing attendees [\#354](https://github.com/exteso/alf.io/issues/354)
 - multi-tenancy: add support for platform mode [\#343](https://github.com/exteso/alf.io/issues/343)
 
