@@ -57,8 +57,8 @@ public interface TicketRepository {
 
 
     String FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION = "select * from ticket_and_reservation_and_tx where t_status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and t_category_id = :categoryId and t_event_id = :eventId and " +
-        " (:search is null or (t_uuid like :search or t_full_name like :search or t_first_name like :search or t_last_name like :search or t_email_address like :search or " +
-        "  tr_full_name like :search or tr_first_name like :search or tr_last_name like :search or tr_email_address like :search)) " +
+        " (:search is null or (lower(t_uuid) like lower(:search) or lower(t_full_name) like lower(:search) or lower(t_first_name) like lower(:search) or lower(t_last_name) like lower(:search) or lower(t_email_address) like lower(:search) or " +
+        "  lower(tr_full_name) like lower(:search) or lower(tr_first_name) like lower(:search) or lower(tr_last_name) like lower(:search) or lower(tr_email_address) like lower(:search))) " +
         " order by tr_confirmation_ts asc, tr_id, t_uuid";
 
     @Query("select * from (" + FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION + " limit :pageSize offset :page) as d_tbl")
