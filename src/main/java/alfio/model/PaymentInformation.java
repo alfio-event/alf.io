@@ -18,6 +18,7 @@ package alfio.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 @Getter
 @AllArgsConstructor
@@ -28,6 +29,6 @@ public class PaymentInformation {
     private final String platformFee;
 
     public boolean isFullyRefunded() {
-        return paidAmount.equals(refundedAmount);
+        return StringUtils.equals(paidAmount, refundedAmount);
     }
 }
