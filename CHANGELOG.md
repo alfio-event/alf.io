@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.13-RC3](https://github.com/exteso/alf.io/tree/1.13-RC3) (2017-10-31)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.13-RC2...1.13-RC3)
+
+**Implemented enhancements:**
+
+- Hide sensitive information when the user is a "check-in supervisor" [\#359](https://github.com/exteso/alf.io/issues/359)
+
+**Fixed bugs:**
+
+- Reservation list: filter should be case-insensitive [\#360](https://github.com/exteso/alf.io/issues/360)
+
 ## [1.13-RC2](https://github.com/exteso/alf.io/tree/1.13-RC2) (2017-10-28)
 [Full Changelog](https://github.com/exteso/alf.io/compare/1.13-RC1...1.13-RC2)
 
