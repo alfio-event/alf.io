@@ -203,13 +203,17 @@ public class PaymentManager {
                 String transactionId = transaction.getTransactionId();
                 PaymentInformation paymentInformation = info.getPaymentInformation();
                 if(paymentInformation != null) {
-                    transactionRepository.updateFees(transactionId, reservation.getId(), Long.parseLong(paymentInformation.getPlatformFee()), Long.parseLong(paymentInformation.getFee()));
+                    transactionRepository.updateFees(transactionId, reservation.getId(), safeParseLong(paymentInformation.getPlatformFee()), safeParseLong(paymentInformation.getFee()));
                 }
             } catch (Exception e) {
                 log.warn("cannot update fees", e);
             }
         });
         return maybeTransaction.orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformation(reservation.getPaidAmount(), null, null, null)));
+    }
+
+    private static long safeParseLong(String src) {
+        return Optional.ofNullable(src).map(Long::parseLong).orElse(0L);
     }
 
 
