@@ -16,9 +16,12 @@
  */
 package alfio.manager;
 
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.TicketWithStatistic;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.util.EventUtil;
@@ -49,6 +52,7 @@ public class EventStatisticsManager {
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final TicketReservationRepository ticketReservationRepository;
     private final SpecialPriceRepository specialPriceRepository;
+    private final ConfigurationManager configurationManager;
     private final UserManager userManager;
 
     private List<Event> getAllEvents(String username) {
@@ -64,10 +68,17 @@ public class EventStatisticsManager {
             boolean isOwner = userManager.isOwner(userManager.findUserByUsername(username));
             Set<Integer> ids = mappedEvent.keySet();
             Stream<EventStatisticView> stats = isOwner ? eventRepository.findStatisticsFor(ids).stream() : ids.stream().map(EventStatisticView::empty);
-            return stats.map(stat -> new EventStatistic(mappedEvent.get(stat.getEventId()), stat)).sorted().collect(Collectors.toList());
+            return stats.map(stat -> {
+                Event event = mappedEvent.get(stat.getEventId());
+                return new EventStatistic(event, stat, displayStatisticsForEvent(event));
+            }).sorted().collect(Collectors.toList());
         } else {
             return Collections.emptyList();
         }
+    }
+
+    private boolean displayStatisticsForEvent(Event event) {
+        return configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.DISPLAY_STATS_IN_EVENT_DETAIL), true);
     }
 
 
@@ -81,7 +92,7 @@ public class EventStatisticsManager {
         Map<String, String> description = eventDescriptionRepository.findByEventIdAsMap(event.getId());
         boolean owner = userManager.isOwner(userManager.findUserByUsername(username));
         EventStatisticView statistics = owner ? eventRepository.findStatisticsFor(event.getId()) : EventStatisticView.empty(event.getId());
-        EventStatistic eventStatistic = new EventStatistic(event, statistics);
+        EventStatistic eventStatistic = new EventStatistic(event, statistics, displayStatisticsForEvent(event));
         BigDecimal grossIncome = owner ? MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(event.getId())) : BigDecimal.ZERO;
 
         List<TicketCategory> ticketCategories = loadTicketCategories(event);

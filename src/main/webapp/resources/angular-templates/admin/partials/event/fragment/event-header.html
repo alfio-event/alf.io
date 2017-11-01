@@ -13,7 +13,7 @@
 <div uib-alert type="success" close="closeActivationAlert()" data-ng-if="eventHasBeenActivated">
     <h4><i class="fa fa-info-circle"></i> Congratulations, this event has been successfully published! <a class="btn btn-default" ng-click="deactivateEvent(event.id)">Undo</a></h4>
 </div>
-<event-overview data-event="event" ng-if="event.visibleForCurrentUser"></event-overview>
+<event-overview data-event="event" ng-if="event.displayStatistics"></event-overview>
 
 <div class="panel panel-default">
     <div class="panel-heading">

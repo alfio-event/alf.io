@@ -36,10 +36,13 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
 
     @JsonIgnore
     private final EventStatisticView eventStatisticView;
+    @JsonIgnore
+    private final boolean statisticsEnabled;
 
-    public EventStatistic(Event event, EventStatisticView eventStatisticView) {
+    public EventStatistic(Event event, EventStatisticView eventStatisticView, boolean statisticsEnabled) {
         this.event = event;
         this.eventStatisticView = eventStatisticView;
+        this.statisticsEnabled = statisticsEnabled;
     }
 
     public List<PaymentProxy> getAllowedPaymentProxies() {
@@ -121,6 +124,10 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
     }
 
     public boolean isVisibleForCurrentUser() { return eventStatisticView.isLiveData(); }
+
+    public boolean isDisplayStatistics() {
+        return isVisibleForCurrentUser() && statisticsEnabled;
+    }
 
     @Override
     public int compareTo(EventStatistic o) {
