@@ -336,11 +336,11 @@ public class EventManager {
             int sum = ticketCategoryRepository.getTicketAllocation(eventId);
             int notAllocated = ticketRepository.countNotAllocatedFreeAndReleasedTicket(eventId);
             int requestedTickets = tcm.isBounded() ? tcm.getMaxTickets() : 1;
-            return new Result.Builder<>(() -> insertCategory(tcm, event))
-                .addValidation(() -> sum + requestedTickets <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
-                .addValidation(() -> requestedTickets <= notAllocated, ErrorCode.CategoryError.ALL_TICKETS_ASSIGNED)
-                .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
-                .build();
+            return new Result.Builder<Integer>()
+                .checkPrecondition(() -> sum + requestedTickets <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
+                .checkPrecondition(() -> requestedTickets <= notAllocated, ErrorCode.CategoryError.ALL_TICKETS_ASSIGNED)
+                .checkPrecondition(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
+                .build(() -> insertCategory(tcm, event));
         }).orElseGet(() -> Result.error(ErrorCode.EventError.ACCESS_DENIED));
     }
 
@@ -370,16 +370,13 @@ public class EventManager {
         checkOwnership(event, username, event.getOrganizationId());
         int eventId = event.getId();
         return Optional.of(ticketCategoryRepository.getById(categoryId)).filter(tc -> tc.getId() == categoryId)
-            .map(existing -> new Result.Builder<>(() -> {
-                    updateCategory(tcm, event.isFreeOfCharge(), event.getZoneId(), event, resetTicketsToFree);
-                    return ticketCategoryRepository.getByIdAndActive(categoryId, eventId);
-                })
-                    .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
-                    .addValidation(() -> tcm.getMaxTickets() - existing.getMaxTickets() + ticketRepository.countAllocatedTicketsForEvent(eventId) <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
-                    .addValidation(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
-                    .addValidation(() -> tcm.isBounded() == existing.isBounded() || ticketRepository.countPendingOrReleasedForCategory(eventId, existing.getId()) == 0, ErrorCode.custom("", "It is not safe to change allocation strategy right now because there are pending reservations."))
-                    .addValidation(() -> !existing.isAccessRestricted() || tcm.isBounded() == existing.isAccessRestricted(), ErrorCode.custom("", "Dynamic allocation is not compatible with restricted access"))
-                    .addValidation(() -> {
+            .map(existing -> new Result.Builder<TicketCategory>()
+                    .checkPrecondition(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
+                    .checkPrecondition(() -> tcm.getMaxTickets() - existing.getMaxTickets() + ticketRepository.countAllocatedTicketsForEvent(eventId) <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
+                    .checkPrecondition(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
+                    .checkPrecondition(() -> tcm.isBounded() == existing.isBounded() || ticketRepository.countPendingOrReleasedForCategory(eventId, existing.getId()) == 0, ErrorCode.custom("", "It is not safe to change allocation strategy right now because there are pending reservations."))
+                    .checkPrecondition(() -> !existing.isAccessRestricted() || tcm.isBounded() == existing.isAccessRestricted(), ErrorCode.custom("", "Dynamic allocation is not compatible with restricted access"))
+                    .checkPrecondition(() -> {
                         // see https://github.com/exteso/alf.io/issues/335
                         // handle the case when the user try to shrink a category with tokens that are already sent
                         // we should fail if there are not enough free token left
@@ -392,7 +389,7 @@ public class EventManager {
                             return true;
                         }
                     }, ErrorCode.CategoryError.NOT_ENOUGH_FREE_TOKEN_FOR_SHRINK)
-                    .addValidation(() -> {
+                    .checkPrecondition(() -> {
                         if(tcm.isBounded() && !existing.isBounded()) {
                             int newSize = tcm.getMaxTickets();
                             int confirmed = ticketRepository.countConfirmedForCategory(eventId, existing.getId());
@@ -401,7 +398,10 @@ public class EventManager {
                             return true;
                         }
                     }, ErrorCode.custom("", "Not enough tickets"))
-                    .build()
+                    .build(() -> {
+                        updateCategory(tcm, event.isFreeOfCharge(), event.getZoneId(), event, resetTicketsToFree);
+                        return ticketCategoryRepository.getByIdAndActive(categoryId, eventId);
+                    })
             )
             .orElseGet(() -> Result.error(ErrorCode.CategoryError.NOT_FOUND));
     }

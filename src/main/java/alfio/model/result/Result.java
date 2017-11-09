@@ -90,18 +90,16 @@ public class Result<T> {
 
     public static final class Builder<T> {
         private final List<Pair<ConditionValidator, ErrorCode>> validators = new ArrayList<>();
-        private final Supplier<T> valueSupplier;
 
-        public Builder(Supplier<T> valueSupplier) {
-            this.valueSupplier = valueSupplier;
+        public Builder() {
         }
 
-        public Builder<T> addValidation(ConditionValidator validator, ErrorCode error) {
+        public Builder<T> checkPrecondition(ConditionValidator validator, ErrorCode error) {
             this.validators.add(Pair.of(validator, error));
             return this;
         }
 
-        public Result<T> build() {
+        public Result<T> build(Supplier<T> valueSupplier) {
             Optional<Pair<ConditionValidator, ErrorCode>> validationError = this.validators.stream()
                 .filter(p -> !p.getLeft().isValid())
                 .findFirst();
