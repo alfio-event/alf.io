@@ -61,6 +61,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.Audit.EntityType.TICKET;
+import static alfio.model.Audit.EventType.CANCEL_TICKET;
 import static alfio.model.modification.DateTimeModification.fromZonedDateTime;
 import static alfio.util.EventUtil.generateEmptyTickets;
 import static alfio.util.OptionalWrapper.optionally;
@@ -559,13 +561,16 @@ public class AdminReservationManager {
         Integer userId = userRepository.findIdByUserName(username).orElse(null);
         Date date = new Date();
 
-        ticketIds.forEach(id -> {
-            auditingRepository.insert(reservationId, userId, event.getId(), Audit.EventType.CANCEL_TICKET, date, Audit.EntityType.TICKET, id.toString());
-        });
+        ticketIds.forEach(id -> auditingRepository.insert(reservationId, userId, event.getId(), CANCEL_TICKET, date, TICKET, id.toString()));
 
         ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
         ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
-        ticketRepository.resetTickets(ticketIds);
+        MapSqlParameterSource[] args = ticketIds.stream().map(id -> new MapSqlParameterSource("ticketId", id)
+            .addValue("reservationId", reservationId)
+            .addValue("eventId", event.getId())
+            .addValue("newUuid", UUID.randomUUID().toString())
+        ).toArray(MapSqlParameterSource[]::new);
+        jdbc.batchUpdate(ticketRepository.batchReleaseTickets(), args);
     }
 
     private void sendTicketHasBeenRemoved(Event event, Organization organization, Ticket ticket) {

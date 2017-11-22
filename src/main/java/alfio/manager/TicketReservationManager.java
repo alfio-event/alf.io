@@ -1246,7 +1246,8 @@ public class TicketReservationManager {
             throw new IllegalStateException("Cannot release reserved tickets");
         }
         String reservationId = ticketReservation.getId();
-        int result = ticketRepository.releaseTicket(reservationId, event.getId(), ticket.getId());
+        //#365 - reset UUID when releasing a ticket
+        int result = ticketRepository.releaseTicket(reservationId, UUID.randomUUID().toString(), event.getId(), ticket.getId());
         Validate.isTrue(result == 1, String.format("Expected 1 row to be updated, got %d", result));
         if(category.isAccessRestricted() || !category.isBounded()) {
             ticketRepository.unbindTicketsFromCategory(event.getId(), category.getId(), singletonList(ticket.getId()));

@@ -616,13 +616,13 @@ public class TicketReservationManagerTest {
         String organizationEmail = "ciccio@test";
         when(organization.getEmail()).thenReturn(organizationEmail);
         when(ticketCategory.isAccessRestricted()).thenReturn(false);
-        when(ticketRepository.releaseTicket(eq(RESERVATION_ID), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(1);
+        when(ticketRepository.releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(1);
         when(ticketCategory.isAccessRestricted()).thenReturn(false);
         List<String> expectedReservations = singletonList(RESERVATION_ID);
         when(ticketReservationRepository.remove(eq(expectedReservations))).thenReturn(1);
         when(transactionRepository.loadOptionalByReservationId(anyString())).thenReturn(Optional.empty());
         trm.releaseTicket(event, ticketReservation, ticket);
-        verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), eq(EVENT_ID), eq(TICKET_ID));
+        verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
         verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_EMAIL), any(), any(TextTemplateGenerator.class));
         verify(notificationManager).sendSimpleEmail(eq(event), eq(organizationEmail), any(), any(TextTemplateGenerator.class));
         verify(organizationRepository).getById(eq(ORGANIZATION_ID));
@@ -643,7 +643,7 @@ public class TicketReservationManagerTest {
     public void releaseRestrictedTicketIfUnboundedCategoryPresent() throws Exception {
         initReleaseTicket();
         when(ticketCategory.getId()).thenReturn(TICKET_CATEGORY_ID);
-        when(ticketRepository.releaseTicket(eq(RESERVATION_ID), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(1);
+        when(ticketRepository.releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(1);
         when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(ticketCategory.isAccessRestricted()).thenReturn(true);
         when(ticketCategoryRepository.countUnboundedCategoriesByEventId(eq(EVENT_ID))).thenReturn(1);
@@ -651,7 +651,7 @@ public class TicketReservationManagerTest {
         when(ticketReservationRepository.remove(eq(expectedReservations))).thenReturn(1);
         when(transactionRepository.loadOptionalByReservationId(anyString())).thenReturn(Optional.empty());
         trm.releaseTicket(event, ticketReservation, ticket);
-        verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), eq(EVENT_ID), eq(TICKET_ID));
+        verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
         verify(ticketRepository).unbindTicketsFromCategory(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(singletonList(TICKET_ID)));
         verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_EMAIL), any(), any(TextTemplateGenerator.class));
         verify(organizationRepository).getById(eq(ORGANIZATION_ID));
@@ -661,12 +661,12 @@ public class TicketReservationManagerTest {
     @Test
     public void throwExceptionIfMultipleTickets() throws Exception {
         initReleaseTicket();
-        when(ticketRepository.releaseTicket(eq(RESERVATION_ID), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(2);
+        when(ticketRepository.releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(2);
         try {
             trm.releaseTicket(event, ticketReservation, ticket);
             fail();
         } catch (IllegalArgumentException e) {
-            verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), eq(EVENT_ID), eq(TICKET_ID));
+            verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
             verify(notificationManager, never()).sendSimpleEmail(any(), any(), any(), any(TextTemplateGenerator.class));
         }
     }
