@@ -1,56 +1,51 @@
 # Change Log
 
-## [1.13-RC3](https://github.com/exteso/alf.io/tree/1.13-RC3) (2017-10-31)
-[Full Changelog](https://github.com/exteso/alf.io/compare/1.13-RC2...1.13-RC3)
+## [1.13](https://github.com/exteso/alf.io/tree/1.13) (2017-11-23)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.13-RC3...1.13)
 
 **Implemented enhancements:**
 
 - Hide sensitive information when the user is a "check-in supervisor" [\#359](https://github.com/exteso/alf.io/issues/359)
-
-**Fixed bugs:**
-
-- Reservation list: filter should be case-insensitive [\#360](https://github.com/exteso/alf.io/issues/360)
-
-## [1.13-RC2](https://github.com/exteso/alf.io/tree/1.13-RC2) (2017-10-28)
-[Full Changelog](https://github.com/exteso/alf.io/compare/1.13-RC1...1.13-RC2)
-
-**Implemented enhancements:**
-
 - Show ticket validity date instead of event date [\#357](https://github.com/exteso/alf.io/issues/357)
 - Waiting queue form should be displayed if all "public" tickets have been sold [\#348](https://github.com/exteso/alf.io/issues/348)
-
-**Closed issues:**
-
-- waiting list: revert access restricted tickets to free [\#355](https://github.com/exteso/alf.io/issues/355)
-- Upload existing attendees [\#354](https://github.com/exteso/alf.io/issues/354)
-- multi-tenancy: add support for platform mode [\#343](https://github.com/exteso/alf.io/issues/343)
-
-## [1.13-RC1](https://github.com/exteso/alf.io/tree/1.13-RC1) (2017-10-24)
-[Full Changelog](https://github.com/exteso/alf.io/compare/1.12.1...1.13-RC1)
-
-**Implemented enhancements:**
-
 - save used vat% in each ticket [\#347](https://github.com/exteso/alf.io/issues/347)
-
-## [1.12.1](https://github.com/exteso/alf.io/tree/1.12.1) (2017-10-08)
-[Full Changelog](https://github.com/exteso/alf.io/compare/1.12...1.12.1)
-
-**Implemented enhancements:**
-
 - Add possibility to disable email sending when mode is PROFILE\_LIVE [\#346](https://github.com/exteso/alf.io/issues/346)
 
 **Fixed bugs:**
 
+- Reset UUID when ticket is released by the attendee or removed by the admin [\#365](https://github.com/exteso/alf.io/issues/365)
+- Reservation list: filter should be case-insensitive [\#360](https://github.com/exteso/alf.io/issues/360)
 - Search from Check-in view has 2 separate fields, but only 1 is used [\#342](https://github.com/exteso/alf.io/issues/342)
 - Consider invitations when invalidating tokens [\#335](https://github.com/exteso/alf.io/issues/335)
 
 **Closed issues:**
 
+- multi-tenancy: add support for platform mode [\#343](https://github.com/exteso/alf.io/issues/343)
 - Set Checkin-date on category [\#333](https://github.com/exteso/alf.io/issues/333)
 
 **Merged pull requests:**
 
 - add support for french [\#350](https://github.com/exteso/alf.io/pull/350) ([bjamet](https://github.com/bjamet))
+
+## [1.13-RC3](https://github.com/exteso/alf.io/tree/1.13-RC3) (2017-10-31)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.13-RC2...1.13-RC3)
+
+## [1.13-RC2](https://github.com/exteso/alf.io/tree/1.13-RC2) (2017-10-28)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.13-RC1...1.13-RC2)
+
+**Closed issues:**
+
+- waiting list: revert access restricted tickets to free [\#355](https://github.com/exteso/alf.io/issues/355)
+- Upload existing attendees [\#354](https://github.com/exteso/alf.io/issues/354)
+
+## [1.13-RC1](https://github.com/exteso/alf.io/tree/1.13-RC1) (2017-10-24)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.12.1...1.13-RC1)
+
+## [1.12.1](https://github.com/exteso/alf.io/tree/1.12.1) (2017-10-08)
+[Full Changelog](https://github.com/exteso/alf.io/compare/1.12...1.12.1)
+
+**Merged pull requests:**
+
 - \#343 - configure "platform mode" in order to collect fees for each ti… [\#344](https://github.com/exteso/alf.io/pull/344) ([cbellone](https://github.com/cbellone))
 - implement \#333 checkin date category [\#341](https://github.com/exteso/alf.io/pull/341) ([syjer](https://github.com/syjer))
 
