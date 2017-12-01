@@ -33,7 +33,10 @@ public enum ConfigurationKeys {
 
     BASE_URL("Base application url", false, SettingCategory.GENERAL, ComponentType.TEXT, true, EnumSet.of(SYSTEM), true),
 
-    MAPS_CLIENT_API_KEY("Google maps' client api key", false, SettingCategory.GENERAL, ComponentType.TEXT, true, EnumSet.of(SYSTEM), true),
+    MAPS_PROVIDER("Select the maps provider (Google, Here)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), true),
+    MAPS_CLIENT_API_KEY("Google maps' client api key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), true),
+    MAPS_HERE_APP_ID("HERE map App ID", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), true),
+    MAPS_HERE_APP_CODE("HERE map App Code", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), true),
 
 
     RECAPTCHA_API_KEY("Recaptcha api key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM), true),
@@ -169,6 +172,10 @@ public enum ConfigurationKeys {
             this.description = description;
         }
 
+    }
+
+    public enum GeoInfoProvider {
+        GOOGLE, HERE, NONE
     }
 
     private static final Predicate<ConfigurationKeys> INTERNAL = ConfigurationKeys::isInternal;
