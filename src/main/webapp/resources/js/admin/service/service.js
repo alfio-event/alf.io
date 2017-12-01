@@ -400,10 +400,10 @@
             getTimezones: function() {
                 return $http.get('/admin/api/location/timezones');
             },
-            getMapUrl : function(latitude, longitude) {
-                return this.mapApiKey().then(function(key) {
-                    return mapUrl(latitude, longitude, key);
-                }, HttpErrorHandler.handle);
+            getMapUrl : function(latitude, longitude, orgId, eventId) {
+                return $http.get('/admin/api/location/static-map-image', {params: {lat: latitude, lng: longitude, orgId : orgId, eventId: eventId}}).then(function(res) {
+                    return res.data;
+                });
             }
         };
     });

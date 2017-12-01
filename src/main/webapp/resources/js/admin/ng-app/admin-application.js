@@ -664,7 +664,7 @@
 
                 $scope.loading = false;
                 $scope.loadingMap = true;
-                LocationService.getMapUrl(result.event.latitude, result.event.longitude).then(function(mapUrl) {
+                LocationService.getMapUrl(result.event.latitude, result.event.longitude, result.event.organizationId, result.event.id).then(function(mapUrl) {
                     $scope.event.geolocation = {
                         latitude: result.event.latitude,
                         longitude: result.event.longitude,

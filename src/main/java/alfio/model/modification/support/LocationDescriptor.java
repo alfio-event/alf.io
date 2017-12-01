@@ -52,15 +52,25 @@ public class LocationDescriptor {
 
     public static LocationDescriptor fromGeoData(Pair<String, String> coordinates, TimeZone timeZone, Map<ConfigurationKeys, Optional<String>> geoConf) {
         Map<String, String> params = new HashMap<>();
-        params.put("latitude", coordinates.getLeft());
-        params.put("longitude", coordinates.getRight());
+        String lat = coordinates.getLeft();
+        String lng = coordinates.getRight();
+        params.put("latitude", lat);
+        params.put("longitude", lng);
+
+        return new LocationDescriptor(timeZone.getID(), coordinates.getLeft(), coordinates.getRight(), getMapUrl(lat, lng, geoConf));
+    }
+
+    public static String getMapUrl(String lat, String lng, Map<ConfigurationKeys, Optional<String>> geoConf) {
+        Map<String, String> params = new HashMap<>();
+        params.put("latitude", lat);
+        params.put("longitude", lng);
 
         ConfigurationKeys.GeoInfoProvider provider = getProvider(geoConf);
         String mapUrl = mapUrl(provider);
 
         fillParams(provider, geoConf, params);
 
-        return new LocationDescriptor(timeZone.getID(), coordinates.getLeft(), coordinates.getRight(), new StrSubstitutor(params).replace(mapUrl));
+        return new StrSubstitutor(params).replace(mapUrl);
     }
 
     // for backward compatibility reason, the logic is not straightforward
