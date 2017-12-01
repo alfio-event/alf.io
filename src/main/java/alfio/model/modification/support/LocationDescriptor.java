@@ -74,7 +74,7 @@ public class LocationDescriptor {
     }
 
     // for backward compatibility reason, the logic is not straightforward
-    private static ConfigurationKeys.GeoInfoProvider getProvider(Map<ConfigurationKeys, Optional<String>> geoConf) {
+    public static ConfigurationKeys.GeoInfoProvider getProvider(Map<ConfigurationKeys, Optional<String>> geoConf) {
         if((!geoConf.containsKey(ConfigurationKeys.MAPS_PROVIDER) || !geoConf.get(ConfigurationKeys.MAPS_PROVIDER).isPresent()) &&
             (geoConf.containsKey(ConfigurationKeys.MAPS_CLIENT_API_KEY) && geoConf.get(ConfigurationKeys.MAPS_CLIENT_API_KEY).isPresent())) {
             return ConfigurationKeys.GeoInfoProvider.GOOGLE;

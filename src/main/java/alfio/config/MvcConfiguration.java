@@ -230,7 +230,7 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                         + " frame-src 'self' https://js.stripe.com https://www.google.com;"
                         + " font-src 'self';"//
                         + " media-src blob: 'self';"//for loading camera api
-                        + " connect-src 'self' https://api.stripe.com https://maps.googleapis.com/;" //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
+                        + " connect-src 'self' https://api.stripe.com https://maps.googleapis.com/ https://geocoder.cit.api.here.com;" //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
                         + (environment.acceptsProfiles(Initializer.PROFILE_DEBUG_CSP) ? " report-uri /report-csp-violation" : ""));
             }
         };

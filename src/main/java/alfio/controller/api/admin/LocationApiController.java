@@ -21,6 +21,8 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import com.moodysalem.TimezoneMapper;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -46,40 +48,73 @@ public class LocationApiController {
         return e.getMessage();
     }
 
-    @RequestMapping(value = "/location/maps-client-api-key")
-    public String mapsClientApiKey() {
-        return configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.MAPS_CLIENT_API_KEY)).orElse(null);
-    }
-
-    @RequestMapping(value = "/location/timezones")
+    @RequestMapping("/location/timezones")
     public List<String> getTimezones() {
         List<String> s = new ArrayList<>(ZoneId.getAvailableZoneIds());
         s.sort(String::compareTo);
         return s;
     }
 
-    @RequestMapping(value = "/location/timezone")
+    @RequestMapping("/location/timezone")
     public String getTimezone(@RequestParam("lat") double lat, @RequestParam("lng") double lng) {
         String tzId = TimezoneMapper.tzNameAt(lat, lng);
         return getTimezones().contains(tzId) ? tzId : null;
     }
 
-    @RequestMapping(value = "/location/static-map-image")
+
+
+    @RequestMapping("/location/static-map-image")
     public String getMapImage(
         @RequestParam("lat") String lat,
         @RequestParam("lng") String lng,
-        @RequestParam("orgId") int orgId,
+        @RequestParam(value = "orgId", required = false) Integer orgId,
         @RequestParam(value = "eventId", required = false) Integer eventId) {
 
-        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathKeyBuilder = (key) ->
-            eventId == null ? Configuration.from(orgId, key) : Configuration.from(orgId, eventId, key);
+        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathKeyBuilder = (key) -> {
+          if(orgId == null && eventId == null) {
+              return Configuration.getSystemConfiguration(key);
+          } else if (eventId == null) {
+              return Configuration.from(orgId, key);
+          } else {
+              return Configuration.from(orgId, eventId, key);
+          }
+        };
 
-        Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = configurationManager.getStringConfigValueFrom(
-            pathKeyBuilder.apply(ConfigurationKeys.MAPS_PROVIDER),
-            pathKeyBuilder.apply(ConfigurationKeys.MAPS_CLIENT_API_KEY),
-            pathKeyBuilder.apply(ConfigurationKeys.MAPS_HERE_APP_ID),
-            pathKeyBuilder.apply(ConfigurationKeys.MAPS_HERE_APP_CODE));
+        Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf(pathKeyBuilder);
 
         return LocationDescriptor.getMapUrl(lat, lng, geoInfoConfiguration);
+    }
+
+    private Map<ConfigurationKeys, Optional<String>> getGeoConf(Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathKeyBuilder) {
+        return configurationManager.getStringConfigValueFrom(
+                pathKeyBuilder.apply(ConfigurationKeys.MAPS_PROVIDER),
+                pathKeyBuilder.apply(ConfigurationKeys.MAPS_CLIENT_API_KEY),
+                pathKeyBuilder.apply(ConfigurationKeys.MAPS_HERE_APP_ID),
+                pathKeyBuilder.apply(ConfigurationKeys.MAPS_HERE_APP_CODE));
+    }
+
+    @RequestMapping("/location/map-provider-client-api-key")
+    public ProviderAndKeys getGeoInfoProviderAndKeys() {
+
+        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathKeyBuilder = (key) -> Configuration.getSystemConfiguration(key);
+
+        Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf(pathKeyBuilder);
+
+        ConfigurationKeys.GeoInfoProvider provider = LocationDescriptor.getProvider(geoInfoConfiguration);
+
+        Map<ConfigurationKeys, String> apiKeys = new HashMap<>();
+
+        geoInfoConfiguration.forEach((k,v) -> {
+            v.ifPresent(value -> apiKeys.put(k, value));
+        });
+
+        return new ProviderAndKeys(provider, apiKeys);
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class ProviderAndKeys {
+        private final ConfigurationKeys.GeoInfoProvider provider;
+        private Map<ConfigurationKeys, String> keys;
     }
 }
