@@ -115,7 +115,17 @@
                         mailReplyTo: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';}),
                         mailAttemptsCount: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_ATTEMPTS_COUNT';})
                     };
+                };
+
+                if(angular.isDefined(original['MAP']) && original['MAP'].length > 0) {
+                    transformed.map = {
+                        MAPS_PROVIDER: _.find(original['MAP'], function(e) {return e.key === 'MAPS_PROVIDER';}),
+                        MAPS_CLIENT_API_KEY: _.find(original['MAP'], function(e) {return e.key === 'MAPS_CLIENT_API_KEY';}),
+                        MAPS_HERE_APP_ID: _.find(original['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_ID';}),
+                        MAPS_HERE_APP_CODE: _.find(original['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_CODE';})
+                    }
                 }
+
                 _.forEach(['PAYMENT', 'PAYMENT_STRIPE', 'PAYMENT_PAYPAL', /*'PAYMENT_MOLLIE',*/ 'PAYMENT_OFFLINE', 'INVOICE_EU', 'ALFIO_PI'], function(group) {
                     if(angular.isDefined(original[group]) && original[group].length > 0) {
                         transformed[_.camelCase(group)] = {
@@ -442,6 +452,12 @@
                             };
                             ctrl.payment = {
                                 settings: onlyBasic(settings['PAYMENT'])
+                            };
+                            ctrl.map = {
+                                MAPS_PROVIDER: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_PROVIDER';}),
+                                MAPS_CLIENT_API_KEY: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_CLIENT_API_KEY';}),
+                                MAPS_HERE_APP_ID: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_ID';}),
+                                MAPS_HERE_APP_CODE: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_CODE';})
                             };
                         });
                         ctrl.saveSettings = function(frm, settings, pluginSettings) {

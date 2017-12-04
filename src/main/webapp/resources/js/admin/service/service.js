@@ -336,8 +336,8 @@
 
         var reqCounter = 0;
 
-        function getMapUrl(latitude, longitude, orgId, eventId) {
-            return $http.get('/admin/api/location/static-map-image', {params: {lat: latitude, lng: longitude, orgId : orgId, eventId: eventId}}).then(function(res) {
+        function getMapUrl(latitude, longitude) {
+            return $http.get('/admin/api/location/static-map-image', {params: {lat: latitude, lng: longitude}}).then(function(res) {
                 return res.data;
             });
         }

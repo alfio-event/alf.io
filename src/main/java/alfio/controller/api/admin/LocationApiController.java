@@ -66,26 +66,13 @@ public class LocationApiController {
     @RequestMapping("/location/static-map-image")
     public String getMapImage(
         @RequestParam("lat") String lat,
-        @RequestParam("lng") String lng,
-        @RequestParam(value = "orgId", required = false) Integer orgId,
-        @RequestParam(value = "eventId", required = false) Integer eventId) {
-
-        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathKeyBuilder = (key) -> {
-          if(orgId == null && eventId == null) {
-              return Configuration.getSystemConfiguration(key);
-          } else if (eventId == null) {
-              return Configuration.from(orgId, key);
-          } else {
-              return Configuration.from(orgId, eventId, key);
-          }
-        };
-
-        Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf(pathKeyBuilder);
-
+        @RequestParam("lng") String lng) {
+        Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf();
         return LocationDescriptor.getMapUrl(lat, lng, geoInfoConfiguration);
     }
 
-    private Map<ConfigurationKeys, Optional<String>> getGeoConf(Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathKeyBuilder) {
+    private Map<ConfigurationKeys, Optional<String>> getGeoConf() {
+        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathKeyBuilder = (key) -> Configuration.getSystemConfiguration(key);
         return configurationManager.getStringConfigValueFrom(
                 pathKeyBuilder.apply(ConfigurationKeys.MAPS_PROVIDER),
                 pathKeyBuilder.apply(ConfigurationKeys.MAPS_CLIENT_API_KEY),
@@ -95,19 +82,12 @@ public class LocationApiController {
 
     @RequestMapping("/location/map-provider-client-api-key")
     public ProviderAndKeys getGeoInfoProviderAndKeys() {
-
-        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathKeyBuilder = (key) -> Configuration.getSystemConfiguration(key);
-
-        Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf(pathKeyBuilder);
-
+        Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf();
         ConfigurationKeys.GeoInfoProvider provider = LocationDescriptor.getProvider(geoInfoConfiguration);
-
         Map<ConfigurationKeys, String> apiKeys = new HashMap<>();
-
         geoInfoConfiguration.forEach((k,v) -> {
             v.ifPresent(value -> apiKeys.put(k, value));
         });
-
         return new ProviderAndKeys(provider, apiKeys);
     }
 

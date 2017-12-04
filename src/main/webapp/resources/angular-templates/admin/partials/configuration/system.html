@@ -83,6 +83,34 @@
             </div>
         </div>
 
+        <div class="page-header">
+            <h2>Map</h2>
+            <span>Map settings</span>
+        </div>
+        <div>
+            <p class="radio-inline">
+                <label>
+                    <input type="radio" name="map.mapsProvider" data-ng-model="systemConf.map['MAPS_PROVIDER'].value" data-ng-value="'GOOGLE'">
+                    Google maps
+                </label>
+            </p>
+            <p class="radio-inline">
+                <label>
+                    <input type="radio" name="map.mapsProvider" data-ng-model="systemConf.map['MAPS_PROVIDER'].value" data-ng-value="'HERE'">
+                    Here maps
+                </label>
+            </p>
+            <div>
+                <setting data-obj="systemConf.map['MAPS_CLIENT_API_KEY']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+            </div>
+            <div>
+                <setting data-obj="systemConf.map['MAPS_HERE_APP_ID']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+            </div>
+            <div>
+                <setting data-obj="systemConf.map['MAPS_HERE_APP_CODE']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+            </div>
+        </div>
+
 
         <div class="page-header">
             <h2>Invoice settings</h2>
