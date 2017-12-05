@@ -334,16 +334,96 @@
 
     baseServices.service("LocationService", function($http, $q, HttpErrorHandler) {
 
-        function mapUrl(lat, lng, key) {
-            var keyParam = key ? ('&key='+encodeURIComponent(key)) : '';
-            return "https://maps.googleapis.com/maps/api/staticmap?center="+lat+","+lng+"&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C"+lat+","+lng+""+keyParam;
+        var reqCounter = 0;
+
+        function getMapUrl(latitude, longitude) {
+            return $http.get('/admin/api/location/static-map-image', {params: {lat: latitude, lng: longitude}}).then(function(res) {
+                return res.data;
+            });
         }
 
-        var reqCounter = 0;
+
+        function handleGoogleGeolocate(location, locService, apiKeyAndProvider, resolve, reject) {
+            var key = apiKeyAndProvider.keys['MAPS_CLIENT_API_KEY'];
+
+            var keyParam = key ? ('&key='+encodeURIComponent(key)) : '';
+
+            if(!window.google || !window.google.maps) {
+
+                reqCounter++;
+
+                var script = document.createElement('script');
+
+                var callBackName = 'clientGeolocate'+reqCounter;
+
+                script.src = 'https://maps.googleapis.com/maps/api/js?libraries=places&callback='+callBackName+keyParam;
+                document.head.appendChild(script);
+                window[callBackName] = function() {
+                    search();
+                }
+            } else {
+                search();
+            }
+
+            function search() {
+                var geocoder = new window.google.maps.Geocoder();
+                geocoder.geocode({'address': location}, function(results, status) {
+                    if (status === 'OK') {
+                        var ret = {};
+                        ret.latitude = ""+results[0].geometry.location.lat()
+                        ret.longitude = ""+results[0].geometry.location.lng()
+                        $q.all([getMapUrl(ret.latitude, ret.longitude), locService.getTimezone(ret.latitude, ret.longitude)]).then(function(success) {
+                            ret.mapUrl = success[0];
+                            var tz = success[1];
+                            if(tz.data) {
+                                ret.timeZone = tz.data;
+                            }
+                            resolve(ret);
+                        }, function () {
+                            reject();
+                        })
+
+                    } else {
+                        reject();
+                    }
+                });
+            }
+        }
+
+        
+        function handleHEREGeolocate(location, locService, apiKeyAndProvider, resolve, reject) {
+            var appId = apiKeyAndProvider.keys['MAPS_HERE_APP_ID'];
+            var appCode = apiKeyAndProvider.keys['MAPS_HERE_APP_CODE'];
+            $http.get('https://geocoder.cit.api.here.com/6.2/geocode.json', {params: {app_id: appId, app_code: appCode, searchtext: location}}).then(function(res) {
+                var view = res.data.Response.View;
+                if(view.length > 0 && view[0].Result.length > 0 && view[0].Result[0].Location) {
+                    var location = view[0].Result[0].Location;
+                    var pos = location.DisplayPosition;
+                    var ret = {latitude: pos.Latitude, longitude: pos.Longitude};
+                    console.log(view);
+
+                    $q.all([getMapUrl(ret.latitude, ret.longitude), locService.getTimezone(ret.latitude, ret.longitude)]).then(function(success) {
+                        ret.mapUrl = success[0];
+                        var tz = success[1];
+                        if(tz.data) {
+                            ret.timeZone = tz.data;
+                        }
+                        resolve(ret);
+                    }, function () {
+                        reject();
+                    })
+                } else {
+                    reject();
+                }
+
+            }, function () {
+                reject();
+            })
+        }
 
         return {
             mapApiKey: function() {
-                return $http.get('/admin/api/location/maps-client-api-key.json').then(function(res) {
+                return $http.get('/admin/api/location/map-provider-client-api-key').then(function(res) {
                     return res.data;
                 });
             },
@@ -351,44 +431,14 @@
                 var locService = this;
                 return $q(function(resolve, reject) {
 
-                    locService.mapApiKey().then(function(key) {
-                        var keyParam = key ? ('&key='+encodeURIComponent(key)) : '';
+                    locService.mapApiKey().then(function(apiKeyAndProvider) {
 
-                        if(!window.google || !window.google.maps) {
-
-                            reqCounter++;
-
-                            var script = document.createElement('script');
-
-                            var callBackName = 'clientGeolocate'+reqCounter;
-
-                            script.src = 'https://maps.googleapis.com/maps/api/js?libraries=places&callback='+callBackName+keyParam;
-                            document.head.appendChild(script);
-                            window[callBackName] = function() {
-                                search();
-                            }
+                        if(apiKeyAndProvider.provider === 'GOOGLE') {
+                            handleGoogleGeolocate(location, locService, apiKeyAndProvider, resolve, reject);
+                        } else if (apiKeyAndProvider.provider === 'HERE') {
+                            handleHEREGeolocate(location, locService, apiKeyAndProvider, resolve, reject);
                         } else {
-                            search();
-                        }
-
-                        function search() {
-                            var geocoder = new window.google.maps.Geocoder();
-                            geocoder.geocode({'address': location}, function(results, status) {
-                                if (status === 'OK') {
-                                    var ret = {};
-                                    ret.latitude = ""+results[0].geometry.location.lat()
-                                    ret.longitude = ""+results[0].geometry.location.lng()
-                                    ret.mapUrl = mapUrl(ret.latitude, ret.longitude, key);
-                                    locService.getTimezone(ret.latitude, ret.longitude).then(function(res) {
-                                        if(res.data) {
-                                            ret.timeZone = res.data;
-                                        }
-                                        resolve(ret);
-                                    });
-                                } else {
-                                    reject();
-                                }
-                            });
+                            alert('Must provide an API key (google or HERE maps)')
                         }
                     })
 
@@ -400,11 +450,7 @@
             getTimezones: function() {
                 return $http.get('/admin/api/location/timezones');
             },
-            getMapUrl : function(latitude, longitude) {
-                return this.mapApiKey().then(function(key) {
-                    return mapUrl(latitude, longitude, key);
-                }, HttpErrorHandler.handle);
-            }
+            getMapUrl : getMapUrl
         };
     });
 

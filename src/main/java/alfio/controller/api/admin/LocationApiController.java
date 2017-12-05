@@ -17,17 +17,19 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import com.moodysalem.TimezoneMapper;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 
 @RestController
 @RequestMapping("/admin/api")
@@ -46,21 +48,53 @@ public class LocationApiController {
         return e.getMessage();
     }
 
-    @RequestMapping(value = "/location/maps-client-api-key")
-    public String mapsClientApiKey() {
-        return configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.MAPS_CLIENT_API_KEY)).orElse(null);
-    }
-
-    @RequestMapping(value = "/location/timezones")
+    @RequestMapping("/location/timezones")
     public List<String> getTimezones() {
         List<String> s = new ArrayList<>(ZoneId.getAvailableZoneIds());
         s.sort(String::compareTo);
         return s;
     }
 
-    @RequestMapping(value = "/location/timezone")
+    @RequestMapping("/location/timezone")
     public String getTimezone(@RequestParam("lat") double lat, @RequestParam("lng") double lng) {
         String tzId = TimezoneMapper.tzNameAt(lat, lng);
         return getTimezones().contains(tzId) ? tzId : null;
+    }
+
+
+
+    @RequestMapping("/location/static-map-image")
+    public String getMapImage(
+        @RequestParam("lat") String lat,
+        @RequestParam("lng") String lng) {
+        Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf();
+        return LocationDescriptor.getMapUrl(lat, lng, geoInfoConfiguration);
+    }
+
+    private Map<ConfigurationKeys, Optional<String>> getGeoConf() {
+        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathKeyBuilder = (key) -> Configuration.getSystemConfiguration(key);
+        return configurationManager.getStringConfigValueFrom(
+                pathKeyBuilder.apply(ConfigurationKeys.MAPS_PROVIDER),
+                pathKeyBuilder.apply(ConfigurationKeys.MAPS_CLIENT_API_KEY),
+                pathKeyBuilder.apply(ConfigurationKeys.MAPS_HERE_APP_ID),
+                pathKeyBuilder.apply(ConfigurationKeys.MAPS_HERE_APP_CODE));
+    }
+
+    @RequestMapping("/location/map-provider-client-api-key")
+    public ProviderAndKeys getGeoInfoProviderAndKeys() {
+        Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf();
+        ConfigurationKeys.GeoInfoProvider provider = LocationDescriptor.getProvider(geoInfoConfiguration);
+        Map<ConfigurationKeys, String> apiKeys = new HashMap<>();
+        geoInfoConfiguration.forEach((k,v) -> {
+            v.ifPresent(value -> apiKeys.put(k, value));
+        });
+        return new ProviderAndKeys(provider, apiKeys);
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class ProviderAndKeys {
+        private final ConfigurationKeys.GeoInfoProvider provider;
+        private Map<ConfigurationKeys, String> keys;
     }
 }
