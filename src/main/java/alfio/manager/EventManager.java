@@ -628,14 +628,14 @@ public class EventManager {
     }
 
     void handlePriceChange(Event event, TicketCategory original, TicketCategory updated) {
-        if(original.getSrcPriceCts() == updated.getSrcPriceCts()) {
+        if(original.getSrcPriceCts() == updated.getSrcPriceCts() || !original.isBounded()) {
             return;
         }
         final List<Integer> ids = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), updated.getId(), updated.getMaxTickets(), singletonList(TicketStatus.FREE.name()));
         if(ids.size() < updated.getMaxTickets()) {
             throw new IllegalStateException("Tickets have already been sold (or are in the process of being sold) for this category. Therefore price update is not allowed.");
         }
-        //there's no need to calculate final price, vat etc, since these values will be update at the time of reservation
+        //there's no need to calculate final price, vat etc, since these values will be updated at the time of reservation
         ticketRepository.updateTicketPrice(updated.getId(), event.getId(), updated.getSrcPriceCts(), 0, 0, 0);
     }
 
