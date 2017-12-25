@@ -3,8 +3,7 @@ alf.io
 
 alf.io
 
-[![Build Status](http://img.shields.io/travis/exteso/alf.io/master.svg)](https://travis-ci.org/exteso/alf.io) [![Coverage Status](https://img.shields.io/coveralls/exteso/alf.io.svg)](https://coveralls.io/r/exteso/alf.io)
-[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/5232.svg)](https://scan.coverity.com/projects/5232)
+[![Build Status](http://img.shields.io/travis/alfio-event/alf.io/master.svg)](https://travis-ci.org/alfio-event/alf.io) [![Coverage Status](https://img.shields.io/coveralls/alfio-event/alf.io.svg)](https://coveralls.io/r/alfio-event/alf.io)
 
 ## Prerequisites
 
