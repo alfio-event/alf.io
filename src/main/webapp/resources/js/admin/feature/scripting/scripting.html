@@ -1,0 +1,29 @@
+<div class="container" container-fluid-responsive="">
+    <h1>Scripting</h1>
+    <hr>
+    <div class="text-right">
+        <button class="btn btn-success" ng-click="$ctrl.addNewOrUpdate()"><i class="fa fa-plus"></i> add new</button>
+    </div>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>path</th>
+                <th>name</th>
+                <th width="10%"><span class="sr-only">actions</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr ng-if="!$ctrl.scripts || $ctrl.scripts.length == 0">
+                <td colspan="4">no scripts have been found.</td>
+            </tr>
+            <tr ng-repeat="script in $ctrl.scripts">
+                <td>{{script.path}}</td>
+                <td>{{script.name}}</td>
+                <td class="text-center">
+                    <button class="btn btn-small" ng-click="$ctrl.addNewOrUpdate(script)">edit</button>
+                    <button class="btn btn-small">delete</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

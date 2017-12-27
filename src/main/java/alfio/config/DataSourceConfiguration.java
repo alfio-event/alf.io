@@ -70,7 +70,7 @@ import java.util.Set;
 @EnableTransactionManagement
 @EnableScheduling
 @EnableAsync
-@ComponentScan(basePackages = {"alfio.manager"})
+@ComponentScan(basePackages = {"alfio.manager", "alfio.scripting"})
 @Log4j2
 public class DataSourceConfiguration implements ResourceLoaderAware {
 

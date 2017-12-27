@@ -277,6 +277,9 @@
                         return AdminReservationService.load($stateParams.eventName, $stateParams.reservationId);
                     }
                 }
+            }).state('scripting', {
+                url: '/scripting/',
+                template: '<scripting></scripting>'
             });
 
         growlProvider.globalPosition('bottom-right');
