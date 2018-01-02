@@ -40,9 +40,9 @@ public interface ScriptRepository {
     @Query("update script_support set enabled = :enabled where path = :path")
     int toggle(@Bind("path") String path, @Bind("enabled") boolean enabled);
 
-    @Query("insert into script_event(path, event) values " +
+    @Query("insert into script_event(path_fk, event) values " +
         " (:path, :event)")
-    int insert(@Bind("path") String path, @Bind("event ") String event);
+    int insert(@Bind("path") String path, @Bind("event") String event);
 
     @Query("select count(*) from script_support where path = :path")
     int hasPath(@Bind("path") String path);
@@ -50,7 +50,7 @@ public interface ScriptRepository {
     @Query("select script from script_support where path = :path")
     String getScript(@Bind("path") String path);
 
-    @Query("delete from script_event where path = :path")
+    @Query("delete from script_event where path_fk = :path")
     int deleteEventsForPath(@Bind("path") String path);
 
     @Query("delete from script_support where path = :path")

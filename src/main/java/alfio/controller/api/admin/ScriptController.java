@@ -44,6 +44,15 @@ public class ScriptController {
         return scriptingService.listAll();
     }
 
+    /*
+    function getScriptMetadata() {
+        return {async:true, events: ['TEST']};
+    }
+
+    function executeScript() {
+
+    }
+     */
     @RequestMapping(value = "/scripting", method = RequestMethod.POST)
     public void createOrUpdate(@RequestBody Script script, Principal principal) {
         ensureAdmin(principal);

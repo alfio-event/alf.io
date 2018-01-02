@@ -17,7 +17,9 @@
 package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
+@Getter
 public class ScriptSupport {
 
     private final String path;

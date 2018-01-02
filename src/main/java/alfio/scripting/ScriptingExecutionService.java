@@ -23,6 +23,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import javax.script.*;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
@@ -43,7 +44,7 @@ import java.util.function.Supplier;
 @Log4j2
 public class ScriptingExecutionService {
 
-    private final static Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("javascript");
+    private final static Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("nashorn");
     private final Cache<String, CompiledScript> compiledScriptCache = Caffeine.newBuilder()
         .expireAfterAccess(12, TimeUnit.HOURS)
         .build();
@@ -81,6 +82,9 @@ public class ScriptingExecutionService {
 
     private static Object executeScript(String name, CompiledScript script, Map<String, Object> params) {
         try {
+            if(params == null) {
+                params = Collections.emptyMap();
+            }
             ScriptContext newContext = new SimpleScriptContext();
             Bindings engineScope = newContext.getBindings(ScriptContext.ENGINE_SCOPE);
             engineScope.putAll(params);

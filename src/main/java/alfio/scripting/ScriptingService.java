@@ -20,6 +20,7 @@ package alfio.scripting;
 import alfio.model.ScriptSupport;
 import alfio.repository.ScriptRepository;
 import alfio.util.Json;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -27,10 +28,8 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.script.Bindings;
+import java.util.*;
 
 @Service
 @Log4j2
@@ -44,11 +43,16 @@ public class ScriptingService {
     @Transactional
     public void createOrUpdate(Script script) {
         String hash = DigestUtils.sha256Hex(script.getScript());
-        ScriptMetadata scriptMetadata = ScriptingExecutionService.executeScript(
+        Bindings scriptMetadataBinding = ScriptingExecutionService.executeScript(
             script.getName(),
-            script.getScript() + "\n;return getScriptMetadata();",
+            script.getScript() + "\n;getScriptMetadata();",
             script.getConfiguration());
 
+        //extracting the object {async: boolean, events: String[]}
+        boolean async = (Boolean) scriptMetadataBinding.getOrDefault("async", Boolean.FALSE);
+        List<String> events = Arrays.asList(((ScriptObjectMirror) scriptMetadataBinding.get("events")).to(String[].class));
+
+        ScriptMetadata scriptMetadata = new ScriptMetadata(async, events);
 
         if(scriptRepository.hasPath(script.getPath()) > 0) {
             scriptRepository.deleteEventsForPath(script.getPath());
@@ -84,7 +88,7 @@ public class ScriptingService {
         for(Triple<String, String, String> activePath : activePaths) {
             String path = activePath.getLeft();
             res = scriptingExecutionService.executeScript(activePath.getLeft(), activePath.getMiddle(), activePath.getRight(),
-                () -> getScript(path)+"\n;return executeScript(event);", input);
+                () -> getScript(path)+"\n;executeScript(event);", input);
             input.put("output", res);
         }
         return res;

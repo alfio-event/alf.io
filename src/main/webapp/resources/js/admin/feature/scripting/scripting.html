@@ -9,6 +9,7 @@
             <tr>
                 <th>path</th>
                 <th>name</th>
+                <th>enabled</th>
                 <th width="10%"><span class="sr-only">actions</span></th>
             </tr>
         </thead>
@@ -19,9 +20,10 @@
             <tr ng-repeat="script in $ctrl.scripts">
                 <td>{{script.path}}</td>
                 <td>{{script.name}}</td>
+                <td>{{script.enabled}}</td>
                 <td class="text-center">
                     <button class="btn btn-small" ng-click="$ctrl.addNewOrUpdate(script)">edit</button>
-                    <button class="btn btn-small">delete</button>
+                    <button class="btn btn-small" ng-click="$ctrl.deleteScript(script)">delete</button>
                 </td>
             </tr>
         </tbody>
