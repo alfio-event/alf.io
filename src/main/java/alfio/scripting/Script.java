@@ -29,6 +29,5 @@ public class Script {
     private final String path;
     private final String name;
     private final String script;
-    private final Map<String, Object> configuration;
     private final boolean enabled;
 }

@@ -27,15 +27,14 @@ import java.util.List;
 @QueryRepository
 public interface ScriptRepository {
 
-    @Query("insert into script_support(path, name, hash, enabled, async, script, configuration) values " +
-        " (:path, :name, :hash, :enabled, :async, :script, :configuration)")
+    @Query("insert into script_support(path, name, hash, enabled, async, script) values " +
+        " (:path, :name, :hash, :enabled, :async, :script)")
     int insert(@Bind("path") String path,
                @Bind("name") String name,
                @Bind("hash") String hash,
                @Bind("enabled") boolean enabled,
                @Bind("async") boolean async,
-               @Bind("script") String script,
-               @Bind("configuration") String configuration);
+               @Bind("script") String script);
 
     @Query("update script_support set enabled = :enabled where path = :path")
     int toggle(@Bind("path") String path, @Bind("enabled") boolean enabled);

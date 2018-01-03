@@ -120,6 +120,7 @@ public class TicketReservationManager {
     private final InvoiceSequencesRepository invoiceSequencesRepository;
     private final AuditingRepository auditingRepository;
     private final UserRepository userRepository;
+    private final ExtensionManager extensionManager;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -158,7 +159,9 @@ public class TicketReservationManager {
                                     AdditionalServiceItemRepository additionalServiceItemRepository,
                                     AdditionalServiceTextRepository additionalServiceTextRepository,
                                     InvoiceSequencesRepository invoiceSequencesRepository,
-                                    AuditingRepository auditingRepository, UserRepository userRepository) {
+                                    AuditingRepository auditingRepository,
+                                    UserRepository userRepository,
+                                    ExtensionManager extensionManager) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -183,6 +186,7 @@ public class TicketReservationManager {
         this.invoiceSequencesRepository = invoiceSequencesRepository;
         this.auditingRepository = auditingRepository;
         this.userRepository = userRepository;
+        this.extensionManager = extensionManager;
     }
     
     /**
@@ -435,7 +439,9 @@ public class TicketReservationManager {
 
         sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language);
 
-        pluginManager.handleReservationConfirmation(ticketReservationRepository.findReservationById(reservationId), event.getId());
+        final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
+        pluginManager.handleReservationConfirmation(finalReservation, event.getId());
+        extensionManager.handleReservationConfirmation(finalReservation, event.getId());
     }
 
     void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
@@ -612,7 +618,9 @@ public class TicketReservationManager {
             TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
             AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
             acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, email, customerName, userLanguage.getLanguage(), billingAddress, eventId);
-            pluginManager.handleReservationConfirmation(ticketReservationRepository.findReservationById(reservationId), eventId);
+            final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+            pluginManager.handleReservationConfirmation(reservation, eventId);
+            extensionManager.handleReservationConfirmation(reservation, eventId);
             //cleanup unused special price codes...
             specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
         }
@@ -649,6 +657,7 @@ public class TicketReservationManager {
                         sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
                     }
                     pluginManager.handleTicketAssignment(ticket);
+                    extensionManager.handleTicketAssignment(ticket);
                 });
 
         }

@@ -28,7 +28,6 @@ public class ScriptSupport {
     private final boolean enabled;
     private final boolean async;
     private final String script;
-    private final String configuration;
 
 
     public ScriptSupport(@Column("path") String path,
@@ -36,14 +35,12 @@ public class ScriptSupport {
                          @Column("hash") String hash,
                          @Column("enabled") boolean enabled,
                          @Column("async") boolean async,
-                         @Column("script") String script,
-                         @Column("configuration") String configuration) {
+                         @Column("script") String script) {
         this.path = path;
         this.name = name;
         this.hash = hash;
         this.enabled = enabled;
         this.async = async;
         this.script = script;
-        this.configuration = configuration;
     }
 }

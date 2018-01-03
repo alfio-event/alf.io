@@ -105,6 +105,8 @@ public class TicketReservationManagerUnitTest {
     private AuditingRepository auditingRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private ExtensionManager extensionManager;
 
     @Before
     public void setUp() {
@@ -130,7 +132,9 @@ public class TicketReservationManagerUnitTest {
             additionalServiceItemRepository,
             additionalServiceTextRepository,
             invoiceSequencesRepository,
-            auditingRepository, userRepository);
+            auditingRepository,
+            userRepository,
+            extensionManager);
     }
 
     @Test

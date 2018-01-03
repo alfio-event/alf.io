@@ -148,6 +148,8 @@ public class TicketReservationManagerTest {
     private Organization organization;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private ExtensionManager extensionManager;
 
     @Before
     public void init() {
@@ -173,7 +175,9 @@ public class TicketReservationManagerTest {
             additionalServiceItemRepository,
             additionalServiceTextRepository,
             invoiceSequencesRepository,
-            auditingRepository, userRepository);
+            auditingRepository,
+            userRepository,
+            extensionManager);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);

@@ -21,8 +21,7 @@ create table script_support (
     hash varchar(256) not null,
     enabled boolean not null,
     async boolean not null,
-    script clob not null,
-    configuration clob
+    script clob not null
 );
 
 create table script_event (

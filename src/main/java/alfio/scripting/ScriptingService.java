@@ -46,7 +46,7 @@ public class ScriptingService {
         Bindings scriptMetadataBinding = ScriptingExecutionService.executeScript(
             script.getName(),
             script.getScript() + "\n;getScriptMetadata();",
-            script.getConfiguration());
+            Collections.emptyMap());
 
         //extracting the object {async: boolean, events: String[]}
         boolean async = (Boolean) scriptMetadataBinding.getOrDefault("async", Boolean.FALSE);
@@ -59,7 +59,7 @@ public class ScriptingService {
             scriptRepository.deleteScriptForPath(script.getPath());
         }
 
-        scriptRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), scriptMetadata.async, script.getScript(), Json.toJson(script.getConfiguration()));
+        scriptRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), scriptMetadata.async, script.getScript());
         for(String event : scriptMetadata.events) {
             scriptRepository.insert(script.getPath(), event);
         }
