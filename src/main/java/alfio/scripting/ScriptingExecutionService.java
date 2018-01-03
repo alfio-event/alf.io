@@ -25,7 +25,10 @@ import org.springframework.stereotype.Service;
 import javax.script.*;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 
@@ -52,6 +55,7 @@ public class ScriptingExecutionService {
         .expireAfterAccess(12, TimeUnit.HOURS)
         .build();
 
+    @SuppressWarnings("unchecked")
     public <T> T executeScript(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params) {
         CompiledScript compiledScript = compiledScriptCache.get(hash, (key) -> {
             try {
@@ -65,11 +69,13 @@ public class ScriptingExecutionService {
     }
 
     public void executeScriptAsync(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params) {
-        asyncExecutors.get(path, (key) -> Executors.newSingleThreadExecutor()).submit(() -> {
-           executeScript(path, name, hash, scriptFetcher, params);
-        });
+        Optional.ofNullable(asyncExecutors.get(path, (key) -> Executors.newSingleThreadExecutor()))
+            .ifPresent(it -> it.submit(() -> {
+               executeScript(path, name, hash, scriptFetcher, params);
+            }));
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T executeScript(String name, String script, Map<String, Object> params) {
         try {
             CompiledScript compiledScript = engine.compile(script);
