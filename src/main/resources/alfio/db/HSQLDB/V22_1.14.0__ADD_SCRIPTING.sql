@@ -16,8 +16,8 @@
 --
 
 create table script_support (
-    path varchar(256) not null,
-    name varchar(256) not null,
+    path varchar(128) not null,
+    name varchar(64) not null,
     hash varchar(256) not null,
     enabled boolean not null,
     async boolean not null,
@@ -26,9 +26,9 @@ create table script_support (
 alter table script_support add constraint "unique_script_support" unique(path, name);
 
 create table script_event (
-    path_fk varchar(256) not null,
-    name_fk varchar(256) not null,
-    event varchar(256) not null
+    path_fk varchar(128) not null,
+    name_fk varchar(64 ) not null,
+    event varchar(128) not null
 );
 
 alter table script_event add constraint "unique_script_event" unique(path_fk, name_fk);
