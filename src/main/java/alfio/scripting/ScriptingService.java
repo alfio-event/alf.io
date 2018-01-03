@@ -81,20 +81,39 @@ public class ScriptingService {
     }
 
     public <T> T executeScriptsForEvent(String event, String basePath, Map<String, Object> payload) {
-        List<Triple<String, String, String>> activePaths = getActiveScriptsForEvent(event, basePath);
+        List<Triple<String, String, String>> activePaths = getActiveScriptsForEvent(event, basePath, false);
         T res = null;
         Map<String, Object> input = new HashMap<>(payload);
         input.put("event", event);
         for(Triple<String, String, String> activePath : activePaths) {
             String path = activePath.getLeft();
-            res = scriptingExecutionService.executeScript(activePath.getLeft(), activePath.getMiddle(), activePath.getRight(),
+            res = scriptingExecutionService.executeScript(path, activePath.getMiddle(), activePath.getRight(),
                 () -> getScript(path)+"\n;executeScript(event);", input);
             input.put("output", res);
         }
         return res;
     }
 
-    private List<Triple<String, String, String>> getActiveScriptsForEvent(String event, String basePath) {
+    public void executeScriptAsync(String event, String basePath, Map<String, Object> payload) {
+        List<Triple<String, String, String>> activePaths = getActiveScriptsForEvent(event, basePath, true);
+        Map<String, Object> input = new HashMap<>(payload);
+        input.put("event", event);
+        for(Triple<String, String, String> activePath : activePaths) {
+            String path = activePath.getLeft();
+            scriptingExecutionService.executeScriptAsync(path, activePath.getMiddle(), activePath.getRight(), () -> getScript(path)+"\n;executeScript(event);", input);
+        }
+    }
+
+    private List<Triple<String, String, String>> getActiveScriptsForEvent(String event, String basePath, boolean async) {
+        // fetch all active scripts
+        // to handle override:
+        // if there are active two scripts with the same name
+        // with path:
+        //  - org/event
+        //  - org
+        // the one with the longest path win
+
+
         return Collections.emptyList();
     }
 

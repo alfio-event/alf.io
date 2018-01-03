@@ -26,6 +26,10 @@ import alfio.scripting.ScriptingService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 @Component
 @AllArgsConstructor
 public class ExtensionManager {
@@ -44,17 +48,44 @@ public class ExtensionManager {
 
     public void handleReservationConfirmation(TicketReservation reservation, int eventId) {
         int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
+
+        asyncCall(ExtensionEvent.RESERVATION_CONFIRMATION,
+            eventId,
+            organizationId,
+            Collections.singletonMap("reservation", reservation));
     }
 
     public void handleTicketAssignment(Ticket ticket) {
         int eventId = ticket.getEventId();
         int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
 
+        asyncCall(ExtensionEvent.TICKET_ASSIGNMENT,
+            eventId,
+            organizationId,
+            Collections.singletonMap("ticket", ticket));
     }
 
     public void handleWaitingQueueSubscription(WaitingQueueSubscription waitingQueueSubscription) {
         int organizationId = eventRepository.findOrganizationIdByEventId(waitingQueueSubscription.getEventId());
+
+        asyncCall(ExtensionEvent.WAITING_QUEUE_SUBSCRIPTION,
+            waitingQueueSubscription.getEventId(),
+            organizationId,
+            Collections.singletonMap("waitingQueueSubscription", waitingQueueSubscription));
     }
 
+    private void asyncCall(ExtensionEvent event, int eventId, int organizationId, Map<String, Object> payload) {
+        Map<String, Object> payloadCopy = new HashMap<>(payload);
+        payloadCopy.put("eventId", eventId);
+        payloadCopy.put("organizationId", organizationId);
+
+        scriptingService.executeScriptAsync(event.name(),
+            toPath(organizationId, eventId), payload);
+    }
+
+
+    public static String toPath(int organizationId, int eventId) {
+        return organizationId + "/" + eventId;
+    }
 
 }
