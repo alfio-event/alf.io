@@ -59,14 +59,13 @@ public interface ScriptRepository {
     @Query("select * from script_support order by name, path")
     List<ScriptSupport> listAll();
 
-
-    @Query("select path, name, hash from " +
+    @Query("select a3.path, a3.name, a3.hash from " +
         " (select a1.* from " +
         " (select path, name, hash from script_support where enabled = true and async = :async and (path in (:possiblePaths))) a1 " +
         " left outer join (select path, name from script_support where enabled = true and async = :async and (path in (:possiblePaths))) a2 on " +
-        " (a1.name = a2.name) and length(a1.path) < length(a2.path) where a2.path is null) " +
+        " (a1.name = a2.name) and length(a1.path) < length(a2.path) where a2.path is null) a3 " +
         " " +
-        " inner join script_event on path_fk = path and name_fk = name where event = :event")
+        " inner join script_event on path_fk = a3.path and name_fk = a3.name where event = :event")
     List<ScriptSupport.ScriptPathNameHash> findActive(@Bind("possiblePaths") Set<String> possiblePaths,
                                                       @Bind("async") boolean async,
                                                       @Bind("event") String event);
