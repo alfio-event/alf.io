@@ -23,8 +23,14 @@ create table script_support (
     async boolean not null,
     script clob not null
 );
+alter table script_support add constraint "unique_script_support" unique(path, name);
 
 create table script_event (
     path_fk varchar(256) not null,
+    name_fk varchar(256) not null,
     event varchar(256) not null
 );
+
+alter table script_event add constraint "unique_script_event" unique(path_fk, name_fk);
+
+--TODO: add fk

@@ -43,4 +43,20 @@ public class ScriptSupport {
         this.async = async;
         this.script = script;
     }
+
+
+    @Getter
+    public static class ScriptPathNameHash {
+        private final String path;
+        private final String name;
+        private final String hash;
+
+        public ScriptPathNameHash(@Column("path") String path,
+                                  @Column("name") String name,
+                                  @Column("hash") String hash) {
+            this.path = path;
+            this.name = name;
+            this.hash = hash;
+        }
+    }
 }

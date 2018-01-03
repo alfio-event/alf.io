@@ -46,11 +46,11 @@ public class ScriptController {
 
     /*
     function getScriptMetadata() {
-        return {async:true, events: ['TEST']};
+        return {async:true, events: ['RESERVATION_CONFIRMATION']};
     }
 
-    function executeScript() {
-
+    function executeScript(event) {
+        log.warn('hello from script with event: ' + event);
     }
      */
     @RequestMapping(value = "/scripting", method = RequestMethod.POST)
@@ -60,16 +60,16 @@ public class ScriptController {
     }
 
 
-    @RequestMapping(value = "/scripting/{path}", method = RequestMethod.DELETE)
-    public void delete(@PathVariable("path") String path, Principal principal) {
+    @RequestMapping(value = "/scripting/{path}/{name}", method = RequestMethod.DELETE)
+    public void delete(@PathVariable("path") String path, @PathVariable("name") String name, Principal principal) {
         ensureAdmin(principal);
-        scriptingService.delete(path);
+        scriptingService.delete(path, name);
     }
 
-    @RequestMapping(value = "/scripting/{path}/toggle/{enable}", method = RequestMethod.POST)
-    public void toggle(@PathVariable("path") String path, @PathVariable("enable") boolean enable, Principal principal) {
+    @RequestMapping(value = "/scripting/{path}/{name}/toggle/{enable}", method = RequestMethod.POST)
+    public void toggle(@PathVariable("path") String path, @PathVariable("name") String name, @PathVariable("enable") boolean enable, Principal principal) {
         ensureAdmin(principal);
-        scriptingService.toggle(path, enable);
+        scriptingService.toggle(path, name, enable);
     }
 
     private void ensureAdmin(Principal principal) {

@@ -18,13 +18,13 @@
 package alfio.scripting;
 
 import alfio.model.ScriptSupport;
+import alfio.model.ScriptSupport.ScriptPathNameHash;
 import alfio.repository.ScriptRepository;
-import alfio.util.Json;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,67 +54,75 @@ public class ScriptingService {
 
         ScriptMetadata scriptMetadata = new ScriptMetadata(async, events);
 
-        if(scriptRepository.hasPath(script.getPath()) > 0) {
-            scriptRepository.deleteEventsForPath(script.getPath());
-            scriptRepository.deleteScriptForPath(script.getPath());
+        if(scriptRepository.hasPath(script.getPath(), script.getName()) > 0) {
+            scriptRepository.deleteEventsForPath(script.getPath(), script.getName());
+            scriptRepository.deleteScriptForPath(script.getPath(), script.getName());
         }
 
         scriptRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), scriptMetadata.async, script.getScript());
         for(String event : scriptMetadata.events) {
-            scriptRepository.insert(script.getPath(), event);
+            scriptRepository.insertEvent(script.getPath(), script.getName(), event);
         }
     }
 
     @Transactional
-    public void toggle(String path, boolean status) {
-        scriptRepository.toggle(path, status);
+    public void toggle(String path, String name, boolean status) {
+        scriptRepository.toggle(path, name, status);
     }
 
     @Transactional
-    public void delete(String path) {
-        scriptRepository.deleteEventsForPath(path);
-        scriptRepository.deleteScriptForPath(path);
+    public void delete(String path, String name) {
+        scriptRepository.deleteEventsForPath(path, name);
+        scriptRepository.deleteScriptForPath(path, name);
     }
 
-    public String getScript(String path) {
-        return scriptRepository.getScript(path);
+    public String getScript(String path, String name) {
+        return scriptRepository.getScript(path, name);
     }
 
     public <T> T executeScriptsForEvent(String event, String basePath, Map<String, Object> payload) {
-        List<Triple<String, String, String>> activePaths = getActiveScriptsForEvent(event, basePath, false);
+        List<ScriptPathNameHash> activePaths = getActiveScriptsForEvent(event, basePath, false);
         T res = null;
         Map<String, Object> input = new HashMap<>(payload);
         input.put("event", event);
-        for(Triple<String, String, String> activePath : activePaths) {
-            String path = activePath.getLeft();
-            res = scriptingExecutionService.executeScript(path, activePath.getMiddle(), activePath.getRight(),
-                () -> getScript(path)+"\n;executeScript(event);", input);
+        for(ScriptPathNameHash activePath : activePaths) {
+            String path = activePath.getPath();
+            String name = activePath.getName();
+            res = scriptingExecutionService.executeScript(path, name, activePath.getHash(),
+                () -> getScript(path, name)+"\n;executeScript(event);", input);
             input.put("output", res);
         }
         return res;
     }
 
     public void executeScriptAsync(String event, String basePath, Map<String, Object> payload) {
-        List<Triple<String, String, String>> activePaths = getActiveScriptsForEvent(event, basePath, true);
+        List<ScriptPathNameHash> activePaths = getActiveScriptsForEvent(event, basePath, true);
         Map<String, Object> input = new HashMap<>(payload);
         input.put("event", event);
-        for(Triple<String, String, String> activePath : activePaths) {
-            String path = activePath.getLeft();
-            scriptingExecutionService.executeScriptAsync(path, activePath.getMiddle(), activePath.getRight(), () -> getScript(path)+"\n;executeScript(event);", input);
+        for(ScriptPathNameHash activePath : activePaths) {
+            String path = activePath.getPath();
+            String name = activePath.getName();
+            scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(event);", input);
         }
     }
 
-    private List<Triple<String, String, String>> getActiveScriptsForEvent(String event, String basePath, boolean async) {
+    private List<ScriptPathNameHash> getActiveScriptsForEvent(String event, String basePath, boolean async) {
         // fetch all active scripts
         // to handle override:
         // if there are active two scripts with the same name
         // with path:
-        //  - org/event
+        //  - org.event
         //  - org
         // the one with the longest path win
 
+        //generate all the paths
+        Set<String> paths = new TreeSet<>();
+        String[] splitted = basePath.split("\\.");
+        for (int i = 0; i < splitted.length; i++) {
+            paths.add(StringUtils.join(Arrays.copyOfRange(splitted, 0, i + 1), '.'));
+        }
 
-        return Collections.emptyList();
+        return scriptRepository.findActive(paths, async, event);
     }
 
     public List<ScriptSupport> listAll() {

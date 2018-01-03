@@ -23,6 +23,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.List;
+import java.util.Set;
 
 @QueryRepository
 public interface ScriptRepository {
@@ -36,25 +37,37 @@ public interface ScriptRepository {
                @Bind("async") boolean async,
                @Bind("script") String script);
 
-    @Query("update script_support set enabled = :enabled where path = :path")
-    int toggle(@Bind("path") String path, @Bind("enabled") boolean enabled);
+    @Query("update script_support set enabled = :enabled where path = :path and name = :name")
+    int toggle(@Bind("path") String path, @Bind("name") String name, @Bind("enabled") boolean enabled);
 
-    @Query("insert into script_event(path_fk, event) values " +
-        " (:path, :event)")
-    int insert(@Bind("path") String path, @Bind("event") String event);
+    @Query("insert into script_event(path_fk, name_fk, event) values " +
+        " (:path, :name, :event)")
+    int insertEvent(@Bind("path") String path, @Bind("name") String name, @Bind("event") String event);
 
-    @Query("select count(*) from script_support where path = :path")
-    int hasPath(@Bind("path") String path);
+    @Query("select count(*) from script_support where path = :path and name = :name")
+    int hasPath(@Bind("path") String path, @Bind("name") String name);
 
-    @Query("select script from script_support where path = :path")
-    String getScript(@Bind("path") String path);
+    @Query("select script from script_support where path = :path and name = :name")
+    String getScript(@Bind("path") String path, @Bind("name") String name);
 
-    @Query("delete from script_event where path_fk = :path")
-    int deleteEventsForPath(@Bind("path") String path);
+    @Query("delete from script_event where path_fk = :path and name_fk = :name")
+    int deleteEventsForPath(@Bind("path") String path, @Bind("name") String name);
 
-    @Query("delete from script_support where path = :path")
-    int deleteScriptForPath(@Bind("path") String path);
+    @Query("delete from script_support where path = :path and name = :name")
+    int deleteScriptForPath(@Bind("path") String path, @Bind("name") String name);
 
-    @Query("select * from script_support order by path")
+    @Query("select * from script_support order by name, path")
     List<ScriptSupport> listAll();
+
+
+    @Query("select path, name, hash from " +
+        " (select a1.* from " +
+        " (select path, name, hash from script_support where enabled = true and async = :async and (path in (:possiblePaths))) a1 " +
+        " left outer join (select path, name from script_support where enabled = true and async = :async and (path in (:possiblePaths))) a2 on " +
+        " (a1.name = a2.name) and length(a1.path) < length(a2.path) where a2.path is null) " +
+        " " +
+        " inner join script_event on path_fk = path and name_fk = name where event = :event")
+    List<ScriptSupport.ScriptPathNameHash> findActive(@Bind("possiblePaths") Set<String> possiblePaths,
+                                                      @Bind("async") boolean async,
+                                                      @Bind("event") String event);
 }

@@ -25,7 +25,7 @@
 
         function deleteScript(script) {
             if(window.confirm('Delete script ' + script.name+'?')) {
-                $http.delete('/admin/api/scripting/' + script.path).then(function () {
+                $http.delete('/admin/api/scripting/' + script.path + '/' + script.name).then(function () {
                     load();
                 });
             }

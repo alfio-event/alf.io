@@ -17,10 +17,12 @@
 
 package alfio.scripting;
 
+import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import javax.script.*;
 import java.util.Collections;
@@ -93,6 +95,9 @@ public class ScriptingExecutionService {
             }
             ScriptContext newContext = new SimpleScriptContext();
             Bindings engineScope = newContext.getBindings(ScriptContext.ENGINE_SCOPE);
+            engineScope.put("log", log);
+            engineScope.put("GSON", Json.GSON);
+            engineScope.put("restTemplate", new RestTemplate());
             engineScope.putAll(params);
             return script.eval(newContext);
         } catch (ScriptException ex) {
