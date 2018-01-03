@@ -19,7 +19,6 @@ package alfio.controller.api.admin;
 
 import alfio.manager.user.UserManager;
 import alfio.model.ScriptSupport;
-import alfio.model.user.Role;
 import alfio.scripting.Script;
 import alfio.scripting.ScriptingService;
 import lombok.AllArgsConstructor;
