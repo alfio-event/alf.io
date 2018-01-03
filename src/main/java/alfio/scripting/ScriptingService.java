@@ -20,7 +20,6 @@ package alfio.scripting;
 import alfio.model.ScriptSupport;
 import alfio.model.ScriptSupport.ScriptPathNameHash;
 import alfio.repository.ScriptRepository;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -28,7 +27,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.script.Bindings;
 import java.util.*;
 
 @Service
@@ -43,24 +41,19 @@ public class ScriptingService {
     @Transactional
     public void createOrUpdate(Script script) {
         String hash = DigestUtils.sha256Hex(script.getScript());
-        Bindings scriptMetadataBinding = ScriptingExecutionService.executeScript(
+        ScriptMetadata scriptMetadata = ScriptingExecutionService.executeScript(
             script.getName(),
-            script.getScript() + "\n;getScriptMetadata();",
-            Collections.emptyMap());
+            script.getScript() + "\n;GSON.fromJson(JSON.stringify(getScriptMetadata()), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
+            Collections.emptyMap(),
+            ScriptMetadata.class);
 
-        //extracting the object {async: boolean, events: String[]}
-        boolean async = (Boolean) scriptMetadataBinding.getOrDefault("async", Boolean.FALSE);
-        List<String> events = Arrays.asList(((ScriptObjectMirror) scriptMetadataBinding.get("events")).to(String[].class));
-
-        ScriptMetadata scriptMetadata = new ScriptMetadata(async, events);
-
-        if(scriptRepository.hasPath(script.getPath(), script.getName()) > 0) {
+        if (scriptRepository.hasPath(script.getPath(), script.getName()) > 0) {
             scriptRepository.deleteEventsForPath(script.getPath(), script.getName());
             scriptRepository.deleteScriptForPath(script.getPath(), script.getName());
         }
 
         scriptRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), scriptMetadata.async, script.getScript());
-        for(String event : scriptMetadata.events) {
+        for (String event : scriptMetadata.events) {
             scriptRepository.insertEvent(script.getPath(), script.getName(), event);
         }
     }
@@ -80,16 +73,16 @@ public class ScriptingService {
         return scriptRepository.getScript(path, name);
     }
 
-    public <T> T executeScriptsForEvent(String event, String basePath, Map<String, Object> payload) {
+    public <T> T executeScriptsForEvent(String event, String basePath, Map<String, Object> payload, Class<T> clazz) {
         List<ScriptPathNameHash> activePaths = getActiveScriptsForEvent(event, basePath, false);
         T res = null;
         Map<String, Object> input = new HashMap<>(payload);
         input.put("event", event);
-        for(ScriptPathNameHash activePath : activePaths) {
+        for (ScriptPathNameHash activePath : activePaths) {
             String path = activePath.getPath();
             String name = activePath.getName();
             res = scriptingExecutionService.executeScript(path, name, activePath.getHash(),
-                () -> getScript(path, name)+"\n;executeScript(event);", input);
+                () -> getScript(path, name)+"\n;executeScript(event);", input, clazz);
             input.put("output", res);
         }
         return res;
@@ -99,7 +92,7 @@ public class ScriptingService {
         List<ScriptPathNameHash> activePaths = getActiveScriptsForEvent(event, basePath, true);
         Map<String, Object> input = new HashMap<>(payload);
         input.put("event", event);
-        for(ScriptPathNameHash activePath : activePaths) {
+        for (ScriptPathNameHash activePath : activePaths) {
             String path = activePath.getPath();
             String name = activePath.getName();
             scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(event);", input);

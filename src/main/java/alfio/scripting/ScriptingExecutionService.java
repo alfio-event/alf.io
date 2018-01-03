@@ -57,8 +57,7 @@ public class ScriptingExecutionService {
         .expireAfterAccess(12, TimeUnit.HOURS)
         .build();
 
-    @SuppressWarnings("unchecked")
-    public <T> T executeScript(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params) {
+    public <T> T executeScript(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params, Class<T> clazz) {
         CompiledScript compiledScript = compiledScriptCache.get(hash, (key) -> {
             try {
                 return engine.compile(scriptFetcher.get());
@@ -67,28 +66,29 @@ public class ScriptingExecutionService {
                 throw new IllegalStateException(se);
             }
         });
-        return (T) executeScript(name, compiledScript, params);
+        return executeScript(name, compiledScript, params, clazz);
     }
 
     public void executeScriptAsync(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params) {
         Optional.ofNullable(asyncExecutors.get(path, (key) -> Executors.newSingleThreadExecutor()))
             .ifPresent(it -> it.submit(() -> {
-               executeScript(path, name, hash, scriptFetcher, params);
+               executeScript(path, name, hash, scriptFetcher, params, Object.class);
             }));
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> T executeScript(String name, String script, Map<String, Object> params) {
+
+    public static <T> T executeScript(String name, String script, Map<String, Object> params, Class<T> clazz) {
         try {
             CompiledScript compiledScript = engine.compile(script);
-            return (T) executeScript(name, compiledScript, params);
+            return executeScript(name, compiledScript, params, clazz);
         } catch (ScriptException se) {
             log.warn("Was not able to compile script", se);
             throw new IllegalStateException(se);
         }
     }
 
-    private static Object executeScript(String name, CompiledScript script, Map<String, Object> params) {
+    @SuppressWarnings("unchecked")
+    private static <T> T executeScript(String name, CompiledScript script, Map<String, Object> params, Class<T> clazz) {
         try {
             if(params == null) {
                 params = Collections.emptyMap();
@@ -98,8 +98,9 @@ public class ScriptingExecutionService {
             engineScope.put("log", log);
             engineScope.put("GSON", Json.GSON);
             engineScope.put("restTemplate", new RestTemplate());
+            engineScope.put("returnClass", clazz);
             engineScope.putAll(params);
-            return script.eval(newContext);
+            return (T) script.eval(newContext);
         } catch (ScriptException ex) {
             log.warn("Error while executing script " + name, ex);
             throw new IllegalStateException(ex);
