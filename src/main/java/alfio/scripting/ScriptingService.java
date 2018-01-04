@@ -73,6 +73,10 @@ public class ScriptingService {
         return scriptRepository.getScript(path, name);
     }
 
+    public Optional<ScriptSupport> getSingle(String path, String name) {
+        return scriptRepository.getSingle(path, name);
+    }
+
     public <T> T executeScriptsForEvent(String event, String basePath, Map<String, Object> payload, Class<T> clazz) {
         List<ScriptPathNameHash> activePaths = getActiveScriptsForEvent(event, basePath, false);
         T res = null;

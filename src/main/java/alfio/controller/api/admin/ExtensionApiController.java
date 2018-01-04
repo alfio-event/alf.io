@@ -23,77 +23,68 @@ import alfio.scripting.Script;
 import alfio.scripting.ScriptingService;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Validate;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.file.Files;
 import java.security.Principal;
 import java.util.List;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/admin/api")
-public class ScriptController {
+@RequestMapping("/admin/api/extensions")
+public class ExtensionApiController {
+
+    private static final String SAMPLE_JS;
+
+    static {
+        try {
+            SAMPLE_JS = new String(Files.readAllBytes(new File(ExtensionApiController.class.getResource("/alfio/extension/sample.js").toURI()).toPath()));
+        } catch (URISyntaxException | IOException e) {
+            throw new IllegalStateException("cannot read sample file", e);
+        }
+    }
 
     private final ScriptingService scriptingService;
     private final UserManager userManager;
 
 
-    @RequestMapping(value = "/scripting", method = RequestMethod.GET)
+    @RequestMapping(value = "", method = RequestMethod.GET)
     public List<ScriptSupport> listAll(Principal principal) {
         ensureAdmin(principal);
         return scriptingService.listAll();
     }
 
-    /*
-    function getScriptMetadata() {
-        return {async:true, events: ['RESERVATION_CONFIRMATION']};
+    @RequestMapping(value = "/sample", method = RequestMethod.GET)
+    public ScriptSupport getSample() {
+        return new ScriptSupport("/", "", null, true, true, SAMPLE_JS);
     }
 
-    function executeScript(scriptEvent) {
-        log.warn('hello from script with event: ' + scriptEvent);
-    }
-
-    --
-
-    function getScriptMetadata() {
-        return {async:false, events: ['INVOICE_GENERATION']};
-    }
-
-    function executeScript(scriptEvent) {
-        return {invoiceNumber: '42'};
-    }
-
-    --
-
-    function getScriptMetadata() {
-        return {async:false, events: ['INVOICE_GENERATION']};
-    }
-
-    function executeScript(scriptEvent) {
-        var symbol = restTemplate.getForObject('https://api.coinmarketcap.com/v1/ticker/bitcoin/', Java.type('java.util.ArrayList').class)[0].symbol;
-        return {invoiceNumber: symbol};
-    }
-
-
-
-
-    --
-
-
-     */
-    @RequestMapping(value = "/scripting", method = RequestMethod.POST)
+    @RequestMapping(value = "", method = RequestMethod.POST)
     public void createOrUpdate(@RequestBody Script script, Principal principal) {
         ensureAdmin(principal);
         scriptingService.createOrUpdate(script);
     }
 
+    @RequestMapping(value = "/{name}", method = RequestMethod.GET)
+    public ResponseEntity<ScriptSupport> loadSingle(@RequestParam("path") String path, @PathVariable("name") String name, Principal principal) throws UnsupportedEncodingException {
+        ensureAdmin(principal);
+        return scriptingService.getSingle(URLDecoder.decode(path, "UTF-8"), name).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
 
-    @RequestMapping(value = "/scripting/{path}/{name}", method = RequestMethod.DELETE)
-    public void delete(@PathVariable("path") String path, @PathVariable("name") String name, Principal principal) {
+
+    @RequestMapping(value = "/{name}", method = RequestMethod.DELETE)
+    public void delete(@RequestParam("path") String path, @PathVariable("name") String name, Principal principal) {
         ensureAdmin(principal);
         scriptingService.delete(path, name);
     }
 
-    @RequestMapping(value = "/scripting/{path}/{name}/toggle/{enable}", method = RequestMethod.POST)
+    @RequestMapping(value = "/{path}/{name}/toggle/{enable}", method = RequestMethod.POST)
     public void toggle(@PathVariable("path") String path, @PathVariable("name") String name, @PathVariable("enable") boolean enable, Principal principal) {
         ensureAdmin(principal);
         scriptingService.toggle(path, name, enable);

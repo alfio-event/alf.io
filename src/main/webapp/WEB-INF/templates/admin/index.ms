@@ -83,8 +83,8 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>
 
-    <script src="{{request.contextPath}}/resources/js/admin/feature/scripting/scripting.js"></script>
-    <script src="{{request.contextPath}}/resources/js/admin/feature/scripting/add-update/scripting-add-update.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/extension/extension.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/extension/add-update/extension-add-update.js"></script>
 
     <link rel="stylesheet" href="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />
 
@@ -117,7 +117,7 @@
                                 <li data-ui-sref-active="active"><a data-ui-sref="organizations" ng-click="ctrl.menuCollapsed = true">Organizations</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="users" ng-click="ctrl.menuCollapsed = true">Users</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="configuration.system" ng-click="ctrl.menuCollapsed = true">Configuration</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="scripting" ng-click="ctrl.menuCollapsed = true">Scripting</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="extension.list" ng-click="ctrl.menuCollapsed = true">Extension</a></li>
                                 {{/isOwner}}
                             </ul>
                             <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">

@@ -23,6 +23,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @QueryRepository
@@ -49,6 +50,9 @@ public interface ScriptRepository {
 
     @Query("select script from script_support where path = :path and name = :name")
     String getScript(@Bind("path") String path, @Bind("name") String name);
+
+    @Query("select * from script_support where path = :path and name = :name")
+    Optional<ScriptSupport> getSingle(@Bind("path") String path, @Bind("name") String name);
 
     @Query("delete from script_event where path_fk = :path and name_fk = :name")
     int deleteEventsForPath(@Bind("path") String path, @Bind("name") String name);
