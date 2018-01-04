@@ -198,6 +198,9 @@ public class TicketReservationManagerTest {
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
         when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
         when(userRepository.findIdByUserName(anyString())).thenReturn(Optional.empty());
+        when(extensionManager.handleInvoiceGeneration(any(), anyString(),
+            anyString(), any(), any(), anyString(), any(), anyBoolean(), anyString(),
+            anyString(), any())).thenReturn(Optional.empty());
     }
 
     private void initUpdateTicketOwner(Ticket original, Ticket modified, String ticketId, String originalEmail, String originalName, UpdateTicketOwnerForm form) {
