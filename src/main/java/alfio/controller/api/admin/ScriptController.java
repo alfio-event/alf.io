@@ -62,6 +62,22 @@ public class ScriptController {
         return {invoiceNumber: '42'};
     }
 
+    --
+
+    function getScriptMetadata() {
+        return {async:false, events: ['INVOICE_GENERATION']};
+    }
+
+    function executeScript(scriptEvent) {
+        var symbol = restTemplate.getForObject('https://api.coinmarketcap.com/v1/ticker/bitcoin/', Java.type('java.util.ArrayList').class)[0].symbol;
+        return {invoiceNumber: symbol};
+    }
+
+
+
+
+    --
+
 
      */
     @RequestMapping(value = "/scripting", method = RequestMethod.POST)
