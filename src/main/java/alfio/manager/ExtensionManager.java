@@ -25,10 +25,7 @@ import alfio.scripting.ScriptingService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 @Component
 @AllArgsConstructor
@@ -74,7 +71,7 @@ public class ExtensionManager {
             Collections.singletonMap("waitingQueueSubscription", waitingQueueSubscription));
     }
 
-    public InvoiceGeneration handleInvoiceGeneration(Event event, String reservationId, String email, CustomerName customerName, Locale userLanguage,
+    public Optional<InvoiceGeneration> handleInvoiceGeneration(Event event, String reservationId, String email, CustomerName customerName, Locale userLanguage,
                                                      String billingAddress, TotalPrice reservationCost, boolean invoiceRequested,
                                                      String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
         Map<String, Object> payload = new HashMap<>();
@@ -90,7 +87,7 @@ public class ExtensionManager {
         payload.put("vatNr", vatNr);
         payload.put("vatStatus", vatStatus);
 
-        return syncCall(ExtensionEvent.INVOICE_GENERATION, event.getId(), event.getOrganizationId(), payload, InvoiceGeneration.class);
+        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, event.getId(), event.getOrganizationId(), payload, InvoiceGeneration.class));
     }
 
     private void asyncCall(ExtensionEvent event, int eventId, int organizationId, Map<String, Object> payload) {

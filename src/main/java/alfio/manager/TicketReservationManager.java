@@ -360,12 +360,14 @@ public class TicketReservationManager {
                 ticketReservationRepository.updateBillingData(vatStatus, vatNr, vatCountryCode, invoiceRequested, reservationId);
 
                 //
-                InvoiceGeneration invoiceGeneration = extensionManager.handleInvoiceGeneration(event, reservationId,
+                extensionManager.handleInvoiceGeneration(event, reservationId,
                     email, customerName, userLanguage, billingAddress,
-                    reservationCost, invoiceRequested, vatCountryCode, vatNr, vatStatus);
-                if (invoiceGeneration.getInvoiceNumber() != null) {
-                    ticketReservationRepository.setInvoiceNumber(reservationId, invoiceGeneration.getInvoiceNumber());
-                }
+                    reservationCost, invoiceRequested, vatCountryCode, vatNr, vatStatus).ifPresent(invoiceGeneration -> {
+                    if (invoiceGeneration.getInvoiceNumber() != null) {
+                        ticketReservationRepository.setInvoiceNumber(reservationId, invoiceGeneration.getInvoiceNumber());
+                    }
+                });
+
                 //
                 switch(paymentProxy) {
                     case STRIPE:
