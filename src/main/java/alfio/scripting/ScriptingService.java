@@ -77,12 +77,12 @@ public class ScriptingService {
         List<ScriptPathNameHash> activePaths = getActiveScriptsForEvent(event, basePath, false);
         T res = null;
         Map<String, Object> input = new HashMap<>(payload);
-        input.put("event", event);
+        input.put("extensionEvent", event);
         for (ScriptPathNameHash activePath : activePaths) {
             String path = activePath.getPath();
             String name = activePath.getName();
             res = scriptingExecutionService.executeScript(path, name, activePath.getHash(),
-                () -> getScript(path, name)+"\n;executeScript(event);", input, clazz);
+                () -> getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz);
             input.put("output", res);
         }
         return res;
@@ -91,11 +91,11 @@ public class ScriptingService {
     public void executeScriptAsync(String event, String basePath, Map<String, Object> payload) {
         List<ScriptPathNameHash> activePaths = getActiveScriptsForEvent(event, basePath, true);
         Map<String, Object> input = new HashMap<>(payload);
-        input.put("event", event);
+        input.put("extensionEvent", event);
         for (ScriptPathNameHash activePath : activePaths) {
             String path = activePath.getPath();
             String name = activePath.getName();
-            scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(event);", input);
+            scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(extensionEvent);", input);
         }
     }
 

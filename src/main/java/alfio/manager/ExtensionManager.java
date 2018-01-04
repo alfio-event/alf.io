@@ -17,9 +17,8 @@
 
 package alfio.manager;
 
-import alfio.model.Ticket;
-import alfio.model.TicketReservation;
-import alfio.model.WaitingQueueSubscription;
+import alfio.model.*;
+import alfio.model.extension.InvoiceGeneration;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.scripting.ScriptingService;
@@ -28,6 +27,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 @Component
@@ -74,6 +74,25 @@ public class ExtensionManager {
             Collections.singletonMap("waitingQueueSubscription", waitingQueueSubscription));
     }
 
+    public InvoiceGeneration handleInvoiceGeneration(Event event, String reservationId, String email, CustomerName customerName, Locale userLanguage,
+                                                     String billingAddress, TotalPrice reservationCost, boolean invoiceRequested,
+                                                     String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("event", event);
+        payload.put("reservationId", reservationId);
+        payload.put("email", email);
+        payload.put("customerName", customerName);
+        payload.put("userLanguage", userLanguage);
+        payload.put("billingAddress", billingAddress);
+        payload.put("reservationCost", reservationCost);
+        payload.put("invoiceRequested", invoiceRequested);
+        payload.put("vatCountryCode", vatCountryCode);
+        payload.put("vatNr", vatNr);
+        payload.put("vatStatus", vatStatus);
+
+        return syncCall(ExtensionEvent.INVOICE_GENERATION, event.getId(), event.getOrganizationId(), payload, InvoiceGeneration.class);
+    }
+
     private void asyncCall(ExtensionEvent event, int eventId, int organizationId, Map<String, Object> payload) {
         Map<String, Object> payloadCopy = new HashMap<>(payload);
         payloadCopy.put("eventId", eventId);
@@ -81,6 +100,13 @@ public class ExtensionManager {
 
         scriptingService.executeScriptAsync(event.name(),
             toPath(organizationId, eventId), payload);
+    }
+
+    private <T> T syncCall(ExtensionEvent event, int eventId, int organizationId, Map<String, Object> payload, Class<T> clazz) {
+        Map<String, Object> payloadCopy = new HashMap<>(payload);
+        payloadCopy.put("eventId", eventId);
+        payloadCopy.put("organizationId", organizationId);
+        return scriptingService.executeScriptsForEvent(event.name(), toPath(eventId, organizationId), payload, clazz);
     }
 
 

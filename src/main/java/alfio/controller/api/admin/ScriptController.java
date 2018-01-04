@@ -48,9 +48,21 @@ public class ScriptController {
         return {async:true, events: ['RESERVATION_CONFIRMATION']};
     }
 
-    function executeScript(event) {
-        log.warn('hello from script with event: ' + event);
+    function executeScript(scriptEvent) {
+        log.warn('hello from script with event: ' + scriptEvent);
     }
+
+    --
+
+    function getScriptMetadata() {
+        return {async:false, events: ['INVOICE_GENERATION']};
+    }
+
+    function executeScript(scriptEvent) {
+        return {invoiceNumber: '42'};
+    }
+
+
      */
     @RequestMapping(value = "/scripting", method = RequestMethod.POST)
     public void createOrUpdate(@RequestBody Script script, Principal principal) {

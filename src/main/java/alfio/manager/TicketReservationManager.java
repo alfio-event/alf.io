@@ -33,6 +33,7 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.AdditionalServiceItemPriceContainer;
 import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
+import alfio.model.extension.InvoiceGeneration;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
@@ -357,6 +358,15 @@ public class TicketReservationManager {
                     ticketReservationRepository.setInvoiceNumber(reservationId, String.format(pattern, invoiceSequence));
                 }
                 ticketReservationRepository.updateBillingData(vatStatus, vatNr, vatCountryCode, invoiceRequested, reservationId);
+
+                //
+                InvoiceGeneration invoiceGeneration = extensionManager.handleInvoiceGeneration(event, reservationId,
+                    email, customerName, userLanguage, billingAddress,
+                    reservationCost, invoiceRequested, vatCountryCode, vatNr, vatStatus);
+                if (invoiceGeneration.getInvoiceNumber() != null) {
+                    ticketReservationRepository.setInvoiceNumber(reservationId, invoiceGeneration.getInvoiceNumber());
+                }
+                //
                 switch(paymentProxy) {
                     case STRIPE:
                         paymentResult = paymentManager.processStripePayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
