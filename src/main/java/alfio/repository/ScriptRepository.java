@@ -65,7 +65,7 @@ public interface ScriptRepository {
         " left outer join (select path, name from script_support where enabled = true and async = :async and (path in (:possiblePaths))) a2 on " +
         " (a1.name = a2.name) and length(a1.path) < length(a2.path) where a2.path is null) a3 " +
         " " +
-        " inner join script_event on path_fk = a3.path and name_fk = a3.name where event = :event")
+        " inner join script_event on path_fk = a3.path and name_fk = a3.name where event = :event order by a3.name, a3.path")
     List<ScriptSupport.ScriptPathNameHash> findActive(@Bind("possiblePaths") Set<String> possiblePaths,
                                                       @Bind("async") boolean async,
                                                       @Bind("event") String event);
