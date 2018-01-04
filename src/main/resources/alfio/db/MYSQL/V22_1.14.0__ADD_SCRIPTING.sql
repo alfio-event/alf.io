@@ -32,5 +32,4 @@ create table script_event (
 );
 
 alter table script_event add constraint unique_script_event unique(path_fk, name_fk);
-
---TODO: add fk
+alter table script_event add foreign key(path_fk, name_fk) references script_support(path, name);
