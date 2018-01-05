@@ -108,7 +108,7 @@ public class ExtensionManager {
 
 
     public static String toPath(int organizationId, int eventId) {
-        return organizationId + "." + eventId;
+        return "." + organizationId + "." + eventId;
     }
 
 }

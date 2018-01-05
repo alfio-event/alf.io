@@ -34,16 +34,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 
-//
 // table {path, name, hash, script content, params}
-// where path is unique, in our case can be:
+// where (path, name) is unique, in our case can be:
 //
-// /name
-// /organization/name
-// /organization/event/name
-// /organization/event/ticket_category/name
-//
-// for async execution -> for each path make a queue
+// .
+// .organizationId
+// .organizationId.eventId
 
 @Service
 @Log4j2

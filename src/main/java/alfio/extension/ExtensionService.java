@@ -106,19 +106,26 @@ public class ExtensionService {
     private List<ScriptPathNameHash> getActiveScriptsForEvent(String event, String basePath, boolean async) {
         // fetch all active scripts
         // to handle override:
-        // if there are active two scripts with the same name
+        // if there are active tree scripts with the same name
         // with path:
-        //  - org.event
-        //  - org
+        //  - .org.event
+        //  - .org
+        //  - .
         // the one with the longest path win
 
         //generate all the paths
-        Set<String> paths = new TreeSet<>();
-        String[] splitted = basePath.split("\\.");
-        for (int i = 0; i < splitted.length; i++) {
-            paths.add(StringUtils.join(Arrays.copyOfRange(splitted, 0, i + 1), '.'));
-        }
+        // given ".0.0" it will generate
+        // ".", ".0", ".0.0"
 
+        Set<String> paths = new TreeSet<>();
+        int basePathLength = basePath.length();
+        for (int i = 1; i < basePathLength; i++) {
+            if (basePath.charAt(i) == '.') {
+                paths.add(basePath.substring(0, i));
+            }
+        }
+        paths.add("."); //handle first and last case
+        paths.add(basePath);
         return extensionRepository.findActive(paths, async, event);
     }
 

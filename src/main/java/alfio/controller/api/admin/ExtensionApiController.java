@@ -62,7 +62,7 @@ public class ExtensionApiController {
 
     @RequestMapping(value = "/sample", method = RequestMethod.GET)
     public ExtensionSupport getSample() {
-        return new ExtensionSupport("", "", null, true, true, SAMPLE_JS);
+        return new ExtensionSupport(".", "", null, true, true, SAMPLE_JS);
     }
 
     @RequestMapping(value = "", method = RequestMethod.POST)
