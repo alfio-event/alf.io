@@ -25,7 +25,7 @@
         ctrl.$onInit = function() {
             ctrl.edit = ctrl.toUpdate;
             if(ctrl.toUpdate) {
-                ctrl.extensionLoader = $http.get('/admin/api/extensions/' + ctrl.toUpdate.name, {params: {path: ctrl.toUpdate.path}});
+                ctrl.extensionLoader = $http.get('/admin/api/extensions/' + encodeURIComponent(ctrl.toUpdate.path) + '/' + encodeURIComponent(ctrl.toUpdate.name));
             } else {
                 ctrl.extensionLoader = $http.get('/admin/api/extensions/sample');
             }
@@ -33,18 +33,27 @@
                 ctrl.organizations = results[1].data;
                 ctrl.allEvents = results[2].data;
                 var extension = results[0].data;
-                var splitPath = extension.path.split('.').filter(function(x) { return x.length > 0 });
+                var splitPath = extension.path.split('-').filter(function(x) { return x.length > 0 });
                 var path = {
                     organization: undefined,
                     event: undefined
                 };
-                if(splitPath.length > 1) {
+                if(splitPath.length >= 1) {
                     path.organization = parseInt(splitPath[0]);
                     if(splitPath.length === 2) {
                         path.event = parseInt(splitPath[1]);
                     }
                 }
+
+                console.log(path);
+
                 ctrl.extension = angular.extend({}, extension, {translatedPath: path});
+
+                if(ctrl.toUpdate) {
+                    ctrl.previousPath = extension.path;
+                    ctrl.previousName = extension.name;
+                }
+
             });
         };
 
@@ -63,15 +72,18 @@
         };
 
         function generatePath(translated) {
-            var path = ".";
+            var path = "-";
             if(translated.organization !== undefined) {
-                path += translated.organization + (translated.event !== undefined ? ("." + translated.event) : "");
+                path += translated.organization + (translated.event !== undefined ? ("-" + translated.event) : "");
             }
             return path;
         }
 
         ctrl.save = function(extension) {
-            $http.post('/admin/api/extensions', {
+
+            var url = ctrl.toUpdate ? ('/admin/api/extensions/'+encodeURIComponent(ctrl.previousPath)+'/'+encodeURIComponent(ctrl.previousName)) : '/admin/api/extensions';
+
+            $http.post(url, {
                 path: extension.path,
                 name: extension.name,
                 enabled: extension.enabled,

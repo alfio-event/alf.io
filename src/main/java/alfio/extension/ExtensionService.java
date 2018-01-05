@@ -39,7 +39,7 @@ public class ExtensionService {
     private final ExtensionRepository extensionRepository;
 
     @Transactional
-    public void createOrUpdate(Extension script) {
+    public void createOrUpdate(String previousPath, String previousName, Extension script) {
         String hash = DigestUtils.sha256Hex(script.getScript());
         ExtensionMetadata extensionMetadata = ScriptingExecutionService.executeScript(
             script.getName(),
@@ -47,9 +47,9 @@ public class ExtensionService {
             Collections.emptyMap(),
             ExtensionMetadata.class);
 
-        if (extensionRepository.hasPath(script.getPath(), script.getName()) > 0) {
-            extensionRepository.deleteEventsForPath(script.getPath(), script.getName());
-            extensionRepository.deleteScriptForPath(script.getPath(), script.getName());
+        if (previousPath != null && previousName != null && extensionRepository.hasPath(previousPath, previousName) > 0) {
+            extensionRepository.deleteEventsForPath(previousPath, previousName);
+            extensionRepository.deleteScriptForPath(previousPath, previousName);
         }
 
         extensionRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());

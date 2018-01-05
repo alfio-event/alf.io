@@ -62,24 +62,30 @@ public class ExtensionApiController {
 
     @RequestMapping(value = "/sample", method = RequestMethod.GET)
     public ExtensionSupport getSample() {
-        return new ExtensionSupport(".", "", null, true, true, SAMPLE_JS);
+        return new ExtensionSupport("-", "", null, true, true, SAMPLE_JS);
     }
 
     @RequestMapping(value = "", method = RequestMethod.POST)
-    public void createOrUpdate(@RequestBody Extension script, Principal principal) {
+    public void create(@RequestBody Extension script, Principal principal) {
         ensureAdmin(principal);
-        extensionService.createOrUpdate(script);
+        extensionService.createOrUpdate(null, null, script);
     }
 
-    @RequestMapping(value = "/{name}", method = RequestMethod.GET)
-    public ResponseEntity<ExtensionSupport> loadSingle(@RequestParam("path") String path, @PathVariable("name") String name, Principal principal) throws UnsupportedEncodingException {
+    @RequestMapping(value = "{path}/{name}", method = RequestMethod.POST)
+    public void update(@PathVariable("path") String path, @PathVariable("name") String name, @RequestBody Extension script, Principal principal) {
+        ensureAdmin(principal);
+        extensionService.createOrUpdate(path, name, script);
+    }
+
+    @RequestMapping(value = "{path}/{name}", method = RequestMethod.GET)
+    public ResponseEntity<ExtensionSupport> loadSingle(@PathVariable("path") String path, @PathVariable("name") String name, Principal principal) throws UnsupportedEncodingException {
         ensureAdmin(principal);
         return extensionService.getSingle(URLDecoder.decode(path, "UTF-8"), name).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 
-    @RequestMapping(value = "/{name}", method = RequestMethod.DELETE)
-    public void delete(@RequestParam("path") String path, @PathVariable("name") String name, Principal principal) {
+    @RequestMapping(value = "{path}/{name}", method = RequestMethod.DELETE)
+    public void delete(@PathVariable("path") String path, @PathVariable("name") String name, Principal principal) {
         ensureAdmin(principal);
         extensionService.delete(path, name);
     }

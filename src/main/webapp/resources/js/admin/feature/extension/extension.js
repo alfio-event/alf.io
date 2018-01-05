@@ -21,7 +21,7 @@
                 var organizations = results[1].data;
                 var events = results[2].data;
                 ctrl.extensions = results[0].data.map(function(ext) {
-                    var splitPath = ext.path.split('.').filter(function(x) { return x.length > 0 });
+                    var splitPath = ext.path.split('-').filter(function(x) { return x.length > 0 });
                     var translatedPath = splitPath;
                     if(splitPath.length >= 1) {
                         var org = organizations.filter(function(o) { return o.id === parseInt(splitPath[0])});
@@ -45,7 +45,7 @@
 
         function deleteExtension(extension) {
             if(window.confirm('Delete ' + extension.name+'?')) {
-                $http.delete('/admin/api/extensions/'+ extension.name, {params: {path: extension.path}}).then(function () {
+                $http.delete('/admin/api/extensions/'+ encodeURIComponent(extension.path) + '/' + encodeURIComponent(extension.name)).then(function () {
                     load();
                 });
             }
