@@ -49,7 +49,14 @@
         };
 
         ctrl.updatePath = function() {
-            if(!ctrl.extension.translatedPath.organization) {
+            if(ctrl.extension.translatedPath.organization === undefined) {
+                delete ctrl.extension.translatedPath.event;
+            }
+            if(ctrl.extension.translatedPath.organization === null) {
+                delete ctrl.extension.translatedPath.organization;
+                delete ctrl.extension.translatedPath.event;
+            }
+            if(ctrl.extension.translatedPath.event === null) {
                 delete ctrl.extension.translatedPath.event;
             }
             ctrl.extension.path = generatePath(ctrl.extension.translatedPath);
@@ -57,8 +64,8 @@
 
         function generatePath(translated) {
             var path = ".";
-            if(translated.organization) {
-                path += translated.organization + (translated.event ? ("." + translated.event) : "");
+            if(translated.organization !== undefined) {
+                path += translated.organization + (translated.event !== undefined ? ("." + translated.event) : "");
             }
             return path;
         }

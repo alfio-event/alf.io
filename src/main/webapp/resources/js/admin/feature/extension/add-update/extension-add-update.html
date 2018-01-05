@@ -12,7 +12,7 @@
                         <option value="">System</option>
                     </select>
                     <span class="text-muted" ng-if="$ctrl.extension.translatedPath.organization">/</span>
-                    <select id="events" class="form-control" ng-model="$ctrl.extension.translatedPath.event" ng-change="$ctrl.updatePath()" ng-if="$ctrl.extension.translatedPath.organization" ng-options="ev.id as ev.displayName for ev in $ctrl.allEvents | belongsToOrganization:$ctrl.extension.translatedPath.organization">
+                    <select id="events" class="form-control" ng-model="$ctrl.extension.translatedPath.event" ng-change="$ctrl.updatePath()" ng-if="$ctrl.extension.translatedPath.organization !== undefined" ng-options="ev.id as ev.displayName for ev in $ctrl.allEvents | belongsToOrganization:$ctrl.extension.translatedPath.organization">
                         <option value="">All Events</option>
                     </select>
                 </div>
