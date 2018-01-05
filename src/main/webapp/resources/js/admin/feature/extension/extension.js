@@ -20,7 +20,7 @@
             $q.all([$http.get('/admin/api/extensions'), OrganizationService.getAllOrganizations()]).then(function(results) {
                 var organizations = results[1].data;
                 ctrl.extensions = results[0].data.map(function(ext) {
-                    var splitPath = ext.path.split('\\.').filter(function(x) { return x.length > 0 });
+                    var splitPath = ext.path.split('.').filter(function(x) { return x.length > 0 });
                     var translatedPath = splitPath;
                     if(splitPath.length > 1) {
                         var org = organizations.filter(function(o) { return o.id === parseInt(splitPath[0])});
