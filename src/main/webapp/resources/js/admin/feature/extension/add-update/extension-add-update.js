@@ -33,7 +33,7 @@
                 ctrl.organizations = results[1].data;
                 ctrl.allEvents = results[2].data;
                 var extension = results[0].data;
-                var splitPath = extension.path.split('/').filter(function(x) { return x.length > 0 });
+                var splitPath = extension.path.split('\\.').filter(function(x) { return x.length > 0 });
                 var path = {
                     organization: undefined,
                     event: undefined
@@ -56,9 +56,9 @@
         };
 
         function generatePath(translated) {
-            var path = "/";
+            var path = ".";
             if(translated.organization) {
-                path += translated.organization + (translated.event ? ("/" + translated.event) : "");
+                path += translated.organization + (translated.event ? ("." + translated.event) : "");
             }
             return path;
         }
