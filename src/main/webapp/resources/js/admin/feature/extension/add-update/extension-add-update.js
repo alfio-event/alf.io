@@ -2,19 +2,25 @@
     'use strict';
 
     angular.module('adminApplication').component('extensionAddUpdate', {
-        controller: ['$http', '$q', '$state', ExtensionAddUpdateCtrl],
+        controller: ['$http', '$q', '$state', 'OrganizationService', 'EventService', ExtensionAddUpdateCtrl],
         templateUrl: '../resources/js/admin/feature/extension/add-update/extension-add-update.html',
         bindings: {
             dismiss:'&',
             close:'&',
             toUpdate:'<'
         }
+    }).filter('belongsToOrganization', function() {
+        return function(events, orgId) {
+            return events.filter(function(ev) {
+                return ev.organizationId === orgId;
+            })
+        }
     });
 
-    function ExtensionAddUpdateCtrl($http, $q, $state) {
+    function ExtensionAddUpdateCtrl($http, $q, $state, OrganizationService, EventService) {
         var ctrl = this;
         ctrl.extension = null;
-        ctrl.extensionLoader = null;
+        ctrl.dataLoader = null;
 
         ctrl.$onInit = function() {
             ctrl.edit = ctrl.toUpdate;
@@ -23,11 +29,39 @@
             } else {
                 ctrl.extensionLoader = $http.get('/admin/api/extensions/sample');
             }
-            ctrl.extensionLoader.then(function(res) {
-                ctrl.extension = res.data;
+            ctrl.dataLoader = $q.all([ctrl.extensionLoader, OrganizationService.getAllOrganizations(), EventService.getAllEvents()]).then(function(results) {
+                ctrl.organizations = results[1].data;
+                ctrl.allEvents = results[2].data;
+                var extension = results[0].data;
+                var splitPath = extension.path.split('/').filter(function(x) { return x.length > 0 });
+                var path = {
+                    organization: undefined,
+                    event: undefined
+                };
+                if(splitPath.length > 1) {
+                    path.organization = parseInt(splitPath[0]);
+                    if(splitPath.length === 2) {
+                        path.event = parseInt(splitPath[1]);
+                    }
+                }
+                ctrl.extension = angular.extend({}, extension, {translatedPath: path});
             });
         };
 
+        ctrl.updatePath = function() {
+            if(!ctrl.extension.translatedPath.organization) {
+                delete ctrl.extension.translatedPath.event;
+            }
+            ctrl.extension.path = generatePath(ctrl.extension.translatedPath);
+        };
+
+        function generatePath(translated) {
+            var path = "/";
+            if(translated.organization) {
+                path += translated.organization + (translated.event ? ("/" + translated.event) : "");
+            }
+            return path;
+        }
 
         ctrl.save = function(extension) {
             $http.post('/admin/api/extensions', {
@@ -38,6 +72,10 @@
             }).then(function() {
                 $state.go('extension.list');
             });
+        };
+
+        ctrl.cancel = function() {
+            $state.go('extension.list');
         };
 
         ctrl.initLoadListener = function() {
@@ -55,7 +93,7 @@
                     }
                 });
 
-                ctrl.extensionLoader.then(function() {
+                ctrl.dataLoader.then(function() {
                     editor.setValue(ctrl.extension.script, 0);
                     editor.clearSelection();
                 });
