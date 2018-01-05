@@ -37,6 +37,8 @@ public class ExtensionManager {
 
     public enum ExtensionEvent {
         RESERVATION_CONFIRMATION,
+        RESERVATION_CANCELLED,
+        RESERVATION_EXPIRED,
         TICKET_ASSIGNMENT,
         WAITING_QUEUE_SUBSCRIPTION,
         INVOICE_GENERATION

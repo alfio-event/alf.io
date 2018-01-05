@@ -926,14 +926,14 @@ public class TicketReservationManager {
         int updatedTickets = ticketRepository.findTicketsInReservation(reservationId).stream().mapToInt(t -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), t.getId())).sum();
         Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
         waitingQueueManager.fireReservationExpired(reservationId);
-        deleteReservations(reservationIdsToRemove);
+        deleteReservation(reservationId);
         auditingRepository.insert(reservationId, null, event.getId(), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
     }
 
-    private void deleteReservations(List<String> reservationIdsToRemove) {
+    private void deleteReservation(String reservationIdToRemove) {
         //handle removal of ticket
-        waitingQueueManager.cleanExpiredReservations(reservationIdsToRemove);
-        int removedReservation = ticketReservationRepository.remove(reservationIdsToRemove);
+        waitingQueueManager.cleanExpiredReservations(Collections.singletonList(reservationIdToRemove));
+        int removedReservation = ticketReservationRepository.remove(Collections.singletonList(reservationIdToRemove));
         Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);
     }
 
@@ -1294,7 +1294,7 @@ public class TicketReservationManager {
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));
 
         if(ticketRepository.countTicketsInReservation(reservationId) == 0 && !transactionRepository.loadOptionalByReservationId(reservationId).isPresent()) {
-            deleteReservations(singletonList(reservationId));
+            deleteReservation(reservationId);
             auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
         }
     }
