@@ -15,16 +15,14 @@
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package alfio.scripting;
+package alfio.extension;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.Map;
-
 @Getter
 @AllArgsConstructor
-public class Script {
+public class Extension {
 
     private final String path;
     private final String name;

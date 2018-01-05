@@ -18,9 +18,9 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.user.UserManager;
-import alfio.model.ScriptSupport;
-import alfio.scripting.Script;
-import alfio.scripting.ScriptingService;
+import alfio.model.ExtensionSupport;
+import alfio.extension.Extension;
+import alfio.extension.ExtensionService;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Validate;
 import org.springframework.http.ResponseEntity;
@@ -50,44 +50,44 @@ public class ExtensionApiController {
         }
     }
 
-    private final ScriptingService scriptingService;
+    private final ExtensionService extensionService;
     private final UserManager userManager;
 
 
     @RequestMapping(value = "", method = RequestMethod.GET)
-    public List<ScriptSupport> listAll(Principal principal) {
+    public List<ExtensionSupport> listAll(Principal principal) {
         ensureAdmin(principal);
-        return scriptingService.listAll();
+        return extensionService.listAll();
     }
 
     @RequestMapping(value = "/sample", method = RequestMethod.GET)
-    public ScriptSupport getSample() {
-        return new ScriptSupport("/", "", null, true, true, SAMPLE_JS);
+    public ExtensionSupport getSample() {
+        return new ExtensionSupport("", "", null, true, true, SAMPLE_JS);
     }
 
     @RequestMapping(value = "", method = RequestMethod.POST)
-    public void createOrUpdate(@RequestBody Script script, Principal principal) {
+    public void createOrUpdate(@RequestBody Extension script, Principal principal) {
         ensureAdmin(principal);
-        scriptingService.createOrUpdate(script);
+        extensionService.createOrUpdate(script);
     }
 
     @RequestMapping(value = "/{name}", method = RequestMethod.GET)
-    public ResponseEntity<ScriptSupport> loadSingle(@RequestParam("path") String path, @PathVariable("name") String name, Principal principal) throws UnsupportedEncodingException {
+    public ResponseEntity<ExtensionSupport> loadSingle(@RequestParam("path") String path, @PathVariable("name") String name, Principal principal) throws UnsupportedEncodingException {
         ensureAdmin(principal);
-        return scriptingService.getSingle(URLDecoder.decode(path, "UTF-8"), name).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return extensionService.getSingle(URLDecoder.decode(path, "UTF-8"), name).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 
     @RequestMapping(value = "/{name}", method = RequestMethod.DELETE)
     public void delete(@RequestParam("path") String path, @PathVariable("name") String name, Principal principal) {
         ensureAdmin(principal);
-        scriptingService.delete(path, name);
+        extensionService.delete(path, name);
     }
 
     @RequestMapping(value = "/{path}/{name}/toggle/{enable}", method = RequestMethod.POST)
     public void toggle(@PathVariable("path") String path, @PathVariable("name") String name, @PathVariable("enable") boolean enable, Principal principal) {
         ensureAdmin(principal);
-        scriptingService.toggle(path, name, enable);
+        extensionService.toggle(path, name, enable);
     }
 
     private void ensureAdmin(Principal principal) {

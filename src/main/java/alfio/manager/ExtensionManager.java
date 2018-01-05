@@ -21,7 +21,7 @@ import alfio.model.*;
 import alfio.model.extension.InvoiceGeneration;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
-import alfio.scripting.ScriptingService;
+import alfio.extension.ExtensionService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +31,7 @@ import java.util.*;
 @AllArgsConstructor
 public class ExtensionManager {
 
-    private final ScriptingService scriptingService;
+    private final ExtensionService extensionService;
     private final EventRepository eventRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
 
@@ -95,7 +95,7 @@ public class ExtensionManager {
         payloadCopy.put("eventId", eventId);
         payloadCopy.put("organizationId", organizationId);
 
-        scriptingService.executeScriptAsync(event.name(),
+        extensionService.executeScriptAsync(event.name(),
             toPath(organizationId, eventId), payload);
     }
 
@@ -103,7 +103,7 @@ public class ExtensionManager {
         Map<String, Object> payloadCopy = new HashMap<>(payload);
         payloadCopy.put("eventId", eventId);
         payloadCopy.put("organizationId", organizationId);
-        return scriptingService.executeScriptsForEvent(event.name(), toPath(eventId, organizationId), payload, clazz);
+        return extensionService.executeScriptsForEvent(event.name(), toPath(eventId, organizationId), payload, clazz);
     }
 
 

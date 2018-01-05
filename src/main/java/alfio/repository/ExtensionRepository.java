@@ -17,7 +17,7 @@
 
 package alfio.repository;
 
-import alfio.model.ScriptSupport;
+import alfio.model.ExtensionSupport;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -27,9 +27,9 @@ import java.util.Optional;
 import java.util.Set;
 
 @QueryRepository
-public interface ScriptRepository {
+public interface ExtensionRepository {
 
-    @Query("insert into script_support(path, name, hash, enabled, async, script) values " +
+    @Query("insert into extension_support(path, name, hash, enabled, async, script) values " +
         " (:path, :name, :hash, :enabled, :async, :script)")
     int insert(@Bind("path") String path,
                @Bind("name") String name,
@@ -38,39 +38,39 @@ public interface ScriptRepository {
                @Bind("async") boolean async,
                @Bind("script") String script);
 
-    @Query("update script_support set enabled = :enabled where path = :path and name = :name")
+    @Query("update extension_support set enabled = :enabled where path = :path and name = :name")
     int toggle(@Bind("path") String path, @Bind("name") String name, @Bind("enabled") boolean enabled);
 
-    @Query("insert into script_event(path_fk, name_fk, event) values " +
+    @Query("insert into extension_event(path_fk, name_fk, event) values " +
         " (:path, :name, :event)")
     int insertEvent(@Bind("path") String path, @Bind("name") String name, @Bind("event") String event);
 
-    @Query("select count(*) from script_support where path = :path and name = :name")
+    @Query("select count(*) from extension_support where path = :path and name = :name")
     int hasPath(@Bind("path") String path, @Bind("name") String name);
 
-    @Query("select script from script_support where path = :path and name = :name")
+    @Query("select script from extension_support where path = :path and name = :name")
     String getScript(@Bind("path") String path, @Bind("name") String name);
 
-    @Query("select * from script_support where path = :path and name = :name")
-    Optional<ScriptSupport> getSingle(@Bind("path") String path, @Bind("name") String name);
+    @Query("select * from extension_support where path = :path and name = :name")
+    Optional<ExtensionSupport> getSingle(@Bind("path") String path, @Bind("name") String name);
 
-    @Query("delete from script_event where path_fk = :path and name_fk = :name")
+    @Query("delete from extension_event where path_fk = :path and name_fk = :name")
     int deleteEventsForPath(@Bind("path") String path, @Bind("name") String name);
 
-    @Query("delete from script_support where path = :path and name = :name")
+    @Query("delete from extension_support where path = :path and name = :name")
     int deleteScriptForPath(@Bind("path") String path, @Bind("name") String name);
 
-    @Query("select * from script_support order by name, path")
-    List<ScriptSupport> listAll();
+    @Query("select * from extension_support order by name, path")
+    List<ExtensionSupport> listAll();
 
     @Query("select a3.path, a3.name, a3.hash from " +
         " (select a1.* from " +
-        " (select path, name, hash from script_support where enabled = true and async = :async and (path in (:possiblePaths))) a1 " +
-        " left outer join (select path, name from script_support where enabled = true and async = :async and (path in (:possiblePaths))) a2 on " +
+        " (select path, name, hash from extension_support where enabled = true and async = :async and (path in (:possiblePaths))) a1 " +
+        " left outer join (select path, name from extension_support where enabled = true and async = :async and (path in (:possiblePaths))) a2 on " +
         " (a1.name = a2.name) and length(a1.path) < length(a2.path) where a2.path is null) a3 " +
         " " +
-        " inner join script_event on path_fk = a3.path and name_fk = a3.name where event = :event order by a3.name, a3.path")
-    List<ScriptSupport.ScriptPathNameHash> findActive(@Bind("possiblePaths") Set<String> possiblePaths,
-                                                      @Bind("async") boolean async,
-                                                      @Bind("event") String event);
+        " inner join extension_event on path_fk = a3.path and name_fk = a3.name where event = :event order by a3.name, a3.path")
+    List<ExtensionSupport.ScriptPathNameHash> findActive(@Bind("possiblePaths") Set<String> possiblePaths,
+                                                         @Bind("async") boolean async,
+                                                         @Bind("event") String event);
 }

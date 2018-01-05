@@ -15,7 +15,7 @@
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package alfio.scripting;
+package alfio.extension;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,7 +24,7 @@ import java.util.List;
 
 @Getter
 @AllArgsConstructor
-public class ScriptMetadata {
+public class ExtensionMetadata {
     boolean async;
     List<String> events;
 }

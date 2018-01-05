@@ -15,7 +15,7 @@
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package alfio.scripting;
+package alfio.extension;
 
 import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;

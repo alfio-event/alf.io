@@ -15,11 +15,11 @@
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package alfio.scripting;
+package alfio.extension;
 
-import alfio.model.ScriptSupport;
-import alfio.model.ScriptSupport.ScriptPathNameHash;
-import alfio.repository.ScriptRepository;
+import alfio.model.ExtensionSupport;
+import alfio.model.ExtensionSupport.ScriptPathNameHash;
+import alfio.repository.ExtensionRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -32,49 +32,49 @@ import java.util.*;
 @Service
 @Log4j2
 @AllArgsConstructor
-public class ScriptingService {
+public class ExtensionService {
 
     private final ScriptingExecutionService scriptingExecutionService;
 
-    private final ScriptRepository scriptRepository;
+    private final ExtensionRepository extensionRepository;
 
     @Transactional
-    public void createOrUpdate(Script script) {
+    public void createOrUpdate(Extension script) {
         String hash = DigestUtils.sha256Hex(script.getScript());
-        ScriptMetadata scriptMetadata = ScriptingExecutionService.executeScript(
+        ExtensionMetadata extensionMetadata = ScriptingExecutionService.executeScript(
             script.getName(),
             script.getScript() + "\n;GSON.fromJson(JSON.stringify(getScriptMetadata()), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
             Collections.emptyMap(),
-            ScriptMetadata.class);
+            ExtensionMetadata.class);
 
-        if (scriptRepository.hasPath(script.getPath(), script.getName()) > 0) {
-            scriptRepository.deleteEventsForPath(script.getPath(), script.getName());
-            scriptRepository.deleteScriptForPath(script.getPath(), script.getName());
+        if (extensionRepository.hasPath(script.getPath(), script.getName()) > 0) {
+            extensionRepository.deleteEventsForPath(script.getPath(), script.getName());
+            extensionRepository.deleteScriptForPath(script.getPath(), script.getName());
         }
 
-        scriptRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), scriptMetadata.async, script.getScript());
-        for (String event : scriptMetadata.events) {
-            scriptRepository.insertEvent(script.getPath(), script.getName(), event);
+        extensionRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
+        for (String event : extensionMetadata.events) {
+            extensionRepository.insertEvent(script.getPath(), script.getName(), event);
         }
     }
 
     @Transactional
     public void toggle(String path, String name, boolean status) {
-        scriptRepository.toggle(path, name, status);
+        extensionRepository.toggle(path, name, status);
     }
 
     @Transactional
     public void delete(String path, String name) {
-        scriptRepository.deleteEventsForPath(path, name);
-        scriptRepository.deleteScriptForPath(path, name);
+        extensionRepository.deleteEventsForPath(path, name);
+        extensionRepository.deleteScriptForPath(path, name);
     }
 
     public String getScript(String path, String name) {
-        return scriptRepository.getScript(path, name);
+        return extensionRepository.getScript(path, name);
     }
 
-    public Optional<ScriptSupport> getSingle(String path, String name) {
-        return scriptRepository.getSingle(path, name);
+    public Optional<ExtensionSupport> getSingle(String path, String name) {
+        return extensionRepository.getSingle(path, name);
     }
 
     public <T> T executeScriptsForEvent(String event, String basePath, Map<String, Object> payload, Class<T> clazz) {
@@ -119,10 +119,10 @@ public class ScriptingService {
             paths.add(StringUtils.join(Arrays.copyOfRange(splitted, 0, i + 1), '.'));
         }
 
-        return scriptRepository.findActive(paths, async, event);
+        return extensionRepository.findActive(paths, async, event);
     }
 
-    public List<ScriptSupport> listAll() {
-        return scriptRepository.listAll();
+    public List<ExtensionSupport> listAll() {
+        return extensionRepository.listAll();
     }
 }

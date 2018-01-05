@@ -20,7 +20,7 @@ import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 @Getter
-public class ScriptSupport {
+public class ExtensionSupport {
 
     private final String path;
     private final String name;
@@ -30,12 +30,12 @@ public class ScriptSupport {
     private final String script;
 
 
-    public ScriptSupport(@Column("path") String path,
-                         @Column("name") String name,
-                         @Column("hash") String hash,
-                         @Column("enabled") boolean enabled,
-                         @Column("async") boolean async,
-                         @Column("script") String script) {
+    public ExtensionSupport(@Column("path") String path,
+                            @Column("name") String name,
+                            @Column("hash") String hash,
+                            @Column("enabled") boolean enabled,
+                            @Column("async") boolean async,
+                            @Column("script") String script) {
         this.path = path;
         this.name = name;
         this.hash = hash;

@@ -23,8 +23,9 @@ function getScriptMetadata() {
 function executeScript(scriptEvent) {
     log.warn('hello from script with event: ' + scriptEvent);
     //this sample calls the https://csrng.net/ website and generates a random invoice number
-    var symbol = restTemplate.getForObject('https://csrng.net/csrng/csrng.php?min=0&max=100', Java.type('java.util.ArrayList').class)[0].random;
+    var randomNumber = restTemplate.getForObject('https://csrng.net/csrng/csrng.php?min=0&max=100', Java.type('java.util.ArrayList').class)[0].random;
+    log.warn('the invoice number will be ' + randomNumber)
     return {
-        invoiceNumber: symbol
+        invoiceNumber: randomNumber
     };
 }
