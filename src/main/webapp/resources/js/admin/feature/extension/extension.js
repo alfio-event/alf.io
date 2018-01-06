@@ -31,9 +31,9 @@
                     }
 
                     if(splitPath.length >=2) {
-                        var service = events.filter(function(e) {return e.id === parseInt(splitPath[1])})
+                        var service = events.filter(function(e) {return e.id === parseInt(splitPath[1])});
                         if (service.length>0) {
-                            translatedPath.splice(1,1, service[0].shortName);
+                            translatedPath.splice(1,1, service[0].displayName);
                         }
                     }
 
