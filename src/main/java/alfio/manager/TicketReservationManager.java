@@ -702,6 +702,17 @@ public class TicketReservationManager {
         ticketFieldRepository.deleteAllValuesForReservations(expiredReservationIds);
         ticketRepository.freeFromReservation(expiredReservationIds);
         waitingQueueManager.cleanExpiredReservations(expiredReservationIds);
+
+        //
+        Map<Integer, List<ReservationIdAndEventId>> reservationIdsByEvent = ticketReservationRepository
+            .getReservationIdAndEventId(expiredReservationIds)
+            .stream()
+            .collect(Collectors.groupingBy(ReservationIdAndEventId::getEventId));
+        reservationIdsByEvent.forEach((eventId, reservations) -> {
+            Event event = eventRepository.findById(eventId);
+            extensionManager.handleReservationsExpiredForEvent(event, reservations.stream().map(ReservationIdAndEventId::getId).collect(Collectors.toList()));
+        });
+        //
         ticketReservationRepository.remove(expiredReservationIds);
     }
 
@@ -926,14 +937,22 @@ public class TicketReservationManager {
         int updatedTickets = ticketRepository.findTicketsInReservation(reservationId).stream().mapToInt(t -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), t.getId())).sum();
         Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
         waitingQueueManager.fireReservationExpired(reservationId);
-        deleteReservation(reservationId);
+        deleteReservation(event, reservationId, expired);
         auditingRepository.insert(reservationId, null, event.getId(), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
     }
 
-    private void deleteReservation(String reservationIdToRemove) {
+    private void deleteReservation(Event event, String reservationIdToRemove, boolean expired) {
         //handle removal of ticket
-        waitingQueueManager.cleanExpiredReservations(Collections.singletonList(reservationIdToRemove));
-        int removedReservation = ticketReservationRepository.remove(Collections.singletonList(reservationIdToRemove));
+        List<String> wrappedReservationIdToRemove = Collections.singletonList(reservationIdToRemove);
+        waitingQueueManager.cleanExpiredReservations(wrappedReservationIdToRemove);
+        //
+        if(expired) {
+            extensionManager.handleReservationsExpiredForEvent(event, wrappedReservationIdToRemove);
+        } else {
+            extensionManager.handleReservationsCancelledForEvent(event, wrappedReservationIdToRemove);
+        }
+        //
+        int removedReservation = ticketReservationRepository.remove(wrappedReservationIdToRemove);
         Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);
     }
 
@@ -1294,7 +1313,7 @@ public class TicketReservationManager {
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));
 
         if(ticketRepository.countTicketsInReservation(reservationId) == 0 && !transactionRepository.loadOptionalByReservationId(reservationId).isPresent()) {
-            deleteReservation(reservationId);
+            deleteReservation(event, reservationId, false);
             auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
         }
     }

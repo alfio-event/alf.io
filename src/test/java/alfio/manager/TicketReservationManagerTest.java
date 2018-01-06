@@ -586,6 +586,7 @@ public class TicketReservationManagerTest {
         verify(ticketRepository).freeFromReservation(eq(reservationIds));
         verify(ticketReservationRepository).remove(eq(reservationIds));
         verify(waitingQueueManager).cleanExpiredReservations(eq(reservationIds));
+        verify(ticketReservationRepository).getReservationIdAndEventId(eq(reservationIds));
         verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository);
     }
 

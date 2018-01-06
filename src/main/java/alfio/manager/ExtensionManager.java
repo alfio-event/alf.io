@@ -20,8 +20,8 @@ package alfio.manager;
 import alfio.model.*;
 import alfio.model.extension.InvoiceGeneration;
 import alfio.repository.EventRepository;
-import alfio.repository.TicketCategoryRepository;
 import alfio.extension.ExtensionService;
+import alfio.repository.TicketReservationRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -33,7 +33,7 @@ public class ExtensionManager {
 
     private final ExtensionService extensionService;
     private final EventRepository eventRepository;
-    private final TicketCategoryRepository ticketCategoryRepository;
+    private final TicketReservationRepository ticketReservationRepository;
 
     public enum ExtensionEvent {
         RESERVATION_CONFIRMATION,
@@ -71,6 +71,25 @@ public class ExtensionManager {
             waitingQueueSubscription.getEventId(),
             organizationId,
             Collections.singletonMap("waitingQueueSubscription", waitingQueueSubscription));
+    }
+
+    public void handleReservationsExpiredForEvent(Event event, Collection<String> reservationIdsToRemove) {
+        handleReservationRemoval(event, reservationIdsToRemove, ExtensionEvent.RESERVATION_EXPIRED);
+    }
+
+    public void handleReservationsCancelledForEvent(Event event, Collection<String> reservationIdsToRemove) {
+        handleReservationRemoval(event, reservationIdsToRemove, ExtensionEvent.RESERVATION_CANCELLED);
+    }
+
+    private void handleReservationRemoval(Event event, Collection<String> reservationIds, ExtensionEvent extensionEvent) {
+        int organizationId = event.getOrganizationId();
+        int eventId = event.getId();
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("event", event);
+        payload.put("reservationIds", reservationIds);
+
+        syncCall(extensionEvent, eventId, organizationId, payload, Boolean.class);
     }
 
     public Optional<InvoiceGeneration> handleInvoiceGeneration(Event event, String reservationId, String email, CustomerName customerName, Locale userLanguage,
