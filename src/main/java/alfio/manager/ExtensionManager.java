@@ -17,10 +17,10 @@
 
 package alfio.manager;
 
+import alfio.extension.ExtensionService;
 import alfio.model.*;
 import alfio.model.extension.InvoiceGeneration;
 import alfio.repository.EventRepository;
-import alfio.extension.ExtensionService;
 import alfio.repository.TicketReservationRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -36,11 +36,11 @@ public class ExtensionManager {
     private final TicketReservationRepository ticketReservationRepository;
 
     public enum ExtensionEvent {
-        RESERVATION_CONFIRMATION,
+        RESERVATION_CONFIRMED,
         RESERVATION_CANCELLED,
         RESERVATION_EXPIRED,
-        TICKET_ASSIGNMENT,
-        WAITING_QUEUE_SUBSCRIPTION,
+        TICKET_ASSIGNED,
+        WAITING_QUEUE_SUBSCRIBED,
         INVOICE_GENERATION
     }
 
@@ -48,7 +48,7 @@ public class ExtensionManager {
     public void handleReservationConfirmation(TicketReservation reservation, int eventId) {
         int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
 
-        asyncCall(ExtensionEvent.RESERVATION_CONFIRMATION,
+        asyncCall(ExtensionEvent.RESERVATION_CONFIRMED,
             eventId,
             organizationId,
             Collections.singletonMap("reservation", reservation));
@@ -58,7 +58,7 @@ public class ExtensionManager {
         int eventId = ticket.getEventId();
         int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
 
-        asyncCall(ExtensionEvent.TICKET_ASSIGNMENT,
+        asyncCall(ExtensionEvent.TICKET_ASSIGNED,
             eventId,
             organizationId,
             Collections.singletonMap("ticket", ticket));
@@ -67,7 +67,7 @@ public class ExtensionManager {
     public void handleWaitingQueueSubscription(WaitingQueueSubscription waitingQueueSubscription) {
         int organizationId = eventRepository.findOrganizationIdByEventId(waitingQueueSubscription.getEventId());
 
-        asyncCall(ExtensionEvent.WAITING_QUEUE_SUBSCRIPTION,
+        asyncCall(ExtensionEvent.WAITING_QUEUE_SUBSCRIBED,
             waitingQueueSubscription.getEventId(),
             organizationId,
             Collections.singletonMap("waitingQueueSubscription", waitingQueueSubscription));

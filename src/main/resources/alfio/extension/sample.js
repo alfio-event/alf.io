@@ -7,8 +7,10 @@ function getScriptMetadata() {
         async: false,
         events: [
             //supported values:
-            //'RESERVATION_CONFIRMATION', //fired on reservation confirmation. No results expected.
-            //'TICKET_ASSIGNMENT', //fired on ticket assignment. No results expected.
+            //'RESERVATION_CONFIRMED', //fired on reservation confirmation. No results expected.
+            //'RESERVATION_EXPIRED', //fired when reservation(s) expired
+            //'RESERVATION_CANCELLED', //fired when reservation(s) are cancelled
+            //'TICKET_ASSIGNED', //fired on ticket assignment. No results expected.
             //'WAITING_QUEUE_SUBSCRIPTION', //fired on waiting queue subscription. No results expected.
             'INVOICE_GENERATION' //fired on invoice generation. Returns the invoice model.
         ]
