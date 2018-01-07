@@ -148,6 +148,8 @@ public class TicketReservationManagerTest {
     private Organization organization;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private ExtensionManager extensionManager;
 
     @Before
     public void init() {
@@ -173,7 +175,9 @@ public class TicketReservationManagerTest {
             additionalServiceItemRepository,
             additionalServiceTextRepository,
             invoiceSequencesRepository,
-            auditingRepository, userRepository);
+            auditingRepository,
+            userRepository,
+            extensionManager);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -194,6 +198,9 @@ public class TicketReservationManagerTest {
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
         when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
         when(userRepository.findIdByUserName(anyString())).thenReturn(Optional.empty());
+        when(extensionManager.handleInvoiceGeneration(any(), anyString(),
+            anyString(), any(), any(), anyString(), any(), anyBoolean(), anyString(),
+            anyString(), any())).thenReturn(Optional.empty());
     }
 
     private void initUpdateTicketOwner(Ticket original, Ticket modified, String ticketId, String originalEmail, String originalName, UpdateTicketOwnerForm form) {
@@ -579,6 +586,7 @@ public class TicketReservationManagerTest {
         verify(ticketRepository).freeFromReservation(eq(reservationIds));
         verify(ticketReservationRepository).remove(eq(reservationIds));
         verify(waitingQueueManager).cleanExpiredReservations(eq(reservationIds));
+        verify(ticketReservationRepository).getReservationIdAndEventId(eq(reservationIds));
         verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository);
     }
 

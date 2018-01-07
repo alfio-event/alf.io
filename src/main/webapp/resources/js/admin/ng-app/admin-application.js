@@ -277,6 +277,23 @@
                         return AdminReservationService.load($stateParams.eventName, $stateParams.reservationId);
                     }
                 }
+            }).state('extension', {
+                url: '/extension',
+                abstract: true,
+                template: '<div><div data-ui-view></div></div>'
+            }).state('extension.list', {
+                url: '/list',
+                template: '<extension></extension>'
+            }).state('extension.new', {
+                url: '/new',
+                template: '<extension-add-update></extension-add-update>'
+            }).state('extension.edit', {
+                url: '/:path/:name/edit',
+                template: '<extension-add-update to-update="ctrl.toUpdate" close="ctrl.close($script)" dismiss="ctrl.dismiss()"></extension-add-update>',
+                controllerAs: 'ctrl',
+                controller: ['$stateParams', function($stateParams) {
+                    this.toUpdate = {path: $stateParams.path, name: $stateParams.name};
+                }]
             });
 
         growlProvider.globalPosition('bottom-right');

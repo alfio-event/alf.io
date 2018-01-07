@@ -33,6 +33,7 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.AdditionalServiceItemPriceContainer;
 import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
+import alfio.model.extension.InvoiceGeneration;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
@@ -120,6 +121,7 @@ public class TicketReservationManager {
     private final InvoiceSequencesRepository invoiceSequencesRepository;
     private final AuditingRepository auditingRepository;
     private final UserRepository userRepository;
+    private final ExtensionManager extensionManager;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -158,7 +160,9 @@ public class TicketReservationManager {
                                     AdditionalServiceItemRepository additionalServiceItemRepository,
                                     AdditionalServiceTextRepository additionalServiceTextRepository,
                                     InvoiceSequencesRepository invoiceSequencesRepository,
-                                    AuditingRepository auditingRepository, UserRepository userRepository) {
+                                    AuditingRepository auditingRepository,
+                                    UserRepository userRepository,
+                                    ExtensionManager extensionManager) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -183,6 +187,7 @@ public class TicketReservationManager {
         this.invoiceSequencesRepository = invoiceSequencesRepository;
         this.auditingRepository = auditingRepository;
         this.userRepository = userRepository;
+        this.extensionManager = extensionManager;
     }
     
     /**
@@ -353,6 +358,17 @@ public class TicketReservationManager {
                     ticketReservationRepository.setInvoiceNumber(reservationId, String.format(pattern, invoiceSequence));
                 }
                 ticketReservationRepository.updateBillingData(vatStatus, vatNr, vatCountryCode, invoiceRequested, reservationId);
+
+                //
+                extensionManager.handleInvoiceGeneration(event, reservationId,
+                    email, customerName, userLanguage, billingAddress,
+                    reservationCost, invoiceRequested, vatCountryCode, vatNr, vatStatus).ifPresent(invoiceGeneration -> {
+                    if (invoiceGeneration.getInvoiceNumber() != null) {
+                        ticketReservationRepository.setInvoiceNumber(reservationId, invoiceGeneration.getInvoiceNumber());
+                    }
+                });
+
+                //
                 switch(paymentProxy) {
                     case STRIPE:
                         paymentResult = paymentManager.processStripePayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
@@ -435,7 +451,9 @@ public class TicketReservationManager {
 
         sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language);
 
-        pluginManager.handleReservationConfirmation(ticketReservationRepository.findReservationById(reservationId), event.getId());
+        final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
+        pluginManager.handleReservationConfirmation(finalReservation, event.getId());
+        extensionManager.handleReservationConfirmation(finalReservation, event.getId());
     }
 
     void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
@@ -612,7 +630,9 @@ public class TicketReservationManager {
             TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
             AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
             acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, email, customerName, userLanguage.getLanguage(), billingAddress, eventId);
-            pluginManager.handleReservationConfirmation(ticketReservationRepository.findReservationById(reservationId), eventId);
+            final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+            pluginManager.handleReservationConfirmation(reservation, eventId);
+            extensionManager.handleReservationConfirmation(reservation, eventId);
             //cleanup unused special price codes...
             specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
         }
@@ -649,6 +669,7 @@ public class TicketReservationManager {
                         sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
                     }
                     pluginManager.handleTicketAssignment(ticket);
+                    extensionManager.handleTicketAssignment(ticket);
                 });
 
         }
@@ -681,6 +702,17 @@ public class TicketReservationManager {
         ticketFieldRepository.deleteAllValuesForReservations(expiredReservationIds);
         ticketRepository.freeFromReservation(expiredReservationIds);
         waitingQueueManager.cleanExpiredReservations(expiredReservationIds);
+
+        //
+        Map<Integer, List<ReservationIdAndEventId>> reservationIdsByEvent = ticketReservationRepository
+            .getReservationIdAndEventId(expiredReservationIds)
+            .stream()
+            .collect(Collectors.groupingBy(ReservationIdAndEventId::getEventId));
+        reservationIdsByEvent.forEach((eventId, reservations) -> {
+            Event event = eventRepository.findById(eventId);
+            extensionManager.handleReservationsExpiredForEvent(event, reservations.stream().map(ReservationIdAndEventId::getId).collect(Collectors.toList()));
+        });
+        //
         ticketReservationRepository.remove(expiredReservationIds);
     }
 
@@ -905,14 +937,22 @@ public class TicketReservationManager {
         int updatedTickets = ticketRepository.findTicketsInReservation(reservationId).stream().mapToInt(t -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), t.getId())).sum();
         Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
         waitingQueueManager.fireReservationExpired(reservationId);
-        deleteReservations(reservationIdsToRemove);
+        deleteReservation(event, reservationId, expired);
         auditingRepository.insert(reservationId, null, event.getId(), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
     }
 
-    private void deleteReservations(List<String> reservationIdsToRemove) {
+    private void deleteReservation(Event event, String reservationIdToRemove, boolean expired) {
         //handle removal of ticket
-        waitingQueueManager.cleanExpiredReservations(reservationIdsToRemove);
-        int removedReservation = ticketReservationRepository.remove(reservationIdsToRemove);
+        List<String> wrappedReservationIdToRemove = Collections.singletonList(reservationIdToRemove);
+        waitingQueueManager.cleanExpiredReservations(wrappedReservationIdToRemove);
+        //
+        if(expired) {
+            extensionManager.handleReservationsExpiredForEvent(event, wrappedReservationIdToRemove);
+        } else {
+            extensionManager.handleReservationsCancelledForEvent(event, wrappedReservationIdToRemove);
+        }
+        //
+        int removedReservation = ticketReservationRepository.remove(wrappedReservationIdToRemove);
         Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);
     }
 
@@ -1273,7 +1313,7 @@ public class TicketReservationManager {
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));
 
         if(ticketRepository.countTicketsInReservation(reservationId) == 0 && !transactionRepository.loadOptionalByReservationId(reservationId).isPresent()) {
-            deleteReservations(singletonList(reservationId));
+            deleteReservation(event, reservationId, false);
             auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
         }
     }

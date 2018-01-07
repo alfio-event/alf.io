@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+import java.security.cert.Extension;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -62,8 +63,9 @@ public class WaitingQueueManagerTest {{
         OrganizationRepository organizationRepository = it.usesMock(OrganizationRepository.class);
         PluginManager pluginManager = it.usesMock(PluginManager.class);
         EventRepository eventRepository = it.usesMock(EventRepository.class);
+        ExtensionManager extensionManager = it.usesMock(ExtensionManager.class);
 
-        WaitingQueueManager manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, jdbc, notificationManager, templateManager, messageSource, organizationRepository, pluginManager, eventRepository);
+        WaitingQueueManager manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, jdbc, notificationManager, templateManager, messageSource, organizationRepository, pluginManager, eventRepository, extensionManager);
         String reservationId = "reservation-id";
         it.should("handle a reservation confirmation", expect -> {
             manager.fireReservationConfirmed(reservationId);

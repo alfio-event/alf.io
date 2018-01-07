@@ -69,6 +69,7 @@ public class WaitingQueueManager {
     private final OrganizationRepository organizationRepository;
     private final PluginManager pluginManager;
     private final EventRepository eventRepository;
+    private final ExtensionManager extensionManager;
 
     public boolean subscribe(Event event, CustomerName customerName, String email, Integer selectedCategoryId, Locale userLanguage) {
         try {
@@ -82,6 +83,7 @@ public class WaitingQueueManager {
             AffectedRowCountAndKey<Integer> key = waitingQueueRepository.insert(event.getId(), customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), email, ZonedDateTime.now(event.getZoneId()), userLanguage.getLanguage(), subscriptionType, selectedCategoryId);
             notifySubscription(event, customerName, email, userLanguage, subscriptionType);
             pluginManager.handleWaitingQueueSubscription(waitingQueueRepository.loadById(key.getKey()));
+            extensionManager.handleWaitingQueueSubscription(waitingQueueRepository.loadById(key.getKey()));
             return true;
         } catch(DuplicateKeyException e) {
             return true;//why are you subscribing twice?

@@ -16,14 +16,12 @@
  */
 package alfio.repository;
 
-import alfio.model.PriceContainer;
-import alfio.model.TicketReservation;
-import alfio.model.TicketReservationInfo;
-import alfio.model.TicketSoldStatistic;
+import alfio.model.*;
 import ch.digitalfondue.npjt.*;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -168,4 +166,9 @@ public interface TicketReservationRepository {
             "confirmation_ts >= :from and " +
             "confirmation_ts <= :to group by day order by day asc", db = "MYSQL")})
     List<TicketSoldStatistic> getSoldStatistic(@Bind("eventId") int eventId, @Bind("from") Date from, @Bind("to") Date to);
+
+
+
+    @Query("select id, event_id_fk from tickets_reservation where id in (:ids)")
+    List<ReservationIdAndEventId> getReservationIdAndEventId(@Bind("ids") Collection<String> ids);
 }
