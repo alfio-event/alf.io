@@ -1,4 +1,4 @@
-#How to write an extension
+# How to write an extension
 
 Extensions allows you to link alf.io with your existing tools, such as:
 
