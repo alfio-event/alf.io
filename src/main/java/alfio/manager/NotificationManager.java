@@ -24,7 +24,6 @@ import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
-import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
@@ -34,18 +33,7 @@ import alfio.util.EventUtil;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.*;
-import com.ryantenney.passkit4j.Pass;
-import com.ryantenney.passkit4j.PassResource;
-import com.ryantenney.passkit4j.PassSerializer;
-import com.ryantenney.passkit4j.model.*;
-import com.ryantenney.passkit4j.model.Color;
-import com.ryantenney.passkit4j.model.TextField;
-import com.ryantenney.passkit4j.sign.PassSigner;
-import com.ryantenney.passkit4j.sign.PassSignerImpl;
-import com.ryantenney.passkit4j.sign.PassSigningException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -53,31 +41,20 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.util.StreamUtils;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -97,10 +74,6 @@ public class NotificationManager {
     private final OrganizationRepository organizationRepository;
     private final ConfigurationManager configurationManager;
     private final Gson gson;
-    private final Cache<String, Optional<byte[]>> passbookLogoCache = Caffeine.newBuilder()
-        .maximumSize(20)
-        .expireAfterWrite(20, TimeUnit.MINUTES)
-        .build();
 
     private final EnumMap<Mailer.AttachmentIdentifier, Function<Map<String, String>, byte[]>> attachmentTransformer;
 
@@ -116,7 +89,8 @@ public class NotificationManager {
                                FileUploadManager fileUploadManager,
                                TemplateManager templateManager,
                                TicketReservationRepository ticketReservationRepository,
-                               TicketCategoryRepository ticketCategoryRepository) {
+                               TicketCategoryRepository ticketCategoryRepository,
+                               PassBookManager passBookManager) {
         this.messageSource = messageSource;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
@@ -128,9 +102,36 @@ public class NotificationManager {
         builder.registerTypeAdapter(Mailer.Attachment.class, new AttachmentConverter());
         this.gson = builder.create();
         attachmentTransformer = new EnumMap<>(Mailer.AttachmentIdentifier.class);
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, generateICS(eventRepository, eventDescriptionRepository, ticketCategoryRepository));
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, receiptOrInvoiceFactory(eventRepository,
+            payload -> TemplateProcessor.buildReceiptPdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight())));
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.INVOICE_PDF, receiptOrInvoiceFactory(eventRepository,
+            payload -> TemplateProcessor.buildInvoicePdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight())));
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, passBookManager::getPassBook);
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository));
+    }
 
+    private static Function<Map<String, String>, byte[]> generateTicketPDF(EventRepository eventRepository, OrganizationRepository organizationRepository, ConfigurationManager configurationManager, FileUploadManager fileUploadManager, TemplateManager templateManager, TicketReservationRepository ticketReservationRepository) {
+        return (model) -> {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
+            try {
+                TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
+                TicketCategory ticketCategory = Json.fromJson(model.get("ticketCategory"), TicketCategory.class);
+                Event event = eventRepository.findById(ticket.getEventId());
+                Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
+                PDFTemplateGenerator pdfTemplateGenerator = TemplateProcessor.buildPDFTicket(Locale.forLanguageTag(ticket.getUserLanguage()), event, reservation,
+                    ticket, ticketCategory, organization, templateManager, fileUploadManager, configurationManager.getShortReservationID(event, ticket.getTicketsReservationId()));
+                pdfTemplateGenerator.generate().createPDF(baos);
+            } catch (IOException e) {
+                log.warn("was not able to generate ticket pdf for ticket with id" + ticket.getId(), e);
+            }
+            return baos.toByteArray();
+        };
+    }
 
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, (model) -> {
+    private static Function<Map<String, String>, byte[]> generateICS(EventRepository eventRepository, EventDescriptionRepository eventDescriptionRepository, TicketCategoryRepository ticketCategoryRepository) {
+        return (model) -> {
             Event event;
             Locale locale;
             Integer categoryId;
@@ -148,169 +149,10 @@ public class NotificationManager {
             TicketCategory category = Optional.ofNullable(categoryId).map(ticketCategoryRepository::getById).orElse(null);
             String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
             return EventUtil.getIcalForEvent(event, category, description).orElse(null);
-        });
-
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, receiptOrInvoiceFactory(
-            payload -> TemplateProcessor.buildReceiptPdf(payload.getLeft(),
-                fileUploadManager,
-                payload.getMiddle(),
-                templateManager,
-                payload.getRight())));
-
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.INVOICE_PDF, receiptOrInvoiceFactory(
-            payload -> TemplateProcessor.buildInvoicePdf(payload.getLeft(),
-                fileUploadManager,
-                payload.getMiddle(),
-                templateManager,
-                payload.getRight())));
-
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, (model) -> {
-            Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
-            int eventId = ticket.getEventId();
-            Event event = eventRepository.findById(eventId);
-            Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
-            int organizationId = organization.getId();
-
-            Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(organizationId, eventId);
-            Map<ConfigurationKeys, Optional<String>> pbookConf = configurationManager.getStringConfigValueFrom(
-                partial.apply(ConfigurationKeys.PASSBOOK_TYPE_IDENTIFIER),
-                partial.apply(ConfigurationKeys.PASSBOOK_KEYSTORE),
-                partial.apply(ConfigurationKeys.PASSBOOK_KEYSTORE_PASSWORD),
-                partial.apply(ConfigurationKeys.PASSBOOK_TEAM_IDENTIFIER));
-            //check if all are set
-            if(pbookConf.values().stream().anyMatch(o -> !o.isPresent())) {
-                log.trace("Cannot generate Passbook. Missing configuration keys, check if all 4 are presents");
-                return null;
-            }
-
-            //
-            String teamIdentifier = pbookConf.get(ConfigurationKeys.PASSBOOK_TEAM_IDENTIFIER).orElseThrow(IllegalStateException::new);
-            String typeIdentifier = pbookConf.get(ConfigurationKeys.PASSBOOK_TYPE_IDENTIFIER).orElseThrow(IllegalStateException::new);
-            byte[] keystoreRaw = Base64.getDecoder().decode(pbookConf.get(ConfigurationKeys.PASSBOOK_KEYSTORE).orElseThrow(IllegalStateException::new));
-            String keystorePwd = pbookConf.get(ConfigurationKeys.PASSBOOK_KEYSTORE_PASSWORD).orElseThrow(IllegalStateException::new);
-
-            //ugly, find an alternative way?
-            Optional<KeyStore> ksJks = loadKeyStore(keystoreRaw, "jks");
-            if(!ksJks.isPresent()) {
-                log.warn("Cannot generate Passbook. Not able to load keystore. Please check configuration.");
-                return null;
-            }
-            KeyStore keyStore = ksJks.orElseThrow(IllegalStateException::new);
-
-            // from example: https://github.com/ryantenney/passkit4j/blob/master/src/test/java/com/ryantenney/passkit4j/EventTicketExample.java
-
-            Location loc = new Location(Double.parseDouble(event.getLatitude()), Double.parseDouble(event.getLongitude())).altitude(0.0);
-
-            Pass pass = new Pass()
-                .teamIdentifier(teamIdentifier)
-                .passTypeIdentifier(typeIdentifier)
-                .organizationName(organization.getName())
-                .description(event.getDisplayName())
-                .serialNumber(ticket.getUuid())
-                .relevantDate(Date.from(event.getBegin().toInstant()))
-                .expirationDate(Date.from(event.getEnd().toInstant()))
-                .locations(loc)
-                .barcode(new Barcode(BarcodeFormat.QR, ticket.ticketCode(event.getPrivateKey())))
-                .labelColor(Color.BLACK)
-                .foregroundColor(Color.BLACK)
-                .backgroundColor(Color.WHITE)
-                .passInformation(
-                    new EventTicket()
-                        .primaryFields(new TextField("event", "EVENT", event.getDisplayName()))
-                        .secondaryFields(new TextField("loc", "LOCATION", event.getLocation()))
-                );
-
-            List<PassResource> passResources = new ArrayList<>(4);
-            try(InputStream icon = new ClassPathResource("/alfio/icon/icon.png").getInputStream();
-                InputStream icon2 = new ClassPathResource("/alfio/icon/icon@2x.png").getInputStream()) {
-                passResources.add(new PassResource("icon.png", StreamUtils.copyToByteArray(icon)));
-                passResources.add(new PassResource("icon@2x.png", StreamUtils.copyToByteArray(icon2)));
-            } catch (IOException e) {
-                //
-            }
-
-
-            fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(metadata -> {
-                if(metadata.getContentType().equals("image/png") || metadata.getContentType().equals("image/jpeg")) {
-                    Optional<byte[]> cachedLogo = passbookLogoCache.get(event.getFileBlobId(), (id) -> {
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        fileUploadManager.outputFile(event.getFileBlobId(), baos);
-                        return readAndConvertImage(baos);
-                    });
-                    cachedLogo.ifPresent(logo -> {
-                        passResources.add(new PassResource("logo.png", logo));
-                        passResources.add(new PassResource("logo@2x.png", logo));
-                    });
-                }
-            });
-
-            pass.files(passResources.toArray(new PassResource[passResources.size()]));
-
-            try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                InputStream appleCert = new ClassPathResource("/alfio/certificates/AppleWWDRCA.cer").getInputStream()) {
-                PassSigner signer = PassSignerImpl.builder()
-                    .keystore(keyStore, keystorePwd)
-                    .intermediateCertificate(appleCert)
-                    .build();
-                PassSerializer.writePkPassArchive(pass, signer, baos);
-                //PassSerializer.writePkPassArchive(pass, signer, new FileOutputStream("/tmp/Passbook.pkpass"));
-                return baos.toByteArray();
-            } catch (IOException | PassSigningException e) {
-                log.warn("was not able to generate the passbook file", e);
-                return null;
-            }
-        });
-
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, (model) -> {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
-            try {
-                TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
-                TicketCategory ticketCategory = Json.fromJson(model.get("ticketCategory"), TicketCategory.class);
-                Event event = eventRepository.findById(ticket.getEventId());
-                Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
-                PDFTemplateGenerator pdfTemplateGenerator = TemplateProcessor.buildPDFTicket(Locale.forLanguageTag(ticket.getUserLanguage()), event, reservation,
-                    ticket, ticketCategory, organization, templateManager, fileUploadManager, configurationManager.getShortReservationID(event, ticket.getTicketsReservationId()));
-                pdfTemplateGenerator.generate().createPDF(baos);
-            } catch (IOException e) {
-                log.warn("was not able to generate ticket pdf for ticket with id" + ticket.getId(), e);
-            }
-            return baos.toByteArray();
-        });
+        };
     }
 
-    //"jks"
-    // -> "pkcs12" don't work ;(
-    private static Optional<KeyStore> loadKeyStore(byte[] k, String type) {
-        try {
-            KeyStore ks = KeyStore.getInstance(type);
-            ks.load(new ByteArrayInputStream(k), null);
-            return Optional.of(ks);
-        } catch (GeneralSecurityException | IOException e) {
-            return Optional.empty();
-        }
-    }
-
-    private static Optional<byte[]> readAndConvertImage(ByteArrayOutputStream baos) {
-        try {
-            BufferedImage sourceImage = ImageIO.read(new ByteArrayInputStream(baos.toByteArray()));
-            boolean isWider = sourceImage.getWidth() > sourceImage.getHeight();
-            // as defined in https://developer.apple.com/library/content/documentation/UserExperience/Conceptual/PassKit_PG/Creating.html#//apple_ref/doc/uid/TP40012195-CH4-SW8
-            // logo max 160*50
-            int finalWidth = isWider ? 160 : -1;
-            int finalHeight = !isWider ? 50 : -1;
-            Image thumb = sourceImage.getScaledInstance(finalWidth, finalHeight, Image.SCALE_SMOOTH);
-            BufferedImage bufferedThumbnail = new BufferedImage(thumb.getWidth(null), thumb.getHeight(null), BufferedImage.TYPE_INT_RGB);
-            bufferedThumbnail.getGraphics().drawImage(thumb, 0, 0, null);
-            ByteArrayOutputStream logoPng = new ByteArrayOutputStream();
-            ImageIO.write(bufferedThumbnail, "png", logoPng);
-            return Optional.of(logoPng.toByteArray());
-        } catch (IOException e) {
-            return Optional.empty();
-        }
-    }
-
-    public Function<Map<String, String>, byte[]> receiptOrInvoiceFactory(Function<Triple<Event, Locale, Map<String, Object>>, Optional<byte[]>> pdfGenerator) {
+    private static Function<Map<String, String>, byte[]> receiptOrInvoiceFactory(EventRepository eventRepository, Function<Triple<Event, Locale, Map<String, Object>>, Optional<byte[]>> pdfGenerator) {
         return (model) -> {
             String reservationId = model.get("reservationId");
             Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
@@ -451,10 +293,10 @@ public class NotificationManager {
             .filter(attachment -> attachment.getIdentifier() != null && !attachment.getIdentifier().reinterpretAs().isEmpty())
             .collect(Collectors.toList());
 
-        List<Mailer.Attachment> generated = new ArrayList<>(Arrays.stream(attachments)
+        List<Mailer.Attachment> generated = Arrays.stream(attachments)
             .map(attachment -> this.transformAttachment(attachment, attachment.getIdentifier()))
             .filter(Objects::nonNull)
-            .collect(Collectors.toList()));
+            .collect(Collectors.toList());
 
         List<Mailer.Attachment> reinterpreted = new ArrayList<>();
         toReinterpret.forEach(attachment ->
