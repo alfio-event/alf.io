@@ -85,7 +85,7 @@ public class ExtensionService {
         for (ScriptPathNameHash activePath : activePaths) {
             String path = activePath.getPath();
             String name = activePath.getName();
-            res = scriptingExecutionService.executeScript(path, name, activePath.getHash(),
+            res = scriptingExecutionService.executeScript(name, activePath.getHash(),
                 () -> getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz);
             input.put("output", res);
         }
@@ -108,9 +108,9 @@ public class ExtensionService {
         // to handle override:
         // if there are active tree scripts with the same name
         // with path:
-        //  - .org.event
-        //  - .org
-        //  - .
+        //  - -org-event
+        //  - -org
+        //  - -
         // the one with the longest path win
 
         //generate all the paths
@@ -120,11 +120,11 @@ public class ExtensionService {
         Set<String> paths = new TreeSet<>();
         int basePathLength = basePath.length();
         for (int i = 1; i < basePathLength; i++) {
-            if (basePath.charAt(i) == '.') {
+            if (basePath.charAt(i) == '-') {
                 paths.add(basePath.substring(0, i));
             }
         }
-        paths.add("."); //handle first and last case
+        paths.add("-"); //handle first and last case
         paths.add(basePath);
         return extensionRepository.findActive(paths, async, event);
     }

@@ -20,6 +20,8 @@ package alfio.extension;
 import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.github.benmanes.caffeine.cache.RemovalListener;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -37,9 +39,9 @@ import java.util.function.Supplier;
 // table {path, name, hash, script content, params}
 // where (path, name) is unique, in our case can be:
 //
-// .
-// .organizationId
-// .organizationId.eventId
+// -
+// -organizationId
+// -organizationId-eventId
 
 @Service
 @Log4j2
@@ -51,9 +53,14 @@ public class ScriptingExecutionService {
         .build();
     private final Cache<String, ExecutorService> asyncExecutors = Caffeine.newBuilder()
         .expireAfterAccess(12, TimeUnit.HOURS)
+        .removalListener((RemovalListener<String, ExecutorService>) (key, value, cause) -> {
+            if (value != null) {
+                value.shutdown();
+            }
+        })
         .build();
 
-    public <T> T executeScript(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params, Class<T> clazz) {
+    public <T> T executeScript(String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params, Class<T> clazz) {
         CompiledScript compiledScript = compiledScriptCache.get(hash, (key) -> {
             try {
                 return engine.compile(scriptFetcher.get());
@@ -68,7 +75,7 @@ public class ScriptingExecutionService {
     public void executeScriptAsync(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params) {
         Optional.ofNullable(asyncExecutors.get(path, (key) -> Executors.newSingleThreadExecutor()))
             .ifPresent(it -> it.submit(() -> {
-               executeScript(path, name, hash, scriptFetcher, params, Object.class);
+               executeScript(name, hash, scriptFetcher, params, Object.class);
             }));
     }
 
