@@ -21,7 +21,7 @@ import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.manager.EventNameManager;
 import alfio.util.MustacheCustomTagInterceptor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
