@@ -738,20 +738,24 @@ public class TicketReservationManager {
      * @param expirationDate expiration date
      */
     public void markExpiredInPaymentReservationAsStuck(Date expirationDate) {
-        final List<String> stuckReservations = ticketReservationRepository.findStuckReservations(expirationDate);
-        stuckReservations.forEach(reservationId -> ticketReservationRepository.updateTicketStatus(reservationId, TicketReservationStatus.STUCK.name()));
-        stuckReservations.stream()
-                .map(ticketRepository::findFirstTicketInReservation)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .mapToInt(Ticket::getEventId)
-                .distinct()
-                .mapToObj(eventRepository::findById)
-                .map(e -> Pair.of(e, organizationRepository.getById(e.getOrganizationId())))
-                .forEach(pair -> notificationManager.sendSimpleEmail(pair.getLeft(), pair.getRight().getEmail(),
-                                STUCK_TICKETS_SUBJECT,
-                                () -> String.format(STUCK_TICKETS_MSG, pair.getLeft().getShortName()))
-                );
+        List<String> stuckReservations = ticketReservationRepository.findStuckReservations(expirationDate);
+        if(!stuckReservations.isEmpty()) {
+            ticketReservationRepository.updateTicketStatus(stuckReservations, TicketReservationStatus.STUCK.name());
+
+            Map<Integer, List<ReservationIdAndEventId>> reservationsGroupedByEvent = ticketReservationRepository
+                .getReservationIdAndEventId(stuckReservations)
+                .stream()
+                .collect(Collectors.groupingBy(ReservationIdAndEventId::getEventId));
+
+            reservationsGroupedByEvent.forEach((eventId, reservationIds) -> {
+                Event event = eventRepository.findById(eventId);
+                Organization organization = organizationRepository.getById(event.getOrganizationId());
+                notificationManager.sendSimpleEmail(event, organization.getEmail(),
+                    STUCK_TICKETS_SUBJECT,  () -> String.format(STUCK_TICKETS_MSG, event.getShortName()));
+
+                extensionManager.handleStuckReservations(event, reservationIds.stream().map(ReservationIdAndEventId::getId).collect(toList()));
+            });
+        }
     }
 
     private static TotalPrice totalReservationCostWithVAT(PromoCodeDiscount promoCodeDiscount,
@@ -1188,6 +1192,7 @@ public class TicketReservationManager {
                 Map<String, Object> model = TemplateResource.prepareModelForOfflineReservationExpiringEmailForOrganizer(event, reservations, baseUrl);
                 notificationManager.sendSimpleEmail(event, organization.getEmail(), cc, subject, () ->
                     templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER, model, Locale.ENGLISH));
+                extensionManager.handleOfflineReservationsWillExpire(event, reservations);
             }
         });
     }

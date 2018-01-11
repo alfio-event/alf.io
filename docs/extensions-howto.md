@@ -29,6 +29,8 @@ function getScriptMetadata() {
             //'RESERVATION_CANCELLED', //fired when reservation(s) are cancelled
             //'TICKET_ASSIGNED', //fired on ticket assignment. No results expected.
             //'WAITING_QUEUE_SUBSCRIPTION', //fired on waiting queue subscription. No results expected.
+            //'STUCK_RESERVATIONS', //fired when the system has detected stuck reservations. No results expected.
+            //'OFFLINE_RESERVATIONS_WILL_EXPIRE' //fired when an offline reservation will expire. No results expected.
             'INVOICE_GENERATION' //fired on invoice generation. Returns the invoice model.
         ]
     };
@@ -132,6 +134,23 @@ extensions will be invoked **synchronously** while generating an invoice.
 ##### expected result type
 
 [InvoiceGeneration](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/InvoiceGeneration.java) - The invoice content, currently limited to the invoice number.
+
+
+#### STUCK_RESERVATIONS
+
+extensions will be invoked **asynchronously** when the system will detect a stuck reservation.
+
+##### params
+* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+* **reservations**: [TicketReservationInfo](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservationInfo.java)
+
+#### OFFLINE_RESERVATIONS_WILL_EXPIRE
+
+extensions will be invoked **asynchronously**
+
+##### params
+* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+* **reservationIds** List of String - list of reservation ids 
 
 ## Methods
 

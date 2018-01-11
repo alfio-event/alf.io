@@ -87,6 +87,9 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set status = :status where id = :reservationId")
     int updateTicketStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
 
+    @Query("update tickets_reservation set status = :status where id in (:reservationIds)")
+    int updateTicketStatus(@Bind("reservationIds") Collection<String> ids, @Bind("status") String status);
+
     @Query("select * from tickets_reservation where id = :id")
     TicketReservation findReservationById(@Bind("id") String id);
 

@@ -35,13 +35,17 @@ public class ExtensionManager {
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
 
+
     public enum ExtensionEvent {
         RESERVATION_CONFIRMED,
         RESERVATION_CANCELLED,
         RESERVATION_EXPIRED,
         TICKET_ASSIGNED,
         WAITING_QUEUE_SUBSCRIBED,
-        INVOICE_GENERATION
+        INVOICE_GENERATION,
+        //
+        STUCK_RESERVATIONS,
+        OFFLINE_RESERVATIONS_WILL_EXPIRE
     }
 
 
@@ -79,6 +83,22 @@ public class ExtensionManager {
 
     public void handleReservationsCancelledForEvent(Event event, Collection<String> reservationIdsToRemove) {
         handleReservationRemoval(event, reservationIdsToRemove, ExtensionEvent.RESERVATION_CANCELLED);
+    }
+
+    public void handleOfflineReservationsWillExpire(Event event, List<TicketReservationInfo> reservations) {
+        int organizationId = eventRepository.findOrganizationIdByEventId(event.getOrganizationId());
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("event", event);
+        payload.put("reservations", reservations);
+        asyncCall(ExtensionEvent.OFFLINE_RESERVATIONS_WILL_EXPIRE, event.getId(), organizationId, payload);
+    }
+
+    public void handleStuckReservations(Event event, List<String> stuckReservationsId) {
+        int organizationId = event.getOrganizationId();
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("event", event);
+        payload.put("reservationIds", stuckReservationsId);
+        asyncCall(ExtensionEvent.STUCK_RESERVATIONS, event.getId(), organizationId, payload);
     }
 
     private void handleReservationRemoval(Event event, Collection<String> reservationIds, ExtensionEvent extensionEvent) {
