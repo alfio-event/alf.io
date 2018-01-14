@@ -46,6 +46,10 @@ vi custom.jvmargs
 
 Please be aware that since this file could contain sensitive information (such as Google Maps private API key) it will be automatically ignored by git.
 
+#### For debug
+
+Add a new line with: `-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005` in custom.jvmargs
+
 
 #### Using hsqldb gui
 

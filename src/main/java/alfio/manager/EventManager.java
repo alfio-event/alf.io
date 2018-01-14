@@ -104,6 +104,7 @@ public class EventManager {
     private final Environment environment;
     private final OrganizationRepository organizationRepository;
     private final AuditingRepository auditingRepository;
+    private final ExtensionManager extensionManager;
 
 
     public Event getSingleEvent(String eventName, String username) {
@@ -163,6 +164,7 @@ public class EventManager {
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(event, em);
         initPlugins(event);
+        extensionManager.handleEventCreation(event);
     }
 
     public void toggleActiveFlag(int id, String username, boolean activate) {
@@ -172,8 +174,9 @@ public class EventManager {
         if(environment.acceptsProfiles(Initializer.PROFILE_DEMO)) {
             throw new IllegalStateException("demo mode");
         }
-
-        eventRepository.updateEventStatus(id, activate ? Event.Status.PUBLIC : Event.Status.DRAFT);
+        Event.Status status = activate ? Event.Status.PUBLIC : Event.Status.DRAFT;
+        eventRepository.updateEventStatus(id, status);
+        extensionManager.handleEventStatusChange(event, status);
     }
 
     private void createAllAdditionalServices(int eventId, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId) {

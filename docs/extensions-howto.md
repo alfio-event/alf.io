@@ -30,7 +30,9 @@ function getScriptMetadata() {
             //'TICKET_ASSIGNED', //fired on ticket assignment. No results expected.
             //'WAITING_QUEUE_SUBSCRIPTION', //fired on waiting queue subscription. No results expected.
             //'STUCK_RESERVATIONS', //fired when the system has detected stuck reservations. No results expected.
-            //'OFFLINE_RESERVATIONS_WILL_EXPIRE' //fired when an offline reservation will expire. No results expected.
+            //'OFFLINE_RESERVATIONS_WILL_EXPIRE', //fired when an offline reservation will expire. No results expected.
+            //'EVENT_CREATED', //fired when an event has been created. Return boolean for synchronous variant, no results expected for the asynchronous one.
+            //'EVENT_STATUS_CHANGE', //fired when an event status has changed (normally, from DRAFT to PUBLIC). Return boolean for synchronous variant, no results expected for the asynchronous one.
             'INVOICE_GENERATION' //fired on invoice generation. Returns the invoice model.
         ]
     };
@@ -150,7 +152,22 @@ extensions will be invoked **asynchronously**
 
 ##### params
 * **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
-* **reservationIds** List of String - list of reservation ids 
+* **reservationIds** List of String - list of reservation ids
+
+#### EVENT_CREATED
+
+extensions will be invoked **asynchronously** and **synchronously** when an event has been created.
+
+##### params
+* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+
+#### EVENT_STATUS_CHANGE
+
+extensions will be invoked **asynchronously** and **synchronously** when an event status change.
+
+##### params
+* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+* **status**: String - possible values: 'DRAFT', 'PUBLIC', 'DISABLED'
 
 ## Methods
 

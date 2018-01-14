@@ -45,9 +45,24 @@ public class ExtensionManager {
         INVOICE_GENERATION,
         //
         STUCK_RESERVATIONS,
-        OFFLINE_RESERVATIONS_WILL_EXPIRE
+        OFFLINE_RESERVATIONS_WILL_EXPIRE,
+        EVENT_CREATED,
+        EVENT_STATUS_CHANGE
     }
 
+    public void handleEventCreation(Event event) {
+        Map<String, Object> payload = Collections.singletonMap("event", event);
+        syncCall(ExtensionEvent.EVENT_CREATED, event.getId(), event.getOrganizationId(), payload, Boolean.class);
+        asyncCall(ExtensionEvent.EVENT_CREATED, event.getId(), event.getOrganizationId(), payload);
+    }
+
+    public void handleEventStatusChange(Event event, Event.Status status) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("event", event);
+        payload.put("status", status.name());
+        syncCall(ExtensionEvent.EVENT_STATUS_CHANGE, event.getId(), event.getOrganizationId(), payload, Boolean.class);
+        asyncCall(ExtensionEvent.EVENT_STATUS_CHANGE, event.getId(), event.getOrganizationId(), payload);
+    }
 
     public void handleReservationConfirmation(TicketReservation reservation, int eventId) {
         int organizationId = eventRepository.findOrganizationIdByEventId(eventId);

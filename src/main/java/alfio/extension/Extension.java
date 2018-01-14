@@ -17,15 +17,24 @@
 
 package alfio.extension;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
 public class Extension {
 
     private final String path;
     private final String name;
     private final String script;
     private final boolean enabled;
+
+    public Extension(@JsonProperty("path") String path,
+                     @JsonProperty("name") String name,
+                     @JsonProperty("script") String script,
+                     @JsonProperty("enabled") boolean enabled) {
+        this.path = path;
+        this.name = name;
+        this.script = script;
+        this.enabled = enabled;
+    }
 }
