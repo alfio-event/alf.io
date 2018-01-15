@@ -15,21 +15,13 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create table extension_support (
-    path varchar(128) not null,
-    name varchar(64) not null,
-    hash varchar(256) not null,
-    enabled boolean not null,
-    async boolean not null,
-    script mediumtext not null
-) ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
-alter table extension_support add constraint unique_extension_support unique(path, name);
-
-create table extension_event (
+create table extension_log (
+    id integer identity not null,
     path_fk varchar(128) not null,
-    name_fk varchar(64) not null,
-    event varchar(128) not null
+    name_fk varchar(64 ) not null,
+    description mediumtext not null,
+    type varchar(255),
+    event_ts timestamp DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
 
-alter table extension_event add constraint unique_extension_event unique(path_fk, name_fk);
-alter table extension_event add foreign key(path_fk, name_fk) references extension_support(path, name);
+alter table extension_log add foreign key(path_fk, name_fk) references extension_support(path, name);

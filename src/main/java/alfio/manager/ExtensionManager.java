@@ -47,7 +47,8 @@ public class ExtensionManager {
         STUCK_RESERVATIONS,
         OFFLINE_RESERVATIONS_WILL_EXPIRE,
         EVENT_CREATED,
-        EVENT_STATUS_CHANGE
+        EVENT_STATUS_CHANGE,
+        WEB_API_HOOK
     }
 
     public void handleEventCreation(Event event) {
