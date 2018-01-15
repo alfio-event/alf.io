@@ -16,7 +16,7 @@
 --
 
 create table extension_log (
-    id integer identity not null,
+    id integer auto_increment primary key not null,
     path_fk varchar(128) not null,
     name_fk varchar(64 ) not null,
     description mediumtext not null,
