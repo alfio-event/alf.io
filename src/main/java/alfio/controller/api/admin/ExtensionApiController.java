@@ -22,6 +22,7 @@ import alfio.model.ExtensionSupport;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +39,7 @@ import java.util.List;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/admin/api/extensions")
+@Log4j2
 public class ExtensionApiController {
 
     private static final String SAMPLE_JS;
@@ -66,15 +68,23 @@ public class ExtensionApiController {
     }
 
     @RequestMapping(value = "", method = RequestMethod.POST)
-    public void create(@RequestBody Extension script, Principal principal) {
-        ensureAdmin(principal);
-        extensionService.createOrUpdate(null, null, script);
+    public ResponseEntity<SerializablePair<Boolean, String>> create(@RequestBody Extension script, Principal principal) {
+        return createOrUpdate(null, null, script, principal);
     }
 
     @RequestMapping(value = "{path}/{name}", method = RequestMethod.POST)
-    public void update(@PathVariable("path") String path, @PathVariable("name") String name, @RequestBody Extension script, Principal principal) {
-        ensureAdmin(principal);
-        extensionService.createOrUpdate(path, name, script);
+    public ResponseEntity<SerializablePair<Boolean, String>> update(@PathVariable("path") String path, @PathVariable("name") String name, @RequestBody Extension script, Principal principal) {
+        return createOrUpdate(path, name, script, principal);
+    }
+
+    private ResponseEntity<SerializablePair<Boolean, String>> createOrUpdate(String previousPath, String previousName, Extension script, Principal principal) {
+        try {
+            ensureAdmin(principal);
+            extensionService.createOrUpdate(previousPath, previousName, script);
+            return ResponseEntity.ok(SerializablePair.of(true, null));
+        } catch (Throwable t) {
+            return ResponseEntity.badRequest().body(SerializablePair.of(false, t.getMessage()));
+        }
     }
 
     @RequestMapping(value = "{path}/{name}", method = RequestMethod.GET)

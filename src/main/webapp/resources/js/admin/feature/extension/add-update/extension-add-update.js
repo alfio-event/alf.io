@@ -40,12 +40,10 @@
                 };
                 if(splitPath.length >= 1) {
                     path.organization = parseInt(splitPath[0]);
-                    if(splitPath.length === 2) {
+                    if (splitPath.length === 2) {
                         path.event = parseInt(splitPath[1]);
                     }
                 }
-
-                console.log(path);
 
                 ctrl.extension = angular.extend({}, extension, {translatedPath: path});
 
@@ -90,6 +88,9 @@
                 script: extension.script
             }).then(function() {
                 $state.go('extension.list');
+            }, function(res) {
+                ctrl.errorMessage = res.data.value;
+                window.scrollTo(0,0);
             });
         };
 

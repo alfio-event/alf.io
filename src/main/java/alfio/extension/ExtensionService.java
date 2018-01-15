@@ -24,6 +24,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +41,7 @@ public class ExtensionService {
 
     @Transactional
     public void createOrUpdate(String previousPath, String previousName, Extension script) {
+        Validate.notBlank(script.getName(), "Name is mandatory");
         String hash = DigestUtils.sha256Hex(script.getScript());
         ExtensionMetadata extensionMetadata = ScriptingExecutionService.executeScript(
             script.getName(),
