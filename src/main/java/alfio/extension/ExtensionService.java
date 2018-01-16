@@ -17,13 +17,14 @@
 
 package alfio.extension;
 
+import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.ScriptPathNameHash;
+import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +40,40 @@ public class ExtensionService {
 
     private final ExtensionRepository extensionRepository;
 
+    private final ExtensionLogRepository extensionLogRepository;
+
+
+    @AllArgsConstructor
+    private static final class ExtensionLoggerImpl implements ExtensionLogger {
+
+        private final ExtensionLogRepository extensionLogRepository;
+        private final String path;
+        private final String name;
+
+        @Override
+        public void logWarning(String msg) {
+            extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.WARNING);
+        }
+
+        @Override
+        public void logSuccess(String msg) {
+            extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.SUCCESS);
+        }
+
+        @Override
+        public void logError(String msg) {
+            extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.ERROR);
+        }
+
+        @Override
+        public void logInfo(String msg) {
+            extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.INFO);
+        }
+    }
+
+    private static final class NoopExtensionLogger implements ExtensionLogger {
+    }
+
     @Transactional
     public void createOrUpdate(String previousPath, String previousName, Extension script) {
         Validate.notBlank(script.getName(), "Name is mandatory");
@@ -47,10 +82,11 @@ public class ExtensionService {
             script.getName(),
             script.getScript() + "\n;GSON.fromJson(JSON.stringify(getScriptMetadata()), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
             Collections.emptyMap(),
-            ExtensionMetadata.class);
+            ExtensionMetadata.class, new NoopExtensionLogger());
 
         if (previousPath != null && previousName != null && extensionRepository.hasPath(previousPath, previousName) > 0) {
             extensionRepository.deleteEventsForPath(previousPath, previousName);
+            extensionLogRepository.deleteWith(previousPath, previousName);
             extensionRepository.deleteScriptForPath(previousPath, previousName);
         }
 
@@ -88,7 +124,8 @@ public class ExtensionService {
             String path = activePath.getPath();
             String name = activePath.getName();
             res = scriptingExecutionService.executeScript(name, activePath.getHash(),
-                () -> getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz);
+                () -> getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz,
+                new ExtensionLoggerImpl(extensionLogRepository, path, name));
             input.put("output", res);
         }
         return res;
@@ -101,7 +138,8 @@ public class ExtensionService {
         for (ScriptPathNameHash activePath : activePaths) {
             String path = activePath.getPath();
             String name = activePath.getName();
-            scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(extensionEvent);", input);
+            scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(extensionEvent);", input,
+                new ExtensionLoggerImpl(extensionLogRepository, path, name));
         }
     }
 

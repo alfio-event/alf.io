@@ -60,7 +60,7 @@ public class ScriptingExecutionService {
         })
         .build();
 
-    public <T> T executeScript(String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params, Class<T> clazz) {
+    public <T> T executeScript(String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params, Class<T> clazz, ExtensionLogger extensionLogger) {
         CompiledScript compiledScript = compiledScriptCache.get(hash, (key) -> {
             try {
                 return engine.compile(scriptFetcher.get());
@@ -69,21 +69,21 @@ public class ScriptingExecutionService {
                 throw new IllegalStateException(se);
             }
         });
-        return executeScript(name, compiledScript, params, clazz);
+        return executeScript(name, compiledScript, params, clazz, extensionLogger);
     }
 
-    public void executeScriptAsync(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params) {
+    public void executeScriptAsync(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params,  ExtensionLogger extensionLogger) {
         Optional.ofNullable(asyncExecutors.get(path, (key) -> Executors.newSingleThreadExecutor()))
             .ifPresent(it -> it.submit(() -> {
-               executeScript(name, hash, scriptFetcher, params, Object.class);
+               executeScript(name, hash, scriptFetcher, params, Object.class, extensionLogger);
             }));
     }
 
 
-    public static <T> T executeScript(String name, String script, Map<String, Object> params, Class<T> clazz) {
+    public static <T> T executeScript(String name, String script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {
         try {
             CompiledScript compiledScript = engine.compile(script);
-            return executeScript(name, compiledScript, params, clazz);
+            return executeScript(name, compiledScript, params, clazz, extensionLogger);
         } catch (ScriptException se) {
             log.warn("Was not able to compile script", se);
             throw new IllegalStateException(se);
@@ -91,7 +91,7 @@ public class ScriptingExecutionService {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T executeScript(String name, CompiledScript script, Map<String, Object> params, Class<T> clazz) {
+    private static <T> T executeScript(String name, CompiledScript script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {
         try {
             if(params == null) {
                 params = Collections.emptyMap();
@@ -99,6 +99,7 @@ public class ScriptingExecutionService {
             ScriptContext newContext = new SimpleScriptContext();
             Bindings engineScope = newContext.getBindings(ScriptContext.ENGINE_SCOPE);
             engineScope.put("log", log);
+            engineScope.put("extensionLogger", extensionLogger);
             engineScope.put("GSON", Json.GSON);
             engineScope.put("restTemplate", new RestTemplate());
             engineScope.put("returnClass", clazz);
