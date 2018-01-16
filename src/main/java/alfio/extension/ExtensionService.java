@@ -27,7 +27,12 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.*;
 
@@ -42,37 +47,47 @@ public class ExtensionService {
 
     private final ExtensionLogRepository extensionLogRepository;
 
+    private final PlatformTransactionManager platformTransactionManager;
 
     @AllArgsConstructor
     private static final class ExtensionLoggerImpl implements ExtensionLogger {
 
         private final ExtensionLogRepository extensionLogRepository;
+        private final PlatformTransactionManager platformTransactionManager;
         private final String path;
         private final String name;
 
         @Override
         public void logWarning(String msg) {
-            extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.WARNING);
+            executeInNewTransaction((s) -> extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.WARNING));
         }
 
         @Override
         public void logSuccess(String msg) {
-            extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.SUCCESS);
+            executeInNewTransaction((s) -> extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.SUCCESS));
         }
 
         @Override
         public void logError(String msg) {
-            extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.ERROR);
+            executeInNewTransaction((s) -> extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.ERROR));
         }
 
         @Override
         public void logInfo(String msg) {
-            extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.INFO);
+            executeInNewTransaction((s) -> extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.INFO));
+        }
+
+        private void executeInNewTransaction(TransactionCallback<Integer> t) {
+            DefaultTransactionDefinition definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            TransactionTemplate template = new TransactionTemplate(platformTransactionManager, definition);
+            template.execute(t);
         }
     }
 
     private static final class NoopExtensionLogger implements ExtensionLogger {
     }
+
+
 
     @Transactional
     public void createOrUpdate(String previousPath, String previousName, Extension script) {
@@ -125,7 +140,7 @@ public class ExtensionService {
             String name = activePath.getName();
             res = scriptingExecutionService.executeScript(name, activePath.getHash(),
                 () -> getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz,
-                new ExtensionLoggerImpl(extensionLogRepository, path, name));
+                new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, path, name));
             input.put("output", res);
         }
         return res;
@@ -139,7 +154,7 @@ public class ExtensionService {
             String path = activePath.getPath();
             String name = activePath.getName();
             scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(extensionEvent);", input,
-                new ExtensionLoggerImpl(extensionLogRepository, path, name));
+                new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, path, name));
         }
     }
 

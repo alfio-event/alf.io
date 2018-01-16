@@ -20,7 +20,6 @@ package alfio.extension;
 import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -66,6 +65,7 @@ public class ScriptingExecutionService {
                 return engine.compile(scriptFetcher.get());
             } catch (ScriptException se) {
                 log.warn("Was not able to compile script " + name, se);
+                extensionLogger.logError("Was not able to compile script: " + se.getMessage());
                 throw new IllegalStateException(se);
             }
         });
@@ -104,9 +104,12 @@ public class ScriptingExecutionService {
             engineScope.put("restTemplate", new RestTemplate());
             engineScope.put("returnClass", clazz);
             engineScope.putAll(params);
-            return (T) script.eval(newContext);
+            T res = (T) script.eval(newContext);
+            extensionLogger.logSuccess("Script executed successfully");
+            return res;
         } catch (ScriptException ex) {
             log.warn("Error while executing script " + name, ex);
+            extensionLogger.logError("Error while executing script " + ex.getMessage());
             throw new IllegalStateException(ex);
         }
     }
