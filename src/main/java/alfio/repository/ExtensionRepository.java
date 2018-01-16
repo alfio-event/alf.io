@@ -38,15 +38,20 @@ public interface ExtensionRepository {
                @Bind("async") boolean async,
                @Bind("script") String script);
 
+    @Query("update extension_support set hash = :hash, enabled = :enabled, async = :async, script = :script where path = :path and name = :name")
+    int update(@Bind("path") String path,
+               @Bind("name") String name,
+               @Bind("hash") String hash,
+               @Bind("enabled") boolean enabled,
+               @Bind("async") boolean async,
+               @Bind("script") String script);
+
     @Query("update extension_support set enabled = :enabled where path = :path and name = :name")
     int toggle(@Bind("path") String path, @Bind("name") String name, @Bind("enabled") boolean enabled);
 
     @Query("insert into extension_event(path_fk, name_fk, event) values " +
         " (:path, :name, :event)")
     int insertEvent(@Bind("path") String path, @Bind("name") String name, @Bind("event") String event);
-
-    @Query("select count(*) from extension_support where path = :path and name = :name")
-    int hasPath(@Bind("path") String path, @Bind("name") String name);
 
     @Query("select script from extension_support where path = :path and name = :name")
     String getScript(@Bind("path") String path, @Bind("name") String name);
@@ -73,4 +78,6 @@ public interface ExtensionRepository {
     List<ExtensionSupport.ScriptPathNameHash> findActive(@Bind("possiblePaths") Set<String> possiblePaths,
                                                          @Bind("async") boolean async,
                                                          @Bind("event") String event);
+
+
 }

@@ -26,6 +26,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -92,6 +93,7 @@ public class ExtensionService {
     @Transactional
     public void createOrUpdate(String previousPath, String previousName, Extension script) {
         Validate.notBlank(script.getName(), "Name is mandatory");
+        Validate.notBlank(script.getPath(), "Path must be defined");
         String hash = DigestUtils.sha256Hex(script.getScript());
         ExtensionMetadata extensionMetadata = ScriptingExecutionService.executeScript(
             script.getName(),
@@ -99,13 +101,18 @@ public class ExtensionService {
             Collections.emptyMap(),
             ExtensionMetadata.class, new NoopExtensionLogger());
 
-        if (previousPath != null && previousName != null && extensionRepository.hasPath(previousPath, previousName) > 0) {
-            extensionRepository.deleteEventsForPath(previousPath, previousName);
+
+        extensionRepository.deleteEventsForPath(previousPath, previousName);
+
+        //
+        if (!Objects.equals(previousPath, script.getPath()) || !Objects.equals(previousName, script.getName())) {
             extensionLogRepository.deleteWith(previousPath, previousName);
             extensionRepository.deleteScriptForPath(previousPath, previousName);
+            extensionRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
+        } else {
+            extensionRepository.update(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
         }
 
-        extensionRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
         for (String event : extensionMetadata.events) {
             extensionRepository.insertEvent(script.getPath(), script.getName(), event);
         }
@@ -186,5 +193,12 @@ public class ExtensionService {
 
     public List<ExtensionSupport> listAll() {
         return extensionRepository.listAll();
+    }
+
+
+    public Pair<List<ExtensionLog>, Integer> getLog(String path, String name, ExtensionLog.Type type, int pageSize, int offset) {
+        int count = extensionLogRepository.countPages(path, name, type);
+        List<ExtensionLog> logs = extensionLogRepository.getPage(path, name, type, pageSize, offset);
+        return Pair.of(logs, count);
     }
 }

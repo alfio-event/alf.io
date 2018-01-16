@@ -17,13 +17,17 @@
 
 package alfio.controller.api.admin;
 
+import alfio.controller.api.support.PageAndContent;
 import alfio.manager.user.UserManager;
+import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -104,6 +108,17 @@ public class ExtensionApiController {
     public void toggle(@PathVariable("path") String path, @PathVariable("name") String name, @PathVariable("enable") boolean enable, Principal principal) {
         ensureAdmin(principal);
         extensionService.toggle(path, name, enable);
+    }
+
+    @RequestMapping(value = "/log")
+    public PageAndContent<List<ExtensionLog>> getLog(@RequestParam(required = false, name = "path") String path,
+                                                     @RequestParam(required = false, name = "name") String name,
+                                                     @RequestParam(required = false, name = "type") ExtensionLog.Type type,
+                                                     @RequestParam(required = false, name = "page", defaultValue = "0") Integer page, Principal principal) {
+        ensureAdmin(principal);
+        final int pageSize = 50;
+        Pair<List<ExtensionLog>, Integer> res = extensionService.getLog(StringUtils.trimToNull(path), StringUtils.trimToNull(name), type, pageSize, (page == null ? 0 : page) * pageSize);
+        return new PageAndContent<>(res.getLeft(), res.getRight());
     }
 
     private void ensureAdmin(Principal principal) {

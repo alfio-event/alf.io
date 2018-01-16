@@ -33,7 +33,7 @@ public interface ExtensionLogRepository {
                @Bind("description") String description,
                @Bind("type") ExtensionLog.Type type);
 
-    String FIND_EXTENSION_LOG = "select * from extension_log where ((:path is null or path_fk = :path) and (:name is null or name_fk = :name)) and (:type is null or type = :type) order by event_ts asc";
+    String FIND_EXTENSION_LOG = "select * from extension_log where ((:path is null or path_fk = :path) and (:name is null or name_fk = :name)) and (:type is null or type = :type) order by event_ts desc";
 
     @Query("select count(*) from (" + FIND_EXTENSION_LOG + ") as el_tbl")
     int countPages(@Bind("path") String path,
