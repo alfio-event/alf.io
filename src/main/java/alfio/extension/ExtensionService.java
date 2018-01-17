@@ -126,13 +126,16 @@ public class ExtensionService {
     @Transactional
     public void delete(String path, String name) {
         extensionRepository.deleteEventsForPath(path, name);
+        extensionLogRepository.deleteWith(path, name);
         extensionRepository.deleteScriptForPath(path, name);
     }
 
+    @Transactional(readOnly = true)
     public String getScript(String path, String name) {
         return extensionRepository.getScript(path, name);
     }
 
+    @Transactional(readOnly = true)
     public Optional<ExtensionSupport> getSingle(String path, String name) {
         return extensionRepository.getSingle(path, name);
     }
@@ -191,11 +194,13 @@ public class ExtensionService {
         return extensionRepository.findActive(paths, async, event);
     }
 
+    @Transactional(readOnly = true)
     public List<ExtensionSupport> listAll() {
         return extensionRepository.listAll();
     }
 
 
+    @Transactional(readOnly = true)
     public Pair<List<ExtensionLog>, Integer> getLog(String path, String name, ExtensionLog.Type type, int pageSize, int offset) {
         int count = extensionLogRepository.countPages(path, name, type);
         List<ExtensionLog> logs = extensionLogRepository.getPage(path, name, type, pageSize, offset);
