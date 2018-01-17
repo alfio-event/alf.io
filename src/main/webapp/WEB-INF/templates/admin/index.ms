@@ -85,6 +85,7 @@
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/extension/extension.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/extension/add-update/extension-add-update.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/extension/log/extension-log.js"></script>
 
     <link rel="stylesheet" href="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />
 

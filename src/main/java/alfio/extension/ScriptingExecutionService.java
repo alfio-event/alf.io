@@ -108,8 +108,8 @@ public class ScriptingExecutionService {
             extensionLogger.logSuccess("Script executed successfully");
             return res;
         } catch (ScriptException ex) {
-            log.warn("Error while executing script " + name, ex);
-            extensionLogger.logError("Error while executing script " + ex.getMessage());
+            log.warn("Error while executing script " + name + ":", ex);
+            extensionLogger.logError("Error while executing script: " + ex.getMessage());
             throw new IllegalStateException(ex);
         }
     }

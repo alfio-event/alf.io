@@ -294,6 +294,9 @@
                 controller: ['$stateParams', function($stateParams) {
                     this.toUpdate = {path: $stateParams.path, name: $stateParams.name};
                 }]
+            }).state('extension.log', {
+                url: '/log',
+                template: '<extension-log></extension-log>'
             });
 
         growlProvider.globalPosition('bottom-right');
