@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="_csrf" content="{{_csrf.token}}"/>
     <meta name="_csrf_header" content="{{_csrf.headerName}}"/>
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="{{request.contextPath}}/resources/css/bootstrap-admin.min.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/chartist/dist/chartist.min.css">
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.css">
     <link rel="stylesheet" href="{{request.contextPath}}/resources/css/admin.css" />
@@ -163,7 +163,7 @@
                             </ul>
                         </div>
                     </div>
-                    <div class="navbar-right hidden-xs">
+                    <div class="navbar-right hidden-sm hidden-xs">
                         <ul class="nav navbar-nav">
                             <li role="presentation" class="navbar-text"><i class="fa fa-user"></i> Logged in as {{username}}</li>
                             <li role="presentation" data-ui-sref-active="active"> <a data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-edit"></i> edit account</a></li>
