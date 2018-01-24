@@ -125,7 +125,7 @@ public interface TicketReservationRepository {
 
 
     String FIND_RESERVATIONS_IN_EVENT = " select * from tickets_reservation where event_id_fk = :eventId and status in (:status) " +
-        " and (:search is null or (lower(full_name) like lower(:search) or lower(first_name) like lower(:search) or lower(last_name) like lower(:search) or lower(email_address) like lower(:search) or lower(billing_address) like lower(:search))) " +
+        " and (:search is null or (lower(id) like lower(:search) or lower(full_name) like lower(:search) or lower(first_name) like lower(:search) or lower(last_name) like lower(:search) or lower(email_address) like lower(:search) or lower(billing_address) like lower(:search))) " +
         " order by confirmation_ts desc, validity desc ";
 
     @Query("select * from (" + FIND_RESERVATIONS_IN_EVENT +"limit :pageSize offset :offset) as r_tbl")
