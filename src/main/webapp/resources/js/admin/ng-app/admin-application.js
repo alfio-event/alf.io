@@ -704,6 +704,11 @@
         $scope.baseUrl = window.location.origin;
         loadData().then(function() {
             initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS);
+            $scope.selection = {
+                active: true,
+                expired: $scope.event.ticketCategories.filter(function(tc) { return tc.containingOrphans; }).length > 0,
+                freeText: ''
+            };
         });
         $scope.allocationStrategyRadioClass = 'radio';
         $scope.evaluateCategoryStatusClass = function(index, category) {
@@ -712,7 +717,7 @@
             }
             return 'category-' + $rootScope.evaluateBarType(index);
         };
-        
+
         $scope.evaluateClass = function(token) {
             switch(token.status) {
                 case 'WAITING':
@@ -726,11 +731,6 @@
             }
         };
 
-        $scope.selection = {
-            active: true,
-            expired: false,
-            freeText: ''
-        };
 
         $scope.getActualCapacity = function(category, event) {
             return category.bounded ? category.maxTickets : (event.dynamicAllocation + category.checkedInTickets + category.soldTickets);
