@@ -181,8 +181,8 @@ public class UsersApiController {
     @RequestMapping(value = "/users/current", method = GET)
     public UserModification loadCurrentUser(Principal principal) {
         User user = userManager.findUserByUsername(principal.getName());
-        List<Organization> userOrganizations = userManager.findUserOrganizations(user.getUsername());
-        return new UserModification(user.getId(), userOrganizations.get(0).getId(), userManager.getUserRole(user).name(), user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress());
+        Optional<Organization> userOrganization = userManager.findUserOrganizations(user.getUsername()).stream().findFirst();
+        return new UserModification(user.getId(), userOrganization.map(Organization::getId).orElse(-1), userManager.getUserRole(user).name(), user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress());
     }
 
     @RequestMapping(value = "/users/{id}/reset-password", method = PUT)
