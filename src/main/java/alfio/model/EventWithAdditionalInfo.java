@@ -90,4 +90,8 @@ public class EventWithAdditionalInfo implements StatisticsContainer, PriceContai
             .mapToInt(TicketCategoryWithAdditionalInfo::getMaxTickets)
             .sum() < getAvailableSeats();
     }
+
+    public boolean isContainingUnboundedCategories() {
+        return getTicketCategories().stream().anyMatch(t -> !t.isBounded());
+    }
 }
