@@ -90,29 +90,40 @@ public class ExtensionService {
     }
 
 
+    private static ExtensionMetadata getMetadata(String name, String script) {
+        return ScriptingExecutionService.executeScript(
+            name,
+            script + "\n;GSON.fromJson(JSON.stringify(getScriptMetadata()), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
+            Collections.emptyMap(),
+            ExtensionMetadata.class, new NoopExtensionLogger());
+    }
 
     @Transactional
     public void createOrUpdate(String previousPath, String previousName, Extension script) {
         Validate.notBlank(script.getName(), "Name is mandatory");
         Validate.notBlank(script.getPath(), "Path must be defined");
         String hash = DigestUtils.sha256Hex(script.getScript());
-        ExtensionMetadata extensionMetadata = ScriptingExecutionService.executeScript(
-            script.getName(),
-            script.getScript() + "\n;GSON.fromJson(JSON.stringify(getScriptMetadata()), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
-            Collections.emptyMap(),
-            ExtensionMetadata.class, new NoopExtensionLogger());
-
+        ExtensionMetadata extensionMetadata = getMetadata(script.getName(), script.getScript());
 
         extensionRepository.deleteEventsForPath(previousPath, previousName);
 
-        //
         if (!Objects.equals(previousPath, script.getPath()) || !Objects.equals(previousName, script.getName())) {
             extensionLogRepository.deleteWith(previousPath, previousName);
+
+            //
+            extensionRepository.getMaybeScript(previousPath, previousName).ifPresent(previousScript -> {
+                ExtensionMetadata previousExtensionMetadata = getMetadata(script.getName(), previousScript);
+                if (previousExtensionMetadata.getParameters() != null) {
+                    extensionRepository.deleteExtensionParameter(previousExtensionMetadata.getParameters().getExtensionId(), previousPath);
+                }
+            });
+            //
+
             extensionRepository.deleteScriptForPath(previousPath, previousName);
             extensionRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
-            //TODO: delete all metadata params here
         } else {
             extensionRepository.update(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
+            //TODO: load all saved parameters value, then delete the register extension parameter
         }
 
         for (String event : extensionMetadata.events) {
@@ -123,10 +134,11 @@ public class ExtensionService {
         ExtensionMetadata.Parameters parameters = extensionMetadata.getParameters();
         if (parameters != null) {
             //TODO: handle if already present, cleanup key that are no more present
-            //AffectedRowCountAndKey<Integer> key = extensionRepository.registerExtension(parameters.extensionId, script.getPath());
-            for(ExtensionMetadata.Field field : parameters.getFields()) {
+            AffectedRowCountAndKey<Integer> key = extensionRepository.registerExtensionParameter(parameters.extensionId, script.getPath());
+            for (ExtensionMetadata.Field field : parameters.getFields()) {
                 for (String level : parameters.getConfigurationLevels()) {
-                    //extensionRepository.registerExtensionConfigurationMetadata(key.getKey(), field.getName(), field.getDescription(), field.getType(), level, field.isRequired());
+                    extensionRepository.registerExtensionConfigurationMetadata(key.getKey(), field.getName(), field.getDescription(), field.getType(), level, field.isRequired());
+                    //if for this key,level is present a value -> save
                 }
             }
         }
@@ -140,8 +152,15 @@ public class ExtensionService {
     @Transactional
     public void delete(String path, String name) {
         extensionRepository.deleteEventsForPath(path, name);
+        String script = extensionRepository.getScript(path, name);
         extensionLogRepository.deleteWith(path, name);
         extensionRepository.deleteScriptForPath(path, name);
+
+        ExtensionMetadata metadata = getMetadata(name, script);
+        if(metadata.getParameters() != null) {
+            extensionRepository.deleteExtensionParameter(metadata.getParameters().getExtensionId(), path);
+        }
+
     }
 
     @Transactional(readOnly = true)
