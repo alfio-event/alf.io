@@ -22,6 +22,7 @@ import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.ScriptPathNameHash;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
+import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -109,12 +110,25 @@ public class ExtensionService {
             extensionLogRepository.deleteWith(previousPath, previousName);
             extensionRepository.deleteScriptForPath(previousPath, previousName);
             extensionRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
+            //TODO: delete all metadata params here
         } else {
             extensionRepository.update(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
         }
 
         for (String event : extensionMetadata.events) {
             extensionRepository.insertEvent(script.getPath(), script.getName(), event);
+        }
+
+        //
+        ExtensionMetadata.Parameters parameters = extensionMetadata.getParameters();
+        if (parameters != null) {
+            //TODO: handle if already present, cleanup key that are no more present
+            //AffectedRowCountAndKey<Integer> key = extensionRepository.registerExtension(parameters.extensionId, script.getPath());
+            for(ExtensionMetadata.Field field : parameters.getFields()) {
+                for (String level : parameters.getConfigurationLevels()) {
+                    //extensionRepository.registerExtensionConfigurationMetadata(key.getKey(), field.getName(), field.getDescription(), field.getType(), level, field.isRequired());
+                }
+            }
         }
     }
 

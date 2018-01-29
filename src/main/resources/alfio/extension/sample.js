@@ -16,6 +16,9 @@ function getScriptMetadata() {
             //'EVENT_STATUS_CHANGE', //fired when an event status has changed (normally, from DRAFT to PUBLIC). Return boolean for synchronous variant, no results expected for the asynchronous one.
             'INVOICE_GENERATION' //fired on invoice generation. Returns the invoice model.
         ]
+        //,
+        //parameters: {extensionId: 'myId', fields: [{name:'name',description:'description',type:'TEXT',required:true}], configurationLevels: ['GLOBAL', 'ORGANIZATION', 'EVENT']}
+
     };
 }
 

@@ -27,4 +27,23 @@ import java.util.List;
 public class ExtensionMetadata {
     boolean async;
     List<String> events;
+    Parameters parameters;
+
+    @Getter
+    @AllArgsConstructor
+    public static class Parameters {
+        String extensionId;
+        List<Field> fields;
+        List<String> configurationLevels;
+    }
+
+
+    @Getter
+    @AllArgsConstructor
+    public static class Field {
+        String name;
+        String description;
+        String type;
+        boolean required;
+    }
 }
