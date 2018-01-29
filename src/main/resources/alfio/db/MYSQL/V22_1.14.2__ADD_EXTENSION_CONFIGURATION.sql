@@ -38,5 +38,5 @@ create table extension_configuration_metadata_value (
     fk_ecm_id integer not null,
     conf_value varchar(1024) not null
 )  ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
-alter table extension_configuration_metadata_value add constraint unique_extension_configuration_metadata_value unique(fk_ecm_id)
+alter table extension_configuration_metadata_value add constraint unique_extension_configuration_metadata_value unique(fk_ecm_id);
 alter table extension_configuration_metadata_value add foreign key(fk_ecm_id) references extension_configuration_metadata(ecm_id);
