@@ -18,9 +18,9 @@
 create table extension_configuration_param_registry (
     ecpr_id integer auto_increment primary key not null,
     ecpr_ec_identifier varchar(64) not null,
-    ecpr_path varchar(128) not null,
+    ecpr_path varchar(128) not null
 )  ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
-alter table extension_configuration_param_registry add constraint "unique_extension_configuration_param_registry" unique(ecpr_ec_identifier, ecpr_path);
+alter table extension_configuration_param_registry add constraint unique_extension_configuration_param_registry unique(ecpr_ec_identifier, ecpr_path);
 
 create table extension_configuration_metadata (
     ecm_id integer auto_increment primary key not null,
@@ -31,12 +31,12 @@ create table extension_configuration_metadata (
     ecm_type varchar(20) not null,
     ecm_mandatory boolean not null
 )  ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
-alter table extension_configuration_metadata add constraint "unique_extension_configuration_metadata" unique(ecm_fk_id, ecm_name, ecm_configuration_level);
+alter table extension_configuration_metadata add constraint unique_extension_configuration_metadata unique(ecm_fk_id, ecm_name, ecm_configuration_level);
 alter table extension_configuration_metadata add foreign key(ecm_fk_id) references extension_configuration_param_registry(ecpr_id);
 
 create table extension_configuration_metadata_value (
     fk_ecm_id integer not null,
-    conf_value varchar(1024) not null,
+    conf_value varchar(1024) not null
 )  ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
-alter table extension_configuration_metadata_value add constraint "unique_extension_configuration_metadata_value" unique(fk_ecm_id)
+alter table extension_configuration_metadata_value add constraint unique_extension_configuration_metadata_value unique(fk_ecm_id)
 alter table extension_configuration_metadata_value add foreign key(fk_ecm_id) references extension_configuration_metadata(ecm_id);
