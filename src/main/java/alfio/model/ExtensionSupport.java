@@ -59,4 +59,25 @@ public class ExtensionSupport {
             this.hash = hash;
         }
     }
+
+    @Getter
+    public static class ExtensionParameterValueAndMetadata {
+        private final String name;
+        private final String path;
+        private final String value;
+        private final String type;
+        private final String configurationLevel;
+
+        public ExtensionParameterValueAndMetadata(@Column("ecm_name") String name,
+                                                  @Column("conf_path") String path,
+                                                  @Column("conf_value") String value,
+                                                  @Column("ecm_type") String type,
+                                                  @Column("ecm_configuration_level") String configurationLevel) {
+            this.name = name;
+            this.path = path;
+            this.value = value;
+            this.type = type;
+            this.configurationLevel = configurationLevel;
+        }
+    }
 }

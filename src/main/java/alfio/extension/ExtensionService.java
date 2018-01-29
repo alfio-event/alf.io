@@ -130,9 +130,11 @@ public class ExtensionService {
             extensionRepository.insertEvent(script.getPath(), script.getName(), event);
         }
 
+
         //
         ExtensionMetadata.Parameters parameters = extensionMetadata.getParameters();
         if (parameters != null) {
+            extensionRepository.deleteExtensionParameter(parameters.getExtensionId(), script.getPath());
             //TODO: handle if already present, cleanup key that are no more present
             AffectedRowCountAndKey<Integer> key = extensionRepository.registerExtensionParameter(parameters.extensionId, script.getPath());
             for (ExtensionMetadata.Field field : parameters.getFields()) {
