@@ -32,7 +32,6 @@ public class ExtensionMetadata {
     @Getter
     @AllArgsConstructor
     public static class Parameters {
-        String extensionId;
         List<Field> fields;
         List<String> configurationLevels;
     }

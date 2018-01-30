@@ -22,7 +22,6 @@ import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.ScriptPathNameHash;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
-import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -109,16 +108,6 @@ public class ExtensionService {
 
         if (!Objects.equals(previousPath, script.getPath()) || !Objects.equals(previousName, script.getName())) {
             extensionLogRepository.deleteWith(previousPath, previousName);
-
-            //
-            extensionRepository.getMaybeScript(previousPath, previousName).ifPresent(previousScript -> {
-                ExtensionMetadata previousExtensionMetadata = getMetadata(script.getName(), previousScript);
-                if (previousExtensionMetadata.getParameters() != null) {
-                    extensionRepository.deleteExtensionParameter(previousExtensionMetadata.getParameters().getExtensionId(), previousPath);
-                }
-            });
-            //
-
             extensionRepository.deleteScriptForPath(previousPath, previousName);
             extensionRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
         } else {
@@ -126,20 +115,21 @@ public class ExtensionService {
             //TODO: load all saved parameters value, then delete the register extension parameter
         }
 
+        int extensionId = extensionRepository.getExtensionIdFor(script.getPath(), script.getName());
+
         for (String event : extensionMetadata.events) {
-            extensionRepository.insertEvent(script.getPath(), script.getName(), event);
+            extensionRepository.insertEvent(extensionId, event);
         }
 
 
         //
         ExtensionMetadata.Parameters parameters = extensionMetadata.getParameters();
         if (parameters != null) {
-            extensionRepository.deleteExtensionParameter(parameters.getExtensionId(), script.getPath());
+            extensionRepository.deleteExtensionParameter(extensionId);
             //TODO: handle if already present, cleanup key that are no more present
-            AffectedRowCountAndKey<Integer> key = extensionRepository.registerExtensionParameter(parameters.extensionId, script.getPath());
             for (ExtensionMetadata.Field field : parameters.getFields()) {
                 for (String level : parameters.getConfigurationLevels()) {
-                    extensionRepository.registerExtensionConfigurationMetadata(key.getKey(), field.getName(), field.getDescription(), field.getType(), level, field.isRequired());
+                    extensionRepository.registerExtensionConfigurationMetadata(extensionId, field.getName(), field.getDescription(), field.getType(), level, field.isRequired());
                     //if for this key,level is present a value -> save
                 }
             }
@@ -154,15 +144,8 @@ public class ExtensionService {
     @Transactional
     public void delete(String path, String name) {
         extensionRepository.deleteEventsForPath(path, name);
-        String script = extensionRepository.getScript(path, name);
         extensionLogRepository.deleteWith(path, name);
         extensionRepository.deleteScriptForPath(path, name);
-
-        ExtensionMetadata metadata = getMetadata(name, script);
-        if(metadata.getParameters() != null) {
-            extensionRepository.deleteExtensionParameter(metadata.getParameters().getExtensionId(), path);
-        }
-
     }
 
     @Transactional(readOnly = true)
