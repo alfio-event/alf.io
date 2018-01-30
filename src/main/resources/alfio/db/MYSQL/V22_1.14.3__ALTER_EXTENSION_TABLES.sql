@@ -29,10 +29,27 @@ create table extension_event (
 );
 alter table extension_event add foreign key(es_id_fk) references extension_support(es_id);
 
-alter table extension_configuration_metadata drop column ecm_fk_id;
-alter table extension_configuration_metadata drop index unique_extension_configuration_metadata;
 
-alter table extension_configuration_metadata add column ecm_es_id_fk integer not null;
+drop table extension_configuration_metadata_value;
+drop table extension_configuration_metadata;
+drop table extension_configuration_param_registry;
+
+create table extension_configuration_metadata (
+    ecm_id integer auto_increment primary key not null,
+    ecm_es_id_fk integer not null,
+    ecm_name varchar(64) not null,
+    ecm_configuration_level varchar(32) not null, -- [event, organization, event], for each -> new entry
+    ecm_description varchar(1024),
+    ecm_type varchar(20) not null,
+    ecm_mandatory boolean not null
+)  ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
 alter table extension_configuration_metadata add foreign key(ecm_es_id_fk) references extension_support(es_id) on delete cascade;
 alter table extension_configuration_metadata add constraint unique_extension_configuration_metadata unique(ecm_es_id_fk, ecm_name, ecm_configuration_level);
-drop table extension_configuration_param_registry;
+
+create table extension_configuration_metadata_value (
+    fk_ecm_id integer not null,
+    conf_path varchar(128) not null,
+    conf_value varchar(1024) not null
+)  ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
+alter table extension_configuration_metadata_value add constraint unique_extension_configuration_metadata_value unique(fk_ecm_id, conf_path);
+alter table extension_configuration_metadata_value add foreign key(fk_ecm_id) references extension_configuration_metadata(ecm_id)  on delete cascade;
