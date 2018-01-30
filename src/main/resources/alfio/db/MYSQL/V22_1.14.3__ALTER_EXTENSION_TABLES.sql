@@ -29,7 +29,7 @@ create table extension_event (
 );
 alter table extension_event add foreign key(es_id_fk) references extension_support(es_id);
 
-alter table extension_configuration_metadata drop constraint unique_extension_configuration_metadata;
+alter table extension_configuration_metadata drop index unique_extension_configuration_metadata;
 alter table extension_configuration_metadata drop column ecm_fk_id;
 
 alter table extension_configuration_metadata add column ecm_es_id_fk integer not null;

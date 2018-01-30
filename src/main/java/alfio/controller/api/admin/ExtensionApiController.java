@@ -28,15 +28,15 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.List;
 
@@ -48,10 +48,11 @@ public class ExtensionApiController {
 
     private static final String SAMPLE_JS;
 
+
     static {
         try {
-            SAMPLE_JS = new String(Files.readAllBytes(new File(ExtensionApiController.class.getResource("/alfio/extension/sample.js").toURI()).toPath()));
-        } catch (URISyntaxException | IOException e) {
+            SAMPLE_JS = StreamUtils.copyToString(new ClassPathResource("/alfio/extension/sample.js").getInputStream(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
             throw new IllegalStateException("cannot read sample file", e);
         }
     }
