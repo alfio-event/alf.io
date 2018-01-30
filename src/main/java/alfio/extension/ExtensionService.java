@@ -55,27 +55,28 @@ public class ExtensionService {
 
         private final ExtensionLogRepository extensionLogRepository;
         private final PlatformTransactionManager platformTransactionManager;
+        private final String effectivePath;
         private final String path;
         private final String name;
 
         @Override
         public void logWarning(String msg) {
-            executeInNewTransaction((s) -> extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.WARNING));
+            executeInNewTransaction((s) -> extensionLogRepository.insert(effectivePath, path, name, msg, ExtensionLog.Type.WARNING));
         }
 
         @Override
         public void logSuccess(String msg) {
-            executeInNewTransaction((s) -> extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.SUCCESS));
+            executeInNewTransaction((s) -> extensionLogRepository.insert(effectivePath, path, name, msg, ExtensionLog.Type.SUCCESS));
         }
 
         @Override
         public void logError(String msg) {
-            executeInNewTransaction((s) -> extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.ERROR));
+            executeInNewTransaction((s) -> extensionLogRepository.insert(effectivePath, path, name, msg, ExtensionLog.Type.ERROR));
         }
 
         @Override
         public void logInfo(String msg) {
-            executeInNewTransaction((s) -> extensionLogRepository.insert(path, name, msg, ExtensionLog.Type.INFO));
+            executeInNewTransaction((s) -> extensionLogRepository.insert(effectivePath, path, name, msg, ExtensionLog.Type.INFO));
         }
 
         private void executeInNewTransaction(TransactionCallback<Integer> t) {
@@ -107,7 +108,6 @@ public class ExtensionService {
         extensionRepository.deleteEventsForPath(previousPath, previousName);
 
         if (!Objects.equals(previousPath, script.getPath()) || !Objects.equals(previousName, script.getName())) {
-            extensionLogRepository.deleteWith(previousPath, previousName);
             extensionRepository.deleteScriptForPath(previousPath, previousName);
             extensionRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
         } else {
@@ -144,7 +144,6 @@ public class ExtensionService {
     @Transactional
     public void delete(String path, String name) {
         extensionRepository.deleteEventsForPath(path, name);
-        extensionLogRepository.deleteWith(path, name);
         extensionRepository.deleteScriptForPath(path, name);
     }
 
@@ -168,7 +167,7 @@ public class ExtensionService {
             String name = activePath.getName();
             res = scriptingExecutionService.executeScript(name, activePath.getHash(),
                 () -> getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz,
-                new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, path, name));
+                new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, basePath, path, name));
             input.put("output", res);
         }
         return res;
@@ -182,7 +181,7 @@ public class ExtensionService {
             String path = activePath.getPath();
             String name = activePath.getName();
             scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(extensionEvent);", input,
-                new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, path, name));
+                new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, basePath, path, name));
         }
     }
 

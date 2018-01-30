@@ -27,13 +27,14 @@ import java.util.List;
 @QueryRepository
 public interface ExtensionLogRepository {
 
-    @Query("insert into extension_log(path_fk, name_fk, description, type) values (:path, :name, :description, :type)")
-    int insert(@Bind("path") String path,
+    @Query("insert into extension_log(effective_path, path, name, description, type) values (:effectivePath, :path, :name, :description, :type)")
+    int insert(@Bind("effectivePath") String effectivePath,
+               @Bind("path") String path,
                @Bind("name") String name,
                @Bind("description") String description,
                @Bind("type") ExtensionLog.Type type);
 
-    String FIND_EXTENSION_LOG = "select * from extension_log where ((:path is null or path_fk = :path) and (:name is null or name_fk = :name)) and (:type is null or type = :type) order by event_ts desc";
+    String FIND_EXTENSION_LOG = "select * from extension_log where ((:path is null or path = :path) and (:name is null or name = :name)) and (:type is null or type = :type) order by event_ts desc";
 
     @Query("select count(*) from (" + FIND_EXTENSION_LOG + ") as el_tbl")
     int countPages(@Bind("path") String path,
@@ -46,7 +47,4 @@ public interface ExtensionLogRepository {
                                @Bind("type") ExtensionLog.Type type,
                                @Bind("pageSize") int pageSize,
                                @Bind("offset") int offset);
-
-    @Query("delete from extension_log where path_fk = :path and name_fk = :name")
-    int deleteWith(@Bind("path") String path, @Bind("name") String name);
 }

@@ -36,3 +36,15 @@ alter table extension_configuration_metadata add column ecm_es_id_fk integer not
 alter table extension_configuration_metadata add foreign key(ecm_es_id_fk) references extension_support(es_id) on delete cascade;
 alter table extension_configuration_metadata add constraint "unique_extension_configuration_metadata" unique(ecm_es_id_fk, ecm_name, ecm_configuration_level);
 drop table extension_configuration_param_registry;
+
+
+drop table extension_log;
+create table extension_log (
+    id integer identity not null,
+    path varchar(128) not null,
+    effective_path varchar(128) not null,
+    name varchar(64) not null,
+    description CLOB not null,
+    type varchar(255),
+    event_ts timestamp DEFAULT CURRENT_TIMESTAMP
+);

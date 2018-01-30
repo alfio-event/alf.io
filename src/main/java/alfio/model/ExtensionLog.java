@@ -31,6 +31,7 @@ public class ExtensionLog {
 
 
     private final int id;
+    private final String effectivePath;
     private final String path;
     private final String name;
     private final String description;
@@ -39,12 +40,14 @@ public class ExtensionLog {
 
 
     public ExtensionLog(@Column("id") int id,
-                        @Column("path_fk") String path,
-                        @Column("name_fk") String name,
+                        @Column("effective_path") String effectivePath,
+                        @Column("path") String path,
+                        @Column("name") String name,
                         @Column("description") String description,
                         @Column("type") Type type,
                         @Column("event_ts") ZonedDateTime timestamp) {
         this.id = id;
+        this.effectivePath = effectivePath;
         this.path = path;
         this.name = name;
         this.description = description;

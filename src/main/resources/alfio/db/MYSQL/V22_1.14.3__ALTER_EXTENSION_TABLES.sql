@@ -26,7 +26,7 @@ drop table extension_event;
 create table extension_event (
     es_id_fk integer not null unique,
     event varchar(128) not null
-);
+)  ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
 alter table extension_event add foreign key(es_id_fk) references extension_support(es_id);
 
 
@@ -53,3 +53,15 @@ create table extension_configuration_metadata_value (
 )  ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
 alter table extension_configuration_metadata_value add constraint unique_extension_configuration_metadata_value unique(fk_ecm_id, conf_path);
 alter table extension_configuration_metadata_value add foreign key(fk_ecm_id) references extension_configuration_metadata(ecm_id)  on delete cascade;
+
+
+drop table extension_log;
+create table extension_log (
+    id integer auto_increment primary key not null,
+    path varchar(128) not null,
+    effective_path varchar(128) not null,
+    name varchar(64) not null,
+    description mediumtext not null,
+    type varchar(255),
+    event_ts timestamp DEFAULT CURRENT_TIMESTAMP
+)  ENGINE=InnoDB CHARACTER SET=utf8 COLLATE utf8_bin;
