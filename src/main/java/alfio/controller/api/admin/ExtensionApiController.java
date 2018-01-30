@@ -34,6 +34,7 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -50,8 +51,8 @@ public class ExtensionApiController {
 
 
     static {
-        try {
-            SAMPLE_JS = StreamUtils.copyToString(new ClassPathResource("/alfio/extension/sample.js").getInputStream(), StandardCharsets.UTF_8);
+        try (InputStream is = new ClassPathResource("/alfio/extension/sample.js").getInputStream()){
+            SAMPLE_JS = StreamUtils.copyToString(is, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new IllegalStateException("cannot read sample file", e);
         }
