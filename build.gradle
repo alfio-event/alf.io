@@ -161,8 +161,8 @@ dependencies {
     compile "org.apache.logging.log4j:log4j-core:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-jcl:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
-    compile "com.stripe:stripe-java:5.7.1"
-    compile 'com.paypal.sdk:rest-api-sdk:1.13.1'
+    compile "com.stripe:stripe-java:5.28.0"
+    compile 'com.paypal.sdk:rest-api-sdk:1.14.0'
     compile 'com.squareup.okhttp3:okhttp:3.8.1'
     compile "org.apache.commons:commons-lang3:3.5"
     compile "com.opencsv:opencsv:3.10"
