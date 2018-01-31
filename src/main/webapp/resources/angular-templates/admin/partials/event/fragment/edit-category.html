@@ -150,7 +150,12 @@
 
 <div class="form-group" bs-form-error="ticketCategory.code">
     <label for="{{buildPrefix($index, 'code')}}">Access Code</label> <a class="btn btn-xs btn-default" ng-click="toggleAccessCodeCollapse()"><i class="fa fa-info-circle"></i> help</a>
-    <input type="text" ng-model="ticketCategory.code" id="{{buildPrefix($index, 'code')}}" name="{{buildPrefix($index, 'code')}}" class="form-control" >
+    <div class="input-group">
+        <div class="input-group-addon">
+            <span>{{baseUrl}}/event/{{event.shortName}}/code/</span>
+        </div>
+        <input type="text" ng-model="ticketCategory.code" id="{{buildPrefix($index, 'code')}}" name="{{buildPrefix($index, 'code')}}" class="form-control" >
+    </div>
 </div>
 
 <div class="panel panel-default" uib-collapse="helpAccessCodeCollapse">
@@ -160,12 +165,6 @@
         <p>You can define an access code for each category, either public or restricted, and then distribute the resulting URL.</p>
         <p>If someone access the URL, a new 1-ticket reservation will be created for this category.</p>
     </div>
-</div>
-<div class="form-group" ng-if="ticketCategory.code && ticketCategory.code.length > 0">
-    <label>Access URL</label>
-    <p class="form-control-static">
-        {{baseUrl}}/event/{{event.shortName}}/code/{{ticketCategory.code}}
-    </p>
 </div>
 
 <div data-ng-if="isLanguagePresent(event.locales, language.value)" class="form-group" data-ng-repeat="(lang, language) in allLanguagesMapping">

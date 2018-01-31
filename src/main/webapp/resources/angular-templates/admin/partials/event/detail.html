@@ -108,9 +108,6 @@
                             <dt data-ng-if="!event.freeOfCharge">Price after tax</dt>
                             <dd data-ng-if="!event.freeOfCharge">{{::ticketCategory.actualPrice | currency : (event.currency || "")}}</dd>
 
-                            <dt ng-if="ticketCategory.code && ticketCategory.code.length > 0">Diret Access Code</dt>
-                            <dd ng-if="ticketCategory.code && ticketCategory.code.length > 0">{{::ticketCategory.code}}</dd>
-
                             <dt ng-if="ticketCategory.code && ticketCategory.code.length > 0">Direct Access URL</dt>
                             <dd ng-if="ticketCategory.code && ticketCategory.code.length > 0">{{::baseUrl}}/event/{{::event.shortName}}/code/{{::ticketCategory.code}}</dd>
 
