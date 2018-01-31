@@ -136,6 +136,10 @@ public class ExtensionService {
         }
     }
 
+    public List<ExtensionSupport.ExtensionParameterMetadataAndValue> getConfigurationParametersFor(String basePath, String configurationLevel) {
+        return extensionRepository.getParametersForLevelAndPath(configurationLevel, generatePossiblePath(basePath));
+    }
+
     @Transactional
     public void toggle(String path, String name, boolean status) {
         extensionRepository.toggle(path, name, status);
@@ -194,11 +198,14 @@ public class ExtensionService {
         //  - -org
         //  - -
         // the one with the longest path win
+        Set<String> paths = generatePossiblePath(basePath);
+        return extensionRepository.findActive(paths, async, event);
+    }
 
+    private static Set<String> generatePossiblePath(String basePath) {
         //generate all the paths
-        // given ".0.0" it will generate
-        // ".", ".0", ".0.0"
-
+        // given "-0-0" it will generate
+        // "-", "-0", "-0-0"
         Set<String> paths = new TreeSet<>();
         int basePathLength = basePath.length();
         for (int i = 1; i < basePathLength; i++) {
@@ -208,7 +215,7 @@ public class ExtensionService {
         }
         paths.add("-"); //handle first and last case
         paths.add(basePath);
-        return extensionRepository.findActive(paths, async, event);
+        return paths;
     }
 
     @Transactional(readOnly = true)

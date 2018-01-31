@@ -36,7 +36,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,7 +47,6 @@ import static java.util.stream.Collectors.toList;
 public class UserManager {
 
     public static final String ADMIN_USERNAME = "admin";
-    private static final Function<Integer, Integer> ID_EVALUATOR = id -> Optional.ofNullable(id).orElse(Integer.MIN_VALUE);
     private final AuthorityRepository authorityRepository;
     private final OrganizationRepository organizationRepository;
     private final UserOrganizationRepository userOrganizationRepository;
@@ -147,7 +145,7 @@ public class UserManager {
     @Transactional
     public int createOrganization(String name, String description, String email) {
         organizationRepository.create(name, description, email);
-        int orgId = organizationRepository.findByName(name).stream().findFirst().orElseThrow(IllegalStateException::new).getId();
+        int orgId = organizationRepository.getIdByName(name);
         invoiceSequencesRepository.initFor(orgId);
         return orgId;
     }
@@ -158,12 +156,7 @@ public class UserManager {
     }
 
     public ValidationResult validateOrganization(Integer id, String name, String email, String description) {
-        int orgId = ID_EVALUATOR.apply(id);
-        final long existing = organizationRepository.findByName(name)
-                .stream()
-                .filter(o -> o.getId() != orgId)
-                .count();
-        if(existing > 0) {
+        if(organizationRepository.findByName(name).isPresent()) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("name", "There is already another organization with the same name."));
         }
         Validate.notBlank(name, "name can't be empty");
@@ -213,7 +206,7 @@ public class UserManager {
 
     @Transactional
     public boolean updatePassword(String username, String newPassword) {
-        User user = userRepository.findByUsername(username).stream().findFirst().orElseThrow(IllegalStateException::new);
+        User user = userRepository.findByUsername(username).orElseThrow(IllegalStateException::new);
         Validate.isTrue(PasswordGenerator.isValid(newPassword), "invalid password");
         Validate.isTrue(userRepository.resetPassword(user.getId(), passwordEncoder.encode(newPassword)) == 1, "error during password update");
         return true;
@@ -238,12 +231,7 @@ public class UserManager {
     }
 
     public ValidationResult validateUser(Integer id, String username, int organizationId, String role, String firstName, String lastName, String emailAddress) {
-        int userId = ID_EVALUATOR.apply(id);
-        final long existing = userRepository.findByUsername(username)
-                .stream()
-                .filter(u -> u.getId() != userId)
-                .count();
-        if(existing > 0) {
+        if(userRepository.findByUsername(username).isPresent()) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("username", "There is already another user with the same username."));
         }
         return ValidationResult.of(Stream.of(Pair.of(firstName, "firstName"), Pair.of(lastName, "lastName"), Pair.of(emailAddress, "emailAddress"))
@@ -254,8 +242,6 @@ public class UserManager {
 
     public ValidationResult validateNewPassword(String username, String oldPassword, String newPassword, String newPasswordConfirm) {
         return userRepository.findByUsername(username)
-            .stream()
-            .findFirst()
             .map(u -> {
                 List<ValidationResult.ErrorDescriptor> errors = new ArrayList<>();
                 Optional<String> password = userRepository.findPasswordByUsername(username);

@@ -98,7 +98,7 @@ public class ConfigurationManagerIntegrationTest {
     public void prepareEnv() {
         //setup...
         organizationRepository.create("org", "org", "email@example.com");
-        Organization organization = organizationRepository.findByName("org").get(0);
+        Organization organization = organizationRepository.findByName("org").get();
 
         userManager.insertUser(organization.getId(), USERNAME, "test", "test", "test@example.com", Role.OWNER, User.Type.INTERNAL);
 
@@ -182,7 +182,7 @@ public class ConfigurationManagerIntegrationTest {
     @Test
     public void testOverrideMechanism() {
 
-        Organization organization = organizationRepository.findByName("org").get(0);
+        Organization organization = organizationRepository.findByName("org").get();
 
 
         Event event = eventManager.getSingleEvent("eventShortName", "test");

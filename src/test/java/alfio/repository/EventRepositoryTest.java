@@ -75,7 +75,7 @@ public class EventRepositoryTest {
         ZonedDateTime beginEventDate = ZonedDateTime.of(2015, 4, 18, 0, 0, 0, 0, ZoneId.of("America/New_York"));
         ZonedDateTime endEventDate = ZonedDateTime.of(2015, 4, 19, 23, 59, 59, 0, ZoneId.of("America/New_York"));
 
-        int orgId = organizationRepository.findByName(ORG_NAME).stream().findFirst().orElseThrow(IllegalStateException::new).getId();
+        int orgId = organizationRepository.getIdByName(ORG_NAME);
 
 
         AffectedRowCountAndKey<Integer> pair = eventRepository.insert("unittest", Event.EventType.INTERNAL, "display Name", "http://localhost:8080/", "http://localhost:8080",

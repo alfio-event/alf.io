@@ -21,8 +21,11 @@ import alfio.controller.api.support.PageAndContent;
 import alfio.manager.user.UserManager;
 import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
+import alfio.model.ExtensionSupport.*;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
+import alfio.repository.EventRepository;
+import alfio.repository.user.OrganizationRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +42,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -60,6 +64,8 @@ public class ExtensionApiController {
 
     private final ExtensionService extensionService;
     private final UserManager userManager;
+    private final OrganizationRepository organizationRepository;
+    private final EventRepository eventRepository;
 
 
     @RequestMapping(value = "", method = RequestMethod.GET)
@@ -111,6 +117,36 @@ public class ExtensionApiController {
         ensureAdmin(principal);
         extensionService.toggle(path, name, enable);
     }
+
+
+    //
+    @RequestMapping(value = "/setting/system", method = RequestMethod.POST)
+    public List<ExtensionParameterMetadataAndValue> getParametersFor(Principal principal) {
+        ensureAdmin(principal);
+        return extensionService.getConfigurationParametersFor("-", "SYSTEM");
+    }
+
+    @RequestMapping(value = "/setting/organization/{orgShortName}", method = RequestMethod.POST)
+    public List<ExtensionParameterMetadataAndValue> getParametersFor(@PathVariable("orgShortName") String orgShortName, Principal principal) {
+
+        //List<Organization> name = organizationRepository.findByName(orgShortName);
+        //FIXME ensure user is admin OR part of the organization
+        //return extensionService.getConfigurationParametersFor("-", "ORGANIZATION");
+        return Collections.emptyList();
+    }
+
+    @RequestMapping(value = "/setting/organization/{orgShortName}/event/{shortName}", method = RequestMethod.POST)
+    public List<ExtensionParameterMetadataAndValue> getParametersFor(@PathVariable("orgShortName") String orgShortName,
+                                                                     @PathVariable("shortName") String eventShortName,
+                                                                     Principal principal) {
+        //FIXME ensure user is admin OR part of the organization
+        //return extensionService.getConfigurationParametersFor("-", "EVENT");
+        return Collections.emptyList();
+    }
+
+
+
+    //
 
     @RequestMapping(value = "/log")
     public PageAndContent<List<ExtensionLog>> getLog(@RequestParam(required = false, name = "path") String path,

@@ -61,23 +61,39 @@ public class ExtensionSupport {
     }
 
     @Getter
-    public static class ExtensionParameterValueAndMetadata {
+    public static class ExtensionParameterMetadataAndValue {
+        private final int id;
         private final String name;
-        private final String path;
-        private final String value;
-        private final String type;
         private final String configurationLevel;
+        private final String description;
+        private final String type;
+        private final boolean mandatory;
+        private final String path;
+        private final String extensionName;
+        private final String configurationPath;
+        private final String configurationValue;
 
-        public ExtensionParameterValueAndMetadata(@Column("ecm_name") String name,
-                                                  @Column("conf_path") String path,
-                                                  @Column("conf_value") String value,
+
+        public ExtensionParameterMetadataAndValue(@Column("ecm_id") int id,
+                                                  @Column("ecm_name") String name,
+                                                  @Column("ecm_configuration_level") String configurationLevel,
+                                                  @Column("ecm_description") String description,
                                                   @Column("ecm_type") String type,
-                                                  @Column("ecm_configuration_level") String configurationLevel) {
+                                                  @Column("ecm_mandatory") boolean mandatory,
+                                                  @Column("path") String path,
+                                                  @Column("name") String extensionName,
+                                                  @Column("conf_path") String configurationPath,
+                                                  @Column("conf_value") String configurationValue) {
+            this.id = id;
             this.name = name;
-            this.path = path;
-            this.value = value;
-            this.type = type;
             this.configurationLevel = configurationLevel;
+            this.description = description;
+            this.type = type;
+            this.mandatory = mandatory;
+            this.path = path;
+            this.extensionName = extensionName;
+            this.configurationPath = configurationPath;
+            this.configurationValue = configurationValue;
         }
     }
 }

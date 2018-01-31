@@ -37,7 +37,7 @@ public interface UserRepository {
     User getByUsername(@Bind("username") String username);
 
     @Query("select * from ba_user where username = :username")
-    List<User> findByUsername(@Bind("username") String username);
+    Optional<User> findByUsername(@Bind("username") String username);
 
     @Query("select id from ba_user where username = :username")
     Optional<Integer> findIdByUserName(@Bind("username") String username);

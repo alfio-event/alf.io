@@ -17,7 +17,7 @@ function getScriptMetadata() {
             'INVOICE_GENERATION' //fired on invoice generation. Returns the invoice model.
         ]
         //,
-        //parameters: {fields: [{name:'name',description:'description',type:'TEXT',required:true}], configurationLevels: ['GLOBAL', 'ORGANIZATION', 'EVENT']}
+        //parameters: {fields: [{name:'name',description:'description',type:'TEXT',required:true}], configurationLevels: ['SYSTEM', 'ORGANIZATION', 'EVENT']}
 
     };
 }

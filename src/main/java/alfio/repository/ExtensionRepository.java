@@ -95,4 +95,12 @@ public interface ExtensionRepository {
                                                @Bind("configurationLevel") String configurationLevel,
                                                @Bind("mandatory") boolean mandatory);
 
+
+    @Query("select ecm_id, ecm_name, ecm_configuration_level, ecm_description, ecm_type, ecm_mandatory, path, name, conf_path, conf_value"+
+        " from extension_configuration_metadata " +
+        " inner join extension_support on es_id = ecm_es_id_fk " +
+        " left outer join extension_configuration_metadata_value on ecm_id = fk_ecm_id " +
+        " where ecm_configuration_level = :configurationLevel and path in (:possiblePaths)")
+    List<ExtensionSupport.ExtensionParameterMetadataAndValue> getParametersForLevelAndPath(@Bind("configurationLevel") String configurationLevel, @Bind("possiblePaths") Set<String> possiblePaths);
+
 }
