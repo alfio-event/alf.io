@@ -19,11 +19,14 @@ package alfio.controller.api.admin;
 
 import alfio.controller.api.support.PageAndContent;
 import alfio.manager.user.UserManager;
+import alfio.model.Event;
 import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.*;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
+import alfio.model.user.Organization;
+import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
 import lombok.AllArgsConstructor;
@@ -42,7 +45,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
-import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -120,32 +122,30 @@ public class ExtensionApiController {
 
 
     //
-    @RequestMapping(value = "/setting/system", method = RequestMethod.POST)
+    @RequestMapping(value = "/setting/system", method = RequestMethod.GET)
     public List<ExtensionParameterMetadataAndValue> getParametersFor(Principal principal) {
         ensureAdmin(principal);
         return extensionService.getConfigurationParametersFor("-", "SYSTEM");
     }
 
-    @RequestMapping(value = "/setting/organization/{orgShortName}", method = RequestMethod.POST)
+    @RequestMapping(value = "/setting/organization/{orgShortName}", method = RequestMethod.GET)
     public List<ExtensionParameterMetadataAndValue> getParametersFor(@PathVariable("orgShortName") String orgShortName, Principal principal) {
-
-        //List<Organization> name = organizationRepository.findByName(orgShortName);
-        //FIXME ensure user is admin OR part of the organization
-        //return extensionService.getConfigurationParametersFor("-", "ORGANIZATION");
-        return Collections.emptyList();
+        Organization org = organizationRepository.findByName(orgShortName).orElseThrow(IllegalStateException::new);
+        ensureOrganization(principal, org);
+        return extensionService.getConfigurationParametersFor("-" + org.getId(), "ORGANIZATION");
     }
 
-    @RequestMapping(value = "/setting/organization/{orgShortName}/event/{shortName}", method = RequestMethod.POST)
+    @RequestMapping(value = "/setting/organization/{orgShortName}/event/{shortName}", method = RequestMethod.GET)
     public List<ExtensionParameterMetadataAndValue> getParametersFor(@PathVariable("orgShortName") String orgShortName,
                                                                      @PathVariable("shortName") String eventShortName,
                                                                      Principal principal) {
-        //FIXME ensure user is admin OR part of the organization
-        //return extensionService.getConfigurationParametersFor("-", "EVENT");
-        return Collections.emptyList();
+
+        Organization org = organizationRepository.findByName(orgShortName).orElseThrow(IllegalStateException::new);
+        ensureOrganization(principal, org);
+        Event event = eventRepository.findByShortName(eventShortName);
+        ensureEventInOrganization(org, event);
+        return extensionService.getConfigurationParametersFor(String.format("-%d-%d", org.getId(), event.getId()), "EVENT");
     }
-
-
-
     //
 
     @RequestMapping(value = "/log")
@@ -161,5 +161,14 @@ public class ExtensionApiController {
 
     private void ensureAdmin(Principal principal) {
         Validate.isTrue(userManager.isAdmin(userManager.findUserByUsername(principal.getName())));
+    }
+
+    private void ensureOrganization(Principal principal, Organization organization) {
+        User user = userManager.findUserByUsername(principal.getName());
+        Validate.isTrue(userManager.isOwnerOfOrganization(user, organization.getId()));
+    }
+
+    private static void ensureEventInOrganization(Organization organization, Event event) {
+        Validate.isTrue(organization.getId() == event.getOrganizationId());
     }
 }
