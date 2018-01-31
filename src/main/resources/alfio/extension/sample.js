@@ -4,6 +4,8 @@
  */
 function getScriptMetadata() {
     return {
+        id: 'myExtensionIdentifier', // optional: id and version will be used later as a mechanism for checking if the script has a newer version
+        version: 0, // optional
         async: false,
         events: [
             //supported values:

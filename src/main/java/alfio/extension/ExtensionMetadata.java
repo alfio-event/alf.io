@@ -25,6 +25,8 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 public class ExtensionMetadata {
+    String id;
+    Integer version;
     boolean async;
     List<String> events;
     Parameters parameters;
