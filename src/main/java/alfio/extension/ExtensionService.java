@@ -136,8 +136,8 @@ public class ExtensionService {
         }
     }
 
-    public List<ExtensionSupport.ExtensionParameterMetadataAndValue> getConfigurationParametersFor(String basePath, String configurationLevel) {
-        return extensionRepository.getParametersForLevelAndPath(configurationLevel, generatePossiblePath(basePath));
+    public List<ExtensionSupport.ExtensionParameterMetadataAndValue> getConfigurationParametersFor(String basePath, String pathPattern, String configurationLevel) {
+        return extensionRepository.getParametersForLevelAndPath(configurationLevel, generatePossiblePath(basePath), pathPattern);
     }
 
     @Transactional

@@ -173,7 +173,7 @@
 
     ConfigurationController.$inject = ['OrganizationService', 'EventService', '$q', '$rootScope'];
 
-    function SystemConfigurationController(ConfigurationService, EventService, NotificationHandler, $rootScope, $q) {
+    function SystemConfigurationController(ConfigurationService, EventService, ExtensionService, NotificationHandler, $rootScope, $q) {
         var systemConf = this;
         systemConf.loading = true;
 
@@ -234,9 +234,9 @@
         });
     }
 
-    SystemConfigurationController.$inject = ['ConfigurationService', 'EventService', 'NotificationHandler', '$rootScope', '$q'];
+    SystemConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$rootScope', '$q'];
 
-    function OrganizationConfigurationController(ConfigurationService, OrganizationService, NotificationHandler, $stateParams, $q, $rootScope) {
+    function OrganizationConfigurationController(ConfigurationService, OrganizationService, ExtensionService, NotificationHandler, $stateParams, $q, $rootScope) {
         var organizationConf = this;
         organizationConf.organizationId = $stateParams.organizationId;
         var load = function() {
@@ -281,9 +281,9 @@
         });
     }
 
-    OrganizationConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', 'NotificationHandler', '$stateParams', '$q', '$rootScope'];
+    OrganizationConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', 'ExtensionService', 'NotificationHandler', '$stateParams', '$q', '$rootScope'];
 
-    function EventConfigurationController(ConfigurationService, EventService, NotificationHandler, $q, $rootScope, $stateParams) {
+    function EventConfigurationController(ConfigurationService, EventService, ExtensionService, NotificationHandler, $q, $rootScope, $stateParams) {
         var eventConf = this;
         var getData = function() {
             if(angular.isDefined($stateParams.eventName)) {
@@ -355,7 +355,7 @@
         });
     }
 
-    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'NotificationHandler', '$q', '$rootScope', '$stateParams'];
+    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams'];
 
     function loadSettings(container, settings, ConfigurationService) {
         var general = settings['GENERAL'] || [];

@@ -46,6 +46,8 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @AllArgsConstructor
@@ -123,20 +125,22 @@ public class ExtensionApiController {
 
     //
     @RequestMapping(value = "/setting/system", method = RequestMethod.GET)
-    public List<ExtensionParameterMetadataAndValue> getParametersFor(Principal principal) {
+    public Map<Integer, List<ExtensionParameterMetadataAndValue>> getParametersFor(Principal principal) {
         ensureAdmin(principal);
-        return extensionService.getConfigurationParametersFor("-", "SYSTEM");
+        return extensionService.getConfigurationParametersFor("-", "-%", "SYSTEM")
+            .stream().collect(Collectors.groupingBy(ExtensionParameterMetadataAndValue::getExtensionId));
     }
 
     @RequestMapping(value = "/setting/organization/{orgShortName}", method = RequestMethod.GET)
-    public List<ExtensionParameterMetadataAndValue> getParametersFor(@PathVariable("orgShortName") String orgShortName, Principal principal) {
+    public Map<Integer, List<ExtensionParameterMetadataAndValue>> getParametersFor(@PathVariable("orgShortName") String orgShortName, Principal principal) {
         Organization org = organizationRepository.findByName(orgShortName).orElseThrow(IllegalStateException::new);
         ensureOrganization(principal, org);
-        return extensionService.getConfigurationParametersFor("-" + org.getId(), "ORGANIZATION");
+        return extensionService.getConfigurationParametersFor("-" + org.getId(), "-" + org.getId()+"-%", "ORGANIZATION")
+            .stream().collect(Collectors.groupingBy(ExtensionParameterMetadataAndValue::getExtensionId));
     }
 
     @RequestMapping(value = "/setting/organization/{orgShortName}/event/{shortName}", method = RequestMethod.GET)
-    public List<ExtensionParameterMetadataAndValue> getParametersFor(@PathVariable("orgShortName") String orgShortName,
+    public Map<Integer, List<ExtensionParameterMetadataAndValue>> getParametersFor(@PathVariable("orgShortName") String orgShortName,
                                                                      @PathVariable("shortName") String eventShortName,
                                                                      Principal principal) {
 
@@ -144,7 +148,9 @@ public class ExtensionApiController {
         ensureOrganization(principal, org);
         Event event = eventRepository.findByShortName(eventShortName);
         ensureEventInOrganization(org, event);
-        return extensionService.getConfigurationParametersFor(String.format("-%d-%d", org.getId(), event.getId()), "EVENT");
+        String pattern = String.format("-%d-%d", org.getId(), event.getId());
+        return extensionService.getConfigurationParametersFor(pattern, pattern,"EVENT")
+            .stream().collect(Collectors.groupingBy(ExtensionParameterMetadataAndValue::getExtensionId));
     }
     //
 

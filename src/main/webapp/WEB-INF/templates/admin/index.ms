@@ -84,6 +84,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/extension/extension.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/extension/extension.service.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/extension/add-update/extension-add-update.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/extension/log/extension-log.js"></script>
 

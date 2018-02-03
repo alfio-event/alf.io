@@ -69,6 +69,7 @@ public class ExtensionSupport {
         private final String type;
         private final boolean mandatory;
         private final String path;
+        private final int extensionId;
         private final String extensionName;
         private final String configurationPath;
         private final String configurationValue;
@@ -81,6 +82,7 @@ public class ExtensionSupport {
                                                   @Column("ecm_type") String type,
                                                   @Column("ecm_mandatory") boolean mandatory,
                                                   @Column("path") String path,
+                                                  @Column("es_id") int extensionId,
                                                   @Column("name") String extensionName,
                                                   @Column("conf_path") String configurationPath,
                                                   @Column("conf_value") String configurationValue) {
@@ -91,6 +93,7 @@ public class ExtensionSupport {
             this.type = type;
             this.mandatory = mandatory;
             this.path = path;
+            this.extensionId = extensionId;
             this.extensionName = extensionName;
             this.configurationPath = configurationPath;
             this.configurationValue = configurationValue;
