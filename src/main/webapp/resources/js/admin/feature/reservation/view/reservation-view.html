@@ -84,11 +84,11 @@
                                     <dt ng-if="$ctrl.paymentInfo.transaction">Transaction timestamp</dt>
                                     <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
 
-                                    <dt ng-if="$ctrl.paymentInfo.paymentInformations && $ctrl.paymentInfo.paymentInformations">Paid amount</dt>
-                                    <dd ng-if="$ctrl.paymentInfo.paymentInformations && $ctrl.paymentInfo.paymentInformations">{{$ctrl.paymentInfo.paymentInformations.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
+                                    <dt ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.paymentInformation">Paid amount</dt>
+                                    <dd ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
 
-                                    <dt ng-if="$ctrl.paymentInfo.paymentInformations && $ctrl.paymentInfo.supportRefund">Refunded amount</dt>
-                                    <dd ng-if="$ctrl.paymentInfo.paymentInformations && $ctrl.paymentInfo.supportRefund">{{$ctrl.paymentInfo.paymentInformations.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}</dd>
+                                    <dt ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">Refunded amount</dt>
+                                    <dd ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">{{$ctrl.paymentInfo.paymentInformation.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}</dd>
                                 </dl>
 
                             </div>
