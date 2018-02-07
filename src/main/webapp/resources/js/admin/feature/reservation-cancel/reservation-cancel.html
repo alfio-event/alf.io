@@ -5,7 +5,7 @@
 
 
     <form ng-if="$ctrl.paymentInfo" >
-        <div class="alert alert-warning text-center" ng-if="$ctrl.paymentInfo.paymentInformations.paidAmount !== '0.00' && !$ctrl.paymentInfo.supportRefund"><i class="fa fa-warning"></i> This reservation cannot be refunded automatically.</div>
+        <div class="alert alert-warning text-center" ng-if="$ctrl.paymentInfo.paymentInformation.paidAmount !== '0.00' && !$ctrl.paymentInfo.supportRefund"><i class="fa fa-warning"></i> This reservation cannot be refunded automatically.</div>
         <div class="form-group">
             <label class="col-sm-4 control-label">Payment method</label>
             <div class="col-sm-8 form-control-static" ng-bind="$ctrl.paymentInfo.paymentMethod"></div>
@@ -14,13 +14,13 @@
             <label class="col-sm-4 control-label">Transaction timestamp</label>
             <div class="col-sm-8 form-control-static" ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></div>
         </div>
-        <div class="form-group" ng-if="$ctrl.paymentInfo.paymentInformations">
+        <div class="form-group" ng-if="$ctrl.paymentInfo.paymentInformation">
             <label class="col-sm-4 control-label">Paid amount</label>
-            <div class="col-sm-8 form-control-static">{{$ctrl.paymentInfo.paymentInformations.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</div>
+            <div class="col-sm-8 form-control-static">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</div>
         </div>
         <div class="form-group" ng-if="$ctrl.paymentInfo.supportRefund">
             <div class="col-sm-offset-4 col-sm-8 checkbox">
-                <label><input type="checkbox" ng-model="$ctrl.refund"> Refund {{$ctrl.paymentInfo.paymentInformations.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</label>
+                <label><input type="checkbox" ng-model="$ctrl.refund"> Refund {{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</label>
             </div>
         </div>
         <div class="form-group">
