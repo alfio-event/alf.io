@@ -294,6 +294,44 @@ public enum PlatformProvider {
             return isMySql(env) ? MYSQL_DRIVER : POSTGRESQL_DRIVER;
         }
 
+    },
+
+    CLEVER_CLOUD {
+        @Override
+        public String getUrl(Environment env) {
+            return "jdbc:" + env.getRequiredProperty("POSTGRESQL_ADDON_URI");
+        }
+
+        @Override
+        public String getUsername(Environment env) {
+            return env.getRequiredProperty("POSTGRESQL_ADDON_USER");
+        }
+
+        @Override
+        public String getPassword(Environment env) {
+            return env.getRequiredProperty("POSTGRESQL_ADDON_PASSWORD");
+        }
+
+        @Override
+        public String getDriveClassName(Environment env) {
+            return POSTGRESQL_DRIVER;
+        }
+
+        @Override
+        public String getDialect(Environment env) {
+            return PGSQL;
+        }
+
+        @Override
+        public int getMaxActive(Environment env) {
+            //default limit to 5, to be on the safe side
+            return Integer.parseInt(env.getProperty("POSTGRESQL_ADDON_MAXCONN", "5"));
+        }
+
+        @Override
+        public boolean isHosting(Environment env) {
+            return ofNullable(env.getProperty("CC_DEPLOYMENT_ID")).isPresent();
+        }
     };
 
     private static final String POSTGRESQL_DRIVER = "org.postgresql.Driver";

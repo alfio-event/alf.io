@@ -1,6 +1,14 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+import java.time.Year
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.regex.Pattern
+
 buildscript {
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.9.RELEASE")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.10.RELEASE")
     }
     repositories {
         jcenter()
@@ -34,7 +42,7 @@ task validate {
     //check build number, but only if current java version is 8
     if (javaVersion == JavaVersion.VERSION_1_8) {
         def currentVersion = System.getProperty("java.version")
-        def matcher = java.util.regex.Pattern.compile("1(\\.\\d+){2}_(\\d+)").matcher(currentVersion)
+        def matcher = Pattern.compile("1(\\.\\d+){2}_(\\d+)").matcher(currentVersion)
         if (!matcher.find()) {
             throw new GradleException(currentVersion + " is not a recognized java version. Please report this issue.")
         }
@@ -51,7 +59,7 @@ war {
     def bowerDir = "resources/bower_components"
     def excludesFile = new File("./lib_exclude")
     if(excludesFile.exists()) {
-        exclude(excludesFile.readLines().collect({ bowerDir + it }));
+        exclude(excludesFile.readLines().collect({ bowerDir + it }))
     }
 }
 
@@ -213,17 +221,11 @@ license {
         java = 'JAVADOC_STYLE'
         sql = 'DOUBLEDASHES_STYLE'
     }
-    ext.year = '2014-'+java.time.Year.now().toString()
+    ext.year = '2014-'+Year.now().toString()
     include '**/*.java'
     include '**/*.sql'
 }
 
-
-import org.apache.tools.ant.filters.ReplaceTokens
-
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 processResources {
 
@@ -315,6 +317,18 @@ task distribution(type: Copy) {
     into "${buildDir}/dockerize"
 
     dependsOn build, dockerize
+}
+
+task clever(type: Copy) {
+    from new File(project.buildDir, "libs/alfio-${project.version}-boot.war")
+    rename(new Transformer<String, String>() {
+        @Override
+        String transform(String s) {
+            return "alfio-boot.war"
+        }
+    })
+    into "${project.buildDir}/clevercloud"
+    dependsOn build
 }
 
 release {
