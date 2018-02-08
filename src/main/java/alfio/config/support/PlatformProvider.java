@@ -299,7 +299,8 @@ public enum PlatformProvider {
     CLEVER_CLOUD {
         @Override
         public String getUrl(Environment env) {
-            return "jdbc:" + env.getRequiredProperty("POSTGRESQL_ADDON_URI");
+            return String.format("jdbc:postgresql://%s:%s/%s", env.getRequiredProperty("POSTGRESQL_ADDON_HOST"),
+                env.getRequiredProperty("POSTGRESQL_ADDON_PORT"), env.getRequiredProperty("POSTGRESQL_ADDON_DB"));
         }
 
         @Override
