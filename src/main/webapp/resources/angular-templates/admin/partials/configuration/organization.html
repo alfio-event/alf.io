@@ -148,6 +148,8 @@
                         <div class="alert alert-info">
                             <p><i class="fa fa-info-circle"></i> in order to accept payments through PayPal, you must create and enable a new <strong>REST API app</strong>, as explained <a href="https://developer.paypal.com/docs/integration/admin/manage-apps/" target="_blank">here</a></p>
                             <p>Once you have created your app and tested the integration, you can enable live payments by inserting the <strong>Live</strong> Client ID and Secret, and enabling the "live mode" below.</p>
+                            <p><strong>IMPORTANT:</strong> if you are going to accept payments in a currency you don't hold, please make sure to enable automatic currency conversion. </p>
+                            <p>To do that, go to <a href="https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_profile-pref">PayPal dashboard</a> and select <code>Profile</code> -> <code>Profile and Settings</code> -> <code>My Selling Tools</code> -> <code>Block Payments</code></p>
                         </div>
                         <div data-ng-repeat="setting in organizationConf.paymentPaypal.settings">
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
