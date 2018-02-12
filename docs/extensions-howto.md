@@ -27,6 +27,7 @@ function getScriptMetadata() {
             //'RESERVATION_CONFIRMED', //fired on reservation confirmation. No results expected.
             //'RESERVATION_EXPIRED', //fired when reservation(s) expired
             //'RESERVATION_CANCELLED', //fired when reservation(s) are cancelled
+            //'TICKET_CANCELLED', //fired when ticket(s) (but not the entire reservation) are cancelled
             //'TICKET_ASSIGNED', //fired on ticket assignment. No results expected.
             //'WAITING_QUEUE_SUBSCRIPTION', //fired on waiting queue subscription. No results expected.
             //'STUCK_RESERVATIONS', //fired when the system has detected stuck reservations. No results expected.
@@ -100,6 +101,14 @@ extensions will be invoked **synchronously** once one or more reservations have 
 
 ##### expected result type
 boolean
+
+#### TICKET_CANCELLED
+
+extension will be invoked **synchronously** once one or more tickets (but not the entire reservation at once) have been cancelled
+
+##### params
+* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+* **ticketUUIDs**: String[] - the cencelled tickets UUIDs. **Please note** that once a ticket has been cancelled, its UUID is reset.
 
 #### TICKET_ASSIGNED
 

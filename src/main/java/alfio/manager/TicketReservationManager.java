@@ -33,7 +33,6 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.AdditionalServiceItemPriceContainer;
 import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
-import alfio.model.extension.InvoiceGeneration;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
@@ -1285,7 +1284,7 @@ public class TicketReservationManager {
         return ticketRepository.countFreeTicketsForUnbounded(event.getId());
     }
 
-    public void releaseTicket(Event event, TicketReservation ticketReservation, Ticket ticket) {
+    public void releaseTicket(Event event, TicketReservation ticketReservation, final Ticket ticket) {
         TicketCategory category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
         if(!CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket)) {
             throw new IllegalStateException("Cannot release reserved tickets");
@@ -1320,6 +1319,8 @@ public class TicketReservationManager {
         if(ticketRepository.countTicketsInReservation(reservationId) == 0 && !transactionRepository.loadOptionalByReservationId(reservationId).isPresent()) {
             deleteReservation(event, reservationId, false);
             auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
+        } else {
+            extensionManager.handleTicketCancelledForEvent(event, Collections.singletonList(ticket.getUuid()));
         }
     }
 

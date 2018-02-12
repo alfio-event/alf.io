@@ -39,6 +39,7 @@ public class ExtensionManager {
     public enum ExtensionEvent {
         RESERVATION_CONFIRMED,
         RESERVATION_CANCELLED,
+        TICKET_CANCELLED,
         RESERVATION_EXPIRED,
         TICKET_ASSIGNED,
         WAITING_QUEUE_SUBSCRIBED,
@@ -99,6 +100,17 @@ public class ExtensionManager {
 
     public void handleReservationsCancelledForEvent(Event event, Collection<String> reservationIdsToRemove) {
         handleReservationRemoval(event, reservationIdsToRemove, ExtensionEvent.RESERVATION_CANCELLED);
+    }
+
+    public void handleTicketCancelledForEvent(Event event, Collection<String> ticketUUIDs) {
+        int organizationId = event.getOrganizationId();
+        int eventId = event.getId();
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("event", event);
+        payload.put("ticketUUIDs", ticketUUIDs);
+
+        syncCall(ExtensionEvent.TICKET_CANCELLED, eventId, organizationId, payload, Boolean.class);
     }
 
     public void handleOfflineReservationsWillExpire(Event event, List<TicketReservationInfo> reservations) {

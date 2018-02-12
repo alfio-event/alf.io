@@ -93,6 +93,7 @@ public class AdminReservationManager {
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AuditingRepository auditingRepository;
     private final UserRepository userRepository;
+    private final ExtensionManager extensionManager;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
@@ -494,7 +495,7 @@ public class AdminReservationManager {
             Assert.isTrue(ticketIdsInReservation.containsAll(toRefund), "Some ticket ids to refund are not contained in the reservation");
             //
 
-            removeTicketsFromReservation(reservationId, e, ticketIds, notify, username);
+            removeTicketsFromReservation(reservationId, e, ticketIds, notify, username, false);
             //
 
             handleTicketsRefund(toRefund, e, reservation, ticketsById, username);
@@ -524,7 +525,7 @@ public class AdminReservationManager {
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
 
-            removeTicketsFromReservation(reservationId, e, tickets.stream().map(Ticket::getId).collect(toList()), notify, username);
+            removeTicketsFromReservation(reservationId, e, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, true);
 
             additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
 
@@ -548,7 +549,7 @@ public class AdminReservationManager {
         });
     }
 
-    private void removeTicketsFromReservation(String reservationId, Event event, List<Integer> ticketIds, boolean notify, String username) {
+    private void removeTicketsFromReservation(String reservationId, Event event, List<Integer> ticketIds, boolean notify, String username, boolean removeReservation) {
         if(notify && !ticketIds.isEmpty()) {
             Organization o = eventManager.loadOrganizer(event, username);
             ticketRepository.findByIds(ticketIds).forEach(t -> {
@@ -571,6 +572,11 @@ public class AdminReservationManager {
             .addValue("newUuid", UUID.randomUUID().toString())
         ).toArray(MapSqlParameterSource[]::new);
         jdbc.batchUpdate(ticketRepository.batchReleaseTickets(), args);
+        if(!removeReservation) {
+            extensionManager.handleTicketCancelledForEvent(event, ticketRepository.findUUIDs(ticketIds));
+        } else {
+            extensionManager.handleReservationsCancelledForEvent(event, ticketRepository.findReservationIds(ticketIds));
+        }
     }
 
     private void sendTicketHasBeenRemoved(Event event, Organization organization, Ticket ticket) {

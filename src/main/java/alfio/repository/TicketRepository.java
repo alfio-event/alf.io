@@ -176,6 +176,12 @@ public interface TicketRepository {
     @Query("select * from ticket where id in (:ids)")
     List<Ticket> findByIds(@Bind("ids") List<Integer> ticketIds);
 
+    @Query("select uuid from ticket where id in (:ids)")
+    List<String> findUUIDs(@Bind("ids") List<Integer> ticketIds);
+
+    @Query("select distinct tickets_reservation_id from ticket where id in (:ids)")
+    List<String> findReservationIds(@Bind("ids") List<Integer> ticketIds);
+
     @Query("select * from ticket where special_price_id_fk = :specialPriceId")
     Optional<Ticket> findBySpecialPriceId(@Bind("specialPriceId") int specialPriceId);
 
