@@ -58,6 +58,10 @@ public class OrderSummary {
     }
 
     public boolean getDisplayVat() {
-        return !PriceContainer.VatStatus.isVatExempt(vatStatus);
+        return !isVatExempt();
+    }
+
+    public boolean isVatExempt() {
+        return PriceContainer.VatStatus.isVatExempt(vatStatus);
     }
 }
