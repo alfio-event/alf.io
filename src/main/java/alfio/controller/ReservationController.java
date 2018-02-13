@@ -154,8 +154,8 @@ public class ReservationController {
                             .addAttribute("captchaRequestedFreeOfCharge", orderSummary.getFree() && captchaForOfflinePaymentEnabled);
                     }
 
-                    boolean invoiceAllowed = orderSummary.getDisplayVat()
-                        && (configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isVatCheckingEnabledFor(event.getOrganizationId()));
+                    boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isVatCheckingEnabledFor(event.getOrganizationId());
+                    PaymentForm paymentForm = PaymentForm.fromExistingReservation(reservation);
                     model.addAttribute("multiplePaymentMethods" , activePaymentMethods.size() > 1 )
                         .addAttribute("orderSummary", orderSummary)
                         .addAttribute("reservationId", reservationId)
@@ -169,6 +169,7 @@ public class ReservationController {
                         .addAttribute("euCountries", TicketHelper.getLocalizedEUCountries(locale, configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST))))
                         .addAttribute("euVatCheckingEnabled", vatChecker.isVatCheckingEnabledFor(event.getOrganizationId()))
                         .addAttribute("invoiceIsAllowed", invoiceAllowed)
+                        .addAttribute("vatNrIsLinked", orderSummary.isVatExempt() || paymentForm.getHasVatCountryCode())
                         .addAttribute("billingAddressLabel", invoiceAllowed ? "reservation-page.billing-address" : "reservation-page.receipt-address");
 
                     boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
@@ -177,7 +178,7 @@ public class ReservationController {
                         model.addAttribute("stripe_p_key", paymentManager.getStripePublicKey(event));
                     }
                     Map<String, Object> modelMap = model.asMap();
-                    modelMap.putIfAbsent("paymentForm", PaymentForm.fromExistingReservation(reservation));
+                    modelMap.putIfAbsent("paymentForm", paymentForm);
                     modelMap.putIfAbsent("hasErrors", false);
 
                     boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(reservationId);
