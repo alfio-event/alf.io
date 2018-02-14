@@ -324,13 +324,7 @@
             <div class="col-xs-12 {{#vatNrIsLinked}}col-md-8{{/vatNrIsLinked}}">
                 <div class="form-group {{#field-has-error}}[billingAddress] has-error{{/field-has-error}}" id="billing-address-container">
                     <label for="billing-address" class="control-label">{{#i18n}}{{billingAddressLabel}}{{/i18n}}</label>
-                    {{^vatNrIsLinked}}
                     <textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450" {{#invoiceIsAllowed}}data-invoice-enabled="true"{{/invoiceIsAllowed}}>{{paymentForm.billingAddress}}</textarea>
-                    {{/vatNrIsLinked}}
-                    {{#vatNrIsLinked}}
-                    <input type="hidden" name="billingAddress" value="{{paymentForm.billingAddress}}"/>
-                    <div class="form-control-static preformatted">{{paymentForm.billingAddress}}</div>
-                    {{/vatNrIsLinked}}
                     {{#field-has-error}}[billingAddress]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddress{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
                 </div>
             </div>
