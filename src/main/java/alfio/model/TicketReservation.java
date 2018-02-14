@@ -143,6 +143,10 @@ public class TicketReservation {
         return status == TicketReservationStatus.COMPLETE;
     }
 
+    public boolean getHasVatNumber() {
+        return StringUtils.isNotEmpty(vatNr);
+    }
+
     public List<String> getLineSplittedBillingAddress() {
         if(billingAddress == null) {
             return Collections.emptyList();

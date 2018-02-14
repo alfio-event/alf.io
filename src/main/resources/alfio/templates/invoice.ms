@@ -129,7 +129,7 @@
                     <p>{{.}}</p>
                     {{/ticketReservation.lineSplittedBillingAddress}}
                     {{/ticketReservation.hasBillingAddress}}
-                    {{^orderSummary.displayVat}}{{#i18n}}invoice.vat{{/i18n}} {{ticketReservation.vatNr}}{{/orderSummary.displayVat}}
+                    {{#ticketReservation.hasVatNumber}}{{#i18n}}invoice.vat{{/i18n}} {{ticketReservation.vatNr}}{{/ticketReservation.hasVatNumber}}
                 </td>
             </tr>
         </table>

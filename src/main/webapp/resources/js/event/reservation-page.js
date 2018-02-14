@@ -294,7 +294,7 @@
 
 
         function disableBillingFields() {
-            $('#vatNr,#vatCountryCode,#billing-address[data-invoice-enabled]').attr('required', false).attr('disabled', '');
+            $('#vatNr,#vatCountryCode').attr('required', false).attr('disabled', '');
         }
 
         disableBillingFields();
