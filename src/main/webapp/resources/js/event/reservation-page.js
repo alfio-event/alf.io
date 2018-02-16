@@ -312,7 +312,8 @@
                     $('#billing-address').attr('required', true).removeAttr('disabled');
                 }
             } else {
-                element.find('.field-required').attr('required', false);
+                element.find('.field-required').attr('required', false).attr('disabled');
+                $('#billing-address').attr('required', false,).attr('disabled');
                 element.addClass('hidden');
                 disableBillingFields();
             }
