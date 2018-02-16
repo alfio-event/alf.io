@@ -144,7 +144,7 @@ dependencies {
     compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     compile "org.springframework.security:spring-security-web:$springSecurityConfigVersion"
     compile "org.springframework.security:spring-security-config:$springSecurityConfigVersion"
-    compile 'org.springframework.session:spring-session:1.3.1.RELEASE'
+    compile 'org.springframework.session:spring-session:1.3.2.RELEASE'
     compile "ch.digitalfondue.npjt-extra:npjt-extra:1.1.4"
     compile "com.samskivert:jmustache:1.14"
     compile "com.github.sps.mustache:mustache-spring-view:1.4"
@@ -159,17 +159,17 @@ dependencies {
     compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC12"
     compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC12"
     /**/
-    compile "com.google.zxing:core:3.3.0"
-    compile "com.google.zxing:javase:3.3.0"
+    compile "com.google.zxing:core:3.3.2"
+    compile "com.google.zxing:javase:3.3.2"
     compile "org.flywaydb:flyway-core:4.2.0"
     compile "org.postgresql:postgresql:42.1.4"
     compile 'mysql:mysql-connector-java:5.1.42'
-    compile "com.zaxxer:HikariCP:2.7.4"
+    compile "com.zaxxer:HikariCP:2.7.7"
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-core:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-jcl:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
-    compile "com.stripe:stripe-java:5.28.0"
+    compile "com.stripe:stripe-java:5.31.0"
     compile 'com.paypal.sdk:rest-api-sdk:1.14.0'
     compile 'com.squareup.okhttp3:okhttp:3.9.1'
     compile "org.apache.commons:commons-lang3:3.7"
@@ -177,10 +177,10 @@ dependencies {
     compile "com.opencsv:opencsv:4.1"
     compile 'commons-codec:commons-codec:1.11'
     compile 'net.sf.biweekly:biweekly:0.6.1'
-    compile 'com.atlassian.commonmark:commonmark:0.10.0'
+    compile 'com.atlassian.commonmark:commonmark:0.11.0'
     compile 'com.ryantenney.passkit4j:passkit4j:2.0.1'
     compile 'com.github.ben-manes.caffeine:caffeine:2.6.1'
-    compile 'de.danielbechler:java-object-diff:0.95-RC5'
+    compile 'de.danielbechler:java-object-diff:0.95'
     compile 'com.github.scribejava:scribejava-core:5.0.0'
 
     testCompile "org.springframework:spring-test:$springVersion"
