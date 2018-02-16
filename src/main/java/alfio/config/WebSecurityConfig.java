@@ -21,6 +21,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.user.Role;
 import alfio.model.user.User;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -59,6 +60,7 @@ import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 public class WebSecurityConfig {
 
     static final String ADMIN_API = "/admin/api";
+    static final String ADMIN_PUBLIC_API = "/api/v1/admin";
     static final String CSRF_SESSION_ATTRIBUTE = "CSRF_SESSION_ATTRIBUTE";
     public static final String CSRF_PARAM_NAME = "_csrf";
     public static final String OPERATOR = "OPERATOR";
@@ -66,6 +68,7 @@ public class WebSecurityConfig {
     public static final String SPONSOR = "SPONSOR";
     private static final String ADMIN = "ADMIN";
     private static final String OWNER = "OWNER";
+    private static final String API_CLIENT = "API_CLIENT";
     static final String X_REQUESTED_WITH = "X-Requested-With";
 
 
@@ -82,6 +85,25 @@ public class WebSecurityConfig {
                     .usersByUsernameQuery("select username, password, enabled from ba_user where username = ?")
                     .authoritiesByUsernameQuery("select username, role from authority where username = ?")
                     .passwordEncoder(passwordEncoder);
+        }
+    }
+
+    /**
+     * Basic auth configuration for Public APIs.
+     * The rules are valid only if the Authorization header is present and if the context path starts with /api/v1/admin
+     */
+    @Configuration
+    @Order(0)
+    public static class APIBasicAuthWebSecurity extends BaseWebSecurity {
+
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http.requestMatcher((request) -> request.getHeader("Authorization") != null && StringUtils.startsWith(request.getContextPath(), ADMIN_PUBLIC_API))
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and().csrf().disable()
+                .authorizeRequests()
+                .antMatchers(ADMIN_PUBLIC_API + "/**").hasRole(API_CLIENT)
+                .and().httpBasic();
         }
     }
 
