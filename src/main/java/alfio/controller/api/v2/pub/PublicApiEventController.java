@@ -27,14 +27,14 @@ import java.util.List;
 @RequestMapping("/api/v2/public/event/")
 public class PublicApiEventController {
 
-    @RequestMapping(method = RequestMethod.GET, path = "/", produces = "application/json")
+    @GetMapping(path = "/", produces = "application/json")
     @ApiOperation(value = "Return a list of available events")
     public List<EventInfo> getEvents(@RequestParam("lang") String lang) {
         return Collections.emptyList();
     }
 
 
-    @RequestMapping(method = RequestMethod.GET, path = "/{shortName}", produces = "application/json")
+    @GetMapping(path = "/{shortName}", produces = "application/json")
     @ApiOperation(value = "Return an event")
     public Event getEvent(@PathVariable("shortName") String shortName,
                          @RequestParam("lang") String lang,
@@ -43,22 +43,34 @@ public class PublicApiEventController {
     }
 
 
-    @RequestMapping(method = RequestMethod.GET, path = "/{shortName}/discount-code/{code}", produces = "application/json")
+    @GetMapping(path = "/{shortName}/discount-code/{code}", produces = "application/json")
     @ApiOperation(value = "Validate a discount code")
     public boolean isValidDiscountCode(@PathVariable("shortName") String shortName, @PathVariable("shortName") String discountCode) {
         return false;
     }
 
 
-    @RequestMapping(method = RequestMethod.GET, path = "/{shortName}/calendar", produces = "text/calendar")
-    @ApiOperation(value = "downloads ICS")
+    @GetMapping(path = "/{shortName}/calendar", produces = "text/calendar")
+    @ApiOperation(value = "Downloads ICS")
     public void getCalendar(@PathVariable("shortName") String shortName, @RequestParam("lang") String lang, HttpServletResponse response) {
     }
 
-    @RequestMapping(method = RequestMethod.GET, path = "/{shortName}/google-calendar", produces = "application/json")
-    @ApiOperation(value = "get google calendar url")
+    @GetMapping(path = "/{shortName}/google-calendar", produces = "application/json")
+    @ApiOperation(value = "Get google calendar url")
     public String getGoogleCalendar(@PathVariable("shortName") String shortName, @RequestParam("lang") String lang) {
         return null;
+    }
+
+
+    @PostMapping(path = "/{shortName}/claim-ticket")
+    @ApiOperation(value = "Claim a ticket")
+    public void claimTicket(@PathVariable("shortName") String shortName) {
+    }
+
+    @PostMapping(path = "/{shortName}/subscribe")
+    @ApiOperation("Subscribe to the waiting list")
+    public boolean subscribe(@PathVariable("shortName") String shortName, @RequestParam("lang") String lang) {
+        return false;
     }
 
     public static class EventInfo {
