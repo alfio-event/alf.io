@@ -19,6 +19,7 @@ package alfio.controller.api.v2.pub;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,16 +29,41 @@ public class PublicApiEventController {
 
     @RequestMapping(method = RequestMethod.GET, path = "/", produces = "application/json")
     @ApiOperation(value = "Return a list of available events")
-    public List<Void> getEvents(@RequestParam("lang") String lang) {
+    public List<EventInfo> getEvents(@RequestParam("lang") String lang) {
         return Collections.emptyList();
     }
 
 
     @RequestMapping(method = RequestMethod.GET, path = "/{shortName}", produces = "application/json")
     @ApiOperation(value = "Return an event")
-    public Void getEvent(@PathVariable("shortName") String shortName,
+    public Event getEvent(@PathVariable("shortName") String shortName,
                          @RequestParam("lang") String lang,
                          @RequestParam(name = "code", required = false) String discountCode) {
         return null;
+    }
+
+
+    @RequestMapping(method = RequestMethod.GET, path = "/{shortName}/discount-code/{code}", produces = "application/json")
+    @ApiOperation(value = "Validate a discount code")
+    public boolean isValidDiscountCode(@PathVariable("shortName") String shortName, @PathVariable("shortName") String discountCode) {
+        return false;
+    }
+
+
+    @RequestMapping(method = RequestMethod.GET, path = "/{shortName}/calendar", produces = "text/calendar")
+    @ApiOperation(value = "downloads ICS")
+    public void getCalendar(@PathVariable("shortName") String shortName, @RequestParam("lang") String lang, HttpServletResponse response) {
+    }
+
+    @RequestMapping(method = RequestMethod.GET, path = "/{shortName}/google-calendar", produces = "application/json")
+    @ApiOperation(value = "get google calendar url")
+    public String getGoogleCalendar(@PathVariable("shortName") String shortName, @RequestParam("lang") String lang) {
+        return null;
+    }
+
+    public static class EventInfo {
+    }
+
+    public static class Event {
     }
 }
