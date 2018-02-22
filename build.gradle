@@ -9,6 +9,7 @@ import java.util.regex.Pattern
 buildscript {
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.10.RELEASE")
+        classpath 'com.benjaminsproule:swagger-gradle-plugin:+'
     }
     repositories {
         jcenter()
@@ -27,6 +28,7 @@ plugins {
 
 apply plugin: 'war'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'com.benjaminsproule.swagger'
 
 task wrapper(type: Wrapper) {
     gradleVersion = '3.5'
@@ -209,6 +211,8 @@ dependencies {
         exclude group: "org.eclipse.jetty.websocket", module: "websocket-server"
         exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
     }
+
+    compile 'io.swagger:swagger-annotations:1.5.18'
 }
 
 // -- license configuration
@@ -281,6 +285,23 @@ bootRun {
 bootRepackage {
     mainClass = 'alfio.config.SpringBootLauncher'
     classifier = 'boot'
+}
+
+swagger {
+    apiSource {
+        springmvc = true
+        locations = [ 'alfio.controller.api.v2' ]
+        schemes = ['http']
+        host = 'localhost:8080'
+        basePath = '/api/v2/'
+
+        info {
+            title = 'Swagger Gradle Plugin Sample'
+            version = 'v2'
+        }
+
+        swaggerDirectory = "${project.buildDir}/swagger-ui"
+    }
 }
 
 // -- code-coverage
