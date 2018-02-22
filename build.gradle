@@ -300,6 +300,8 @@ swagger {
             version = 'v2'
         }
 
+        outputFormats = ['json', 'yaml']
+
         swaggerDirectory = "${project.buildDir}/swagger-ui"
     }
 }

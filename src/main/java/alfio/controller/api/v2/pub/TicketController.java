@@ -16,29 +16,10 @@
  */
 package alfio.controller.api.v2.pub;
 
-import io.swagger.annotations.ApiOperation;
-import lombok.Data;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Collections;
-import java.util.List;
-
 @RestController
-@RequestMapping("/api/v2/public/country/")
-public class CountryController {
-
-    @RequestMapping(method = RequestMethod.GET, path = "/", produces = "application/json")
-    @ApiOperation(value = "Return a list of CodeAndCountry")
-    public List<CodeAndCountry> getCountries(@RequestParam("lang") String lang) {
-        return Collections.emptyList();
-    }
-
-    @Data
-    public static class CodeAndCountry {
-        private String code;
-        private String name;
-    }
+@RequestMapping("/api/v2/public/ticket/")
+public class TicketController {
 }
