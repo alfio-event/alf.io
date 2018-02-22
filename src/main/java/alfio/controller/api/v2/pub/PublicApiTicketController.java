@@ -16,10 +16,39 @@
  */
 package alfio.controller.api.v2.pub;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import io.swagger.annotations.ApiOperation;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v2/public/ticket/")
 public class PublicApiTicketController {
+
+    @GetMapping("/{uuid}")
+    @ApiOperation("Get a ticket")
+    public Void getTicket(@PathVariable("uuid") String uuid) {
+        return null;
+    }
+
+    @PostMapping("/{uuid}")
+    @ApiOperation("Get a ticket")
+    public Void updateTicket(@PathVariable("uuid") String uuid, @RequestBody Void ticket) {
+        return null;
+    }
+
+    @PostMapping("/{uuid}/send")
+    @ApiOperation("Sends ticket via email")
+    public boolean sendTicketViaEmail(@PathVariable("uuid") String uuid) {
+        return false;
+    }
+
+    @GetMapping("/{uuid}/download")
+    @ApiOperation("Download ticket PDF")
+    public void downloadTicketPDF(@PathVariable("uuid") String uuid) {
+    }
+
+    @DeleteMapping("/{uuid}")
+    @ApiOperation("Sends ticket via email")
+    public boolean releaseTicket(@PathVariable("uuid") String uuid) {
+        return false;
+    }
 }
