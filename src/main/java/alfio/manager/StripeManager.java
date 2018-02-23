@@ -168,7 +168,7 @@ public class StripeManager {
      * @return
      * @throws StripeException
      */
-    Charge chargeCreditCard(String stripeToken, long amountInCent, Event event,
+    Optional<Charge> chargeCreditCard(String stripeToken, long amountInCent, Event event,
                             String reservationId, String email, String fullName, String billingAddress) throws StripeException {
 
         int tickets = ticketRepository.countTicketsInReservation(reservationId);
@@ -188,7 +188,12 @@ public class StripeManager {
             initialMetadata.put("billingAddress", billingAddress);
         }
         chargeParams.put("metadata", initialMetadata);
-        RequestOptions options = options(event);
+
+        Optional<RequestOptions> opt = options(event);
+        if(!opt.isPresent()) {
+            return Optional.empty();
+        }
+        RequestOptions options = opt.get();
         Charge charge = Charge.create(chargeParams, options);
         if(charge.getBalanceTransactionObject() == null) {
             try {
@@ -197,7 +202,7 @@ public class StripeManager {
                 log.warn("can't retrieve balance transaction", e);
             }
         }
-        return charge;
+        return Optional.of(charge);
     }
 
     private BalanceTransaction retrieveBalanceTransaction(String balanceTransaction, RequestOptions options) throws AuthenticationException, InvalidRequestException, APIConnectionException, CardException, APIException {
@@ -205,24 +210,31 @@ public class StripeManager {
     }
 
 
-    private RequestOptions options(Event event) {
+    Optional<RequestOptions> options(Event event) {
         RequestOptions.RequestOptionsBuilder builder = RequestOptions.builder();
         if(isConnectEnabled(event)) {
-            //connected stripe account
-            builder.setStripeAccount(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), STRIPE_CONNECTED_ID)));
-            return builder.setApiKey(getSystemApiKey()).build();
+            return configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), STRIPE_CONNECTED_ID))
+                .map(connectedId -> {
+                    //connected stripe account
+                    builder.setStripeAccount(connectedId);
+                    return builder.setApiKey(getSystemApiKey()).build();
+                });
         }
-        return builder.setApiKey(getSecretKey(event)).build();
+        return Optional.of(builder.setApiKey(getSecretKey(event)).build());
     }
 
     Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
         try {
-            RequestOptions options = options(event);
-            Charge charge = Charge.retrieve(transaction.getTransactionId(), options);
-            String paidAmount = MonetaryUtil.formatCents(charge.getAmount());
-            String refundedAmount = MonetaryUtil.formatCents(charge.getAmountRefunded());
-            List<Fee> fees = retrieveBalanceTransaction(charge.getBalanceTransaction(), options).getFeeDetails();
-            return Optional.of(new PaymentInformation(paidAmount, refundedAmount, getFeeAmount(fees, "stripe_fee"), getFeeAmount(fees, "application_fee")));
+            Optional<RequestOptions> requestOptionsOptional = options(event);
+            if(requestOptionsOptional.isPresent()) {
+                RequestOptions options = requestOptionsOptional.get();
+                Charge charge = Charge.retrieve(transaction.getTransactionId(), options);
+                String paidAmount = MonetaryUtil.formatCents(charge.getAmount());
+                String refundedAmount = MonetaryUtil.formatCents(charge.getAmountRefunded());
+                List<Fee> fees = retrieveBalanceTransaction(charge.getBalanceTransaction(), options).getFeeDetails();
+                return Optional.of(new PaymentInformation(paidAmount, refundedAmount, getFeeAmount(fees, "stripe_fee"), getFeeAmount(fees, "application_fee")));
+            }
+            return Optional.empty();
         } catch (StripeException e) {
             return Optional.empty();
         }
@@ -249,14 +261,20 @@ public class StripeManager {
             if(isConnectEnabled(event)) {
                 params.put("refund_application_fee", true);
             }
-            Refund r = Refund.create(params, options(event));
-            if("succeeded".equals(r.getStatus())) {
-                log.info("Stripe: refund for payment {} executed with success for amount: {}", chargeId, amountOrFull);
-                return true;
-            } else {
-                log.warn("Stripe: was not able to refund payment with id {}, returned status is not 'succeded' but {}", chargeId, r.getStatus());
-                return false;
+
+            Optional<RequestOptions> requestOptionsOptional = options(event);
+            if(requestOptionsOptional.isPresent()) {
+                RequestOptions options = requestOptionsOptional.get();
+                Refund r = Refund.create(params, options);
+                if("succeeded".equals(r.getStatus())) {
+                    log.info("Stripe: refund for payment {} executed with success for amount: {}", chargeId, amountOrFull);
+                    return true;
+                } else {
+                    log.warn("Stripe: was not able to refund payment with id {}, returned status is not 'succeded' but {}", chargeId, r.getStatus());
+                    return false;
+                }
             }
+            return false;
         } catch (StripeException e) {
             log.warn("Stripe: was not able to refund payment with id " + chargeId, e);
             return false;

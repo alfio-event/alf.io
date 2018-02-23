@@ -16,38 +16,76 @@
  */
 package alfio.manager;
 
-import com.insightfullogic.lambdabehave.JunitSuiteRunner;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.Event;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
+import alfio.repository.TicketRepository;
 import com.stripe.exception.*;
+import com.stripe.net.RequestOptions;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import static com.insightfullogic.lambdabehave.Suite.describe;
+import java.util.Optional;
+import java.util.function.Function;
 
-@RunWith(JunitSuiteRunner.class)
-public class StripeManagerTest {{
+import static alfio.model.system.ConfigurationKeys.PLATFORM_MODE_ENABLED;
+import static alfio.model.system.ConfigurationKeys.STRIPE_CONNECTED_ID;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.when;
 
-    StripeManager stripeManager = new StripeManager(null, null, null, null);
+@RunWith(MockitoJUnitRunner.class)
+public class StripeManagerTest {
 
-    describe("Exception handler", it -> {
+    @Mock
+    private ConfigurationManager configurationManager;
+    @Mock
+    private TicketRepository ticketRepository;
+    @Mock
+    private Event event;
 
-        it.should("return stripe's code in case of CardException", expect ->
-                expect.that(stripeManager.handleException(new CardException("abcd", "houston_we_ve_a_problem", "param", null, null, null, null, null)))
-                      .is("error.STEP2_STRIPE_houston_we_ve_a_problem"));
+    private StripeManager stripeManager;
 
-        it.should("return a code containing the field in error in case of InvalidRequestException", expect ->
-                expect.that(stripeManager.handleException(new InvalidRequestException("abcd", "param", null, null, null)))
-                        .is("error.STEP2_STRIPE_invalid_param"));
+    @Before
+    public void init() {
+        stripeManager = new StripeManager(configurationManager, ticketRepository, null, null);
+    }
 
-        it.should("return the 'abort' error code in case of AuthenticationException, " +
-                "APIConnectionException and RateLimitException", expect -> {
-            expect.that(stripeManager.handleException(new AuthenticationException("abcd", null, 401)))
-                    .is("error.STEP2_STRIPE_abort");
-            expect.that(stripeManager.handleException(new APIConnectionException("abcd")))
-                    .is("error.STEP2_STRIPE_abort");
-        });
+    @Test
+    public void testCardExceptionHandler() {
+        assertEquals("error.STEP2_STRIPE_houston_we_ve_a_problem", stripeManager.handleException(new CardException("", "abcd", "houston_we_ve_a_problem", "param", null, null, null, null)));
+    }
 
-        it.should("return the 'unexpected' error in the other cases", expect ->
-                expect.that(stripeManager.handleException(new StripeException("", null, 42) {}))
-                        .is("error.STEP2_STRIPE_unexpected"));
+    @Test
+    public void testInvalidRequestExceptionHandler() {
+        assertEquals("error.STEP2_STRIPE_invalid_param", stripeManager.handleException(new InvalidRequestException("abcd", "param", null, null, null)));
+    }
 
-    });
-}}
+    @Test
+    public void testAuthenticationExceptionHandler() {
+        assertEquals("error.STEP2_STRIPE_abort", stripeManager.handleException(new AuthenticationException("abcd", null, 401)));
+    }
+
+    @Test
+    public void testApiConnectionException() {
+        assertEquals("error.STEP2_STRIPE_abort", stripeManager.handleException(new APIConnectionException("abcd")));
+    }
+
+    @Test
+    public void testUnexpectedError() {
+        assertEquals("error.STEP2_STRIPE_unexpected", stripeManager.handleException(new StripeException("", null, 42) {}));
+    }
+
+    @Test
+    public void testMissingStripeConnectedId() {
+        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(event.getOrganizationId(), event.getId());
+        when(configurationManager.getBooleanConfigValue(partial.apply(PLATFORM_MODE_ENABLED), false)).thenReturn(true);
+        when(configurationManager.getStringConfigValue(partial.apply(STRIPE_CONNECTED_ID))).thenReturn(Optional.empty());
+        Optional<RequestOptions> options = stripeManager.options(event);
+        assertNotNull(options);
+        assertFalse(options.isPresent());
+    }
+}

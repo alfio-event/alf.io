@@ -48,9 +48,9 @@
                         <div class="form-group">
                             <label>Status</label>
                             <div class="input-group">
-                                <div class="form-control-static">{{$ctrl.reservation.status}}</div>
+                                <div class="form-control-static" ng-class="{'text-danger': $ctrl.reservation.status === 'STUCK'}">{{$ctrl.reservation.status}}</div>
                                 <div class="input-group-addon" style="padding: 0; background-color: transparent; border: 0" ng-if="!$ctrl.onUpdate">
-                                    <button type="button" ng-if="$ctrl.reservation.status === 'PENDING'" class="btn btn-sm btn-success pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
+                                    <button type="button" ng-if="$ctrl.reservation.status === 'PENDING' || $ctrl.reservation.status === 'STUCK'" class="btn btn-sm btn-success pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
                                 </div>
                             </div>
                         </div>
@@ -61,6 +61,10 @@
                             <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration" required>
                         </div>
                     </div>
+                </div>
+
+                <div class="alert alert-danger" ng-if="$ctrl.reservation.status === 'STUCK'">
+                    This reservation is in an unknown state. This could happen when we have troubles after receiving a response from the Payment Gateway. Please check the payment status on the Payment Gateway's dashboard and confirm or cancel this reservation.
                 </div>
 
                 <div>
@@ -92,7 +96,7 @@
                                 </dl>
 
                             </div>
-                            <div class="col-xs-12 col-sm-6" ng-if="$ctrl.paymentInfo.supportRefund">
+                            <div class="col-xs-12 col-sm-6" ng-if="$ctrl.reservation.status !== 'STUCK' && $ctrl.paymentInfo.supportRefund">
                                 <div class="panel panel-default">
                                     <div class="panel-heading"><strong>Refund an arbitrary amount</strong></div>
                                     <div class="panel-body">

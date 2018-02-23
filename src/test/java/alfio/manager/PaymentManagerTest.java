@@ -31,6 +31,7 @@ import com.stripe.model.Charge;
 import org.junit.runner.RunWith;
 
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static org.mockito.Matchers.*;
@@ -53,9 +54,9 @@ public class PaymentManagerTest {{
     Event event = mock(Event.class);
     CustomerName customerName = mock(CustomerName.class);
     try {
-        when(successStripe.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenReturn(new Charge() {{
+        when(successStripe.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenReturn(Optional.of(new Charge() {{
             setId(paymentId);
-        }});
+        }}));
         when(failureStripe.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenThrow(new AuthenticationException("401", "42", 401));
         when(failureStripe.handleException(any(StripeException.class))).thenReturn(error);
         when(failureTR.insert(anyString(), anyString(), anyString(), any(ZonedDateTime.class), anyInt(), anyString(), anyString(), anyString(), anyLong(), anyLong()))
