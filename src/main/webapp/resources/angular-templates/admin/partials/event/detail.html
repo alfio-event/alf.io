@@ -86,9 +86,10 @@
                         </div>
                         <div class="row text-warning" data-ng-if="ticketCategory.containingStuckTickets">
                             <div class="col-xs-12">
-                                <i class="fa fa-warning"></i> This category contains tickets which have been paid but not yet confirmed. This is usually due to a Database failure after a successful payment. Please fix them.
+                                <i class="fa fa-warning"></i> This category contains tickets whose reservations are in an unknown state. This could happen when we have troubles after receiving a response from the Payment Gateway. Please <a ui-sref="events.single.ticketsList({eventName: event.shortName, categoryId: ticketCategory.id})">fix them</a>.
                             </div>
                         </div>
+
                         <dl class="dl-horizontal">
                             <dt>Max tickets</dt>
                             <dd ng-switch="ticketCategory.bounded">

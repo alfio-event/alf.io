@@ -105,7 +105,7 @@ public class AdminReservationManager {
                         eventManager.checkOwnership(e, username, e.getOrganizationId());
                         return e;
                     })).map(event -> ticketReservationRepository.findOptionalReservationById(reservationId)
-                        .filter(r -> r.getStatus() == TicketReservationStatus.PENDING)
+                        .filter(r -> r.getStatus() == TicketReservationStatus.PENDING || r.getStatus() == TicketReservationStatus.STUCK)
                         .map(r -> performConfirmation(reservationId, event, r))
                         .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
                     ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
