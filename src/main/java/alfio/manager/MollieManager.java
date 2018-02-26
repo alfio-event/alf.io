@@ -97,7 +97,7 @@ public class MollieManager {
                 log.warn(msg);
                 throw new Exception(msg);
             } else {
-                ticketReservationRepository.updateTicketStatus(reservationId, TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT.toString());
+                ticketReservationRepository.updateReservationStatus(reservationId, TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT.toString());
                 Map<String, Object> res = Json.GSON.fromJson(respBody, (new TypeToken<Map<String, Object>>() {}).getType());
                 @SuppressWarnings("unchecked")
                 Map<String, String> links = (Map<String, String>) res.get("links");

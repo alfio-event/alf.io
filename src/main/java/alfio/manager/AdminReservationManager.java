@@ -588,7 +588,7 @@ public class AdminReservationManager {
     }
 
     private void markAsCancelled(TicketReservation ticketReservation) {
-        ticketReservationRepository.updateTicketStatus(ticketReservation.getId(), TicketReservationStatus.CANCELLED.toString());
+        ticketReservationRepository.updateReservationStatus(ticketReservation.getId(), TicketReservationStatus.CANCELLED.toString());
     }
 
     private void handleTicketsRefund(List<Integer> toRefund, Event e, TicketReservation reservation, Map<Integer, Ticket> ticketsById, String username) {

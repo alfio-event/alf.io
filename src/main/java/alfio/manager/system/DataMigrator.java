@@ -22,7 +22,6 @@ import alfio.model.system.EventMigration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
-import alfio.repository.plugin.PluginConfigurationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.util.MonetaryUtil;
@@ -48,6 +47,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static alfio.model.PriceContainer.VatStatus.*;
+import static alfio.repository.TicketRepository.RESET_TICKET;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.stream.Collectors.*;
 
@@ -66,7 +66,6 @@ public class DataMigrator {
     private final ZonedDateTime buildTimestamp;
     private final TransactionTemplate transactionTemplate;
     private final ConfigurationRepository configurationRepository;
-    private final PluginConfigurationRepository pluginConfigurationRepository;
     private final NamedParameterJdbcTemplate jdbc;
 
     static {
@@ -85,13 +84,11 @@ public class DataMigrator {
                         @Value("${alfio.build-ts}") String buildTimestamp,
                         PlatformTransactionManager transactionManager,
                         ConfigurationRepository configurationRepository,
-                        PluginConfigurationRepository pluginConfigurationRepository,
                         NamedParameterJdbcTemplate jdbc) {
         this.eventMigrationRepository = eventMigrationRepository;
         this.eventRepository = eventRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.configurationRepository = configurationRepository;
-        this.pluginConfigurationRepository = pluginConfigurationRepository;
         this.jdbc = jdbc;
         this.currentVersion = parseVersion(currentVersion);
         this.currentVersionAsString = currentVersion;
@@ -124,12 +121,12 @@ public class DataMigrator {
                 if(ZonedDateTime.now(event.getZoneId()).isBefore(event.getEnd())) {
                     fixAvailableSeats(event);
                     fillDescriptions(event);
-                    migratePluginConfig(event);
                     fixCategoriesSize(event);
                 }
 
                 //migrate prices to new structure. This should be done for all events, regardless of the expiration date.
                 migratePrices(event.getId());
+                fixStuckTickets(event.getId());
 
                 if(alreadyDefined) {
                     EventMigration eventMigration = optional.get();
@@ -144,6 +141,17 @@ public class DataMigrator {
         }
     }
 
+    void fixStuckTickets(int eventId) {
+        List<Integer> ticketIds = jdbc.queryForList("select a.id from ticket a, tickets_reservation b where a.event_id = :eventId and a.status = 'PENDING' and a.tickets_reservation_id = b.id and b.status = 'CANCELLED'", new MapSqlParameterSource("eventId", eventId), Integer.class);
+        if(!ticketIds.isEmpty()) {
+            int toBeFixed = ticketIds.size();
+            log.warn("********* reverting {} stuck tickets ({}) for event id {}", toBeFixed, ticketIds, eventId);
+            int[] results = jdbc.batchUpdate("update ticket set status = 'RELEASED'," + RESET_TICKET + " where id = :ticketId", ticketIds.stream().map(id -> new MapSqlParameterSource("ticketId", id)).toArray(MapSqlParameterSource[]::new));
+            int result = Arrays.stream(results).sum();
+            Validate.isTrue(result == toBeFixed, "Error while fixing stuck tickets: expected "+toBeFixed+", got "+result);
+        }
+    }
+
     void fixCategoriesSize(Event event) {
         ticketCategoryRepository.findByEventId(event.getId()).stream()
             .filter(TicketCategory::isBounded)
@@ -155,19 +163,6 @@ public class DataMigrator {
                 }
             });
 
-    }
-
-    void migratePluginConfig(Event event) {
-        pluginConfigurationRepository.loadByEventId(-1).forEach(p -> {
-            MapSqlParameterSource source = new MapSqlParameterSource("pluginId", p.getPluginId())
-                .addValue("eventId", event.getId())
-                .addValue("confName", p.getOptionName())
-                .addValue("confValue", p.getValue())
-                .addValue("description", p.getDescription())
-                .addValue("confType", p.getComponentType().name());
-            jdbc.update("insert into plugin_configuration(plugin_id, event_id, conf_name, conf_value, conf_description, conf_type) values(:pluginId, :eventId, :confName, :confValue, :description, :confType)", source);
-        });
-        jdbc.update("update plugin_configuration set event_id = -2 where event_id = -1", new EmptySqlParameterSource());
     }
 
     void fillReservationsLanguage() {
