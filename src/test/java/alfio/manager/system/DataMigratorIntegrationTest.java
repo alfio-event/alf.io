@@ -30,8 +30,6 @@ import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.modification.support.LocationDescriptor;
-import alfio.model.plugin.PluginConfigOption;
-import alfio.model.system.ComponentType;
 import alfio.model.system.EventMigration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
@@ -40,6 +38,7 @@ import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.plugin.PluginConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -70,8 +69,7 @@ import static org.junit.Assert.*;
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 public class DataMigratorIntegrationTest {
 
-    public static final int AVAILABLE_SEATS = 20;
-
+    private static final int AVAILABLE_SEATS = 20;
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
 
     @Autowired
@@ -98,6 +96,8 @@ public class DataMigratorIntegrationTest {
     private FileUploadManager fileUploadManager;
     @Autowired
     private PluginConfigurationRepository pluginConfigurationRepository;
+    @Autowired
+    private TicketReservationRepository ticketReservationRepository;
     @Value("${alfio.version}")
     private String currentVersion;
     @Value("${alfio.build-ts}")
@@ -318,31 +318,7 @@ public class DataMigratorIntegrationTest {
     }
 
     @Test
-    public void testUpdatePluginConfiguration() {
-    	List<TicketCategoryModification> categories = Collections.singletonList(new TicketCategoryModification(null,
-				"default", AVAILABLE_SEATS, new DateTimeModification(LocalDate.now(), LocalTime.now()),
-				new DateTimeModification(LocalDate.now(), LocalTime.now()), DESCRIPTION, BigDecimal.TEN, false, "",
-				false, null, null, null, null, null));
-    	Pair<Event, String> eventUsername = initEvent(categories); 
-        Event event = eventUsername.getKey();
-		try {
-			
-			pluginConfigurationRepository.delete("my-plugin");
-			pluginConfigurationRepository.insert("my-plugin", -1, "name", "value", "description", ComponentType.TEXT);
-			dataMigrator.migratePluginConfig(event);
-			List<PluginConfigOption> options = pluginConfigurationRepository.loadByPluginIdAndEventId("my-plugin",
-					event.getId());
-			assertFalse(options.isEmpty());
-			assertEquals(1, options.size());
-			assertEquals(event.getId(), options.get(0).getEventId());
-		} finally {
-			pluginConfigurationRepository.delete("my-plugin");
-			eventManager.deleteEvent(event.getId(), eventUsername.getValue());
-		}
-    }
-
-    @Test
-    public void testFixCategoriesSize() throws Exception {
+    public void testFixCategoriesSize() {
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS -1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
@@ -362,5 +338,30 @@ public class DataMigratorIntegrationTest {
         assertEquals(1, ticketRepository.countFreeTicketsForUnbounded(event.getId()).intValue());
         assertEquals(AVAILABLE_SEATS - 1, ticketRepository.countFreeTickets(event.getId(), firstCategoryID).intValue());
         assertEquals(AVAILABLE_SEATS - 1, firstCategory.getMaxTickets());
+    }
+
+    @Test
+    public void testFixStuckTickets() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+        Pair<Event, String> eventUsername = initEvent(categories);
+        Event event = eventUsername.getKey();
+        TicketReservationModification trm = new TicketReservationModification();
+        trm.setAmount(1);
+        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
+        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
+        Date expiration = DateUtils.addDays(new Date(), 1);
+        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        //simulate the effect of a reservation cancellation after #392, as described in #391
+        ticketReservationRepository.updateReservationStatus(reservationId, TicketReservation.TicketReservationStatus.CANCELLED.name());
+        List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
+        assertEquals(1, ticketsInReservation.size());
+        String uuid = ticketsInReservation.get(0).getUuid();
+        assertTrue(ticketsInReservation.stream().allMatch(t -> t.getStatus() == Ticket.TicketStatus.PENDING));
+        dataMigrator.fixStuckTickets(event.getId());
+        assertTrue(ticketRepository.findByUUID(uuid).getStatus() == Ticket.TicketStatus.RELEASED);
     }
 }

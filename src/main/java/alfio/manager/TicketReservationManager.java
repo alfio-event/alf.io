@@ -579,7 +579,7 @@ public class TicketReservationManager {
     }
 
     private void reTransitionToPending(String reservationId) {
-        int updatedReservation = ticketReservationRepository.updateTicketStatus(reservationId, TicketReservationStatus.PENDING.toString());
+        int updatedReservation = ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.PENDING.toString());
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
     }
     
@@ -707,7 +707,7 @@ public class TicketReservationManager {
      */
     public void markExpiredInPaymentReservationAsStuck(Date expirationDate) {
         final List<String> stuckReservations = ticketReservationRepository.findStuckReservations(expirationDate);
-        stuckReservations.forEach(reservationId -> ticketReservationRepository.updateTicketStatus(reservationId, TicketReservationStatus.STUCK.name()));
+        stuckReservations.forEach(reservationId -> ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.STUCK.name()));
         stuckReservations.stream()
                 .map(ticketRepository::findFirstTicketInReservation)
                 .filter(Optional::isPresent)
