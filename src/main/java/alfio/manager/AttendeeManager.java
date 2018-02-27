@@ -20,8 +20,11 @@ import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.DefaultCheckInResult;
 import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
+import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
+import alfio.model.result.ErrorCode;
+import alfio.model.result.Result;
 import alfio.repository.EventRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketRepository;
@@ -43,6 +46,7 @@ public class AttendeeManager {
     private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final UserManager userManager;
 
     public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String username) {
         int userId = userRepository.getByUsername(username).getId();
@@ -64,6 +68,22 @@ public class AttendeeManager {
             sponsorScanRepository.insert(userId, ZonedDateTime.now(event.getZoneId()), event.getId(), ticket.getId());
         }
         return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(CheckInStatus.SUCCESS, "success"));
+    }
+
+    public Result<Ticket> retrieveTicket(String eventShortName, String ticketUid, String username) {
+        Optional<Event> maybeEvent = eventRepository.findOptionalByShortName(eventShortName)
+            .filter(e -> userManager.findUserOrganizations(username).stream().anyMatch(o -> o.getId() == e.getOrganizationId()));
+
+        if(!maybeEvent.isPresent()) {
+            return Result.error(ErrorCode.EventError.NOT_FOUND);
+        }
+
+        Event event = maybeEvent.get();
+        Optional<Ticket> maybeTicket = ticketRepository.findOptionalByUUID(ticketUid).filter(t -> t.getEventId() == event.getId());
+
+        return new Result.Builder<Ticket>()
+            .checkPrecondition(maybeTicket::isPresent, ErrorCode.custom("ticket_not_found", "ticket not found"))
+            .build(maybeTicket::get);
     }
 
     public Optional<List<SponsorAttendeeData>> retrieveScannedAttendees(String eventShortName, String username, ZonedDateTime start) {
