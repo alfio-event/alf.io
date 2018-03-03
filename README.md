@@ -119,7 +119,7 @@ TODO
  docker run --name alfio-proxy --link alfio-web:web1 -e SSL_CERT="$(awk 1 ORS='\\n' src/main/dist/servercert.pem)" -e FORCE_SSL=yes -e PORT=8080 -p 443:443 -p 80:80 -d tutum/haproxy
  ```
 
-### Test alf.io application
+### Test alf.io application
  * See alfio-web logs: `docker logs alfio-web` or `less /path/to/logs/alfio.log`
  * Copy admin password in a secure place
  * Get IP of your docker container: (only on Mac/Windows, on linux the proxy will bind directly on your public IP)
