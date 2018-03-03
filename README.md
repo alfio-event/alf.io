@@ -20,7 +20,7 @@ the project. Simply execute the wrapper along with the appropriate task, for exa
 ./gradlew clean
 ```
 
-#### Running with multiple profiles
+#### Running with multiple profiles
 
 You must specify a project property at the command line, such as
 ```
