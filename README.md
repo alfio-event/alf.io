@@ -72,9 +72,36 @@ Importing the Gradle project into Intellij and Eclipse both work.
 
 `./gradlew dependencyUpdates`
 
+
+## Run on OpenShift
+
+You'll either need to [locally install minishift](https://docs.openshift.org/latest/minishift/index.html)
+(great for testing! perhaps slightly increase resources from the default via `minishift config set memory 4096; minishift config set cpus 4`),
+or need to create at least a FREE TRIAL ;-) account on [openshift.com](https://www.openshift.com).
+Either way you'll use the OC CLI, like this:
+
+    oc login https://... --token=...
+
+    oc new-project alf-io
+
+    oc apply -f openshift.yaml
+
+    oc start-build alfio
+
+    oc logs -f bc/alfio
+
+    oc expose svc/alfio
+
+    oc status
+
+NB: This does NOT use the Docker images (below) from DockerHub, but instead builds a container from source using [OpenShift's S2I Java Builder feature](https://github.com/fabric8io-images/s2i/tree/master/java/examples), thanks to this project's configuration in [.s2i/](.s2i/), and uses [OpenShift's PostgreSQL](https://docs.okd.io/latest/using_images/db_images/postgresql.html) ([from here](https://github.com/sclorg/postgresql-container)).
+
+To use TLS on a Route with a custom Hostname, [use openshift-acme](https://github.com/tnozicka/openshift-acme/tree/master/deploy/letsencrypt-live/single-namespace) which will automagically add a Cert from [Let's Encrypt](https://letsencrypt.org) as soon as you add the `metadata: annotations: kubernetes.io/tls-acme: "true"` to your Route.
+
+
 ## Docker images
 
-### Pull the latest stable version from Docker Hub 
+### Pull the latest stable version from Docker Hub
 
  ```
  docker pull alfio/alf.io
@@ -90,9 +117,9 @@ Here's an example of deployment as a 3 tier application using the following imag
 ### Launch alf.io container instances
 
  * Define local directory for database data (on docker host, for data to survive postgres image restarts):  `/path/to/local/data = /data/postgres/alfio`
- 
+
  * Launch the Postgres instance
- 
+
  ```
  docker run --name alfio-db -e POSTGRES_DB=postgres -e POSTGRES_USERNAME=postgres -e POSTGRES_PASSWORD=alfiopassword --restart=always -d -v /path/to/local/data:/var/lib/postgresql/data postgres
  ```
@@ -103,7 +130,7 @@ Here's an example of deployment as a 3 tier application using the following imag
  docker run --name alfio --link alfio-db:postgres -d alfio/alf.io
  ```
     Please note that at the moment, the only alias supported for the DB link is *postgres*
- 
+
  * Launch the proxy
  ```
  docker run --name alfio-proxy --link alfio-web:web1 -e SSL_CERT="$(awk 1 ORS='\\n' src/main/dist/servercert.pem)" -e FORCE_SSL=yes -e PORT=8080 -p 443:443 -p 80:80 -d tutum/haproxy

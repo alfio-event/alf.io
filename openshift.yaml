@@ -1,0 +1,196 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: alf.io-db
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  labels:
+    app: postgresql-95-centos7
+  name: postgresql-95-centos7
+spec:
+  replicas: 1
+  selector:
+    app: postgresql-95-centos7
+    deploymentconfig: postgresql-95-centos7
+  strategy:
+    type: Rolling
+  template:
+    metadata:
+      labels:
+        app: postgresql-95-centos7
+        deploymentconfig: postgresql-95-centos7
+    spec:
+      containers:
+      - env:
+        - name: POSTGRESQL_DATABASE
+          value: alfio
+        - name: POSTGRESQL_PASSWORD
+          value: 237vnaw8zevbaacwzebt
+        - name: POSTGRESQL_USER
+          value: alfy
+        image: centos/postgresql-95-centos7
+        imagePullPolicy: Always
+        name: postgresql-95-centos7
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /var/lib/pgsql/data
+          name: volume-qp85f
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      volumes:
+      - name: volume-qp85f
+        persistentVolumeClaim:
+          claimName: alf.io-db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: postgresql-95-centos7
+  name: postgresql-95-centos7
+spec:
+  ports:
+    - name: 5432-tcp
+      port: 5432
+      protocol: TCP
+      targetPort: 5432
+  selector:
+    app: postgresql-95-centos7
+    deploymentconfig: postgresql-95-centos7
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: alfio
+spec:
+  lookupPolicy:
+    local: false
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: alfio
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'alfio:latest'
+  source:
+    git:
+      ref: openshift_1.x-maintenance
+      uri: 'https://github.com/vorburger/alf.io'
+    type: Git
+  strategy:
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: 's2i-java:latest'
+    incremental: true
+    type: Source
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: alfio
+spec:
+  replicas: 1
+  selector:
+    app: alfio
+    deploymentconfig: alfio
+  strategy:
+    type: Rolling
+  template:
+    metadata:
+      labels:
+        app: alfio
+        deploymentconfig: alfio
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_ENV_POSTGRES_DB
+              value: alfio
+            - name: POSTGRES_ENV_POSTGRES_PASSWORD
+              value: 237vnaw8zevbaacwzebt
+            - name: POSTGRES_ENV_POSTGRES_USERNAME
+              value: alfy
+            - name: POSTGRES_PORT_5432_TCP_ADDR
+              value: postgresql-95-centos7
+            - name: POSTGRES_PORT_5432_TCP_PORT
+              value: '5432'
+          image: "alfio"
+          imagePullPolicy: Always
+          name: alfio
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 9779
+              protocol: TCP
+            - containerPort: 8778
+              protocol: TCP
+  triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+          - alfio
+        from:
+          kind: ImageStreamTag
+          name: 'alfio:latest'
+      type: ImageChange
+  revisionHistoryLimit: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: alfio
+  name: alfio
+spec:
+  ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8778-tcp
+      port: 8778
+      protocol: TCP
+      targetPort: 8778
+    - name: 9779-tcp
+      port: 9779
+      protocol: TCP
+      targetPort: 9779
+  selector:
+    app: alfio
+    deploymentconfig: alfio
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: alfio
+  name: alfio
+spec:
+  port:
+    targetPort: 8080-tcp
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  to:
+    kind: Service
+    name: alfio
+    weight: 100
+  wildcardPolicy: None
