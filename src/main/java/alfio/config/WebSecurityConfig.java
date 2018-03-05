@@ -126,6 +126,7 @@ public class WebSecurityConfig {
             .antMatchers(ADMIN_API + "/user-type").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
             .antMatchers(ADMIN_API + "/**").denyAll()
             .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
+            .antMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR)
             .antMatchers("/**").authenticated()
             .and().httpBasic();
         }
