@@ -45,7 +45,7 @@ public class PublicApiEventController {
 
     @GetMapping(path = "/{shortName}/discount-code/{code}", produces = "application/json")
     @ApiOperation(value = "Validate a discount code")
-    public boolean isValidDiscountCode(@PathVariable("shortName") String shortName, @PathVariable("shortName") String discountCode) {
+    public boolean isValidDiscountCode(@PathVariable("shortName") String shortName, @PathVariable("code") String discountCode) {
         return false;
     }
 

@@ -66,8 +66,8 @@ public class WebSecurityConfig {
     public static final String OPERATOR = "OPERATOR";
     private static final String SUPERVISOR = "SUPERVISOR";
     public static final String SPONSOR = "SPONSOR";
-    private static final String ADMIN = "ADMIN";
-    private static final String OWNER = "OWNER";
+    public static final String ADMIN = "ADMIN";
+    public static final String OWNER = "OWNER";
     private static final String API_CLIENT = "API_CLIENT";
     static final String X_REQUESTED_WITH = "X-Requested-With";
 

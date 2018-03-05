@@ -23,32 +23,32 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v2/public/ticket/")
 public class PublicApiTicketController {
 
-    @GetMapping("/{uuid}")
+    @GetMapping("/{ticketUuid}")
     @ApiOperation("Get a ticket")
-    public Void getTicket(@PathVariable("uuid") String uuid) {
+    public Void getTicket(@PathVariable("ticketUuid") String ticketUuid) {
         return null;
     }
 
-    @PostMapping("/{uuid}")
+    @PostMapping("/{ticketUuid}")
     @ApiOperation("Get a ticket")
-    public Void updateTicket(@PathVariable("uuid") String uuid, @RequestBody Void ticket) {
+    public Void updateTicket(@PathVariable("ticketUuid") String ticketUuid, @RequestBody Void ticket) {
         return null;
     }
 
-    @PostMapping("/{uuid}/send")
+    @PostMapping("/{ticketUuid}/send")
     @ApiOperation("Sends ticket via email")
-    public boolean sendTicketViaEmail(@PathVariable("uuid") String uuid) {
+    public boolean sendTicketViaEmail(@PathVariable("ticketUuid") String ticketUuid) {
         return false;
     }
 
-    @GetMapping("/{uuid}/download")
+    @GetMapping("/{ticketUuid}/download")
     @ApiOperation("Download ticket PDF")
-    public void downloadTicketPDF(@PathVariable("uuid") String uuid) {
+    public void downloadTicketPDF(@PathVariable("ticketUuid") String ticketUuid) {
     }
 
-    @DeleteMapping("/{uuid}")
+    @DeleteMapping("/{ticketUuid}")
     @ApiOperation("Sends ticket via email")
-    public boolean releaseTicket(@PathVariable("uuid") String uuid) {
+    public boolean releaseTicket(@PathVariable("ticketUuid") String ticketUuid) {
         return false;
     }
 }

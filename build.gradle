@@ -290,19 +290,37 @@ bootRepackage {
 swagger {
     apiSource {
         springmvc = true
-        locations = [ 'alfio.controller.api.v2' ]
+        locations = [ 'alfio.controller.api.v2.pub' ]
         schemes = ['http']
         host = 'localhost:8080'
         basePath = '/api/v2/'
 
         info {
-            title = 'Swagger Gradle Plugin Sample'
+            title = 'Alf.io Public'
             version = 'v2'
         }
 
         outputFormats = ['json', 'yaml']
 
-        swaggerDirectory = "${project.buildDir}/swagger-ui"
+        swaggerDirectory = "${project.buildDir}/swagger-ui/public"
+    }
+
+    apiSource {
+        springmvc = true
+        locations = [ 'alfio.controller.api.v2.admin' ]
+        schemes = ['http']
+        host = 'localhost:8080'
+        basePath = '/api/v2/'
+
+        info {
+            title = 'Alf.io Admin'
+            version = 'v2'
+        }
+
+        outputFormats = ['json', 'yaml']
+
+        swaggerDirectory = "${project.buildDir}/swagger-ui/admin"
+
     }
 }
 
