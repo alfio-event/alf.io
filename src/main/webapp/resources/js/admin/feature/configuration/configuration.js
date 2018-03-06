@@ -177,6 +177,8 @@
         var systemConf = this;
         systemConf.loading = true;
 
+        systemConf.keys = Object.keys;
+
         var loadAll = function() {
             systemConf.loading = true;
             $q.all([EventService.getAllLanguages(), ConfigurationService.loadAll(), ConfigurationService.loadEUCountries(), ExtensionService.loadSystem()]).then(function(results) {
@@ -200,6 +202,9 @@
                 if(systemConf.alfioPi) {
                     systemConf.alfioPiOptions = _.filter(systemConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT'});
                 }
+
+                systemConf.extensionSettings = results[3].data;
+
             }, function() {
                 systemConf.loading = false;
             });
@@ -253,6 +258,7 @@
                     var platformModeStatus = result[3].data;
                     organizationConf.platformModeEnabled = platformModeStatus.enabled;
                     organizationConf.stripeConnected = platformModeStatus.stripeConnected;
+                    organizationConf.extensionSettings = result[4].data;
                 }, function() {
                     organizationConf.loading = false;
                 });
@@ -321,6 +327,7 @@
                         eventConf.alfioPiOptions = _.filter(eventConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT'});
                         eventConf.labelLayout = _.find(eventConf.alfioPi.settings, function(pi) { return pi.key === 'LABEL_LAYOUT'});
                     }
+                    eventConf.extensionSettings = result[3].data;
                     eventConf.loading = false;
                 }, function() {
                     eventConf.loading = false;

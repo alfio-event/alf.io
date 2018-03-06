@@ -132,6 +132,12 @@
                 }
             })
         };
+    });
+
+    filters.filter('keys', function() {
+        return function(o) {
+            return Object.keys(o);
+        }
     })
 
 })();

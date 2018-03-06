@@ -220,6 +220,22 @@
             </div>
         </div>
 
+        <div class="page-header" data-ng-if="systemConf.extensionSettings">
+            <h2>Extension settings</h2>
+        </div>
+        <div class="panel panel-default" data-ng-repeat="settingId in systemConf.extensionSettings | keys">
+            <div class="panel-heading">
+                <div class="panel-title">Extension: {{systemConf.extensionSettings[settingId][0].extensionName}}</div>
+            </div>
+            <div class="panel-body">
+                <div>
+                    <div data-ng-repeat="setting in systemConf.extensionSettings[settingId]">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler=""></setting>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <control-buttons data-form-obj="systemConf" data-success-text="Save" data-cancel-handler="Cancel"></control-buttons>
     </form>
 </div>

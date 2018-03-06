@@ -131,6 +131,22 @@
                 </div>
             </div>
 
+            <div class="page-header" data-ng-if="eventConf.extensionSettings">
+                <h2>Extension settings</h2>
+            </div>
+            <div class="panel panel-default" data-ng-repeat="settingId in eventConf.extensionSettings | keys">
+                <div class="panel-heading">
+                    <div class="panel-title">Extension: {{eventConf.extensionSettings[settingId][0].extensionName}}</div>
+                </div>
+                <div class="panel-body">
+                    <div>
+                        <div data-ng-repeat="setting in eventConf.extensionSettings[settingId]">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler=""></setting>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
             <div class="pull-left wMarginBottom wMarginTop" data-ng-if="eventConf.eventName">
                 <a class="btn btn-default" data-ng-if="eventConf.eventName" data-ui-sref="events.single.detail({eventName: eventConf.eventName})">back to event</a>
