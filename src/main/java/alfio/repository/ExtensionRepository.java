@@ -99,11 +99,17 @@ public interface ExtensionRepository {
     @Query("select ecm_id, ecm_name, ecm_configuration_level, ecm_description, ecm_type, ecm_mandatory, path, es_id, name, conf_path, conf_value"+
         " from extension_configuration_metadata " +
         " inner join extension_support on es_id = ecm_es_id_fk " +
-        " left outer join extension_configuration_metadata_value on ecm_id = fk_ecm_id " +
+        " left outer join extension_configuration_metadata_value on ecm_id = fk_ecm_id and (conf_path is null or (conf_path in (:possiblePaths))) " +
         " where ecm_configuration_level = :configurationLevel and (path in (:possiblePaths) or path like :pathPattern) order by es_id, name, ecm_id, ecm_name")
     List<ExtensionSupport.ExtensionParameterMetadataAndValue> getParametersForLevelAndPath(
         @Bind("configurationLevel") String configurationLevel,
         @Bind("possiblePaths") Set<String> possiblePaths,
         @Bind("pathPattern") String pathPattern);
 
+
+    @Query("delete from extension_configuration_metadata_value where fk_ecm_id in (select ecm_id from extension_configuration_metadata where ECM_CONFIGURATION_LEVEL = :confLevel) and conf_path = :confPath")
+    int deleteSettingValue(@Bind("confLevel") String level, @Bind("confPath") String confPath);
+
+    @Query("insert into extension_configuration_metadata_value(fk_ecm_id, conf_path, conf_value) values (:ecmId, :confPath, :value)")
+    int insertSettingValue(@Bind("ecmId") int ecmId, @Bind("confPath") String confPath, @Bind("value") String value);
 }

@@ -17,6 +17,7 @@
 package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
@@ -103,5 +104,16 @@ public class ExtensionSupport {
         public String getComponentType() {
             return type;
         }
+
+        public String getValue() {
+            return configurationValue;
+        }
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class ExtensionMetadataValue {
+        private final int id;
+        private final String value;
     }
 }
