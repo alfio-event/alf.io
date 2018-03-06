@@ -98,5 +98,10 @@ public class ExtensionSupport {
             this.configurationPath = configurationPath;
             this.configurationValue = configurationValue;
         }
+
+        //for compatibility
+        public String getComponentType() {
+            return type;
+        }
     }
 }
