@@ -45,6 +45,22 @@
                     var eventShortName = res[1].data.shortName;
                     return $http.post('/admin/api/extensions/setting/organization/'+encodeURIComponent(organizationName)+'/event/'+encodeURIComponent(eventShortName) + '/bulk-update', transformSettingPayload(toSave));
                 });
+            },
+            deleteSystemSettingValue: function(toDelete) {
+                return $http.delete('/admin/api/extensions/setting/system/'+toDelete.id);
+            },
+            deleteOrganizationSettingValue: function(orgId, toDelete) {
+                return OrganizationService.getOrganization(orgId).then(function(org) {
+                    var organizationName = org.data.name;
+                    return $http.delete('/admin/api/extensions/setting/organization/' + encodeURIComponent(organizationName) + '/'+toDelete.id);
+                });
+            },
+            deleteEventSettingValue: function(orgId, eventId, toDelete) {
+                return $q.all([OrganizationService.getOrganization(orgId), EventService.getEventById(eventId)]).then(function(res) {
+                    var organizationName = res[0].data.name;
+                    var eventShortName = res[1].data.shortName;
+                    return $http.delete('/admin/api/extensions/setting/organization/'+encodeURIComponent(organizationName)+'/event/'+encodeURIComponent(eventShortName) + '/'+toDelete.id);
+                });
             }
         };
     }

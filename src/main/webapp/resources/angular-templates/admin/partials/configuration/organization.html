@@ -195,7 +195,7 @@
                     <div class="panel-body">
                         <div>
                             <div data-ng-repeat="setting in organizationConf.extensionSettings[settingId]">
-                                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler=""></setting>
+                                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.deleteExtensionSetting(setting)"></setting>
                             </div>
                         </div>
                     </div>

@@ -234,6 +234,10 @@
             return ConfigurationService.removeSystemConfig(config);
         };
 
+        systemConf.deleteExtensionSetting = function(config) {
+            return ExtensionService.deleteSystemSettingValue(config);
+        };
+
         $rootScope.$on('ReloadSettings', function() {
             loadAll();
         });
@@ -282,6 +286,10 @@
 
         organizationConf.delete = function(config) {
             return ConfigurationService.removeOrganizationConfig(config, organizationConf.organizationId);
+        };
+
+        organizationConf.deleteExtensionSetting = function(config) {
+            return ExtensionService.deleteOrganizationSettingValue(organizationConf.organizationId, config);
         };
 
         $rootScope.$on('ReloadSettings', function() {
@@ -359,6 +367,10 @@
 
         eventConf.delete = function(config) {
             return ConfigurationService.removeEventConfig(config, eventConf.eventId);
+        };
+
+        eventConf.deleteExtensionSetting = function(config) {
+            return ExtensionService.deleteEventSettingValue(eventConf.organizationId, eventConf.eventId, config);
         };
 
         $rootScope.$on('ReloadSettings', function() {

@@ -54,6 +54,7 @@ public class ExtensionService {
 
     private final PlatformTransactionManager platformTransactionManager;
 
+
     @AllArgsConstructor
     private static final class ExtensionLoggerImpl implements ExtensionLogger {
 
@@ -159,6 +160,11 @@ public class ExtensionService {
     public void bulkUpdateEventSettings(Organization org, Event event, List<ExtensionMetadataValue> toUpdate) {
         String path = "-" + org.getId() + "-" + event.getId();
         deleteAndInsertSetting("EVENT", path, toUpdate);
+    }
+
+    @Transactional
+    public void deleteSettingValue(int id, String path) {
+        extensionRepository.deleteSettingValue(id, path);
     }
 
     private void deleteAndInsertSetting(String level, String path, List<ExtensionMetadataValue> toUpdate) {
