@@ -179,7 +179,7 @@
 
         var loadAll = function() {
             systemConf.loading = true;
-            $q.all([EventService.getAllLanguages(), ConfigurationService.loadAll(), ConfigurationService.loadEUCountries()]).then(function(results) {
+            $q.all([EventService.getAllLanguages(), ConfigurationService.loadAll(), ConfigurationService.loadEUCountries(), ExtensionService.loadSystem()]).then(function(results) {
                 systemConf.allLanguages = results[0].data;
                 loadSettings(systemConf, results[1].data, ConfigurationService);
                 if(systemConf.general) {
@@ -244,7 +244,8 @@
             $q.all([OrganizationService.getOrganization(organizationConf.organizationId),
                 ConfigurationService.loadOrganizationConfig(organizationConf.organizationId),
                 ConfigurationService.loadEUCountries(),
-                ConfigurationService.getPlatformModeStatus(organizationConf.organizationId)
+                ConfigurationService.getPlatformModeStatus(organizationConf.organizationId),
+                ExtensionService.loadOrganizationConfigWithOrgId(organizationConf.organizationId)
             ]).then(function(result) {
                     organizationConf.organization = result[0].data;
                     loadSettings(organizationConf, result[1].data, ConfigurationService);
@@ -293,7 +294,7 @@
                     var event = result.data.event;
                     eventConf.eventName = event.shortName;
                     eventConf.eventId = event.id;
-                    $q.all([ConfigurationService.loadEventConfig(eventConf.eventId), ConfigurationService.loadPluginsConfig(eventConf.eventId)]).then(function(result) {
+                    $q.all([ConfigurationService.loadEventConfig(eventConf.eventId), ConfigurationService.loadPluginsConfig(eventConf.eventId), ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)]).then(function(result) {
                         deferred.resolve([{data:event}].concat(result));
                     }, function(e) {
                         deferred.reject(e);
@@ -305,7 +306,7 @@
             } else {
                 eventConf.eventId = $stateParams.eventId;
                 eventConf.organizationId = $stateParams.organizationId;
-                return $q.all([EventService.getEventById($stateParams.eventId), ConfigurationService.loadEventConfig($stateParams.eventId), ConfigurationService.loadPluginsConfig($stateParams.eventId)])
+                return $q.all([EventService.getEventById($stateParams.eventId), ConfigurationService.loadEventConfig($stateParams.eventId), ConfigurationService.loadPluginsConfig($stateParams.eventId), ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)])
             }
         };
 
