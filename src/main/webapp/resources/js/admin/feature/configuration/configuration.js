@@ -216,7 +216,7 @@
                 return;
             }
             systemConf.loading = true;
-            ConfigurationService.bulkUpdate(systemConf.settings).then(function() {
+            $q.all([ConfigurationService.bulkUpdate(systemConf.settings), ExtensionService.saveBulkSystemSetting(systemConf.extensionSettings)]).then(function() {
                 loadAll();
                 NotificationHandler.showSuccess("Configurations have been saved successfully");
             }, function(e) {
@@ -269,7 +269,8 @@
                 return;
             }
             organizationConf.loading = true;
-            ConfigurationService.updateOrganizationConfig(organizationConf.organization, organizationConf.settings).then(function() {
+            $q.all([ConfigurationService.updateOrganizationConfig(organizationConf.organization, organizationConf.settings),
+                ExtensionService.saveBulkOrganizationSetting(organizationConf.organizationId, organizationConf.extensionSettings)]).then(function() {
                 load();
                 NotificationHandler.showSuccess("Configurations have been saved successfully");
             }, function(e) {
@@ -344,7 +345,9 @@
                 return;
             }
             eventConf.loading = true;
-            $q.all([ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings), ConfigurationService.bulkUpdatePlugins(eventConf.eventId, eventConf.pluginSettings)]).then(function() {
+            $q.all([ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings),
+                ConfigurationService.bulkUpdatePlugins(eventConf.eventId, eventConf.pluginSettings),
+                ExtensionService.saveBulkEventSetting(eventConf.organizationId, eventConf.eventId, eventConf.extensionSettings)]).then(function() {
                 load();
                 NotificationHandler.showSuccess("Configurations have been saved successfully");
             }, function(e) {

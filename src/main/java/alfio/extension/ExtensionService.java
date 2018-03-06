@@ -17,14 +17,17 @@
 
 package alfio.extension;
 
+import alfio.model.Event;
 import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
-import alfio.model.ExtensionSupport.ScriptPathNameHash;
+import alfio.model.ExtensionSupport.*;
+import alfio.model.user.Organization;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
@@ -36,6 +39,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Log4j2
@@ -136,8 +140,36 @@ public class ExtensionService {
         }
     }
 
-    public List<ExtensionSupport.ExtensionParameterMetadataAndValue> getConfigurationParametersFor(String basePath, String pathPattern, String configurationLevel) {
+    public List<ExtensionParameterMetadataAndValue> getConfigurationParametersFor(String basePath, String pathPattern, String configurationLevel) {
         return extensionRepository.getParametersForLevelAndPath(configurationLevel, generatePossiblePath(basePath), pathPattern);
+    }
+
+    @Transactional
+    public void bulkUpdateSystemSettings(List<ExtensionMetadataValue> toUpdate) {
+        deleteAndInsertSetting("SYSTEM", "-", toUpdate);
+    }
+
+    @Transactional
+    public void bulkUpdateOrganizationSettings(Organization org, List<ExtensionMetadataValue> toUpdate) {
+        String path = "-" + org.getId();
+        deleteAndInsertSetting("ORGANIZATION", path, toUpdate);
+    }
+
+    @Transactional
+    public void bulkUpdateEventSettings(Organization org, Event event, List<ExtensionMetadataValue> toUpdate) {
+        String path = "-" + org.getId() + "-" + event.getId();
+        deleteAndInsertSetting("EVENT", path, toUpdate);
+    }
+
+    private void deleteAndInsertSetting(String level, String path, List<ExtensionMetadataValue> toUpdate) {
+        extensionRepository.deleteSettingValue(level, path);
+        List<ExtensionMetadataValue> toUpdate2 = (toUpdate == null ? Collections.emptyList() : toUpdate);
+        List<ExtensionMetadataValue> filtered = toUpdate2.stream()
+            .filter(f -> StringUtils.trimToNull(f.getValue()) != null)
+            .collect(Collectors.toList());
+        for (ExtensionMetadataValue v : filtered) {
+            extensionRepository.insertSettingValue(v.getId(), path, v.getValue());
+        }
     }
 
     @Transactional
