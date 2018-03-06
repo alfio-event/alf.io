@@ -137,6 +137,12 @@ public class ExtensionApiController {
         extensionService.bulkUpdateSystemSettings(toUpdate);
     }
 
+    @DeleteMapping("/setting/system/{id}")
+    public void deleteSystemSettingValue(@PathVariable("id") int id, Principal principal) {
+        ensureAdmin(principal);
+        extensionService.deleteSettingValue(id, "-");
+    }
+
     @RequestMapping(value = "/setting/organization/{orgShortName}", method = RequestMethod.GET)
     public Map<Integer, List<ExtensionParameterMetadataAndValue>> getParametersFor(@PathVariable("orgShortName") String orgShortName, Principal principal) {
         Organization org = organizationRepository.findByName(orgShortName).orElseThrow(IllegalStateException::new);
@@ -151,6 +157,13 @@ public class ExtensionApiController {
         ensureOrganization(principal, org);
         ensureIdsArePresent(toUpdate, extensionService.getConfigurationParametersFor("-" + org.getId(), "-" + org.getId()+"-%", "ORGANIZATION"));
         extensionService.bulkUpdateOrganizationSettings(org, toUpdate);
+    }
+
+    @DeleteMapping("/setting/organization/{orgShortName}/{id}")
+    public void deleteOrganizationSettingValue(@PathVariable("orgShortName") String orgShortName, @PathVariable("id") int id, Principal principal) {
+        Organization org = organizationRepository.findByName(orgShortName).orElseThrow(IllegalStateException::new);
+        ensureOrganization(principal, org);
+        extensionService.deleteSettingValue(id, "-" + org.getId());
     }
 
     @RequestMapping(value = "/setting/organization/{orgShortName}/event/{shortName}", method = RequestMethod.GET)
@@ -177,6 +190,15 @@ public class ExtensionApiController {
         String pattern = String.format("-%d-%d", org.getId(), event.getId());
         ensureIdsArePresent(toUpdate, extensionService.getConfigurationParametersFor(pattern, pattern, "EVENT"));
         extensionService.bulkUpdateEventSettings(org, event, toUpdate);
+    }
+
+    @DeleteMapping("/setting/organization/{orgShortName}/event/{shortName}/{id}")
+    public void deleteEventSettingValue(@PathVariable("orgShortName") String orgShortName, @PathVariable("shortName") String eventShortName, @PathVariable("id") int id, Principal principal) {
+        Organization org = organizationRepository.findByName(orgShortName).orElseThrow(IllegalStateException::new);
+        ensureOrganization(principal, org);
+        Event event = eventRepository.findByShortName(eventShortName);
+        ensureEventInOrganization(org, event);
+        extensionService.deleteSettingValue(id, String.format("-%d-%d", org.getId(), event.getId()));
     }
 
     //check that the ids are coherent

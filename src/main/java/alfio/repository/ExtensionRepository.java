@@ -110,6 +110,9 @@ public interface ExtensionRepository {
     @Query("delete from extension_configuration_metadata_value where fk_ecm_id in (select ecm_id from extension_configuration_metadata where ECM_CONFIGURATION_LEVEL = :confLevel) and conf_path = :confPath")
     int deleteSettingValue(@Bind("confLevel") String level, @Bind("confPath") String confPath);
 
+    @Query("delete from extension_configuration_metadata_value where fk_ecm_id = :id and conf_path = :path")
+    int deleteSettingValue(@Bind("id") int id, @Bind("path") String path);
+
     @Query("insert into extension_configuration_metadata_value(fk_ecm_id, conf_path, conf_value) values (:ecmId, :confPath, :value)")
     int insertSettingValue(@Bind("ecmId") int ecmId, @Bind("confPath") String confPath, @Bind("value") String value);
 }

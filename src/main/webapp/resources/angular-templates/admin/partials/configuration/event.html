@@ -141,7 +141,7 @@
                 <div class="panel-body">
                     <div>
                         <div data-ng-repeat="setting in eventConf.extensionSettings[settingId]">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler=""></setting>
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.deleteExtensionSetting(setting)"></setting>
                         </div>
                     </div>
                 </div>
