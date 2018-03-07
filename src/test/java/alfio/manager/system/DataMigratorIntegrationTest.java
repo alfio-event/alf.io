@@ -41,11 +41,9 @@ import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.repository.user.OrganizationRepository;
-import alfio.test.util.IntegrationTestUtil;
 import alfio.util.TemplateManager;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +63,7 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
-@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
+@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 public class DataMigratorIntegrationTest {
 
     private static final int AVAILABLE_SEATS = 20;
@@ -99,11 +97,6 @@ public class DataMigratorIntegrationTest {
     private String currentVersion;
     @Value("${alfio.build-ts}")
     private String buildTimestamp;
-
-    @BeforeClass
-    public static void initEnv() {
-        IntegrationTestUtil.initSystemProperties();
-    }
 
     private Pair<Event, String> initEvent(List<TicketCategoryModification> categories) {
         return initEvent(categories, "display name");

@@ -24,7 +24,6 @@ import alfio.config.RepositoryConfiguration;
 import alfio.model.FileBlobMetadata;
 import alfio.model.modification.UploadBase64FileModification;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,18 +36,12 @@ import java.io.ByteArrayOutputStream;
 import java.util.Base64;
 import java.util.Optional;
 
-import static alfio.test.util.IntegrationTestUtil.initSystemProperties;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
-@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
+@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 public class FileUploadManagerIntegrationTest {
-
-    @BeforeClass
-    public static void initEnv() {
-        initSystemProperties();
-    }
 
     @Autowired
     FileUploadManager fileUploadManager;
