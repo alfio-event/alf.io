@@ -24,10 +24,8 @@ import alfio.config.WebSecurityConfig;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.repository.user.OrganizationRepository;
-import alfio.test.util.IntegrationTestUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,17 +43,12 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
-@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
+@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 public class EventRepositoryTest {
 
     private static final String NEW_YORK_TZ = "America/New_York";
     private static final String ORG_NAME = "name";
-
-    @BeforeClass
-    public static void initEnv() {
-        IntegrationTestUtil.initSystemProperties();
-    }
 
     @Autowired
     private EventRepository eventRepository;

@@ -31,7 +31,6 @@ The following profiles are supported
 
  * `dev`
  * `dev-pgsql`
- * `dev-mysql`
  * `docker-test`
 
 You can get a list of all supported Gradle tasks by running
@@ -49,18 +48,6 @@ Please be aware that since this file could contain sensitive information (such a
 #### For debug
 
 Add a new line with: `-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005` in custom.jvmargs
-
-
-#### Using hsqldb gui
-
-In the custom.jvmargs add the following 2 lines:
-
-```
--Djava.awt.headless=false
--DstartDBManager=true
-```
-
-Then, when executing `./gradlew -Pprofile=dev :bootRun`, the ui will automatically launch.
 
 
 ## Developing alf.io

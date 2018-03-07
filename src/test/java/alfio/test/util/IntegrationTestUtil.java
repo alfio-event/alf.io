@@ -52,26 +52,19 @@ public class IntegrationTestUtil {
     public static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
 
     static {
-        DB_CONF.put("HSQLDB", c("HSQLDB", "org.hsqldb.jdbcDriver", "jdbc:hsqldb:mem:alfio", "sa", "", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS"));
-        DB_CONF.put("PGSQL", c("PGSQL", "org.postgresql.Driver", "jdbc:postgresql://localhost:5432/alfio", "postgres", "password", "SELECT 1"));
-        DB_CONF.put("PGSQL-TRAVIS", c("PGSQL", "org.postgresql.Driver", "jdbc:postgresql://localhost:5432/alfio", "postgres", "", "SELECT 1"));
-        DB_CONF.put("MYSQL", c("MYSQL", "com.mysql.jdbc.Driver", "jdbc:mysql://localhost:3306/alfio", "root", "", "SELECT 1"));
+        DB_CONF.put("PGSQL", generateDBConfig("jdbc:postgresql://localhost:5432/alfio", "postgres", "password"));
+        DB_CONF.put("PGSQL-TRAVIS", generateDBConfig("jdbc:postgresql://localhost:5432/alfio", "postgres", ""));
     }
 
-    private static Map<String, String> c(String dialect, String driver, String url, String username, String password, String validationQuery) {
+    public static Map<String, String> generateDBConfig(String url, String username, String password) {
         Map<String, String> c = new HashMap<>();
-        c.put("datasource.dialect", dialect);
-        c.put("datasource.driver", driver);
+        c.put("datasource.dialect", "PGSQL");
+        c.put("datasource.driver", "org.postgresql.Driver");
         c.put("datasource.url", url);
         c.put("datasource.username", username);
         c.put("datasource.password", password);
-        c.put("datasource.validationQuery", validationQuery);
+        c.put("datasource.validationQuery", "SELECT 1");
         return c;
-    }
-
-    public static void initSystemProperties() {
-        String dialect = System.getProperty("dbenv", "HSQLDB");
-        DB_CONF.get(dialect).forEach(System::setProperty);
     }
 
     public static void ensureMinimalConfiguration(ConfigurationRepository configurationRepository) {
