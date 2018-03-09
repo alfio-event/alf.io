@@ -20,65 +20,96 @@ import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
-import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
 import alfio.repository.WaitingQueueRepository;
 import alfio.util.TemplateManager;
-import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.apache.commons.lang3.tuple.Triple;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.MessageSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
-import static com.insightfullogic.lambdabehave.Suite.describe;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
-@RunWith(JunitSuiteRunner.class)
-public class WaitingQueueSubscriptionProcessorTest {{
-    describe("handleWaitingTickets", it -> {
-        EventManager eventManager = it.usesMock(EventManager.class);
-        TicketReservationManager ticketReservationManager = it.usesMock(TicketReservationManager.class);
-        ConfigurationManager configurationManager = it.usesMock(ConfigurationManager.class);
-        WaitingQueueManager waitingQueueManager = it.usesMock(WaitingQueueManager.class);
-        NotificationManager notificationManager = it.usesMock(NotificationManager.class);
-        MessageSource messageSource = it.usesMock(MessageSource.class);
-        TemplateManager templateManager = it.usesMock(TemplateManager.class);
-        WaitingQueueRepository waitingQueueRepository = it.usesMock(WaitingQueueRepository.class);
-        PlatformTransactionManager transactionManager = it.usesMock(PlatformTransactionManager.class);
-        WaitingQueueSubscriptionProcessor processor = new WaitingQueueSubscriptionProcessor(eventManager, ticketReservationManager, configurationManager, waitingQueueManager, notificationManager, waitingQueueRepository, messageSource, templateManager, transactionManager);
-        final int eventId = 1;
-        Event event = mock(Event.class);
-        final String reservationId = "reservation-id";
+@RunWith(MockitoJUnitRunner.class)
+public class WaitingQueueSubscriptionProcessorTest {
+
+    @Mock
+    private EventManager eventManager;
+    @Mock
+    private TicketReservationManager ticketReservationManager;
+    @Mock
+    private ConfigurationManager configurationManager;
+    @Mock
+    private WaitingQueueManager waitingQueueManager;
+    @Mock
+    private NotificationManager notificationManager;
+    @Mock
+    private MessageSource messageSource;
+    @Mock
+    private TemplateManager templateManager;
+    @Mock
+    private WaitingQueueRepository waitingQueueRepository;
+    @Mock
+    private PlatformTransactionManager transactionManager;
+    @Mock
+    private Event event;
+    @Mock
+    private WaitingQueueSubscription subscription;
+    @Mock
+    private TicketReservationWithOptionalCodeModification reservation;
+    private WaitingQueueSubscriptionProcessor processor;
+
+
+    @Before
+    public void setUp() {
+        int eventId = 1;
         when(event.getId()).thenReturn(eventId);
-        List<Event> activeEvents = Collections.singletonList(event);
-        it.should("filter events whose 'waiting queue' flag is not active", expect -> {
-            when(eventManager.getActiveEvents()).thenReturn(activeEvents);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(false);
-            processor.handleWaitingTickets();
-            verify(waitingQueueManager, never()).distributeSeats(eq(event));
-        });
-        it.should("process pending tickets", expect -> {
-            when(eventManager.getActiveEvents()).thenReturn(activeEvents);
-            when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
-            when(messageSource.getMessage(anyString(), any(), eq(Locale.ENGLISH))).thenReturn("subject");
-            WaitingQueueSubscription subscription = it.usesMock(WaitingQueueSubscription.class);
-            when(subscription.getLocale()).thenReturn(Locale.ENGLISH);
-            when(subscription.getEmailAddress()).thenReturn("me");
-            TicketReservationWithOptionalCodeModification reservation = it.usesMock(TicketReservationWithOptionalCodeModification.class);
-            ZonedDateTime expiration = ZonedDateTime.now().plusDays(1);
-            when(waitingQueueManager.distributeSeats(eq(event))).thenReturn(Stream.of(Triple.of(subscription, reservation, expiration)));
-            when(ticketReservationManager.createTicketReservation(eq(event), anyListOf(TicketReservationWithOptionalCodeModification.class), anyListOf(ASReservationWithOptionalCodeModification.class), any(Date.class), eq(Optional.empty()), eq(Optional.empty()), any(Locale.class), eq(true))).thenReturn(reservationId);
-            processor.handleWaitingTickets();
-            verify(configurationManager).getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false));
-            verify(ticketReservationManager).createTicketReservation(eq(event), eq(Collections.singletonList(reservation)), anyListOf(ASReservationWithOptionalCodeModification.class), eq(Date.from(expiration.toInstant())), eq(Optional.empty()), eq(Optional.empty()), eq(Locale.ENGLISH), eq(true));
-            verify(notificationManager).sendSimpleEmail(eq(event), eq("me"), eq("subject"), any(TextTemplateGenerator.class));
-        });
-    });
-}}
+        when(eventManager.getActiveEvents()).thenReturn(Collections.singletonList(event));
+        processor = new WaitingQueueSubscriptionProcessor(eventManager,
+            ticketReservationManager,
+            configurationManager,
+            waitingQueueManager,
+            notificationManager,
+            waitingQueueRepository,
+            messageSource,
+            templateManager,
+            transactionManager);
+    }
+
+    @Test
+    public void filterWaitingQueueFlagIsNotActive() {
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(false);
+        processor.handleWaitingTickets();
+        verify(waitingQueueManager, never()).distributeSeats(eq(event));
+    }
+
+    @Test
+    public void processPendingTickets() {
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
+        when(messageSource.getMessage(anyString(), any(), eq(Locale.ENGLISH))).thenReturn("subject");
+        when(subscription.getLocale()).thenReturn(Locale.ENGLISH);
+        when(subscription.getEmailAddress()).thenReturn("me");
+        ZonedDateTime expiration = ZonedDateTime.now().plusDays(1);
+        when(waitingQueueManager.distributeSeats(eq(event))).thenReturn(Stream.of(Triple.of(subscription, reservation, expiration)));
+        String reservationId = "reservation-id";
+        when(ticketReservationManager.createTicketReservation(eq(event), anyList(), anyList(), any(Date.class), eq(Optional.empty()), eq(Optional.empty()), any(Locale.class), eq(true))).thenReturn(reservationId);
+        processor.handleWaitingTickets();
+        verify(configurationManager).getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false));
+        verify(ticketReservationManager).createTicketReservation(eq(event), eq(Collections.singletonList(reservation)), anyList(), eq(Date.from(expiration.toInstant())), eq(Optional.empty()), eq(Optional.empty()), eq(Locale.ENGLISH), eq(true));
+        verify(notificationManager).sendSimpleEmail(eq(event), eq("me"), eq("subject"), any(TextTemplateGenerator.class));
+    }
+}

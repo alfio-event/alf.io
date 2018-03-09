@@ -18,6 +18,7 @@ package alfio.config;
 
 import alfio.util.DefaultExceptionHandler;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -48,6 +49,9 @@ public class SpringBootLauncher {
         }
         if("true".equals(System.getenv("ALFIO_JDBC_SESSION_ENABLED"))) {
             additionalProfiles.add(Initializer.PROFILE_JDBC_SESSION);
+        }
+        if(StringUtils.isNotBlank(System.getProperty("alfio.worker.name"))) {
+            additionalProfiles.add(Initializer.PROFILE_USE_WORKER_NAME);
         }
         application.setAdditionalProfiles(additionalProfiles.toArray(new String[additionalProfiles.size()]));
         ConfigurableApplicationContext applicationContext = application.run(args);

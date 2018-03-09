@@ -8,11 +8,13 @@ import java.util.regex.Pattern
 
 buildscript {
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.10.RELEASE")
         classpath 'com.benjaminsproule:swagger-gradle-plugin:+'
     }
     repositories {
         jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
 }
 
@@ -24,11 +26,13 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.17.0'
     id 'com.github.hierynomus.license' version '0.14.0'
     id 'net.researchgate.release' version '2.6.0'
+    id 'org.springframework.boot' version '2.0.0.RELEASE'
 }
 
 apply plugin: 'war'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'com.benjaminsproule.swagger'
+apply plugin: 'io.spring.dependency-management'
 
 task wrapper(type: Wrapper) {
     gradleVersion = '3.5'
@@ -37,7 +41,7 @@ task wrapper(type: Wrapper) {
 //as pointed out by @facundofarias, we should check minimum javac version in order to avoid problems with type inference mechanism during compilation
 task validate {
     //check JDK version
-    def javaVersion = JavaVersion.current();
+    def javaVersion = JavaVersion.current()
     if (!javaVersion.isJava8Compatible()) {
         throw new GradleException("A Java JDK 8+ is required to build the project.")
     }
@@ -125,6 +129,7 @@ dependencies {
     compile "org.springframework:spring-jdbc:$springVersion"
     compile "org.springframework:spring-aop:$springVersion"
     compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion"
+    compile "org.springframework.boot:spring-boot-properties-migrator"
     compile "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
     compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     compile "org.springframework.security:spring-security-web:$springSecurityConfigVersion"
@@ -168,7 +173,6 @@ dependencies {
     compile 'com.github.scribejava:scribejava-core:5.0.0'
 
     testCompile "org.springframework:spring-test:$springVersion"
-    testCompile "com.insightfullogic:lambda-behave:0.3"
 
     compileOnly "org.projectlombok:lombok:1.16.20"
     testCompile "org.projectlombok:lombok:1.16.20"
@@ -264,8 +268,8 @@ bootRun {
     jvmArgs = opts
 }
 
-bootRepackage {
-    mainClass = 'alfio.config.SpringBootLauncher'
+bootWar {
+    mainClassName = 'alfio.config.SpringBootLauncher'
     classifier = 'boot'
 }
 

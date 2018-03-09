@@ -24,66 +24,77 @@ import alfio.repository.AuditingRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.user.UserRepository;
-import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import com.stripe.exception.AuthenticationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
+import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
-import static com.insightfullogic.lambdabehave.Suite.describe;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
-@RunWith(JunitSuiteRunner.class)
-public class PaymentManagerTest {{
-    StripeManager successStripe = mock(StripeManager.class);
-    StripeManager failureStripe = mock(StripeManager.class);
-    TransactionRepository transactionRepository = mock(TransactionRepository.class);
-    ConfigurationManager configurationManager = mock(ConfigurationManager.class);
-    TransactionRepository failureTR = mock(TransactionRepository.class);
-    AuditingRepository auditingRepository = mock(AuditingRepository.class);
-    UserRepository userRepository = mock(UserRepository.class);
-    TicketRepository ticketRepository = mock(TicketRepository.class);
+@RunWith(MockitoJUnitRunner.class)
+public class PaymentManagerTest {
 
-    final String paymentId = "customer#1";
-    final String error = "errorCode";
-    Event event = mock(Event.class);
-    CustomerName customerName = mock(CustomerName.class);
-    try {
-        when(successStripe.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenReturn(Optional.of(new Charge() {{
-            setId(paymentId);
-        }}));
-        when(failureStripe.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenThrow(new AuthenticationException("401", "42", 401));
-        when(failureStripe.handleException(any(StripeException.class))).thenReturn(error);
-        when(failureTR.insert(anyString(), anyString(), anyString(), any(ZonedDateTime.class), anyInt(), anyString(), anyString(), anyString(), anyLong(), anyLong()))
-                .thenThrow(new NullPointerException());
-    } catch (StripeException e) {
-        throw new AssertionError("it should not have thrown any exception!!");
+    @Mock
+    private StripeManager stripeManager;
+    @Mock
+    private TransactionRepository transactionRepository;
+    @Mock
+    private ConfigurationManager configurationManager;
+    @Mock
+    private AuditingRepository auditingRepository;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private TicketRepository ticketRepository;
+    @Mock
+    private Event event;
+    @Mock
+    private CustomerName customerName;
+
+    private final String paymentId = "customer#1";
+    private final String error = "errorCode";
+
+    @Test
+    public void successFlow() throws StripeException {
+        PaymentResult result = stripeSuccess().processStripePayment("", "", 100, event, "", customerName, "");
+        assertEquals(result, PaymentResult.successful(paymentId));
     }
 
-    describe("success flow", it -> {
-        it.should("return a successful payment result", expect -> {
-            expect.that(new PaymentManager(successStripe, null, null, transactionRepository, configurationManager, auditingRepository, userRepository, ticketRepository).processStripePayment("", "", 100, event, "", customerName, ""))
-                    .is(PaymentResult.successful(paymentId));
-        });
-    });
+    @Test
+    public void stripeError() throws StripeException {
+        PaymentResult result = stripeFailure().processStripePayment("", "", 100, event, "", customerName, "");
+        assertEquals(result, PaymentResult.unsuccessful(error));
+    }
 
-    describe("stripe error", it -> {
-        it.should("return an unsuccessful payment result", expect -> {
-            expect.that(new PaymentManager(failureStripe, null, null, transactionRepository, configurationManager, auditingRepository, userRepository, ticketRepository).processStripePayment("", "", 100, event, "", customerName, ""))
-                    .is(PaymentResult.unsuccessful(error));
-        });
-    });
+    @Test(expected = IllegalArgumentException.class)
+    public void internalError() throws StripeException {
+        when(transactionRepository.insert(anyString(), anyString(), anyString(), any(ZonedDateTime.class), anyInt(), anyString(), anyString(), anyString(), anyLong(), anyLong()))
+            .thenThrow(new NullPointerException());
+        stripeSuccess().processStripePayment("", "", 100, event, "", customerName, "");
+    }
 
-    describe("internal error", it -> {
-        it.should("throw IllegalStateException in case of internal error", expect -> {
-            expect.exception(IllegalStateException.class, () -> {
-                new PaymentManager(successStripe, null, null, failureTR, configurationManager, auditingRepository, userRepository, ticketRepository).processStripePayment("", "", 100, event, "", customerName, "");
-            });
-        });
-    });
-}}
+    private PaymentManager stripeFailure() throws StripeException {
+        when(stripeManager.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenThrow(new AuthenticationException("401", "42", 401));
+        when(stripeManager.handleException(any(StripeException.class))).thenReturn(error);
+        return new PaymentManager(stripeManager,
+            null, null, transactionRepository, configurationManager, auditingRepository,
+            userRepository, ticketRepository);
+    }
+
+    private PaymentManager stripeSuccess() throws StripeException {
+        when(stripeManager.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenReturn(Optional.of(new Charge() {{
+            setId(paymentId);
+        }}));
+        return new PaymentManager(stripeManager,
+            null, null, transactionRepository, configurationManager, auditingRepository,
+            userRepository, ticketRepository);
+    }
+}

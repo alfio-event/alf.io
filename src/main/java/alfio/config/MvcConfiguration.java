@@ -71,7 +71,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 @Configuration
 @ComponentScan(basePackages = {"alfio.controller", "alfio.config"})
 @EnableWebMvc
-public class MvcConfiguration extends WebMvcConfigurerAdapter {
+public class MvcConfiguration implements WebMvcConfigurer {
 
     private final MessageSource messageSource;
     private final JMustacheTemplateLoader templateLoader;
