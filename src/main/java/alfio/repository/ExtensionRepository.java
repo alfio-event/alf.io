@@ -115,4 +115,23 @@ public interface ExtensionRepository {
 
     @Query("insert into extension_configuration_metadata_value(fk_ecm_id, conf_path, conf_value) values (:ecmId, :confPath, :value)")
     int insertSettingValue(@Bind("ecmId") int ecmId, @Bind("confPath") String confPath, @Bind("value") String value);
+
+    @Query("select ecm_name, conf_value from " +
+        "" +
+        "(select ecm_name, conf_value, ecm_configuration_level, conf_path, " +
+        "(case when ecm_configuration_level = 'EVENT' then 0 when ecm_configuration_level = 'ORGANIZATION' then 1 else 2 end) as priority from extension_configuration_metadata inner join " +
+        "extension_configuration_metadata_value on ecm_id = fk_ecm_id " +
+        "where ecm_es_id_fk = (SELECT es_id from extension_support where path = :path and name = :name) and conf_path in (:allPaths)) a1 " +
+        "" +
+        "where (ecm_name, priority) in " +
+        "" +
+        "(select ecm_name, min(priority) selected_priority from ( " +
+        "select ecm_name, conf_value, ecm_configuration_level, conf_path, " +
+        "(case when ecm_configuration_level = 'EVENT' then 0 when ecm_configuration_level = 'ORGANIZATION' then 1 else 2 end) as priority from extension_configuration_metadata inner join " +
+        "extension_configuration_metadata_value on ecm_id = fk_ecm_id " +
+        "where ecm_es_id_fk = (SELECT es_id from extension_support where path = :path and name = :name) and conf_path in (:allPaths)) a2 group by ecm_name)")
+    List<ExtensionSupport.NameAndValue> findParametersForScript(@Bind("name") String name, @Bind("path") String path, @Bind("allPaths") Set<String> allPaths);
+
+    @Query("select distinct ecm_name from extension_configuration_metadata where ecm_es_id_fk = (SELECT es_id from extension_support where path = :path and name = :name) and ecm_mandatory is true")
+    List<String> findMandatoryParametersForScript(@Bind("name") String name, @Bind("path") String path);
 }

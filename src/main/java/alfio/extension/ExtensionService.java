@@ -207,10 +207,17 @@ public class ExtensionService {
         for (ScriptPathNameHash activePath : activePaths) {
             String path = activePath.getPath();
             String name = activePath.getName();
-            res = scriptingExecutionService.executeScript(name, activePath.getHash(),
-                () -> getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz,
-                new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, basePath, path, name));
-            input.put("output", res);
+            Pair<Set<String>, Map<String, Object>> params = addExtensionParameters(input, basePath, activePath);
+            input = params.getRight();
+            ExtensionLogger extLogger = new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, basePath, path, name);
+
+            if(params.getLeft().isEmpty()) {
+                res = scriptingExecutionService.executeScript(name, activePath.getHash(),
+                    () -> getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz, extLogger);
+                input.put("output", res);
+            } else {
+                extLogger.logInfo("script not run, missing parameters: " + params.getLeft());
+            }
         }
         return res;
     }
@@ -222,9 +229,33 @@ public class ExtensionService {
         for (ScriptPathNameHash activePath : activePaths) {
             String path = activePath.getPath();
             String name = activePath.getName();
-            scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(extensionEvent);", input,
-                new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, basePath, path, name));
+            Pair<Set<String>, Map<String, Object>> params = addExtensionParameters(input, basePath, activePath);
+            input = params.getRight();
+            ExtensionLogger extLogger = new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, basePath, path, name);
+
+            if(params.getLeft().isEmpty()) {
+                scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(extensionEvent);", input, extLogger);
+            } else {
+                extLogger.logInfo("script not run, missing parameters: " + params.getLeft());
+            }
         }
+    }
+
+    /*
+    * Return a copy of the input with added parameters and a set of missing mandatory parameters, if any
+    * */
+    private Pair<Set<String>, Map<String,Object>> addExtensionParameters(Map<String, Object> input, String basePath, ScriptPathNameHash activePath) {
+        Map<String, Object> copy = new HashMap<>(input);
+        Map<String, String> nameAndValues = extensionRepository.findParametersForScript(activePath.getName(), activePath.getPath(), generatePossiblePath(basePath))
+            .stream()
+            .collect(Collectors.toMap(NameAndValue::getName, NameAndValue::getValue));
+
+        Set<String> mandatory = new HashSet<>(extensionRepository.findMandatoryParametersForScript(activePath.getName(), activePath.getPath()));
+
+        mandatory.removeAll(nameAndValues.keySet());
+
+        copy.put("extensionParameters", nameAndValues);
+        return Pair.of(mandatory, copy);
     }
 
     private List<ScriptPathNameHash> getActiveScriptsForEvent(String event, String basePath, boolean async) {
