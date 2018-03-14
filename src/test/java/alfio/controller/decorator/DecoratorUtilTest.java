@@ -16,17 +16,25 @@
  */
 package alfio.controller.decorator;
 
-import com.insightfullogic.lambdabehave.JunitSuiteRunner;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 
-import static com.insightfullogic.lambdabehave.Suite.describe;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-@RunWith(JunitSuiteRunner.class)
-public class DecoratorUtilTest {{
-    describe("SaleableTicketCategory.getAmountOfTickets", it -> {
+public class DecoratorUtilTest {
 
-        it.should("return a range from 0 to 5", expect -> expect.that(DecoratorUtil.generateRangeOfTicketQuantity(5,5)).is(new int[]{0,1,2,3,4,5}));
-        it.should("return a range from 0 to 1", expect -> expect.that(DecoratorUtil.generateRangeOfTicketQuantity(1, 50)).is(new int[]{0,1}));
-        it.should("return a range from 0 to 0", expect -> expect.that(DecoratorUtil.generateRangeOfTicketQuantity(-1, 50)).is(new int[] {0}));
-    });
-}}
+    @Test
+    public void range0to5() {
+        assertArrayEquals(new int[]{0,1,2,3,4,5}, DecoratorUtil.generateRangeOfTicketQuantity(5,5));
+    }
+
+    @Test
+    public void range0to1() {
+        assertArrayEquals(new int[]{0,1}, DecoratorUtil.generateRangeOfTicketQuantity(1, 50));
+    }
+
+    @Test
+    public void range0to0() {
+        assertArrayEquals(new int[]{0}, DecoratorUtil.generateRangeOfTicketQuantity(-1, 50));
+    }
+
+}

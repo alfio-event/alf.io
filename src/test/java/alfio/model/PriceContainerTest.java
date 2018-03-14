@@ -19,7 +19,7 @@ package alfio.model;
 import alfio.test.util.PriceContainerImpl;
 import alfio.util.MonetaryUtil;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

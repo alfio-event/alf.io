@@ -29,13 +29,14 @@ import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.TemplateManager;
-import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.apache.commons.lang3.tuple.Triple;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
-import java.security.cert.Extension;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -44,83 +45,122 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
-import static com.insightfullogic.lambdabehave.Suite.describe;
-import static org.mockito.Matchers.eq;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@RunWith(JunitSuiteRunner.class)
-public class WaitingQueueManagerTest {{
-    describe("basicOperations", it -> {
-        WaitingQueueRepository waitingQueueRepository = it.usesMock(WaitingQueueRepository.class);
-        EventStatisticsManager eventStatisticsManager = it.usesMock(EventStatisticsManager.class);
-        TicketRepository ticketRepository = it.usesMock(TicketRepository.class);
-        TicketCategoryRepository ticketCategoryRepository = it.usesMock(TicketCategoryRepository.class);
-        ConfigurationManager configurationManager = it.usesMock(ConfigurationManager.class);
-        NamedParameterJdbcTemplate jdbc = it.usesMock(NamedParameterJdbcTemplate.class);
-        NotificationManager notificationManager = it.usesMock(NotificationManager.class);
-        TemplateManager templateManager = it.usesMock(TemplateManager.class);
-        MessageSource messageSource = it.usesMock(MessageSource.class);
-        OrganizationRepository organizationRepository = it.usesMock(OrganizationRepository.class);
-        PluginManager pluginManager = it.usesMock(PluginManager.class);
-        EventRepository eventRepository = it.usesMock(EventRepository.class);
-        ExtensionManager extensionManager = it.usesMock(ExtensionManager.class);
+@DisplayName("Waiting Queue Manager")
+public class WaitingQueueManagerTest {
 
-        WaitingQueueManager manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, jdbc, notificationManager, templateManager, messageSource, organizationRepository, pluginManager, eventRepository, extensionManager);
-        String reservationId = "reservation-id";
-        it.should("handle a reservation confirmation", expect -> {
-            manager.fireReservationConfirmed(reservationId);
-            verify(waitingQueueRepository).updateStatusByReservationId(eq(reservationId), eq(WaitingQueueSubscription.Status.ACQUIRED.toString()));
-        });
-        it.should("handle a reservation expiration", expect -> {
-            manager.fireReservationExpired(reservationId);
-            verify(waitingQueueRepository).updateStatusByReservationId(eq(reservationId), eq(WaitingQueueSubscription.Status.EXPIRED.toString()));
-        });
-        it.should("handle a bulk cancellation", expect -> {
-            List<String> reservationIds = Arrays.asList(reservationId, "id2");
-            manager.cleanExpiredReservations(reservationIds);
-            verify(waitingQueueRepository).bulkUpdateExpiredReservations(eq(reservationIds));
-        });
-        it.should("revert tickets to free if there isn't any subscriber", expect -> {
-            Event event = it.usesMock(Event.class);
-            int eventId = 1;
-            when(event.getId()).thenReturn(eventId);
-            when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(0);
-            when(ticketRepository.countWaiting(eq(eventId))).thenReturn(1);
-            manager.distributeSeats(event);
-            verify(waitingQueueRepository).countWaitingPeople(eq(eventId));
-            verify(ticketRepository).countWaiting(eq(eventId));
-            verify(ticketRepository).revertToFree(eq(eventId));
-        });
-        it.should("do nothing if there are 0 subscribers and 0 waiting tickets", expect -> {
-            Event event = it.usesMock(Event.class);
-            int eventId = 1;
-            when(event.getId()).thenReturn(eventId);
-            when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(0);
-            when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
-            manager.distributeSeats(event);
-            verify(waitingQueueRepository).countWaitingPeople(eq(eventId));
-            verify(ticketRepository).countWaiting(eq(eventId));
-            verify(ticketRepository, never()).revertToFree(eq(eventId));
-        });
-        it.should("process pre-reservations if there are 0 waiting tickets 1 or more subscribers", expect -> {
-            Event event = it.usesMock(Event.class);
-            int eventId = 1;
-            when(event.getId()).thenReturn(eventId);
-            when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+    private WaitingQueueRepository waitingQueueRepository;
+    private EventStatisticsManager eventStatisticsManager;
+    private TicketRepository ticketRepository;
+    private TicketCategoryRepository ticketCategoryRepository;
+    private ConfigurationManager configurationManager;
+    private NamedParameterJdbcTemplate jdbc;
+    private NotificationManager notificationManager;
+    private TemplateManager templateManager;
+    private MessageSource messageSource;
+    private OrganizationRepository organizationRepository;
+    private PluginManager pluginManager;
+    private EventRepository eventRepository;
+    private ExtensionManager extensionManager;
+    private Event event;
+    private WaitingQueueManager manager;
+    private final String reservationId = "reservation-id";
+    private final int eventId = 1;
 
-            when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(1);
-            when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
-            when(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false)).thenReturn(true);
-            Ticket ticket = it.usesMock(Ticket.class);
-            when(ticketRepository.selectWaitingTicketsForUpdate(eventId, Ticket.TicketStatus.PRE_RESERVED.name(), 1)).thenReturn(Collections.singletonList(ticket));
-            WaitingQueueSubscription subscription = it.usesMock(WaitingQueueSubscription.class);
-            when(waitingQueueRepository.loadWaiting(eventId, 1)).thenReturn(Collections.singletonList(subscription));
-            Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> stream = manager.distributeSeats(event);
-            expect.that(stream.count()).is(1L);
-            verify(waitingQueueRepository).countWaitingPeople(eq(eventId));
-            verify(ticketRepository).countWaiting(eq(eventId));
-            verify(ticketRepository, never()).revertToFree(eq(eventId));
-        });
-        it.completesWith(() -> verifyNoMoreInteractions(waitingQueueRepository, eventStatisticsManager, ticketRepository));
-    });
-}}
+
+    @BeforeEach
+    void setUp() {
+        waitingQueueRepository = mock(WaitingQueueRepository.class);
+        eventStatisticsManager = mock(EventStatisticsManager.class);
+        ticketRepository = mock(TicketRepository.class);
+        ticketCategoryRepository = mock(TicketCategoryRepository.class);
+        configurationManager = mock(ConfigurationManager.class);
+        jdbc = mock(NamedParameterJdbcTemplate.class);
+        notificationManager = mock(NotificationManager.class);
+        templateManager = mock(TemplateManager.class);
+        messageSource = mock(MessageSource.class);
+        organizationRepository = mock(OrganizationRepository.class);
+        pluginManager = mock(PluginManager.class);
+        eventRepository = mock(EventRepository.class);
+        extensionManager = mock(ExtensionManager.class);
+        event = mock(Event.class);
+        when(event.getId()).thenReturn(eventId);
+        manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, jdbc, notificationManager, templateManager, messageSource, organizationRepository, pluginManager, eventRepository, extensionManager);
+    }
+
+    @AfterEach
+    void tearDown() {
+        verifyNoMoreInteractions(waitingQueueRepository, eventStatisticsManager, ticketRepository);
+    }
+
+    @Test
+    @DisplayName("handle a reservation confirmation")
+    void handleReservationConfirmation() {
+        manager.fireReservationConfirmed(reservationId);
+        verify(waitingQueueRepository).updateStatusByReservationId(eq(reservationId), eq(WaitingQueueSubscription.Status.ACQUIRED.toString()));
+    }
+
+    @Test
+    @DisplayName("handle a reservation expiration")
+    void handleReservationExpiration() {
+        manager.fireReservationExpired(reservationId);
+        verify(waitingQueueRepository).bulkUpdateExpiredReservations(eq(Collections.singletonList(reservationId)));
+    }
+
+    @Test
+    @DisplayName("handle a bulk cancellation")
+    void handleBulkCancellation() {
+        List<String> reservationIds = Arrays.asList(reservationId, "id2");
+        manager.cleanExpiredReservations(reservationIds);
+        verify(waitingQueueRepository).bulkUpdateExpiredReservations(eq(reservationIds));
+    }
+
+    @Test
+    @DisplayName("revert tickets to free if there isn't any subscriber")
+    void revertTicketsIfNoSubscribers() {
+        when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(0);
+        when(ticketRepository.countWaiting(eq(eventId))).thenReturn(1);
+        manager.distributeSeats(event);
+        verify(waitingQueueRepository).loadAllWaiting(eq(eventId));
+        verify(ticketRepository).countWaiting(eq(eventId));
+        verify(ticketRepository).revertToFree(eq(eventId));
+    }
+
+    @Test
+    @DisplayName("do nothing if there are 0 subscribers and 0 waiting tickets")
+    void doNothingIfNoSubscribersAndNoWaiting() {
+        when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(0);
+        when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
+        manager.distributeSeats(event);
+        verify(waitingQueueRepository).loadAllWaiting(eq(eventId));
+        verify(ticketRepository).countWaiting(eq(eventId));
+        verify(ticketRepository, never()).revertToFree(eq(eventId));
+    }
+
+    @Test
+    void processPreReservations() {
+        Ticket ticket = mock(Ticket.class);
+        WaitingQueueSubscription subscription = mock(WaitingQueueSubscription.class);
+        when(subscription.isPreSales()).thenReturn(true);
+        when(eventRepository.countExistingTickets(eq(eventId))).thenReturn(10);
+        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+        when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(1);
+        when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
+        when(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false)).thenReturn(true);
+        when(ticketRepository.selectWaitingTicketsForUpdate(eventId, Ticket.TicketStatus.PRE_RESERVED.name(), 1)).thenReturn(Collections.singletonList(ticket));
+        when(waitingQueueRepository.loadAllWaiting(eventId)).thenReturn(Collections.singletonList(subscription));
+        when(waitingQueueRepository.loadWaiting(eventId, 1)).thenReturn(Collections.singletonList(subscription));
+        Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> stream = manager.distributeSeats(event);
+        assertEquals(1L, stream.count());
+        verify(waitingQueueRepository).loadAllWaiting(eq(eventId));
+        verify(waitingQueueRepository).loadWaiting(eq(eventId), eq(1));
+        verify(ticketRepository).countWaiting(eq(eventId));
+        verify(ticketRepository, never()).revertToFree(eq(eventId));
+        verify(ticketRepository).countPreReservedTickets(eq(eventId));
+        verify(ticketRepository).preReserveTicket();
+        verify(ticketRepository).selectWaitingTicketsForUpdate(eq(eventId), anyString(), anyInt());
+    }
+}

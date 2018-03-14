@@ -21,37 +21,34 @@ import alfio.model.VatDetail;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import okhttp3.*;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Optional;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class EuVatCheckerTest {
 
     private static final String OK_RESPONSE = "{\"isValid\": true,\"name\": \"Test Corp.\",\"address\": \"Address\"}";
     private static final String KO_RESPONSE = "{\"isValid\": false,\"name\": \"------\",\"address\": \"------\"}";
 
-    @Mock
     private OkHttpClient client;
-    @Mock
     private Call call;
-    @Mock
     private ConfigurationManager configurationManager;
 
-    @Before
+    @BeforeEach
     public void init() throws IOException {
+        client = mock(OkHttpClient.class);
+        call = mock(Call.class);
+        configurationManager = mock(ConfigurationManager.class);
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(1, ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE)), anyBoolean())).thenReturn(true);
-        when(configurationManager.getStringConfigValue(eq(Configuration.from(1, ConfigurationKeys.COUNTRY_OF_BUSINESS)), anyString())).thenReturn("IT");
-        when(configurationManager.getStringConfigValue(eq(Configuration.getSystemConfiguration(ConfigurationKeys.EU_VAT_API_ADDRESS)), anyString())).thenReturn("http://localhost:8080");
+        when(configurationManager.getStringConfigValue(eq(Configuration.from(1, ConfigurationKeys.COUNTRY_OF_BUSINESS)), isNull())).thenReturn("IT");
+        when(configurationManager.getStringConfigValue(eq(Configuration.getSystemConfiguration(ConfigurationKeys.EU_VAT_API_ADDRESS)), isNull())).thenReturn("http://localhost:8080");
         when(client.newCall(any())).thenReturn(call);
     }
 

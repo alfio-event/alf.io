@@ -69,7 +69,7 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getDriveClassName(Environment env) {
+        public String getDriverClassName(Environment env) {
             return POSTGRESQL_DRIVER;
         }
 
@@ -115,7 +115,7 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getDriveClassName(Environment env) {
+        public String getDriverClassName(Environment env) {
             return POSTGRESQL_DRIVER;
         }
 
@@ -152,7 +152,7 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getDriveClassName(Environment env) {
+        public String getDriverClassName(Environment env) {
             return isMySql(env) ? MYSQL_DRIVER : POSTGRESQL_DRIVER;
         }
 
@@ -201,7 +201,7 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getDriveClassName(Environment env) {
+        public String getDriverClassName(Environment env) {
             return POSTGRESQL_DRIVER;
         }
 
@@ -244,7 +244,7 @@ public enum PlatformProvider {
 
 
         @Override
-        public String getDriveClassName(Environment env) {
+        public String getDriverClassName(Environment env) {
             return POSTGRESQL_DRIVER;
         }
 
@@ -290,7 +290,7 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getDriveClassName(Environment env) {
+        public String getDriverClassName(Environment env) {
             return isMySql(env) ? MYSQL_DRIVER : POSTGRESQL_DRIVER;
         }
 
@@ -314,7 +314,7 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getDriveClassName(Environment env) {
+        public String getDriverClassName(Environment env) {
             return POSTGRESQL_DRIVER;
         }
 
@@ -354,7 +354,7 @@ public enum PlatformProvider {
         return env.getRequiredProperty("datasource.password");
     }
 
-    public String getDriveClassName(Environment env) {
+    public String getDriverClassName(Environment env) {
         return env.getRequiredProperty("datasource.driver");
     }
 

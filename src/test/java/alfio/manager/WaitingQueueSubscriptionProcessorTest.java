@@ -25,11 +25,8 @@ import alfio.model.system.Configuration;
 import alfio.repository.WaitingQueueRepository;
 import alfio.util.TemplateManager;
 import org.apache.commons.lang3.tuple.Triple;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -41,41 +38,40 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class WaitingQueueSubscriptionProcessorTest {
 
-    @Mock
     private EventManager eventManager;
-    @Mock
     private TicketReservationManager ticketReservationManager;
-    @Mock
     private ConfigurationManager configurationManager;
-    @Mock
     private WaitingQueueManager waitingQueueManager;
-    @Mock
     private NotificationManager notificationManager;
-    @Mock
     private MessageSource messageSource;
-    @Mock
     private TemplateManager templateManager;
-    @Mock
     private WaitingQueueRepository waitingQueueRepository;
-    @Mock
     private PlatformTransactionManager transactionManager;
-    @Mock
     private Event event;
-    @Mock
     private WaitingQueueSubscription subscription;
-    @Mock
     private TicketReservationWithOptionalCodeModification reservation;
     private WaitingQueueSubscriptionProcessor processor;
 
 
-    @Before
+    @BeforeEach
     public void setUp() {
+        eventManager = mock(EventManager.class);
+        ticketReservationManager = mock(TicketReservationManager.class);
+        configurationManager = mock(ConfigurationManager.class);
+        waitingQueueManager = mock(WaitingQueueManager.class);
+        notificationManager = mock(NotificationManager.class);
+        messageSource = mock(MessageSource.class);
+        templateManager = mock(TemplateManager.class);
+        waitingQueueRepository = mock(WaitingQueueRepository.class);
+        transactionManager = mock(PlatformTransactionManager.class);
+        event = mock(Event.class);
+        subscription = mock(WaitingQueueSubscription.class);
+        reservation = mock(TicketReservationWithOptionalCodeModification.class);
         int eventId = 1;
         when(event.getId()).thenReturn(eventId);
         when(eventManager.getActiveEvents()).thenReturn(Collections.singletonList(event));

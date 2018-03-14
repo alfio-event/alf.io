@@ -16,78 +16,88 @@
  */
 package alfio.util;
 
-import com.insightfullogic.lambdabehave.JunitSuiteRunner;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.Month;
 
-import static com.insightfullogic.lambdabehave.Suite.describe;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@RunWith(JunitSuiteRunner.class)
-public class WorkingDaysAdjustersTest {{
-    describe("Adjust to next week day", it -> {
+@DisplayName("Adjust to next week day")
+public class WorkingDaysAdjustersTest {
 
-        it.should("adjust date to next monday, same hour", expect -> {
-            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.JUNE, 20, 10, 0);
-            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
-            expect.that(adjusted).isNotNull();
-            expect.that(adjusted.getDayOfWeek()).is(DayOfWeek.MONDAY);
-            expect.that(adjusted.getDayOfMonth()).is(22);
-            expect.that(adjusted.getHour()).is(10);
-            expect.that(adjusted.getMinute()).is(0);
-        });
+    @Test
+    @DisplayName("adjust date to next monday, same hour")
+    void adjustToNextMondaySameHour() {
+        LocalDateTime localDateTime = LocalDateTime.of(2015, Month.JUNE, 20, 10, 0);
+        LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+        assertNotNull(adjusted);
+        assertEquals(DayOfWeek.MONDAY, adjusted.getDayOfWeek());
+        assertEquals(22, adjusted.getDayOfMonth());
+        assertEquals(10, adjusted.getHour());
+        assertEquals(0, adjusted.getMinute());
+    }
 
-        it.should("adjust date to next monday and time to next hour", expect -> {
-            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.JUNE, 20, 7, 0);
-            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
-            expect.that(adjusted).isNotNull();
-            expect.that(adjusted.getDayOfWeek()).is(DayOfWeek.MONDAY);
-            expect.that(adjusted.getDayOfMonth()).is(22);
-            expect.that(adjusted.getHour()).is(8);
-            expect.that(adjusted.getMinute()).is(0);
-        });
+    @Test
+    @DisplayName("adjust date to next monday and time to next hour")
+    void adjustToNextMondayNextHour() {
+        LocalDateTime localDateTime = LocalDateTime.of(2015, Month.JUNE, 20, 7, 0);
+        LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+        assertNotNull(adjusted);
+        assertEquals(DayOfWeek.MONDAY, adjusted.getDayOfWeek());
+        assertEquals(22, adjusted.getDayOfMonth());
+        assertEquals(8, adjusted.getHour());
+        assertEquals(0, adjusted.getMinute());
+    }
 
-        it.should("adjust date to to next hour", expect -> {
-            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.JUNE, 17, 7, 0);
-            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
-            expect.that(adjusted).isNotNull();
-            expect.that(adjusted.getDayOfWeek()).is(DayOfWeek.WEDNESDAY);
-            expect.that(adjusted.getDayOfMonth()).is(17);
-            expect.that(adjusted.getHour()).is(8);
-            expect.that(adjusted.getMinute()).is(0);
-        });
+    @Test
+    @DisplayName("adjust date to to next hour")
+    void adjustToNextHour() {
+        LocalDateTime localDateTime = LocalDateTime.of(2015, Month.JUNE, 17, 7, 0);
+        LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+        assertNotNull(adjusted);
+        assertEquals(DayOfWeek.WEDNESDAY, adjusted.getDayOfWeek());
+        assertEquals(17, adjusted.getDayOfMonth());
+        assertEquals(8, adjusted.getHour());
+        assertEquals(0, adjusted.getMinute());
+    }
 
-        it.should("do nothing if the date is within range (start)", expect -> {
-            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.JUNE, 17, 8, 0);
-            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
-            expect.that(adjusted).isNotNull();
-            expect.that(adjusted.getDayOfWeek()).is(DayOfWeek.WEDNESDAY);
-            expect.that(adjusted.getDayOfMonth()).is(17);
-            expect.that(adjusted.getHour()).is(8);
-            expect.that(adjusted.getMinute()).is(0);
-        });
+    @Test
+    @DisplayName("do nothing if the date is within range (start)")
+    void doNothingIfDateWithinRange() {
+        LocalDateTime localDateTime = LocalDateTime.of(2015, Month.JUNE, 17, 8, 0);
+        LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+        assertNotNull(adjusted);
+        assertEquals(DayOfWeek.WEDNESDAY, adjusted.getDayOfWeek());
+        assertEquals(17, adjusted.getDayOfMonth());
+        assertEquals(8, adjusted.getHour());
+        assertEquals(0, adjusted.getMinute());
+    }
 
-        it.should("do nothing if the date is within range (middle)", expect -> {
-            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.JUNE, 17, 13, 0);
-            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
-            expect.that(adjusted).isNotNull();
-            expect.that(adjusted.getDayOfWeek()).is(DayOfWeek.WEDNESDAY);
-            expect.that(adjusted.getDayOfMonth()).is(17);
-            expect.that(adjusted.getHour()).is(13);
-            expect.that(adjusted.getMinute()).is(0);
-        });
+    @Test
+    @DisplayName("do nothing if the date is within range (middle)")
+    void doNothingIfDateWithinRangeMiddle() {
+        LocalDateTime localDateTime = LocalDateTime.of(2015, Month.JUNE, 17, 13, 0);
+        LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+        assertNotNull(adjusted);
+        assertEquals(DayOfWeek.WEDNESDAY, adjusted.getDayOfWeek());
+        assertEquals(17, adjusted.getDayOfMonth());
+        assertEquals(13, adjusted.getHour());
+        assertEquals(0, adjusted.getMinute());
+    }
 
-        it.should("do nothing if the date is within range (end)", expect -> {
-            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.JUNE, 17, 19, 59);
-            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
-            expect.that(adjusted).isNotNull();
-            expect.that(adjusted.getDayOfWeek()).is(DayOfWeek.WEDNESDAY);
-            expect.that(adjusted.getDayOfMonth()).is(17);
-            expect.that(adjusted.getHour()).is(19);
-            expect.that(adjusted.getMinute()).is(59);
-        });
-
-    });
-}}
+    @Test
+    @DisplayName("do nothing if the date is within range (end)")
+    void doNothingIfDateWithinRangeEnd() {
+        LocalDateTime localDateTime = LocalDateTime.of(2015, Month.JUNE, 17, 19, 59);
+        LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+        assertNotNull(adjusted);
+        assertEquals(DayOfWeek.WEDNESDAY, adjusted.getDayOfWeek());
+        assertEquals(17, adjusted.getDayOfMonth());
+        assertEquals(19, adjusted.getHour());
+        assertEquals(59, adjusted.getMinute());
+    }
+}

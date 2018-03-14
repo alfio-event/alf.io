@@ -17,21 +17,23 @@
 package alfio.config;
 
 import alfio.config.support.PlatformProvider;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class DataSourceConfigurationTest {
 
-    @Mock
     private Environment environment;
     private DataSourceConfiguration configuration = new DataSourceConfiguration();
+
+    @BeforeEach
+    void init() {
+        environment = mock(Environment.class);
+    }
 
 
     @Test
@@ -53,13 +55,6 @@ public class DataSourceConfigurationTest {
     }
 
     @Test
-    public void selectDocker() {
-        when(environment.getProperty("DB_ENV_POSTGRES_DB")).thenReturn("docker");
-        when(environment.getProperty("DB_ENV_DOCKER_DB_NAME")).thenReturn("docker");
-        assertEquals(PlatformProvider.DOCKER, configuration.getCloudProvider(environment));
-    }
-
-    @Test
     public void selectBeanstalk() {
         when(environment.getProperty("RDS_HOSTNAME")).thenReturn("host.rds.amazonaws.com");
         when(environment.getRequiredProperty("RDS_HOSTNAME")).thenReturn("host.rds.amazonaws.com");
@@ -72,7 +67,7 @@ public class DataSourceConfigurationTest {
         assertEquals("foo", cloudProvider.getUsername(environment));
         assertEquals("bar", cloudProvider.getPassword(environment));
         assertEquals("foo", cloudProvider.getUsername(environment));
-        assertEquals("jdbc:postgresql://host.rds.amazonaws.com:5432/ebdb", cloudProvider.getUsername(environment));
+        assertEquals("jdbc:postgresql://host.rds.amazonaws.com:5432/ebdb", cloudProvider.getUrl(environment));
     }
 
     @Test

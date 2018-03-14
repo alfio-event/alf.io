@@ -27,13 +27,10 @@ import alfio.model.user.Organization;
 import alfio.repository.SpecialPriceRepository;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Matchers;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.MessageSource;
 
 import java.time.ZoneId;
@@ -45,31 +42,31 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
-@RunWith(MockitoJUnitRunner.class)
 public class SpecialPriceManagerTest {
 
-    @Mock
     private EventManager eventManager;
-    @Mock
     private Event event;
-    @Mock
     private Organization organization;
-    @Mock
     private TicketCategory ticketCategory;
-    @Mock
     private NotificationManager notificationManager;
-    @Mock
     private SpecialPriceRepository specialPriceRepository;
-    @Mock
     private TemplateManager templateManager;
-    @Mock
     private MessageSource messageSource;
-    @Mock
     private I18nManager i18nManager;
     private SpecialPriceManager specialPriceManager;
 
-    @Before
+    @BeforeEach
     public void init() {
+        eventManager = mock(EventManager.class);
+        event = mock(Event.class);
+        organization = mock(Organization.class);
+        ticketCategory = mock(TicketCategory.class);
+        notificationManager = mock(NotificationManager.class);
+        specialPriceRepository = mock(SpecialPriceRepository.class);
+        templateManager = mock(TemplateManager.class);
+        messageSource = mock(MessageSource.class);
+        i18nManager = mock(I18nManager.class);
+
         List<SpecialPrice> specialPrices = asList(new SpecialPrice(0, "123", 0, 0, "FREE", null, null, null, null), new SpecialPrice(0, "456", 0, 0, "FREE", null, null, null, null));
         when(i18nManager.getEventLanguages(anyInt())).thenReturn(Collections.singletonList(ContentLanguage.ITALIAN));
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("text");
@@ -95,36 +92,35 @@ public class SpecialPriceManagerTest {
         testAssigneeLink(specialPriceManager, CODES_REQUESTED);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void validationErrorCategoryNotRestricted() throws Exception {
         setRestricted(ticketCategory, false);
-        specialPriceManager.linkAssigneeToCode(Collections.emptyList(), "test", 0, "username");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(Collections.emptyList(), "test", 0, "username"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void validationErrorTooManyCodesRequested() throws Exception {
-        List<SendCodeModification> oneMore = new ArrayList<>();
-        oneMore.addAll(CODES_REQUESTED);
+        List<SendCodeModification> oneMore = new ArrayList<>(CODES_REQUESTED);
         oneMore.add(new SendCodeModification("123", "", "", ""));
-        specialPriceManager.linkAssigneeToCode(oneMore, "test", 0, "username");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(oneMore, "test", 0, "username"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void validationErrorRequestedCodeIsNotAvailable() throws Exception {
         List<SendCodeModification> notExistingCode = asList(new SendCodeModification("AAA", "A 123", "123@123", "it"), new SendCodeModification("456", "A 456", "456@456", "en"));
-        specialPriceManager.linkAssigneeToCode(notExistingCode, "test", 0, "username");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(notExistingCode, "test", 0, "username"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void validationErrorCodeRequestedTwice() throws Exception {
         List<SendCodeModification> duplicatedCodes = asList(new SendCodeModification("123", "A 123", "123@123", "it"), new SendCodeModification("123", "A 456", "456@456", "en"));
-        specialPriceManager.linkAssigneeToCode(duplicatedCodes, "test", 0, "username");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(duplicatedCodes, "test", 0, "username"));
     }
 
     @Test
     public void sendAllCodes() throws Exception {
         assertTrue(specialPriceManager.sendCodeToAssignee(CODES_REQUESTED, "", 0, ""));
-        verify(notificationManager, times(CODES_REQUESTED.size())).sendSimpleEmail(eq(event), anyString(), anyString(), Matchers.any());
+        verify(notificationManager, times(CODES_REQUESTED.size())).sendSimpleEmail(eq(event), anyString(), anyString(), any());
     }
 
     @Test

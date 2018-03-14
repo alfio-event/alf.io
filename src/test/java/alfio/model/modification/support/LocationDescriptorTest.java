@@ -18,7 +18,7 @@ package alfio.model.modification.support;
 
 import alfio.model.system.ConfigurationKeys;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 import java.util.function.Function;

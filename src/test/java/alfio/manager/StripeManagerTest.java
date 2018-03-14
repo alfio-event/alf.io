@@ -23,11 +23,8 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketRepository;
 import com.stripe.exception.*;
 import com.stripe.net.RequestOptions;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -35,22 +32,22 @@ import java.util.function.Function;
 import static alfio.model.system.ConfigurationKeys.PLATFORM_MODE_ENABLED;
 import static alfio.model.system.ConfigurationKeys.STRIPE_CONNECTED_ID;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class StripeManagerTest {
 
-    @Mock
     private ConfigurationManager configurationManager;
-    @Mock
     private TicketRepository ticketRepository;
-    @Mock
     private Event event;
 
     private StripeManager stripeManager;
 
-    @Before
+    @BeforeEach
     public void init() {
+        configurationManager = mock(ConfigurationManager.class);
+        ticketRepository = mock(TicketRepository.class);
+        event = mock(Event.class);
         stripeManager = new StripeManager(configurationManager, ticketRepository, null, null);
     }
 

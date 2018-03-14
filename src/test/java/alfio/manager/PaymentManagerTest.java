@@ -27,40 +27,44 @@ import alfio.repository.user.UserRepository;
 import com.stripe.exception.AuthenticationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class PaymentManagerTest {
 
-    @Mock
     private StripeManager stripeManager;
-    @Mock
     private TransactionRepository transactionRepository;
-    @Mock
     private ConfigurationManager configurationManager;
-    @Mock
     private AuditingRepository auditingRepository;
-    @Mock
     private UserRepository userRepository;
-    @Mock
     private TicketRepository ticketRepository;
-    @Mock
     private Event event;
-    @Mock
     private CustomerName customerName;
 
     private final String paymentId = "customer#1";
     private final String error = "errorCode";
+
+    @BeforeEach
+    public void setUp() {
+        stripeManager = mock(StripeManager.class);
+        transactionRepository = mock(TransactionRepository.class);
+        configurationManager = mock(ConfigurationManager.class);
+        auditingRepository = mock(AuditingRepository.class);
+        userRepository = mock(UserRepository.class);
+        ticketRepository = mock(TicketRepository.class);
+        event = mock(Event.class);
+        customerName = mock(CustomerName.class);
+        when(customerName.getFullName()).thenReturn("ciccio");
+    }
 
     @Test
     public void successFlow() throws StripeException {
@@ -74,11 +78,12 @@ public class PaymentManagerTest {
         assertEquals(result, PaymentResult.unsuccessful(error));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void internalError() throws StripeException {
-        when(transactionRepository.insert(anyString(), anyString(), anyString(), any(ZonedDateTime.class), anyInt(), anyString(), anyString(), anyString(), anyLong(), anyLong()))
+        when(event.getCurrency()).thenReturn("CHF");
+        when(transactionRepository.insert(anyString(), isNull(), anyString(), any(ZonedDateTime.class), anyInt(), eq("CHF"), anyString(), anyString(), anyLong(), anyLong()))
             .thenThrow(new NullPointerException());
-        stripeSuccess().processStripePayment("", "", 100, event, "", customerName, "");
+        Assertions.assertThrows(IllegalStateException.class, () -> stripeSuccess().processStripePayment("", "", 100, event, "", customerName, ""));
     }
 
     private PaymentManager stripeFailure() throws StripeException {
@@ -92,6 +97,7 @@ public class PaymentManagerTest {
     private PaymentManager stripeSuccess() throws StripeException {
         when(stripeManager.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenReturn(Optional.of(new Charge() {{
             setId(paymentId);
+            setDescription("description");
         }}));
         return new PaymentManager(stripeManager,
             null, null, transactionRepository, configurationManager, auditingRepository,
