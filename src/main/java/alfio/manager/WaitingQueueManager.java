@@ -160,8 +160,7 @@ public class WaitingQueueManager {
         // Given that this Job runs more than once in a minute, in order to ensure that all the waiting queue subscribers would get a seat *before*
         // all other people, we must process their a little bit before the sale period starts
         Optional<TicketCategory> categoryWithInceptionInFuture = ticketCategories.stream()
-                .sorted(TicketCategory.COMPARATOR)
-                .findFirst()
+                .min(TicketCategory.COMPARATOR)
                 .filter(t -> ZonedDateTime.now(event.getZoneId()).isBefore(t.getInception(event.getZoneId()).minusMinutes(5)));
         int ticketsNeeded = Math.min(waitingPeople, eventRepository.countExistingTickets(event.getId()));
         if(ticketsNeeded > 0) {

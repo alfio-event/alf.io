@@ -16,21 +16,40 @@
  */
 package alfio.manager.system;
 
-import com.insightfullogic.lambdabehave.JunitSuiteRunner;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
 import static alfio.manager.system.DataMigrator.parseVersion;
-import static com.insightfullogic.lambdabehave.Suite.describe;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(JunitSuiteRunner.class)
-public class DataMigratorTest {{
-    describe("parseVersion", it -> {
-        BigDecimal target = new BigDecimal("1.5");
-        it.should("parse a stable version", expect -> expect.that(parseVersion("1.5")).is(target));
-        it.should("parse a snapshot version", expect -> expect.that(parseVersion("1.5-SNAPSHOT")).is(target));
-        it.should("parse a patch release", expect -> expect.that(parseVersion("1.5.1")).is(new BigDecimal("1.51")));
-        it.should("return zero if unknown", expect -> expect.that(parseVersion("NOT_VALID")).is(BigDecimal.ZERO));
-    });
-}}
+@DisplayName("DataMigrator: parse version")
+public class DataMigratorTest {
+
+    private final BigDecimal target = new BigDecimal("1.5");
+
+    @Test
+    @DisplayName("parse a stable version")
+    void parseStable() {
+        assertEquals(target, parseVersion("1.5"));
+    }
+
+    @Test
+    @DisplayName("parse a snapshot version")
+    void parseSnapshot() {
+        assertEquals(target, parseVersion("1.5-SNAPSHOT"));
+    }
+
+    @Test
+    @DisplayName("parse a patch release")
+    void parsePatch() {
+        assertEquals(new BigDecimal("1.51"), parseVersion("1.5.1"));
+    }
+
+    @Test
+    @DisplayName("return zero if unknown")
+    void zeroIfUnknown() {
+        assertEquals(BigDecimal.ZERO, parseVersion("NOT_VALID"));
+    }
+}

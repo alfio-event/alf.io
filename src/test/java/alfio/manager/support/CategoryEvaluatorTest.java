@@ -19,30 +19,29 @@ package alfio.manager.support;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.repository.TicketCategoryRepository;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class CategoryEvaluatorTest {
 
-    @Mock
     private Ticket ticket;
-    @Mock
     private TicketCategory category;
-    @Mock
     private TicketCategoryRepository tcr;
     private final int eventId = 2;
 
-    @Before
+    @BeforeEach
     public void init() {
+
+        ticket = mock(Ticket.class);
+        category = mock(TicketCategory.class);
+        tcr = mock(TicketCategoryRepository.class);
+        
         int categoryId = 1;
         when(ticket.getCategoryId()).thenReturn(categoryId);
         when(ticket.getEventId()).thenReturn(eventId);

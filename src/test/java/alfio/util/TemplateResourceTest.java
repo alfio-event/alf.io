@@ -22,10 +22,8 @@ import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
 import alfio.model.user.Organization;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -34,24 +32,27 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class TemplateResourceTest {
 
-    @Mock
     private Organization organization;
-    @Mock
     private Event event;
-    @Mock
     private TicketReservation ticketReservation;
-    @Mock
     private TicketCategory ticketCategory;
-    @Mock
     private Ticket ticket;
 
+    @BeforeEach
+    void setUp() {
+        organization = mock(Organization.class);
+        event = mock(Event.class);
+        ticketReservation = mock(TicketReservation.class);
+        ticketCategory = mock(TicketCategory.class);
+        ticket = mock(Ticket.class);
+    }
 
     @Test
     public void buildModelForTicketEmail() throws Exception {
@@ -64,6 +65,8 @@ public class TemplateResourceTest {
     @Test
     public void buildModelForTicketPDF() throws Exception {
         Pair<ZonedDateTime, ZonedDateTime> dates = getDates();
+        when(ticket.ticketCode(anyString())).thenReturn("abcd");
+        when(event.getPrivateKey()).thenReturn("key");
         Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, Optional.empty(), "abcd", Collections.emptyMap());
         assertEquals(dates.getLeft(), model.get("validityStart"));
         assertEquals(dates.getRight(), model.get("validityEnd"));

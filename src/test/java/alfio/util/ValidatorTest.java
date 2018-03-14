@@ -18,15 +18,11 @@ package alfio.util;
 
 import alfio.model.AdditionalService;
 import alfio.model.AdditionalServiceText;
-import alfio.model.ContentLanguage;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.result.ValidationResult;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 
@@ -39,22 +35,21 @@ import java.util.stream.Stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
-@RunWith(MockitoJUnitRunner.class)
 public class ValidatorTest {
 
     private static final DateTimeModification VALID_EXPIRATION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusHours(1L));
     private static final DateTimeModification VALID_INCEPTION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().minusDays(1L));
 
-    @Mock
     private EventModification eventModification;
     private Errors errors;
     private EventModification.AdditionalServiceText title = new EventModification.AdditionalServiceText(0, "it", "titolo", AdditionalServiceText.TextType.TITLE);
     private EventModification.AdditionalServiceText description = new EventModification.AdditionalServiceText(0, "it", "descrizione", AdditionalServiceText.TextType.DESCRIPTION);
 
-    @Before
+    @BeforeEach
     public void init() {
+        eventModification = mock(EventModification.class);
         errors = new MapBindingResult(new HashMap<>(), "test");
     }
 
@@ -110,7 +105,6 @@ public class ValidatorTest {
 
     @Test
     public void testValidationFailedDescription() {
-        when(eventModification.getLocales()).thenReturn(ContentLanguage.ENGLISH.getValue());
         EventModification.AdditionalService invalid1 = new EventModification.AdditionalService(0, BigDecimal.ZERO, false, 0, -1, 1, VALID_INCEPTION, VALID_EXPIRATION, null, AdditionalService.VatType.NONE, Collections.emptyList(), emptyList(), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null);//English is required here
         EventModification.AdditionalService invalid2 = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(new EventModification.AdditionalServiceText(0, "en", "", AdditionalServiceText.TextType.DESCRIPTION)), AdditionalService.AdditionalServiceType.DONATION, null);
         assertFalse(Validator.validateAdditionalService(invalid1, errors).isSuccess());

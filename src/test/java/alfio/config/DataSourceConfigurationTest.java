@@ -17,55 +17,67 @@
 package alfio.config;
 
 import alfio.config.support.PlatformProvider;
-import com.insightfullogic.lambdabehave.JunitSuiteRunner;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
 
-import static com.insightfullogic.lambdabehave.Suite.describe;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(JunitSuiteRunner.class)
-public class DataSourceConfigurationTest {{
-    describe("DataSourceConfiguration", it -> {
+public class DataSourceConfigurationTest {
 
-        Environment environment = mock(Environment.class);
-        DataSourceConfiguration configuration = new DataSourceConfiguration();
-        it.isSetupWith(() -> Mockito.reset(environment));
-        it.should("select OPENSHIFT environment", expect -> {
-            when(environment.getProperty("OPENSHIFT_APP_NAME")).thenReturn("openshift");
-            expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.OPENSHIFT);
-        });
-        it.should("select CLOUD_FOUNDRY environment", expect -> {
-            when(environment.getProperty("VCAP_SERVICES")).thenReturn("cloud foundry");
-            expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.CLOUD_FOUNDRY);
-        });
-        it.should("select HEROKU environment", expect -> {
-            when(environment.getProperty("DYNO")).thenReturn("heroku");
-            expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.HEROKU);
-        });
-        it.should("select DOCKER environment", expect -> {
-            when(environment.getProperty("DB_ENV_POSTGRES_DB")).thenReturn("docker");
-            when(environment.getProperty("DB_ENV_DOCKER_DB_NAME")).thenReturn("docker");
-            expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.DOCKER);
-        });
-        it.should("select AWS BEANSTALK environment", expect -> {
-            when(environment.getProperty("RDS_HOSTNAME")).thenReturn("host.rds.amazonaws.com");
-            when(environment.getRequiredProperty("RDS_HOSTNAME")).thenReturn("host.rds.amazonaws.com");
-            when(environment.getRequiredProperty("RDS_PORT")).thenReturn("3306");
-            when(environment.getRequiredProperty("RDS_DB_NAME")).thenReturn("ebdb");
-            when(environment.getRequiredProperty("RDS_USERNAME")).thenReturn("foo");
-            when(environment.getRequiredProperty("RDS_PASSWORD")).thenReturn("bar");
-            expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.AWS_BEANSTALK);
-            expect.that(configuration.getCloudProvider(environment).getUsername(environment)).isEqualTo("foo");
-            expect.that(configuration.getCloudProvider(environment).getPassword(environment)).isEqualTo("bar");
-            expect.that(configuration.getCloudProvider(environment).getUrl(environment)).isEqualTo("jdbc:mysql://host.rds.amazonaws.com:3306/ebdb");
-        });
+    private Environment environment;
+    private DataSourceConfiguration configuration = new DataSourceConfiguration();
 
-        it.should("select DEFAULT environment otherwise", expect -> {
-            expect.that(configuration.getCloudProvider(environment)).isEqualTo(PlatformProvider.DEFAULT);
-        });
+    @BeforeEach
+    void init() {
+        environment = mock(Environment.class);
+    }
 
-    });
-}}
+
+    @Test
+    public void selectOpenShift() {
+        when(environment.getProperty("OPENSHIFT_APP_NAME")).thenReturn("openshift");
+        assertEquals(PlatformProvider.OPENSHIFT, configuration.getCloudProvider(environment));
+    }
+
+    @Test
+    public void selectCloudFoundry() {
+        when(environment.getProperty("VCAP_SERVICES")).thenReturn("cloud foundry");
+        assertEquals(PlatformProvider.CLOUD_FOUNDRY, configuration.getCloudProvider(environment));
+    }
+
+    @Test
+    public void selectHeroku() {
+        when(environment.getProperty("DYNO")).thenReturn("heroku");
+        assertEquals(PlatformProvider.HEROKU, configuration.getCloudProvider(environment));
+    }
+
+    @Test
+    public void selectBeanstalk() {
+        when(environment.getProperty("RDS_HOSTNAME")).thenReturn("host.rds.amazonaws.com");
+        when(environment.getRequiredProperty("RDS_HOSTNAME")).thenReturn("host.rds.amazonaws.com");
+        when(environment.getRequiredProperty("RDS_PORT")).thenReturn("5432");
+        when(environment.getRequiredProperty("RDS_DB_NAME")).thenReturn("ebdb");
+        when(environment.getRequiredProperty("RDS_USERNAME")).thenReturn("foo");
+        when(environment.getRequiredProperty("RDS_PASSWORD")).thenReturn("bar");
+        PlatformProvider cloudProvider = configuration.getCloudProvider(environment);
+        assertEquals(PlatformProvider.AWS_BEANSTALK, cloudProvider);
+        assertEquals("foo", cloudProvider.getUsername(environment));
+        assertEquals("bar", cloudProvider.getPassword(environment));
+        assertEquals("foo", cloudProvider.getUsername(environment));
+        assertEquals("jdbc:postgresql://host.rds.amazonaws.com:5432/ebdb", cloudProvider.getUrl(environment));
+    }
+
+    @Test
+    public void selectCleverCloud() {
+        when(environment.getProperty("CC_DEPLOYMENT_ID")).thenReturn("deployment-id");
+
+    }
+
+    @Test
+    public void selectDefault() {
+        assertEquals(PlatformProvider.DEFAULT, configuration.getCloudProvider(environment));
+    }
+}

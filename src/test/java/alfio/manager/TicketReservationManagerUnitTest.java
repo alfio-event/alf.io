@@ -22,11 +22,8 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.TemplateManager;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -36,79 +33,78 @@ import java.util.List;
 import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class TicketReservationManagerUnitTest {
     private static final String TICKET_RESERVATION_ID = "abcdef";
 
     private TicketReservationManager manager;
-    @Mock
+    
     private PromoCodeDiscountRepository promoCodeDiscountRepository;
-    @Mock
     private TicketRepository ticketRepository;
-    @Mock
     private TicketReservationRepository ticketReservationRepository;
-    @Mock
     private EventRepository eventRepository;
-    @Mock
     private TicketReservation reservation;
-    @Mock
     private Event event;
-    @Mock
     private Ticket ticket;
-    @Mock
     private TicketCategory ticketCategory;
-    @Mock
     private OrganizationRepository organizationRepository;
-    @Mock
     private TicketCategoryRepository ticketCategoryRepository;
-    @Mock
     private TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
-    @Mock
     private ConfigurationManager configurationManager;
-    @Mock
     private PaymentManager paymentManager;
-    @Mock
     private SpecialPriceRepository specialPriceRepository;
-    @Mock
     private TransactionRepository transactionRepository;
-    @Mock
     private NotificationManager notificationManager;
-    @Mock
     private MessageSource messageSource;
-    @Mock
     private TemplateManager templateManager;
-    @Mock
     private PlatformTransactionManager transactionManager;
-    @Mock
     private WaitingQueueManager waitingQueueManager;
-    @Mock
     private FileUploadManager fileUploadManager;
-    @Mock
     private TicketFieldRepository ticketFieldRepository;
-    @Mock
     private AdditionalServiceRepository additionalServiceRepository;
-    @Mock
     private AdditionalServiceItemRepository additionalServiceItemRepository;
-    @Mock
     private AdditionalServiceTextRepository additionalServiceTextRepository;
-    @Mock
     private InvoiceSequencesRepository invoiceSequencesRepository;
-    @Mock
     private AuditingRepository auditingRepository;
-    @Mock
     private UserRepository userRepository;
-    @Mock
     private ExtensionManager extensionManager;
-    @Mock
-    private TicketSearchRepository ticketSearchRepository;
 
-    @Before
+    @BeforeEach
     public void setUp() {
+        promoCodeDiscountRepository = mock(PromoCodeDiscountRepository.class);
+        ticketRepository = mock(TicketRepository.class);
+        ticketReservationRepository = mock(TicketReservationRepository.class);
+        eventRepository = mock(EventRepository.class);
+        reservation = mock(TicketReservation.class);
+        event = mock(Event.class);
+        ticket = mock(Ticket.class);
+        ticketCategory = mock(TicketCategory.class);
+        organizationRepository = mock(OrganizationRepository.class);
+        ticketCategoryRepository = mock(TicketCategoryRepository.class);
+        ticketCategoryDescriptionRepository = mock(TicketCategoryDescriptionRepository.class);
+        configurationManager = mock(ConfigurationManager.class);
+        paymentManager = mock(PaymentManager.class);
+        specialPriceRepository = mock(SpecialPriceRepository.class);
+        transactionRepository = mock(TransactionRepository.class);
+        notificationManager = mock(NotificationManager.class);
+        messageSource = mock(MessageSource.class);
+        templateManager = mock(TemplateManager.class);
+        transactionManager = mock(PlatformTransactionManager.class);
+        waitingQueueManager = mock(WaitingQueueManager.class);
+        fileUploadManager = mock(FileUploadManager.class);
+        ticketFieldRepository = mock(TicketFieldRepository.class);
+        additionalServiceRepository = mock(AdditionalServiceRepository.class);
+        additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
+        additionalServiceTextRepository = mock(AdditionalServiceTextRepository.class);
+        invoiceSequencesRepository = mock(InvoiceSequencesRepository.class);
+        auditingRepository = mock(AuditingRepository.class);
+        userRepository = mock(UserRepository.class);
+        extensionManager = mock(ExtensionManager.class);
+
         manager = new TicketReservationManager(eventRepository,
             organizationRepository,
             ticketRepository,
@@ -132,7 +128,8 @@ public class TicketReservationManagerUnitTest {
             invoiceSequencesRepository,
             auditingRepository,
             userRepository,
-            extensionManager, ticketSearchRepository);
+            extensionManager,
+            mock(TicketSearchRepository.class));
     }
 
     @Test

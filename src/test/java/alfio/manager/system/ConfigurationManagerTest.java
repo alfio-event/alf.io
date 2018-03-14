@@ -18,16 +18,15 @@ package alfio.manager.system;
 
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationPathLevel.EVENT;
-import static alfio.model.system.ConfigurationPathLevel.ORGANIZATION;
-import static alfio.model.system.ConfigurationPathLevel.SYSTEM;
-import static org.junit.Assert.*;
+import static alfio.model.system.ConfigurationPathLevel.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ConfigurationManagerTest {
 

@@ -13,7 +13,7 @@ buildscript {
     dependencies {
         classpath 'ru.yandex.qatools.embed:postgresql-embedded:+'
     }
-    
+
     repositories {
         jcenter()
         maven {
@@ -33,14 +33,11 @@ plugins {
     id 'org.springframework.boot' version '2.0.3.RELEASE'
 }
 
+apply plugin: 'java'
 apply plugin: 'war'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '3.5'
-}
 
 //as pointed out by @facundofarias, we should check minimum javac version in order to avoid problems with type inference mechanism during compilation
 task validate {
@@ -75,7 +72,7 @@ war {
 
 idea {
     project {
-        jdkName sourceCompatibility
+        jdkName sourceCompatibility.toString()
         languageLevel sourceCompatibility
     }
 }
@@ -161,9 +158,6 @@ dependencies {
     compile "org.postgresql:postgresql:42.2.2"
     compile "com.zaxxer:HikariCP:2.7.7"
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
-    compile "org.apache.logging.log4j:log4j-core:$log4jVersion"
-    compile "org.apache.logging.log4j:log4j-jcl:$log4jVersion"
-    compile "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
     compile "com.stripe:stripe-java:5.42.0"
     compile 'com.paypal.sdk:rest-api-sdk:1.14.0'
     compile 'com.squareup.okhttp3:okhttp:3.10.0'
@@ -179,11 +173,8 @@ dependencies {
     compile 'com.github.scribejava:scribejava-core:5.0.0'
     compile 'ch.digitalfondue.vatchecker:vatchecker:1.1'
 
-    testCompile "org.springframework:spring-test:$springVersion"
-    testCompile "com.insightfullogic:lambda-behave:0.3"
+    annotationProcessor "org.projectlombok:lombok:1.16.20"
 
-    compileOnly "org.projectlombok:lombok:1.16.20"
-    testCompile "org.projectlombok:lombok:1.16.20"
     testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.8"
 
     compileOnly "javax.servlet:javax.servlet-api:3.1.0"
@@ -211,6 +202,10 @@ dependencies {
         exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
     }
 
+    testCompile "org.junit.jupiter:junit-jupiter-api"
+    testCompile "org.junit.jupiter:junit-jupiter-engine"
+    testCompile "org.junit.platform:junit-platform-engine"
+    testRuntime "org.junit.vintage:junit-vintage-engine:$junitVersion"
 
     providedCompile "org.springframework.boot:spring-boot-starter-jetty", {
         exclude group: "org.eclipse.jetty.websocket", module: "websocket-server"
@@ -262,6 +257,7 @@ compileJava {
 
 //propagate the system properties to the tests
 test {
+    useJUnitPlatform()
     systemProperties = System.properties
     testLogging {
         events "failed"
